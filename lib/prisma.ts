@@ -6,13 +6,19 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient | undefi
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL!;
   const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
+
+  // Supabase pooler requires ?pgbouncer=true to work correctly with prepared statements
+  const resolvedUrl = !isLocal && !connectionString.includes("pgbouncer=true")
+    ? connectionString + (connectionString.includes("?") ? "&" : "?") + "pgbouncer=true"
+    : connectionString;
+
   const adapter = new PrismaPg({
-    connectionString,
+    connectionString: resolvedUrl,
     ssl: isLocal ? false : { rejectUnauthorized: false },
-    max: 5,
-    idleTimeoutMillis: 600_000,       // keep idle connections alive for 10 minutes
-    connectionTimeoutMillis: 10_000,
-    keepAlive: true,                   // send TCP keepalives so idle connections aren't silently killed
+    max: 3,                           // fewer connections → faster pooler handoff
+    idleTimeoutMillis: 30_000,        // release idle connections quickly (Supabase pauses DBs)
+    connectionTimeoutMillis: 15_000,
+    keepAlive: true,
     keepAliveInitialDelayMillis: 10_000,
   });
   return new PrismaClient({ adapter });
