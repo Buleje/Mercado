@@ -1,0 +1,528 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Products ───────────────────────────────────────────
+model Product {
+  id        Int      @id @default(autoincrement())
+  name      String
+  category  String
+  price     Float
+  costPrice Float?
+  image     String   @default("")
+  unit      String   @default("unidad")
+  badge     String?
+  barcode   String?
+  stock     Int?
+  stockMin  Int?
+  stockMax  Int?
+  active    Boolean  @default(true)
+
+  orderItems    OrderItem[]
+  purchaseItems PurchaseItem[]
+  saleItems     SaleItem[]
+  inventoryMovements InventoryMovement[]
+  priceHistory  PriceHistory[]
+}
+
+// ─── Customers ──────────────────────────────────────────
+model Customer {
+  phone            String          @id
+  name             String
+  location         String          @default("")
+  reference        String          @default("")
+  activeLocationId String?
+  aiNotes          String?
+  aiNotesDate      DateTime?
+  loyaltyPoints    Int             @default(0)
+  loyaltyTier      String          @default("bronce")
+  totalSpent       Float           @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  locations SavedLocation[]
+  orders    Order[]
+  sales     Sale[]
+}
+
+model SavedLocation {
+  id            String   @id @default(cuid())
+  location      String
+  reference     String   @default("")
+  customerPhone String
+  customer      Customer @relation(fields: [customerPhone], references: [phone], onDelete: Cascade)
+
+  @@index([customerPhone])
+}
+
+// ─── Orders ─────────────────────────────────────────────
+enum OrderStatus {
+  pendiente
+  confirmado
+  en_camino
+  entregado
+  cancelado
+}
+
+model Order {
+  id                  String      @id
+  customerName        String
+  customerPhone       String?
+  customerLocation    String      @default("")
+  customerReference   String      @default("")
+  total               Float
+  status              OrderStatus @default(pendiente)
+  notes               String?
+  paymentMethod       String?
+  yapeOperationNumber String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  items    OrderItem[]
+  customer Customer?   @relation(fields: [customerPhone], references: [phone], onDelete: SetNull)
+
+  @@index([customerPhone])
+  @@index([status])
+}
+
+model OrderItem {
+  id       Int    @id @default(autoincrement())
+  orderId  String
+  productId Int?
+  name     String
+  price    Float
+  quantity Int
+  unit     String
+  image    String @default("")
+
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+}
+
+// ─── Reviews ────────────────────────────────────────────
+model Review {
+  id       String   @id
+  name     String
+  location String   @default("")
+  text     String
+  rating   Int
+  phone    String?
+  date     DateTime @default(now())
+}
+
+// ─── Settings ───────────────────────────────────────────
+model Settings {
+  id                 Int     @id @default(1)
+  mode               String  @default("checkout")
+  businessName       String?
+  businessPhone      String?
+  businessAddress    String?
+  logoUrl            String?
+  description        String?
+  hours              String?
+  deliveryZone       String?
+  yapeEnabled        Boolean @default(false)
+  yapeImage          String?
+  yapeName           String?
+  yapePhone          String?
+  cashEnabled        Boolean @default(true)
+  navLinksJson       String?
+  businessLat        Float?
+  businessLon        Float?
+  adminPassword      String?
+  maintenanceMode    Boolean @default(false)
+  maintenanceMessage String?
+}
+
+// ─── Suppliers ──────────────────────────────────────────
+model Supplier {
+  id        String   @id
+  name      String
+  ruc       String?
+  phone     String?
+  email     String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  purchases   PurchaseOrder[]
+  payables    Payable[]
+  evaluations SupplierEvaluation[]
+}
+
+// ─── Purchase Orders ────────────────────────────────────
+enum PurchaseStatus {
+  pendiente
+  recibido
+  parcial
+  cancelado
+}
+
+model PurchaseOrder {
+  id           String         @id
+  supplierId   String
+  supplierName String
+  total        Float
+  status       PurchaseStatus @default(pendiente)
+  notes        String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  items    PurchaseItem[]
+  supplier Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+}
+
+model PurchaseItem {
+  id              Int    @id @default(autoincrement())
+  purchaseOrderId String
+  productId       Int
+  name            String
+  quantity        Int
+  unitCost        Float
+  unit            String
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseOrderId])
+}
+
+// ─── Sales (POS) ────────────────────────────────────────
+model Sale {
+  id            String   @id
+  total         Float
+  payment       String   @default("efectivo")
+  amountPaid    Float    @default(0)
+  change        Float    @default(0)
+  customerPhone String?
+  createdAt     DateTime @default(now())
+
+  items    SaleItem[]
+  customer Customer?  @relation(fields: [customerPhone], references: [phone], onDelete: SetNull)
+
+  @@index([customerPhone])
+}
+
+model SaleItem {
+  id        Int    @id @default(autoincrement())
+  saleId    String
+  productId Int
+  name      String
+  price     Float
+  quantity  Int
+  unit      String
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([saleId])
+}
+
+// ─── Promotions ─────────────────────────────────────────
+model Promotion {
+  id              String    @id
+  name            String
+  description     String    @default("")
+  discountPercent Float     @default(0)
+  minPurchase     Float?
+  imageUrl        String?
+  message         String?
+  targetType      String    @default("all")
+  targetPhones    String?
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime?
+}
+
+// ─── Payables (Accounts Payable) ────────────────────────
+model Payable {
+  id              String   @id
+  supplierId      String
+  supplierName    String
+  purchaseOrderId String?
+  description     String   @default("")
+  amount          Float
+  paidAmount      Float    @default(0)
+  status          String   @default("pendiente")
+  dueDate         DateTime
+  createdAt       DateTime @default(now())
+
+  payments Payment[]
+  supplier Supplier  @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+}
+
+model Payment {
+  id        String   @id
+  payableId String
+  amount    Float
+  method    String   @default("efectivo")
+  date      DateTime @default(now())
+  reference String?
+
+  payable Payable @relation(fields: [payableId], references: [id], onDelete: Cascade)
+
+  @@index([payableId])
+}
+
+// ─── Cash Register ──────────────────────────────────────
+enum CashRegisterStatus {
+  abierta
+  cerrada
+}
+
+model CashRegister {
+  id            String             @id @default(cuid())
+  openedAt      DateTime           @default(now())
+  closedAt      DateTime?
+  openingAmount Float              @default(0)
+  closingAmount Float?
+  expectedAmount Float?
+  difference    Float?
+  status        CashRegisterStatus @default(abierta)
+  notes         String?
+
+  movements CashMovement[]
+}
+
+model CashMovement {
+  id             String   @id @default(cuid())
+  cashRegisterId String
+  type           String   // venta, ingreso, egreso, apertura, cierre
+  amount         Float
+  method         String   @default("efectivo") // efectivo, yape, plin, tarjeta, transferencia
+  description    String   @default("")
+  saleId         String?
+  createdAt      DateTime @default(now())
+
+  cashRegister CashRegister @relation(fields: [cashRegisterId], references: [id], onDelete: Cascade)
+
+  @@index([cashRegisterId])
+}
+
+// ─── Inventory Movements ────────────────────────────────
+model InventoryMovement {
+  id          String   @id @default(cuid())
+  productId   Int
+  type        String   // compra, venta, venta_online, devolucion, ajuste_positivo, ajuste_negativo, merma
+  quantity    Int
+  previousStock Int    @default(0)
+  newStock    Int      @default(0)
+  reference   String?  // saleId, orderId, purchaseId, etc.
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ─── Coupons ────────────────────────────────────────────
+model Coupon {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  description     String    @default("")
+  discountType    String    @default("percent") // percent | fixed
+  discountValue   Float     @default(0)
+  minPurchase     Float?
+  maxUses         Int?
+  usedCount       Int       @default(0)
+  active          Boolean   @default(true)
+  expiresAt       DateTime?
+  createdAt       DateTime  @default(now())
+}
+
+// ─── Returns / Refunds ──────────────────────────────────
+model Return {
+  id          String       @id @default(cuid())
+  saleId      String?
+  orderId     String?
+  reason      String       @default("")
+  total       Float        @default(0)
+  createdAt   DateTime     @default(now())
+
+  items ReturnItem[]
+}
+
+model ReturnItem {
+  id        Int    @id @default(autoincrement())
+  returnId  String
+  productId Int
+  name      String
+  quantity  Int
+  price     Float
+  unit      String
+
+  returnRecord Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
+
+  @@index([returnId])
+}
+
+// ─── Shopping Lists ─────────────────────────────────────
+model ShoppingList {
+  id            String   @id @default(cuid())
+  customerPhone String
+  name          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  items ShoppingListItem[]
+
+  @@index([customerPhone])
+}
+
+model ShoppingListItem {
+  id             Int    @id @default(autoincrement())
+  shoppingListId String
+  productId      Int
+  quantity       Int    @default(1)
+
+  shoppingList ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+
+  @@index([shoppingListId])
+}
+
+// ─── Price History ──────────────────────────────────────
+model PriceHistory {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  oldPrice  Float
+  newPrice  Float
+  changedAt DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([changedAt])
+}
+
+// ─── Delivery Slots ─────────────────────────────────────
+model DeliverySlot {
+  id        String   @id @default(cuid())
+  orderId   String   @unique
+  date      String   // YYYY-MM-DD
+  slot      String   // manana, tarde, noche
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+// ─── Admin Chat Messages ────────────────────────────────
+model AdminMessage {
+  id        String   @id @default(cuid())
+  sender    String   // admin, cajero, almacenero
+  message   String
+  createdAt DateTime @default(now())
+}
+
+// ─── Supplier Evaluations ───────────────────────────────
+model SupplierEvaluation {
+  id            String   @id @default(cuid())
+  supplierId    String
+  purchaseId    String?
+  punctuality   Int      @default(3) // 1-5
+  quality       Int      @default(3) // 1-5
+  price         Int      @default(3) // 1-5
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([supplierId])
+}
+
+// ─── Expenses (Operating Costs) ─────────────────────────
+model Expense {
+  id          String   @id @default(cuid())
+  category    String   // alquiler, servicios, personal, transporte, limpieza, marketing, otros
+  description String   @default("")
+  amount      Float
+  date        DateTime @default(now())
+  recurring   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([category])
+  @@index([date])
+}
+
+// ─── Product Bundles (Combos) ───────────────────────────
+model Bundle {
+  id          String    @id @default(cuid())
+  name        String
+  description String    @default("")
+  price       Float     // bundle price (usually less than sum of items)
+  image       String    @default("")
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  items BundleItem[]
+}
+
+model BundleItem {
+  id        Int    @id @default(autoincrement())
+  bundleId  String
+  productId Int
+  quantity  Int    @default(1)
+
+  bundle Bundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+
+  @@index([bundleId])
+}
+
+// ─── Activity Log (Admin Audit Trail) ─────────────────
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String   // create, update, delete, view, login, etc.
+  entity    String   // product, order, customer, settings, etc.
+  entityId  String?
+  detail    String   @default("")
+  user      String   @default("admin")
+  createdAt DateTime @default(now())
+
+  @@index([entity])
+  @@index([user])
+  @@index([createdAt])
+}
+
+// ─── Admin Users ─────────────────────────────────────────
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("admin") // admin, cajero, almacenero
+  name         String   @default("")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ─── WhatsApp Notification Log ──────────────────────────
+model NotificationLog {
+  id        String   @id @default(cuid())
+  type      String   // order_confirmed, order_shipped, order_delivered, promotion, low_stock
+  recipient String   // phone number
+  message   String
+  status    String   @default("sent") // sent, failed
+  orderId   String?
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([createdAt])
+}

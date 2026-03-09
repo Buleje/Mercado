@@ -1,0 +1,30 @@
+import { NextRequest, NextResponse } from "next/server";
+import { CashRegistersDB } from "@/lib/jsondb";
+import { requireAdmin } from "@/lib/require-admin";
+
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+
+  return NextResponse.json(await CashRegistersDB.getAll());
+}
+
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
+  if (auth instanceof NextResponse) return auth;
+  const body = await req.json();
+  const { action } = body;
+
+  if (action === "open") {
+    const openingAmount = Number(body.openingAmount) || 0;
+    // Check if there's already an open register
+    const open = await CashRegistersDB.getOpen();
+    if (open) {
+      return NextResponse.json({ error: "Ya hay una caja abierta" }, { status: 400 });
+    }
+    const reg = await CashRegistersDB.open(openingAmount, body.notes);
+    return NextResponse.json(reg, { status: 201 });
+  }
+
+  return NextResponse.json({ error: "action required (open)" }, { status: 400 });
+}

@@ -1,0 +1,147 @@
+"use client";
+
+import { MapPin, Phone, Clock, MessageCircle } from "lucide-react";
+import { useInView } from "@/hooks/use-in-view";
+
+const contactInfo = [
+  {
+    icon: MapPin,
+    label: "Dirección",
+    value: "Jr. Ucayali 450, Pucallpa, Ucayali",
+  },
+  {
+    icon: Phone,
+    label: "Teléfono",
+    value: "916 409 675",
+    href: "tel:+51916409675",
+  },
+  {
+    icon: Clock,
+    label: "Horario",
+    value: "Lun - Sáb: 7:00am - 9:00pm",
+  },
+  {
+    icon: MessageCircle,
+    label: "WhatsApp",
+    value: "Escríbenos al WhatsApp",
+    href: "https://wa.me/51916409675?text=Hola%2C%20necesito%20información",
+  },
+];
+
+export default function Contact() {
+  const [ref, inView] = useInView({ threshold: 0.1 });
+
+  return (
+    <section id="contacto" className="py-20 sm:py-28 bg-surface" ref={ref}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-14">
+          <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
+            Contacto
+          </span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+            Delivery de Abarrotes en{" "}
+            <span className="text-primary relative">
+              Pucallpa
+              <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/30" viewBox="0 0 100 12" preserveAspectRatio="none">
+                <path d="M0 8 Q25 0 50 6 Q75 12 100 4" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
+              </svg>
+            </span>
+          </h2>
+          <p className="mt-4 text-lg text-muted max-w-2xl mx-auto">
+            Haz tu pedido online o escríbenos por WhatsApp. Entrega rápida y segura. Pago con Yape o efectivo.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          {/* Contact Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {contactInfo.map((item, i) => (
+              <div
+                key={item.label}
+                style={inView ? { animationDelay: `${i * 100}ms` } : undefined}
+                className={inView ? "animate-[fadeUp_0.4s_ease-out_both]" : "opacity-0"}
+              >
+                {item.href ? (
+                  <a
+                    href={item.href}
+                    target={item.href.startsWith("http") ? "_blank" : undefined}
+                    rel={item.href.startsWith("http") ? "noopener noreferrer" : undefined}
+                    className="block bg-white dark:bg-card rounded-xl p-6 shadow-sm hover:shadow-lg hover:border-primary/20 transition-all duration-300 group"
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                        <item.icon className="h-5 w-5" />
+                      </div>
+                      <span className="text-sm font-semibold text-muted">
+                        {item.label}
+                      </span>
+                    </div>
+                    <p className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {item.value}
+                    </p>
+                  </a>
+                ) : (
+                  <div className="bg-white dark:bg-card rounded-xl p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <item.icon className="h-5 w-5" />
+                      </div>
+                      <span className="text-sm font-semibold text-muted">
+                        {item.label}
+                      </span>
+                    </div>
+                    <p className="font-semibold text-foreground">{item.value}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* WhatsApp CTA Card */}
+          <div
+            className={`rounded-2xl p-8 sm:p-10 text-white shadow-xl ${
+              inView ? "animate-[fadeUp_0.5s_ease-out_0.3s_both]" : "opacity-0"
+            }`}
+            style={{ background: "linear-gradient(135deg, #2d6a4f, #1b4332)" }}
+          >
+            <h3 className="text-2xl sm:text-3xl font-extrabold mb-4">
+              ¿Listo para pedir?
+            </h3>
+            <p className="text-white/80 text-lg mb-8 leading-relaxed">
+              Agrega productos a tu carrito y envía tu pedido directo por
+              WhatsApp. ¡Es así de fácil!
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold shrink-0">
+                  1
+                </span>
+                <p className="text-white/90">Elige tus productos desde nuestro catálogo</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold shrink-0">
+                  2
+                </span>
+                <p className="text-white/90">Agrega al carrito la cantidad que necesites</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-sm font-bold shrink-0">
+                  3
+                </span>
+                <p className="text-white/90">Envía tu pedido por WhatsApp y lo llevamos a tu puerta</p>
+              </div>
+            </div>
+
+            <a
+              href="#productos"
+              className="inline-flex items-center justify-center gap-2 mt-8 rounded-xl bg-white px-8 py-4 text-base font-bold text-primary shadow-lg hover:bg-gray-50 active:scale-[0.98] transition-all duration-200"
+            >
+              🛒 Empezar a Comprar
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

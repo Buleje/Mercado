@@ -1,0 +1,82 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { SalesDB, ProductsDB } from "@/lib/jsondb";
+
+export async function POST(req: NextRequest) {
+  const GROQ_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_KEY) return NextResponse.json({ error: "GROQ_API_KEY no configurada" }, { status: 500 });
+
+  const { period } = await req.json().catch(() => ({ period: "mes" }));
+
+  // Gather data
+  const [sales, products] = await Promise.all([SalesDB.getAll(), ProductsDB.getAll()]);
+
+  const now = new Date();
+  const cutoff = new Date(now);
+  if (period === "semana") cutoff.setDate(cutoff.getDate() - 7);
+  else if (period === "mes") cutoff.setMonth(cutoff.getMonth() - 1);
+  else cutoff.setMonth(cutoff.getMonth() - 3);
+
+  const recentSales = sales.filter(s => new Date(s.createdAt) >= cutoff);
+
+  // Aggregate product sales
+  const productSales: Record<string, { name: string; qty: number; revenue: number }> = {};
+  for (const sale of recentSales) {
+    for (const item of sale.items) {
+      const key = String(item.productId);
+      if (!productSales[key]) productSales[key] = { name: item.name, qty: 0, revenue: 0 };
+      productSales[key].qty += item.quantity;
+      productSales[key].revenue += item.price * item.quantity;
+    }
+  }
+
+  const topProducts = Object.entries(productSales)
+    .sort((a, b) => b[1].qty - a[1].qty)
+    .slice(0, 20)
+    .map(([id, d]) => {
+      const prod = products.find(p => p.id === Number(id));
+      return { id, name: d.name, qtySold: d.qty, revenue: d.revenue, stock: prod?.stock ?? 0, stockMin: prod?.stockMin ?? 0 };
+    });
+
+  const lowStock = products.filter(p => p.stock != null && p.stockMin != null && p.stock <= p.stockMin)
+    .map(p => ({ name: p.name, stock: p.stock, stockMin: p.stockMin }));
+
+  const prompt = `Eres un analista de inventario para una bodega (tienda de abarrotes) en Pucallpa, Perú.
+
+Datos del período (${period}):
+- Total ventas: ${recentSales.length}
+- Productos más vendidos: ${JSON.stringify(topProducts)}
+- Productos con stock bajo: ${JSON.stringify(lowStock)}
+
+Genera un análisis JSON con:
+{
+  "predictions": [{"productName": "...", "currentStock": N, "estimatedDaysLeft": N, "recommendation": "..."}],
+  "peakDays": ["lunes", ...],
+  "purchaseSuggestions": [{"product": "...", "suggestedQuantity": N, "urgency": "alta|media|baja"}],
+  "summary": "Resumen general de 2-3 oraciones"
+}
+
+Responde SOLO el JSON, sin markdown.`;
+
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_KEY}` },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.3,
+      max_tokens: 2000,
+    }),
+  });
+
+  if (!res.ok) return NextResponse.json({ error: "Error IA" }, { status: 502 });
+
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content ?? "";
+
+  try {
+    const parsed = JSON.parse(text);
+    return NextResponse.json(parsed);
+  } catch {
+    return NextResponse.json({ summary: text, predictions: [], peakDays: [], purchaseSuggestions: [] });
+  }
+}
