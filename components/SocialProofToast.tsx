@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, startTransition } from "react";
 import Image from "next/image";
 import { ShoppingBag, X } from "lucide-react";
+// TODO: Uncomment after creating hooks/use-first-order.ts (see use-notifications.ts for content)
+// import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
 import { products } from "@/data/products";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +42,9 @@ function generateNotification(id: number): Notification {
 }
 
 export default function SocialProofToast() {
+  // TODO: Uncomment after creating use-first-order.ts
+  // const hasFirstOrder = useHasCompletedFirstOrder();
+  const hasFirstOrder = true; // TEMPORARY - replace with hook
   const [notification, setNotification] = useState<Notification | null>(null);
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -47,6 +52,9 @@ export default function SocialProofToast() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // Only show social proof after user has completed their first order
+    if (hasFirstOrder !== true) return;
+
     // Don't show on first 10s of page load to avoid being annoying
     const initialDelay = setTimeout(() => {
       const show = () => {
@@ -75,7 +83,7 @@ export default function SocialProofToast() {
       clearTimeout(initialDelay);
       clearTimeout(timerRef.current!);
     };
-  }, []);
+  }, [hasFirstOrder]);
 
   if (!notification || dismissed) return null;
 

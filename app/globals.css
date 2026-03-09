@@ -242,3 +242,23 @@ body {
 .hover\:bg-primary\/20:hover { background-color: rgba(45, 106, 79, 0.20); }
 .hover\:bg-secondary\/20:hover { background-color: rgba(244, 162, 97, 0.20); }
 .group-hover\:border-primary\/30:is(:where(.group):hover *) { border-color: rgba(45, 106, 79, 0.30); }
+
+/* ── Accessibility utilities ────────────────────────────────────────────  */
+/* Visually hidden but accessible to screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Focus visible styles */
+*:focus-visible {
+  outline: 2px solid theme('colors.primary.DEFAULT');
+  outline-offset: 2px;
+}

@@ -17,6 +17,7 @@ import {
   MicrosoftClarity,
 } from "@/components/Analytics";
 
+// Utility components - disable SSR for better performance
 const CheckoutModal = nextDynamic(() => import("@/components/CheckoutModal"));
 const ScrollToTop = nextDynamic(() => import("@/components/ScrollToTop"));
 const WhatsAppButton = nextDynamic(() => import("@/components/WhatsAppButton"));

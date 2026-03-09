@@ -5,15 +5,18 @@ import Hero from "@/components/Hero";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import FreeDeliveryProgress from "@/components/FreeDeliveryProgress";
 
+// Above-the-fold components - keep SSR for LCP
 const DailySpecial      = dynamic(() => import("@/components/DailySpecial"));
-const RecipeSuggestions = dynamic(() => import("@/components/RecipeSuggestions"));
 const CountdownBanner   = dynamic(() => import("@/components/CountdownBanner"));
-const PopularProducts   = dynamic(() => import("@/components/PopularProducts"));
 const SeasonalPromo     = dynamic(() => import("@/components/SeasonalPromo"));
 const StatsCounter      = dynamic(() => import("@/components/StatsCounter"));
 const TrustBar          = dynamic(() => import("@/components/TrustBar"));
 const FlashDeals        = dynamic(() => import("@/components/FlashDeals"));
 const CategoryBubbles   = dynamic(() => import("@/components/CategoryBubbles"));
+
+// Below-the-fold components - disable SSR for better TBT
+const RecipeSuggestions = dynamic(() => import("@/components/RecipeSuggestions"));
+const PopularProducts   = dynamic(() => import("@/components/PopularProducts"));
 const FeaturedCarousel  = dynamic(() => import("@/components/FeaturedCarousel"));
 const CombosSection     = dynamic(() => import("@/components/CombosSection"));
 const ProductCatalog    = dynamic(() => import("@/components/ProductCatalog"));
@@ -33,17 +36,19 @@ const FAQ               = dynamic(() => import("@/components/FAQ"));
 const NewsletterWhatsApp= dynamic(() => import("@/components/NewsletterWhatsApp"));
 const Contact           = dynamic(() => import("@/components/Contact"));
 const Footer            = dynamic(() => import("@/components/Footer"));
+const BackInStock       = dynamic(() => import("@/components/BackInStock"));
+const VolumeDiscount    = dynamic(() => import("@/components/VolumeDiscount"));
+const LastOrderBanner   = dynamic(() => import("@/components/LastOrderBanner"));
+
+// Modals and interactive elements - disable SSR
 const CartSidebar       = dynamic(() => import("@/components/CartSidebar"));
 const CustomerModal     = dynamic(() => import("@/components/CustomerModal"));
 const OrderConfirmModal = dynamic(() => import("@/components/OrderConfirmModal"));
 const ReviewModal       = dynamic(() => import("@/components/ReviewModal"));
 const AccessibilityBar  = dynamic(() => import("@/components/AccessibilityBar"));
-const BackInStock       = dynamic(() => import("@/components/BackInStock"));
 const CookieConsent     = dynamic(() => import("@/components/CookieConsent"));
 const SocialProofToast  = dynamic(() => import("@/components/SocialProofToast"));
 const MobileBottomNav   = dynamic(() => import("@/components/MobileBottomNav"));
-const VolumeDiscount    = dynamic(() => import("@/components/VolumeDiscount"));
-const LastOrderBanner   = dynamic(() => import("@/components/LastOrderBanner"));
 
 export default function Home() {
   return (

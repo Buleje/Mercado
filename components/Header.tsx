@@ -514,8 +514,12 @@ export default function Header() {
           <div className="bg-white dark:bg-card shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="mx-auto max-w-3xl px-4 py-4">
               <div className="flex items-center gap-3">
-                <Search className="h-5 w-5 text-muted shrink-0" />
+                <Search className="h-5 w-5 text-muted shrink-0" aria-hidden="true" />
+                <label htmlFor="product-search" className="sr-only">
+                  Buscar productos
+                </label>
                 <input
+                  id="product-search"
                   ref={searchInputRef}
                   type="text"
                   value={searchQuery}

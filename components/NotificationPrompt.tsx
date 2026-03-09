@@ -2,10 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useNotifications } from "@/hooks/use-notifications";
+// TODO: Uncomment after creating hooks/use-first-order.ts (see use-notifications.ts for content)
+// import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
 import { Bell, X } from "lucide-react";
 
 export default function NotificationPrompt() {
   const { permission, requestPermission, hasAsked } = useNotifications();
+  // TODO: Uncomment after creating use-first-order.ts
+  // const hasFirstOrder = useHasCompletedFirstOrder();
+  const hasFirstOrder = true; // TEMPORARY - replace with hook
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -15,7 +20,8 @@ export default function NotificationPrompt() {
     }
   }, [permission, hasAsked]);
 
-  if (!show || permission !== "default") return null;
+  // Don't show until we know if user has completed first order
+  if (!show || permission !== "default" || hasFirstOrder !== true) return null;
 
   const handleAllow = async () => {
     await requestPermission();

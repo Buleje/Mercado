@@ -79,3 +79,46 @@ export function useNotifications() {
 
   return { permission, requestPermission, sendNotification, hasAsked };
 }
+
+/* =====================================================================================
+ * TEMPORAL: Create new file hooks/use-first-order.ts with this exact content:
+ * =====================================================================================
+ 
+"use client";
+
+import { useState, useEffect } from "react";
+import { useCustomer } from "@/contexts/customer-context";
+
+export function useHasCompletedFirstOrder(): boolean | null {
+  const { customer } = useCustomer();
+  const [hasOrder, setHasOrder] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check localStorage first (fast)
+    const local = localStorage.getItem("bsm-first-order-completed");
+    if (local === "true") {
+      setHasOrder(true);
+      return;
+    }
+
+    // If customer has phone, check with API
+    if (customer?.phone) {
+      fetch(`/api/orders?phone=${encodeURIComponent(customer.phone)}&limit=1`)
+        .then(r => r.json())
+        .then(data => {
+          const completed = Array.isArray(data) && data.length > 0;
+          setHasOrder(completed);
+          if (completed) localStorage.setItem("bsm-first-order-completed", "true");
+        })
+        .catch(() => setHasOrder(false));
+    } else {
+      setHasOrder(false);
+    }
+  }, [customer?.phone]);
+
+  return hasOrder;
+}
+
+ * =====================================================================================
+ * After creating the file, delete this entire comment block from use-notifications.ts
+ * ===================================================================================== */

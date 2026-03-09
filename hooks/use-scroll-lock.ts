@@ -18,3 +18,4 @@ export function useScrollLock(active: boolean) {
     };
   }, [active]);
 }
+
