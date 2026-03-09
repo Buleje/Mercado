@@ -9,7 +9,7 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    // Session pooler works for both queries and migrations (IPv4 compatible)
+    // Session pooler — works for both queries and migrations (IPv4 compatible)
     url: process.env["DATABASE_URL"],
   },
 });
