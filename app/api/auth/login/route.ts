@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import "server-only";
 import { NextResponse } from "next/server";
 import { SettingsDB } from "@/lib/jsondb";
@@ -20,7 +21,7 @@ async function getLegacyUsers(): Promise<LegacyAdminUser[]> {
   }
 }
 
-/** Check password against a stored value — supports bcrypt hashes and plain text (legacy). */
+/** Check password against a stored value â€” supports bcrypt hashes and plain text (legacy). */
 async function checkPassword(input: string, stored: string): Promise<boolean> {
   if (stored.startsWith("$2")) {
     return compare(input, stored);
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "password required" }, { status: 400 });
   }
 
-  // ── Primary: query AdminUser table in Prisma ──────────────────────────────
+  // â”€â”€ Primary: query AdminUser table in Prisma â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const dbUsers = await prisma.adminUser.findMany({
     where: { active: true, ...(username ? { username } : {}) },
   });
@@ -60,7 +61,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // ── Fallback: legacy admin-users.json (used during migration window) ──────
+  // â”€â”€ Fallback: legacy admin-users.json (used during migration window) â”€â”€â”€â”€â”€â”€
   if (dbUsers.length === 0) {
     const legacyUsers = await getLegacyUsers();
     const candidates = username ? legacyUsers.filter((u) => u.username === username) : legacyUsers;
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // ── Final fallback: admin password stored in Settings ────────────────────
+  // â”€â”€ Final fallback: admin password stored in Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const settings = await SettingsDB.get();
   const adminPassword = settings.adminPassword ?? "admin2024";
   if (await checkPassword(password, adminPassword)) {

@@ -1,47 +1,31 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { CashRegistersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 
-export async function GET(
-  req: NextRequest,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
-  const { id } = await ctx.params;
-  const reg = await CashRegistersDB.getById(id);
-  if (!reg) return NextResponse.json({ error: "not found" }, { status: 404 });
-  return NextResponse.json(reg);
+  return NextResponse.json(await CashRegistersDB.getAll());
 }
 
-export async function PATCH(
-  req: NextRequest,
-  ctx: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
-
-  const { id } = await ctx.params;
   const body = await req.json();
+  const { action } = body;
 
-  if (body.action === "close") {
-    const closingAmount = Number(body.closingAmount) || 0;
-    const reg = await CashRegistersDB.close(id, closingAmount, body.notes);
-    if (!reg) return NextResponse.json({ error: "not found" }, { status: 404 });
-    return NextResponse.json(reg);
-  }
-
-  if (body.action === "movement") {
-    const { type, amount, method, description, saleId } = body;
-    if (!type || amount == null || !method) {
-      return NextResponse.json({ error: "type, amount, method required" }, { status: 400 });
+  if (action === "open") {
+    const openingAmount = Number(body.openingAmount) || 0;
+    // Check if there's already an open register
+    const open = await CashRegistersDB.getOpen();
+    if (open) {
+      return NextResponse.json({ error: "Ya hay una caja abierta" }, { status: 400 });
     }
-    const movement = await CashRegistersDB.addMovement(id, {
-      type, amount: Number(amount), method, description: description || "", saleId,
-    });
-    return NextResponse.json(movement, { status: 201 });
+    const reg = await CashRegistersDB.open(openingAmount, body.notes);
+    return NextResponse.json(reg, { status: 201 });
   }
 
-  return NextResponse.json({ error: "action required (close|movement)" }, { status: 400 });
+  return NextResponse.json({ error: "action required (open)" }, { status: 400 });
 }

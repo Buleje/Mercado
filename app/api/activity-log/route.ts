@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
@@ -12,7 +13,7 @@ export type ActivityEntry = {
   createdAt: string;
 };
 
-// GET — return recent activity
+// GET â€” return recent activity
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(entries);
 }
 
-// POST — add a new entry
+// POST â€” add a new entry
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(entry, { status: 201 });
 }
 
-// DELETE — clear all entries (admin only)
+// DELETE â€” clear all entries (admin only)
 export async function DELETE(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ProductsDB } from "@/lib/jsondb";
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest) {
 
     const total = products.length;
 
-    // Pagination — only applied when ?limit= is provided; keeps existing callers working
+    // Pagination â€” only applied when ?limit= is provided; keeps existing callers working
     if (limitParam) {
       const limit = Math.min(Math.max(parseInt(limitParam, 10) || 20, 1), 200);
       const page  = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
     const parsed = ProductPostSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+        { error: "Datos invÃ¡lidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 }
       );
     }

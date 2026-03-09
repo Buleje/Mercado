@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server";
 
 // Lookup product info by barcode using Open Food Facts API

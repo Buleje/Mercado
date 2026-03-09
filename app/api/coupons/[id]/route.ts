@@ -1,39 +1,32 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
-import { z } from "zod";
 import { CouponsDB } from "@/lib/jsondb";
-import { requireAdmin } from "@/lib/require-admin";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
-const CouponPatchSchema = z.object({
-  code: z.string().min(1).max(50).optional(),
-  description: z.string().max(300).optional(),
-  discountType: z.enum(["percent", "fixed"]).optional(),
-  discountValue: z.number().positive().optional(),
-  minPurchase: z.number().min(0).optional(),
-  maxUses: z.number().min(1).optional(),
-  active: z.boolean().optional(),
-  expiresAt: z.string().max(50).optional(),
-});
-
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
-
-  const { id } = await params;
-  const raw = await req.json();
-  const parsed = CouponPatchSchema.safeParse(raw);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
+export async function POST(req: NextRequest) {
+  // Rate limit: 10 attempts per IP per 5 minutes
+  const ip = getClientIp(req);
+  const { allowed } = rateLimit(`coupon:${ip}`, 10, 300);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Demasiados intentos. Espera unos minutos antes de intentarlo de nuevo." },
+      { status: 429 }
+    );
   }
-  const coupon = await CouponsDB.update(id, parsed.data);
-  if (!coupon) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(coupon);
-}
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
+  const { code, cartTotal } = await req.json();
+  if (!code) return NextResponse.json({ error: "CÃ³digo requerido" }, { status: 400 });
 
-  const { id } = await params;
-  await CouponsDB.delete(id);
-  return NextResponse.json({ ok: true });
+  const coupon = await CouponsDB.getByCode(code);
+  if (!coupon) return NextResponse.json({ error: "CupÃ³n no encontrado" }, { status: 404 });
+  if (!coupon.active) return NextResponse.json({ error: "CupÃ³n inactivo" }, { status: 400 });
+  if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) return NextResponse.json({ error: "CupÃ³n expirado" }, { status: 400 });
+  if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) return NextResponse.json({ error: "CupÃ³n agotado" }, { status: 400 });
+  if (coupon.minPurchase && cartTotal < coupon.minPurchase) return NextResponse.json({ error: `MÃ­nimo de compra: S/${coupon.minPurchase}` }, { status: 400 });
+
+  const discount = coupon.discountType === "percent"
+    ? Math.round(cartTotal * coupon.discountValue / 100 * 100) / 100
+    : Math.min(coupon.discountValue, cartTotal);
+
+  return NextResponse.json({ coupon, discount });
 }

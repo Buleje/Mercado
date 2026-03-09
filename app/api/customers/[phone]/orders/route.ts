@@ -1,25 +1,60 @@
-import { NextResponse } from "next/server";
-import { OrdersDB, normalizePhone } from "@/lib/jsondb";
+export const dynamic = 'force-dynamic'
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { CustomersDB, normalizePhone } from "@/lib/jsondb";
+import { requireAdmin } from "@/lib/require-admin";
 
-export async function GET(
-  _req: Request,
-  ctx: { params: Promise<{ phone: string }> }
-) {
-  const { phone } = await ctx.params;
-  const normalized = normalizePhone(phone);
-  if (!normalized || normalized.length < 6) {
-    return NextResponse.json({ error: "invalid phone" }, { status: 400 });
+const LocationSchema = z.object({
+  id: z.string().min(1),
+  location: z.string().min(1).max(500),
+  reference: z.string().max(300),
+});
+
+const CustomerPostSchema = z.object({
+  phone: z.string().min(6).max(20),
+  name: z.string().min(1).max(100),
+  location: z.string().max(500).optional(),
+  reference: z.string().max(300).optional(),
+  locations: z.array(LocationSchema).optional(),
+  activeLocationId: z.string().nullable().optional(),
+});
+
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+
+  try {
+    return NextResponse.json(await CustomersDB.getAll());
+  } catch (e) {
+    console.error("[customers] GET error:", e);
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
-  const orders = await OrdersDB.getByCustomerPhone(normalized);
-  // Return only safe public fields (strip customer addresses/references)
-  const safe = orders.map((o) => ({
-    id: o.id,
-    items: o.items.map((i) => ({ productId: i.id, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit, image: i.image })),
-    total: o.total,
-    status: o.status,
-    paymentMethod: o.paymentMethod,
-    createdAt: o.createdAt,
-    updatedAt: o.updatedAt,
-  }));
-  return NextResponse.json(safe);
+}
+
+export async function POST(req: Request) {
+  try {
+    const raw = await req.json();
+    const parsed = CustomerPostSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Datos invÃ¡lidos", issues: parsed.error.issues.map((i) => i.message) },
+        { status: 400 }
+      );
+    }
+    const body = parsed.data;
+    const record = await CustomersDB.upsert({
+      phone: normalizePhone(body.phone),
+      name: body.name,
+      location: body.location ?? "",
+      reference: body.reference ?? "",
+      locations: body.locations ?? [],
+      activeLocationId: body.activeLocationId ?? null,
+      loyaltyPoints: 0,
+      loyaltyTier: "Nuevo",
+      totalSpent: 0,
+    });
+    return NextResponse.json(record);
+  } catch {
+    return NextResponse.json({ error: "invalid request" }, { status: 400 });
+  }
 }

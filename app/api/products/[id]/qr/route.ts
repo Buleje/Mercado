@@ -1,33 +1,98 @@
-import { NextResponse, type NextRequest } from "next/server";
+export const dynamic = 'force-dynamic'
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { ProductsDB } from "@/lib/jsondb";
+import { logActivity } from "@/lib/activity-logger";
+import { requireAdmin } from "@/lib/require-admin";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const product = await ProductsDB.getById(Number(id));
-  if (!product) return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
+const ProductPostSchema = z.object({
+  name: z.string().min(1).max(150),
+  category: z.string().min(1).max(100),
+  price: z.number().positive(),
+  image: z.string().max(500).optional(),
+  unit: z.string().max(20).optional(),
+  badge: z.string().max(50).optional(),
+  stock: z.number().min(0).optional(),
+  stockMin: z.number().min(0).optional(),
+});
 
-  // Generate QR as SVG using a simple approach
-  const url = `${req.nextUrl.origin}/#producto-${id}`;
-  const qrSvg = generateQRSvg(url, product.name);
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const category   = searchParams.get("category");
+    const search     = searchParams.get("q");
+    const onlyActive = searchParams.get("active");
+    const limitParam = searchParams.get("limit");
+    const pageParam  = searchParams.get("page");
 
-  return new NextResponse(qrSvg, {
-    headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=86400" },
-  });
+    let products = await ProductsDB.getAll();
+
+    if (category && category !== "todos") {
+      products = products.filter(p => p.category === category);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      products = products.filter(p => p.name.toLowerCase().includes(q));
+    }
+    if (onlyActive === "true") {
+      products = products.filter(p => p.active !== false);
+    }
+
+    const total = products.length;
+
+    // Pagination â€” only applied when ?limit= is provided; keeps existing callers working
+    if (limitParam) {
+      const limit = Math.min(Math.max(parseInt(limitParam, 10) || 20, 1), 200);
+      const page  = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
+      const start = (page - 1) * limit;
+      products = products.slice(start, start + limit);
+
+      return NextResponse.json(products, {
+        headers: {
+          "X-Total-Count": String(total),
+          "X-Page": String(page),
+          "X-Limit": String(limit),
+          "X-Total-Pages": String(Math.ceil(total / limit)),
+        },
+      });
+    }
+
+    return NextResponse.json(products);
+  } catch (e) {
+    console.error("[products] GET error:", e);
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
 }
 
-function generateQRSvg(data: string, label: string): string {
-  // Use a simple QR-like placeholder with the URL encoded
-  // For real QR, we encode the data as a data matrix pattern
-  const encoded = encodeURIComponent(data);
-  const size = 200;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size + 30}" width="${size}" height="${size + 30}">
-  <rect width="${size}" height="${size + 30}" fill="white"/>
-  <rect x="10" y="10" width="180" height="180" rx="8" fill="white" stroke="#2d6a4f" stroke-width="2"/>
-  <image href="https://api.qrserver.com/v1/create-qr-code/?size=170x170&amp;data=${encoded}" x="15" y="15" width="170" height="170"/>
-  <text x="${size / 2}" y="${size + 20}" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#333">${escapeXml(label.slice(0, 30))}</text>
-</svg>`;
-}
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin", "almacenero"]);
+  if (auth instanceof NextResponse) return auth;
 
-function escapeXml(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  try {
+    const raw = await req.json();
+    const parsed = ProductPostSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Datos invÃ¡lidos", issues: parsed.error.issues.map((i) => i.message) },
+        { status: 400 }
+      );
+    }
+    const body = parsed.data;
+    const all = await ProductsDB.getAll();
+    const newId = all.length > 0 ? Math.max(...all.map((p) => p.id)) + 1 : 1;
+    const product = await ProductsDB.upsert({
+      id: newId,
+      name: body.name,
+      category: body.category,
+      price: body.price,
+      image: body.image ?? "",
+      unit: body.unit ?? "und",
+      badge: body.badge || undefined,
+      active: true,
+    });
+    await logActivity("Crear", "producto", `Producto creado: ${product.name} (S/${product.price})`, String(product.id));
+    return NextResponse.json(product);
+  } catch {
+    return NextResponse.json({ error: "invalid request" }, { status: 400 });
+  }
 }

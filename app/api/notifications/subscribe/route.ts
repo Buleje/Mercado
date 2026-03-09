@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
 import webpush from "web-push";
 import { PushSubscriptionsStore } from "@/lib/push-subscriptions";
@@ -8,7 +9,7 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY!,
 );
 
-// POST /api/notifications/subscribe — save or update subscription
+// POST /api/notifications/subscribe â€” save or update subscription
 export async function POST(req: NextRequest) {
   try {
     const { subscription, phone } = await req.json() as {
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE /api/notifications/subscribe — remove subscription
+// DELETE /api/notifications/subscribe â€” remove subscription
 export async function DELETE(req: NextRequest) {
   try {
     const { endpoint } = await req.json() as { endpoint: string };

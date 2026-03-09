@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
 import { ReturnsDB, InventoryMovementsDB } from "@/lib/jsondb";
 
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
       type: "devolucion",
       quantity: item.quantity,
       reference: ret.id,
-      notes: `Devolución: ${reason ?? "Sin motivo"}`,
+      notes: `DevoluciÃ³n: ${reason ?? "Sin motivo"}`,
     });
   }
 

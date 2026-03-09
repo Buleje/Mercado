@@ -1,16 +1,18 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
 import { ShoppingListsDB } from "@/lib/jsondb";
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const body = await req.json();
-  const list = await ShoppingListsDB.update(id, body);
-  if (!list) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(list);
+export async function GET(req: NextRequest) {
+  const phone = req.nextUrl.searchParams.get("phone");
+  if (!phone) return NextResponse.json({ error: "phone requerido" }, { status: 400 });
+  const lists = await ShoppingListsDB.getByPhone(phone);
+  return NextResponse.json(lists);
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  await ShoppingListsDB.delete(id);
-  return NextResponse.json({ ok: true });
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const { customerPhone, name, items } = body;
+  if (!customerPhone || !name) return NextResponse.json({ error: "customerPhone y name requeridos" }, { status: 400 });
+  const list = await ShoppingListsDB.add({ customerPhone, name, items: items ?? [] });
+  return NextResponse.json(list, { status: 201 });
 }

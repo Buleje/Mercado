@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { CustomersDB, normalizePhone } from "@/lib/jsondb";
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
     const parsed = CustomerPostSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+        { error: "Datos invÃ¡lidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 }
       );
     }

@@ -1,33 +1,44 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { PayablesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
-  const { id } = await params;
-  const p = await PayablesDB.getById(id);
-  if (!p) return NextResponse.json({ error: "not found" }, { status: 404 });
-  return NextResponse.json(p);
+  try {
+    const { searchParams } = new URL(req.url);
+    const supplierId = searchParams.get("supplierId");
+    if (supplierId) return NextResponse.json(await PayablesDB.getBySupplierId(supplierId));
+    return NextResponse.json(await PayablesDB.getAll());
+  } catch (e) {
+    console.error("[payables] GET error:", e);
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const { id } = await params;
   const body = await req.json();
-  const updated = await PayablesDB.update(id, body);
-  if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
-  return NextResponse.json(updated);
-}
-
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
-
-  const { id } = await params;
-  await PayablesDB.delete(id);
-  return NextResponse.json({ ok: true });
+  if (!body.supplierId || !body.amount) {
+    return NextResponse.json({ error: "supplierId and amount required" }, { status: 400 });
+  }
+  const id = `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const payable = await PayablesDB.add({
+    id,
+    supplierId: body.supplierId,
+    supplierName: body.supplierName || "",
+    purchaseOrderId: body.purchaseOrderId || undefined,
+    description: body.description || "",
+    amount: Number(body.amount),
+    paidAmount: 0,
+    status: "pendiente",
+    dueDate: body.dueDate || new Date().toISOString(),
+    payments: [],
+    createdAt: new Date().toISOString(),
+  });
+  return NextResponse.json(payable, { status: 201 });
 }

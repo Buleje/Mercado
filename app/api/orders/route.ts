@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { OrdersDB, CouponsDB } from "@/lib/jsondb";
@@ -119,14 +120,14 @@ export async function POST(req: NextRequest) {
     const parsed = OrderPostSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+        { error: "Datos invÃ¡lidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 }
       );
     }
     const body = parsed.data;
 
-    // ── Server-side total recomputation ─────────────────────────────────────
-    // Prevents price manipulation: always compute from item prices × quantities
+    // â”€â”€ Server-side total recomputation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Prevents price manipulation: always compute from item prices Ã— quantities
     const itemsTotal = body.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
     // Re-verify coupon server-side when code is present
@@ -157,7 +158,7 @@ export async function POST(req: NextRequest) {
       : 0;
 
     const computedTotal = Math.max(0, itemsTotal - serverCouponDiscount - promoDiscount);
-    // ────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     const now = new Date().toISOString();
     const order: DbOrder = {

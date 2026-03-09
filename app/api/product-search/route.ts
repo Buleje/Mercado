@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server";
 
 // Search Open Food Facts by product name (national product database)
@@ -7,7 +8,7 @@ export async function GET(req: Request) {
   if (q.length < 2) return NextResponse.json({ products: [] });
 
   // Allow letters, numbers, accented chars, spaces and basic punctuation only
-  const safe = q.replace(/[^a-zA-Z0-9áéíóúüñÁÉÍÓÚÜÑ\s\-.]/g, "").slice(0, 80);
+  const safe = q.replace(/[^a-zA-Z0-9Ã¡Ã©Ã­Ã³ÃºÃ¼Ã±ÃÃ‰ÃÃ“ÃšÃœÃ‘\s\-.]/g, "").slice(0, 80);
   if (!safe) return NextResponse.json({ products: [] });
 
   try {

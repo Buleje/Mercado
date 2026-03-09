@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { SettingsDB, type DbSettings } from "@/lib/jsondb";
 import { logActivity } from "@/lib/activity-logger";
@@ -44,6 +45,6 @@ export async function PUT(req: NextRequest) {
     ...(body.maintenanceMessage !== undefined && { maintenanceMessage: body.maintenanceMessage }),
   };
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");
-    logActivity("Editar", "configuracion", `Configuración actualizada: ${changed || "general"}` ).catch(() => {});
+    logActivity("Editar", "configuracion", `ConfiguraciÃ³n actualizada: ${changed || "general"}` ).catch(() => {});
     return NextResponse.json(await SettingsDB.set(updated));
 }

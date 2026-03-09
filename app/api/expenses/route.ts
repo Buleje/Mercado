@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { ExpensesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";

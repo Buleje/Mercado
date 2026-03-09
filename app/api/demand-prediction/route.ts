@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
 import { SalesDB, ProductsDB } from "@/lib/jsondb";
 
@@ -40,14 +41,14 @@ export async function POST(req: NextRequest) {
   const lowStock = products.filter(p => p.stock != null && p.stockMin != null && p.stock <= p.stockMin)
     .map(p => ({ name: p.name, stock: p.stock, stockMin: p.stockMin }));
 
-  const prompt = `Eres un analista de inventario para una bodega (tienda de abarrotes) en Pucallpa, Perú.
+  const prompt = `Eres un analista de inventario para una bodega (tienda de abarrotes) en Pucallpa, PerÃº.
 
-Datos del período (${period}):
+Datos del perÃ­odo (${period}):
 - Total ventas: ${recentSales.length}
-- Productos más vendidos: ${JSON.stringify(topProducts)}
+- Productos mÃ¡s vendidos: ${JSON.stringify(topProducts)}
 - Productos con stock bajo: ${JSON.stringify(lowStock)}
 
-Genera un análisis JSON con:
+Genera un anÃ¡lisis JSON con:
 {
   "predictions": [{"productName": "...", "currentStock": N, "estimatedDaysLeft": N, "recommendation": "..."}],
   "peakDays": ["lunes", ...],
