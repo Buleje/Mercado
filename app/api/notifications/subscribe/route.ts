@@ -3,14 +3,17 @@ import { NextResponse, type NextRequest } from "next/server";
 import webpush from "web-push";
 import { PushSubscriptionsStore } from "@/lib/push-subscriptions";
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
+function initWebPush() {
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!,
+  );
+}
 
-// POST /api/notifications/subscribe â€” save or update subscription
+// POST /api/notifications/subscribe — save or update subscription
 export async function POST(req: NextRequest) {
+  initWebPush();
   try {
     const { subscription, phone } = await req.json() as {
       subscription: { endpoint: string; keys: { p256dh: string; auth: string } };

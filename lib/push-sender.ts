@@ -1,11 +1,13 @@
 import webpush from "web-push";
 import { PushSubscriptionsStore } from "@/lib/push-subscriptions";
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
-);
+function initVapid() {
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL!,
+    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!,
+  );
+}
 
 export type PushPayload = {
   title: string;
@@ -16,6 +18,7 @@ export type PushPayload = {
 
 /** Send push to all subscriptions belonging to a phone number. */
 export async function sendPushToPhone(phone: string, payload: PushPayload): Promise<void> {
+  initVapid();
   const subs = PushSubscriptionsStore.getByPhone(phone);
   await Promise.allSettled(
     subs.map((s) =>
@@ -34,6 +37,7 @@ export async function sendPushToPhone(phone: string, payload: PushPayload): Prom
 
 /** Send push to every stored subscription (e.g. broadcast promo). */
 export async function broadcastPush(payload: PushPayload): Promise<void> {
+  initVapid();
   const subs = PushSubscriptionsStore.getAll();
   await Promise.allSettled(
     subs.map((s) =>
