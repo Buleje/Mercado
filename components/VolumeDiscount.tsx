@@ -3,6 +3,7 @@
 import { useState, useEffect, startTransition } from "react";
 import { Percent, X, ShoppingCart } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
+import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
 import { cn } from "@/lib/utils";
 
 const TIERS = [
@@ -14,6 +15,7 @@ const TIERS = [
 
 export default function VolumeDiscount() {
   const { items } = useCart();
+  const hasFirstOrder = useHasCompletedFirstOrder();
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
   const [dismissed, setDismissed] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -22,7 +24,8 @@ export default function VolumeDiscount() {
     startTransition(() => setMounted(true));
   }, []);
 
-  if (!mounted || dismissed || totalQty < 3) return null;
+  // Solo mostrar después de la primera compra
+  if (!mounted || dismissed || totalQty < 3 || hasFirstOrder !== true) return null;
 
   // Current tier
   const currentTier = [...TIERS].reverse().find((t) => totalQty >= t.min);
@@ -30,7 +33,7 @@ export default function VolumeDiscount() {
   const nextTier = TIERS.find((t) => totalQty < t.min);
 
   return (
-    <div className="fixed bottom-20 sm:bottom-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-30 animate-[fadeUp_0.4s_ease-out] max-w-[calc(100vw-2rem)]">
+    <div className="fixed bottom-34 sm:bottom-4 left-4 sm:left-auto sm:right-4 sm:w-80 z-30 animate-[fadeUp_0.4s_ease-out] max-w-[calc(100vw-2rem)]">  
       <div className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border p-4 relative">
         <button
           onClick={() => setDismissed(true)}

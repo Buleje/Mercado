@@ -15,7 +15,7 @@ export default function CompareBar() {
   return (
     <>
       {/* Floating bar */}
-      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 animate-[fadeUp_0.3s_ease-out_both]">
+      <div className="fixed bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 animate-[fadeUp_0.3s_ease-out_both]">
         <GitCompareArrows className="h-5 w-5 text-primary shrink-0" />
         <div className="flex items-center gap-2">
           {items.map(p => (

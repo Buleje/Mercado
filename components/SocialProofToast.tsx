@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef, startTransition } from "react";
 import Image from "next/image";
 import { ShoppingBag, X } from "lucide-react";
-// TODO: Uncomment after creating hooks/use-first-order.ts (see use-notifications.ts for content)
-// import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
+import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
 import { products } from "@/data/products";
 import { cn } from "@/lib/utils";
 
@@ -42,9 +41,7 @@ function generateNotification(id: number): Notification {
 }
 
 export default function SocialProofToast() {
-  // TODO: Uncomment after creating use-first-order.ts
-  // const hasFirstOrder = useHasCompletedFirstOrder();
-  const hasFirstOrder = true; // TEMPORARY - replace with hook
+  const hasFirstOrder = useHasCompletedFirstOrder();
   const [notification, setNotification] = useState<Notification | null>(null);
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -90,7 +87,7 @@ export default function SocialProofToast() {
   return (
     <div
       className={cn(
-        "fixed bottom-20 sm:bottom-6 left-4 z-40 max-w-xs transition-all duration-500 pointer-events-auto",
+        "fixed bottom-54 sm:bottom-6 left-4 z-20 max-w-xs transition-all duration-500 pointer-events-auto",
         visible
           ? "opacity-100 translate-y-0 translate-x-0"
           : "opacity-0 translate-y-4 -translate-x-4"

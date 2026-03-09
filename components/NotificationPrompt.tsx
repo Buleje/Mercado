@@ -2,15 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useNotifications } from "@/hooks/use-notifications";
-// TODO: Uncomment after creating hooks/use-first-order.ts (see use-notifications.ts for content)
-// import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
+import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
 import { Bell, X } from "lucide-react";
 
 export default function NotificationPrompt() {
   const { permission, requestPermission, hasAsked } = useNotifications();
-  // TODO: Uncomment after creating use-first-order.ts
-  // const hasFirstOrder = useHasCompletedFirstOrder();
-  const hasFirstOrder = true; // TEMPORARY - replace with hook
+  const hasFirstOrder = useHasCompletedFirstOrder();
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -20,7 +17,7 @@ export default function NotificationPrompt() {
     }
   }, [permission, hasAsked]);
 
-  // Don't show until we know if user has completed first order
+  // Solo mostrar después de la primera compra
   if (!show || permission !== "default" || hasFirstOrder !== true) return null;
 
   const handleAllow = async () => {
@@ -29,7 +26,7 @@ export default function NotificationPrompt() {
   };
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-4 animate-[fadeUp_0.4s_ease-out_both]">
+    <div className="fixed bottom-44 left-4 right-4 sm:left-auto sm:bottom-20 sm:right-4 sm:max-w-sm z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-4 animate-[fadeUp_0.4s_ease-out_both]">
       <button onClick={() => setShow(false)} className="absolute top-2 right-2 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
         <X className="h-4 w-4 text-gray-400" />
       </button>
