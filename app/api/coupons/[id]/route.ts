@@ -15,14 +15,14 @@ export async function POST(req: NextRequest) {
   }
 
   const { code, cartTotal } = await req.json();
-  if (!code) return NextResponse.json({ error: "CÃ³digo requerido" }, { status: 400 });
+  if (!code) return NextResponse.json({ error: "Código requerido" }, { status: 400 });
 
   const coupon = await CouponsDB.getByCode(code);
-  if (!coupon) return NextResponse.json({ error: "CupÃ³n no encontrado" }, { status: 404 });
-  if (!coupon.active) return NextResponse.json({ error: "CupÃ³n inactivo" }, { status: 400 });
-  if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) return NextResponse.json({ error: "CupÃ³n expirado" }, { status: 400 });
-  if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) return NextResponse.json({ error: "CupÃ³n agotado" }, { status: 400 });
-  if (coupon.minPurchase && cartTotal < coupon.minPurchase) return NextResponse.json({ error: `MÃ­nimo de compra: S/${coupon.minPurchase}` }, { status: 400 });
+  if (!coupon) return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
+  if (!coupon.active) return NextResponse.json({ error: "Cupón inactivo" }, { status: 400 });
+  if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) return NextResponse.json({ error: "Cupón expirado" }, { status: 400 });
+  if (coupon.maxUses && coupon.usedCount >= coupon.maxUses) return NextResponse.json({ error: "Cupón agotado" }, { status: 400 });
+  if (coupon.minPurchase && cartTotal < coupon.minPurchase) return NextResponse.json({ error: `Mínimo de compra: S/${coupon.minPurchase}` }, { status: 400 });
 
   const discount = coupon.discountType === "percent"
     ? Math.round(cartTotal * coupon.discountValue / 100 * 100) / 100

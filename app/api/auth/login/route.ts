@@ -21,7 +21,7 @@ async function getLegacyUsers(): Promise<LegacyAdminUser[]> {
   }
 }
 
-/** Check password against a stored value â€” supports bcrypt hashes and plain text (legacy). */
+/** Check password against a stored value – supports bcrypt hashes and plain text (legacy). */
 async function checkPassword(input: string, stored: string): Promise<boolean> {
   if (stored.startsWith("$2")) {
     return compare(input, stored);

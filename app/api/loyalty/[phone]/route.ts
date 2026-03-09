@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     const parsed = AdjustSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Datos invÃ¡lidos", issues: parsed.error.issues.map((i) => i.message) },
+        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 }
       );
     }
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
   const parsed = MovementSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Datos invÃ¡lidos", issues: parsed.error.issues.map((i) => i.message) },
+      { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
       { status: 400 }
     );
   }

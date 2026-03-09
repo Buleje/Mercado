@@ -6,13 +6,13 @@ import { hash } from "bcryptjs";
 import { z } from "zod";
 
 const CreateSchema = z.object({
-  username: z.string().min(3).max(32).regex(/^[a-z0-9_]+$/, "Solo letras minÃºsculas, nÃºmeros y guiÃ³n bajo"),
+  username: z.string().min(3).max(32).regex(/^[a-z0-9_]+$/, "Solo letras minúsculas, números y guión bajo"),
   password: z.string().min(8),
   role: z.enum(["admin", "cajero", "almacenero"]),
   name: z.string().min(1).max(64),
 });
 
-// GET /api/admin-users â€” list all admin users (passwords excluded)
+// GET /api/admin-users – list all admin users (passwords excluded)
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(users);
 }
 
-// POST /api/admin-users â€” create a new admin user
+// POST /api/admin-users – create a new admin user
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

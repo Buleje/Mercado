@@ -6,7 +6,7 @@ export async function POST(req: Request) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "GROQ_API_KEY no configurada. ObtÃ©n una clave GRATUITA en console.groq.com y agrÃ©gala en tu .env" },
+      { error: "GROQ_API_KEY no configurada. Obtén una clave GRATUITA en console.groq.com y agrégala en tu .env" },
       { status: 503 }
     );
   }
@@ -50,16 +50,16 @@ export async function POST(req: Request) {
   const topCustomers = Object.entries(customerStats)
     .sort((a, b) => b[1].spent - a[1].spent)
     .slice(0, 10)
-    .map(([phone, s]) => `${s.name} (${phone}): ${s.orders} pedidos, S/${s.spent.toFixed(2)} gastado â€” favoritos: ${Object.entries(s.products).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n, q]) => `${n}(${q})`).join(", ")}`);
+    .map(([phone, s]) => `${s.name} (${phone}): ${s.orders} pedidos, S/${s.spent.toFixed(2)} gastado – favoritos: ${Object.entries(s.products).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n, q]) => `${n}(${q})`).join(", ")}`);
 
-  const prompt = `Eres un experto en marketing para una bodega/tienda de abarrotes en Pucallpa, PerÃº llamada "Bodega San MartÃ­n".
+  const prompt = `Eres un experto en marketing para una bodega/tienda de abarrotes en Pucallpa, Perú llamada "Bodega San Martín".
 
 Genera sugerencias de PROMOCIONES y PUBLICIDAD basadas en los datos de ventas y clientes.
 
 ESTADÃSTICAS GENERALES:
 - Total clientes: ${customers.length}
 - Total pedidos: ${orders.length}
-- Productos mÃ¡s vendidos:
+- Productos más vendidos:
 ${topGlobal.join("\n")}
 
 TOP 10 CLIENTES:
@@ -67,11 +67,11 @@ ${topCustomers.join("\n")}
 
 ${context ? `CONTEXTO ADICIONAL DEL USUARIO: ${context}` : ""}
 
-Responde en espaÃ±ol con formato Markdown. Para cada sugerencia incluye:
-1. **Nombre de la promociÃ³n**
-2. **Tipo**: descuento %, 2x1, combo, envÃ­o gratis, etc.
+Responde en español con formato Markdown. Para cada sugerencia incluye:
+1. **Nombre de la promoción**
+2. **Tipo**: descuento %, 2x1, combo, envío gratis, etc.
 3. **Productos incluidos**
-4. **PÃºblico objetivo**: todos, top clientes, clientes nuevos, grupo especÃ­fico
+4. **Público objetivo**: todos, top clientes, clientes nuevos, grupo específico
 5. **Mensaje sugerido para WhatsApp** (corto, persuasivo, con emojis)
 6. **Porcentaje de descuento sugerido**
 

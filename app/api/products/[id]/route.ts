@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 
     const total = products.length;
 
-    // Pagination â€” only applied when ?limit= is provided; keeps existing callers working
+    // Pagination – only applied when ?limit= is provided; keeps existing callers working
     if (limitParam) {
       const limit = Math.min(Math.max(parseInt(limitParam, 10) || 20, 1), 200);
       const page  = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     const parsed = ProductPostSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Datos invÃ¡lidos", issues: parsed.error.issues.map((i) => i.message) },
+        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 }
       );
     }

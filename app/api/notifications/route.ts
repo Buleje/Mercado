@@ -16,18 +16,18 @@ export async function POST(req: Request) {
   if (!order) return NextResponse.json({ error: "order not found" }, { status: 404 });
 
   const settings = await SettingsDB.get();
-  const storeName = settings?.businessName ?? "Bodega San MartÃ­n";
+  const storeName = settings?.businessName ?? "Bodega San Martín";
 
   const STATUS_MSGS: Record<string, string> = {
-    pendiente: `ðŸ›’ Â¡Hola! Tu pedido #${order.id.slice(-6)} en ${storeName} ha sido recibido. Te confirmaremos pronto. Total: S/${order.total.toFixed(2)}`,
-    confirmado: `âœ… Â¡Tu pedido #${order.id.slice(-6)} ha sido confirmado! Estamos preparÃ¡ndolo. Total: S/${order.total.toFixed(2)}`,
-    en_camino: `ðŸšš Â¡Tu pedido #${order.id.slice(-6)} va en camino! Pronto llegarÃ¡ a tu direcciÃ³n.`,
-    entregado: `ðŸ“¦ Â¡Pedido #${order.id.slice(-6)} entregado! Gracias por tu compra en ${storeName}. Â¡Vuelve pronto!`,
-    cancelado: `âŒ Tu pedido #${order.id.slice(-6)} ha sido cancelado. Para mÃ¡s info contacta al ${settings?.businessPhone ?? "tienda"}.`,
+    pendiente: `ðŸ›’ ¡Hola! Tu pedido #${order.id.slice(-6)} en ${storeName} ha sido recibido. Te confirmaremos pronto. Total: S/${order.total.toFixed(2)}`,
+    confirmado: `âœ… ¡Tu pedido #${order.id.slice(-6)} ha sido confirmado! Estamos preparándolo. Total: S/${order.total.toFixed(2)}`,
+    en_camino: `ðŸšš ¡Tu pedido #${order.id.slice(-6)} va en camino! Pronto llegará a tu dirección.`,
+    entregado: `ðŸ“¦ ¡Pedido #${order.id.slice(-6)} entregado! Gracias por tu compra en ${storeName}. ¡Vuelve pronto!`,
+    cancelado: `âŒ Tu pedido #${order.id.slice(-6)} ha sido cancelado. Para más info contacta al ${settings?.businessPhone ?? "tienda"}.`,
   };
 
   const type = body.type ?? `order_${order.status}`;
-  const message = body.message ?? STATUS_MSGS[order.status] ?? `ActualizaciÃ³n de tu pedido #${order.id.slice(-6)}`;
+  const message = body.message ?? STATUS_MSGS[order.status] ?? `Actualización de tu pedido #${order.id.slice(-6)}`;
   const phone = body.phone.replace(/[^0-9]/g, "");
   const whatsappUrl = `https://wa.me/${phone.startsWith("51") ? phone : "51" + phone}?text=${encodeURIComponent(message)}`;
 

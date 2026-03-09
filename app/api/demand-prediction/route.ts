@@ -41,14 +41,14 @@ export async function POST(req: NextRequest) {
   const lowStock = products.filter(p => p.stock != null && p.stockMin != null && p.stock <= p.stockMin)
     .map(p => ({ name: p.name, stock: p.stock, stockMin: p.stockMin }));
 
-  const prompt = `Eres un analista de inventario para una bodega (tienda de abarrotes) en Pucallpa, PerÃº.
+  const prompt = `Eres un analista de inventario para una bodega (tienda de abarrotes) en Pucallpa, Perú.
 
-Datos del perÃ­odo (${period}):
+Datos del período (${period}):
 - Total ventas: ${recentSales.length}
-- Productos mÃ¡s vendidos: ${JSON.stringify(topProducts)}
+- Productos más vendidos: ${JSON.stringify(topProducts)}
 - Productos con stock bajo: ${JSON.stringify(lowStock)}
 
-Genera un anÃ¡lisis JSON con:
+Genera un análisis JSON con:
 {
   "predictions": [{"productName": "...", "currentStock": N, "estimatedDaysLeft": N, "recommendation": "..."}],
   "peakDays": ["lunes", ...],

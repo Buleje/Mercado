@@ -31,14 +31,14 @@ export async function POST(req: NextRequest) {
   const parsed = CouponPostSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Datos invÃ¡lidos", issues: parsed.error.issues.map((i) => i.message) },
+      { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
       { status: 400 }
     );
   }
   const { code, description, discountType, discountValue, minPurchase, maxUses, active, expiresAt } = parsed.data;
 
   const existing = await CouponsDB.getByCode(code);
-  if (existing) return NextResponse.json({ error: "Ya existe un cupÃ³n con ese cÃ³digo" }, { status: 409 });
+  if (existing) return NextResponse.json({ error: "Ya existe un cupón con ese código" }, { status: 409 });
 
   const coupon = await CouponsDB.add({
     code, description: description ?? "",

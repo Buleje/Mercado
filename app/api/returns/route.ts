@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       type: "devolucion",
       quantity: item.quantity,
       reference: ret.id,
-      notes: `DevoluciÃ³n: ${reason ?? "Sin motivo"}`,
+      notes: `Devolución: ${reason ?? "Sin motivo"}`,
     });
   }
 

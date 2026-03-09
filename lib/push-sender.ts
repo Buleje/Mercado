@@ -2,11 +2,11 @@ import webpush from "web-push";
 import { PushSubscriptionsStore } from "@/lib/push-subscriptions";
 
 function initVapid() {
-  webpush.setVapidDetails(
-    process.env.VAPID_EMAIL!,
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!,
-  );
+  const email = process.env.VAPID_EMAIL;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!email || !publicKey || !privateKey) return;
+  webpush.setVapidDetails(email, publicKey, privateKey);
 }
 
 export type PushPayload = {

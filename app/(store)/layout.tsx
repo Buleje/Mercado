@@ -1,4 +1,4 @@
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import MotionProvider from "@/components/MotionProvider";
 import MaintenancePage from "@/components/MaintenancePage";
 import { CartProvider } from "@/contexts/cart-context";
@@ -17,12 +17,14 @@ import {
   MicrosoftClarity,
 } from "@/components/Analytics";
 
-const CheckoutModal = dynamic(() => import("@/components/CheckoutModal"));
-const ScrollToTop = dynamic(() => import("@/components/ScrollToTop"));
-const WhatsAppButton = dynamic(() => import("@/components/WhatsAppButton"));
-const CompareBar = dynamic(() => import("@/components/CompareBar"));
-const NotificationPrompt = dynamic(() => import("@/components/NotificationPrompt"));
-const AbandonedCartRecovery = dynamic(() => import("@/components/AbandonedCartRecovery"));
+const CheckoutModal = nextDynamic(() => import("@/components/CheckoutModal"));
+const ScrollToTop = nextDynamic(() => import("@/components/ScrollToTop"));
+const WhatsAppButton = nextDynamic(() => import("@/components/WhatsAppButton"));
+const CompareBar = nextDynamic(() => import("@/components/CompareBar"));
+const NotificationPrompt = nextDynamic(() => import("@/components/NotificationPrompt"));
+const AbandonedCartRecovery = nextDynamic(() => import("@/components/AbandonedCartRecovery"));
+
+export const dynamic = "force-dynamic";
 
 export default async function StoreLayout({
   children,

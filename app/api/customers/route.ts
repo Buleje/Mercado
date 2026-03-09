@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     const parsed = CustomerPostSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: "Datos invÃ¡lidos", issues: parsed.error.issues.map((i) => i.message) },
+        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 }
       );
     }

@@ -4,11 +4,11 @@ import webpush from "web-push";
 import { PushSubscriptionsStore } from "@/lib/push-subscriptions";
 
 function initWebPush() {
-  webpush.setVapidDetails(
-    process.env.VAPID_EMAIL!,
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-    process.env.VAPID_PRIVATE_KEY!,
-  );
+  const email = process.env.VAPID_EMAIL;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  if (!email || !publicKey || !privateKey) return;
+  webpush.setVapidDetails(email, publicKey, privateKey);
 }
 
 // POST /api/notifications/subscribe — save or update subscription
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE /api/notifications/subscribe â€” remove subscription
+// DELETE /api/notifications/subscribe – remove subscription
 export async function DELETE(req: NextRequest) {
   try {
     const { endpoint } = await req.json() as { endpoint: string };
