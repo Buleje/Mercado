@@ -1,0 +1,51 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🚀 Commit & Push to GitHub",
+      "type": "shell",
+      "command": "git add -A && git diff --cached --quiet && echo 'Nothing to commit' || (git commit -m \"update: $(Get-Date -Format 'yyyy-MM-dd HH:mm')\" && git push && echo '✅ Pushed to GitHub!')",
+      "options": {
+        "shell": {
+          "executable": "powershell.exe",
+          "args": ["-NoProfile", "-Command"]
+        }
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "📦 Commit con mensaje personalizado",
+      "type": "shell",
+      "command": "git add -A && git commit -m \"${input:commitMessage}\" && git push && echo '✅ Pushed to GitHub!'",
+      "options": {
+        "shell": {
+          "executable": "powershell.exe",
+          "args": ["-NoProfile", "-Command"]
+        }
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "commitMessage",
+      "type": "promptString",
+      "description": "Mensaje del commit",
+      "default": "update: cambios varios"
+    }
+  ]
+}
