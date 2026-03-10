@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, startTransition } from "react";
-import { Package, Truck, CheckCircle2, Clock, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Package, Truck, CheckCircle2, Clock, X, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
 
 type TrackedOrder = {
   id: string;
@@ -96,19 +96,22 @@ export default function OrderProgress() {
   return (
     <div className="fixed top-20 right-4 z-40 w-72 sm:w-80 bg-card border border-border rounded-2xl shadow-2xl shadow-black/8 overflow-hidden animate-[fadeDown_0.3s_ease-out]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <div className="flex items-center gap-2">
-          <div className="h-5 w-5 rounded-full bg-primary/15 flex items-center justify-center">
-            <Package className="w-3 h-3 text-primary" />
+          <div className="relative">
+            <AlertCircle className="w-5 h-5 text-amber-500 animate-pulse" />
+            <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 animate-ping" />
           </div>
           <span className="text-xs font-bold text-foreground">Pedido #{order.id.slice(-6)}</span>
           <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
         </div>
         <div className="flex items-center gap-1">
-          <button type="button" onClick={() => setExpanded(!expanded)} className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-            {expanded ? <ChevronUp className="w-3.5 h-3.5 text-muted" /> : <ChevronDown className="w-3.5 h-3.5 text-muted" />}
-          </button>
-          <button type="button" onClick={() => setDismissed(true)} className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+          {expanded ? <ChevronUp className="w-3.5 h-3.5 text-muted" /> : <ChevronDown className="w-3.5 h-3.5 text-muted" />}
+          <button 
+            type="button" 
+            onClick={(e) => { e.stopPropagation(); setDismissed(true); }} 
+            className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+          >
             <X className="w-3.5 h-3.5 text-muted" />
           </button>
         </div>

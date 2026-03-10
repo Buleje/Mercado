@@ -30,13 +30,13 @@ function getSystemTheme(): "light" | "dark" {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const [theme, setThemeState] = useState<Theme>("light");
   const [resolved, setResolved] = useState<"light" | "dark">("light");
 
   // Hydrate from localStorage after mount to avoid SSR mismatch
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const t = stored && ["light", "dark", "system"].includes(stored) ? stored : "system";
+    const t = stored && ["light", "dark", "system"].includes(stored) ? stored : "light";
     startTransition(() => {
       setThemeState(t);
       setResolved(t === "system" ? getSystemTheme() : t);

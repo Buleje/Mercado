@@ -43,7 +43,6 @@ const LastOrderBanner   = dynamic(() => import("@/components/LastOrderBanner"));
 // Modals and interactive elements - disable SSR
 const CartSidebar       = dynamic(() => import("@/components/CartSidebar"));
 const CustomerModal     = dynamic(() => import("@/components/CustomerModal"));
-const OrderConfirmModal = dynamic(() => import("@/components/OrderConfirmModal"));
 const ReviewModal       = dynamic(() => import("@/components/ReviewModal"));
 const AccessibilityBar  = dynamic(() => import("@/components/AccessibilityBar"));
 const CookieConsent     = dynamic(() => import("@/components/CookieConsent"));
@@ -90,7 +89,6 @@ export default function Home() {
       <Footer />
       <CartSidebar />
       <CustomerModal />
-      <OrderConfirmModal />
       <ReviewModal />
       <CookieConsent />
       <SocialProofToast />
