@@ -697,8 +697,11 @@ export default function CheckoutModal() {
                         </div>
 
                         {submitError && (
-                          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm text-center">
-                            {submitError}
+                          <div className="flex items-center gap-3 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 animate-[fadeUp_0.2s_ease-out]">
+                            <div className="h-9 w-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                              <X className="h-4 w-4 text-red-500" />
+                            </div>
+                            <p className="text-red-700 dark:text-red-300 text-sm font-medium">{submitError}</p>
                           </div>
                         )}
 

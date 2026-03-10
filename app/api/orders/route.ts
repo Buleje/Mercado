@@ -22,7 +22,7 @@ const OrderItemSchema = z.object({
 const OrderPostSchema = z.object({
   customer: z.object({
     name: z.string().min(1).max(100),
-    phone: z.string().min(6).max(20),
+    phone: z.string().min(6).max(20).optional(),
     location: z.string().max(500).optional(),
     reference: z.string().max(300).optional(),
   }),

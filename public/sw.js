@@ -28,6 +28,14 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
 
+  // Ignorar extensiones del navegador
+  if (
+    url.protocol === "chrome-extension:" ||
+    url.protocol === "moz-extension:" ||
+    url.protocol === "extension:" ||
+    url.hostname === "localhost" && url.port !== "3000"
+  ) return;
+
   // Cache product images (Unsplash, OpenFoodFacts)
   if (url.hostname.includes("unsplash.com") || url.hostname.includes("openfoodfacts.org")) {
     event.respondWith(

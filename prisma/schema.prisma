@@ -145,6 +145,7 @@ model Settings {
   adminPassword      String?
   maintenanceMode    Boolean @default(false)
   maintenanceMessage String?
+  adminBypassLogin   Boolean @default(false)
 }
 
 // ─── Suppliers ──────────────────────────────────────────

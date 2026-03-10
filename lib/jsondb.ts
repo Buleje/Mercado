@@ -142,6 +142,7 @@ export type DbSettings = {
   adminPassword?: string;
   maintenanceMode?: boolean;
   maintenanceMessage?: string;
+  adminBypassLogin?: boolean;
 };
 
 export type DbSupplier = {
@@ -333,6 +334,7 @@ function mapSettings(s: PSettings): DbSettings {
     ...(s.adminPassword != null && { adminPassword: s.adminPassword }),
     maintenanceMode: s.maintenanceMode,
     ...(s.maintenanceMessage != null && { maintenanceMessage: s.maintenanceMessage }),
+    adminBypassLogin: s.adminBypassLogin,
   };
 }
 
@@ -685,6 +687,7 @@ export const SettingsDB = {
       ...(s.adminPassword !== undefined && { adminPassword: s.adminPassword }),
       ...(s.maintenanceMode !== undefined && { maintenanceMode: s.maintenanceMode }),
       ...(s.maintenanceMessage !== undefined && { maintenanceMessage: s.maintenanceMessage }),
+      ...(s.adminBypassLogin !== undefined && { adminBypassLogin: s.adminBypassLogin }),
     };
     const row = await prisma.settings.upsert({ where: { id: 1 }, create: { id: 1, ...d }, update: d });
     return mapSettings(row);

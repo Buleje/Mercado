@@ -1440,6 +1440,8 @@ function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onMode
   // Maintenance
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMsg, setMaintenanceMsg] = useState("");
+  // Bypass login
+  const [bypassLogin, setBypassLogin] = useState(false);
 
   const yapeImgRef = useRef<HTMLInputElement>(null);
   const logoImgRef = useRef<HTMLInputElement>(null);
@@ -1468,6 +1470,7 @@ function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onMode
           if (d.adminPassword) setStoredAdminPw(d.adminPassword);
           if (d.maintenanceMode !== undefined) setMaintenanceMode(d.maintenanceMode);
           if (d.maintenanceMessage) setMaintenanceMsg(d.maintenanceMessage);
+          if (d.adminBypassLogin !== undefined) setBypassLogin(d.adminBypassLogin);
         }
         setLoading(false);
       })
@@ -1632,6 +1635,35 @@ function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onMode
               className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border rounded-xl outline-none focus:ring-2 focus:ring-amber-200"
             />
           </div>
+        )}
+      </div>
+
+      {/* Bypass login toggle */}
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-cyan-50 flex items-center justify-center shrink-0">
+            <UserCog className="h-6 w-6 text-cyan-500" />
+          </div>
+          <div className="flex-1">
+            <p className="font-bold text-gray-900 dark:text-foreground text-sm">Acceso sin login</p>
+            <p className="text-xs text-gray-500 dark:text-muted">Permite entrar al panel sin credenciales</p>
+          </div>
+          <button
+            onClick={async () => {
+              const next = !bypassLogin;
+              setBypassLogin(next);
+              await patch({ adminBypassLogin: next });
+            }}
+            className={cn(
+              "relative w-12 h-6 rounded-full transition-colors",
+              bypassLogin ? "bg-cyan-500" : "bg-gray-200 dark:bg-surface"
+            )}
+          >
+            <span className={cn("absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform", bypassLogin && "translate-x-6")} />
+          </button>
+        </div>
+        {bypassLogin && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium">⚠️ Cualquier persona podrá acceder al panel de administración</p>
         )}
       </div>
 
@@ -2035,7 +2067,19 @@ function AdminPage() {
         if (d?.role) { setUserRole(d.role); setUserName(d.username ?? "admin"); }
         setAuthReady(true);
       })
-      .catch(() => { router.push("/admin/login"); });
+      .catch(() => {
+        fetch("/api/settings")
+          .then(r => r.ok ? r.json() : null)
+          .then(s => {
+            if (s?.adminBypassLogin) {
+              return fetch("/api/auth/bypass", { method: "POST" })
+                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+                .then(d => { setUserRole(d.role); setUserName(d.name ?? "invitado"); setAuthReady(true); });
+            }
+            throw new Error("no bypass");
+          })
+          .catch(() => { router.push("/admin/login"); });
+      });
   }, [router]);
 
   // Keyboard shortcuts: Alt+1..9,0 for tabs, Alt+? for help

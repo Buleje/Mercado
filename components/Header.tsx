@@ -13,6 +13,22 @@ import { useTheme } from "@/contexts/theme-context";
 import { products } from "@/data/products";
 import { cn } from "@/lib/utils";
 
+/** Safe text highlight — no dangerouslySetInnerHTML */
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <span>{text}</span>;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return (
+    <span>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase()
+          ? <strong key={i} className="text-primary">{part}</strong>
+          : <span key={i}>{part}</span>
+      )}
+    </span>
+  );
+}
+
 const categoryMenuItems = [
   { id: "frutas-verduras", label: "Frutas y Verduras", emoji: "🥬", icon: Leaf,
     desc: "Productos frescos del día" },
@@ -192,26 +208,26 @@ export default function Header() {
                 onMouseLeave={() => setMegaOpen(false)}
                 className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-120 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden animate-[megaIn_0.18s_ease-out]"
               >
-                <div className="grid grid-cols-2 gap-2 p-4">
+                <div className="grid grid-cols-2 gap-1.5 p-3">
                   {categoryMenuItems.map((cat) => (
                     <button
                       key={cat.id}
                       onClick={() => handleCategoryClick(cat.id)}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 text-left transition-all hover:scale-[1.02] hover:shadow-sm hover:border-primary/25 hover:bg-primary/5 group"
+                      className="flex items-center gap-3 p-3 rounded-xl border border-transparent text-left transition-all hover:shadow-md hover:border-primary/20 hover:bg-primary/5 group"
                     >
-                      <span className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/8 text-xl leading-none shrink-0 group-hover:bg-primary/12 transition-colors">
+                      <span className="flex items-center justify-center h-11 w-11 rounded-xl bg-primary/8 text-xl leading-none shrink-0 group-hover:bg-primary/15 transition-colors">
                         {cat.emoji}
                       </span>
                       <div>
                         <p className="font-bold text-sm leading-tight text-foreground group-hover:text-primary transition-colors">{cat.label}</p>
-                        <p className="text-xs text-muted mt-0.5">{cat.desc}</p>
+                        <p className="text-[11px] text-muted mt-0.5">{cat.desc}</p>
                       </div>
                     </button>
                   ))}
                 </div>
-                <div className="px-5 py-3 bg-gray-50 border-t border-gray-100">
-                  <button onClick={() => handleCategoryClick("todos")} className="text-sm font-semibold text-primary hover:underline">
-                    → Ver todos los productos
+                <div className="px-4 py-2.5 bg-primary/5 dark:bg-primary/8 border-t border-gray-100 dark:border-card-border">
+                  <button onClick={() => handleCategoryClick("todos")} className="text-sm font-bold text-primary hover:underline">
+                    Ver todos los productos →
                   </button>
                 </div>
               </div>
@@ -549,12 +565,7 @@ export default function Header() {
                       className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-foreground hover:bg-primary/5 hover:text-primary transition-colors text-left"
                     >
                       <Search className="h-3.5 w-3.5 text-muted shrink-0" />
-                      <span dangerouslySetInnerHTML={{
-                        __html: name.replace(
-                          new RegExp(`(${searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, "gi"),
-                          '<strong class="text-primary">$1</strong>'
-                        )
-                      }} />
+                      <HighlightMatch text={name} query={searchQuery} />
                     </button>
                   ))}
                 </div>

@@ -94,12 +94,15 @@ export default function OrderProgress() {
   const currentIdx = STATUS_INDEX[order.status] ?? 0;
 
   return (
-    <div className="fixed top-20 right-4 z-40 w-72 sm:w-80 bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
+    <div className="fixed top-20 right-4 z-40 w-72 sm:w-80 bg-card border border-border rounded-2xl shadow-2xl shadow-black/8 overflow-hidden animate-[fadeDown_0.3s_ease-out]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-primary/5 border-b border-border">
         <div className="flex items-center gap-2">
-          <Package className="w-4 h-4 text-primary" />
+          <div className="h-5 w-5 rounded-full bg-primary/15 flex items-center justify-center">
+            <Package className="w-3 h-3 text-primary" />
+          </div>
           <span className="text-xs font-bold text-foreground">Pedido #{order.id.slice(-6)}</span>
+          <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
         </div>
         <div className="flex items-center gap-1">
           <button type="button" onClick={() => setExpanded(!expanded)} className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
