@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef, startTransition } from "react";
 import {
   Menu, X, ShoppingBasket, ShoppingCart,
-  ChevronDown, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, AlertTriangle, Settings,
-  Sun, Moon, Search, Trophy, Gift,
+  ChevronDown, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
+  Sun, Moon, Search, Trophy, Gift, History, PackageCheck, User,
 } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
@@ -54,10 +54,13 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [announcementVisible, setAnnouncementVisible] = useState(true);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const prevCount = useRef(0);
-  const { count, toggle, hasPendingOrder, openConfirmModal } = useCart();
-  const { customer, openModal: openCustomerModal } = useCustomer();
+  const { count, toggle } = useCart();
+  const { customer, openModal: openCustomerModal, openAccountModal, openOrderStatusModal } = useCustomer();
   const { navLinks: storedNavLinks } = useSettings();
   const { resolved: theme, toggle: toggleTheme } = useTheme();
   const megaRef = useRef<HTMLDivElement>(null);
@@ -97,15 +100,42 @@ export default function Header() {
     prevCount.current = count;
   }, [count]);
 
-  // Close mega menu on outside click
+  // Close mega menu and user menu on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (megaRef.current && !megaRef.current.contains(e.target as Node)) {
         setMegaOpen(false);
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Check for active order
+  useEffect(() => {
+    const checkOrder = () => {
+      try {
+        const raw = localStorage.getItem("bsm-active-order");
+        if (!raw) { setHasActiveOrder(false); return; }
+        const order = JSON.parse(raw);
+        const age = Date.now() - new Date(order.createdAt).getTime();
+        if (age > 7_200_000 || order.status === "entregado") {
+          setHasActiveOrder(false);
+          return;
+        }
+        setHasActiveOrder(true);
+      } catch { setHasActiveOrder(false); }
+    };
+    checkOrder();
+    const interval = setInterval(checkOrder, 30_000);
+    window.addEventListener("bsm:orderCreated", checkOrder);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("bsm:orderCreated", checkOrder);
+    };
   }, []);
 
   // Fetch loyalty data when customer phone is available
@@ -348,27 +378,69 @@ export default function Header() {
               <span className="hidden xl:inline">Admin</span>
             </a>
 
-            {/* User profile pill — desktop nav */}
-            <button
-              onClick={() => openCustomerModal("profile")}
-              className={cn(
-                "flex items-center gap-2 rounded-full text-sm font-semibold transition-all duration-200 px-3 py-2 ml-1",
-                scrolled
-                  ? customer
-                    ? "bg-primary/10 text-primary hover:bg-primary/20"
-                    : "bg-gray-100 text-foreground hover:bg-primary/10 hover:text-primary"
-                  : "bg-white/15 backdrop-blur-sm text-white border border-white/20 hover:bg-white/25"
+            {/* User menu dropdown — desktop nav */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setUserMenuOpen((o) => !o)}
+                className={cn(
+                  "flex items-center gap-2 rounded-full text-sm font-semibold transition-all duration-200 px-3 py-2 ml-1",
+                  scrolled
+                    ? customer
+                      ? "bg-primary/10 text-primary hover:bg-primary/20"
+                      : "bg-gray-100 text-foreground hover:bg-primary/10 hover:text-primary"
+                    : "bg-white/15 backdrop-blur-sm text-white border border-white/20 hover:bg-white/25"
+                )}
+                aria-label="Menú de usuario"
+                aria-expanded={userMenuOpen}
+              >
+                <UserCircle className="h-4 w-4 shrink-0" />
+                <span className="max-w-22.5 truncate">
+                  {customer ? customer.name.split(" ")[0] : "Mi cuenta"}
+                </span>
+                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", userMenuOpen && "rotate-180")} />
+              </button>
+              
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-card rounded-xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden animate-[fadeDown_0.15s_ease-out] z-50">
+                  <div className="py-1.5">
+                    <button
+                      onClick={() => { openAccountModal(); setUserMenuOpen(false); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors text-left"
+                    >
+                      <User className="h-4 w-4" />
+                      <span>Mi cuenta</span>
+                    </button>
+                    <button
+                      onClick={() => { setUserMenuOpen(false); window.location.href = "/cuenta"; }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors text-left"
+                    >
+                      <History className="h-4 w-4" />
+                      <span>Historial de datos</span>
+                    </button>
+                    <button
+                      onClick={() => { openOrderStatusModal(); setUserMenuOpen(false); }}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left",
+                        hasActiveOrder
+                          ? "bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/20"
+                          : "text-muted hover:bg-primary/5 hover:text-primary"
+                      )}
+                    >
+                      <div className="relative">
+                        <PackageCheck className="h-4 w-4" />
+                        {hasActiveOrder && (
+                          <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-amber-500 animate-ping" />
+                        )}
+                      </div>
+                      <span className="flex-1">Estado de mi pedido</span>
+                      {hasActiveOrder && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      )}
+                    </button>
+                  </div>
+                </div>
               )}
-              aria-label="Mi cuenta"
-            >
-              <UserCircle className="h-4 w-4 shrink-0" />
-              <span className="max-w-22.5 truncate">
-                {customer ? customer.name.split(" ")[0] : "Mi cuenta"}
-              </span>
-              {customer && (
-                <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
-              )}
-            </button>
+            </div>
 
             {/* Loyalty points badge — desktop */}
             {loyalty && customer && (
@@ -422,19 +494,6 @@ export default function Header() {
                 ? <Sun className="h-4.5 w-4.5" />
                 : <Moon className="h-4.5 w-4.5" />}
             </button>
-
-            {/* Pending warning icon — next to cart */}
-            {hasPendingOrder && (
-              <button
-                onClick={() => openConfirmModal()}
-                className="relative flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 hover:bg-amber-400 shadow-lg shadow-amber-500/40 transition-colors animate-[scaleIn_0.3s_ease-out]"
-                aria-label="Pedido pendiente de confirmación"
-                title="Tienes un pedido pendiente"
-              >
-                <span className="absolute inset-0 rounded-full bg-amber-400 animate-[pendingRing_1.8s_ease-in-out_infinite]" />
-                <AlertTriangle className="h-4 w-4 text-white relative z-10" />
-              </button>
-            )}
 
             {/* Cart */}
             <button

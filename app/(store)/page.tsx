@@ -29,7 +29,6 @@ const Benefits          = dynamic(() => import("@/components/Benefits"));
 const Testimonials      = dynamic(() => import("@/components/Testimonials"));
 const StoreStats        = dynamic(() => import("@/components/StoreStats"));
 const DeliveryZoneMap   = dynamic(() => import("@/components/DeliveryZoneMap"));
-const OrderProgress     = dynamic(() => import("@/components/OrderProgress"));
 const StoreHours        = dynamic(() => import("@/components/StoreHours"));
 const PaymentMethods    = dynamic(() => import("@/components/PaymentMethods"));
 const FAQ               = dynamic(() => import("@/components/FAQ"));
@@ -48,6 +47,8 @@ const AccessibilityBar  = dynamic(() => import("@/components/AccessibilityBar"))
 const CookieConsent     = dynamic(() => import("@/components/CookieConsent"));
 const SocialProofToast  = dynamic(() => import("@/components/SocialProofToast"));
 const MobileBottomNav   = dynamic(() => import("@/components/MobileBottomNav"));
+const UserAccountModal  = dynamic(() => import("@/components/UserAccountModal"));
+const OrderStatusModalWrapper = dynamic(() => import("@/components/OrderStatusModalWrapper"));
 
 export default function Home() {
   return (
@@ -96,7 +97,8 @@ export default function Home() {
       <AccessibilityBar />
       <BackInStock />
       <SpinWheel />
-      <OrderProgress />
+      <UserAccountModal />
+      <OrderStatusModalWrapper />
       <MobileBottomNav />
     </>
   );

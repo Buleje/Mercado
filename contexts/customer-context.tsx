@@ -29,9 +29,15 @@ type CustomerCtx = {
   customer: Customer | null;
   showModal: boolean;
   openMode: "order" | "profile";
+  accountModalOpen: boolean;
+  orderStatusModalOpen: boolean;
   register: (data: Customer) => void;
   openModal: (mode?: "order" | "profile") => void;
   closeModal: () => void;
+  openAccountModal: () => void;
+  closeAccountModal: () => void;
+  openOrderStatusModal: () => void;
+  closeOrderStatusModal: () => void;
   clear: () => void;
   findByPhone: (phone: string) => Promise<Customer | null>;
 };
@@ -44,6 +50,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [openMode, setOpenMode] = useState<"order" | "profile">("order");
+  const [accountModalOpen, setAccountModalOpen] = useState(false);
+  const [orderStatusModalOpen, setOrderStatusModalOpen] = useState(false);
 
   // Hydrate from localStorage after mount — null during SSR and first render to avoid mismatch
   useEffect(() => {
@@ -104,6 +112,10 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
     setShowModal(true);
   }, []);
   const closeModal = useCallback(() => setShowModal(false), []);
+  const openAccountModal = useCallback(() => setAccountModalOpen(true), []);
+  const closeAccountModal = useCallback(() => setAccountModalOpen(false), []);
+  const openOrderStatusModal = useCallback(() => setOrderStatusModalOpen(true), []);
+  const closeOrderStatusModal = useCallback(() => setOrderStatusModalOpen(false), []);
   const clear = useCallback(() => {
     setCustomer(null);
     localStorage.removeItem(STORAGE_KEY);
@@ -111,7 +123,11 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
   return (
     <CustomerContext.Provider
-      value={{ customer, showModal, openMode, register, openModal, closeModal, clear, findByPhone }}
+      value={{ 
+        customer, showModal, openMode, accountModalOpen, orderStatusModalOpen,
+        register, openModal, closeModal, openAccountModal, closeAccountModal,
+        openOrderStatusModal, closeOrderStatusModal, clear, findByPhone 
+      }}
     >
       {children}
     </CustomerContext.Provider>
