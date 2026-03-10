@@ -13,7 +13,6 @@ export default function AdminLoginPage() {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [bypassLoading, setBypassLoading] = useState(false);
-  const [bypassError, setBypassError] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -45,18 +44,13 @@ export default function AdminLoginPage() {
 
   const handleBypass = async () => {
     setBypassLoading(true);
-    setBypassError(false);
     try {
       const res = await fetch("/api/auth/bypass", { method: "POST" });
       if (res.ok) {
         router.push(fromRef.current ? decodeURIComponent(fromRef.current) : "/admin");
-      } else {
-        setBypassError(true);
-        setTimeout(() => setBypassError(false), 3000);
       }
     } catch {
-      setBypassError(true);
-      setTimeout(() => setBypassError(false), 3000);
+      console.error("Bypass error");
     }
     setBypassLoading(false);
   };
@@ -118,9 +112,6 @@ export default function AdminLoginPage() {
             {bypassLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
             {bypassLoading ? "Entrando…" : "Entrar sin login"}
           </button>
-          {bypassError && (
-            <p className="text-xs text-amber-600 text-center mt-2">Acceso sin login no disponible</p>
-          )}
         </div>
         <p className="text-[10px] text-gray-400 text-center mt-4">admin / cajero / almacen</p>
       </div>
