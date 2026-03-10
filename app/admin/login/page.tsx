@@ -12,16 +12,12 @@ export default function AdminLoginPage() {
   const [pw, setPw] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [bypassEnabled, setBypassEnabled] = useState(false);
   const [bypassLoading, setBypassLoading] = useState(false);
+  const [bypassError, setBypassError] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     fromRef.current = params.get("from");
-    fetch("/api/settings")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.adminBypassLogin) setBypassEnabled(true); })
-      .catch(() => {});
   }, []);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -49,12 +45,19 @@ export default function AdminLoginPage() {
 
   const handleBypass = async () => {
     setBypassLoading(true);
+    setBypassError(false);
     try {
       const res = await fetch("/api/auth/bypass", { method: "POST" });
       if (res.ok) {
         router.push(fromRef.current ? decodeURIComponent(fromRef.current) : "/admin");
+      } else {
+        setBypassError(true);
+        setTimeout(() => setBypassError(false), 3000);
       }
-    } catch {}
+    } catch {
+      setBypassError(true);
+      setTimeout(() => setBypassError(false), 3000);
+    }
     setBypassLoading(false);
   };
 
@@ -101,23 +104,24 @@ export default function AdminLoginPage() {
             {loading ? "Verificando…" : "Ingresar"}
           </button>
         </form>
-        {bypassEnabled && (
-          <div className="mt-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-px flex-1 bg-gray-200" />
-              <span className="text-xs text-gray-400">o</span>
-              <div className="h-px flex-1 bg-gray-200" />
-            </div>
-            <button
-              onClick={handleBypass}
-              disabled={bypassLoading}
-              className="w-full py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              {bypassLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-              {bypassLoading ? "Entrando…" : "Entrar sin login"}
-            </button>
+        <div className="mt-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="h-px flex-1 bg-gray-200" />
+            <span className="text-xs text-gray-400">o</span>
+            <div className="h-px flex-1 bg-gray-200" />
           </div>
-        )}
+          <button
+            onClick={handleBypass}
+            disabled={bypassLoading}
+            className="w-full py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            {bypassLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+            {bypassLoading ? "Entrando…" : "Entrar sin login"}
+          </button>
+          {bypassError && (
+            <p className="text-xs text-amber-600 text-center mt-2">Acceso sin login no disponible</p>
+          )}
+        </div>
         <p className="text-[10px] text-gray-400 text-center mt-4">admin / cajero / almacen</p>
       </div>
     </div>
