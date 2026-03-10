@@ -18,6 +18,7 @@ const PromotionSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  try {
   const all = await PromotionsDB.getAll();
 
   // Admin sees full data including targetPhones
@@ -34,6 +35,10 @@ export async function GET(req: NextRequest) {
     .map(({ targetPhones, ...rest }) => rest);
 
   return NextResponse.json(publicPromos);
+  } catch (e) {
+    console.error("[promotions] GET error:", e);
+    return NextResponse.json([], { status: 200 });
+  }
 }
 
 export async function POST(req: NextRequest) {

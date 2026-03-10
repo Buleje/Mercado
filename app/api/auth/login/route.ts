@@ -40,6 +40,7 @@ function makeCookie(token: string) {
 }
 
 export async function POST(req: Request) {
+  try {
   const body = await req.json() as { username?: string; password?: string };
   const { username, password } = body;
 
@@ -48,9 +49,14 @@ export async function POST(req: Request) {
   }
 
   // â”€â”€ Primary: query AdminUser table in Prisma â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const dbUsers = await prisma.adminUser.findMany({
-    where: { active: true, ...(username ? { username } : {}) },
-  });
+  let dbUsers: { username: string; passwordHash: string; role: string; name: string }[] = [];
+  try {
+    dbUsers = await prisma.adminUser.findMany({
+      where: { active: true, ...(username ? { username } : {}) },
+    });
+  } catch {
+    // DB unavailable — continue with fallback auth
+  }
 
   for (const u of dbUsers) {
     if (await checkPassword(password, u.passwordHash)) {
@@ -76,8 +82,13 @@ export async function POST(req: Request) {
   }
 
   // â”€â”€ Final fallback: admin password stored in Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  const settings = await SettingsDB.get();
-  const adminPassword = settings.adminPassword ?? "admin2024";
+  let adminPassword = "admin2024";
+  try {
+    const settings = await SettingsDB.get();
+    adminPassword = settings.adminPassword ?? adminPassword;
+  } catch {
+    // Settings DB unavailable — use default password
+  }
   if (await checkPassword(password, adminPassword)) {
     const token = await createSessionToken("admin", "admin");
     const response = NextResponse.json({ ok: true, role: "admin", name: "Administrador" });
@@ -86,5 +97,9 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ error: "incorrect credentials" }, { status: 401 });
+  } catch (e) {
+    console.error("[auth/login] error:", e);
+    return NextResponse.json({ error: "server error" }, { status: 500 });
+  }
 }
 
