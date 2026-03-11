@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, startTransition } from "react";
 import { X, ChevronRight, Sparkles } from "lucide-react";
+import { dispatchAppEvent } from "@/lib/events";
 
 const MESSAGES = [
   { text: "🚚 Delivery gratis en compras desde S/50", link: "#productos", highlight: "S/50" },
@@ -39,7 +40,7 @@ export default function AnnouncementBar() {
       if (hide === prev) return;
       prev = hide;
       startTransition(() => setScrollHidden(hide));
-      window.dispatchEvent(new CustomEvent(hide ? "bsm:announcementHidden" : "bsm:announcementShown"));
+      dispatchAppEvent(hide ? "announcementHidden" : "announcementShown", {});
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -48,7 +49,7 @@ export default function AnnouncementBar() {
   const handleDismiss = useCallback(() => {
     setDismissed(true);
     // Dispatch event so Header can adjust its top
-    window.dispatchEvent(new CustomEvent("bsm:announcementDismissed"));
+    dispatchAppEvent("announcementDismissed", {});
   }, []);
 
   if (!mounted || dismissed) return null;
@@ -60,7 +61,7 @@ export default function AnnouncementBar() {
       id="announcement-bar"
       className="fixed top-0 left-0 right-0 h-11 text-white text-center overflow-hidden shadow-lg"
       style={{
-        background: "linear-gradient(90deg, #1b4332, #2d6a4f, #1b4332)",
+        background: "linear-gradient(90deg, #4f46e5, #6366f1, #4f46e5)",
         zIndex: 60,
         transform: scrollHidden ? "translateY(-100%)" : "translateY(0)",
         transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",

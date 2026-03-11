@@ -1,17 +1,20 @@
 "use client";
 
 import { useState, useEffect, useRef, startTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Menu, X, ShoppingBasket, ShoppingCart,
+  Menu, X, ShoppingCart, Store,
   ChevronDown, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
-  Sun, Moon, Search, Trophy, Gift, History, PackageCheck, User,
+  Sun, Moon, Search, Trophy, Gift, History, PackageCheck, User, ClipboardList,
 } from "lucide-react";
+import Link from "next/link";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
 import { useSettings, DEFAULT_NAV_LINKS } from "@/contexts/settings-context";
 import { useTheme } from "@/contexts/theme-context";
 import { products } from "@/data/products";
 import { cn } from "@/lib/utils";
+import { dispatchAppEvent, onAppEvent } from "@/lib/events";
 
 /** Safe text highlight — no dangerouslySetInnerHTML */
 function HighlightMatch({ text, query }: { text: string; query: string }) {
@@ -44,10 +47,20 @@ const categoryMenuItems = [
     desc: "Todo para tu hogar limpio" },
 ];
 
+const inicioMenuItems = [
+  { id: "inicio-top", label: "Página Principal", emoji: "🏠", href: "/", desc: "Volver al inicio" },
+  { id: "beneficios", label: "Beneficios", emoji: "⚡", href: "#beneficios", desc: "¿Por qué elegirnos?" },
+  { id: "como-funciona", label: "Cómo Funciona", emoji: "🔄", href: "#como-funciona", desc: "Pasos para pedir" },
+  { id: "reseñas", label: "Reseñas", emoji: "⭐", href: "#reseñas", desc: "Lo que dicen nuestros clientes" },
+  { id: "contacto", label: "Contacto", emoji: "📞", href: "#contacto", desc: "Escríbenos" },
+];
+
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
+  const [inicioOpen, setInicioOpen] = useState(false);
+  const [mobileInicioOpen, setMobileInicioOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [cartBounce, setCartBounce] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -56,11 +69,14 @@ export default function Header() {
   const [announcementVisible, setAnnouncementVisible] = useState(true);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
+  const [orderStatusChanged, setOrderStatusChanged] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const prevCount = useRef(0);
+  const prevOrderStatus = useRef<string | null>(null);
+  const router = useRouter();
   const { count, toggle } = useCart();
-  const { customer, openModal: openCustomerModal, openAccountModal, openOrderStatusModal } = useCustomer();
+  const { customer, openModal: openCustomerModal, openAccountModal, openOrderStatusModal, clear } = useCustomer();
   const { navLinks: storedNavLinks } = useSettings();
   const { resolved: theme, toggle: toggleTheme } = useTheme();
   const megaRef = useRef<HTMLDivElement>(null);
@@ -79,13 +95,15 @@ export default function Header() {
   useEffect(() => {
     const hide = () => startTransition(() => setAnnouncementVisible(false));
     const show = () => startTransition(() => setAnnouncementVisible(true));
-    window.addEventListener("bsm:announcementDismissed", hide);
-    window.addEventListener("bsm:announcementHidden", hide);
-    window.addEventListener("bsm:announcementShown", show);
+    
+    const unsubDismissed = onAppEvent("announcementDismissed", hide);
+    const unsubHidden = onAppEvent("announcementHidden", hide);
+    const unsubShown = onAppEvent("announcementShown", show);
+    
     return () => {
-      window.removeEventListener("bsm:announcementDismissed", hide);
-      window.removeEventListener("bsm:announcementHidden", hide);
-      window.removeEventListener("bsm:announcementShown", show);
+      unsubDismissed();
+      unsubHidden();
+      unsubShown();
     };
   }, []);
 
@@ -105,6 +123,7 @@ export default function Header() {
     const handler = (e: MouseEvent) => {
       if (megaRef.current && !megaRef.current.contains(e.target as Node)) {
         setMegaOpen(false);
+        setInicioOpen(false);
       }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
@@ -119,13 +138,18 @@ export default function Header() {
     const checkOrder = () => {
       try {
         const raw = localStorage.getItem("bsm-active-order");
-        if (!raw) { setHasActiveOrder(false); return; }
+        if (!raw) { setHasActiveOrder(false); prevOrderStatus.current = null; return; }
         const order = JSON.parse(raw);
         const age = Date.now() - new Date(order.createdAt).getTime();
         if (age > 7_200_000 || order.status === "entregado") {
           setHasActiveOrder(false);
+          prevOrderStatus.current = null;
           return;
         }
+        if (prevOrderStatus.current !== null && order.status !== prevOrderStatus.current) {
+          startTransition(() => setOrderStatusChanged(true));
+        }
+        prevOrderStatus.current = order.status;
         setHasActiveOrder(true);
       } catch { setHasActiveOrder(false); }
     };
@@ -176,11 +200,19 @@ export default function Header() {
     setSearchOpen(false);
     setSearchQuery("");
     setSuggestions([]);
-    // Scroll to products and trigger search
+    // Navigate to tienda and trigger search
     const el = document.getElementById("productos");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-    // Set the search input in ProductCatalog
-    window.dispatchEvent(new CustomEvent("bsm:searchProduct", { detail: { query: name } }));
+    if (el) {
+      // Already on /tienda — just scroll and dispatch
+      el.scrollIntoView({ behavior: "smooth" });
+      dispatchAppEvent("searchProduct", { query: name });
+    } else {
+      // On landing page — navigate to /tienda then dispatch after load
+      router.push("/tienda");
+      setTimeout(() => {
+        dispatchAppEvent("searchProduct", { query: name });
+      }, 800);
+    }
   };
 
   const handleSearchSubmit = () => {
@@ -194,12 +226,17 @@ export default function Header() {
     setMobileOpen(false);
     setMobileCatOpen(false);
     // Broadcast to ProductCatalog via DOM event
-    window.dispatchEvent(
-      new CustomEvent("bsm:selectCategory", { detail: { categoryId } })
-    );
-    // Scroll to products section
+    dispatchAppEvent("selectCategory", { categoryId });
+    // Navigate to shop if not there
     const el = document.getElementById("productos");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      router.push("/tienda");
+      setTimeout(() => {
+        dispatchAppEvent("selectCategory", { categoryId });
+      }, 800);
+    }
   };
 
   const navLinkCls = cn(
@@ -210,23 +247,70 @@ export default function Header() {
   const renderDesktopNavItem = (id: string) => {
     switch (id) {
       case "inicio":
-        return <a key="inicio" href="#inicio" className={navLinkCls}>Inicio</a>;
-      case "productos":
         return (
-          <div key="productos" className="relative">
+          <div key="inicio" className="relative">
+            <button
+              onClick={() => setInicioOpen((o) => !o)}
+              onMouseEnter={() => setInicioOpen(true)}
+              aria-expanded={inicioOpen}
+              aria-haspopup="true"
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
+                inicioOpen && (scrolled ? "text-primary bg-primary/5" : "text-white bg-white/10")
+              )}
+            >
+              Inicio
+              <span className={cn("transition-transform duration-200 inline-block", inicioOpen && "rotate-180")}>
+                <ChevronDown className="h-4 w-4" />
+              </span>
+            </button>
+            {inicioOpen && (
+              <div
+                onMouseLeave={() => setInicioOpen(false)}
+                className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden animate-[megaIn_0.18s_ease-out]"
+              >
+                <div className="p-2 space-y-0.5">
+                  {inicioMenuItems.map((item) => (
+                    <a
+                      key={item.id}
+                      href={item.href}
+                      onClick={() => setInicioOpen(false)}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-transparent text-left transition-all hover:shadow-sm hover:border-primary/20 hover:bg-primary/5 group"
+                    >
+                      <span className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/8 text-xl leading-none shrink-0 group-hover:bg-primary/15 transition-colors">
+                        {item.emoji}
+                      </span>
+                      <div>
+                        <p className="font-bold text-sm leading-tight text-foreground group-hover:text-primary transition-colors">{item.label}</p>
+                        <p className="text-[11px] text-muted mt-0.5">{item.desc}</p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case "tienda":
+        return <Link key="tienda" href="/tienda" className={navLinkCls}>Tienda</Link>;
+      case "categorias":
+        return (
+          <div key="categorias" className="relative">
             <button
               onClick={() => setMegaOpen((o) => !o)}
               onMouseEnter={() => setMegaOpen(true)}
               aria-expanded={megaOpen}
               aria-haspopup="true"
               aria-controls="mega-menu"
+              aria-label="Menú de categorías"
               className={cn(
                 "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all",
                 scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
                 megaOpen && (scrolled ? "text-primary bg-primary/5" : "text-white bg-white/10")
               )}
             >
-              Productos
+              Categorías
               <span className={cn("transition-transform duration-200 inline-block", megaOpen && "rotate-180")}>
                 <ChevronDown className="h-4 w-4" />
               </span>
@@ -240,9 +324,10 @@ export default function Header() {
               >
                 <div className="grid grid-cols-2 gap-1.5 p-3">
                   {categoryMenuItems.map((cat) => (
-                    <button
+                    <Link
                       key={cat.id}
-                      onClick={() => handleCategoryClick(cat.id)}
+                      href="/tienda"
+                      onClick={() => { setMegaOpen(false); handleCategoryClick(cat.id); }}
                       className="flex items-center gap-3 p-3 rounded-xl border border-transparent text-left transition-all hover:shadow-md hover:border-primary/20 hover:bg-primary/5 group"
                     >
                       <span className="flex items-center justify-center h-11 w-11 rounded-xl bg-primary/8 text-xl leading-none shrink-0 group-hover:bg-primary/15 transition-colors">
@@ -252,22 +337,18 @@ export default function Header() {
                         <p className="font-bold text-sm leading-tight text-foreground group-hover:text-primary transition-colors">{cat.label}</p>
                         <p className="text-[11px] text-muted mt-0.5">{cat.desc}</p>
                       </div>
-                    </button>
+                    </Link>
                   ))}
                 </div>
                 <div className="px-4 py-2.5 bg-primary/5 dark:bg-primary/8 border-t border-gray-100 dark:border-card-border">
-                  <button onClick={() => handleCategoryClick("todos")} className="text-sm font-bold text-primary hover:underline">
+                  <Link href="/tienda" onClick={() => setMegaOpen(false)} className="text-sm font-bold text-primary hover:underline">
                     Ver todos los productos →
-                  </button>
+                  </Link>
                 </div>
               </div>
             )}
           </div>
         );
-      case "beneficios":
-        return <a key="beneficios" href="#beneficios" className={navLinkCls}>Beneficios</a>;
-      case "contacto":
-        return <a key="contacto" href="#contacto" className={navLinkCls}>Contacto</a>;
       default:
         return null;
     }
@@ -277,16 +358,52 @@ export default function Header() {
     const cls = "block px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors";
     switch (id) {
       case "inicio":
-        return <a key="inicio" href="#inicio" onClick={() => setMobileOpen(false)} className={cls}>Inicio</a>;
-      case "productos":
         return (
-          <div key="productos">
+          <div key="inicio">
+            <button
+              onClick={() => setMobileInicioOpen((o) => !o)}
+              aria-expanded={mobileInicioOpen}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors"
+            >
+              <span>Inicio</span>
+              <span className={cn("transition-transform duration-200 inline-block", mobileInicioOpen && "rotate-180")}>
+                <ChevronDown className="h-4 w-4 text-muted" />
+              </span>
+            </button>
+            {mobileInicioOpen && (
+              <div className="overflow-hidden animate-[fadeDown_0.2s_ease-out]">
+                <div className="mx-4 my-2 space-y-1">
+                  {inicioMenuItems.map((item) => (
+                    <a
+                      key={item.id}
+                      href={item.href}
+                      onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); }}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-card-border transition-colors hover:border-primary/25 hover:bg-primary/5"
+                    >
+                      <span className="text-xl">{item.emoji}</span>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">{item.label}</p>
+                        <p className="text-xs text-muted">{item.desc}</p>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case "tienda":
+        return <Link key="tienda" href="/tienda" onClick={() => setMobileOpen(false)} className={cls}>Tienda</Link>;
+      case "categorias":
+        return (
+          <div key="categorias">
             <button
               onClick={() => setMobileCatOpen((o) => !o)}
               aria-expanded={mobileCatOpen}
+              aria-label="Menú de categorías"
               className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors"
             >
-              <span>Productos</span>
+              <span>Categorías</span>
               <span className={cn("transition-transform duration-200 inline-block", mobileCatOpen && "rotate-180")}>
                 <ChevronDown className="h-4 w-4 text-muted" />
               </span>
@@ -295,24 +412,28 @@ export default function Header() {
               <div className="overflow-hidden animate-[fadeDown_0.2s_ease-out]">
                 <div className="mx-4 my-2 grid grid-cols-2 gap-2">
                   {categoryMenuItems.map((cat) => (
-                    <button
+                    <Link
                       key={cat.id}
-                      onClick={() => handleCategoryClick(cat.id)}
+                      href="/tienda"
+                      onClick={() => { setMobileOpen(false); setMobileCatOpen(false); handleCategoryClick(cat.id); }}
                       className="flex items-center gap-2 p-3 rounded-xl border border-gray-100 text-left transition-colors hover:border-primary/25 hover:bg-primary/5"
                     >
                       <span className="text-xl">{cat.emoji}</span>
                       <span className="text-sm font-bold text-foreground">{cat.label}</span>
-                    </button>
+                    </Link>
                   ))}
                 </div>
+                <Link
+                  href="/tienda"
+                  onClick={() => { setMobileOpen(false); setMobileCatOpen(false); }}
+                  className="block mx-4 mb-2 text-center text-sm font-bold text-primary hover:underline py-2"
+                >
+                  Ver todos los productos →
+                </Link>
               </div>
             )}
           </div>
         );
-      case "beneficios":
-        return <a key="beneficios" href="#beneficios" onClick={() => setMobileOpen(false)} className={cls}>Beneficios</a>;
-      case "contacto":
-        return <a key="contacto" href="#contacto" onClick={() => setMobileOpen(false)} className={cls}>Contacto</a>;
       default:
         return null;
     }
@@ -332,10 +453,10 @@ export default function Header() {
           ? "background 0.4s ease, box-shadow 0.4s ease, top 0.35s cubic-bezier(0.4,0,0.2,1)"
           : "background 0.4s ease, top 0.35s cubic-bezier(0.4,0,0.2,1)",
         ...(scrolled ? {} : {
-          background: "rgba(4,20,10,0.55)",
+          background: "rgba(30,27,75,0.65)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
-          borderBottom: "1px solid rgba(74,222,128,0.18)",
+          borderBottom: "1px solid rgba(99,102,241,0.18)",
         }),
       }}
     >
@@ -343,9 +464,15 @@ export default function Header() {
         <div className="flex h-16 sm:h-20 items-center justify-between gap-4">
 
           {/* Logo */}
-          <a href="#inicio" className="flex items-center gap-2.5 shrink-0">
-            <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-primary text-white shadow-md">
-              <ShoppingBasket className="h-5 w-5 sm:h-6 sm:w-6" />
+          <Link href="/" className="flex items-center gap-2.5 shrink-0">
+            <div 
+              className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl text-white shadow-lg"
+              style={{ 
+                background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #3730a3 100%)",
+                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.35)"
+              }}
+            >
+              <Store className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div className="hidden sm:flex flex-col">
               <span className={cn("text-base sm:text-xl font-bold leading-tight transition-colors",
@@ -357,26 +484,35 @@ export default function Header() {
                 Pucallpa · Ucayali
               </span>
             </div>
-          </a>
+          </Link>
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-1" ref={megaRef}>
             {navLinks.filter(l => l.visible).map(l => renderDesktopNavItem(l.id))}
 
-            {/* Admin link — desktop */}
-            <a
-              href="/admin"
+            {/* Estado de pedido — desktop (always visible) */}
+            <button
+              id="order-status-nav-btn"
+              onClick={() => { setOrderStatusChanged(false); openOrderStatusModal(); }}
+              title="Ver estado de tu pedido"
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all",
-                scrolled
-                  ? "text-gray-400 hover:text-primary hover:bg-primary/5"
-                  : "text-white/50 hover:text-white hover:bg-white/10"
+                "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
+                hasActiveOrder
+                  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/50 hover:bg-amber-200 dark:hover:bg-amber-900/50"
+                  : scrolled
+                    ? "bg-primary/8 text-primary border-primary/20 hover:bg-primary/15"
+                    : "bg-white/15 text-white border-white/20 hover:bg-white/25"
               )}
-              title="Panel de administración"
             >
-              <Settings className="h-4 w-4" />
-              <span className="hidden xl:inline">Admin</span>
-            </a>
+              <PackageCheck className="h-3.5 w-3.5 shrink-0" />
+              <span>Estado de pedido</span>
+              {hasActiveOrder && (
+                <span className="relative flex h-2 w-2">
+                  {orderStatusChanged && <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping" />}
+                  <span className="relative h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                </span>
+              )}
+            </button>
 
             {/* User menu dropdown — desktop nav */}
             <div className="relative" ref={userMenuRef}>
@@ -395,7 +531,7 @@ export default function Header() {
               >
                 <UserCircle className="h-4 w-4 shrink-0" />
                 <span className="max-w-22.5 truncate">
-                  {customer ? customer.name.split(" ")[0] : "Mi cuenta"}
+                  {customer ? (customer.name?.split(" ")[0] ?? "Mi cuenta") : "Mi cuenta"}
                 </span>
                 <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", userMenuOpen && "rotate-180")} />
               </button>
@@ -410,6 +546,14 @@ export default function Header() {
                       <User className="h-4 w-4" />
                       <span>Mi cuenta</span>
                     </button>
+                    <a
+                      href="/mis-pedidos"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      <span>Mis pedidos</span>
+                    </a>
                     <button
                       onClick={() => { setUserMenuOpen(false); window.location.href = "/cuenta"; }}
                       className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors text-left"
@@ -417,8 +561,16 @@ export default function Header() {
                       <History className="h-4 w-4" />
                       <span>Historial de datos</span>
                     </button>
+                    <a
+                      href="/admin"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-400 hover:bg-primary/5 hover:text-primary transition-colors"
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span>Panel de administración</span>
+                    </a>
                     <button
-                      onClick={() => { openOrderStatusModal(); setUserMenuOpen(false); }}
+                      onClick={() => { setOrderStatusChanged(false); openOrderStatusModal(); setUserMenuOpen(false); }}
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors text-left",
                         hasActiveOrder
@@ -437,6 +589,22 @@ export default function Header() {
                         <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
                       )}
                     </button>
+                    {customer && (
+                      <>
+                        <div className="mx-3 my-1 border-t border-gray-100 dark:border-card-border" />
+                        <button
+                          onClick={() => {
+                            clear();
+                            setUserMenuOpen(false);
+                            window.location.reload();
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors text-left"
+                        >
+                          <X className="h-4 w-4" />
+                          <span>Cerrar sesión</span>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -522,6 +690,33 @@ export default function Header() {
               )}
             </button>
 
+            {/* Order status icon — mobile shortcut */}
+            <button
+              id="order-status-nav-btn-mobile"
+              onClick={() => { setOrderStatusChanged(false); openOrderStatusModal(); }}
+              className={cn(
+                "lg:hidden relative flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                scrolled
+                  ? hasActiveOrder
+                    ? "text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                    : "text-foreground hover:bg-primary/10 hover:text-primary"
+                  : hasActiveOrder
+                    ? "text-amber-300 hover:bg-white/15"
+                    : "text-white/70 hover:text-white hover:bg-white/15"
+              )}
+              aria-label="Estado de pedido"
+              title="Estado de pedido"
+            >
+              <PackageCheck className="h-5 w-5" />
+              {hasActiveOrder && (
+                <span className="absolute top-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-amber-500">
+                  {orderStatusChanged && (
+                    <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping" />
+                  )}
+                </span>
+              )}
+            </button>
+
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileOpen((o) => !o)}
@@ -534,6 +729,25 @@ export default function Header() {
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
+        </div>
+
+        {/* Category quick-strip — mobile only */}
+        <div className="lg:hidden overflow-x-auto scrollbar-hide flex gap-1.5 px-2 pb-2 pt-0.5">
+          {categoryMenuItems.map(cat => (
+            <button
+              key={cat.id}
+              onClick={() => handleCategoryClick(cat.id)}
+              className={cn(
+                "flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shrink-0",
+                scrolled
+                  ? "bg-primary/8 text-primary hover:bg-primary/15"
+                  : "bg-white/15 text-white border border-white/20 hover:bg-white/25"
+              )}
+            >
+              <span>{cat.emoji}</span>
+              {cat.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -548,13 +762,35 @@ export default function Header() {
             <div className="px-4 py-5 space-y-1">
               {navLinks.filter(l => l.visible).map(l => renderMobileNavItem(l.id))}
               <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
+                {/* Estado de pedido — mobile */}
+                <button
+                  onClick={() => { setOrderStatusChanged(false); openOrderStatusModal(); setMobileOpen(false); }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-colors",
+                    hasActiveOrder
+                      ? "bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 hover:bg-amber-100"
+                      : "bg-primary/5 text-primary hover:bg-primary/10"
+                  )}
+                >
+                  <PackageCheck className="h-5 w-5 shrink-0" />
+                  <span className="flex-1 text-left">Estado de mi pedido</span>
+                  {hasActiveOrder && <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />}
+                </button>
                 <button
                   onClick={() => { openCustomerModal("profile"); setMobileOpen(false); }}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors"
                 >
                   <UserCircle className="h-5 w-5" />
-                  <span>{customer ? `Mi cuenta \u2014 ${customer.name.split(" ")[0]}` : "Mi cuenta"}</span>
+                  <span>{customer ? `Mi cuenta \u2014 ${customer.name?.split(" ")[0] ?? "Mi cuenta"}` : "Mi cuenta"}</span>
                 </button>
+                <a
+                  href="/mis-pedidos"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors"
+                >
+                  <ClipboardList className="h-5 w-5" />
+                  <span>Mis pedidos</span>
+                </a>
 
                 {/* Loyalty — mobile */}
                 {loyalty && customer && (
@@ -578,6 +814,19 @@ export default function Header() {
                   <Settings className="h-5 w-5" />
                   <span>Panel de administración</span>
                 </a>
+                {customer && (
+                  <button
+                    onClick={() => {
+                      clear();
+                      setMobileOpen(false);
+                      window.location.reload();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 font-medium hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                    <span>Cerrar sesión</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

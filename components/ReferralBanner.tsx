@@ -74,7 +74,7 @@ export default function ReferralBanner() {
 
         {/* Main card */}
         <div className="relative rounded-3xl overflow-hidden shadow-2xl" style={{
-          background: "linear-gradient(135deg, #0a2212 0%, #1b4332 40%, #2d6a4f 70%, #1b4332 100%)",
+          background: "linear-gradient(135deg, #1e1b4b 0%, #4f46e5 40%, #6366f1 70%, #4f46e5 100%)",
         }}>
           {/* Decorative circles */}
           <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(244,162,97,0.18) 0%, transparent 70%)" }} />

@@ -93,7 +93,7 @@ export default function PopularProducts() {
                   {product.badge && (
                     <span
                       className="absolute bottom-2 right-2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md"
-                      style={{ background: product.badge === "Popular" ? "#2d6a4f" : product.badge === "Oferta" ? "#ef4444" : product.badge === "Fresco" ? "#16a34a" : "#6b7280" }}
+                      style={{ background: product.badge === "Popular" ? "#6366f1" : product.badge === "Oferta" ? "#ef4444" : product.badge === "Fresco" ? "#10b981" : "#6b7280" }}
                     >
                       {product.badge}
                     </span>

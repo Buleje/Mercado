@@ -20,10 +20,10 @@ import {
 // Utility components - disable SSR for better performance
 const CheckoutModal = nextDynamic(() => import("@/components/CheckoutModal"));
 const ScrollToTop = nextDynamic(() => import("@/components/ScrollToTop"));
-const WhatsAppButton = nextDynamic(() => import("@/components/WhatsAppButton"));
 const CompareBar = nextDynamic(() => import("@/components/CompareBar"));
 const NotificationPrompt = nextDynamic(() => import("@/components/NotificationPrompt"));
 const AbandonedCartRecovery = nextDynamic(() => import("@/components/AbandonedCartRecovery"));
+const OrderStatusModalWrapper = nextDynamic(() => import("@/components/OrderStatusModalWrapper"));
 
 export const dynamic = "force-dynamic";
 
@@ -33,12 +33,14 @@ export default async function StoreLayout({
   children: React.ReactNode;
 }) {
   // Check maintenance mode
+  let maintenanceMode = false;
+  let maintenanceMessage: string | undefined;
   try {
     const settings = await SettingsDB.get();
-    if (settings.maintenanceMode) {
-      return <MaintenancePage message={settings.maintenanceMessage} />;
-    }
+    maintenanceMode = !!settings.maintenanceMode;
+    maintenanceMessage = settings.maintenanceMessage;
   } catch { /* continue normally */ }
+  if (maintenanceMode) return <MaintenancePage message={maintenanceMessage} />;
 
   return (
     <>
@@ -57,9 +59,9 @@ export default async function StoreLayout({
                   <MotionProvider>
                     {children}
                     <CheckoutModal />
+                    <OrderStatusModalWrapper />
                     <CompareBar />
                     <ScrollToTop />
-                    <WhatsAppButton />
                     <NotificationPrompt />
                     <AbandonedCartRecovery />
                   </MotionProvider>

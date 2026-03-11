@@ -49,7 +49,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       {/* Toast Container */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-100 flex flex-col items-center gap-2 pointer-events-none w-full max-w-xs px-4">
+      <div 
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-100 flex flex-col items-center gap-2 pointer-events-none w-full max-w-xs px-4"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         {toasts.map((toast) => (
           <div
             key={toast.id}
@@ -59,23 +64,26 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 ? "animate-[toastOut_0.3s_ease-in_forwards]"
                 : "animate-[toastIn_0.3s_ease-out]"
             )}
+            role="alert"
+            aria-label={`${toast.name} agregado al carrito`}
           >
             <div className="relative h-10 w-10 shrink-0 rounded-xl overflow-hidden bg-white/10">
               <Image
                 src={toast.image}
-                alt={toast.name}
+                alt=""
                 fill
                 sizes="40px"
                 className="object-cover"
+                aria-hidden="true"
               />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-white/70 dark:text-muted font-medium">Agregado al carrito</p>
               <p className="text-sm font-bold leading-tight truncate dark:text-foreground">{toast.name}</p>
             </div>
-            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" aria-hidden="true" />
             {/* Progress bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10">
+            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10" aria-hidden="true">
               <div className="h-full bg-emerald-400 animate-[shrink_2.8s_linear_forwards]" />
             </div>
           </div>

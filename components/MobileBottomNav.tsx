@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect, startTransition } from "react";
-import { Home, Search, Heart, ShoppingCart, User } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Home, Store, Heart, ShoppingCart, User } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { id: "home", label: "Inicio", icon: Home, action: "scroll-top" },
-  { id: "search", label: "Buscar", icon: Search, action: "search" },
+  { id: "home", label: "Inicio", icon: Home, action: "go-home" },
+  { id: "tienda", label: "Tienda", icon: Store, action: "go-tienda" },
   { id: "favs", label: "Favoritos", icon: Heart, action: "scroll-favs" },
   { id: "cart", label: "Carrito", icon: ShoppingCart, action: "cart" },
   { id: "cuenta", label: "Cuenta", icon: User, action: "account" },
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
 export default function MobileBottomNav() {
   const { items, open: openCart } = useCart();
   const { openModal } = useCustomer();
+  const router = useRouter();
   const [visible, setVisible] = useState(false);
   const [active, setActive] = useState("home");
 
@@ -33,21 +35,23 @@ export default function MobileBottomNav() {
   }, []);
 
   const handleTap = (action: string) => {
-    setActive(action === "scroll-top" ? "home" : action === "scroll-favs" ? "favs" : action);
+    setActive(action === "go-home" ? "home" : action === "go-tienda" ? "tienda" : action === "scroll-favs" ? "favs" : action);
 
     switch (action) {
-      case "scroll-top":
-        window.scrollTo({ top: 0, behavior: "smooth" });
+      case "go-home":
+        router.push("/");
         break;
-      case "search":
-        document.getElementById("productos")?.scrollIntoView({ behavior: "smooth" });
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent("bsm:focusSearch"));
-        }, 500);
+      case "go-tienda":
+        router.push("/tienda");
         break;
       case "scroll-favs": {
-        const el = document.getElementById("favoritos") || document.getElementById("productos");
-        el?.scrollIntoView({ behavior: "smooth" });
+        // If already on /tienda within reach of #favoritos, scroll; otherwise navigate with anchor
+        const favEl = document.getElementById("favoritos");
+        if (favEl) {
+          favEl.scrollIntoView({ behavior: "smooth" });
+        } else {
+          router.push("/tienda#favoritos");
+        }
         break;
       }
       case "cart":
@@ -83,7 +87,8 @@ export default function MobileBottomNav() {
                 "relative flex flex-col items-center justify-center gap-0.5 flex-1 h-full transition-all duration-200",
                 isActive ? "text-primary" : "text-gray-400 dark:text-gray-500 active:text-primary active:scale-90"
               )}
-              aria-label={item.label}
+              aria-label={item.id === "cart" && totalQty > 0 ? `${item.label} (${totalQty} productos)` : item.label}
+              aria-current={isActive ? "page" : undefined}
             >
               {isActive && (
                 <span className="absolute top-0 inset-x-3 h-0.75 bg-primary rounded-b-full" />

@@ -9,8 +9,8 @@ type _CartItemCompat = CartItem extends OrderItem ? true : false; // compile-tim
 
 // Theme colors
 const PC = {
-  primaryDark: "#1b4332",
-  primary: "#2d6a4f",
+  primaryDark: "#4f46e5",
+  primary: "#6366f1",
   secondary: "#f4a261",
   bgLight: "#F0FDF4",
   border: "#D1FAE5",
@@ -63,12 +63,14 @@ function rr(
 }
 
 function loadImage(src: string): Promise<HTMLImageElement | null> {
+  // Skip empty, data-URI, or suspiciously long URLs — they won't render on canvas
+  if (!src || src.startsWith("data:") || src.length > 800) return Promise.resolve(null);
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
-    setTimeout(() => resolve(null), 8000);
+    setTimeout(() => resolve(null), 6000);
     img.src = src;
   });
 }

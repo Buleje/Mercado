@@ -6,7 +6,7 @@ import type { DbOrder } from "@/lib/jsondb";
 import { sendOrderNotification } from "@/lib/mailer";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const OrderItemSchema = z.object({
   id: z.number(),
@@ -102,17 +102,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  // Rate limit: 5 orders per IP per 10 minutes
-  const ip = getClientIp(req);
-  const { allowed, resetAt } = rateLimit(`orders:${ip}`, 5, 600);
-  if (!allowed) {
-    return NextResponse.json(
-      { error: "Demasiadas solicitudes. Intenta de nuevo en unos minutos." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)) },
-      }
-    );
+  // Rate limit: 5 orders per IP per 15 minutes (STRICT preset)
+  const rateLimitResponse = applyRateLimit(req, "STRICT", "orders");
+  if (rateLimitResponse) {
+    return rateLimitResponse;
   }
 
   try {

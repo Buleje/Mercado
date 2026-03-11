@@ -48,13 +48,15 @@ export default function DailySpecial() {
           <div className="flex flex-col sm:flex-row items-center gap-6 p-6 sm:p-8 lg:p-10">
             {/* Image */}
             <div className="relative w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 rounded-2xl overflow-hidden bg-white dark:bg-white/10 shadow-xl shrink-0">
-              <Image
-                src={product.image}
-                alt={product.name}
-                fill
-                sizes="256px"
-                className="object-cover"
-              />
+              {product.image && (
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  sizes="256px"
+                  className="object-cover"
+                />
+              )}
               {/* Discount badge */}
               <div className="absolute bottom-3 right-3 bg-red-500 text-white font-extrabold text-lg px-3 py-1.5 rounded-xl shadow-lg">
                 -{pct}%

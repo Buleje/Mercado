@@ -3,14 +3,23 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { createSessionToken, SESSION } from "@/lib/session";
 
+/**
+ * SECURITY: Bypass login endpoint.
+ * Only available in development. Returns 404 in production (as if it doesn't exist).
+ */
 export async function POST() {
+  // CRITICAL: Block in production
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   try {
-    // Always allow bypass login for development/testing
+    console.warn("[SECURITY] Bypass login used in development mode");
     const token = await createSessionToken("admin", "Invitado");
     const response = NextResponse.json({ ok: true, role: "admin", name: "Invitado" });
     response.cookies.set(SESSION.COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Development only
       sameSite: "strict" as const,
       maxAge: SESSION.MAX_AGE,
       path: "/",

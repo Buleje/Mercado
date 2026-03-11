@@ -5,13 +5,13 @@ import { Gift, X } from "lucide-react";
 
 const SEGMENTS = [
   { label: "5% OFF", color: "#ef4444", value: 5 },
-  { label: "Envío gratis", color: "#10b981", value: 0 },
+  { label: "Envío gratis", color: "#3b82f6", value: 0 },
   { label: "3% OFF", color: "#f59e0b", value: 3 },
   { label: "¡Intenta de nuevo!", color: "#6b7280", value: -1 },
   { label: "10% OFF", color: "#8b5cf6", value: 10 },
   { label: "S/2 OFF", color: "#3b82f6", value: 2 },
   { label: "S/5 OFF", color: "#ec4899", value: 5 },
-  { label: "Sorpresa 🎁", color: "#14b8a6", value: 0 },
+  { label: "Sorpresa 🎁", color: "#818cf8", value: 0 },
 ];
 
 const STORAGE_KEY = "bsm-spin-played";

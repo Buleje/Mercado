@@ -7,23 +7,23 @@ import { useInView } from "@/hooks/use-in-view";
 const stats = [
   {
     icon: ShoppingBag, value: 500, suffix: "+", label: "Productos disponibles",
-    iconBg: "bg-emerald-500", iconColor: "text-white",
-    accentGradient: "linear-gradient(to bottom, rgba(16,185,129,0.18), rgba(16,185,129,0.04))",
+    accent: "#6366f1",
+    accentGradient: "linear-gradient(to bottom, rgba(99,102,241,0.12), transparent)",
   },
   {
     icon: Users, value: 1200, suffix: "+", label: "Clientes satisfechos",
-    iconBg: "bg-amber-500", iconColor: "text-white",
-    accentGradient: "linear-gradient(to bottom, rgba(245,158,11,0.18), rgba(245,158,11,0.04))",
+    accent: "#f59e0b",
+    accentGradient: "linear-gradient(to bottom, rgba(245,158,11,0.12), transparent)",
   },
   {
     icon: Truck, value: 3500, suffix: "+", label: "Pedidos entregados",
-    iconBg: "bg-blue-500", iconColor: "text-white",
-    accentGradient: "linear-gradient(to bottom, rgba(59,130,246,0.18), rgba(59,130,246,0.04))",
+    accent: "#3b82f6",
+    accentGradient: "linear-gradient(to bottom, rgba(59,130,246,0.12), transparent)",
   },
   {
     icon: Star, value: 4.8, suffix: "/5", label: "Calificación promedio", decimals: 1,
-    iconBg: "bg-rose-500", iconColor: "text-white",
-    accentGradient: "linear-gradient(to bottom, rgba(244,63,94,0.18), rgba(244,63,94,0.04))",
+    accent: "#f43f5e",
+    accentGradient: "linear-gradient(to bottom, rgba(244,63,94,0.12), transparent)",
   },
 ];
 
@@ -90,25 +90,25 @@ export default function StatsCounter() {
             <div
               key={stat.label}
               style={started ? { animationDelay: `${i * 120}ms` } : undefined}
-              className={`relative group rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center bg-white dark:bg-card shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden ${
+              className={`relative group rounded-2xl p-6 sm:p-8 text-center bg-white dark:bg-card border border-gray-100/80 dark:border-card-border hover:border-primary/25 hover:shadow-[0_8px_32px_rgba(99,102,241,0.08)] hover:-translate-y-0.5 transition-all duration-300 overflow-hidden ${
                 started ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
               }`}
             >
-              {/* Colored gradient accent */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: stat.accentGradient }} />
-
-              {/* Top accent line */}
-              <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 rounded-b-full ${stat.iconBg} opacity-60`} />
+              {/* Hover gradient */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: stat.accentGradient }} />
 
               <div className="relative z-10">
-                <div className={`inline-flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-2xl ${stat.iconBg} mb-5 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  <stat.icon className={`h-7 w-7 sm:h-8 sm:w-8 ${stat.iconColor}`} />
+                <div
+                  className="inline-flex items-center justify-center h-12 w-12 rounded-xl mb-5 group-hover:scale-110 transition-transform duration-300"
+                  style={{ background: stat.accent + "18", color: stat.accent }}
+                >
+                  <stat.icon className="h-5.5 w-5.5" />
                 </div>
-                <div className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-foreground mb-2 tabular-nums tracking-tight">
+                <div className="text-4xl sm:text-5xl font-black text-foreground mb-1.5 tabular-nums tracking-tighter">
                   <AnimatedNumber target={stat.value} decimals={stat.decimals} started={started} />
-                  <span className="text-primary">{stat.suffix}</span>
+                  <span style={{ color: stat.accent }}>{stat.suffix}</span>
                 </div>
-                <p className="text-sm sm:text-base text-muted font-medium">{stat.label}</p>
+                <p className="text-sm text-muted font-medium">{stat.label}</p>
               </div>
             </div>
           ))}

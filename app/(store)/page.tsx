@@ -3,52 +3,34 @@ import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import AnnouncementBar from "@/components/AnnouncementBar";
-import FreeDeliveryProgress from "@/components/FreeDeliveryProgress";
+import {
+  StatsSkeleton,
+  SectionSkeleton,
+  CardSkeleton,
+  TestimonialSkeleton,
+  FAQSkeleton,
+} from "@/components/LoadingSkeleton";
 
-// Above-the-fold components - keep SSR for LCP
-const DailySpecial      = dynamic(() => import("@/components/DailySpecial"));
-const CountdownBanner   = dynamic(() => import("@/components/CountdownBanner"));
-const SeasonalPromo     = dynamic(() => import("@/components/SeasonalPromo"));
-const StatsCounter      = dynamic(() => import("@/components/StatsCounter"));
-const TrustBar          = dynamic(() => import("@/components/TrustBar"));
-const FlashDeals        = dynamic(() => import("@/components/FlashDeals"));
-const CategoryBubbles   = dynamic(() => import("@/components/CategoryBubbles"));
+// Landing page sections — optimized conversion flow
+const StatsCounter       = dynamic(() => import("@/components/StatsCounter"), { ssr: true });
+const ProductsPreview    = dynamic(() => import("@/components/ProductsPreview"), { ssr: true });
+const HowItWorks         = dynamic(() => import("@/components/HowItWorks"), { ssr: true });
+const Benefits           = dynamic(() => import("@/components/Benefits"), { ssr: true });
+const CTABanner          = dynamic(() => import("@/components/CTABanner"), { ssr: true });
+const Testimonials       = dynamic(() => import("@/components/Testimonials"), { ssr: true });
+const BrandStory         = dynamic(() => import("@/components/BrandStory"), { ssr: true });
+const FAQ                = dynamic(() => import("@/components/FAQ"), { ssr: true });
+const Contact            = dynamic(() => import("@/components/Contact"), { ssr: true });
+const Footer             = dynamic(() => import("@/components/Footer"), { ssr: true });
 
-// Below-the-fold components - disable SSR for better TBT
-const RecipeSuggestions = dynamic(() => import("@/components/RecipeSuggestions"));
-const PopularProducts   = dynamic(() => import("@/components/PopularProducts"));
-const FeaturedCarousel  = dynamic(() => import("@/components/FeaturedCarousel"));
-const CombosSection     = dynamic(() => import("@/components/CombosSection"));
-const ProductCatalog    = dynamic(() => import("@/components/ProductCatalog"));
-const RecentlyViewed    = dynamic(() => import("@/components/RecentlyViewed"));
-const FavoritesSection  = dynamic(() => import("@/components/FavoritesSection"));
-const ReferralBanner    = dynamic(() => import("@/components/ReferralBanner"));
-const BrandStory        = dynamic(() => import("@/components/BrandStory"));
-const SpinWheel         = dynamic(() => import("@/components/SpinWheel"));
-const Benefits          = dynamic(() => import("@/components/Benefits"));
-const Testimonials      = dynamic(() => import("@/components/Testimonials"));
-const StoreStats        = dynamic(() => import("@/components/StoreStats"));
-const DeliveryZoneMap   = dynamic(() => import("@/components/DeliveryZoneMap"));
-const StoreHours        = dynamic(() => import("@/components/StoreHours"));
-const PaymentMethods    = dynamic(() => import("@/components/PaymentMethods"));
-const FAQ               = dynamic(() => import("@/components/FAQ"));
-const NewsletterWhatsApp= dynamic(() => import("@/components/NewsletterWhatsApp"));
-const Contact           = dynamic(() => import("@/components/Contact"));
-const Footer            = dynamic(() => import("@/components/Footer"));
-const BackInStock       = dynamic(() => import("@/components/BackInStock"));
-const VolumeDiscount    = dynamic(() => import("@/components/VolumeDiscount"));
-const LastOrderBanner   = dynamic(() => import("@/components/LastOrderBanner"));
-
-// Modals and interactive elements - disable SSR
+// Essential modals & utilities (client-only, no SSR needed)
 const CartSidebar       = dynamic(() => import("@/components/CartSidebar"));
 const CustomerModal     = dynamic(() => import("@/components/CustomerModal"));
-const ReviewModal       = dynamic(() => import("@/components/ReviewModal"));
 const AccessibilityBar  = dynamic(() => import("@/components/AccessibilityBar"));
 const CookieConsent     = dynamic(() => import("@/components/CookieConsent"));
-const SocialProofToast  = dynamic(() => import("@/components/SocialProofToast"));
 const MobileBottomNav   = dynamic(() => import("@/components/MobileBottomNav"));
 const UserAccountModal  = dynamic(() => import("@/components/UserAccountModal"));
-const OrderStatusModalWrapper = dynamic(() => import("@/components/OrderStatusModalWrapper"));
+const ExitIntentModal   = dynamic(() => import("@/components/ExitIntentModal"));
 
 export default function Home() {
   return (
@@ -56,73 +38,115 @@ export default function Home() {
       <AnnouncementBar />
       <Header />
       <main id="main-content">
+        {/* Hero — strong first impression with CTA to /tienda */}
         <Hero />
-        <FreeDeliveryProgress />
-        <LastOrderBanner />
-        <DailySpecial />
-        <SeasonalPromo />
-        <StatsCounter />
-        <TrustBar />
-        <CountdownBanner />
-        <FlashDeals />
-        <CategoryBubbles />
-        <PopularProducts />
-        <FeaturedCarousel />
-        <CombosSection />
-        <Suspense fallback={<ProductCatalogSkeleton />}>
-          <ProductCatalog />
+
+        {/* Social proof stats */}
+        <Suspense fallback={<LoadingStats />}>
+          <StatsCounter />
         </Suspense>
-        <RecentlyViewed />
-        <FavoritesSection />
-        <RecipeSuggestions />
-        <ReferralBanner />
-        <Benefits />
-        <BrandStory />
-        <Testimonials />
-        <StoreStats />
-        <DeliveryZoneMap />
-        <PaymentMethods />
-        <FAQ />
-        <NewsletterWhatsApp />
-        <StoreHours />
-        <Contact />
+
+        {/* Product preview — showcase + CTA to full catalog */}
+        <Suspense fallback={<LoadingProducts />}>
+          <ProductsPreview />
+        </Suspense>
+
+        {/* How it works — 3-step process */}
+        <Suspense fallback={<LoadingSection />}>
+          <HowItWorks />
+        </Suspense>
+
+        {/* Value proposition */}
+        <Suspense fallback={<LoadingSection />}>
+          <Benefits />
+        </Suspense>
+
+        {/* Conversion CTA — urgency + link to /tienda */}
+        <Suspense fallback={<LoadingSection />}>
+          <CTABanner />
+        </Suspense>
+
+        {/* Social proof & brand */}
+        <Suspense fallback={<LoadingTestimonials />}>
+          <Testimonials />
+        </Suspense>
+        <Suspense fallback={<LoadingSection />}>
+          <BrandStory />
+        </Suspense>
+
+        {/* Support */}
+        <Suspense fallback={<LoadingFAQ />}>
+          <FAQ />
+        </Suspense>
+        <Suspense fallback={<LoadingSection />}>
+          <Contact />
+        </Suspense>
       </main>
       <Footer />
       <CartSidebar />
       <CustomerModal />
-      <ReviewModal />
       <CookieConsent />
-      <SocialProofToast />
-      <VolumeDiscount />
       <AccessibilityBar />
-      <BackInStock />
-      <SpinWheel />
       <UserAccountModal />
-      <OrderStatusModalWrapper />
       <MobileBottomNav />
+      <ExitIntentModal />
     </>
   );
 }
 
-function ProductCatalogSkeleton() {
+/* ── Loading States ── */
+function LoadingStats() {
+  return (
+    <section className="py-12 sm:py-16 bg-surface">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <StatsSkeleton />
+      </div>
+    </section>
+  );
+}
+
+function LoadingProducts() {
+  return (
+    <section className="py-20 sm:py-28 bg-white dark:bg-card">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionSkeleton />
+      </div>
+    </section>
+  );
+}
+
+function LoadingSection() {
+  return (
+    <section className="py-16 sm:py-20 bg-surface">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="space-y-8">
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LoadingTestimonials() {
+  return (
+    <section className="py-20 sm:py-28 bg-white dark:bg-card">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid md:grid-cols-3 gap-6">
+          <TestimonialSkeleton />
+          <TestimonialSkeleton />
+          <TestimonialSkeleton />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LoadingFAQ() {
   return (
     <section className="py-20 sm:py-28 bg-surface">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <div className="h-10 w-64 bg-gray-200 rounded-lg mx-auto animate-pulse" />
-          <div className="h-5 w-96 max-w-full bg-gray-100 rounded-lg mx-auto mt-4 animate-pulse" />
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-              <div className="aspect-square bg-gray-100 animate-pulse" />
-              <div className="p-3 space-y-2">
-                <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4" />
-                <div className="h-5 bg-gray-200 rounded animate-pulse w-1/2" />
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <FAQSkeleton />
       </div>
     </section>
   );

@@ -1,14 +1,22 @@
 export const dynamic = 'force-dynamic'
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { BundlesDB } from "@/lib/jsondb";
+import { requireAdmin } from "@/lib/require-admin";
+import { ALLOWED_ROLES } from "@/lib/auth/role-permissions";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req, ALLOWED_ROLES.BUNDLES_READ);
+  if (auth instanceof NextResponse) return auth;
+
   const { searchParams } = new URL(req.url);
   const activeOnly = searchParams.get("active") === "true";
   return NextResponse.json(activeOnly ? await BundlesDB.getActive() : await BundlesDB.getAll());
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req, ALLOWED_ROLES.BUNDLES_WRITE);
+  if (auth instanceof NextResponse) return auth;
+
   const body = await req.json();
   if (!body.name || !body.price || !Array.isArray(body.items) || body.items.length === 0) {
     return NextResponse.json({ error: "name, price, and items required" }, { status: 400 });

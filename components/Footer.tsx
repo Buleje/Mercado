@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  ShoppingBasket,
+  Store,
   MapPin,
   Phone,
   Clock,
@@ -13,34 +13,34 @@ import {
 } from "lucide-react";
 
 const perks = [
-  { icon: Truck, label: "Delivery Gratis en Pucallpa", color: "#52b788" },
+  { icon: Truck, label: "Delivery Gratis en Pucallpa", color: "#818cf8" },
   { icon: MessageCircle, label: "Pedidos por WhatsApp", color: "#25D366" },
   { icon: Clock, label: "Lun - Sáb: 7am - 9pm", color: "#f4a261" },
   { icon: ShieldCheck, label: "Pago con Yape o Efectivo", color: "#60a5fa" },
 ];
 
 const quickLinks = [
-  { href: "#inicio", label: "Inicio" },
-  { href: "#productos", label: "Productos" },
-  { href: "#beneficios", label: "Beneficios" },
-  { href: "#preguntas", label: "Preguntas Frecuentes" },
-  { href: "#contacto", label: "Contacto" },
+  { href: "/", label: "Inicio" },
+  { href: "/tienda", label: "Tienda" },
+  { href: "/#beneficios", label: "Beneficios" },
+  { href: "/#preguntas", label: "Preguntas Frecuentes" },
+  { href: "/#contacto", label: "Contacto" },
 ];
 
 const categoryLinks = [
-  { href: "#productos", label: "Abarrotes" },
-  { href: "#productos", label: "Bebidas" },
-  { href: "#productos", label: "Golosinas y Snacks" },
-  { href: "#productos", label: "Carne y Pollo" },
-  { href: "#productos", label: "Productos de Limpieza" },
-  { href: "#productos", label: "Artículos para el Hogar" },
+  { href: "/tienda", label: "Abarrotes" },
+  { href: "/tienda", label: "Bebidas" },
+  { href: "/tienda", label: "Golosinas y Snacks" },
+  { href: "/tienda", label: "Carne y Pollo" },
+  { href: "/tienda", label: "Productos de Limpieza" },
+  { href: "/tienda", label: "Artículos para el Hogar" },
 ];
 
 export default function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer style={{ background: "linear-gradient(180deg, #1b4332 0%, #132d22 100%)" }} className="text-white">
+    <footer style={{ background: "linear-gradient(180deg, #4f46e5 0%, #3730a3 100%)" }} className="text-white">
       {/* Perks Bar */}
       <div className="border-b border-white/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
@@ -66,8 +66,14 @@ export default function Footer() {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3 mb-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
-                <ShoppingBasket className="h-5.5 w-5.5 text-white" />
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-2xl"
+                style={{
+                  background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #3730a3 100%)",
+                  boxShadow: "0 4px 12px rgba(99,102,241,0.35)",
+                }}
+              >
+                <Store className="h-5 w-5 text-white" />
               </div>
               <div>
                 <span className="text-lg font-extrabold block leading-tight">Bodega San Martín</span>
@@ -184,28 +190,6 @@ export default function Footer() {
                 </span>
               </li>
             </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* WhatsApp CTA Banner */}
-      <div className="border-t border-white/8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/5 rounded-2xl p-5 sm:p-6 border border-white/8">
-            <div className="text-center sm:text-left">
-              <p className="text-white font-bold text-lg">¿Necesitas algo? Escríbenos</p>
-              <p className="text-white/50 text-sm mt-1">Respuesta inmediata por WhatsApp — te atendemos al instante</p>
-            </div>
-            <a
-              href="https://wa.me/51916409675?text=Hola%2C%20necesito%20ayuda"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-white transition-all hover:scale-[1.03] active:scale-[0.97] shadow-lg shrink-0"
-              style={{ background: "#25D366" }}
-            >
-              <MessageCircle className="h-4 w-4" />
-              Chatear ahora
-            </a>
           </div>
         </div>
       </div>

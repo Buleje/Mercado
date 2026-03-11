@@ -29,6 +29,7 @@ function useVisibleCount() {
 
 export default function FeaturedCarousel() {
   const [rawIdx, setIdx] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const { addItem } = useCart();
   const { showToast } = useToast();
   const n = FEATURED.length;
@@ -37,17 +38,14 @@ export default function FeaturedCarousel() {
   const idx = Math.min(rawIdx, maxIdx);
   const pausedRef = useRef(false);
 
-  const next = useCallback(() => {
-    if (pausedRef.current) return;
-    setIdx(i => (i >= maxIdx ? 0 : i + 1));
-  }, [maxIdx]);
-
-  const prev = useCallback(() => setIdx(i => (i <= 0 ? maxIdx : i - 1)), [maxIdx]);
+  // Unconditional nav for buttons and keyboard
+  const goNext = useCallback(() => setIdx(i => (i >= maxIdx ? 0 : i + 1)), [maxIdx]);
+  const goPrev = useCallback(() => setIdx(i => (i <= 0 ? maxIdx : i - 1)), [maxIdx]);
 
   useEffect(() => {
-    const t = setInterval(next, INTERVAL);
+    const t = setInterval(() => { if (!pausedRef.current) goNext(); }, INTERVAL);
     return () => clearInterval(t);
-  }, [next]);
+  }, [goNext]);
 
   if (n === 0) return null;
 
@@ -60,10 +58,24 @@ export default function FeaturedCarousel() {
             <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">Productos Destacados</h2>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={prev} aria-label="Anterior" className="h-8 w-8 rounded-full bg-white dark:bg-card border border-gray-200 dark:border-card-border flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+            <button
+              onClick={() => { setIsPaused(p => { pausedRef.current = !p; return !p; }); }}
+              aria-label={isPaused ? "Reanudar carrusel" : "Pausar carrusel"}
+              title={isPaused ? "Reanudar" : "Pausar"}
+              className="h-8 w-8 rounded-full bg-white dark:bg-card border border-gray-200 dark:border-card-border flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+            >
+              {isPaused
+                ? <ChevronRight className="h-3.5 w-3.5 text-primary" />
+                : <span className="flex gap-0.5">
+                    <span className="h-3 w-0.5 rounded-full bg-gray-500 dark:bg-muted" />
+                    <span className="h-3 w-0.5 rounded-full bg-gray-500 dark:bg-muted" />
+                  </span>
+              }
+            </button>
+            <button onClick={goPrev} aria-label="Anterior" className="h-8 w-8 rounded-full bg-white dark:bg-card border border-gray-200 dark:border-card-border flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
               <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-muted" />
             </button>
-            <button onClick={next} aria-label="Siguiente" className="h-8 w-8 rounded-full bg-white dark:bg-card border border-gray-200 dark:border-card-border flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+            <button onClick={goNext} aria-label="Siguiente" className="h-8 w-8 rounded-full bg-white dark:bg-card border border-gray-200 dark:border-card-border flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
               <ChevronRight className="h-4 w-4 text-gray-600 dark:text-muted" />
             </button>
           </div>
@@ -71,9 +83,16 @@ export default function FeaturedCarousel() {
 
         {/* Carousel track */}
         <div
-          className="overflow-hidden rounded-2xl"
+          className="overflow-hidden rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          role="region"
+          aria-label="Carrusel de productos destacados"
+          tabIndex={0}
           onMouseEnter={() => { pausedRef.current = true; }}
-          onMouseLeave={() => { pausedRef.current = false; }}
+          onMouseLeave={() => { if (!isPaused) pausedRef.current = false; }}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft") { e.preventDefault(); goPrev(); }
+            else if (e.key === "ArrowRight") { e.preventDefault(); goNext(); }
+          }}
         >
           <div
             className="flex transition-transform duration-500 ease-out"

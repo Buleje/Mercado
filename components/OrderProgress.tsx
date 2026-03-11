@@ -48,6 +48,7 @@ function simulateProgress(order: TrackedOrder): TrackedOrder["status"] {
 
 export default function OrderProgress() {
   const [order, setOrder] = useState<TrackedOrder | null>(null);
+  const [showAsModal, setShowAsModal] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const [dismissed, setDismissed] = useState(false);
 
@@ -65,7 +66,7 @@ export default function OrderProgress() {
           createdAt: new Date().toISOString(),
         };
         localStorage.setItem("bsm-active-order", JSON.stringify(newOrder));
-        startTransition(() => { setOrder(newOrder); setDismissed(false); });
+        startTransition(() => { setOrder(newOrder); setDismissed(false); setShowAsModal(true); });
       }
     };
     window.addEventListener("bsm:orderCreated", handleNewOrder);
@@ -93,6 +94,98 @@ export default function OrderProgress() {
 
   const currentIdx = STATUS_INDEX[order.status] ?? 0;
 
+  // Reusable progress content
+  const progressContent = (
+    <div className="space-y-0">
+      {STEPS.slice(0, 3).map((step, i) => {
+        const done = i <= currentIdx;
+        const active = i === currentIdx;
+        const StepIcon = step.icon;
+        return (
+          <div key={step.key} className="flex items-start gap-3">
+            <div className="flex flex-col items-center">
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center ${
+                done ? "bg-primary text-white" : "bg-gray-200 dark:bg-white/10 text-muted"
+              } ${active ? "ring-2 ring-primary/30" : ""}`}>
+                <StepIcon className="w-3.5 h-3.5" />
+              </div>
+              {i < 2 && (
+                <div className={`w-0.5 h-6 ${done ? "bg-primary" : "bg-gray-200 dark:bg-white/10"}`} />
+              )}
+            </div>
+            <div className="pt-1">
+              <p className={`text-sm font-semibold ${done ? "text-foreground" : "text-muted"}`}>{step.label}</p>
+              {active && (
+                <p className="text-xs text-primary flex items-center gap-1 mt-0.5">
+                  <Clock className="w-3 h-3" /> En progreso...
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // Show as centered modal when order just created
+  if (showAsModal) {
+    return (
+      <div className="fixed inset-0 z-[6002] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAsModal(false)} />
+        <div className="relative bg-white dark:bg-card rounded-3xl shadow-2xl border border-gray-100 dark:border-card-border w-full max-w-sm overflow-hidden animate-[scaleIn_0.25s_ease-out]">
+          {/* Modal header */}
+          <div className="px-6 pt-6 pb-4 text-center border-b border-gray-100 dark:border-card-border bg-gradient-to-b from-primary/5 to-transparent">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <div className="relative">
+                <AlertCircle className="w-8 h-8 text-amber-500 animate-pulse" />
+                <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-amber-500 animate-ping" />
+              </div>
+            </div>
+            <h3 className="text-xl font-extrabold text-foreground">¡Pedido recibido!</h3>
+            <p className="text-sm text-muted mt-1">
+              Pedido <span className="font-bold text-primary">#{order.id.slice(-6)}</span> — Confirmado
+            </p>
+            <button
+              onClick={() => setShowAsModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            >
+              <X className="w-4 h-4 text-muted" />
+            </button>
+          </div>
+
+          {/* Progress steps */}
+          <div className="px-6 py-5 space-y-4">
+            {progressContent}
+            {/* ETA */}
+            <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl px-4 py-3 border border-amber-100 dark:border-amber-700/30">
+              <p className="text-sm text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-2">
+                <Clock className="w-4 h-4 shrink-0" />
+                Tiempo estimado: {currentIdx < 2 ? "30-45 min" : "10-15 min"}
+              </p>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="px-6 pb-6 flex gap-3">
+            <button
+              onClick={() => { setShowAsModal(false); setDismissed(true); }}
+              className="flex-1 py-3 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-muted hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            >
+              Cerrar
+            </button>
+            <button
+              onClick={() => setShowAsModal(false)}
+              className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-md shadow-primary/25"
+            >
+              Seguir comprando
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Floating widget (after modal dismissed)
   return (
     <div className="fixed top-20 right-4 z-40 w-72 sm:w-80 bg-card border border-border rounded-2xl shadow-2xl shadow-black/8 overflow-hidden animate-[fadeDown_0.3s_ease-out]">
       {/* Header */}
@@ -120,16 +213,13 @@ export default function OrderProgress() {
       {/* Progress */}
       {expanded && (
         <div className="px-4 py-4 space-y-3">
-          {/* Steps */}
           <div className="space-y-0">
             {STEPS.slice(0, 3).map((step, i) => {
               const done = i <= currentIdx;
               const active = i === currentIdx;
               const StepIcon = step.icon;
-
               return (
                 <div key={step.key} className="flex items-start gap-3">
-                  {/* Dot + line */}
                   <div className="flex flex-col items-center">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
                       done ? "bg-primary text-white" : "bg-gray-200 dark:bg-white/10 text-muted"
@@ -140,11 +230,8 @@ export default function OrderProgress() {
                       <div className={`w-0.5 h-5 ${done ? "bg-primary" : "bg-gray-200 dark:bg-white/10"}`} />
                     )}
                   </div>
-                  {/* Label */}
                   <div className="pt-0.5">
-                    <p className={`text-xs font-semibold ${done ? "text-foreground" : "text-muted"}`}>
-                      {step.label}
-                    </p>
+                    <p className={`text-xs font-semibold ${done ? "text-foreground" : "text-muted"}`}>{step.label}</p>
                     {active && (
                       <p className="text-[10px] text-primary flex items-center gap-1 mt-0.5">
                         <Clock className="w-2.5 h-2.5" /> En progreso...
@@ -155,8 +242,6 @@ export default function OrderProgress() {
               );
             })}
           </div>
-
-          {/* ETA */}
           <div className="bg-amber-50 dark:bg-amber-900/10 rounded-lg px-3 py-2">
             <p className="text-xs text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1.5">
               <Clock className="w-3 h-3" />

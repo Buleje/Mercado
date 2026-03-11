@@ -170,6 +170,48 @@ export function CartProvider({ children }: { children: ReactNode }) {
     } catch {}
   }, []);
 
+  // Multi-tab cart sync with BroadcastChannel API
+  useEffect(() => {
+    if (typeof window === "undefined" || !("BroadcastChannel" in window)) {
+      return; // Skip on server or unsupported browsers
+    }
+
+    const channel = new BroadcastChannel("bsm-cart-sync");
+
+    // Listen to messages from other tabs
+    const handleMessage = (event: MessageEvent) => {
+      if (!event.data || typeof event.data !== "object") return;
+
+      const { type, payload } = event.data;
+
+      switch (type) {
+        case "CART_UPDATE":
+          // Sync cart items from another tab
+          if (Array.isArray(payload)) {
+            dispatch({ type: "HYDRATE", payload });
+          }
+          break;
+        case "CART_CLEAR":
+          dispatch({ type: "CLEAR" });
+          break;
+        case "PENDING_STATUS":
+          if (payload === true) {
+            dispatch({ type: "MARK_ORDER_PENDING" });
+          } else {
+            dispatch({ type: "CLEAR_PENDING_ORDER" });
+          }
+          break;
+      }
+    };
+
+    channel.addEventListener("message", handleMessage);
+
+    return () => {
+      channel.removeEventListener("message", handleMessage);
+      channel.close();
+    };
+  }, []);
+
   // Persist to localStorage
   useEffect(() => {
     localStorage.setItem("bsm-cart", JSON.stringify(state.items));
@@ -180,10 +222,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("bsm-cart-ts");
       localStorage.removeItem("bsm-cart-dismissed");
     }
+
+    // Broadcast cart changes to other tabs
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      try {
+        const channel = new BroadcastChannel("bsm-cart-sync");
+        channel.postMessage({ type: "CART_UPDATE", payload: state.items });
+        channel.close();
+      } catch {
+        // Silently fail if BroadcastChannel fails
+      }
+    }
   }, [state.items]);
 
   useEffect(() => {
     localStorage.setItem("bsm-pending", state.hasPendingOrder ? "1" : "0");
+
+    // Broadcast pending status to other tabs
+    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+      try {
+        const channel = new BroadcastChannel("bsm-cart-sync");
+        channel.postMessage({ type: "PENDING_STATUS", payload: state.hasPendingOrder });
+        channel.close();
+      } catch {
+        // Silently fail
+      }
+    }
   }, [state.hasPendingOrder]);
 
   const count = state.items.reduce((acc, i) => acc + i.quantity, 0);

@@ -22,7 +22,8 @@ export type NavLinkItem = { id: string; visible: boolean };
 
 export const DEFAULT_NAV_LINKS: NavLinkItem[] = [
   { id: "inicio", visible: true },
-  { id: "productos", visible: true },
+  { id: "tienda", visible: true },
+  { id: "categorias", visible: true },
   { id: "beneficios", visible: true },
   { id: "contacto", visible: true },
 ];

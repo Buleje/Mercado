@@ -1,32 +1,32 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
-import Image from "next/image";
 import dynamic from "next/dynamic";
 import { m, AnimatePresence } from "framer-motion";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   X, ShoppingCart, User, MapPin, Home, Navigation,
   Loader2, CheckCircle2, ChevronRight, Phone,
-  Banknote, Hash, ExternalLink, Copy, Check, Clock, MessageCircle, Share2,
+  Banknote, Hash, Clock,
 } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
 import { useSettings } from "@/contexts/settings-context";
 import { usePromotions } from "@/contexts/promotions-context";
 import { cn } from "@/lib/utils";
+import { trackPurchase } from "@/lib/analytics";
 import type { DbOrderItem } from "@/lib/jsondb";
-import type { SavedLocation } from "@/contexts/customer-context";
+import type { SavedLocation, Customer } from "@/contexts/customer-context";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
-const Confetti = dynamic(() => import("./Confetti"), { ssr: false });
 
-type Step = "resumen" | "datos" | "exito";
+type Step = "cuenta" | "datos" | "pago" | "exito";
 type PaymentMethod = "yape" | "efectivo";
 
 const STEPS: { id: Step; label: string }[] = [
-  { id: "resumen", label: "Resumen" },
+  { id: "cuenta", label: "Tu cuenta" },
   { id: "datos", label: "Tus datos" },
+  { id: "pago", label: "Pago" },
 ];
 
 function coordsFromLocation(loc: string) {
@@ -66,16 +66,16 @@ function StepBar({ current }: { current: Step }) {
 }
 
 export default function CheckoutModal() {
-  const { items, total, checkoutOpen, closeCheckout, clear, close: closeCart, openConfirmModal, markOrderPending } = useCart();
-  const { customer, register } = useCustomer();
+  const { items, total, checkoutOpen, closeCheckout, clear, close: closeCart, markOrderPending } = useCart();
+  const { customer, register, findByPhone, openOrderStatusModal } = useCustomer();
   const { yape, cashEnabled } = useSettings();
   const { getBestPromotion } = usePromotions();
 
-  const [step, setStep] = useState<Step>("resumen");
+  const [step, setStep] = useState<Step>("datos");
   const [submitting, setSubmitting] = useState(false);
-  const [orderId, setOrderId] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [, setOrderId] = useState("");
   const [submitError, setSubmitError] = useState("");
+  const [dataError, setDataError] = useState("");
 
   // Customer data fields
   const [name, setName] = useState("");
@@ -84,6 +84,7 @@ export default function CheckoutModal() {
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
   const [loadingGeo, setLoadingGeo] = useState(false);
+  const [geoError, setGeoError] = useState("");
   const [showMap, setShowMap] = useState(false);
   const [mapCoords, setMapCoords] = useState({ lat: -8.3791, lon: -74.5539 });
 
@@ -134,18 +135,31 @@ export default function CheckoutModal() {
   const [refSuggestions, setRefSuggestions] = useState<string[]>([]);
   const [showRefSuggestions, setShowRefSuggestions] = useState(false);
 
+  // Phone account lookup
+  const [phoneQuery, setPhoneQuery] = useState("");
+  const [phoneSearching, setPhoneSearching] = useState(false);
+  const [foundCustomer, setFoundCustomer] = useState<Customer | null>(null);
+  const [phoneNotFound, setPhoneNotFound] = useState(false);
+  const [editingCustomerData, setEditingCustomerData] = useState(false);
+  const [skippedAccount, setSkippedAccount] = useState(false);
+
   useScrollLock(checkoutOpen);
 
-  // Saved locations from customer
-  const locations: SavedLocation[] = customer?.locations?.length
-    ? customer.locations
-    : customer?.location
-    ? [{ id: "default", location: customer.location, reference: customer.reference }]
+  const effectiveCustomer = foundCustomer ?? customer;
+  const locations: SavedLocation[] = effectiveCustomer?.locations?.length
+    ? effectiveCustomer.locations
+    : effectiveCustomer?.location
+    ? [{ id: "default", location: effectiveCustomer.location, reference: effectiveCustomer.reference ?? "" }]
     : [];
 
   useEffect(() => {
     if (checkoutOpen) {
-      setStep("resumen");
+      setStep("cuenta");
+      setPhoneQuery(customer?.phone ?? "");
+      setFoundCustomer(null);
+      setPhoneNotFound(false);
+      setEditingCustomerData(false);
+      setSkippedAccount(false);
       setSubmitting(false);
       setOrderId("");
       setNotes("");
@@ -194,8 +208,12 @@ export default function CheckoutModal() {
   };
 
   const useGeo = () => {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) {
+      setGeoError("Tu navegador no soporta geolocalización. Ingresa tu dirección manualmente.");
+      return;
+    }
     setLoadingGeo(true);
+    setGeoError("");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const lat = pos.coords.latitude;
@@ -206,8 +224,17 @@ export default function CheckoutModal() {
         // Reverse geocode for reference suggestion
         fetchReferenceSuggestion(lat, lon);
       },
-      () => setLoadingGeo(false),
-      { enableHighAccuracy: true, timeout: 10000 }
+      (err) => {
+        setLoadingGeo(false);
+        setGeoError(
+          err.code === 1
+            ? "Permiso denegado. Habilita el GPS en tu navegador e intenta de nuevo."
+            : err.code === 3
+              ? "GPS tardó demasiado. Ingresa tu dirección manualmente."
+              : "No se pudo obtener tu ubicación. Ingresa tu dirección manualmente."
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
@@ -236,22 +263,91 @@ export default function CheckoutModal() {
     } catch { /* ignore */ }
   };
 
+  const handlePhoneSearch = async () => {
+    const q = phoneQuery.trim();
+    if (!q) return;
+    setPhoneSearching(true);
+    setPhoneNotFound(false);
+    const found = await findByPhone(q);
+    if (found) {
+      setFoundCustomer(found);
+      setName(found.name || "");
+      setPhone(found.phone ?? q);
+      const foundLocs: SavedLocation[] = found.locations?.length
+        ? found.locations
+        : found.location
+        ? [{ id: "default", location: found.location, reference: found.reference ?? "" }]
+        : [];
+      if (foundLocs.length > 0) {
+        const activeId = found.activeLocationId ?? foundLocs[0].id;
+        setSelectedLocId(activeId);
+        const activeLoc = foundLocs.find((l) => l.id === activeId) ?? foundLocs[0];
+        setLocation(activeLoc.location ?? "");
+        setReference(activeLoc.reference ?? "");
+        setMapCoords(coordsFromLocation(activeLoc.location ?? ""));
+      } else {
+        setLocation(found.location ?? "");
+        setReference(found.reference ?? "");
+        if (found.location) setMapCoords(coordsFromLocation(found.location));
+      }
+      setStep("datos");
+    } else {
+      setPhoneNotFound(true);
+    }
+    setPhoneSearching(false);
+  };
+
+  const handleSkipAccount = () => {
+    setFoundCustomer(null);
+    setSkippedAccount(true);
+    setEditingCustomerData(false);
+    setStep("datos");
+  };
+
   const handleSubmit = async () => {
     setSubmitting(true);
     setSubmitError("");
+
+    // Build effective values first so we can pre-flight validate
+    const effectiveName = (name || effectiveCustomer?.name || "").trim();
+    const effectivePhone = (phone || effectiveCustomer?.phone || "").replace(/\D/g, "").slice(-9);
+    const effectiveLoc = (location || effectiveCustomer?.location || "").trim();
+    const effectiveRef = (reference || effectiveCustomer?.reference || "").trim();
+    const effectivePayment = paymentMethod ?? "efectivo";
+
+    // Pre-flight guard — should rarely trigger thanks to UI validation
+    if (!effectiveName) {
+      setSubmitError("Por favor ingresa tu nombre completo.");
+      setSubmitting(false);
+      return;
+    }
+    if (!effectiveLoc) {
+      setSubmitError("Por favor ingresa tu dirección de entrega.");
+      setSubmitting(false);
+      return;
+    }
+
+    // Defensive: strip data-URIs and truncate long image URLs (API max 500 chars)
     const orderItems: DbOrderItem[] = items.map((i) => ({
       id: i.id, name: i.name, price: i.price,
-      quantity: i.quantity, unit: i.unit, image: i.image,
+      quantity: i.quantity, unit: i.unit,
+      image: (i.image && !i.image.startsWith("data:")) ? i.image.slice(0, 499) : "",
     }));
+
     const payload = JSON.stringify({
-      customer: { name: name.trim(), phone: phone.trim() || undefined, location: location.trim(), reference: reference.trim() },
+      customer: {
+        name: effectiveName,
+        phone: effectivePhone.length >= 6 ? effectivePhone : undefined,
+        location: effectiveLoc || undefined,
+        reference: effectiveRef || undefined,
+      },
       items: orderItems,
       total: finalTotal,
-      notes: notes.trim() || undefined,
+      notes: (notes ?? "").trim() || undefined,
       deliverySlot: deliverySlot !== "lo-antes-posible" ? deliverySlot : undefined,
-      paymentMethod: paymentMethod,
-      yapeOperationNumber: paymentMethod === "yape" ? yapeOpNumber.trim() : undefined,
-      deuda: paymentMethod === "efectivo" ? true : undefined,
+      paymentMethod: effectivePayment,
+      yapeOperationNumber: effectivePayment === "yape" ? yapeOpNumber.trim() : undefined,
+      deuda: effectivePayment === "efectivo" ? true : undefined,
       ...(promo && { appliedPromoId: promo.id, discountAmount: discount }),
       ...(couponApplied && couponCode.trim() && { appliedCouponCode: couponCode.trim(), couponDiscount }),
     });
@@ -272,34 +368,53 @@ export default function CheckoutModal() {
       if (res?.ok) {
         const data = await res.json() as { id: string };
         setOrderId(data.id);
-        setStep("exito");
         clear();
         closeCart();
         markOrderPending();
         window.dispatchEvent(new CustomEvent("bsm:orderCreated", { detail: { orderId: data.id } }));
-        // Auto-save address so it auto-fills next time
-        if (location.trim() && reference.trim()) {
-          const existingLocs: SavedLocation[] = customer?.locations ?? (
-            customer?.location ? [{ id: "default", location: customer.location, reference: customer.reference ?? "" }] : []
+        // Track purchase conversion
+        trackPurchase({
+          orderId: data.id,
+          total: finalTotal,
+          items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
+        });
+        // Auto-save customer so next checkout skips straight to datos
+        const finalPhone = effectivePhone.length >= 6 ? effectivePhone : (effectiveCustomer?.phone ?? "");
+        if (effectiveName && finalPhone) {
+          const existingLocs: SavedLocation[] = effectiveCustomer?.locations ?? (
+            effectiveCustomer?.location
+              ? [{ id: "default", location: effectiveCustomer.location, reference: effectiveCustomer.reference ?? "" }]
+              : []
           );
-          const alreadyExists = existingLocs.some(l => l.location.trim() === location.trim());
-          if (!alreadyExists) {
+          let updatedLocs = existingLocs;
+          let activeId = effectiveCustomer?.activeLocationId ?? existingLocs[0]?.id ?? null;
+          if (effectiveLoc && !existingLocs.some(l => l.location.trim() === effectiveLoc)) {
             const newLocId = Date.now().toString();
-            const newLoc: SavedLocation = { id: newLocId, location: location.trim(), reference: reference.trim() };
-            const finalPhone = phone.trim() || customer?.phone;
-            if (finalPhone) {
-              register({
-                name: name.trim() || customer?.name || "",
-                phone: finalPhone,
-                location: location.trim(),
-                reference: reference.trim(),
-                locations: [...existingLocs, newLoc],
-                activeLocationId: newLocId,
-              });
-            }
+            updatedLocs = [...existingLocs, { id: newLocId, location: effectiveLoc, reference: effectiveRef }];
+            activeId = newLocId;
           }
+          register({
+            name: effectiveName,
+            phone: finalPhone,
+            location: effectiveLoc || effectiveCustomer?.location || "",
+            reference: effectiveRef || effectiveCustomer?.reference || "",
+            locations: updatedLocs,
+            activeLocationId: activeId !== null ? activeId : undefined,
+          });
         }
+        // Open order tracking modal and close checkout
+        openOrderStatusModal();
+        closeCheckout();
       } else {
+        // Log the actual Zod issues so we can diagnose validation failures
+        try {
+          const errBody = await res!.json() as { error?: string; issues?: { path: (string | number)[]; message: string }[] };
+          if (errBody?.issues?.length) {
+            console.error("[orders] Validation issues:", errBody.issues);
+          } else {
+            console.error("[orders] Error response:", errBody);
+          }
+        } catch { /* response wasn't JSON */ }
         setSubmitError("No se pudo procesar tu pedido. Por favor intenta de nuevo.");
       }
     } catch {
@@ -308,7 +423,25 @@ export default function CheckoutModal() {
     setSubmitting(false);
   };
 
+  // datos step: validate required fields then advance to pago
   const handleDataSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    setDataError("");
+    const effectiveName = (name || effectiveCustomer?.name || "").trim();
+    const effectiveLoc = (location || effectiveCustomer?.location || "").trim();
+    if (!effectiveName) {
+      setDataError("Por favor ingresa tu nombre completo.");
+      return;
+    }
+    if (!effectiveLoc) {
+      setDataError("Por favor ingresa tu dirección de entrega.");
+      return;
+    }
+    setStep("pago");
+  };
+
+  // pago step: validate payment then submit
+  const handlePaymentSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!canConfirm) {
       setShowPaymentHint(true);
@@ -328,7 +461,7 @@ export default function CheckoutModal() {
           <m.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-7500 bg-black/60 backdrop-blur-sm"
-            onClick={step !== "exito" ? closeCheckout : undefined}
+            onClick={closeCheckout}
           />
           <m.div
             initial={{ opacity: 0, y: 48 }}
@@ -349,78 +482,139 @@ export default function CheckoutModal() {
                     <ShoppingCart className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <h2 className="font-extrabold text-gray-900 leading-tight">
-                      {step === "exito" ? "¡Pedido confirmado!" : "Completar pedido"}
-                    </h2>
-                    <p className="text-xs text-gray-400">
-                      {step === "exito" ? `Nº ${orderId}` : "Bodega San Martín"}
-                    </p>
+                    <h2 className="font-extrabold text-gray-900 leading-tight">Completar pedido</h2>
+                    <p className="text-xs text-gray-400">Bodega San Martín</p>
                   </div>
                 </div>
-                {step !== "exito" && (
-                  <button onClick={closeCheckout} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                    <X className="h-5 w-5 text-gray-400" />
-                  </button>
-                )}
+                <button onClick={closeCheckout} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                  <X className="h-5 w-5 text-gray-400" />
+                </button>
               </div>
 
-              {step !== "exito" && <StepBar current={step} />}
+              <StepBar current={step} />
 
               <div className="flex-1 overflow-y-auto">
                 <AnimatePresence mode="wait">
 
-                  {/* ── Step: Resumen ─────────────────────── */}
-                  {step === "resumen" && (
-                    <m.div key="resumen" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <div className="px-5 py-4 space-y-3">
-                        {items.length === 0 ? (
-                          <p className="text-center text-gray-400 py-10">Tu carrito está vacío</p>
-                        ) : (
+                  {/* ── Step: Cuenta ──────────────────────── */}
+                  {step === "cuenta" && (
+                    <m.div key="cuenta" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>
+                      <div className="px-5 py-6 space-y-5">
+                        <div className="text-center space-y-2">
+                          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                            <User className="h-8 w-8 text-primary" />
+                          </div>
+                          <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">¿Ya tienes cuenta?</h3>
+                          <p className="text-sm text-gray-400">
+                            Ingresa tu celular para cargar tus datos guardados automáticamente.
+                          </p>
+                        </div>
+
+                        {/* Quick-continue card if customer already in context */}
+                        {customer && (
                           <>
-                            {items.map((item) => (
-                              <div key={item.id} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
-                                <div className="relative h-14 w-14 rounded-lg overflow-hidden bg-white shrink-0 border border-gray-100">
-                                  <Image src={item.image} alt={item.name} fill className="object-cover" sizes="56px" />
+                            <div className="bg-primary/5 border-2 border-primary/20 rounded-2xl p-4">
+                              <p className="text-[10px] font-bold text-primary/70 uppercase tracking-wider mb-3">Cuenta guardada</p>
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                                  <User className="h-5 w-5 text-primary" />
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-sm text-gray-900 line-clamp-1">{item.name}</p>
-                                  <p className="text-xs text-gray-400">S/{item.price.toFixed(2)} / {item.unit} · x{item.quantity}</p>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-gray-900 dark:text-foreground text-sm leading-tight">{customer.name}</p>
+                                  {customer.phone && (
+                                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                                      <Phone className="h-3 w-3" />{customer.phone}
+                                    </p>
+                                  )}
                                 </div>
-                                <p className="font-bold text-primary shrink-0">S/{(item.price * item.quantity).toFixed(2)}</p>
                               </div>
-                            ))}
-                            <div className="flex items-center justify-between pt-2 border-t">
-                              <span className="text-sm font-semibold text-gray-500">Total</span>
-                              <div className="text-right">
-                                {(promo || couponApplied) && (
-                                  <p className="text-xs text-gray-400 line-through leading-none">S/{total.toFixed(2)}</p>
-                                )}
-                                <span className="text-2xl font-extrabold text-primary">S/{finalTotal.toFixed(2)}</span>
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                setFoundCustomer(customer);
+                                setName(customer.name);
+                                setPhone(customer.phone ?? "");
+                                const cLocs: SavedLocation[] = customer.locations?.length
+                                  ? customer.locations
+                                  : customer.location
+                                  ? [{ id: "default", location: customer.location, reference: customer.reference ?? "" }]
+                                  : [];
+                                if (cLocs.length > 0) {
+                                  const aId = customer.activeLocationId ?? cLocs[0].id;
+                                  const aLoc = cLocs.find((l) => l.id === aId) ?? cLocs[0];
+                                  setSelectedLocId(aId);
+                                  setLocation(aLoc.location ?? "");
+                                  setReference(aLoc.reference ?? "");
+                                  setMapCoords(coordsFromLocation(aLoc.location ?? ""));
+                                }
+                                setStep("datos");
+                              }}
+                                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20"
+                              >
+                                Continuar como {customer.name?.split(" ")[0] ?? "tí"} <ChevronRight className="h-4 w-4" />
+                              </button>
                             </div>
-                            {promo && (
-                              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
-                                <span className="text-emerald-600 font-bold text-sm">🏷️ {promo.name}</span>
-                                <span className="ml-auto text-emerald-700 font-bold text-sm">-{promo.discountPercent}%</span>
-                              </div>
-                            )}
-                            {couponApplied && couponDiscount > 0 && (
-                              <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3 py-2">
-                                <span className="text-blue-600 font-bold text-sm">🎟️ Cupón: {couponCode}</span>
-                                <span className="ml-auto text-blue-700 font-bold text-sm">-S/{couponDiscount.toFixed(2)}</span>
-                              </div>
-                            )}
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                              <span className="text-xs text-gray-400 font-medium">o buscar otro número</span>
+                              <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                            </div>
                           </>
                         )}
-                      </div>
-                      <div className="px-5 pb-5">
-                        <button
-                          onClick={() => setStep("datos")}
-                          disabled={items.length === 0}
-                          className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
-                        >
-                          Continuar con mis datos <ChevronRight className="h-4 w-4" />
-                        </button>
+
+                        {/* Phone search */}
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">
+                              Número de celular
+                            </label>
+                            <div className="relative">
+                              <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                              <input
+                                type="tel"
+                                value={phoneQuery}
+                                onChange={(e) => { setPhoneQuery(e.target.value); setPhoneNotFound(false); }}
+                                placeholder="Ej: 987654321"
+                                maxLength={15}
+                                onKeyDown={(e) => e.key === "Enter" && handlePhoneSearch()}
+                                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                              />
+                            </div>
+                          </div>
+
+                          {phoneNotFound && (
+                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30">
+                              <X className="h-4 w-4 text-red-500 shrink-0" />
+                              <p className="text-xs text-red-600 dark:text-red-400 font-semibold">
+                                No encontramos una cuenta con ese número.
+                              </p>
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={handlePhoneSearch}
+                            disabled={!phoneQuery.trim() || phoneSearching}
+                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
+                          >
+                            {phoneSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}
+                            {phoneSearching ? "Buscando cuenta…" : "Buscar mi cuenta"}
+                          </button>
+
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                            <span className="text-xs text-gray-400 font-medium">o</span>
+                            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handleSkipAccount}
+                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:border-primary/30 hover:text-primary transition-all"
+                          >
+                            Continuar sin cuenta <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     </m.div>
                   )}
@@ -429,123 +623,165 @@ export default function CheckoutModal() {
                   {step === "datos" && (
                     <m.div key="datos" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
                       <form onSubmit={handleDataSubmit} className="px-5 py-4 space-y-4">
-                        <div>
-                          <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Nombre completo *</label>
-                          <div className="relative">
-                            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: María García"
-                              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Teléfono</label>
-                          <div className="relative">
-                            <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Ej: 987654321" maxLength={15}
-                              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
-                          </div>
-                        </div>
 
-                        {/* Saved addresses selector */}
-                        {locations.length > 0 && !useNewAddress && (
-                          <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Dirección de entrega</label>
-                            <div className="space-y-2">
-                              {locations.map((loc) => (
-                                <button
-                                  type="button"
-                                  key={loc.id}
-                                  onClick={() => handleSelectLocation(loc)}
-                                  className={cn(
-                                    "w-full text-left flex items-start gap-3 p-3 rounded-xl border-2 transition-all",
-                                    selectedLocId === loc.id
-                                      ? "border-primary bg-primary/5"
-                                      : "border-gray-100 hover:border-primary/30"
-                                  )}
-                                >
-                                  <div className={cn(
-                                    "mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0",
-                                    selectedLocId === loc.id ? "border-primary bg-primary" : "border-gray-300"
-                                  )}>
-                                    {selectedLocId === loc.id && <CheckCircle2 className="h-3.5 w-3.5 text-white fill-white" />}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className={cn("text-sm font-semibold truncate", selectedLocId === loc.id ? "text-primary" : "text-gray-900")}>{loc.location}</p>
-                                    <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
-                                      <Home className="h-3 w-3 shrink-0" />{loc.reference}
-                                    </p>
-                                  </div>
-                                </button>
-                              ))}
-                              <button
-                                type="button"
-                                onClick={handleNewAddress}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm font-semibold text-gray-400 hover:text-primary hover:border-primary/30 transition-all"
-                              >
-                                <MapPin className="h-4 w-4" /> Usar otra dirección
-                              </button>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Manual address input (shown if no saved locations or "use new") */}
-                        {(locations.length === 0 || useNewAddress) && (
-                          <>
-                            <div>
-                              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Dirección *</label>
-                              <div className="relative">
-                                <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                <input required value={location} onChange={(e) => { setLocation(e.target.value); setMapCoords(coordsFromLocation(e.target.value)); }}
-                                  placeholder="Ej: Jr. Ucayali 450, Pucallpa"
-                                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                        {/* ── CASO A: cuenta cargada → card de sólo lectura ── */}
+                        {(foundCustomer !== null || (customer !== null && !skippedAccount)) && !editingCustomerData ? (
+                          <div className="rounded-2xl border-2 border-primary/20 bg-primary/5 overflow-hidden">
+                            {/* header */}
+                            <div className="flex items-center justify-between px-4 py-2.5 border-b border-primary/10 bg-white/60 dark:bg-black/10">
+                              <div className="flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
+                                  {foundCustomer ? "Cuenta verificada" : "Datos guardados"}
+                                </span>
                               </div>
-                              <button type="button" onClick={useGeo} disabled={loadingGeo}
-                                className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-primary/25 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary hover:text-white hover:border-primary transition-all disabled:opacity-50">
-                                {loadingGeo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
-                                {loadingGeo ? "Obteniendo ubicación…" : "Usar mi ubicación GPS"}
+                              <button type="button" onClick={() => setEditingCustomerData(true)}
+                                className="text-xs font-semibold text-primary hover:underline">
+                                Cambiar datos
                               </button>
                             </div>
-                            <div>
-                              <button type="button" onClick={() => setShowMap((v) => !v)}
-                                className="text-xs font-semibold text-primary hover:underline mb-2 flex items-center gap-1">
-                                <MapPin className="h-3 w-3" /> {showMap ? "Ocultar mapa" : "Ver / ajustar en mapa"}
-                              </button>
-                              {showMap && (
-                                <div className="rounded-xl overflow-hidden" style={{ height: 160 }}>
-                                  <LeafletMap lat={mapCoords.lat} lon={mapCoords.lon} zoom={15} height={160}
-                                    onPick={(lt, lg, addr) => {
-                                      setMapCoords({ lat: lt, lon: lg });
-                                      setLocation(addr);
-                                      fetchReferenceSuggestion(lt, lg);
-                                    }} />
+                            {/* rows */}
+                            <div className="divide-y divide-primary/10">
+                              <div className="flex items-center gap-3 px-4 py-3">
+                                <User className="h-4 w-4 text-primary/60 shrink-0" />
+                                <div>
+                                  <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider leading-none mb-0.5">Nombre</p>
+                                  <p className="text-sm font-bold text-gray-900 dark:text-foreground">{name}</p>
+                                </div>
+                              </div>
+                              {phone && (
+                                <div className="flex items-center gap-3 px-4 py-3">
+                                  <Phone className="h-4 w-4 text-primary/60 shrink-0" />
+                                  <div>
+                                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider leading-none mb-0.5">Teléfono</p>
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-foreground">{phone}</p>
+                                  </div>
+                                </div>
+                              )}
+                              {location && (
+                                <div className="flex items-start gap-3 px-4 py-3">
+                                  <MapPin className="h-4 w-4 text-primary/60 shrink-0 mt-0.5" />
+                                  <div>
+                                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider leading-none mb-0.5">Dirección</p>
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-foreground">{location}</p>
+                                  </div>
+                                </div>
+                              )}
+                              {reference && (
+                                <div className="flex items-start gap-3 px-4 py-3">
+                                  <Home className="h-4 w-4 text-primary/60 shrink-0 mt-0.5" />
+                                  <div>
+                                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider leading-none mb-0.5">Referencia</p>
+                                    <p className="text-sm font-semibold text-gray-800 dark:text-foreground">{reference}</p>
+                                  </div>
                                 </div>
                               )}
                             </div>
+                          </div>
+                        ) : (
+                          /* ── CASO B: sin cuenta / editando → formulario completo ── */
+                          <>
+                            {/* Name */}
                             <div>
-                              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Referencia *</label>
+                              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Nombre completo *</label>
                               <div className="relative">
-                                <Home className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                <input required value={reference} onChange={(e) => { setReference(e.target.value); setShowRefSuggestions(false); }}
-                                  placeholder="Ej: Casa azul frente al parque"
-                                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: María García"
+                                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
                               </div>
-                              {/* Reference suggestions from geocoding */}
-                              {showRefSuggestions && refSuggestions.length > 0 && (
-                                <div className="mt-2 space-y-1">
-                                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Sugerencias de referencia:</p>
-                                  {refSuggestions.map((s, i) => (
-                                    <button
-                                      key={i}
-                                      type="button"
-                                      onClick={() => { setReference(s); setShowRefSuggestions(false); }}
-                                      className="w-full text-left text-xs px-3 py-2 rounded-lg bg-primary/5 text-primary font-medium hover:bg-primary/10 transition-colors"
-                                    >
-                                      📍 {s}
+                            </div>
+                            {/* Phone */}
+                            <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Teléfono</label>
+                              <div className="relative">
+                                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Ej: 987654321" maxLength={15}
+                                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                              </div>
+                            </div>
+                            {/* Saved addresses selector */}
+                            {locations.length > 0 && !useNewAddress && (
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Dirección de entrega</label>
+                                <div className="space-y-2">
+                                  {locations.map((loc) => (
+                                    <button type="button" key={loc.id} onClick={() => handleSelectLocation(loc)}
+                                      className={cn("w-full text-left flex items-start gap-3 p-3 rounded-xl border-2 transition-all",
+                                        selectedLocId === loc.id ? "border-primary bg-primary/5" : "border-gray-100 hover:border-primary/30")}>
+                                      <div className={cn("mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0",
+                                        selectedLocId === loc.id ? "border-primary bg-primary" : "border-gray-300")}>
+                                        {selectedLocId === loc.id && <CheckCircle2 className="h-3.5 w-3.5 text-white fill-white" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className={cn("text-sm font-semibold truncate", selectedLocId === loc.id ? "text-primary" : "text-gray-900")}>{loc.location}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><Home className="h-3 w-3 shrink-0" />{loc.reference}</p>
+                                      </div>
                                     </button>
                                   ))}
+                                  <button type="button" onClick={handleNewAddress}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm font-semibold text-gray-400 hover:text-primary hover:border-primary/30 transition-all">
+                                    <MapPin className="h-4 w-4" /> Usar otra dirección
+                                  </button>
                                 </div>
-                              )}
-                            </div>
+                              </div>
+                            )}
+                            {/* Manual address input */}
+                            {(locations.length === 0 || useNewAddress) && (
+                              <>
+                                <div>
+                                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Dirección *</label>
+                                  <div className="relative">
+                                    <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <input required value={location} onChange={(e) => { setLocation(e.target.value); setMapCoords(coordsFromLocation(e.target.value)); }}
+                                      placeholder="Ej: Jr. Ucayali 450, Pucallpa"
+                                      className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                                  </div>
+                                  <button type="button" onClick={useGeo} disabled={loadingGeo}
+                                    className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-primary/25 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary hover:text-white hover:border-primary transition-all disabled:opacity-50">
+                                    {loadingGeo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                                    {loadingGeo ? "Obteniendo ubicación…" : "Usar mi ubicación GPS"}
+                                  </button>
+                                  {geoError && (
+                                    <p className="mt-1.5 text-xs text-red-500 flex items-start gap-1.5">
+                                      <span className="shrink-0 mt-0.5">⚠️</span>
+                                      {geoError}
+                                    </p>
+                                  )}
+                                </div>
+                                <div>
+                                  <button type="button" onClick={() => setShowMap((v) => !v)}
+                                    className="text-xs font-semibold text-primary hover:underline mb-2 flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" /> {showMap ? "Ocultar mapa" : "Ver / ajustar en mapa"}
+                                  </button>
+                                  {showMap && (
+                                    <div className="rounded-xl overflow-hidden" style={{ height: 160 }}>
+                                      <LeafletMap lat={mapCoords.lat} lon={mapCoords.lon} zoom={15} height={160}
+                                        onPick={(lt, lg, addr) => { setMapCoords({ lat: lt, lon: lg }); setLocation(addr); fetchReferenceSuggestion(lt, lg); }} />
+                                    </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Referencia *</label>
+                                  <div className="relative">
+                                    <Home className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <input required value={reference} onChange={(e) => { setReference(e.target.value); setShowRefSuggestions(false); }}
+                                      placeholder="Ej: Casa azul frente al parque"
+                                      className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                                  </div>
+                                  {showRefSuggestions && refSuggestions.length > 0 && (
+                                    <div className="mt-2 space-y-1">
+                                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Sugerencias de referencia:</p>
+                                      {refSuggestions.map((s, i) => (
+                                        <button key={i} type="button" onClick={() => { setReference(s); setShowRefSuggestions(false); }}
+                                          className="w-full text-left text-xs px-3 py-2 rounded-lg bg-primary/5 text-primary font-medium hover:bg-primary/10 transition-colors">
+                                          📍 {s}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </>
+                            )}
                           </>
                         )}
 
@@ -587,12 +823,83 @@ export default function CheckoutModal() {
                           </div>
                         </div>
 
-                        {/* ── Cupón de descuento ─────────────── */}
+                        {/* datos validation error */}
+                        {dataError && (
+                          <p className="text-red-600 dark:text-red-400 text-sm text-center flex items-center justify-center gap-1.5">
+                            <span aria-hidden>⚠</span>{dataError}
+                          </p>
+                        )}
+
+                        {/* datos → continue to pago */}
+                        <div className="flex gap-3 pt-1">
+                          <button type="button" onClick={() => setStep("cuenta")}
+                            className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                            ← Volver
+                          </button>
+                          <button type="submit"
+                            className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                            Continuar al pago <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </form>
+                    </m.div>
+                  )}
+
+                  {/* ── Step: Pago ───────────────────────── */}
+                  {step === "pago" && (
+                    <m.div key="pago" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                      <form onSubmit={handlePaymentSubmit} className="px-5 py-4 space-y-4">
+
+                        {/* ── Items list ───────────────────── */}
+                        <div>
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tu pedido ({items.length} {items.length === 1 ? "producto" : "productos"})</p>
+                          <div className="rounded-xl border border-gray-100 dark:border-card-border divide-y divide-gray-50 dark:divide-card-border max-h-50 overflow-y-auto">
+                            {items.map((item) => (
+                              <div key={item.id} className="flex items-center gap-3 px-3 py-2.5">
+                                {item.image && (
+                                  /* eslint-disable-next-line @next/next/no-img-element */
+                                  <img src={item.image} alt={item.name} className="h-9 w-9 rounded-lg object-cover shrink-0 bg-gray-100" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-semibold text-gray-800 dark:text-foreground truncate">{item.name}</p>
+                                  <p className="text-[10px] text-gray-400">{item.unit} × {item.quantity}</p>
+                                </div>
+                                <p className="text-sm font-bold text-gray-900 dark:text-foreground shrink-0">S/{(item.price * item.quantity).toFixed(2)}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* ── Totals ───────────────────────── */}
+                        <div className="rounded-xl border border-gray-100 dark:border-card-border divide-y divide-gray-50 dark:divide-card-border overflow-hidden">
+                          <div className="flex justify-between px-4 py-2.5 text-sm bg-gray-50/50 dark:bg-surface/50">
+                            <span className="text-gray-500">Subtotal</span>
+                            <span className="font-semibold text-gray-800 dark:text-foreground">S/{total.toFixed(2)}</span>
+                          </div>
+                          {discount > 0 && promo && (
+                            <div className="flex justify-between px-4 py-2.5 text-sm bg-emerald-50/50 dark:bg-emerald-900/10">
+                              <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Promo {promo.discountPercent}% off</span>
+                              <span className="font-bold text-emerald-600">−S/{discount.toFixed(2)}</span>
+                            </div>
+                          )}
+                          {couponApplied && couponDiscount > 0 && (
+                            <div className="flex justify-between px-4 py-2.5 text-sm bg-emerald-50/50 dark:bg-emerald-900/10">
+                              <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Cupón {couponCode}</span>
+                              <span className="font-bold text-emerald-600">−S/{couponDiscount.toFixed(2)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between items-center px-4 py-3 bg-primary/5 dark:bg-primary/10">
+                            <span className="font-extrabold text-gray-900 dark:text-foreground">Total a pagar</span>
+                            <span className="text-xl font-extrabold text-primary">S/{finalTotal.toFixed(2)}</span>
+                          </div>
+                        </div>
+
+                        {/* ── Cupón ───────────────────────── */}
                         <div>
                           <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Cupón de descuento</label>
                           <div className="flex gap-2">
                             <input value={couponCode} onChange={e => { setCouponCode(e.target.value.toUpperCase()); if (couponApplied) { setCouponApplied(false); setCouponDiscount(0); setCouponMsg(""); } }} placeholder="Ej: DESCUENTO10" disabled={couponApplied}
-                              className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm disabled:opacity-50 uppercase" />
+                              className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm disabled:opacity-50 uppercase" />
                             {couponApplied ? (
                               <button type="button" onClick={() => { setCouponApplied(false); setCouponDiscount(0); setCouponCode(""); setCouponMsg(""); }} className="px-4 py-2 rounded-xl bg-red-100 text-red-600 font-bold text-sm hover:bg-red-200 transition">Quitar</button>
                             ) : (
@@ -604,36 +911,22 @@ export default function CheckoutModal() {
                           {couponMsg && <p className={`text-xs mt-1 font-bold ${couponApplied ? "text-emerald-600" : "text-red-500"}`}>{couponMsg}</p>}
                         </div>
 
-                        {/* ── Método de pago ────────────────── */}
+                        {/* ── Método de pago ───────────────── */}
                         <div className="space-y-3">
                           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Método de pago</p>
                           <div className="grid grid-cols-2 gap-3">
                             {yape.enabled && (
-                              <button
-                                type="button"
-                                onClick={() => { setPaymentMethod("yape"); setShowPaymentHint(false); }}
-                                className={cn(
-                                  "flex flex-col items-center gap-2 py-4 px-3 rounded-xl border-2 transition-all",
-                                  paymentMethod === "yape"
-                                    ? "border-purple-400 bg-purple-50 shadow-sm"
-                                    : "border-gray-200 hover:border-purple-300"
-                                )}
-                              >
+                              <button type="button" onClick={() => { setPaymentMethod("yape"); setShowPaymentHint(false); }}
+                                className={cn("flex flex-col items-center gap-2 py-4 px-3 rounded-xl border-2 transition-all",
+                                  paymentMethod === "yape" ? "border-purple-400 bg-purple-50 shadow-sm" : "border-gray-200 hover:border-purple-300")}>
                                 <div className="h-10 w-10 rounded-xl bg-purple-600 flex items-center justify-center text-white font-extrabold text-lg">Y</div>
                                 <span className={cn("text-sm font-bold", paymentMethod === "yape" ? "text-purple-700" : "text-gray-500")}>Yape</span>
                               </button>
                             )}
                             {cashEnabled && (
-                              <button
-                                type="button"
-                                onClick={() => { setPaymentMethod("efectivo"); setShowPaymentHint(false); }}
-                                className={cn(
-                                  "flex flex-col items-center gap-2 py-4 px-3 rounded-xl border-2 transition-all",
-                                  paymentMethod === "efectivo"
-                                    ? "border-emerald-400 bg-emerald-50 shadow-sm"
-                                    : "border-gray-200 hover:border-emerald-300"
-                                )}
-                              >
+                              <button type="button" onClick={() => { setPaymentMethod("efectivo"); setShowPaymentHint(false); }}
+                                className={cn("flex flex-col items-center gap-2 py-4 px-3 rounded-xl border-2 transition-all",
+                                  paymentMethod === "efectivo" ? "border-emerald-400 bg-emerald-50 shadow-sm" : "border-gray-200 hover:border-emerald-300")}>
                                 <Banknote className={cn("h-10 w-10", paymentMethod === "efectivo" ? "text-emerald-600" : "text-gray-400")} />
                                 <span className={cn("text-sm font-bold", paymentMethod === "efectivo" ? "text-emerald-700" : "text-gray-500")}>Efectivo</span>
                               </button>
@@ -641,10 +934,10 @@ export default function CheckoutModal() {
                           </div>
                           {paymentMethod === "yape" && yape.enabled && (
                             <div className="bg-purple-50 rounded-2xl border border-purple-200 p-4 space-y-4">
-                              <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Realizar pago con Yape</p>
+                              <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Pago con Yape</p>
                               <div className="flex flex-col items-center gap-3">
                                 {yape.image && (
-                                  <div className="relative w-48 h-48 rounded-xl overflow-hidden border-2 border-purple-200 bg-white">
+                                  <div className="relative w-40 h-40 rounded-xl overflow-hidden border-2 border-purple-200 bg-white">
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={yape.image} alt="Yape QR" className="w-full h-full object-contain" />
                                   </div>
@@ -653,26 +946,19 @@ export default function CheckoutModal() {
                                   {yape.name && <p className="font-bold text-gray-900">{yape.name}</p>}
                                   {yape.phone && <p className="text-sm font-mono text-purple-700">{yape.phone}</p>}
                                 </div>
-                                <div className="bg-purple-100 rounded-xl px-4 py-2.5 text-center">
+                                <div className="bg-purple-100 rounded-xl px-4 py-2 text-center">
                                   <p className="text-xs text-purple-600 font-semibold">Monto a yapear</p>
                                   <p className="text-2xl font-extrabold text-purple-800">S/{finalTotal.toFixed(2)}</p>
                                 </div>
                               </div>
                               <div>
-                                <label className="block text-xs font-bold text-purple-600 mb-1.5 uppercase tracking-wider">
-                                  Número de operación *
-                                </label>
+                                <label className="block text-xs font-bold text-purple-600 mb-1.5 uppercase tracking-wider">Número de operación *</label>
                                 <div className="relative">
                                   <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-400" />
-                                  <input
-                                    value={yapeOpNumber}
-                                    onChange={(e) => setYapeOpNumber(e.target.value)}
-                                    placeholder="Ej: 123456789"
-                                    maxLength={20}
-                                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-purple-200 text-gray-900 placeholder:text-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all text-sm font-mono"
-                                  />
+                                  <input value={yapeOpNumber} onChange={(e) => setYapeOpNumber(e.target.value)} placeholder="Ej: 123456789" maxLength={20}
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-purple-200 text-gray-900 placeholder:text-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all text-sm font-mono" />
                                 </div>
-                                <p className="text-[10px] text-purple-500 mt-1">Ingresa el número de operación que aparece en tu Yape después de realizar el pago</p>
+                                <p className="text-[10px] text-purple-500 mt-1">Número de operación de tu app Yape</p>
                               </div>
                             </div>
                           )}
@@ -689,9 +975,7 @@ export default function CheckoutModal() {
                           )}
                           {showPaymentHint && (
                             <p className="text-xs text-red-500 font-semibold">
-                              {!paymentMethod
-                                ? "Selecciona un método de pago para continuar"
-                                : "Ingresa el número de operación de Yape para continuar"}
+                              {!paymentMethod ? "Selecciona un método de pago para continuar" : "Ingresa el número de operación de Yape para continuar"}
                             </p>
                           )}
                         </div>
@@ -706,132 +990,17 @@ export default function CheckoutModal() {
                         )}
 
                         <div className="flex gap-3 pt-1">
-                          <button type="button" onClick={() => setStep("resumen")}
+                          <button type="button" onClick={() => setStep("datos")}
                             className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
                             ← Volver
                           </button>
                           <button type="submit" disabled={submitting}
                             className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 flex items-center justify-center gap-2">
-                            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                            {submitting ? "Enviando…" : "Realizar pedido"}
+                            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                            {submitting ? "Enviando…" : "Finalizar pedido"}
                           </button>
                         </div>
                       </form>
-                    </m.div>
-                  )}
-
-                  {/* ── Step: Éxito ───────────────────────── */}
-                  {step === "exito" && (
-                    <m.div key="exito" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ type: "spring", damping: 20, stiffness: 280 }}
-                      className="px-6 py-8 flex flex-col items-center text-center gap-4">
-                      <Confetti active={step === "exito"} />
-                      <m.div
-                        initial={{ scale: 0 }} animate={{ scale: 1 }}
-                        transition={{ type: "spring", delay: 0.1, damping: 14, stiffness: 260 }}
-                        className="h-20 w-20 rounded-full bg-emerald-100 flex items-center justify-center"
-                      >
-                        <CheckCircle2 className="h-10 w-10 text-emerald-500" />
-                      </m.div>
-                      <div>
-                        <h3 className="text-2xl font-extrabold text-foreground mb-1">¡Pedido recibido!</h3>
-                        <p className="text-muted text-sm">Pronto nos comunicaremos contigo para coordinar la entrega.</p>
-                      </div>
-                      <div className="bg-gray-50 dark:bg-surface rounded-xl px-5 py-3 w-full text-left space-y-1">
-                        <p className="text-xs text-muted font-semibold uppercase tracking-wider">Número de pedido</p>
-                        <p className="font-mono text-sm font-bold text-primary">{orderId}</p>
-                      </div>
-                      {paymentMethod && (
-                        <div className="bg-gray-50 dark:bg-surface rounded-xl px-5 py-3 w-full text-left space-y-1">
-                          <p className="text-xs text-muted font-semibold uppercase tracking-wider">Método de pago</p>
-                          <p className="text-sm font-bold text-foreground">
-                            {paymentMethod === "yape" ? `Yape — Nº Op. ${yapeOpNumber}` : "Efectivo contra entrega"}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* ── Tracking link ──────────────────── */}
-                      {orderId && (
-                        <div className="w-full rounded-2xl border-2 border-primary/20 bg-primary/5 p-4 space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <p className="text-xs font-bold text-primary uppercase tracking-wider">Seguimiento en vivo</p>
-                          </div>
-                          <p className="text-xs text-gray-500 text-left">Guarda este enlace para ver el estado de tu pedido en tiempo real.</p>
-                          <a
-                            href={`/pedido/${orderId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-colors shadow shadow-primary/20"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                            Ver mi pedido en vivo
-                          </a>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const url = `${window.location.origin}/pedido/${orderId}`;
-                              navigator.clipboard.writeText(url).then(() => {
-                                setCopied(true);
-                                setTimeout(() => setCopied(false), 2000);
-                              }).catch(() => {});
-                            }}
-                            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-primary/30 text-primary font-semibold text-sm hover:bg-primary/10 transition-colors"
-                          >
-                            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                            {copied ? "¡Enlace copiado!" : "Copiar enlace"}
-                          </button>
-                        </div>
-                      )}
-
-                      {/* ── Delivery estimate ─────────────── */}
-                      <div className="w-full rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 p-3 flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-                          <Clock className="h-5 w-5 text-amber-600" />
-                        </div>
-                        <div className="text-left">
-                          <p className="text-xs font-bold text-amber-800 dark:text-amber-300">Tiempo estimado de entrega</p>
-                          <p className="text-sm font-extrabold text-amber-900 dark:text-amber-200">30 — 45 minutos</p>
-                        </div>
-                      </div>
-
-                      {/* ── WhatsApp share ────────────────── */}
-                      {orderId && (
-                        <div className="w-full flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const url = `${window.location.origin}/pedido/${orderId}`;
-                              const text = `¡Hice mi pedido en Bodega San Martín! 🛒\nPuedes rastrear el estado aquí:\n${url}`;
-                              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
-                            }}
-                            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-[#25D366] text-white font-bold text-sm hover:bg-[#1fb85a] transition-colors shadow-sm"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                            Compartir por WhatsApp
-                          </button>
-                          {typeof navigator !== "undefined" && navigator.share && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const url = `${window.location.origin}/pedido/${orderId}`;
-                                navigator.share({ title: "Mi pedido - Bodega San Martín", text: "¡Mira mi pedido!", url }).catch(() => {});
-                              }}
-                              className="flex items-center justify-center w-11 rounded-xl border border-gray-200 text-muted hover:text-foreground hover:border-gray-300 transition-colors"
-                              aria-label="Compartir"
-                            >
-                              <Share2 className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                      )}
-
-                      <button onClick={() => { closeCheckout(); setTimeout(() => openConfirmModal(true), 400); }}
-                        className="w-full py-3.5 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors text-sm">
-                        Continuar comprando
-                      </button>
-                      <a href="/cuenta" className="text-xs text-emerald-600 font-semibold hover:underline">
-                        Ver todos mis pedidos →
-                      </a>
                     </m.div>
                   )}
 

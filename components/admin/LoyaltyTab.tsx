@@ -26,7 +26,7 @@ export default function LoyaltyTab() {
     let active = true;
     fetch("/api/customers")
       .then(r => r.ok ? r.json() : [])
-      .then((data: Customer[]) => { if (active) { setCustomers(data.sort((a, b) => b.totalSpent - a.totalSpent)); setLoading(false); } })
+      .then((data: Customer[]) => { if (active) { setCustomers(data.sort((a, b) => (b.totalSpent ?? 0) - (a.totalSpent ?? 0))); setLoading(false); } })
       .catch(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
@@ -35,7 +35,7 @@ export default function LoyaltyTab() {
     const res = await fetch(`/api/loyalty/${encodeURIComponent(phone)}`);
     if (res.ok) {
       const data = await res.json();
-      setSelected({ phone: data.phone, name: data.name, loyaltyPoints: data.loyaltyPoints, loyaltyTier: data.loyaltyTier, totalSpent: data.totalSpent });
+      setSelected({ phone: data.phone, name: data.name, loyaltyPoints: data.loyaltyPoints ?? 0, loyaltyTier: data.loyaltyTier ?? 'bronce', totalSpent: data.totalSpent ?? 0 });
       if (data.tiers) setTiers(data.tiers);
     }
   };
@@ -60,8 +60,8 @@ export default function LoyaltyTab() {
     ? customers.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search))
     : customers;
 
-  const totalPoints = customers.reduce((s, c) => s + c.loyaltyPoints, 0);
-  const avgSpent = customers.length > 0 ? customers.reduce((s, c) => s + c.totalSpent, 0) / customers.length : 0;
+  const totalPoints = customers.reduce((s, c) => s + (c.loyaltyPoints ?? 0), 0);
+  const avgSpent = customers.length > 0 ? customers.reduce((s, c) => s + (c.totalSpent ?? 0), 0) / customers.length : 0;
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
@@ -104,7 +104,7 @@ export default function LoyaltyTab() {
               </div>
               <div className="text-right shrink-0">
                 <p className="font-extrabold text-sm text-primary">{c.loyaltyPoints} pts</p>
-                <p className="text-xs text-gray-400">S/{c.totalSpent.toFixed(0)}</p>
+                <p className="text-xs text-gray-400">S/{(c.totalSpent ?? 0).toFixed(0)}</p>
               </div>
             </button>
           ))}
@@ -129,7 +129,7 @@ export default function LoyaltyTab() {
                     <p className="text-xs text-gray-400">Puntos</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground">S/{selected.totalSpent.toFixed(0)}</p>
+                    <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground">S/{(selected.totalSpent ?? 0).toFixed(0)}</p>
                     <p className="text-xs text-gray-400">Gastado total</p>
                   </div>
                 </div>

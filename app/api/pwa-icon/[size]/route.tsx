@@ -19,7 +19,7 @@ export async function GET(
         style={{
           width: s,
           height: s,
-          background: "linear-gradient(145deg, #2d6a4f, #1b4332)",
+          background: "linear-gradient(145deg, #6366f1, #4f46e5)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

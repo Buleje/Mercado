@@ -40,7 +40,7 @@ const PROMOS: Promo[] = [
     cta: "Ver Ofertas",
     category: "limpieza",
     gradient: "linear-gradient(to right, #06b6d4, #60a5fa)",
-    accent: "bg-cyan-600",
+    accent: "bg-indigo-600",
   },
   {
     emoji: "🍼",
@@ -48,8 +48,8 @@ const PROMOS: Promo[] = [
     subtitle: "Leche, yogurt y quesos siempre frescos",
     cta: "Ver Lácteos",
     category: "lacteos",
-    gradient: "linear-gradient(to right, #10b981, #4ade80)",
-    accent: "bg-emerald-600",
+    gradient: "linear-gradient(to right, #6366f1, #818cf8)",
+    accent: "bg-blue-600",
   },
 ];
 

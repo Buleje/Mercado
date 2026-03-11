@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import withBundleAnalyzer from "@next/bundle-analyzer";
+
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
 
 const nextConfig: NextConfig = {
   // Compress responses
@@ -41,9 +46,10 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
 
-  // Add long-lived cache headers for static assets
+  // Add long-lived cache headers for static assets and security headers
   async headers() {
     return [
+      // Cache headers for static assets
       {
         source: "/_next/static/:path*",
         headers: [
@@ -62,8 +68,34 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Security headers for all routes
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "X-DNS-Prefetch-Control",
+            value: "on",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(self)",
+          },
+        ],
+      },
     ];
   },
 };
 
-export default nextConfig;
+export default bundleAnalyzer(nextConfig);

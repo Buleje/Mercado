@@ -527,3 +527,173 @@ model NotificationLog {
   @@index([type])
   @@index([createdAt])
 }
+
+// ═══════════════════════════════════════════════════════
+// CMS - CONTENT MANAGEMENT SYSTEM
+// ═══════════════════════════════════════════════════════
+
+// ─── Pages ──────────────────────────────────────────────
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Page {
+  id              String     @id @default(cuid())
+  slug            String     @unique
+  title           String
+  description     String?
+  
+  // SEO Metadata
+  metaTitle       String?
+  metaDescription String?
+  ogImage         String?
+  
+  // Publishing
+  status          PageStatus @default(DRAFT)
+  publishedAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  
+  // Layout
+  layout          String     @default("default")
+  settings        Json?      // { headerVisible: true, footerVisible: true }
+  
+  // Relations
+  blocks          PageBlock[]
+  versions        PageVersion[]
+  
+  @@index([slug])
+  @@index([status])
+  @@index([publishedAt])
+}
+
+// ─── Page Blocks ────────────────────────────────────────
+model PageBlock {
+  id          String   @id @default(cuid())
+  pageId      String
+  page        Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  
+  // Block config
+  type        String   // hero, about, benefits, products, cta, etc.
+  order       Int      // Display order
+  visible     Boolean  @default(true)
+  
+  // Content
+  props       Json     // Component props
+  styles      Json?    // Custom styles
+  mobileProps Json?    // Mobile-specific props
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([pageId, order])
+  @@index([type])
+}
+
+// ─── Block Templates ────────────────────────────────────
+model BlockTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  type        String   // hero, cta, etc.
+  category    String   // marketing, informativo, producto
+  
+  // Template data
+  props       Json
+  styles      Json?
+  preview     String?  // Preview image URL
+  
+  // Usage tracking
+  isPublic    Boolean  @default(false)
+  usageCount  Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([type])
+  @@index([category])
+}
+
+// ─── Media Library ──────────────────────────────────────
+model Media {
+  id          String    @id @default(cuid())
+  
+  // File info
+  filename    String
+  url         String
+  mimeType    String
+  size        Int       // bytes
+  
+  // Metadata
+  alt         String?
+  title       String?
+  caption     String?
+  
+  // Organization
+  folder      String    @default("general")
+  tags        String[]
+  
+  // Image-specific
+  width       Int?
+  height      Int?
+  blurhash    String?
+  
+  // Usage tracking
+  usageCount  Int       @default(0)
+  lastUsedAt  DateTime?
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  @@index([folder])
+  @@index([mimeType])
+}
+
+// ─── Page Versions ──────────────────────────────────────
+model PageVersion {
+  id        String   @id @default(cuid())
+  pageId    String
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  
+  // Snapshot
+  title     String
+  blocks    Json     // Complete blocks array snapshot
+  settings  Json?
+  
+  // Metadata
+  comment   String?
+  createdBy String?
+  createdAt DateTime @default(now())
+  
+  @@index([pageId, createdAt])
+}
+
+// ─── Theme Settings ─────────────────────────────────────
+model ThemeSettings {
+  id         String   @id @default("global")
+  
+  // Design
+  colors     Json     // { primary, secondary, accent, ... }
+  fonts      Json     // { heading, body }
+  spacing    Json?    // { section, container }
+  
+  // Components
+  header     Json?    // { sticky, transparent }
+  footer     Json?    // { showSocial }
+  
+  // Effects
+  animations Json?    // { enabled, speed }
+  
+  updatedAt  DateTime @updatedAt
+}
+
+// ─── Navigation ─────────────────────────────────────────
+model Navigation {
+  id        String   @id @default("main")
+  items     Json     // Array of { label, href, icon?, children? }
+  settings  Json?    // { position, style }
+  
+  updatedAt DateTime @updatedAt
+}

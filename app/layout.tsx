@@ -4,6 +4,8 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
+import InstallPrompt from "@/components/InstallPrompt";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/contexts/theme-context";
 
 export const metadata: Metadata = {
@@ -101,7 +103,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2d6a4f",
+  themeColor: "#6366f1",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -116,16 +118,29 @@ export default function RootLayout({
     <html lang="es" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
         <SchemaMarkup />
-        <link rel="preconnect" href="https://images.unsplash.com" />
-        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        
+        {/* Resource Hints: Preconnect to critical origins */}
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://images.openfoodfacts.org" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://static.openfoodfacts.org" crossOrigin="anonymous" />
+        
+        {/* DNS Prefetch: Analytics and external services */}
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://www.google-analytics.com" />
         <link rel="dns-prefetch" href="https://www.clarity.ms" />
-        {/* PWA */}
+        <link rel="dns-prefetch" href="https://c.clarity.ms" />
+        
+        {/* PWA Metadata */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Bodega San Martín" />
         <link rel="apple-touch-icon" href="/api/pwa-icon/180" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/api/pwa-icon/180" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/api/pwa-icon/152" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/api/pwa-icon/167" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/api/pwa-icon/120" />
+        
         {/* Filtrar TODOS los errores de extensiones - Ejecutar PRIMERO */}
         <script
           dangerouslySetInnerHTML={{
@@ -141,6 +156,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <ThemeProvider>
+        <ErrorBoundary>
         {/* Skip to content — accesibilidad */}
         <a
           href="#main-content"
@@ -149,7 +165,9 @@ export default function RootLayout({
           Ir al contenido principal
         </a>
         <ServiceWorkerRegistrar />
+        <InstallPrompt />
         {children}
+        </ErrorBoundary>
         </ThemeProvider>
       </body>
     </html>

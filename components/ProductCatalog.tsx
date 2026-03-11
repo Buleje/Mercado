@@ -7,16 +7,19 @@ import {
   useCallback,
   startTransition,
   useSyncExternalStore,
+  useMemo,
 } from "react";
 import Image from "next/image";
-import { Plus, Minus, ShoppingCart, ArrowRight, Sparkles, Package, Search, X, ArrowUpDown, Heart, SlidersHorizontal, Clock, Eye, GitCompareArrows, Star } from "lucide-react";
+import { Plus, Minus, ShoppingCart, ArrowRight, Sparkles, Package, Search, X, ArrowUpDown, Heart, SlidersHorizontal, Clock, Star } from "lucide-react";
 import { products, categories } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useFavorites } from "@/contexts/favorites-context";
-import { useCompare } from "@/contexts/compare-context";
 import { cn } from "@/lib/utils";
+import { onAppEvent } from "@/lib/events";
 import type { Product } from "@/data/products";
+import { ProductCard } from "./ProductCard";
+import { useCachedData } from "@/hooks/use-cached-data";
 
 type LiveProduct = Product & { stock?: number; stockMin?: number };
 
@@ -77,171 +80,6 @@ function SkeletonSection() {
   );
 }
 
-// ── Product Card ──────────────────────────────────────────────────────────────
-function ProductCard({ product, onQuickView }: { product: LiveProduct; onQuickView?: (p: LiveProduct) => void }) {
-  const { items, addItem, updateQty } = useCart();
-  const { showToast } = useToast();
-  const { isFavorite, toggle: toggleFav } = useFavorites();
-  const { add: addCompare, isIn: isCompare, remove: removeCompare } = useCompare();
-  const cartItem = items.find((i) => i.id === product.id);
-  const qty = cartItem?.quantity ?? 0;
-  const fav = isFavorite(String(product.id));
-
-  const isOutOfStock = product.stock != null && product.stock <= 0;
-  const isLowStock = !isOutOfStock && product.stock != null && product.stockMin != null && product.stock <= product.stockMin;
-
-  const handleAdd = () => {
-    if (isOutOfStock) return;
-    addItem(product);
-    showToast(product.name, product.image);
-  };
-
-  const badgeColors: Record<string, string> = {
-    Oferta: "bg-red-500",
-    Popular: "bg-secondary",
-    Fresco: "bg-emerald-500",
-    Premium: "bg-violet-600",
-  };
-
-  return (
-    <div className={cn(
-      "group relative bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-card-border hover:shadow-xl hover:shadow-primary/8 hover:-translate-y-1.5 transition-all duration-300 flex flex-col",
-      isOutOfStock && "opacity-60 pointer-events-none"
-    )}>
-      {/* Badge */}
-      {product.badge && (
-        <span className={cn(
-          "absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm",
-          badgeColors[product.badge] ?? "bg-primary"
-        )}>
-          {product.badge}
-        </span>
-      )}
-
-      {/* Stock indicators */}
-      {isOutOfStock && (
-        <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm bg-gray-500">
-          Agotado
-        </span>
-      )}
-      {isLowStock && (
-        <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm bg-amber-500 animate-pulse">
-          ¡Últimas unidades!
-        </span>
-      )}
-
-      {/* Favorite button */}
-      <button
-        onClick={(e) => { e.stopPropagation(); toggleFav(String(product.id)); }}
-        aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
-        className={cn(
-          "absolute z-10 flex items-center justify-center h-8 w-8 rounded-full transition-all duration-200 pointer-events-auto",
-          isOutOfStock || isLowStock ? "top-12 right-3" : "top-3 right-3",
-          fav
-            ? "bg-red-500 text-white shadow-md scale-110"
-            : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-red-500 hover:bg-white dark:hover:bg-card shadow-sm"
-        )}
-      >
-        <Heart className={cn("h-4 w-4", fav && "fill-current")} />
-      </button>
-
-      {/* Image */}
-      <div className="relative aspect-square bg-gray-50 overflow-hidden shrink-0">
-        {product.image ? (
-          <Image
-            src={product.image}
-            alt={product.name}
-            fill
-            loading="lazy"
-            className="object-cover group-hover:scale-110 transition-transform duration-500"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          />
-        ) : (
-          <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-300">
-            <Package className="h-10 w-10" />
-          </div>
-        )}
-        {/* Compare button */}
-        <button
-          onClick={(e) => { e.stopPropagation(); if (isCompare(product.id)) { removeCompare(product.id); } else { addCompare(product); } }}
-          aria-label={isCompare(product.id) ? "Quitar de comparación" : "Comparar"}
-          className={cn(
-            "absolute bottom-2 left-2 z-10 flex items-center justify-center h-7 w-7 rounded-full transition-all duration-200 pointer-events-auto opacity-0 group-hover:opacity-100",
-            isCompare(product.id)
-              ? "bg-primary text-white shadow-md"
-              : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-primary hover:bg-white dark:hover:bg-card shadow-sm"
-          )}
-        >
-          <GitCompareArrows className="h-3.5 w-3.5" />
-        </button>
-
-        {/* Quick View overlay */}
-        {onQuickView && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onQuickView(product); }}
-            className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all duration-300 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
-            aria-label={`Vista rápida de ${product.name}`}
-          >
-            <span className="flex items-center gap-1.5 bg-white dark:bg-card text-foreground rounded-full px-3 py-1.5 text-xs font-bold shadow-lg scale-90 group-hover:scale-100 transition-transform">
-              <Eye className="h-3.5 w-3.5" /> Vista rápida
-            </span>
-          </button>
-        )}
-      </div>
-
-      {/* Body */}
-      <div className="p-3 sm:p-4 flex flex-col gap-2 flex-1">
-        <h3 className="font-semibold text-foreground text-sm sm:text-base leading-tight line-clamp-2 flex-1">
-          {product.name}
-        </h3>
-
-        <div className="flex items-end justify-between gap-2">
-          <div>
-            <span className="text-lg sm:text-xl font-extrabold text-primary leading-none">
-              S/{product.price.toFixed(2)}
-            </span>
-            <span className="block text-[11px] text-muted mt-0.5">/{product.unit}</span>
-          </div>
-
-          {/* Counter or Add button */}
-          {qty === 0 ? (
-            <button
-              onClick={handleAdd}
-              className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary text-white shadow-md hover:bg-primary-dark hover:scale-110 active:scale-95 transition-all duration-200 animate-[scaleIn_0.15s_ease-out]"
-              aria-label={`Agregar ${product.name}`}
-            >
-              <Plus className="h-5 w-5" />
-            </button>
-          ) : (
-            <div className="flex items-center bg-primary rounded-xl overflow-hidden shadow-md animate-[scaleIn_0.15s_ease-out]">
-              <button
-                onClick={() => updateQty(product.id, qty - 1)}
-                className="flex items-center justify-center h-10 w-9 text-white hover:bg-primary-dark transition-colors"
-                aria-label="Reducir"
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-              <span
-                key={qty}
-                className="w-7 text-center text-sm font-bold text-white animate-[pop_0.15s_ease-out]"
-              >
-                {qty}
-              </span>
-              <button
-                onClick={handleAdd}
-                className="flex items-center justify-center h-10 w-9 text-white hover:bg-primary-dark transition-colors"
-                aria-label="Aumentar"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Category Section ──────────────────────────────────────────────────────────
 function CategorySection({ categoryId, highlight, productList, onQuickView }: { categoryId: string; highlight: boolean; productList: LiveProduct[]; onQuickView: (p: LiveProduct) => void }) {
   const cat = categories.find((c) => c.id === categoryId);
@@ -286,16 +124,29 @@ function QuickViewModal({ product, onClose }: { product: LiveProduct; onClose: (
   const qty = cartItem?.quantity ?? 0;
   const isOutOfStock = product.stock != null && product.stock <= 0;
   const [tab, setTab] = useState<"info" | "reviews" | "related">("info");
-  const [reviews, setReviews] = useState<Array<{ name: string; rating: number; comment: string; createdAt: string }>>([]);
   const fav = isFavorite(String(product.id));
 
-  // Fetch reviews for this product
+  // Fetch reviews for this product - with caching
+  const { data: reviews = [] } = useCachedData<Array<{ name: string; rating: number; comment: string; createdAt: string }>>(
+    `reviews-${product.id}`,
+    async () => {
+      const response = await fetch(`/api/reviews?productId=${product.id}`);
+      if (!response.ok) return [];
+      const data = await response.json();
+      return Array.isArray(data) ? data.slice(0, 5) : [];
+    },
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes - reviews don't change frequently
+      refetchOnFocus: false, // Don't refetch reviews on focus
+    }
+  );
+
+  // Escape key closes modal
   useEffect(() => {
-    fetch(`/api/reviews?productId=${product.id}`)
-      .then(r => r.ok ? r.json() : [])
-      .then((data) => { if (Array.isArray(data)) setReviews(data.slice(0, 5)); })
-      .catch(() => {});
-  }, [product.id]);
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   // Track as recently viewed
   useEffect(() => {
@@ -337,7 +188,7 @@ function QuickViewModal({ product, onClose }: { product: LiveProduct; onClose: (
         {/* Image */}
         <div className="relative aspect-video sm:aspect-4/3 bg-gray-50 dark:bg-surface">
           {product.image ? (
-            <Image src={product.image} alt={product.name} fill className="object-cover" sizes="(max-width: 672px) 100vw, 672px" />
+            <Image src={product.image} alt={product.name} fill className="object-cover" sizes="(max-width: 672px) 100vw, 672px" loading="lazy" />
           ) : (
             <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-16 w-16" /></div>
           )}
@@ -492,7 +343,7 @@ function QuickViewModal({ product, onClose }: { product: LiveProduct; onClose: (
                 relatedProducts.map((rp) => (
                   <div key={rp.id} className="bg-surface dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
                     <div className="relative aspect-square bg-gray-50 dark:bg-card">
-                      {rp.image && <Image src={rp.image} alt={rp.name} fill className="object-cover" sizes="200px" />}
+                      {rp.image && <Image src={rp.image} alt={rp.name} fill className="object-cover" sizes="200px" loading="lazy" />}
                     </div>
                     <div className="p-3">
                       <p className="text-sm font-semibold text-foreground line-clamp-1">{rp.name}</p>
@@ -557,7 +408,7 @@ function ShowMoreBlock({ onExpand }: { onExpand: () => void }) {
       className="relative overflow-hidden rounded-3xl bg-white dark:bg-card border border-gray-100 dark:border-card-border shadow-xl animate-[fadeUp_0.5s_ease-out]"
     >
       {/* Top gradient accent bar */}
-      <div className="absolute top-0 left-0 right-0 h-1.5" style={{ background: "linear-gradient(90deg, #2d6a4f, #f4a261, #2d6a4f)" }} />
+      <div className="absolute top-0 left-0 right-0 h-1.5" style={{ background: "linear-gradient(90deg, #6366f1, #f59e0b, #6366f1)" }} />
       {/* Background decorations */}
       <div className="absolute -top-14 -right-14 h-56 w-56 rounded-full bg-primary/5 pointer-events-none" />
       <div className="absolute -bottom-10 -left-10 h-44 w-44 rounded-full bg-secondary/5 pointer-events-none" />
@@ -622,37 +473,50 @@ function ShowMoreBlock({ onExpand }: { onExpand: () => void }) {
 export default function ProductCatalog() {
   const [expanded, setExpanded] = useState(false);
   const [highlighted, setHighlighted] = useState<string | null>(null);
-  const [productList, setProductList] = useState<LiveProduct[]>(products);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("relevancia");
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
-  const [maxPrice, setMaxPrice] = useState(100);
   const [showPriceFilter, setShowPriceFilter] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<LiveProduct | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [suggestions, setSuggestions] = useState<LiveProduct[]>([]);
   const [suggestionIdx, setSuggestionIdx] = useState(-1);
+  const [searchPage, setSearchPage] = useState(1);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Fetch live products from API (admin changes reflect here)
-  useEffect(() => {
-    fetch("/api/products")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: Array<LiveProduct & { active?: boolean }> | null) => {
-        if (Array.isArray(data) && data.length > 0) {
-          const active = data.filter((p) => p.active !== false);
-          setProductList(active);
-          const mp = Math.ceil(Math.max(...active.map(p => p.price), 100));
-          setMaxPrice(mp);
-          setPriceRange([0, mp]);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+  // Fetch live products from API (admin changes reflect here) - with caching
+  const { data: apiProducts, isLoading: isLoadingProducts, isError: apiError, refetch: refetchProducts } = useCachedData<Array<LiveProduct & { active?: boolean }>>(
+    "products",
+    async () => {
+      const response = await fetch("/api/products");
+      if (!response.ok) return [];
+      return response.json();
+    },
+    {
+      staleTime: 2 * 60 * 1000, // 2 minutes - products don't change that often
+      refetchOnFocus: true, // Refetch when user returns to tab
+    }
+  );
+
+  // Compute productList from API data
+  const productList = useMemo(() => {
+    if (apiProducts && Array.isArray(apiProducts) && apiProducts.length > 0) {
+      return apiProducts.filter((p) => p.active !== false);
+    }
+    return products; // Fallback to static data
+  }, [apiProducts]);
+
+  // Compute maxPrice from productList
+  const maxPrice = useMemo(() => {
+    return Math.ceil(Math.max(...productList.map(p => p.price), 100));
+  }, [productList]);
+
+  // Price range state - will be updated by user interaction
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+
+  // Only show skeleton when loading AND no fallback data is available
+  const loading = isLoadingProducts && productList.length === 0;
 
   // Hydrate search history from localStorage after mount
   useEffect(() => {
@@ -694,8 +558,7 @@ export default function ProductCatalog() {
 
   // Listen for category selection events from Header mega menu
   useEffect(() => {
-    const handler = (e: Event) => {
-      const { categoryId } = (e as CustomEvent<{ categoryId: string }>).detail;
+    const unsub = onAppEvent("selectCategory", ({ categoryId }) => {
       setExpanded(true);
       setHighlighted(categoryId);
       clearTimeout(highlightTimer.current);
@@ -704,20 +567,22 @@ export default function ProductCatalog() {
         const el = document.getElementById(`cat-${categoryId}`);
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
       });
-    };
-    window.addEventListener("bsm:selectCategory", handler);
-    return () => window.removeEventListener("bsm:selectCategory", handler);
+    });
+    return unsub;
   }, []);
 
   // Listen for search from Header
   useEffect(() => {
-    const handler = (e: Event) => {
-      const { query } = (e as CustomEvent<{ query: string }>).detail;
+    const unsub = onAppEvent("searchProduct", ({ query }) => {
       setSearch(query);
-    };
-    window.addEventListener("bsm:searchProduct", handler);
-    return () => window.removeEventListener("bsm:searchProduct", handler);
+    });
+    return unsub;
   }, []);
+
+  // Reset to first page whenever search term or filters change
+  useEffect(() => {
+    startTransition(() => setSearchPage(1));
+  }, [search, sort, priceRange]);
 
   const visibleCategories = expanded
     ? realCategories
@@ -738,6 +603,13 @@ export default function ProductCatalog() {
   );
 
   const handleQuickView = useCallback((p: LiveProduct) => setQuickViewProduct(p), []);
+
+  const ITEMS_PER_PAGE = 24;
+  const totalSearchPages = Math.max(1, Math.ceil(filteredProducts.length / ITEMS_PER_PAGE));
+  const paginatedSearchProducts = filteredProducts.slice(
+    (searchPage - 1) * ITEMS_PER_PAGE,
+    searchPage * ITEMS_PER_PAGE
+  );
 
   return (
     <section id="productos" className="py-20 sm:py-28 bg-surface">
@@ -885,6 +757,19 @@ export default function ProductCatalog() {
           ))}
         </div>
 
+        {/* API error notice — shown only when fetch failed (still shows static fallback data) */}
+        {apiError && (
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-700/40 text-xs text-amber-700 dark:text-amber-400">
+            <span>⚠️ No se pudo cargar el catálogo actualizado. Mostrando datos de muestra.</span>
+            <button
+              onClick={refetchProducts}
+              className="shrink-0 font-bold underline hover:no-underline transition-all"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+
         {/* Category Sections */}
         <div className="space-y-8">
           {loading ? (
@@ -902,14 +787,53 @@ export default function ProductCatalog() {
               </div>
             ) : (
               <div className="bg-white dark:bg-card rounded-2xl p-5 sm:p-6">
-                <p className="text-sm text-gray-500 mb-4">
-                  {filteredProducts.length} resultado{filteredProducts.length !== 1 ? "s" : ""} para &ldquo;{search.trim()}&rdquo;
-                </p>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-gray-500">
+                    {filteredProducts.length} resultado{filteredProducts.length !== 1 ? "s" : ""} para &ldquo;{search.trim()}&rdquo;
+                    {totalSearchPages > 1 && (
+                      <span className="ml-2 text-gray-400">· página {searchPage} de {totalSearchPages}</span>
+                    )}
+                  </p>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                  {filteredProducts.map((product) => (
+                  {paginatedSearchProducts.map((product) => (
                     <ProductCard key={product.id} product={product} onQuickView={handleQuickView} />
                   ))}
                 </div>
+                {totalSearchPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-6 pt-5 border-t border-gray-100 dark:border-card-border">
+                    <button
+                      disabled={searchPage <= 1}
+                      onClick={() => { setSearchPage(p => p - 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      ← Anterior
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalSearchPages }, (_, i) => i + 1).map(pg => (
+                        <button
+                          key={pg}
+                          onClick={() => { setSearchPage(pg); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                          className={cn(
+                            "h-8 w-8 rounded-full text-sm font-bold transition-all",
+                            pg === searchPage
+                              ? "bg-primary text-white shadow-md shadow-primary/25"
+                              : "text-gray-500 hover:bg-primary/10 hover:text-primary"
+                          )}
+                        >
+                          {pg}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      disabled={searchPage >= totalSearchPages}
+                      onClick={() => { setSearchPage(p => p + 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                )}
               </div>
             )
           ) : (

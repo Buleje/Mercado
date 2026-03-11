@@ -11,10 +11,32 @@ import { useSettings } from "@/contexts/settings-context";
 import { usePromotions } from "@/contexts/promotions-context";
 import { sendOrder, type SendResult } from "@/lib/order-utils";
 
+/** Renders a cart item image with graceful error fallback */
+function CartItemImage({ src, alt }: { src: string; alt: string }) {
+  const [err, setErr] = useState(false);
+  if (!src || err) {
+    return (
+      <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+        <Package className="h-7 w-7 text-gray-300" />
+      </div>
+    );
+  }
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      className="object-cover"
+      sizes="80px"
+      onError={() => setErr(true)}
+    />
+  );
+}
+
 export default function CartSidebar() {
   const { items, isOpen, count, total, close, removeItem, updateQty, clear, markOrderPending, openConfirmModal, clearPendingOrder, openCheckout } =
     useCart();
-  const { customer, openModal } = useCustomer();
+  const { customer } = useCustomer();
   const { mode } = useSettings();
   const { getBestPromotion, promotions } = usePromotions();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -40,18 +62,27 @@ export default function CartSidebar() {
 
   const handleOrder = async () => {
     if (items.length === 0) return;
-    if (!customer) { openModal(); return; }
-    // Checkout flow mode — open the checkout modal instead
+    // Checkout flow mode — open the checkout modal (handles data collection inside)
     if (mode === "checkout") {
       openCheckout();
       return;
     }
-    // WhatsApp mode (default)
+    // WhatsApp mode
+    const sender = customer ?? {
+      name: "Cliente",
+      phone: "",
+      location: "Pucallpa, Ucayali",
+      reference: "",
+      savedLocations: [],
+    };
     setSending(true);
-    const result = await sendOrder(customer, items, total);
+    const result = await sendOrder(sender, items, total);
     setSending(false);
     setSendResult(result);
     markOrderPending();
+    // Dispatch order tracking event so OrderProgress widget appears
+    const orderId = `WA-${Date.now().toString(36).toUpperCase()}`;
+    window.dispatchEvent(new CustomEvent("bsm:orderCreated", { detail: { orderId } }));
     setTimeout(() => openConfirmModal(), 1800);
   };
 
@@ -103,14 +134,50 @@ export default function CartSidebar() {
             {/* Items */}
             <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
               {items.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center gap-4 py-20">
-                  <ShoppingCart className="h-16 w-16 text-gray-200" />
-                  <p className="text-muted text-lg">Tu carrito está vacío</p>
+                <div className="flex flex-col items-center justify-center h-full text-center gap-5 py-10 px-2">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/8">
+                    <ShoppingCart className="h-9 w-9 text-primary/40" />
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-foreground">Tu carrito está vacío</p>
+                    <p className="text-sm text-muted mt-1">Agrega productos para hacer tu pedido</p>
+                  </div>
+                  <div className="w-full space-y-2">
+                    <p className="text-xs font-semibold text-muted uppercase tracking-wide">Categorías populares</p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {[
+                        { emoji: "🥬", label: "Verduras", id: "frutas-verduras" },
+                        { emoji: "🏪", label: "Abarrotes", id: "abarrotes" },
+                        { emoji: "🥩", label: "Carnes", id: "carnes" },
+                        { emoji: "🧀", label: "Lácteos", id: "lacteos" },
+                        { emoji: "🥤", label: "Bebidas", id: "bebidas" },
+                        { emoji: "🧹", label: "Limpieza", id: "limpieza" },
+                      ].map(cat => (
+                        <button
+                          key={cat.id}
+                          onClick={() => {
+                            close();
+                            // Navigate + dispatch category filter
+                            const el = document.getElementById(`cat-${cat.id}`);
+                            if (el) {
+                              el.scrollIntoView({ behavior: "smooth", block: "start" });
+                            } else {
+                              window.location.href = `/tienda#cat-${cat.id}`;
+                            }
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/8 text-primary text-xs font-semibold hover:bg-primary/15 transition-colors"
+                        >
+                          <span>{cat.emoji}</span>
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <button
                     onClick={close}
-                    className="text-primary font-semibold hover:underline"
+                    className="w-full max-w-48 rounded-xl bg-primary text-white py-2.5 text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
                   >
-                    Ver productos
+                    Explorar tienda
                   </button>
                 </div>
               ) : (
@@ -121,13 +188,7 @@ export default function CartSidebar() {
                   >
                     {/* Image */}
                     <div className="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden bg-white">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        className="object-cover"
-                        sizes="80px"
-                      />
+                      <CartItemImage src={item.image} alt={item.name} />
                     </div>
 
                     {/* Info */}

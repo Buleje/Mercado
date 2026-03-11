@@ -9,7 +9,7 @@ import {
   Truck, XCircle, Receipt, Loader2, Search, Award, RotateCcw,
   ListChecks, Tag, User, MapPin, Plus, Trash2, Pencil,
   ChevronDown, Heart, Filter, Gift, Percent, Star, ShoppingCart,
-  MessageSquare, ThumbsUp, Repeat, TrendingUp, Bell, BellOff,
+  MessageSquare, ThumbsUp, Repeat, TrendingUp, Bell,
   Sparkles, ArrowRight, Info,
 } from "lucide-react";
 import { useCustomer } from "@/contexts/customer-context";
@@ -22,15 +22,15 @@ import type { SavedLocation } from "@/contexts/customer-context";
 
 /* ── Types ───────────────────────────────────────────────────────── */
 
-type OrderItem = { productId?: number; name: string; price: number; quantity: number; unit: string; image: string };
+type OrderItem = { productId?: number; name: string; price?: number; quantity: number; unit: string; image: string };
 type Order = {
-  id: string; items: OrderItem[]; total: number;
+  id: string; items?: OrderItem[]; total?: number;
   status: "pendiente" | "confirmado" | "en_camino" | "entregado" | "cancelado";
   paymentMethod?: "yape" | "efectivo"; createdAt: string; updatedAt: string;
 };
 type LoyaltyData = {
-  phone: string; name: string; loyaltyPoints: number; loyaltyTier: string;
-  totalSpent: number; tiers: { name: string; minSpent: number }[];
+  phone?: string; name?: string; loyaltyPoints?: number; loyaltyTier: string;
+  totalSpent?: number; tiers?: { name: string; minSpent: number }[];
 };
 type ShoppingList = {
   id: string; customerPhone: string; name: string;
@@ -58,7 +58,7 @@ const TIER_STYLES: Record<string, { bg: string; text: string; border: string; gr
   diamante: { bg: "bg-sky-50 dark:bg-sky-900/20",        text: "text-sky-700 dark:text-sky-300",       border: "border-sky-200 dark:border-sky-700",     gradient: "from-sky-400 to-blue-500",     inlineGradient: "linear-gradient(90deg, #38bdf8, #3b82f6)" },
 };
 
-function fmt(n: number) { return `S/${n.toFixed(2)}`; }
+function fmt(n: number | undefined | null) { return `S/${(n ?? 0).toFixed(2)}`; }
 function fmtDate(iso: string) {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); } catch { return iso; }
 }
@@ -141,7 +141,7 @@ export default function CuentaPage() {
     setTimeout(() => router.push("/"), 800);
   }, [router]);
 
-  const totalSpent = orders?.filter(o => o.status !== "cancelado").reduce((a, o) => a + o.total, 0) ?? 0;
+  const totalSpent = orders?.filter(o => o.status !== "cancelado").reduce((a, o) => a + (o.total ?? 0), 0) ?? 0;
   const orderCount = orders?.filter(o => o.status !== "cancelado").length ?? 0;
   const activeOrders = orders?.filter(o => ["pendiente", "confirmado", "en_camino"].includes(o.status)) ?? [];
 
@@ -160,7 +160,7 @@ export default function CuentaPage() {
           {identified && loyalty && (
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
               <Award className="h-3.5 w-3.5" />
-              {loyalty.loyaltyPoints} pts
+              {loyalty.loyaltyPoints ?? 0} pts
             </div>
           )}
         </div>
@@ -242,13 +242,13 @@ export default function CuentaPage() {
             {/* Tab Content */}
             <div>
               {activeTab === "pedidos" && (
-                <PedidosTab orders={orders} activeOrders={activeOrders} onReorder={handleReorder} />
+                <PedidosTab orders={orders ?? []} activeOrders={activeOrders} onReorder={handleReorder} />
               )}
               {activeTab === "favoritos" && <FavoritosTab />}
               {activeTab === "listas" && <ListasTab phone={phone} />}
-              {activeTab === "puntos" && <PuntosTab loyalty={loyalty} orders={orders} />}
+              {activeTab === "puntos" && <PuntosTab loyalty={loyalty} orders={orders ?? []} />}
               {activeTab === "ofertas" && <OfertasTab />}
-              {activeTab === "resenas" && <ResenasTab phone={phone} orders={orders} />}
+              {activeTab === "resenas" && <ResenasTab phone={phone} orders={orders ?? []} />}
               {activeTab === "perfil" && (
                 <PerfilTab loyalty={loyalty} onLogout={() => {
                   startTransition(() => { setIdentified(false); setOrders(null); setLoyalty(null); setPhone(""); });
@@ -306,13 +306,18 @@ function QuickAction({ icon: Icon, label, href, onClick }: {
 function PedidosTab({ orders, activeOrders, onReorder }: { orders: Order[]; activeOrders: Order[]; onReorder: (items: OrderItem[]) => void }) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
   const { addItem } = useCart();
-  const filtered = statusFilter === "todos" ? orders : orders.filter(o => o.status === statusFilter);
+  
+  // Safe defaults
+  const safeOrders = orders ?? [];
+  const safeActiveOrders = activeOrders ?? [];
+  
+  const filtered = statusFilter === "todos" ? safeOrders : safeOrders.filter(o => o.status === statusFilter);
 
   // Most purchased products
   const frequentProducts = (() => {
-    const counts = new Map<string, { name: string; image: string; price: number; unit: string; productId?: number; qty: number }>();
-    orders.filter(o => o.status !== "cancelado").forEach(o => {
-      o.items.forEach(item => {
+    const counts = new Map<string, { name: string; image: string; price?: number; unit: string; productId?: number; qty: number }>();
+    safeOrders.filter(o => o.status !== "cancelado").forEach(o => {
+      o.items?.forEach(item => {
         const key = item.name;
         const existing = counts.get(key);
         if (existing) existing.qty += item.quantity;
@@ -324,14 +329,14 @@ function PedidosTab({ orders, activeOrders, onReorder }: { orders: Order[]; acti
 
   return (
     <div className="space-y-4">
-      {activeOrders.length > 0 && (
+      {safeActiveOrders.length > 0 && (
         <div>
           <h3 className="text-xs font-bold text-gray-700 dark:text-foreground/80 mb-2 flex items-center gap-1.5">
             <Truck className="h-3.5 w-3.5 text-indigo-500" />
-            Pedidos en curso ({activeOrders.length})
+            Pedidos en curso ({safeActiveOrders.length})
           </h3>
           <div className="space-y-2">
-            {activeOrders.map((o) => <OrderCard key={o.id} order={o} highlight onReorder={onReorder} />)}
+            {safeActiveOrders.map((o, i) => <OrderCard key={o.id || `active-${i}`} order={o} highlight onReorder={onReorder} />)}
           </div>
         </div>
       )}
@@ -345,12 +350,12 @@ function PedidosTab({ orders, activeOrders, onReorder }: { orders: Order[]; acti
           </h3>
           <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
             {frequentProducts.map((p) => (
-              <div key={p.name} className="min-w-30 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-2.5 flex flex-col items-center shrink-0">
+              <div key={`${p.productId ?? p.name}-${p.qty}`} className="min-w-30 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-2.5 flex flex-col items-center shrink-0">
                 {p.image && <Image src={p.image} alt={p.name} width={48} height={48} className="w-12 h-12 rounded-lg object-cover mb-1.5" />}
                 <p className="text-xs font-medium text-gray-700 dark:text-foreground/80 text-center truncate w-full">{p.name}</p>
                 <p className="text-xs text-gray-400 dark:text-muted">{p.qty}x comprado</p>
                 <button onClick={() => {
-                  if (p.productId) addItem({ id: p.productId, name: p.name, price: p.price, image: p.image, unit: p.unit, category: "" });
+                  if (p.productId && p.price) addItem({ id: p.productId, name: p.name, price: p.price, image: p.image, unit: p.unit, category: "" });
                 }} className="mt-1.5 w-full py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors flex items-center justify-center gap-1">
                   <Plus className="h-3 w-3" /> Agregar
                 </button>
@@ -377,7 +382,7 @@ function PedidosTab({ orders, activeOrders, onReorder }: { orders: Order[]; acti
         {filtered.length === 0 ? (
           <EmptyState icon={Receipt} message="No hay pedidos con este filtro" />
         ) : (
-          filtered.map((o) => <OrderCard key={o.id} order={o} onReorder={onReorder} />)
+          filtered.map((o, i) => <OrderCard key={o.id || `order-${i}`} order={o} onReorder={onReorder} />)
         )}
       </div>
     </div>
@@ -388,19 +393,20 @@ function PedidosTab({ orders, activeOrders, onReorder }: { orders: Order[]; acti
 
 function OrderCard({ order: o, highlight, onReorder }: { order: Order; highlight?: boolean; onReorder?: (items: OrderItem[]) => void }) {
   const [open, setOpen] = useState(false);
-  const st = STATUS_MAP[o.status];
+  const st = STATUS_MAP[o.status] ?? STATUS_MAP.pendiente;
   const StIcon = st.icon;
+  const safeItems = o.items ?? [];
 
   return (
     <div className={cn("bg-white dark:bg-card rounded-xl border transition-colors", highlight ? "border-indigo-200 dark:border-indigo-700 shadow-sm" : "border-gray-100 dark:border-card-border")}>
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 p-3.5 text-left">
+      <div onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 p-3.5 cursor-pointer">
         <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", st.color)}>
           <StIcon className="h-4 w-4" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-gray-800 dark:text-foreground truncate">
-              {o.items.length} producto{o.items.length > 1 ? "s" : ""}
+              {safeItems.length} producto{safeItems.length > 1 ? "s" : ""}
             </p>
             <span className="text-xs font-bold text-gray-900 dark:text-foreground ml-2 shrink-0">{fmt(o.total)}</span>
           </div>
@@ -414,14 +420,14 @@ function OrderCard({ order: o, highlight, onReorder }: { order: Order; highlight
         {/* One-click reorder — visible without expanding */}
         {o.status !== "cancelado" && onReorder && (
           <button
-            onClick={(e) => { e.stopPropagation(); onReorder(o.items); }}
+            onClick={(e) => { e.stopPropagation(); onReorder(safeItems); }}
             title="Volver a pedir"
             className="ml-1 p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors shrink-0"
           >
             <RotateCcw className="h-3.5 w-3.5" />
           </button>
         )}
-      </button>
+      </div>
 
       {open && (
         <div className="px-3.5 pb-3.5 border-t border-gray-50 dark:border-card-border pt-2.5 space-y-2.5">
@@ -430,8 +436,8 @@ function OrderCard({ order: o, highlight, onReorder }: { order: Order; highlight
             <OrderTimeline status={o.status} />
           )}
 
-          {o.items.map((item, i) => (
-            <div key={i} className="flex items-center gap-2.5 text-xs">
+          {safeItems.map((item) => (
+            <div key={`${o.id}-${item.productId ?? item.name}-${item.quantity}`} className="flex items-center gap-2.5 text-xs">
               {item.image && (
                 <Image src={item.image} alt={item.name} width={32} height={32} className="w-8 h-8 rounded-lg object-cover shrink-0" />
               )}
@@ -439,7 +445,7 @@ function OrderCard({ order: o, highlight, onReorder }: { order: Order; highlight
                 <p className="text-gray-700 dark:text-foreground/80 truncate">{item.name}</p>
                 <p className="text-gray-400 dark:text-muted">{item.quantity} {item.unit} &times; {fmt(item.price)}</p>
               </div>
-              <p className="font-semibold text-gray-700 dark:text-foreground/80 shrink-0">{fmt(item.price * item.quantity)}</p>
+              <p className="font-semibold text-gray-700 dark:text-foreground/80 shrink-0">{fmt((item.price ?? 0) * item.quantity)}</p>
             </div>
           ))}
           <div className="flex justify-between pt-1.5 border-t border-gray-50 dark:border-card-border text-xs">
@@ -454,7 +460,7 @@ function OrderCard({ order: o, highlight, onReorder }: { order: Order; highlight
               </Link>
             )}
             {o.status !== "cancelado" && onReorder && (
-              <button onClick={() => onReorder(o.items)}
+              <button onClick={() => onReorder(safeItems)}
                 className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-primary bg-primary/5 rounded-lg py-2 hover:bg-primary/10 transition-colors">
                 <RotateCcw className="h-3 w-3" /> Volver a pedir
               </button>
@@ -478,7 +484,7 @@ function ListasTab({ phone }: { phone: string }) {
   const [newName, setNewName] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQ, setSearchQ] = useState("");
-  const { addItem, addMultiple } = useCart();
+  const { addMultiple } = useCart();
 
   useEffect(() => {
     const clean = phone.replace(/\D/g, "");
@@ -636,7 +642,7 @@ function ListasTab({ phone }: { phone: string }) {
                       )}
                       <span className="flex-1 text-gray-700 dark:text-foreground/80 truncate">{prod?.name ?? `Producto #${item.productId}`}</span>
                       <span className="text-gray-400 dark:text-muted">&times;{item.quantity}</span>
-                      {prod && <span className="font-semibold text-gray-700 dark:text-foreground/80">{fmt(prod.price * item.quantity)}</span>}
+                      {prod && <span className="font-semibold text-gray-700 dark:text-foreground/80">{fmt((prod.price ?? 0) * item.quantity)}</span>}
                       {editingId === list.id && (
                         <button onClick={() => removeProductFromList(list.id, item.productId)}
                           className="p-1 rounded text-gray-300 hover:text-red-500 transition-colors">
@@ -686,11 +692,14 @@ function ListasTab({ phone }: { phone: string }) {
 function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: Order[] }) {
   if (!loyalty) return <EmptyState icon={Award} message="No hay datos de lealtad disponibles" />;
 
-  const style = TIER_STYLES[loyalty.loyaltyTier] ?? TIER_STYLES.bronce;
-  const currentIdx = loyalty.tiers.findIndex(t => t.name === loyalty.loyaltyTier);
-  const nextTier = loyalty.tiers[currentIdx + 1];
-  const progress = nextTier ? Math.min((loyalty.totalSpent / nextTier.minSpent) * 100, 100) : 100;
-  const deliveredOrders = orders.filter(o => o.status === "entregado").slice(0, 5);
+  const style = TIER_STYLES[loyalty.loyaltyTier ?? "bronce"] ?? TIER_STYLES.bronce;
+  const safeTiers = loyalty.tiers ?? [];
+  const currentIdx = safeTiers.findIndex(t => t.name === (loyalty.loyaltyTier ?? "bronce"));
+  const nextTier = safeTiers[currentIdx + 1];
+  const safeTotalSpent = loyalty.totalSpent ?? 0;
+  const progress = nextTier ? Math.min((safeTotalSpent / (nextTier.minSpent || 1)) * 100, 100) : 100;
+  const safeOrders = orders ?? [];
+  const deliveredOrders = safeOrders.filter(o => o && o.status === "entregado").slice(0, 5);
 
   return (
     <div className="space-y-4">
@@ -716,13 +725,13 @@ function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: O
           <div className="flex items-start justify-between">
             <div>
               <p className="text-[10px] font-semibold tracking-widest uppercase opacity-70">Bodega San Martín</p>
-              <p className="text-base font-bold tracking-wide capitalize mt-0.5">{loyalty.loyaltyTier}</p>
+              <p className="text-base font-bold tracking-wide capitalize mt-0.5">{loyalty?.loyaltyTier ?? "bronce"}</p>
             </div>
             <div className="flex flex-col items-center gap-1">
               {/* Tier icon */}
-              {loyalty.loyaltyTier === "diamante" ? (
+              {(loyalty?.loyaltyTier ?? "bronce") === "diamante" ? (
                 <Sparkles className="h-9 w-9 opacity-80 drop-shadow" />
-              ) : loyalty.loyaltyTier === "oro" ? (
+              ) : (loyalty?.loyaltyTier ?? "bronce") === "oro" ? (
                 <Star className="h-9 w-9 opacity-80 drop-shadow fill-current" />
               ) : (
                 <Award className="h-9 w-9 opacity-80 drop-shadow" />
@@ -733,7 +742,11 @@ function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: O
           {/* Card number / phone */}
           <div>
             <p className="text-xs opacity-60 tracking-widest font-mono">
-              {"•••• •••• " + loyalty.phone.slice(-4).padStart(4, "•")}
+              {(() => {
+                const phone = loyalty?.phone ?? "";
+                if (typeof phone !== "string" || phone.length === 0) return "•••• •••• ••••";
+                return "•••• •••• " + phone.slice(-4).padStart(4, "•");
+              })()}
             </p>
           </div>
 
@@ -741,11 +754,11 @@ function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: O
           <div className="flex items-end justify-between">
             <div>
               <p className="text-[10px] uppercase tracking-widest opacity-60">Titular</p>
-              <p className="text-sm font-semibold truncate max-w-35">{loyalty.name}</p>
+              <p className="text-sm font-semibold truncate max-w-35">{loyalty.name ?? "Cliente"}</p>
             </div>
             <div className="text-right">
               <p className="text-[10px] uppercase tracking-widest opacity-60">Puntos</p>
-              <p className="text-3xl font-black tabular-nums leading-none">{loyalty.loyaltyPoints.toLocaleString()}</p>
+              <p className="text-3xl font-black tabular-nums leading-none">{(loyalty.loyaltyPoints ?? 0).toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -760,15 +773,15 @@ function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: O
             <>
               <div className="flex justify-between text-xs">
                 <span className={cn("font-medium", style.text)}>
-                  Progreso a <span className="font-bold capitalize">{nextTier.name}</span>
+                  Progreso a <span className="font-bold capitalize">{nextTier.name ?? "siguiente nivel"}</span>
                 </span>
-                <span className="font-bold text-gray-700 dark:text-foreground">{fmt(loyalty.totalSpent)} / {fmt(nextTier.minSpent)}</span>
+                <span className="font-bold text-gray-700 dark:text-foreground">{fmt(safeTotalSpent)} / {fmt(nextTier.minSpent ?? 0)}</span>
               </div>
               <div className="h-3 bg-white/60 dark:bg-white/20 rounded-full overflow-hidden">
                 <div className={cn("h-full rounded-full transition-all")} style={{ width: `${progress}%`, background: style.inlineGradient }} />
               </div>
               <p className="text-xs text-gray-500 dark:text-muted">
-                Te falta {fmt(nextTier.minSpent - loyalty.totalSpent)} para subir a {nextTier.name}
+                Te falta {fmt((nextTier.minSpent ?? 0) - safeTotalSpent)} para subir a {nextTier.name ?? "siguiente nivel"}
               </p>
             </>
           ) : (
@@ -778,18 +791,18 @@ function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: O
           )}
 
           <div className="grid grid-cols-2 gap-2 mt-2">
-            {loyalty.tiers.map((t, i) => {
-              const isCurrent = t.name === loyalty.loyaltyTier;
+            {safeTiers.map((t, i) => {
+              const isCurrent = t.name === (loyalty?.loyaltyTier ?? "bronce");
               const isPast = i < currentIdx;
               return (
-                <div key={t.name}
+                <div key={`${t.name ?? "tier"}-${i}`}
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-all",
                     isCurrent ? "bg-white dark:bg-card shadow-sm border border-gray-100 dark:border-card-border font-bold" : isPast ? "opacity-60" : "opacity-40"
                   )}>
                   {isCurrent && <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />}
-                  <span className="capitalize flex-1">{t.name}</span>
-                  <span className="text-gray-400 dark:text-muted">{i === 0 ? "Inicio" : fmt(t.minSpent)}</span>
+                  <span className="capitalize flex-1">{t.name ?? "nivel"}</span>
+                  <span className="text-gray-400 dark:text-muted">{i === 0 ? "Inicio" : fmt(t.minSpent ?? 0)}</span>
                 </div>
               );
             })}
@@ -803,11 +816,11 @@ function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: O
           <Gift className="h-4 w-4 text-primary" /> Beneficios de tu nivel
         </h3>
         <div className="grid grid-cols-1 gap-2 text-xs">
-          <BenefitRow tier={loyalty.loyaltyTier} benefit="Acumula puntos por cada compra" always />
-          <BenefitRow tier={loyalty.loyaltyTier} benefit="Descuentos exclusivos en productos seleccionados" minTier="plata" />
-          <BenefitRow tier={loyalty.loyaltyTier} benefit="Delivery prioritario" minTier="oro" />
-          <BenefitRow tier={loyalty.loyaltyTier} benefit="Acceso anticipado a ofertas" minTier="oro" />
-          <BenefitRow tier={loyalty.loyaltyTier} benefit="Regalos en fechas especiales" minTier="diamante" />
+          <BenefitRow tier={loyalty?.loyaltyTier ?? "bronce"} benefit="Acumula puntos por cada compra" always />
+          <BenefitRow tier={loyalty?.loyaltyTier ?? "bronce"} benefit="Descuentos exclusivos en productos seleccionados" minTier="plata" />
+          <BenefitRow tier={loyalty?.loyaltyTier ?? "bronce"} benefit="Delivery prioritario" minTier="oro" />
+          <BenefitRow tier={loyalty?.loyaltyTier ?? "bronce"} benefit="Acceso anticipado a ofertas" minTier="oro" />
+          <BenefitRow tier={loyalty?.loyaltyTier ?? "bronce"} benefit="Regalos en fechas especiales" minTier="diamante" />
         </div>
       </div>
 
@@ -822,10 +835,10 @@ function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: O
               <div key={o.id} className="flex items-center justify-between text-xs py-1">
                 <div>
                   <p className="text-gray-700 dark:text-foreground/80">Compra {fmtDate(o.createdAt)}</p>
-                  <p className="text-gray-400 dark:text-muted">{o.items.length} productos</p>
+                  <p className="text-gray-400 dark:text-muted">{(o.items ?? []).length} productos</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-primary">+{Math.floor(o.total)} pts</p>
+                  <p className="font-bold text-primary">+{Math.floor(o.total ?? 0)} pts</p>
                   <p className="text-gray-400 dark:text-muted">{fmt(o.total)}</p>
                 </div>
               </div>
@@ -854,7 +867,7 @@ function BenefitRow({ tier, benefit, minTier, always }: { tier: string; benefit:
    ══════════════════════════════════════════════════════════════════ */
 
 function FavoritosTab() {
-  const { favorites, toggle, isFavorite } = useFavorites();
+  const { toggle, isFavorite } = useFavorites();
   const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -907,7 +920,7 @@ function FavoritosTab() {
         {filtered.map(product => (
           <div key={product.id} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden group">
             <div className="aspect-square relative bg-gray-50">
-              <Image src={product.image} alt={product.name} fill className="object-cover" />
+              <Image src={product.image} alt={product.name} fill className="object-cover" sizes="(max-width: 640px) 50vw, 200px" />
               <button onClick={() => toggle(String(product.id))}
                 className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 dark:bg-card/90 flex items-center justify-center shadow-sm hover:scale-110 transition-transform">
                 <Heart className="h-3.5 w-3.5 text-red-500 fill-red-500" />
@@ -1007,7 +1020,7 @@ function OfertasTab() {
               <div key={bundle.id} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
                 {bundle.image && (
                   <div className="aspect-video relative bg-gray-100">
-                    <Image src={bundle.image} alt={bundle.name} fill className="object-cover" />
+                    <Image src={bundle.image} alt={bundle.name} fill className="object-cover" sizes="(max-width: 640px) 100vw, 50vw" />
                   </div>
                 )}
                 <div className="p-3.5">
@@ -1063,7 +1076,8 @@ function ResenasTab({ phone, orders }: { phone: string; orders: Order[] }) {
       .catch(() => setLoading(false));
   }, [phone]);
 
-  const deliveredOrders = orders.filter(o => o.status === "entregado");
+  const safeOrders = orders ?? [];
+  const deliveredOrders = safeOrders.filter(o => o.status === "entregado");
   const canReview = deliveredOrders.length > reviews.length;
 
   const submitReview = async () => {
@@ -1249,7 +1263,7 @@ function PerfilTab({ loyalty, onLogout }: { loyalty: LoyaltyData | null; onLogou
             )}
             {loyalty && (
               <p className="text-xs text-primary font-semibold capitalize mt-0.5 flex items-center gap-1">
-                <Award className="h-3 w-3" /> Nivel {loyalty.loyaltyTier} &middot; {loyalty.loyaltyPoints} puntos
+                <Award className="h-3 w-3" /> Nivel {loyalty.loyaltyTier ?? "bronce"} &middot; {loyalty.loyaltyPoints ?? 0} puntos
               </p>
             )}
           </div>
@@ -1339,15 +1353,15 @@ function PerfilTab({ loyalty, onLogout }: { loyalty: LoyaltyData | null; onLogou
               <p className="text-xs text-gray-400 dark:text-muted">Total gastado</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold text-primary">{loyalty.loyaltyPoints}</p>
+              <p className="text-lg font-bold text-primary">{loyalty.loyaltyPoints ?? 0}</p>
               <p className="text-xs text-gray-400 dark:text-muted">Puntos acumulados</p>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-gray-50 dark:border-card-border">
             <p className="text-xs text-gray-500 dark:text-muted text-center">
-              Nivel <span className="font-bold text-primary capitalize">{loyalty.loyaltyTier}</span> &middot; {
-                loyalty.tiers[loyalty.tiers.findIndex(t => t.name === loyalty.loyaltyTier) + 1]
-                  ? `${fmt(loyalty.tiers[loyalty.tiers.findIndex(t => t.name === loyalty.loyaltyTier) + 1].minSpent - loyalty.totalSpent)} para el siguiente nivel`
+              Nivel <span className="font-bold text-primary capitalize">{loyalty.loyaltyTier ?? "bronce"}</span> &middot; {
+                (loyalty.tiers ?? [])[((loyalty.tiers ?? []).findIndex(t => t.name === (loyalty.loyaltyTier ?? "bronce")) + 1)]
+                  ? `${fmt((loyalty.tiers ?? [])[((loyalty.tiers ?? []).findIndex(t => t.name === (loyalty.loyaltyTier ?? "bronce")) + 1)].minSpent - (loyalty.totalSpent ?? 0))} para el siguiente nivel`
                   : "¡Nivel máximo alcanzado!"
               }
             </p>

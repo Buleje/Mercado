@@ -1,11 +1,15 @@
-const CACHE_NAME = "bsm-v3";
-const STATIC_URLS = ["/", "/manifest.webmanifest"];
-const API_CACHE = "bsm-api-v2";
-const IMG_CACHE = "bsm-img-v2";
+const CACHE_NAME = "bsm-v4";
+const STATIC_URLS = ["/", "/tienda", "/manifest.webmanifest", "/offline.html"];
+const API_CACHE = "bsm-api-v3";
+const IMG_CACHE = "bsm-img-v3";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_URLS))
+    caches.open(CACHE_NAME).then((cache) => 
+      cache.addAll(STATIC_URLS).catch((err) => {
+        console.log("[SW] Failed to cache some static URLs:", err);
+      })
+    )
   );
   self.skipWaiting();
 });
@@ -78,7 +82,7 @@ self.addEventListener("fetch", (event) => {
   )
     return;
 
-  // Pages: network first, cache fallback
+  // Pages: network first, cache fallback, offline.html as last resort
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -90,7 +94,19 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() => 
+        caches.match(event.request).then((cached) => {
+          if (cached) return cached;
+          // If HTML request and no cache, return offline page
+          if (
+            event.request.destination === "document" ||
+            event.request.headers.get("accept")?.includes("text/html")
+          ) {
+            return caches.match("/offline.html");
+          }
+          return new Response("Offline", { status: 503 });
+        })
+      )
   );
 });
 

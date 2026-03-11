@@ -15,7 +15,7 @@ export type ActivityEntry = {
 
 // GET – return recent activity
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
   const limit = Math.min(parseInt(req.nextUrl.searchParams.get("limit") ?? "50", 10), 500);
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 
 // POST – add a new entry
 export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   const body = await req.json();

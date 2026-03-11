@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-const COLORS = ["#2d6a4f", "#f4a261", "#e63946", "#457b9d", "#ffd166", "#06d6a0"];
+const COLORS = ["#6366f1", "#f59e0b", "#e63946", "#3b82f6", "#ffd166", "#818cf8"];
 
 export default function Confetti({ active }: { active: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);

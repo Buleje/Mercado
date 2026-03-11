@@ -49,7 +49,7 @@ export async function sendOrderNotification(order: {
     subject: `🛒 Nuevo pedido — ${order.customerName} — S/${order.total.toFixed(2)}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
-        <div style="background:#2d6a4f;padding:20px 24px;">
+        <div style="background:#6366f1;padding:20px 24px;">
           <h2 style="color:#fff;margin:0;font-size:18px;">🛒 Nuevo pedido recibido</h2>
           <p style="color:#a8d5ba;margin:4px 0 0;font-size:13px;">ID: ${order.id}</p>
         </div>
@@ -65,15 +65,15 @@ export async function sendOrderNotification(order: {
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
               <tr style="background:#f0fdf4;">
-                <th style="text-align:left;padding:6px 8px;color:#2d6a4f;">Producto</th>
-                <th style="text-align:right;padding:6px 8px;color:#2d6a4f;">Subtotal</th>
+                <th style="text-align:left;padding:6px 8px;color:#6366f1;">Producto</th>
+                <th style="text-align:right;padding:6px 8px;color:#6366f1;">Subtotal</th>
               </tr>
             </thead>
             <tbody>${itemsHtml}</tbody>
             <tfoot>
               <tr style="background:#f0fdf4;">
                 <td style="padding:8px;font-weight:bold;color:#111;">Total</td>
-                <td style="padding:8px;text-align:right;font-weight:bold;color:#2d6a4f;font-size:16px;">S/${order.total.toFixed(2)}</td>
+                <td style="padding:8px;text-align:right;font-weight:bold;color:#6366f1;font-size:16px;">S/${order.total.toFixed(2)}</td>
               </tr>
             </tfoot>
           </table>

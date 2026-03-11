@@ -2,7 +2,7 @@
 
 import { useState, useEffect, startTransition } from "react";
 import Image from "next/image";
-import { BellRing, ShoppingCart, X } from "lucide-react";
+import { BellRing, ShoppingCart, X, Package } from "lucide-react";
 import { products } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 
@@ -64,7 +64,10 @@ export default function BackInStock() {
         {/* Content */}
         <div className="flex items-center gap-3 p-3">
           <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gray-50 dark:bg-white/5 border border-border shrink-0">
-            <Image src={product.image} alt={product.name} fill sizes="56px" className="object-cover" />
+            {product.image
+              ? <Image src={product.image} alt={product.name} fill sizes="56px" className="object-cover" />
+              : <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-6 w-6" /></div>
+            }
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-foreground line-clamp-1">{product.name}</p>

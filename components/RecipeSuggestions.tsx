@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ShoppingCart, Clock, Users, Sparkles } from "lucide-react";
+import { ShoppingCart, Clock, Users, Sparkles, Package } from "lucide-react";
 import { products, type Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
@@ -37,7 +37,7 @@ const RECIPES: Recipe[] = [
     emoji: "🥗",
     time: "10 min",
     servings: 2,
-    gradient: "linear-gradient(135deg, #10b981, #16a34a)",
+    gradient: "linear-gradient(135deg, #6366f1, #4f46e5)",
     ingredients: ["lechuga", "tomate", "palta", "limón", "aceite"],
   },
   {
@@ -134,7 +134,10 @@ export default function RecipeSuggestions() {
                     {matched.slice(0, 3).map((p) => (
                       <div key={p.id} className="flex items-center gap-2.5">
                         <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-gray-50 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/5 shrink-0">
-                          <Image src={p.image} alt={p.name} fill sizes="36px" className="object-cover" />
+                          {p.image
+                            ? <Image src={p.image} alt={p.name} fill sizes="36px" className="object-cover" />
+                            : <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-5 w-5" /></div>
+                          }
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-foreground truncate">{p.name}</p>

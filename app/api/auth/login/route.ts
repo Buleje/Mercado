@@ -6,6 +6,7 @@ import { createSessionToken, SESSION } from "@/lib/session";
 import type { AdminRole } from "@/lib/session";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { applyRateLimit } from "@/lib/rate-limit";
 import fs from "fs/promises";
 import path from "path";
 
@@ -40,6 +41,12 @@ function makeCookie(token: string) {
 }
 
 export async function POST(req: Request) {
+  // Rate limit: 3 failed login attempts per hour (AUTH preset)
+  const rateLimitResponse = applyRateLimit(req, "AUTH", "auth:login");
+  if (rateLimitResponse) {
+    return rateLimitResponse;
+  }
+
   try {
   const body = await req.json() as { username?: string; password?: string };
   const { username, password } = body;

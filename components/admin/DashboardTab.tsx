@@ -10,6 +10,7 @@ import {
   UserCheck, TrendingDown, Download, type LucideIcon,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
+import { OrderStats } from "@/components/OrderStats";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,9 +77,9 @@ function dateKey(iso: string) { const d = new Date(iso); return `${d.getFullYear
 function dayLabel(dk: string) { return new Date(dk+"T12:00:00").toLocaleDateString("es-PE",{day:"2-digit",month:"short"}); }
 
 const CAT_LABELS: Record<string,string> = { "frutas-verduras":"Frutas y Verduras", abarrotes:"Abarrotes", carnes:"Carnes", lacteos:"Lácteos", bebidas:"Bebidas", limpieza:"Limpieza" };
-const CAT_COLORS: Record<string,string> = { "frutas-verduras":"#22c55e", abarrotes:"#f59e0b", carnes:"#ef4444", lacteos:"#3b82f6", bebidas:"#8b5cf6", limpieza:"#06b6d4" };
+const CAT_COLORS: Record<string,string> = { "frutas-verduras":"#10b981", abarrotes:"#f59e0b", carnes:"#ef4444", lacteos:"#3b82f6", bebidas:"#8b5cf6", limpieza:"#06b6d4" };
 const PAY_LABELS: Record<string,string> = { efectivo:"Efectivo", yape:"Yape", plin:"Plin", tarjeta:"Tarjeta", transferencia:"Transferencia" };
-const PAY_COLORS: Record<string,string> = { efectivo:"#22c55e", yape:"#8b5cf6", plin:"#06b6d4", tarjeta:"#3b82f6", transferencia:"#f59e0b" };
+const PAY_COLORS: Record<string,string> = { efectivo:"#10b981", yape:"#8b5cf6", plin:"#06b6d4", tarjeta:"#3b82f6", transferencia:"#f59e0b" };
 const DAYS = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 
 const SECTIONS: { id: Section; label: string; icon: React.ComponentType<{className?:string}> }[] = [
@@ -350,6 +351,11 @@ export default function DashboardTab() {
     insights.sort((a, b) => b.priority - a.priority);
 
     const avgRating = reviews.length>0?reviews.reduce((a,r)=>a+r.rating,0)/reviews.length:0;
+    
+    // OrderStats calculations
+    const pendingOrdersCount = fOrders.filter(o => o.status === "pendiente").length;
+    const completedOrdersCount = fOrders.filter(o => o.status === "entregado").length + fSales.length;
+    const conversionRate = tickets > 0 ? (completedOrdersCount / tickets) * 100 : 0;
 
     return {
       ventas,utilidad,margen,tickets,ticketProm,uds,clientesAtendidos:uniqueClients.size,
@@ -361,6 +367,7 @@ export default function DashboardTab() {
       activeProducts:products.filter(p=>p.active).length,
       dVentas:pctDelta(ventas,prevVentas),dUtilidad:pctDelta(utilidad,prevUtilidad),
       dTickets:pctDelta(tickets,prevTickets),dTicketProm:pctDelta(ticketProm,prevTicketProm),
+      pendingOrdersCount,completedOrdersCount,conversionRate,
     };
   }, [products,orders,sales,customers,purchases,payables,suppliers,reviews,period]);
 
@@ -613,11 +620,32 @@ th{font-weight:600;background:#f9f9f9}
             <Kpi label="Tickets" value={String(d.tickets)} icon={Receipt} accent="text-violet-500" delta={d.dTickets} />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <Kpi label="Ticket Prom." value={fmt(d.ticketProm)} icon={ShoppingCart} accent="text-indigo-500" delta={d.dTicketProm} />
+            <Kpi label="Ticket Prom." value={fmt(d.ticketProm)} icon={ShoppingCart} accent="text-indigo-500" delta={d. dTicketProm} />
             <Kpi label="Uds. Vendidas" value={String(d.uds)} icon={Package} accent="text-cyan-500" />
             <Kpi label="Clientes" value={String(d.clientesAtendidos)} icon={Users} accent="text-violet-500" />
             <Kpi label="Stock Valor." value={fmt(d.stockVal)} icon={ShoppingBasket} accent="text-amber-500" />
           </div>
+
+          {/* OrderStats Component - Enhanced metrics */}
+          <OrderStats
+            totalOrders={d.tickets}
+            totalRevenue={d.ventas}
+            pendingOrders={d.pendingOrdersCount}
+            completedOrders={d.completedOrdersCount}
+            averageOrderValue={d.ticketProm}
+            conversionRate={d.conversionRate}
+            periodLabel={period === "hoy" ? "hoy" : period === "semana" ? "esta semana" : period === "mes" ? "este mes" : "todo"}
+            previousPeriodComparison={
+              period !== "todo" && d.dVentas !== null
+                ? {
+                    totalOrders: d.dTickets ?? 0,
+                    totalRevenue: d.dVentas ?? 0,
+                    averageOrderValue: d.dTicketProm ?? 0,
+                    conversionRate: 0, // Not calculated for comparison period yet
+                  }
+                : undefined
+            }
+          />
 
           <div className="grid lg:grid-cols-5 gap-3">
             <div className="lg:col-span-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4">

@@ -1,6 +1,7 @@
 "use client";
 
-import { Truck, BadgePercent, ShieldCheck, Leaf } from "lucide-react";
+import Link from "next/link";
+import { Truck, BadgePercent, ShieldCheck, Leaf, ArrowRight } from "lucide-react";
 import { useInView } from "@/hooks/use-in-view";
 
 const benefits = [
@@ -8,29 +9,29 @@ const benefits = [
     icon: Truck,
     title: "Delivery Rápido",
     description: "Entrega a domicilio en toda la zona urbana de Pucallpa. Recibe tus abarrotes, bebidas y productos en tu puerta.",
-    iconBg: "bg-blue-500",
-    accentGradient: "linear-gradient(to bottom, rgba(59,130,246,0.13), rgba(59,130,246,0.03))",
+    accent: "#3b82f6",
+    accentGradient: "linear-gradient(to bottom, rgba(59,130,246,0.10), transparent)",
   },
   {
     icon: BadgePercent,
     title: "Pago con Yape o Efectivo",
     description: "Paga fácil con Yape o en efectivo contra entrega. Compra online sin complicaciones.",
-    iconBg: "bg-amber-500",
-    accentGradient: "linear-gradient(to bottom, rgba(245,158,11,0.13), rgba(245,158,11,0.03))",
+    accent: "#f59e0b",
+    accentGradient: "linear-gradient(to bottom, rgba(245,158,11,0.10), transparent)",
   },
   {
     icon: ShieldCheck,
     title: "Calidad Garantizada",
     description: "Productos seleccionados y verificados: abarrotes, golosinas, carne, pollo y más para tu familia.",
-    iconBg: "bg-emerald-500",
-    accentGradient: "linear-gradient(to bottom, rgba(16,185,129,0.13), rgba(16,185,129,0.03))",
+    accent: "#6366f1",
+    accentGradient: "linear-gradient(to bottom, rgba(99,102,241,0.10), transparent)",
   },
   {
     icon: Leaf,
     title: "Productos Frescos",
     description: "Carne, pollo, frutas y verduras frescas todos los días. Víveres de calidad directo a tu hogar.",
-    iconBg: "bg-teal-500",
-    accentGradient: "linear-gradient(to bottom, rgba(20,184,166,0.13), rgba(20,184,166,0.03))",
+    accent: "#8b5cf6",
+    accentGradient: "linear-gradient(to bottom, rgba(139,92,246,0.10), transparent)",
   },
 ];
 
@@ -64,23 +65,21 @@ export default function Benefits() {
             <div
               key={benefit.title}
               style={inView ? { animationDelay: `${i * 100}ms` } : undefined}
-              className={`group relative bg-white dark:bg-card rounded-2xl sm:rounded-3xl p-7 sm:p-8 text-center shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden ${
+              className={`group relative bg-white dark:bg-card rounded-2xl p-7 sm:p-8 text-center border border-gray-100/80 dark:border-card-border hover:border-primary/25 hover:shadow-[0_8px_32px_rgba(99,102,241,0.07)] hover:-translate-y-0.5 transition-all duration-300 overflow-hidden ${
                 inView ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
               }`}
             >
               {/* Hover gradient */}
-              <div className="absolute inset-0 dark:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ background: benefit.accentGradient }} />
-
-              {/* Top accent */}
-              <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 rounded-b-full ${benefit.iconBg} opacity-60`} />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: benefit.accentGradient }} />
 
               <div className="relative z-10">
                 <div
-                  className={`inline-flex items-center justify-center h-14 w-14 sm:h-16 sm:w-16 rounded-2xl ${benefit.iconBg} shadow-lg mb-5 group-hover:scale-110 transition-transform duration-300`}
+                  className="inline-flex items-center justify-center h-13 w-13 rounded-xl mb-5 group-hover:scale-110 transition-transform duration-300"
+                  style={{ background: benefit.accent + "18", color: benefit.accent }}
                 >
-                  <benefit.icon className="h-7 w-7 sm:h-8 sm:w-8 text-white" />
+                  <benefit.icon className="h-6 w-6" />
                 </div>
-                <h3 className="text-lg font-bold text-foreground mb-2">
+                <h3 className="text-base font-bold text-foreground mb-2">
                   {benefit.title}
                 </h3>
                 <p className="text-sm text-muted leading-relaxed">
@@ -89,6 +88,17 @@ export default function Benefits() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* CTA */}
+        <div className={`text-center mt-12 transition-all duration-700 delay-300 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+          <Link
+            href="/tienda"
+            className="group inline-flex items-center gap-2.5 text-primary hover:text-primary-dark font-bold text-base transition-colors"
+          >
+            Empieza a comprar ahora
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Link>
         </div>
       </div>
     </section>

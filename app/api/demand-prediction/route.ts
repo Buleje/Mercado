@@ -1,8 +1,13 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
 import { SalesDB, ProductsDB } from "@/lib/jsondb";
+import { requireAdmin } from "@/lib/require-admin";
 
 export async function POST(req: NextRequest) {
+  // Only admin can access demand prediction (sensitive business intelligence)
+  const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+
   const GROQ_KEY = process.env.GROQ_API_KEY;
   if (!GROQ_KEY) return NextResponse.json({ error: "GROQ_API_KEY no configurada" }, { status: 500 });
 
