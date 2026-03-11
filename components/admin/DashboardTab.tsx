@@ -638,10 +638,8 @@ th{font-weight:600;background:#f9f9f9}
             previousPeriodComparison={
               period !== "todo" && d.dVentas !== null
                 ? {
-                    totalOrders: d.dTickets ?? 0,
-                    totalRevenue: d.dVentas ?? 0,
-                    averageOrderValue: d.dTicketProm ?? 0,
-                    conversionRate: 0, // Not calculated for comparison period yet
+                    orders: d.dTickets ?? 0,
+                    revenue: d.dVentas ?? 0,
                   }
                 : undefined
             }

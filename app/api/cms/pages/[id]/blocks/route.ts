@@ -18,13 +18,14 @@ import { z } from "zod";
 // ═══════════════════════════════════════════════════════
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
+  const { id } = await params;
   try {
-    const blocks = await getPageBlocks(params.id);
+    const blocks = await getPageBlocks(id);
     return NextResponse.json(blocks);
   } catch (error) {
     console.error("[cms/blocks] GET error:", error);
@@ -40,17 +41,18 @@ export async function GET(
 // ═══════════════════════════════════════════════════════
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
+  const { id } = await params;
   try {
     const body = await req.json();
     
     // Handle special actions
     if (body.action === "reorder") {
-      const blocks = await reorderBlocks(params.id, body.blockOrders);
+      const blocks = await reorderBlocks(id, body.blockOrders);
       return NextResponse.json(blocks);
     }
 
@@ -61,7 +63,7 @@ export async function POST(
 
     // Create new block
     const validated = BlockSchema.parse(body);
-    const block = await createBlock(params.id, validated);
+    const block = await createBlock(id, validated);
 
     return NextResponse.json(block, { status: 201 });
   } catch (error) {

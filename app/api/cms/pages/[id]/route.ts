@@ -15,13 +15,14 @@ import { z } from "zod";
 // ═══════════════════════════════════════════════════════
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
+  const { id } = await params;
   try {
-    const page = await getPageById(params.id);
+    const page = await getPageById(id);
 
     if (!page) {
       return NextResponse.json(
@@ -45,16 +46,17 @@ export async function GET(
 // ═══════════════════════════════════════════════════════
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
+  const { id } = await params;
   try {
     const body = await req.json();
     const validated = PageSchema.partial().parse(body);
 
-    const page = await updatePage(params.id, validated);
+    const page = await updatePage(id, validated);
 
     return NextResponse.json(page);
   } catch (error) {
@@ -78,13 +80,14 @@ export async function PUT(
 // ═══════════════════════════════════════════════════════
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
+  const { id } = await params;
   try {
-    await deletePage(params.id);
+    await deletePage(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[cms/pages/id] DELETE error:", error);

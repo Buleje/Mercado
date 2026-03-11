@@ -16,7 +16,7 @@ export const PageSchema = z.object({
   ogImage: z.string().url().optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
   layout: z.string().default("default"),
-  settings: z.record(z.unknown()).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type PageInput = z.infer<typeof PageSchema>;
@@ -26,9 +26,9 @@ export const BlockSchema = z.object({
   type: z.string().min(1),
   order: z.number().int().min(0),
   visible: z.boolean().default(true),
-  props: z.record(z.unknown()),
-  styles: z.record(z.unknown()).optional(),
-  mobileProps: z.record(z.unknown()).optional(),
+  props: z.record(z.string(), z.unknown()),
+  styles: z.record(z.string(), z.unknown()).optional(),
+  mobileProps: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type BlockInput = z.infer<typeof BlockSchema>;
@@ -107,9 +107,9 @@ export const ThemeSchema = z.object({
     section: z.string(),
     container: z.string(),
   }).optional(),
-  header: z.record(z.unknown()).optional(),
-  footer: z.record(z.unknown()).optional(),
-  animations: z.record(z.unknown()).optional(),
+  header: z.record(z.string(), z.unknown()).optional(),
+  footer: z.record(z.string(), z.unknown()).optional(),
+  animations: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type ThemeInput = z.infer<typeof ThemeSchema>;
@@ -129,7 +129,7 @@ export const NavigationSchema = z.object({
     icon: z.string().optional(),
     children: z.array(z.lazy(() => z.any())).optional(),
   })),
-  settings: z.record(z.unknown()).optional(),
+  settings: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type NavigationInput = z.infer<typeof NavigationSchema>;

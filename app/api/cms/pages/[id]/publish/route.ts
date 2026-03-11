@@ -9,13 +9,14 @@ import { publishPage } from "@/lib/cms-db/pages";
 // ═══════════════════════════════════════════════════════
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
+  const { id } = await params;
   try {
-    const page = await publishPage(params.id);
+    const page = await publishPage(id);
     return NextResponse.json(page);
   } catch (error) {
     console.error("[cms/pages/publish] error:", error);

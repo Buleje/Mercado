@@ -1,95 +1,9 @@
-# ================================================
-# 🤖 ROBOTS.TXT - BODEGA SAN MARTÍN
-# ================================================
-# Configuración SEO para crawling de motores de búsqueda
-
-# ================================================
-# 🌐 REGLAS GLOBALES (Todos los bots)
-# ================================================
+# *
 User-agent: *
-
-# ✅ PERMITIR - Rutas públicas
 Allow: /
-Allow: /tienda
-Allow: /tienda/*
-Allow: /_next/static/
-Allow: /images/
-Allow: /icons/
 
-# 🚫 BLOQUEAR - Áreas privadas
-Disallow: /admin/
-Disallow: /admin/*
-Disallow: /api/
-Disallow: /api/*
-Disallow: /pedido/
-Disallow: /venta/
-Disallow: /_next/data/
-
-# 🚫 BLOQUEAR - Rutas de autenticación
-Disallow: /login
-Disallow: /auth/
-
-# 🚫 BLOQUEAR - Archivos del sistema
-Disallow: /*.json$
-Disallow: /*.xml$
-Disallow: /sitemap-*.xml
-
-# ================================================
-# 🤖 GOOGLE BOT (Optimización específica)
-# ================================================
-User-agent: Googlebot
-Allow: /
-Allow: /tienda
-Allow: /tienda/*
-Disallow: /admin/
-Disallow: /api/
-
-# Google Image Bot (permitir imágenes de productos)
-User-agent: Googlebot-Image
-Allow: /images/
-Allow: /_next/static/
-Allow: /_next/image
-
-# ================================================
-# 🎯 BING BOT
-# ================================================
-User-agent: Bingbot
-Allow: /
-Allow: /tienda
-Disallow: /admin/
-Disallow: /api/
-
-# ================================================
-# 🚫 BOTS BLOQUEADOS (scrapers, crawlers maliciosos)
-# ================================================
-User-agent: AhrefsBot
-Disallow: /
-
-User-agent: SemrushBot
-Disallow: /
-
-User-agent: DotBot
-Disallow: /
-
-User-agent: MJ12bot
-Disallow: /
-
-User-agent: BLEXBot
-Disallow: /
-
-# ================================================
-# 📍 CONFIGURACIÓN REGIONAL
-# ================================================
-# Host principal (Perú)
+# Host
 Host: https://www.bodegasanmartin.pe
 
-# ================================================
-# 🗺️ SITEMAPS
-# ================================================
+# Sitemaps
 Sitemap: https://www.bodegasanmartin.pe/sitemap.xml
-Sitemap: https://www.bodegasanmartin.pe/sitemap-0.xml
-
-# ================================================
-# ⏱️ CRAWL DELAY (solo si hay problemas de carga)
-# ================================================
-# Crawl-delay: 10  # Descomentar si el servidor tiene problemas
