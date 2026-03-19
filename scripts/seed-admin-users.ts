@@ -17,7 +17,7 @@ async function main() {
 
   for (const u of users) {
     await prisma.adminUser.upsert({
-      where: { username: u.username },
+      where: { id: u.id },
       create: {
         id: u.id,
         username: u.username,

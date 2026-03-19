@@ -14,7 +14,7 @@ function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE",
 const FORECAST: ForecastPoint[] = [];
 
 /* ── Product Forecasts ── */
-const PRODUCT_FORECASTS = [];
+const PRODUCT_FORECASTS: { id: string; name: string; current: number; predicted7d: number; predicted30d: number; trend: number; stock: number; daysLeft: number }[] = [];
 
 export default function SalesForecastTab() {
   const [period, setPeriod] = useState<Period>("30d");

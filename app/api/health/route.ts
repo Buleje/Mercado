@@ -56,8 +56,11 @@ export async function GET() {
         import("@/lib/mailer-superadmin").then(({ sendSuperAdminAlert }) =>
           sendSuperAdminAlert({
             subject: "⚠️ Alerta de salud: Base de datos degradada",
-            headline: "Base de datos no disponible",
-            body: `El health check ha detectado ${_failCount} fallos de conexión a la base de datos en el último minuto. Último error: ${errMsg}`,
+            title: "Base de datos no disponible",
+            items: [
+              { label: "Fallos detectados", value: String(_failCount) },
+              { label: "Último error", value: errMsg },
+            ],
             actionLabel: "Ver health check",
             actionUrl: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://bodegasanmartin.com"}/api/health`,
           })

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Heart, Loader2, Search, Gift, Award, ArrowUpRight, NotebookPen, Save, DollarSign, Clock, Bell, Users2, Link, Copy, MessageSquare, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Customer = { phone: string; name: string; loyaltyPoints: number; loyaltyTier: string; totalSpent: number; privateNotes?: string; creditBalance?: number };
+type Customer = { phone: string; name: string; loyaltyPoints: number; loyaltyTier: string; totalSpent: number; privateNotes?: string; creditBalance?: number; referralCode?: string; referredBy?: string };
 type Tier = { name: string; minSpent: number; pointsMultiplier: number; color: string };
 
 const TIER_COLORS: Record<string, string> = {

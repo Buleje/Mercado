@@ -109,12 +109,10 @@ export async function setFeatureFlag(
   await prisma.settings.upsert({
     where: { tenantId },
     update: {
-      // @ts-expect-error — featureFlagsJson added in migration, types lag prisma generate
       featureFlagsJson: JSON.stringify(current),
     },
     create: {
       tenantId,
-      // @ts-expect-error — featureFlagsJson added in migration, types lag prisma generate
       featureFlagsJson: JSON.stringify(current),
     },
   });

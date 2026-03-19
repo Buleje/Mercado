@@ -3,11 +3,6 @@
 import { useEffect } from "react";
 import { onCLS, onFCP, onINP, onLCP, onTTFB, type Metric } from "web-vitals";
 
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void;
-  }
-}
 
 function sendToGA(metric: Metric) {
   if (typeof window === "undefined" || typeof window.gtag !== "function") return;

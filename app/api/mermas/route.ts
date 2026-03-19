@@ -68,5 +68,5 @@ export async function POST(req: NextRequest) {
   });
 
   const product = await prisma.product.findUnique({ where: { id: productId }, select: { name: true, category: true, costPrice: true } });
-  return NextResponse.json(buildRecord(movement, product), { status: 201 });
+  return NextResponse.json(buildRecord(movement, product ?? undefined), { status: 201 });
 }

@@ -40,7 +40,7 @@ const STATUS_META: Record<ReconciliationStatus, { label: string; color: string; 
   discrepancia: { label: "Discrepancia",  color: "text-red-700 dark:text-red-400",         bg: "bg-red-100 dark:bg-red-900/30",        icon: AlertTriangle },
 };
 
-const BANK_ACCOUNTS = [];
+const BANK_ACCOUNTS: { id: string; name: string; number: string }[] = [];
 
 // ── Seed Data ─────────────────────────────────────────────────────────────────
 
