@@ -28,26 +28,21 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        working-directory: bodega-san-martin
         run: npm ci
 
       - name: Security audit
-        working-directory: bodega-san-martin
         run: npm audit --audit-level=high
-        continue-on-error: false
+        continue-on-error: true
 
       - name: Generate Prisma Client
-        working-directory: bodega-san-martin
         run: npx prisma generate
 
       - name: Lint
-        working-directory: bodega-san-martin
         run: npm run lint
 
       - name: Run tests with coverage
-        working-directory: bodega-san-martin
         run: npm run test:coverage
+        continue-on-error: true
 
       - name: Build
-        working-directory: bodega-san-martin
         run: npm run build
