@@ -35,7 +35,7 @@ export { SEGMENT_LABELS };
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
-  if (auth) return auth;
+  if (auth instanceof NextResponse) return auth;
 
   const db = prisma as unknown as PrismaClient;
   const now = new Date();

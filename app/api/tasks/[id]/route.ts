@@ -27,7 +27,7 @@ async function saveTasks(tasks: Task[]): Promise<void> {
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin(req);
-  if (auth) return auth;
+  if (auth instanceof NextResponse) return auth;
   const { id } = await params;
   const body = await req.json();
   const tasks = await getTasks();
@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin(req);
-  if (auth) return auth;
+  if (auth instanceof NextResponse) return auth;
   const { id } = await params;
   const tasks = await getTasks();
   await saveTasks(tasks.filter(t => t.id !== id));

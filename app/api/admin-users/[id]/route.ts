@@ -46,14 +46,14 @@ export async function POST(req: NextRequest) {
 
   const { username, password, role, name } = parsed.data;
 
-  const existing = await prisma.adminUser.findUnique({ where: { username } });
+  const existing = await prisma.adminUser.findFirst({ where: { username, tenantId: auth.tenantId } });
   if (existing) {
     return NextResponse.json({ error: "El usuario ya existe" }, { status: 409 });
   }
 
   const passwordHash = await hash(password, 12);
   const user = await prisma.adminUser.create({
-    data: { username, passwordHash, role, name, active: true },
+    data: { username, passwordHash, role, name, active: true, tenantId: auth.tenantId },
     select: { id: true, username: true, role: true, name: true, active: true, createdAt: true },
   });
 

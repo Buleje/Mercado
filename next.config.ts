@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
     removeConsole: process.env.NODE_ENV === "production",
   },
 
+  // Fix Turbopack workspace root detection (avoids "multiple lockfiles" warning)
+  turbopack: {
+    root: __dirname,
+  },
+
   // No source maps in production browser bundle (saves ~30–50% of chunk sizes)
   productionBrowserSourceMaps: false,
 

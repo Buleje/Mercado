@@ -28,7 +28,7 @@ async function checkAndCreateBirthdayCoupons() {
     const code = `CUMPLE-${customer.phone.slice(-4)}-${year}`;
 
     // Skip if coupon already exists for this customer this year
-    const existing = await prisma.coupon.findUnique({ where: { code } });
+    const existing = await prisma.coupon.findFirst({ where: { code } });
     if (existing) continue;
 
     // Create 10% birthday discount coupon, valid for 7 days

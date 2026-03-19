@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
         data: {
           customerPhone,
           title: "¡Bienvenido a Bodega San Martín!",
-          message: "Gracias por tu primer pedido. Como cliente nuevo, disfruta envío gratis en tu próxima compra. ¡Esperamos verte pronto! 🎉",
+          body: "Gracias por tu primer pedido. Como cliente nuevo, disfruta envío gratis en tu próxima compra. ¡Esperamos verte pronto! 🎉",
           type: "promotion",
         },
       });
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
 
       // Check if review request already sent for this order
       const existing = await prisma.customerNotification.findFirst({
-        where: { customerPhone: order.customerPhone, message: { contains: order.id.slice(-6) } },
+        where: { customerPhone: order.customerPhone, body: { contains: order.id.slice(-6) } },
       });
       if (existing) continue;
 
@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
         data: {
           customerPhone: order.customerPhone,
           title: "¿Cómo fue tu pedido?",
-          message: `Tu pedido #${order.id.slice(-6)} fue entregado. ¡Cuéntanos cómo te fue! Tu opinión nos ayuda a mejorar. ⭐`,
+          body: `Tu pedido #${order.id.slice(-6)} fue entregado. ¡Cuéntanos cómo te fue! Tu opinión nos ayuda a mejorar. ⭐`,
           type: "order",
         },
       });
@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
         data: {
           customerPhone: cart.customerPhone,
           title: "¡No olvides tu carrito!",
-          message: `Tienes ${items.length} producto${items.length > 1 ? "s" : ""} esperando: ${firstItems}${items.length > 2 ? "…" : ""}. ¡Completa tu pedido! 🛒`,
+          body: `Tienes ${items.length} producto${items.length > 1 ? "s" : ""} esperando: ${firstItems}${items.length > 2 ? "…" : ""}. ¡Completa tu pedido! 🛒`,
           type: "promotion",
         },
       });

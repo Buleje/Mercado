@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 
 export default function StoreError({
   error,
@@ -34,12 +35,12 @@ export default function StoreError({
           >
             Intentar de nuevo
           </button>
-          <a
+          <Link
             href="/tienda"
             className="px-6 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
           >
             Ir a la tienda
-          </a>
+          </Link>
         </div>
       </div>
     </div>

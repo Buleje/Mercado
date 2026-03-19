@@ -36,7 +36,7 @@ export type CLVResponse = {
 
 export async function GET(req: NextRequest) {
   const authErr = await requireAdmin(req);
-  if (authErr) return authErr;
+  if (authErr instanceof NextResponse) return authErr;
 
   // Aggregate orders by customerPhone (non-cancelled)
   const rows = await prisma.order.groupBy({
