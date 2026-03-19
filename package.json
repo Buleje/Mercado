@@ -7,7 +7,6 @@
     "dev:clean": "taskkill /F /IM node.exe 2>nul; next dev",
     "build": "next build",
     "analyze": "cross-env ANALYZE=true next build",
-    "postbuild": "next-sitemap",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "eslint",
