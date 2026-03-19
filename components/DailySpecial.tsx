@@ -1,26 +1,58 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import { Star, ShoppingCart, Zap, Timer } from "lucide-react";
 import { products } from "@/data/products";
+import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
 
-/* Pick a different product each day using day-of-year */
-function getDailyProduct() {
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=400&fit=crop&q=80";
+
+/* Pick a different in-stock product each day using day-of-year */
+function getDailyProduct(): Product {
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 0);
   const diff = now.getTime() - start.getTime();
   const dayOfYear = Math.floor(diff / 86_400_000);
-  const idx = dayOfYear % products.length;
-  return products[idx];
+
+  // Try up to products.length offsets to skip products without images
+  for (let i = 0; i < products.length; i++) {
+    const idx = (dayOfYear + i) % products.length;
+    const p = products[idx];
+    if (p.image) return p;
+  }
+  return products[dayOfYear % products.length];
+}
+
+/* Live countdown to midnight */
+function useCountdown() {
+  const [remaining, setRemaining] = useState("");
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const diff = midnight.getTime() - now.getTime();
+      const h = Math.floor(diff / 3_600_000);
+      const m = Math.floor((diff % 3_600_000) / 60_000);
+      const s = Math.floor((diff % 60_000) / 1_000);
+      setRemaining(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return remaining;
 }
 
 export default function DailySpecial() {
   const { addItem, items } = useCart();
   const [ref, inView] = useInView({ threshold: 0.15 });
+  const [imgError, setImgError] = useState(false);
   const product = useMemo(() => getDailyProduct(), []);
+  const countdown = useCountdown();
 
   const inCart = items.find((i) => i.id === product.id);
   const qty = inCart?.quantity ?? 0;
@@ -48,15 +80,14 @@ export default function DailySpecial() {
           <div className="flex flex-col sm:flex-row items-center gap-6 p-6 sm:p-8 lg:p-10">
             {/* Image */}
             <div className="relative w-48 h-48 sm:w-56 sm:h-56 lg:w-64 lg:h-64 rounded-2xl overflow-hidden bg-white dark:bg-white/10 shadow-xl shrink-0">
-              {product.image && (
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  sizes="256px"
-                  className="object-cover"
-                />
-              )}
+              <Image
+                src={imgError ? FALLBACK_IMAGE : (product.image || FALLBACK_IMAGE)}
+                alt={product.name}
+                fill
+                sizes="256px"
+                className="object-cover"
+                onError={() => setImgError(true)}
+              />
               {/* Discount badge */}
               <div className="absolute bottom-3 right-3 bg-red-500 text-white font-extrabold text-lg px-3 py-1.5 rounded-xl shadow-lg">
                 -{pct}%
@@ -95,7 +126,7 @@ export default function DailySpecial() {
                 </span>
                 <span className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full">
                   <Timer className="w-3 h-3" />
-                  Solo por hoy
+                  {countdown ? `Termina en ${countdown}` : "Solo por hoy"}
                 </span>
               </div>
 

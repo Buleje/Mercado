@@ -3,6 +3,39 @@ import type { NextRequest } from "next/server";
 import { verifySessionToken, SESSION } from "@/lib/session";
 
 /**
+ * Root domain for tenant routing (strip port).
+ * Set ROOT_DOMAIN=bodegasaas.com in production .env
+ */
+const ROOT_DOMAIN = (process.env.ROOT_DOMAIN ?? "localhost").split(":")[0];
+
+/** Resolve tenantId from the incoming Host header. */
+function resolveTenantFromHost(req: NextRequest): string {
+  const host = req.headers.get("host") ?? "";
+  const hostname = host.split(":")[0];
+
+  const isLocalhost =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.endsWith(".localhost");
+
+  if (isLocalhost) return "main";
+
+  if (
+    hostname.endsWith(`.${ROOT_DOMAIN}`) &&
+    hostname !== `www.${ROOT_DOMAIN}`
+  ) {
+    const parts = hostname.split(".");
+    if (parts.length >= 3) return parts[0];
+  }
+
+  if (hostname !== ROOT_DOMAIN && hostname !== `www.${ROOT_DOMAIN}`) {
+    return `custom:${hostname}`;
+  }
+
+  return "main";
+}
+
+/**
  * API routes that are admin-only (all methods require auth)
  */
 const ADMIN_ONLY_API_PREFIXES = [
@@ -26,7 +59,6 @@ const ADMIN_ONLY_API_PREFIXES = [
   "/api/supplier-evaluations",
   "/api/suppliers",
   "/api/notifications",
-  "/api/loyalty",
   "/api/admin-users",
 ];
 
@@ -42,6 +74,7 @@ const WRITE_PROTECTED_API_PREFIXES = [
   "/api/settings",
   "/api/promotions",
   "/api/coupons",
+  "/api/loyalty",
 ];
 
 // ── Simple in-memory rate limiter for API routes ──
@@ -87,6 +120,22 @@ function checkRateLimit(req: NextRequest): NextResponse | null {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // ── Tenant injection ── always runs
+  const tenantId = resolveTenantFromHost(request);
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-tenant-id", tenantId);
+  const withTenant = { request: { headers: requestHeaders } };
+
+  // ── API key Bearer auth pass-through ──────────────────────────────────────
+  // If the request carries a Bearer sk_... token on an /api/ route, skip all
+  // cookie-based auth and forward the raw key in x-api-key so route handlers
+  // can call validateApiKey() from lib/api-keys.ts.
+  const bearerAuth = request.headers.get("authorization") ?? "";
+  if (bearerAuth.startsWith("Bearer sk_") && pathname.startsWith("/api/")) {
+    requestHeaders.set("x-api-key", bearerAuth.slice("Bearer ".length));
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
   // Rate-limit all API routes (skip in development)
   if (pathname.startsWith("/api/") && process.env.NODE_ENV !== "development") {
     const rlResponse = checkRateLimit(request);
@@ -94,10 +143,15 @@ export async function proxy(request: NextRequest) {
   }
 
   // Login page is always public
-  if (pathname === "/admin/login") return NextResponse.next();
+  if (pathname === "/admin/login") return NextResponse.next(withTenant);
 
   // Public order tracking page
-  if (pathname.startsWith("/pedido/")) return NextResponse.next();
+  if (pathname.startsWith("/pedido/")) return NextResponse.next(withTenant);
+
+  // Superadmin routes — handled by their own cookie auth
+  if (pathname.startsWith("/superadmin") || pathname.startsWith("/api/superadmin")) {
+    return NextResponse.next(withTenant);
+  }
 
   // Protect all /admin routes
   if (pathname.startsWith("/admin")) {
@@ -124,11 +178,23 @@ export async function proxy(request: NextRequest) {
   ) {
     // Allow the store's own order creation without auth (customer placing an order)
     if (pathname === "/api/orders" && request.method === "POST") {
-      return NextResponse.next();
+      return NextResponse.next(withTenant);
+    }
+    // Allow store frontend to read orders by phone (LastOrderBanner, CheckoutModal)
+    if (pathname === "/api/orders" && request.method === "GET" && request.nextUrl.searchParams.has("phone")) {
+      return NextResponse.next(withTenant);
     }
     // Allow review creation by customers
     if (pathname === "/api/reviews" && request.method === "POST") {
-      return NextResponse.next();
+      return NextResponse.next(withTenant);
+    }
+    // Allow public spin wheel coupon generation (no login required)
+    if (pathname === "/api/coupons/spin" && request.method === "POST") {
+      return NextResponse.next(withTenant);
+    }
+    // Allow coupon validation at checkout (customers validate without admin login)
+    if (pathname === "/api/coupons/validate" && request.method === "POST") {
+      return NextResponse.next(withTenant);
     }
     const token = request.cookies.get(SESSION.COOKIE_NAME)?.value;
     if (!token || !(await verifySessionToken(token))) {
@@ -136,9 +202,16 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return NextResponse.next(withTenant);
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/:path*"],
+  matcher: [
+    /*
+     * Match all paths except Next.js internals and static file extensions.
+     * This ensures x-tenant-id is injected on every request including
+     * /manifest.webmanifest, /sitemap.xml, /robots.txt, etc.
+     */
+    "/((?!_next/static|_next/image|favicon\.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2)$).*)",
+  ],
 };
