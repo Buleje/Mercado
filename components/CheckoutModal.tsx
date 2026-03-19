@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import { m, AnimatePresence } from "framer-motion";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   X, ShoppingCart, User, MapPin, Home, Navigation,
   Loader2, CheckCircle2, ChevronRight, Phone,
-  Banknote, Hash, Clock,
+  Banknote, Hash, Clock, Award, Copy, Check,
 } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
@@ -15,10 +15,12 @@ import { useSettings } from "@/contexts/settings-context";
 import { usePromotions } from "@/contexts/promotions-context";
 import { cn } from "@/lib/utils";
 import { trackPurchase } from "@/lib/analytics";
+import DeliveryEstimation from "@/components/DeliveryEstimation";
 import type { DbOrderItem } from "@/lib/jsondb";
 import type { SavedLocation, Customer } from "@/contexts/customer-context";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
+const Confetti = dynamic(() => import("./Confetti"), { ssr: false });
 
 type Step = "cuenta" | "datos" | "pago" | "exito";
 type PaymentMethod = "yape" | "efectivo";
@@ -33,6 +35,39 @@ function coordsFromLocation(loc: string) {
   const match = loc.match(/GPS:\s*([-\d.]+),\s*([-\d.]+)/);
   if (match) return { lat: parseFloat(match[1]), lon: parseFloat(match[2]) };
   return { lat: -8.3791, lon: -74.5539 };
+}
+
+/* R3: Haversine distance for zone validation (~km) */
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+const STORE_LAT = -8.3791;
+const STORE_LON = -74.5539;
+const MAX_DELIVERY_KM = 5;
+
+/* ── Dynamic delivery ETA helper (kept for fallback) ── */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getDeliveryETA(slotId: string): string {
+  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
+  const h = now.getHours();
+  const isOpen = h >= 8 && h < 20;
+
+  switch (slotId) {
+    case "lo-antes-posible":
+      return isOpen ? "Estimado: ~30-45 min" : "Mañana a primera hora (8:00)";
+    case "manana":
+      return h < 12 ? "Hoy entre 8:00 - 12:00" : "Mañana entre 8:00 - 12:00";
+    case "tarde":
+      return h < 17 ? "Hoy entre 12:00 - 17:00" : "Mañana entre 12:00 - 17:00";
+    case "noche":
+      return h < 20 ? "Hoy entre 17:00 - 20:00" : "Mañana entre 17:00 - 20:00";
+    default:
+      return "";
+  }
 }
 
 function StepBar({ current }: { current: Step }) {
@@ -73,7 +108,7 @@ export default function CheckoutModal() {
 
   const [step, setStep] = useState<Step>("datos");
   const [submitting, setSubmitting] = useState(false);
-  const [, setOrderId] = useState("");
+  const [orderId, setOrderId] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [dataError, setDataError] = useState("");
 
@@ -87,6 +122,12 @@ export default function CheckoutModal() {
   const [geoError, setGeoError] = useState("");
   const [showMap, setShowMap] = useState(false);
   const [mapCoords, setMapCoords] = useState({ lat: -8.3791, lon: -74.5539 });
+  
+  // Detailed address fields
+  const [streetType, setStreetType] = useState("Calle");
+  const [streetName, setStreetName] = useState("");
+  const [streetNumber, setStreetNumber] = useState("");
+  const [useDetailedAddress, setUseDetailedAddress] = useState(false);
 
   // Compute best promo based on cart total + phone (resolved from state or customer)
   const promo = getBestPromotion(total, phone || customer?.phone);
@@ -99,7 +140,65 @@ export default function CheckoutModal() {
   const [couponApplied, setCouponApplied] = useState(false);
   const [validatingCoupon, setValidatingCoupon] = useState(false);
 
-  const finalTotal = total - discount - couponDiscount;
+  // Loyalty points + tier for identified customer
+  const [loyaltyPoints, setLoyaltyPoints] = useState<number | null>(null);
+  const [loyaltyTier, setLoyaltyTier] = useState<string | null>(null);
+
+  // Tier-based automatic discount: plata=2%, oro=4%, diamante=7%
+  const TIER_DISCOUNT: Record<string, number> = { plata: 2, oro: 4, diamante: 7 };
+  const tierDiscountPct = loyaltyTier ? (TIER_DISCOUNT[loyaltyTier] ?? 0) : 0;
+  const tierDiscount = total * (tierDiscountPct / 100);
+
+  /* R1: Optional tip */
+  const [tip, setTip] = useState(0);
+
+  /* W1: Pending orders alert */
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  useEffect(() => {
+    if (step !== "pago" || !phone) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/orders?phone=${encodeURIComponent(phone)}&status=pendiente,confirmado,en_camino`);
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          setPendingOrdersCount(Array.isArray(data) ? data.length : 0);
+        }
+      } catch { /* silent */ }
+    })();
+    return () => { cancelled = true; };
+  }, [step, phone]);
+
+  /* Stock validation when checkout opens */
+  const [stockWarnings, setStockWarnings] = useState<string[]>([]);
+  useEffect(() => {
+    if (!checkoutOpen || items.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const ids = items.map(i => i.id).join(",");
+        const res = await fetch(`/api/products/stock-check?ids=${ids}`);
+        if (res.ok && !cancelled) {
+          const data: { id: number; stock: number | null }[] = await res.json();
+          const warnings: string[] = [];
+          for (const item of items) {
+            const info = data.find(d => d.id === item.id);
+            if (info && info.stock !== null && item.quantity > info.stock) {
+              warnings.push(
+                info.stock === 0
+                  ? `"${item.name}" está agotado`
+                  : `"${item.name}" solo tiene ${info.stock} en stock (tienes ${item.quantity})`
+              );
+            }
+          }
+          setStockWarnings(warnings);
+        }
+      } catch { /* silent — don't block checkout */ }
+    })();
+    return () => { cancelled = true; };
+  }, [checkoutOpen, items]);
+
+  const finalTotal = Math.max(0, total - discount - couponDiscount - tierDiscount + tip);
 
   const validateCoupon = async () => {
     if (!couponCode.trim()) return;
@@ -130,10 +229,29 @@ export default function CheckoutModal() {
 
   // Delivery time slot
   const [deliverySlot, setDeliverySlot] = useState<string>("lo-antes-posible");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [deliveryTime, setDeliveryTime] = useState("");
+  const [useCustomDateTime, setUseCustomDateTime] = useState(false);
+
+  // Delivery distance from store (computed when location has GPS)
+  const [deliveryDistance, setDeliveryDistance] = useState<number | undefined>(undefined);
 
   // Google Maps suggestions
   const [refSuggestions, setRefSuggestions] = useState<string[]>([]);
   const [showRefSuggestions, setShowRefSuggestions] = useState(false);
+
+  const fetchLoyaltyPoints = async (ph: string) => {
+    const clean = ph.replace(/\D/g, "").slice(-9);
+    if (clean.length < 6) return;
+    try {
+      const res = await fetch(`/api/loyalty/${encodeURIComponent(clean)}`);
+      if (res.ok) {
+        const data = await res.json() as { loyaltyPoints?: number; loyaltyTier?: string };
+        setLoyaltyPoints(data.loyaltyPoints ?? null);
+        setLoyaltyTier(data.loyaltyTier ?? null);
+      }
+    } catch { /* ignore — non-critical */ }
+  };
 
   // Phone account lookup
   const [phoneQuery, setPhoneQuery] = useState("");
@@ -142,6 +260,18 @@ export default function CheckoutModal() {
   const [phoneNotFound, setPhoneNotFound] = useState(false);
   const [editingCustomerData, setEditingCustomerData] = useState(false);
   const [skippedAccount, setSkippedAccount] = useState(false);
+
+  // Real-time phone validation helper
+  const validatePhone = (v: string) => {
+    const digits = v.replace(/\D/g, "");
+    if (digits.length === 0) return { valid: false, hint: "", color: "" };
+    if (digits.length < 9) return { valid: false, hint: `${9 - digits.length} dígitos más`, color: "text-amber-500" };
+    if (digits.length === 9 && /^9/.test(digits)) return { valid: true, hint: "✓ Número válido", color: "text-emerald-600" };
+    if (digits.length === 9) return { valid: false, hint: "Debe empezar con 9", color: "text-red-500" };
+    return { valid: false, hint: "Máximo 9 dígitos", color: "text-red-500" };
+  };
+  const phoneQueryValidation = validatePhone(phoneQuery);
+  const phoneValidation = validatePhone(phone);
 
   useScrollLock(checkoutOpen);
 
@@ -170,6 +300,16 @@ export default function CheckoutModal() {
       setRefSuggestions([]);
       setShowRefSuggestions(false);
       setDeliverySlot("lo-antes-posible");
+      setDeliveryDate("");
+      setDeliveryTime("");
+      setUseCustomDateTime(false);
+      setStreetType("Calle");
+      setStreetName("");
+      setStreetNumber("");
+      setUseDetailedAddress(false);
+      setLoyaltyPoints(null);
+      // Pre-load points for already-identified customers
+      if (customer?.phone) fetchLoyaltyPoints(customer.phone);
 
       // Auto-fill from customer
       setName(customer?.name ?? "");
@@ -214,15 +354,91 @@ export default function CheckoutModal() {
     }
     setLoadingGeo(true);
     setGeoError("");
+    setGeoSuggested(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
-        setLocation(`Pucallpa — GPS: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
         setMapCoords({ lat, lon });
+        
+        // Reverse geocode to get detailed address
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
+            { headers: { "Accept-Language": "es" } }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data.address;
+            
+            // Extract street details
+            if (addr) {
+              // Determine street type and name
+              if (addr.road) {
+                const roadName = addr.road;
+                // Try to detect street type
+                if (roadName.toLowerCase().includes('avenida') || roadName.toLowerCase().includes('av.')) {
+                  setStreetType('Avenida');
+                  setStreetName(roadName.replace(/avenida|av\./gi, '').trim());
+                } else if (roadName.toLowerCase().includes('jirón') || roadName.toLowerCase().includes('jr.')) {
+                  setStreetType('Jirón');
+                  setStreetName(roadName.replace(/jirón|jr\./gi, '').trim());
+                } else if (roadName.toLowerCase().includes('pasaje') || roadName.toLowerCase().includes('psje.')) {
+                  setStreetType('Pasaje');
+                  setStreetName(roadName.replace(/pasaje|psje\./gi, '').trim());
+                } else {
+                  setStreetType('Calle');
+                  setStreetName(roadName);
+                }
+              }
+              
+              // Set house number if available
+              if (addr.house_number) {
+                setStreetNumber(addr.house_number);
+              }
+              
+              // Build full location string
+              const locationParts = [];
+              if (addr.road) locationParts.push(addr.road);
+              if (addr.house_number) locationParts.push(addr.house_number);
+              if (addr.suburb || addr.neighbourhood) locationParts.push(addr.suburb || addr.neighbourhood);
+              locationParts.push(`GPS: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+              setLocation(locationParts.join(', '));
+              
+              // Auto-enable detailed address view
+              setUseDetailedAddress(true);
+              
+              // Generate reference suggestions
+              const suggestions: string[] = [];
+              if (addr.amenity) suggestions.push(`Cerca de ${addr.amenity}`);
+              if (addr.shop) suggestions.push(`Frente a tienda: ${addr.shop}`);
+              if (addr.building) suggestions.push(`Edificio ${addr.building}`);
+              if (addr.neighbourhood) suggestions.push(`Barrio ${addr.neighbourhood}`);
+              if (addr.suburb) suggestions.push(`Zona ${addr.suburb}`);
+              if (addr.road && addr.house_number) suggestions.push(`${addr.road} ${addr.house_number}`);
+              
+              // Add nearby landmarks
+              const landmarks = [
+                `Casa de color visible desde la calle`,
+                `Con reja/portón principal`,
+                `Esquina de la cuadra`,
+                `A media cuadra`,
+                `Frente al parque`,
+                `Cerca de la bodega`,
+                `Al lado del mercado`
+              ];
+              suggestions.push(...landmarks.slice(0, 3));
+              
+              setRefSuggestions([...new Set(suggestions)].slice(0, 6));
+              setShowRefSuggestions(true);
+            }
+          }
+        } catch {
+          // Fallback to basic GPS location
+          setLocation(`Pucallpa — GPS: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+        }
+        
         setLoadingGeo(false);
-        // Reverse geocode for reference suggestion
-        fetchReferenceSuggestion(lat, lon);
       },
       (err) => {
         setLoadingGeo(false);
@@ -247,17 +463,22 @@ export default function CheckoutModal() {
       if (res.ok) {
         const data = await res.json();
         const suggestions: string[] = [];
-        if (data.display_name) {
-          const parts = data.display_name.split(",").map((s: string) => s.trim());
-          if (parts.length >= 2) suggestions.push(parts.slice(0, 3).join(", "));
-        }
         if (data.address) {
           const a = data.address;
-          if (a.road) suggestions.push(`Cerca de ${a.road}`);
-          if (a.neighbourhood) suggestions.push(`Zona ${a.neighbourhood}`);
-          if (a.suburb) suggestions.push(`Barrio ${a.suburb}`);
+          if (a.amenity) suggestions.push(`Cerca de ${a.amenity}`);
+          if (a.shop) suggestions.push(`Frente a tienda: ${a.shop}`);
+          if (a.road) suggestions.push(`${a.road}`);
+          if (a.neighbourhood) suggestions.push(`Barrio ${a.neighbourhood}`);
+          if (a.suburb) suggestions.push(`Zona ${a.suburb}`);
         }
-        setRefSuggestions([...new Set(suggestions)]);
+        // Add generic helpful references
+        suggestions.push(
+          'Casa de color visible',
+          'Con reja/portón',
+          'Esquina de la cuadra',
+          'Frente al parque'
+        );
+        setRefSuggestions([...new Set(suggestions)].slice(0, 6));
         if (suggestions.length > 0) setShowRefSuggestions(true);
       }
     } catch { /* ignore */ }
@@ -273,6 +494,7 @@ export default function CheckoutModal() {
       setFoundCustomer(found);
       setName(found.name || "");
       setPhone(found.phone ?? q);
+      fetchLoyaltyPoints(found.phone ?? q);
       const foundLocs: SavedLocation[] = found.locations?.length
         ? found.locations
         : found.location
@@ -305,6 +527,8 @@ export default function CheckoutModal() {
   };
 
   const handleSubmit = async () => {
+    // Double-submit guard
+    if (submitting) return;
     setSubmitting(true);
     setSubmitError("");
 
@@ -332,6 +556,7 @@ export default function CheckoutModal() {
       id: i.id, name: i.name, price: i.price,
       quantity: i.quantity, unit: i.unit,
       image: (i.image && !i.image.startsWith("data:")) ? i.image.slice(0, 499) : "",
+      ...(i.note ? { note: i.note } : {}),
     }));
 
     const payload = JSON.stringify({
@@ -345,11 +570,14 @@ export default function CheckoutModal() {
       total: finalTotal,
       notes: (notes ?? "").trim() || undefined,
       deliverySlot: deliverySlot !== "lo-antes-posible" ? deliverySlot : undefined,
+      deliveryDate: useCustomDateTime && deliveryDate ? deliveryDate : undefined,
+      deliveryTime: useCustomDateTime && deliveryTime ? deliveryTime : undefined,
       paymentMethod: effectivePayment,
       yapeOperationNumber: effectivePayment === "yape" ? yapeOpNumber.trim() : undefined,
       deuda: effectivePayment === "efectivo" ? true : undefined,
       ...(promo && { appliedPromoId: promo.id, discountAmount: discount }),
       ...(couponApplied && couponCode.trim() && { appliedCouponCode: couponCode.trim(), couponDiscount }),
+      ...(tip > 0 && { tip }),
     });
     // Retry up to 3 times on transient server errors (5xx)
     let res: Response | null = null;
@@ -368,6 +596,14 @@ export default function CheckoutModal() {
       if (res?.ok) {
         const data = await res.json() as { id: string };
         setOrderId(data.id);
+        // Save order summary for OrderConfirmModal
+        try {
+          localStorage.setItem("bsm-last-order", JSON.stringify({
+            id: data.id,
+            items: items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, unit: i.unit ?? "", image: i.image ?? "" })),
+            total: finalTotal,
+          }));
+        } catch { /* quota exceeded — non-critical */ }
         clear();
         closeCart();
         markOrderPending();
@@ -403,8 +639,11 @@ export default function CheckoutModal() {
           });
         }
         // Open order tracking modal and close checkout
-        openOrderStatusModal();
-        closeCheckout();
+        setStep("exito");
+        setTimeout(() => {
+          openOrderStatusModal();
+          closeCheckout();
+        }, 2500);
       } else {
         // Log the actual Zod issues so we can diagnose validation failures
         try {
@@ -424,6 +663,7 @@ export default function CheckoutModal() {
   };
 
   // datos step: validate required fields then advance to pago
+  const [geoSuggested, setGeoSuggested] = useState(false);
   const handleDataSubmit = (e: FormEvent) => {
     e.preventDefault();
     setDataError("");
@@ -435,6 +675,21 @@ export default function CheckoutModal() {
     }
     if (!effectiveLoc) {
       setDataError("Por favor ingresa tu dirección de entrega.");
+      return;
+    }
+    /* R3: Zone validation */
+    const coords = coordsFromLocation(effectiveLoc);
+    const dist = haversineKm(STORE_LAT, STORE_LON, coords.lat, coords.lon);
+    if (effectiveLoc.includes("GPS:")) setDeliveryDistance(dist);
+    if (effectiveLoc.includes("GPS:") && dist > MAX_DELIVERY_KM) {
+      setDataError(`Tu ubicación está a ${dist.toFixed(1)} km. Solo entregamos hasta ${MAX_DELIVERY_KM} km.`);
+      return;
+    }
+    // Suggest GPS verification for manual addresses (one-time)
+    if (!effectiveLoc.includes("GPS:") && !geoSuggested && navigator.geolocation) {
+      setGeoSuggested(true);
+      setDataError("💡 Tip: Usa \"Ubicación GPS\" para confirmar que estás en zona de entrega. O continúa si tu dirección es correcta.");
+      // Allow re-submit to proceed
       return;
     }
     setStep("pago");
@@ -450,7 +705,7 @@ export default function CheckoutModal() {
     handleSubmit();
   };
 
-  const canConfirm = paymentMethod === "efectivo" || (paymentMethod === "yape" && yapeOpNumber.trim().length > 0);
+  const canConfirm = paymentMethod === "efectivo" || (paymentMethod === "yape" && /^\d{6,20}$/.test(yapeOpNumber.trim()));
 
   if (!checkoutOpen) return null;
 
@@ -458,40 +713,121 @@ export default function CheckoutModal() {
     <AnimatePresence>
       {checkoutOpen && (
         <>
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              /* Force cursor to always be visible over modal */
+              html, body {
+                cursor: default !important;
+              }
+              
+              #checkout-modal-overlay {
+                cursor: default !important;
+                transform: translateZ(0) !important;
+                backface-visibility: hidden !important;
+                perspective: 1000px !important;
+              }
+              
+              #checkout-modal-container,
+              #checkout-modal-container > *,
+              #checkout-modal-container * {
+                cursor: inherit !important;
+                pointer-events: auto !important;
+                transform: translateZ(1px) !important;
+              }
+              
+              #checkout-modal-container {
+                cursor: default !important;
+              }
+              
+              #checkout-modal-container button,
+              #checkout-modal-container a,
+              #checkout-modal-container [role="button"],
+              #checkout-modal-container [type="button"],
+              #checkout-modal-container [type="submit"],
+              #checkout-modal-container summary {
+                cursor: pointer !important;
+              }
+              
+              #checkout-modal-container input[type="text"],
+              #checkout-modal-container input[type="tel"],
+              #checkout-modal-container input[type="number"],
+              #checkout-modal-container input[type="email"],
+              #checkout-modal-container input[type="date"],
+              #checkout-modal-container input[type="time"],
+              #checkout-modal-container textarea,
+              #checkout-modal-container select {
+                cursor: text !important;
+              }
+            `
+          }} />
           <m.div
+            id="checkout-modal-overlay"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-7500 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 sm:backdrop-blur-md"
+            style={{ 
+              zIndex: 2147483640,
+              pointerEvents: 'auto',
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              transform: 'translateZ(0)',
+            }}
             onClick={closeCheckout}
           />
           <m.div
+            id="checkout-modal-container"
             initial={{ opacity: 0, y: 48 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 48 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
-            className="fixed inset-x-0 bottom-0 sm:inset-0 z-7501 flex items-end sm:items-center justify-center sm:p-6"
+            className="fixed inset-x-0 bottom-0 sm:inset-0 flex items-end sm:items-center justify-center sm:p-6"
+            style={{ 
+              zIndex: 2147483645,
+              pointerEvents: 'auto',
+              transform: 'translateZ(1px)',
+            }}
           >
-            <div className="relative bg-white dark:bg-background rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg max-h-[95svh] flex flex-col overflow-hidden">
+            <div role="dialog" aria-modal="true" aria-label="Completar pedido" className="relative bg-white dark:bg-background rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg md:max-w-xl max-h-[95svh] flex flex-col overflow-hidden">
 
               <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
                 <div className="h-1 w-10 rounded-full bg-gray-200" />
               </div>
 
-              <div className="flex items-center justify-between px-5 py-4 border-b bg-primary/5 shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-primary/15 flex items-center justify-center">
-                    <ShoppingCart className="h-5 w-5 text-primary" />
+              <div className="flex items-center justify-between px-5 py-4 shrink-0 bg-linear-to-r from-primary to-primary-dark">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shadow-lg">
+                    <ShoppingCart className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <h2 className="font-extrabold text-gray-900 leading-tight">Completar pedido</h2>
-                    <p className="text-xs text-gray-400">Bodega San Martín</p>
+                    <h2 className="font-extrabold text-white text-lg leading-tight">Completar pedido</h2>
+                    <p className="text-xs text-white/70">Bodega San Martín · {items.length} {items.length === 1 ? "producto" : "productos"}</p>
                   </div>
                 </div>
-                <button onClick={closeCheckout} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                  <X className="h-5 w-5 text-gray-400" />
+                <button onClick={closeCheckout} aria-label="Cerrar checkout" className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+                  <X className="h-5 w-5 text-white" />
                 </button>
               </div>
 
               <StepBar current={step} />
+
+              {/* Mini cart summary — visible in cuenta and datos steps */}
+              {(step === "cuenta" || step === "datos") && items.length > 0 && (
+                <details className="mx-5 mt-2 mb-0 group">
+                  <summary className="flex items-center justify-between cursor-pointer list-none text-xs font-semibold text-primary py-1.5 px-3 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors">
+                    <span className="flex items-center gap-1.5">
+                      <ShoppingCart className="h-3.5 w-3.5" />
+                      {items.length} {items.length === 1 ? "producto" : "productos"} · S/{finalTotal.toFixed(2)}
+                    </span>
+                    <svg className="h-3.5 w-3.5 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                  </summary>
+                  <div className="mt-1.5 max-h-32 overflow-y-auto rounded-lg border border-gray-100 dark:border-card-border divide-y divide-gray-50 dark:divide-card-border">
+                    {items.map(item => (
+                      <div key={item.id} className="flex items-center justify-between px-3 py-1.5 text-xs">
+                        <span className="text-gray-700 dark:text-foreground truncate flex-1 min-w-0">{item.quantity}× {item.name}</span>
+                        <span className="text-gray-500 font-semibold ml-2 shrink-0">S/{(item.price * item.quantity).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
 
               <div className="flex-1 overflow-y-auto">
                 <AnimatePresence mode="wait">
@@ -534,6 +870,7 @@ export default function CheckoutModal() {
                                 setFoundCustomer(customer);
                                 setName(customer.name);
                                 setPhone(customer.phone ?? "");
+                                if (customer.phone) fetchLoyaltyPoints(customer.phone);
                                 const cLocs: SavedLocation[] = customer.locations?.length
                                   ? customer.locations
                                   : customer.location
@@ -573,13 +910,20 @@ export default function CheckoutModal() {
                               <input
                                 type="tel"
                                 value={phoneQuery}
-                                onChange={(e) => { setPhoneQuery(e.target.value); setPhoneNotFound(false); }}
+                                onChange={(e) => { setPhoneQuery(e.target.value.replace(/[^\d]/g, "")); setPhoneNotFound(false); }}
                                 placeholder="Ej: 987654321"
-                                maxLength={15}
+                                maxLength={9}
                                 onKeyDown={(e) => e.key === "Enter" && handlePhoneSearch()}
-                                className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                                className={cn("w-full pl-10 pr-4 py-3 rounded-xl border-2 text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:ring-2 outline-none transition-all text-sm",
+                                  phoneQuery.length === 0 ? "border-gray-200 dark:border-zinc-700 focus:border-primary focus:ring-primary/20"
+                                  : phoneQueryValidation.valid ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-200"
+                                  : "border-gray-200 dark:border-zinc-700 focus:border-primary focus:ring-primary/20"
+                                )}
                               />
                             </div>
+                            {phoneQuery.length > 0 && phoneQueryValidation.hint && (
+                              <p className={`text-[11px] mt-1 font-semibold ${phoneQueryValidation.color}`}>{phoneQueryValidation.hint}</p>
+                            )}
                           </div>
 
                           {phoneNotFound && (
@@ -594,7 +938,7 @@ export default function CheckoutModal() {
                           <button
                             type="button"
                             onClick={handlePhoneSearch}
-                            disabled={!phoneQuery.trim() || phoneSearching}
+                            disabled={!phoneQueryValidation.valid || phoneSearching}
                             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
                           >
                             {phoneSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}
@@ -610,9 +954,9 @@ export default function CheckoutModal() {
                           <button
                             type="button"
                             onClick={handleSkipAccount}
-                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:border-primary/30 hover:text-primary transition-all"
+                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-primary/30 bg-primary/5 text-sm font-bold text-primary hover:bg-primary/10 hover:border-primary/50 transition-all"
                           >
-                            Continuar sin cuenta <ChevronRight className="h-4 w-4" />
+                            Soy cliente nuevo <ChevronRight className="h-4 w-4" />
                           </button>
                         </div>
                       </div>
@@ -676,27 +1020,73 @@ export default function CheckoutModal() {
                                   </div>
                                 </div>
                               )}
+                              {loyaltyPoints !== null && loyaltyPoints > 0 && (
+                                <div className="flex items-center gap-3 px-4 py-3 bg-amber-50/60 dark:bg-amber-900/10">
+                                  <Award className="h-4 w-4 text-amber-500 shrink-0" />
+                                  <div>
+                                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider leading-none mb-0.5">Puntos acumulados</p>
+                                    <p className="text-sm font-bold text-amber-700 dark:text-amber-400">{loyaltyPoints} pts</p>
+                                  </div>
+                                </div>
+                              )}
                             </div>
+
+                            {/* ── Saved addresses selector (within verified card) ── */}
+                            {locations.length > 1 && (
+                              <div className="mt-3">
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">Dirección de entrega</p>
+                                <div className="space-y-2">
+                                  {locations.map((loc) => (
+                                    <button type="button" key={loc.id} onClick={() => handleSelectLocation(loc)}
+                                      className={cn("w-full text-left flex items-start gap-3 p-3 rounded-xl border-2 transition-all",
+                                        selectedLocId === loc.id ? "border-primary bg-primary/5" : "border-gray-100 hover:border-primary/30")}>
+                                      <div className={cn("mt-0.5 h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0",
+                                        selectedLocId === loc.id ? "border-primary bg-primary" : "border-gray-300")}>
+                                        {selectedLocId === loc.id && <CheckCircle2 className="h-3.5 w-3.5 text-white fill-white" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className={cn("text-sm font-semibold truncate", selectedLocId === loc.id ? "text-primary" : "text-gray-900 dark:text-foreground")}>{loc.location}</p>
+                                        {loc.reference && <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1"><Home className="h-3 w-3 shrink-0" />{loc.reference}</p>}
+                                      </div>
+                                    </button>
+                                  ))}
+                                  <button type="button" onClick={() => { setEditingCustomerData(true); handleNewAddress(); }}
+                                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-sm font-semibold text-gray-400 hover:text-primary hover:border-primary/30 transition-all">
+                                    <MapPin className="h-4 w-4" /> Agregar nueva dirección
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           /* ── CASO B: sin cuenta / editando → formulario completo ── */
                           <>
-                            {/* Name */}
-                            <div>
-                              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Nombre completo *</label>
-                              <div className="relative">
-                                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: María García"
-                                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                            {/* Name and Phone in grid for desktop */}
+                            <div className="grid md:grid-cols-2 gap-4">
+                              {/* Name */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Nombre completo *</label>
+                                <div className="relative">
+                                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: María García"
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                                </div>
                               </div>
-                            </div>
-                            {/* Phone */}
-                            <div>
-                              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Teléfono</label>
-                              <div className="relative">
-                                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Ej: 987654321" maxLength={15}
-                                  className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                              {/* Phone */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Teléfono</label>
+                                <div className="relative">
+                                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ""))} placeholder="Ej: 987654321" maxLength={9}
+                                    className={cn("w-full pl-10 pr-4 py-3 rounded-xl border-2 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:ring-2 outline-none transition-all text-sm",
+                                      phone.length === 0 ? "border-gray-200 focus:border-primary focus:ring-primary/20"
+                                      : phoneValidation.valid ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-200"
+                                      : "border-gray-200 focus:border-primary focus:ring-primary/20"
+                                    )} />
+                                </div>
+                                {phone.length > 0 && phoneValidation.hint && (
+                                  <p className={`text-[11px] mt-1 font-semibold ${phoneValidation.color}`}>{phoneValidation.hint}</p>
+                                )}
                               </div>
                             </div>
                             {/* Saved addresses selector */}
@@ -728,69 +1118,153 @@ export default function CheckoutModal() {
                             {/* Manual address input */}
                             {(locations.length === 0 || useNewAddress) && (
                               <>
-                                <div>
-                                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Dirección *</label>
-                                  <div className="relative">
-                                    <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                    <input required value={location} onChange={(e) => { setLocation(e.target.value); setMapCoords(coordsFromLocation(e.target.value)); }}
-                                      placeholder="Ej: Jr. Ucayali 450, Pucallpa"
-                                      className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
-                                  </div>
-                                  <button type="button" onClick={useGeo} disabled={loadingGeo}
-                                    className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-primary/25 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary hover:text-white hover:border-primary transition-all disabled:opacity-50">
-                                    {loadingGeo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
-                                    {loadingGeo ? "Obteniendo ubicación…" : "Usar mi ubicación GPS"}
-                                  </button>
-                                  {geoError && (
-                                    <p className="mt-1.5 text-xs text-red-500 flex items-start gap-1.5">
-                                      <span className="shrink-0 mt-0.5">⚠️</span>
-                                      {geoError}
-                                    </p>
-                                  )}
-                                </div>
-                                <div>
-                                  <button type="button" onClick={() => setShowMap((v) => !v)}
-                                    className="text-xs font-semibold text-primary hover:underline mb-2 flex items-center gap-1">
-                                    <MapPin className="h-3 w-3" /> {showMap ? "Ocultar mapa" : "Ver / ajustar en mapa"}
-                                  </button>
-                                  {showMap && (
-                                    <div className="rounded-xl overflow-hidden" style={{ height: 160 }}>
-                                      <LeafletMap lat={mapCoords.lat} lon={mapCoords.lon} zoom={15} height={160}
-                                        onPick={(lt, lg, addr) => { setMapCoords({ lat: lt, lon: lg }); setLocation(addr); fetchReferenceSuggestion(lt, lg); }} />
-                                    </div>
-                                  )}
-                                </div>
-                                <div>
-                                  <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Referencia *</label>
-                                  <div className="relative">
-                                    <Home className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                    <input required value={reference} onChange={(e) => { setReference(e.target.value); setShowRefSuggestions(false); }}
-                                      placeholder="Ej: Casa azul frente al parque"
-                                      className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
-                                  </div>
-                                  {showRefSuggestions && refSuggestions.length > 0 && (
-                                    <div className="mt-2 space-y-1">
-                                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Sugerencias de referencia:</p>
-                                      {refSuggestions.map((s, i) => (
-                                        <button key={i} type="button" onClick={() => { setReference(s); setShowRefSuggestions(false); }}
-                                          className="w-full text-left text-xs px-3 py-2 rounded-lg bg-primary/5 text-primary font-medium hover:bg-primary/10 transition-colors">
-                                          📍 {s}
+                                <div className="lg:grid lg:grid-cols-2 lg:gap-4 space-y-4 lg:space-y-0">
+                                  {/* Columna izquierda: Dirección */}
+                                  <div className="space-y-3">
+                                    <div>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Dirección *</label>
+                                        <button type="button" onClick={() => { setUseDetailedAddress(!useDetailedAddress); if (!useDetailedAddress && streetName && streetType) { setLocation(`${streetType} ${streetName}${streetNumber ? ' ' + streetNumber : ''}`); } }}
+                                          className="text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+                                          {useDetailedAddress ? "Dirección simple" : "Dirección detallada"}
                                         </button>
-                                      ))}
+                                      </div>
+                                      
+                                      {useDetailedAddress ? (
+                                        <div className="space-y-3">
+                                          <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                              <select value={streetType} onChange={(e) => { setStreetType(e.target.value); if (streetName) setLocation(`${e.target.value} ${streetName}${streetNumber ? ' ' + streetNumber : ''}`); }}
+                                                className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm">
+                                                <option value="Calle">Calle</option>
+                                                <option value="Avenida">Avenida</option>
+                                                <option value="Jirón">Jirón</option>
+                                                <option value="Pasaje">Pasaje</option>
+                                                <option value="Jr.">Jr.</option>
+                                                <option value="Av.">Av.</option>
+                                                <option value="Psje.">Psje.</option>
+                                                <option value="Mz.">Manzana</option>
+                                                <option value="Lote">Lote</option>
+                                              </select>
+                                            </div>
+                                            <div>
+                                              <input required value={streetNumber} onChange={(e) => { setStreetNumber(e.target.value); if (streetName) setLocation(`${streetType} ${streetName} ${e.target.value}`); }}
+                                                placeholder="N° / Lote"
+                                                className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <input required value={streetName} onChange={(e) => { setStreetName(e.target.value); setLocation(`${streetType} ${e.target.value}${streetNumber ? ' ' + streetNumber : ''}`); setMapCoords(coordsFromLocation(`${streetType} ${e.target.value}${streetNumber ? ' ' + streetNumber : ''}`)); }}
+                                              placeholder="Nombre de la vía (ej: Ucayali, San Martín)"
+                                              className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                                          </div>
+                                          {location && (
+                                            <div className="px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
+                                              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Vista previa:</p>
+                                              <p className="text-sm font-semibold text-primary">{location}</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="relative">
+                                          <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                          <input required value={location} onChange={(e) => { setLocation(e.target.value); setMapCoords(coordsFromLocation(e.target.value)); }}
+                                            placeholder="Ej: Jr. Ucayali 450, Pucallpa"
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                                        </div>
+                                      )}
+                                      
+                                      <button type="button" onClick={useGeo} disabled={loadingGeo}
+                                        className="group relative mt-2 w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl border-2 border-primary bg-linear-to-r from-primary to-primary-dark text-white text-sm font-bold shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.97] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden">
+                                        {/* Animated background pulse */}
+                                        {!loadingGeo && (
+                                          <span className="absolute inset-0 bg-white/20 animate-[pulse_2s_ease-in-out_infinite]" />
+                                        )}
+                                        {/* Animated shine effect */}
+                                        {!loadingGeo && (
+                                          <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/30 to-transparent group-hover:translate-x-full transition-transform duration-700" />
+                                        )}
+                                        {/* Icon with animation */}
+                                        <span className={cn("relative z-10", !loadingGeo && "animate-bounce")}>
+                                          {loadingGeo ? <Loader2 className="h-5 w-5 animate-spin" /> : <Navigation className="h-5 w-5" />}
+                                        </span>
+                                        {/* Text */}
+                                        <span className="relative z-10 flex flex-col items-start">
+                                          <span className="text-base font-extrabold">
+                                            {loadingGeo ? "Obteniendo ubicación..." : "📍 Usar mi ubicación GPS"}
+                                          </span>
+                                          {!loadingGeo && (
+                                            <span className="text-[10px] font-medium text-white/80 uppercase tracking-wide">Preciso y rápido</span>
+                                          )}
+                                        </span>
+                                      </button>
+                                      {geoError && (
+                                        <p className="mt-1.5 text-xs text-red-500 flex items-start gap-1.5">
+                                          <span className="shrink-0 mt-0.5">⚠️</span>
+                                          {geoError}
+                                        </p>
+                                      )}
                                     </div>
-                                  )}
+                                    
+                                    <div>
+                                      <button type="button" onClick={() => setShowMap((v) => !v)}
+                                        className="text-xs font-semibold text-primary hover:underline mb-2 flex items-center gap-1">
+                                        <MapPin className="h-3 w-3" /> {showMap ? "Ocultar mapa" : "Ver / ajustar en mapa"}
+                                      </button>
+                                      {showMap && (
+                                        <div className="rounded-xl overflow-hidden" style={{ height: 200 }}>
+                                          <LeafletMap lat={mapCoords.lat} lon={mapCoords.lon} zoom={15} height={200}
+                                            onPick={(lt, lg, addr) => { setMapCoords({ lat: lt, lon: lg }); setLocation(addr); fetchReferenceSuggestion(lt, lg); }} />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Columna derecha: Referencia y Notas */}
+                                  <div className="space-y-3">
+                                    <div>
+                                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Referencia *</label>
+                                      <div className="relative">
+                                        <Home className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <input required value={reference} onChange={(e) => { setReference(e.target.value); setShowRefSuggestions(false); }}
+                                          placeholder="Ej: Casa azul frente al parque"
+                                          className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                                      </div>
+                                      {showRefSuggestions && refSuggestions.length > 0 && (
+                                        <div className="mt-2 space-y-1">
+                                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Sugerencias de referencia:</p>
+                                          {refSuggestions.map((s, i) => (
+                                            <button key={i} type="button" onClick={() => { setReference(s); setShowRefSuggestions(false); }}
+                                              className="w-full text-left text-xs px-3 py-2 rounded-lg bg-primary/5 text-primary font-medium hover:bg-primary/10 transition-colors">
+                                              📍 {s}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                    
+                                    <div>
+                                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Notas adicionales</label>
+                                      <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4}
+                                        placeholder="Instrucciones especiales, hora preferida…"
+                                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm resize-none" />
+                                    </div>
+                                  </div>
                                 </div>
                               </>
                             )}
                           </>
                         )}
 
-                        <div>
-                          <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Notas adicionales</label>
-                          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-                            placeholder="Instrucciones especiales, hora preferida…"
-                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm resize-none" />
-                        </div>
+                        {/* Notas adicionales si hay dirección guardada */}
+                        {((foundCustomer !== null || (customer !== null && !skippedAccount)) && !editingCustomerData) && (
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Notas adicionales</label>
+                            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
+                              placeholder="Instrucciones especiales, hora preferida…"
+                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm resize-none" />
+                          </div>
+                        )}
 
                         {/* ── Horario de entrega ────────────── */}
                         <div>
@@ -798,29 +1272,72 @@ export default function CheckoutModal() {
                             <Clock className="inline h-3.5 w-3.5 mr-1 -mt-0.5" />
                             Horario de entrega
                           </label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {[
-                              { id: "lo-antes-posible", label: "Lo antes posible", emoji: "⚡" },
-                              { id: "manana", label: "Mañana (8-12h)", emoji: "🌅" },
-                              { id: "tarde", label: "Tarde (12-17h)", emoji: "☀️" },
-                              { id: "noche", label: "Noche (17-20h)", emoji: "🌙" },
-                            ].map((slot) => (
-                              <button
-                                key={slot.id}
-                                type="button"
-                                onClick={() => setDeliverySlot(slot.id)}
-                                className={cn(
-                                  "flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all",
-                                  deliverySlot === slot.id
-                                    ? "border-primary bg-primary/5 text-primary"
-                                    : "border-gray-200 text-gray-600 hover:border-primary/30"
-                                )}
-                              >
-                                <span>{slot.emoji}</span>
-                                <span className="text-xs">{slot.label}</span>
+                          
+                          {useCustomDateTime ? (
+                            <div className="space-y-3">
+                              <div className="grid md:grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Fecha de entrega</label>
+                                  <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Hora preferida</label>
+                                  <input type="time" value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)}
+                                    min="08:00" max="20:00"
+                                    className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
+                                </div>
+                              </div>
+                              {deliveryDate && deliveryTime && (
+                                <div className="px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30">
+                                  <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
+                                    Entrega programada: {new Date(deliveryDate + 'T' + deliveryTime).toLocaleString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                              )}
+                              <p className="text-[10px] text-gray-400 leading-relaxed">
+                                💡 Horario de atención: Lunes a Domingo de 8:00 AM a 8:00 PM
+                              </p>
+                              <button type="button" onClick={() => { setUseCustomDateTime(false); setDeliverySlot('lo-antes-posible'); }}
+                                className="w-full text-xs font-semibold text-primary hover:underline py-2">
+                                ← Volver a &ldquo;Lo antes posible&rdquo;
                               </button>
-                            ))}
-                          </div>
+                            </div>
+                          ) : (
+                            <>
+                              {/* Default: Lo antes posible */}
+                              <div className="px-4 py-4 rounded-xl border-2 border-primary bg-primary/5">
+                                <div className="flex items-center gap-3">
+                                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
+                                    <span className="text-2xl">⚡</span>
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-sm font-bold text-primary">Lo antes posible</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Preparamos y enviamos tu pedido de inmediato</p>
+                                  </div>
+                                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                                </div>
+                              </div>
+                              
+                              {/* Enhanced Delivery ETA */}
+                              <div className="mt-3">
+                                <DeliveryEstimation
+                                  deliverySlot={deliverySlot}
+                                  distanceKm={deliveryDistance}
+                                  orderCount={pendingOrdersCount}
+                                />
+                              </div>
+                              
+                              {/* Link to custom date/time */}
+                              <button type="button" onClick={() => setUseCustomDateTime(true)}
+                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border-2 border-dashed border-primary/30 text-sm font-semibold text-primary hover:bg-primary/5 transition-colors">
+                                <Clock className="h-4 w-4" />
+                                ¿Prefieres una fecha y hora específica?
+                              </button>
+                            </>
+                          )}
                         </div>
 
                         {/* datos validation error */}
@@ -848,159 +1365,355 @@ export default function CheckoutModal() {
                   {/* ── Step: Pago ───────────────────────── */}
                   {step === "pago" && (
                     <m.div key="pago" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <form onSubmit={handlePaymentSubmit} className="px-5 py-4 space-y-4">
-
-                        {/* ── Items list ───────────────────── */}
-                        <div>
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tu pedido ({items.length} {items.length === 1 ? "producto" : "productos"})</p>
-                          <div className="rounded-xl border border-gray-100 dark:border-card-border divide-y divide-gray-50 dark:divide-card-border max-h-50 overflow-y-auto">
-                            {items.map((item) => (
-                              <div key={item.id} className="flex items-center gap-3 px-3 py-2.5">
-                                {item.image && (
-                                  /* eslint-disable-next-line @next/next/no-img-element */
-                                  <img src={item.image} alt={item.name} className="h-9 w-9 rounded-lg object-cover shrink-0 bg-gray-100" />
-                                )}
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-semibold text-gray-800 dark:text-foreground truncate">{item.name}</p>
-                                  <p className="text-[10px] text-gray-400">{item.unit} × {item.quantity}</p>
-                                </div>
-                                <p className="text-sm font-bold text-gray-900 dark:text-foreground shrink-0">S/{(item.price * item.quantity).toFixed(2)}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* ── Totals ───────────────────────── */}
-                        <div className="rounded-xl border border-gray-100 dark:border-card-border divide-y divide-gray-50 dark:divide-card-border overflow-hidden">
-                          <div className="flex justify-between px-4 py-2.5 text-sm bg-gray-50/50 dark:bg-surface/50">
-                            <span className="text-gray-500">Subtotal</span>
-                            <span className="font-semibold text-gray-800 dark:text-foreground">S/{total.toFixed(2)}</span>
-                          </div>
-                          {discount > 0 && promo && (
-                            <div className="flex justify-between px-4 py-2.5 text-sm bg-emerald-50/50 dark:bg-emerald-900/10">
-                              <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Promo {promo.discountPercent}% off</span>
-                              <span className="font-bold text-emerald-600">−S/{discount.toFixed(2)}</span>
-                            </div>
-                          )}
-                          {couponApplied && couponDiscount > 0 && (
-                            <div className="flex justify-between px-4 py-2.5 text-sm bg-emerald-50/50 dark:bg-emerald-900/10">
-                              <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Cupón {couponCode}</span>
-                              <span className="font-bold text-emerald-600">−S/{couponDiscount.toFixed(2)}</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between items-center px-4 py-3 bg-primary/5 dark:bg-primary/10">
-                            <span className="font-extrabold text-gray-900 dark:text-foreground">Total a pagar</span>
-                            <span className="text-xl font-extrabold text-primary">S/{finalTotal.toFixed(2)}</span>
-                          </div>
-                        </div>
-
-                        {/* ── Cupón ───────────────────────── */}
-                        <div>
-                          <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Cupón de descuento</label>
-                          <div className="flex gap-2">
-                            <input value={couponCode} onChange={e => { setCouponCode(e.target.value.toUpperCase()); if (couponApplied) { setCouponApplied(false); setCouponDiscount(0); setCouponMsg(""); } }} placeholder="Ej: DESCUENTO10" disabled={couponApplied}
-                              className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm disabled:opacity-50 uppercase" />
-                            {couponApplied ? (
-                              <button type="button" onClick={() => { setCouponApplied(false); setCouponDiscount(0); setCouponCode(""); setCouponMsg(""); }} className="px-4 py-2 rounded-xl bg-red-100 text-red-600 font-bold text-sm hover:bg-red-200 transition">Quitar</button>
-                            ) : (
-                              <button type="button" onClick={validateCoupon} disabled={!couponCode.trim() || validatingCoupon} className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition disabled:opacity-50">
-                                {validatingCoupon ? "..." : "Aplicar"}
-                              </button>
-                            )}
-                          </div>
-                          {couponMsg && <p className={`text-xs mt-1 font-bold ${couponApplied ? "text-emerald-600" : "text-red-500"}`}>{couponMsg}</p>}
-                        </div>
-
-                        {/* ── Método de pago ───────────────── */}
-                        <div className="space-y-3">
-                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Método de pago</p>
-                          <div className="grid grid-cols-2 gap-3">
-                            {yape.enabled && (
-                              <button type="button" onClick={() => { setPaymentMethod("yape"); setShowPaymentHint(false); }}
-                                className={cn("flex flex-col items-center gap-2 py-4 px-3 rounded-xl border-2 transition-all",
-                                  paymentMethod === "yape" ? "border-purple-400 bg-purple-50 shadow-sm" : "border-gray-200 hover:border-purple-300")}>
-                                <div className="h-10 w-10 rounded-xl bg-purple-600 flex items-center justify-center text-white font-extrabold text-lg">Y</div>
-                                <span className={cn("text-sm font-bold", paymentMethod === "yape" ? "text-purple-700" : "text-gray-500")}>Yape</span>
-                              </button>
-                            )}
-                            {cashEnabled && (
-                              <button type="button" onClick={() => { setPaymentMethod("efectivo"); setShowPaymentHint(false); }}
-                                className={cn("flex flex-col items-center gap-2 py-4 px-3 rounded-xl border-2 transition-all",
-                                  paymentMethod === "efectivo" ? "border-emerald-400 bg-emerald-50 shadow-sm" : "border-gray-200 hover:border-emerald-300")}>
-                                <Banknote className={cn("h-10 w-10", paymentMethod === "efectivo" ? "text-emerald-600" : "text-gray-400")} />
-                                <span className={cn("text-sm font-bold", paymentMethod === "efectivo" ? "text-emerald-700" : "text-gray-500")}>Efectivo</span>
-                              </button>
-                            )}
-                          </div>
-                          {paymentMethod === "yape" && yape.enabled && (
-                            <div className="bg-purple-50 rounded-2xl border border-purple-200 p-4 space-y-4">
-                              <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Pago con Yape</p>
-                              <div className="flex flex-col items-center gap-3">
-                                {yape.image && (
-                                  <div className="relative w-40 h-40 rounded-xl overflow-hidden border-2 border-purple-200 bg-white">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={yape.image} alt="Yape QR" className="w-full h-full object-contain" />
-                                  </div>
-                                )}
-                                <div className="text-center">
-                                  {yape.name && <p className="font-bold text-gray-900">{yape.name}</p>}
-                                  {yape.phone && <p className="text-sm font-mono text-purple-700">{yape.phone}</p>}
-                                </div>
-                                <div className="bg-purple-100 rounded-xl px-4 py-2 text-center">
-                                  <p className="text-xs text-purple-600 font-semibold">Monto a yapear</p>
-                                  <p className="text-2xl font-extrabold text-purple-800">S/{finalTotal.toFixed(2)}</p>
-                                </div>
-                              </div>
-                              <div>
-                                <label className="block text-xs font-bold text-purple-600 mb-1.5 uppercase tracking-wider">Número de operación *</label>
-                                <div className="relative">
-                                  <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-400" />
-                                  <input value={yapeOpNumber} onChange={(e) => setYapeOpNumber(e.target.value)} placeholder="Ej: 123456789" maxLength={20}
-                                    className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-purple-200 text-gray-900 placeholder:text-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition-all text-sm font-mono" />
-                                </div>
-                                <p className="text-[10px] text-purple-500 mt-1">Número de operación de tu app Yape</p>
-                              </div>
-                            </div>
-                          )}
-                          {paymentMethod === "efectivo" && (
-                            <div className="bg-emerald-50 rounded-2xl border border-emerald-200 p-4">
-                              <div className="flex items-center gap-3">
-                                <Banknote className="h-8 w-8 text-emerald-600 shrink-0" />
-                                <div>
-                                  <p className="font-bold text-sm text-emerald-800">Pago contra entrega</p>
-                                  <p className="text-xs text-emerald-600">Pagarás S/{finalTotal.toFixed(2)} en efectivo al recibir tu pedido</p>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          {showPaymentHint && (
-                            <p className="text-xs text-red-500 font-semibold">
-                              {!paymentMethod ? "Selecciona un método de pago para continuar" : "Ingresa el número de operación de Yape para continuar"}
-                            </p>
-                          )}
-                        </div>
-
-                        {submitError && (
-                          <div className="flex items-center gap-3 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 animate-[fadeUp_0.2s_ease-out]">
-                            <div className="h-9 w-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
-                              <X className="h-4 w-4 text-red-500" />
-                            </div>
-                            <p className="text-red-700 dark:text-red-300 text-sm font-medium">{submitError}</p>
+                      <form onSubmit={handlePaymentSubmit} className="px-5 py-4">
+                        {/* Stock warnings */}
+                        {stockWarnings.length > 0 && (
+                          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3">
+                            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">⚠️ Problemas de stock</p>
+                            <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-0.5 list-disc list-inside">
+                              {stockWarnings.map((w, i) => <li key={i}>{w}</li>)}
+                            </ul>
                           </div>
                         )}
+                        <div className="lg:grid lg:grid-cols-[1fr_380px] lg:divide-x lg:divide-gray-100 dark:lg:divide-card-border">
 
-                        <div className="flex gap-3 pt-1">
-                          <button type="button" onClick={() => setStep("datos")}
-                            className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-                            ← Volver
-                          </button>
-                          <button type="submit" disabled={submitting}
-                            className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50 flex items-center justify-center gap-2">
-                            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            {submitting ? "Enviando…" : "Finalizar pedido"}
-                          </button>
+                          {/* ─── Columna izquierda: detalle del pedido ─── */}
+                          <div className="space-y-4 lg:pr-6">
+
+                            {/* Items list — redesigned */}
+                            <div>
+                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <ShoppingCart className="h-3.5 w-3.5" />
+                                Tu pedido ({items.length} {items.length === 1 ? "producto" : "productos"})
+                              </p>
+                              <div className="rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden bg-white dark:bg-card shadow-sm">
+                                <div className="max-h-60 overflow-y-auto divide-y divide-gray-50 dark:divide-card-border">
+                                  {items.map((item) => (
+                                    <div key={item.id} className="flex items-center gap-3 px-3.5 py-3 hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
+                                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface shrink-0 ring-1 ring-gray-100 dark:ring-card-border">
+                                        {item.image ? (
+                                          /* eslint-disable-next-line @next/next/no-img-element */
+                                          <img
+                                            src={item.image}
+                                            alt={item.name}
+                                            className="h-full w-full object-cover"
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                          />
+                                        ) : (
+                                          <div className="h-full w-full flex items-center justify-center text-gray-300 text-lg">📦</div>
+                                        )}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-semibold text-gray-800 dark:text-foreground truncate leading-tight">{item.name}</p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                          <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold">
+                                            ×{item.quantity}
+                                          </span>
+                                          <span className="text-[10px] text-gray-400">{item.unit}</span>
+                                          {item.note && <span className="text-[10px] text-amber-500 truncate">📝 {item.note}</span>}
+                                        </div>
+                                      </div>
+                                      <p className="text-sm font-extrabold text-gray-900 dark:text-foreground shrink-0 tabular-nums">
+                                        S/{(item.price * item.quantity).toFixed(2)}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* R2: Dynamic wait time */}
+                            {(() => {
+                              const h = new Date().getHours();
+                              const base = h >= 11 && h <= 14 ? 45 : h >= 18 && h <= 21 ? 40 : 25;
+                              const extra = Math.floor(items.length / 5) * 5;
+                              const est = base + extra;
+                              return (
+                                <div className="flex items-center gap-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/30 px-4 py-2.5">
+                                  <span className="text-lg">🕐</span>
+                                  <div>
+                                    <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300">Tiempo estimado: {est}–{est + 15} min</p>
+                                    <p className="text-[10px] text-indigo-500 dark:text-indigo-400">{h >= 11 && h <= 14 ? "Hora pico almuerzo — puede demorar un poco más" : h >= 18 && h <= 21 ? "Hora pico cena" : "Buen momento para pedir"}</p>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Cupón */}
+                            <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Cupón de descuento</label>
+                              <div className="flex gap-2">
+                                <input value={couponCode} onChange={e => { setCouponCode(e.target.value.toUpperCase()); if (couponApplied) { setCouponApplied(false); setCouponDiscount(0); setCouponMsg(""); } }} placeholder="Ej: DESCUENTO10" disabled={couponApplied}
+                                  className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm disabled:opacity-50 uppercase" />
+                                {couponApplied ? (
+                                  <button type="button" onClick={() => { setCouponApplied(false); setCouponDiscount(0); setCouponCode(""); setCouponMsg(""); }} className="px-4 py-2 rounded-xl bg-red-100 text-red-600 font-bold text-sm hover:bg-red-200 transition">Quitar</button>
+                                ) : (
+                                  <button type="button" onClick={validateCoupon} disabled={!couponCode.trim() || validatingCoupon} className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition disabled:opacity-50">
+                                    {validatingCoupon ? "..." : "Aplicar"}
+                                  </button>
+                                )}
+                              </div>
+                              {couponMsg && <p className={`text-xs mt-1 font-bold ${couponApplied ? "text-emerald-600" : "text-red-500"}`}>{couponMsg}</p>}
+                            </div>
+
+                            {/* K2 — WhatsApp summary */}
+                            <a
+                              href={`https://wa.me/?text=${encodeURIComponent(
+                                `📋 Mi pedido en Bodega San Martín:\n${items.map(i => `• ${i.name} ×${i.quantity} — S/${(i.price * i.quantity).toFixed(2)}`).join("\n")}\n\n💰 Total: S/${finalTotal.toFixed(2)}${discount > 0 ? ` (desc: -S/${discount.toFixed(2)})` : ""}`
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border-2 border-dashed border-emerald-300 text-emerald-600 text-xs font-bold hover:bg-emerald-50 transition-colors"
+                            >
+                              📲 Enviar resumen por WhatsApp
+                            </a>
+                          </div>
+
+                          {/* ─── Columna derecha: pago y resumen ─── */}
+                          <div className="space-y-4 mt-6 lg:mt-0 lg:pl-6">
+
+                            {/* W1: Pending orders alert */}
+                            {pendingOrdersCount > 0 && (
+                              <div className="flex items-center gap-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 px-4 py-2.5">
+                                <span className="text-lg">⚠️</span>
+                                <div>
+                                  <p className="text-xs font-bold text-amber-700 dark:text-amber-300">Tienes {pendingOrdersCount} pedido{pendingOrdersCount > 1 ? "s" : ""} activo{pendingOrdersCount > 1 ? "s" : ""}</p>
+                                  <p className="text-[10px] text-amber-600 dark:text-amber-400">Puedes continuar, pero tu pedido anterior aún está en proceso</p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* R1: Tip */}
+                            <div className="rounded-2xl border border-gray-100 dark:border-card-border p-3.5 bg-gray-50/50 dark:bg-surface/30">
+                              <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                                <span className="text-base">🛵</span> Propina para el repartidor
+                              </p>
+                              <div className="flex gap-2">
+                                {[0, 1, 2, 5].map((v) => (
+                                  <button key={v} type="button" onClick={() => setTip(v)}
+                                    className={cn(
+                                      "flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border-2",
+                                      tip === v
+                                        ? "border-primary bg-primary text-white shadow-md shadow-primary/25"
+                                        : "border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-muted hover:border-primary/50 hover:text-primary bg-white dark:bg-card"
+                                    )}>
+                                    {v === 0 ? "Sin\npropina" : `S/${v}`}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Totals */}
+                            <div className="rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm">
+                              <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
+                                <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Resumen del pago</p>
+                              </div>
+                              <div className="flex justify-between px-4 py-2.5 text-sm bg-white dark:bg-card">
+                                <span className="text-gray-500">Subtotal</span>
+                                <span className="font-semibold text-gray-800 dark:text-foreground">S/{total.toFixed(2)}</span>
+                              </div>
+                              {discount > 0 && promo && (
+                                <div className="flex justify-between px-4 py-2.5 text-sm bg-emerald-50/50 dark:bg-emerald-900/10">
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Promo {promo.discountPercent}% off</span>
+                                  <span className="font-bold text-emerald-600">−S/{discount.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {couponApplied && couponDiscount > 0 && (
+                                <div className="flex justify-between px-4 py-2.5 text-sm bg-emerald-50/50 dark:bg-emerald-900/10">
+                                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Cupón {couponCode}</span>
+                                  <span className="font-bold text-emerald-600">−S/{couponDiscount.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {tierDiscount > 0 && loyaltyTier && (
+                                <div className="flex justify-between px-4 py-2.5 text-sm bg-purple-50/50 dark:bg-purple-900/10">
+                                  <span className="text-purple-700 dark:text-purple-400 font-semibold flex items-center gap-1"><Award className="h-3.5 w-3.5" /> Tier {loyaltyTier} ({tierDiscountPct}%)</span>
+                                  <span className="font-bold text-purple-600">−S/{tierDiscount.toFixed(2)}</span>
+                                </div>
+                              )}
+                              {tip > 0 && (
+                                <div className="flex justify-between px-4 py-2.5 text-sm bg-amber-50/50 dark:bg-amber-900/10">
+                                  <span className="text-amber-700 dark:text-amber-400 font-semibold">Propina</span>
+                                  <span className="font-bold text-amber-600">+S/{tip.toFixed(2)}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between items-center px-4 py-3.5 bg-linear-to-r from-primary/8 to-indigo-500/8 dark:from-primary/15 dark:to-indigo-500/15 border-t border-primary/20">
+                                <span className="font-extrabold text-gray-900 dark:text-foreground text-sm">Total a pagar</span>
+                                <span className="text-2xl font-extrabold text-primary">S/{finalTotal.toFixed(2)}</span>
+                              </div>
+                            </div>
+
+                            {/* Método de pago */}
+                            <div className="space-y-3">
+                              <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider flex items-center gap-1.5"><span className="text-base">💳</span> Método de pago</p>
+                              <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Método de pago">
+                                {yape.enabled && (
+                                  <m.button
+                                    type="button" role="radio" aria-checked={paymentMethod === "yape"}
+                                    onClick={() => { setPaymentMethod("yape"); setShowPaymentHint(false); }}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ type: "spring", damping: 15, stiffness: 300, delay: 0.1 }}
+                                    whileHover={{ scale: 1.04, y: -2 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    className={cn("flex flex-col items-center gap-2 py-5 px-3 rounded-2xl border-2 transition-colors relative overflow-hidden",
+                                      paymentMethod === "yape"
+                                        ? "border-purple-400 bg-purple-50 shadow-lg shadow-purple-200/50 dark:shadow-purple-900/30"
+                                        : "border-gray-200 hover:border-purple-300 hover:shadow-md")}
+                                  >
+                                    {paymentMethod === "yape" && (
+                                      <m.div
+                                        layoutId="payment-glow"
+                                        className="absolute inset-0 bg-linear-to-br from-purple-100/80 to-purple-50/40 dark:from-purple-900/20 dark:to-purple-800/10"
+                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
+                                      />
+                                    )}
+                                    <m.div
+                                      animate={paymentMethod === "yape" ? { scale: [1, 1.15, 1], rotate: [0, -5, 5, 0] } : {}}
+                                      transition={{ duration: 0.5 }}
+                                      className="relative z-10 h-12 w-12 rounded-xl bg-purple-600 flex items-center justify-center text-white font-extrabold text-xl shadow-lg"
+                                    >Y</m.div>
+                                    <span className={cn("relative z-10 text-sm font-bold", paymentMethod === "yape" ? "text-purple-700" : "text-gray-500")}>Yape</span>
+                                    {paymentMethod !== "yape" && (
+                                      <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
+                                    )}
+                                  </m.button>
+                                )}
+                                {cashEnabled && (
+                                  <m.button
+                                    type="button" role="radio" aria-checked={paymentMethod === "efectivo"}
+                                    onClick={() => { setPaymentMethod("efectivo"); setShowPaymentHint(false); }}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ type: "spring", damping: 15, stiffness: 300, delay: 0.2 }}
+                                    whileHover={{ scale: 1.04, y: -2 }}
+                                    whileTap={{ scale: 0.97 }}
+                                    className={cn("flex flex-col items-center gap-2 py-5 px-3 rounded-2xl border-2 transition-colors relative overflow-hidden",
+                                      paymentMethod === "efectivo"
+                                        ? "border-emerald-400 bg-emerald-50 shadow-lg shadow-emerald-200/50 dark:shadow-emerald-900/30"
+                                        : "border-gray-200 hover:border-emerald-300 hover:shadow-md")}
+                                  >
+                                    {paymentMethod === "efectivo" && (
+                                      <m.div
+                                        layoutId="payment-glow"
+                                        className="absolute inset-0 bg-linear-to-br from-emerald-100/80 to-emerald-50/40 dark:from-emerald-900/20 dark:to-emerald-800/10"
+                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
+                                      />
+                                    )}
+                                    <m.div
+                                      animate={paymentMethod === "efectivo" ? { scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] } : {}}
+                                      transition={{ duration: 0.5 }}
+                                      className="relative z-10"
+                                    >
+                                      <Banknote className={cn("h-12 w-12 drop-shadow-md", paymentMethod === "efectivo" ? "text-emerald-600" : "text-gray-400")} />
+                                    </m.div>
+                                    <span className={cn("relative z-10 text-sm font-bold", paymentMethod === "efectivo" ? "text-emerald-700" : "text-gray-500")}>Efectivo</span>
+                                    {paymentMethod !== "efectivo" && (
+                                      <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                                    )}
+                                  </m.button>
+                                )}
+                              </div>
+                              {paymentMethod === "yape" && yape.enabled && (
+                                <YapePaymentPanel
+                                  yape={yape}
+                                  finalTotal={finalTotal}
+                                  yapeOpNumber={yapeOpNumber}
+                                  onOpNumberChange={setYapeOpNumber}
+                                />
+                              )}
+                              {paymentMethod === "efectivo" && (
+                                <CashChangeCalculator finalTotal={finalTotal} />
+                              )}
+                              {showPaymentHint && (
+                                <p className="text-xs text-red-500 font-semibold">
+                                  {!paymentMethod ? "Selecciona un método de pago para continuar" : "Ingresa el número de operación de Yape para continuar"}
+                                </p>
+                              )}
+                            </div>
+
+                            {submitError && (
+                              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 animate-[fadeUp_0.2s_ease-out]">
+                                <div className="h-9 w-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
+                                  <X className="h-4 w-4 text-red-500" />
+                                </div>
+                                <p className="text-red-700 dark:text-red-300 text-sm font-medium">{submitError}</p>
+                              </div>
+                            )}
+
+                            {/* G1 — Points preview */}
+                            {finalTotal > 0 && (
+                              <div className="flex items-center gap-3 bg-linear-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 rounded-2xl border border-violet-100 dark:border-violet-800/30 px-4 py-3">
+                                <div className="h-10 w-10 rounded-xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center shrink-0">
+                                  <span className="text-xl leading-none">⭐</span>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-extrabold text-violet-800 dark:text-violet-300">+{Math.floor(finalTotal / 10) * 5} puntos</p>
+                                  <p className="text-[11px] text-violet-500 dark:text-violet-400">¡Ganarás puntos por este pedido!</p>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="flex gap-3 pt-1">
+                              <button type="button" onClick={() => setStep("datos")}
+                                className="flex items-center justify-center gap-1.5 shrink-0 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                                ← Volver
+                              </button>
+                              <button type="submit" disabled={submitting}
+                                className="flex-1 py-3.5 rounded-xl bg-linear-to-r from-primary to-indigo-600 text-white font-extrabold text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-primary/30 disabled:opacity-50 flex items-center justify-center gap-2">
+                                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                                {submitting ? "Enviando…" : "Finalizar pedido"}
+                              </button>
+                            </div>
+                          </div>
+
                         </div>
                       </form>
+                    </m.div>
+                  )}
+
+                  {/* ── Step: Éxito ──────────────────────── */}
+                  {step === "exito" && (
+                    <m.div key="exito" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ type: "spring", damping: 20, stiffness: 250 }}>
+                      {/* Confetti celebration overlay */}
+                      <Confetti active />
+                      <div className="px-5 py-10 flex flex-col items-center text-center space-y-5 relative">
+                        {/* Animated pulsing ring behind icon */}
+                        <div className="relative">
+                          <m.div
+                            animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0, 0.3] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                            className="absolute inset-0 rounded-full bg-emerald-300/30"
+                          />
+                          <m.div
+                            animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0, 0.4] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+                            className="absolute inset-0 rounded-full bg-emerald-400/20"
+                          />
+                          <m.div
+                            initial={{ scale: 0, rotate: -180 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ type: "spring", damping: 10, stiffness: 180, delay: 0.1 }}
+                            className="relative h-24 w-24 rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-xl shadow-emerald-300/40"
+                          >
+                            <CheckCircle2 className="h-12 w-12 text-white drop-shadow-md" />
+                          </m.div>
+                        </div>
+                        <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                          <h3 className="text-2xl font-extrabold text-gray-900 dark:text-foreground">¡Pedido enviado! 🎉</h3>
+                          <p className="text-sm text-gray-500 mt-1.5">Tu pedido está siendo preparado con cariño</p>
+                        </m.div>
+                        {orderId && (
+                          <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
+                            className="bg-linear-to-r from-primary/5 to-emerald-50 dark:from-primary/10 dark:to-emerald-900/20 rounded-2xl px-6 py-4 border border-primary/20">
+                            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Número de pedido</p>
+                            <p className="text-lg font-extrabold text-primary font-mono mt-1">{orderId}</p>
+                          </m.div>
+                        )}
+                        <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
+                          className="text-xs text-gray-400 flex items-center gap-2">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Redirigiendo al seguimiento…
+                        </m.p>
+                      </div>
                     </m.div>
                   )}
 
@@ -1012,5 +1725,225 @@ export default function CheckoutModal() {
         </>
       )}
     </AnimatePresence>
+  );
+}
+
+/* ── Yape Payment Panel ───────────────────────────────────────────────── */
+function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberChange }: {
+  yape: { enabled: boolean; image?: string; name?: string; phone?: string };
+  finalTotal: number;
+  yapeOpNumber: string;
+  onOpNumberChange: (v: string) => void;
+}) {
+  const [copied, setCopied] = useState<"amount" | "phone" | null>(null);
+  const [countdown, setCountdown] = useState(600); // 10 min
+  const opInputRef = useRef<HTMLInputElement>(null);
+  const opEntered = /^\d{6,20}$/.test(yapeOpNumber.trim());
+
+  useEffect(() => {
+    const t = setInterval(() => setCountdown((c) => (c > 0 ? c - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Auto-focus the operation number field once QR is visible
+  useEffect(() => {
+    const t = setTimeout(() => opInputRef.current?.focus(), 600);
+    return () => clearTimeout(t);
+  }, []);
+
+  const copyText = async (text: string, type: "amount" | "phone") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(type);
+      setTimeout(() => setCopied(null), 2000);
+    } catch { /* fallback: user copies manually */ }
+  };
+
+  const minutes = Math.floor(countdown / 60);
+  const seconds = countdown % 60;
+
+  return (
+    <div className="bg-linear-to-b from-purple-50 to-purple-100/50 rounded-2xl border border-purple-200 p-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Pago con Yape</p>
+        <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold",
+          countdown > 120 ? "bg-purple-200 text-purple-700" : "bg-red-100 text-red-600 animate-pulse")}>
+          <Clock className="h-3 w-3" />
+          {minutes}:{seconds.toString().padStart(2, "0")}
+        </div>
+      </div>
+
+      {/* Timeout expired — show retry */}
+      {countdown === 0 && !opEntered && (
+        <div className="flex flex-col items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+          <p className="text-xs font-bold text-red-600">⏰ Tiempo expirado</p>
+          <p className="text-xs text-red-500 text-center">El tiempo para completar el pago se agotó. Puedes reiniciar el temporizador.</p>
+          <button
+            type="button"
+            onClick={() => setCountdown(600)}
+            className="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 transition-colors"
+          >
+            🔄 Reiniciar temporizador (10 min)
+          </button>
+        </div>
+      )}
+
+      {/* Steps */}
+      <div className="bg-white/70 rounded-xl p-3 space-y-2">
+        <div className="flex items-start gap-2">
+          <span className="shrink-0 h-5 w-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">1</span>
+          <p className="text-xs text-gray-600">Abre tu app <strong className="text-purple-700">Yape</strong> y escanea el QR o yapea al número</p>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="shrink-0 h-5 w-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">2</span>
+          <p className="text-xs text-gray-600">Ingresa el monto <strong className="text-purple-700">exacto</strong> que se muestra abajo</p>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="shrink-0 h-5 w-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">3</span>
+          <p className="text-xs text-gray-600">Copia el <strong className="text-purple-700">número de operación</strong> e ingrésalo aquí</p>
+        </div>
+      </div>
+
+      {/* Waiting indicator */}
+      {!opEntered && (
+        <div className="flex items-center gap-2 bg-purple-100/70 rounded-xl px-3 py-2">
+          <span className="flex h-2 w-2 relative">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600" />
+          </span>
+          <p className="text-xs font-semibold text-purple-700">Esperando tu pago&hellip;</p>
+        </div>
+      )}
+      {opEntered && (
+        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+          <p className="text-xs font-semibold text-emerald-700">¡Número ingresado! Ya puedes confirmar el pedido</p>
+        </div>
+      )}
+
+      <div className="flex flex-col items-center gap-3">
+        {yape.image && (
+          <div className="relative w-44 h-44 rounded-2xl overflow-hidden border-2 border-purple-300 bg-white shadow-lg shadow-purple-200/50">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={yape.image} alt="Yape QR" className="w-full h-full object-contain p-1" />
+          </div>
+        )}
+        <div className="text-center space-y-1">
+          {yape.name && <p className="font-bold text-gray-900">{yape.name}</p>}
+          {yape.phone && (
+            <button
+              type="button"
+              onClick={() => copyText(yape.phone!, "phone")}
+              className="inline-flex items-center gap-1.5 text-sm font-mono text-purple-700 hover:text-purple-900 transition-colors"
+            >
+              {yape.phone}
+              {copied === "phone" ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5 opacity-50" />}
+            </button>
+          )}
+        </div>
+
+        {/* Amount with copy button */}
+        <button
+          type="button"
+          onClick={() => copyText(finalTotal.toFixed(2), "amount")}
+          className="w-full bg-purple-200/80 hover:bg-purple-200 rounded-xl px-4 py-3 text-center transition-colors group relative"
+        >
+          <p className="text-xs text-purple-600 font-semibold">Monto exacto a yapear</p>
+          <div className="flex items-center justify-center gap-2">
+            <p className="text-3xl font-extrabold text-purple-800">S/{finalTotal.toFixed(2)}</p>
+            {copied === "amount" ? (
+              <Check className="h-5 w-5 text-green-500" />
+            ) : (
+              <Copy className="h-5 w-5 text-purple-400 group-hover:text-purple-600 transition-colors" />
+            )}
+          </div>
+          <p className="text-[10px] text-purple-500 mt-0.5">{copied === "amount" ? "¡Copiado!" : "Toca para copiar"}</p>
+        </button>
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-purple-600 mb-1.5 uppercase tracking-wider">Número de operación *</label>
+        <div className="relative">
+          <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-400" />
+          <input
+            ref={opInputRef}
+            value={yapeOpNumber}
+            onChange={(e) => onOpNumberChange(e.target.value.replace(/\D/g, ""))}
+            placeholder="Ej: 123456789"
+            maxLength={20}
+            inputMode="numeric"
+            className={cn(
+              "w-full pl-10 pr-10 py-3 rounded-xl border-2 text-gray-900 placeholder:text-purple-300 focus:ring-2 outline-none transition-all text-sm font-mono bg-white",
+              opEntered
+                ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-200"
+                : "border-purple-200 focus:border-purple-500 focus:ring-purple-200"
+            )}
+          />
+          {opEntered && (
+            <CheckCircle2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+          )}
+        </div>
+        <p className="text-[10px] text-purple-500 mt-1">
+          {yapeOpNumber.trim().length > 0 && !opEntered
+            ? "⚠️ El número de operación debe tener entre 6 y 20 dígitos"
+            : "Encuéntralo en tu comprobante de Yape · Solo números"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Cash Change Calculator ────────────────────────────────── */
+function CashChangeCalculator({ finalTotal }: { finalTotal: number }) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const bills = [10, 20, 50, 100, 200];
+  const change = selected !== null ? selected - finalTotal : null;
+
+  return (
+    <div className="mt-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30">
+      <div className="flex items-center gap-2 mb-3">
+        <Banknote className="h-5 w-5 text-emerald-600" />
+        <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+          Pago contra entrega — Total: S/{finalTotal.toFixed(2)}
+        </p>
+      </div>
+      <p className="text-xs text-emerald-700 dark:text-emerald-300 mb-2">
+        ¿Con cuánto vas a pagar? Así preparamos tu vuelto
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {bills.filter(b => b >= finalTotal).map(bill => (
+          <button
+            key={bill}
+            type="button"
+            onClick={() => setSelected(prev => prev === bill ? null : bill)}
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+              selected === bill
+                ? "bg-emerald-600 text-white shadow-md scale-105"
+                : "bg-white dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:border-emerald-500"
+            }`}
+          >
+            S/{bill}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => setSelected(null)}
+          className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+            selected === null
+              ? "bg-emerald-600 text-white shadow-md"
+              : "bg-white dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:border-emerald-500"
+          }`}
+        >
+          Monto exacto
+        </button>
+      </div>
+      {change !== null && change > 0 && (
+        <div className="mt-3 p-2.5 rounded-lg bg-white dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700">
+          <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
+            Tu vuelto: S/{change.toFixed(2)}
+          </p>
+        </div>
+      )}
+    </div>
   );
 }

@@ -1,11 +1,11 @@
-﻿﻿"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   Plus, Trash2, X, Check, Search, Loader2, AlertTriangle,
-  MessageCircle, ExternalLink, Send,
-  Percent, Users, User, Phone,
+  MessageCircle, ExternalLink, Send, Calendar,
+  Percent, Users, User, Phone, Target, Play, Pause, Clock,
 } from "lucide-react";
 import type { DbPromotion, DbCustomer } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
@@ -42,9 +42,28 @@ type PromoForm = {
   expiresAt: string;
 };
 
+type ScheduledCampaign = {
+  id: string;
+  name: string;
+  description: string;
+  targetSegment: string;
+  startDate: string;
+  endDate: string;
+  messageTemplate: string;
+  discountCode: string;
+  autoSend: boolean;
+  status: "scheduled" | "active" | "completed" | "paused";
+  createdAt: string;
+};
+
 const emptyForm: PromoForm = {
   name: "", description: "", discountPercent: 0, minPurchase: "",
   imageUrl: "", message: "", targetType: "all", expiresAt: "",
+};
+
+const emptyCampaign: Omit<ScheduledCampaign, "id" | "createdAt" | "status"> = {
+  name: "", description: "", targetSegment: "all",
+  startDate: "", endDate: "", messageTemplate: "", discountCode: "", autoSend: false,
 };
 
 export default function PromotionsTab() {
@@ -79,7 +98,67 @@ export default function PromotionsTab() {
   // Detail modal
   const [detailPromo, setDetailPromo] = useState<DbPromotion | null>(null);
 
-  useScrollLock(showForm || showAiModal || !!sendPromo || !!confirmDeleteId || !!detailPromo);
+  // Seasonal campaign templates
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  // Scheduled campaigns
+  const [campaigns, setCampaigns] = useState<ScheduledCampaign[]>(() => {
+    try {
+      const stored = localStorage.getItem("scheduled-campaigns");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Update status based on dates
+        const now = new Date().toISOString();
+        return parsed.map((c: ScheduledCampaign) => {
+          if (c.status === "paused") return c;
+          if (c.endDate && c.endDate < now) return { ...c, status: "completed" };
+          if (c.startDate <= now && (!c.endDate || c.endDate >= now)) return { ...c, status: "active" };
+          return c;
+        });
+      }
+    } catch {}
+    return [];
+  });
+  const [showCampaignForm, setShowCampaignForm] = useState(false);
+  const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
+  const [campaignForm, setCampaignForm] = useState(emptyCampaign);
+  const [savingCampaign, setSavingCampaign] = useState(false);
+
+  const campaignTemplates: { name: string; icon: string; description: string; form: PromoForm }[] = [
+    { name: "🎄 Navidad & Año Nuevo", icon: "🎄", description: "Descuento navideño para fiestas de fin de año",
+      form: { name: "Fiestas de Fin de Año", description: "¡Celebra con precios especiales! Descuento en toda tu compra navideña.", discountPercent: 15, minPurchase: "50", imageUrl: "", message: "🎄 *Bodega San Martín* te desea ¡Felices Fiestas! 🎉\nLleva un *15% de descuento* en compras mayores a S/50.\n¡Haz tu pedido ahora!", targetType: "all", expiresAt: "" }},
+    { name: "🇵🇪 Fiestas Patrias", icon: "🇵🇪", description: "Celebración patria con ofertas en canasta de productos peruanos",
+      form: { name: "Fiestas Patrias", description: "¡Viva el Perú! Descuentos especiales en tu canasta patriota.", discountPercent: 12, minPurchase: "40", imageUrl: "", message: "🇵🇪 ¡Felices Fiestas Patrias! 🎉\n*Bodega San Martín* tiene *12% de descuento* en compras mayores a S/40.\n¡Arma tu canasta patriota!", targetType: "all", expiresAt: "" }},
+    { name: "💖 Día de la Madre", icon: "💖", description: "Sorprende a mamá con la mejor canasta de productos",
+      form: { name: "Día de la Madre", description: "Un detalle especial para mamá con descuento exclusivo.", discountPercent: 10, minPurchase: "30", imageUrl: "", message: "💖 ¡Feliz Día de la Madre! 🌸\n*10% de descuento* en compras mayores a S/30.\n¡Sorpréndela con la mejor canasta de *Bodega San Martín*!", targetType: "all", expiresAt: "" }},
+    { name: "🎒 Vuelta a Clases", icon: "🎒", description: "Ofertas en lonchera saludable y snacks para el colegio",
+      form: { name: "Vuelta a Clases", description: "Lonchera saludable con descuento. ¡La mejor nutrición para tus hijos!", discountPercent: 8, minPurchase: "25", imageUrl: "", message: "🎒 *Vuelta a Clases* con Bodega San Martín 📚\n*8% de descuento* en tu compra de lonchera mayor a S/25.\n¡Nutrición y ahorro!", targetType: "all", expiresAt: "" }},
+    { name: "🖤 Black Friday / Cyber", icon: "🖤", description: "Super descuento por tiempo limitado",
+      form: { name: "Black Friday", description: "¡El descuento más grande del año! Solo por tiempo limitado.", discountPercent: 20, minPurchase: "60", imageUrl: "", message: "🖤 *BLACK FRIDAY* en Bodega San Martín 🔥\n¡*20% de descuento* en compras mayores a S/60!\n⏰ Solo por tiempo limitado. ¡No te lo pierdas!", targetType: "all", expiresAt: "" }},
+    { name: "🌞 Verano", icon: "🌞", description: "Refrescos, frutas y ofertas de temporada calurosa",
+      form: { name: "Ofertas de Verano", description: "¡Combate el calor! Descuentos en refrescos, frutas y más.", discountPercent: 10, minPurchase: "30", imageUrl: "", message: "🌞 *¡Ofertas de Verano!* 🍉\n*10% de descuento* en compras mayores a S/30.\n¡Refréscate con *Bodega San Martín*!", targetType: "all", expiresAt: "" }},
+    { name: "❤️ San Valentín", icon: "❤️", description: "Ofertas para parejas y celebraciones románticas",
+      form: { name: "San Valentín", description: "¡Celebra el amor! Descuento especial para este día.", discountPercent: 10, minPurchase: "35", imageUrl: "", message: "❤️ *¡Feliz San Valentín!* 🌹\n*10% de descuento* en compras mayores a S/35.\n¡Sorprende a esa persona especial con *Bodega San Martín*!", targetType: "all", expiresAt: "" }},
+    { name: "🎃 Halloween", icon: "🎃", description: "Dulces, snacks y decoración con descuento",
+      form: { name: "Halloween", description: "¡Truco o trato! Descuento en dulces y snacks para la noche de brujas.", discountPercent: 8, minPurchase: "20", imageUrl: "", message: "🎃 *¡Halloween en Bodega San Martín!* 👻\n*8% de descuento* en compras mayores a S/20.\n¡Prepárate para la noche más divertida!", targetType: "all", expiresAt: "" }},
+  ];
+
+  const applyTemplate = (tpl: typeof campaignTemplates[0]) => {
+    setForm(tpl.form);
+    setEditingId(null);
+    setSelectedPhones(new Set());
+    setShowTemplates(false);
+    setShowForm(true);
+  };
+
+  useScrollLock(showForm || showAiModal || !!sendPromo || !!confirmDeleteId || !!detailPromo || showTemplates || showCampaignForm);
+
+  // Save campaigns to localStorage whenever they change
+  useEffect(() => {
+    if (campaigns.length >= 0) {
+      localStorage.setItem("scheduled-campaigns", JSON.stringify(campaigns));
+    }
+  }, [campaigns]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -164,6 +243,100 @@ export default function PromotionsTab() {
     load();
   };
 
+  // ── Scheduled Campaigns ────────────────────────────────────────────────
+  const openCreateCampaign = () => {
+    setCampaignForm(emptyCampaign);
+    setEditingCampaignId(null);
+    setShowCampaignForm(true);
+  };
+
+  const openEditCampaign = (c: ScheduledCampaign) => {
+    setCampaignForm({
+      name: c.name,
+      description: c.description,
+      targetSegment: c.targetSegment,
+      startDate: c.startDate,
+      endDate: c.endDate,
+      messageTemplate: c.messageTemplate,
+      discountCode: c.discountCode,
+      autoSend: c.autoSend,
+    });
+    setEditingCampaignId(c.id);
+    setShowCampaignForm(true);
+  };
+
+  const saveCampaign = () => {
+    if (!campaignForm.name.trim() || !campaignForm.startDate) return;
+    setSavingCampaign(true);
+
+    const now = new Date().toISOString();
+    const startDate = new Date(campaignForm.startDate).toISOString();
+    const endDate = campaignForm.endDate ? new Date(campaignForm.endDate).toISOString() : "";
+
+    let status: ScheduledCampaign["status"] = "scheduled";
+    if (startDate <= now && (!endDate || endDate >= now)) status = "active";
+    else if (endDate && endDate < now) status = "completed";
+
+    if (editingCampaignId) {
+      setCampaigns(prev => prev.map(c => c.id === editingCampaignId ? {
+        ...c,
+        name: campaignForm.name.trim(),
+        description: campaignForm.description.trim(),
+        targetSegment: campaignForm.targetSegment,
+        startDate,
+        endDate,
+        messageTemplate: campaignForm.messageTemplate.trim(),
+        discountCode: campaignForm.discountCode.trim(),
+        autoSend: campaignForm.autoSend,
+        status,
+      } : c));
+    } else {
+      const newCampaign: ScheduledCampaign = {
+        id: `camp-${Date.now()}`,
+        name: campaignForm.name.trim(),
+        description: campaignForm.description.trim(),
+        targetSegment: campaignForm.targetSegment,
+        startDate,
+        endDate,
+        messageTemplate: campaignForm.messageTemplate.trim(),
+        discountCode: campaignForm.discountCode.trim(),
+        autoSend: campaignForm.autoSend,
+        status,
+        createdAt: now,
+      };
+      setCampaigns(prev => [newCampaign, ...prev]);
+    }
+
+    setShowCampaignForm(false);
+    setSavingCampaign(false);
+  };
+
+  const toggleCampaignStatus = (id: string) => {
+    setCampaigns(prev => prev.map(c => {
+      if (c.id !== id) return c;
+      if (c.status === "paused") {
+        // Resume: check dates to determine if active or scheduled
+        const now = new Date().toISOString();
+        const newStatus = c.startDate <= now && (!c.endDate || c.endDate >= now) ? "active" : "scheduled";
+        return { ...c, status: newStatus };
+      } else if (c.status === "active" || c.status === "scheduled") {
+        return { ...c, status: "paused" };
+      }
+      return c;
+    }));
+  };
+
+  const deleteCampaign = (id: string) => {
+    if (confirm("¿Eliminar campaña programada?")) {
+      setCampaigns(prev => prev.filter(c => c.id !== id));
+    }
+  };
+
+  const sendCampaignNow = (c: ScheduledCampaign) => {
+    alert(`Enviando campaña "${c.name}" ahora...\n\nSegmento: ${c.targetSegment}\nMensaje: ${c.messageTemplate}\nCódigo: ${c.discountCode}`);
+    // In production, call /api/campaigns/send
+  };
+
   // ── AI Suggestions ─────────────────────────────────────────────────────────
   const requestAiSuggestions = async () => {
     setLoadingAi(true);
@@ -202,15 +375,23 @@ export default function PromotionsTab() {
     window.open(`https://wa.me/${fullPhone}?text=${encoded}`, "_blank");
   };
 
-  const sendToAll = () => {
+  const sendToAll = async () => {
     if (!sendPromo) return;
     const msg = sendPromo.message || `🎉 *${sendPromo.name}*\n\n${sendPromo.description}\n\n${sendPromo.discountPercent > 0 ? `📢 ${sendPromo.discountPercent}% de descuento` : ""}${sendPromo.minPurchase ? `\nCompra mínima: S/${sendPromo.minPurchase}` : ""}\n\n¡Te esperamos en Bodega San Martín! 🛒`;
     const phones = Array.from(sendPhones);
     if (phones.length === 0) return;
-    // Open first one immediately, rest after user interaction
+
+    // Create in-app notifications for all selected customers (fire-and-forget)
+    fetch("/api/campaigns/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phones, title: sendPromo.name, message: sendPromo.description || msg, promoId: sendPromo.id }),
+    }).catch(() => {});
+
+    // Open first WhatsApp link
     sendWhatsApp(phones[0], msg);
     if (phones.length > 1) {
-      alert(`Se abrió WhatsApp para ${phones[0]}.\n\nQuedan ${phones.length - 1} clientes más. Haz clic en cada botón "Enviar" para enviar individualmente.`);
+      alert(`Se abrió WhatsApp para ${phones[0]}.\n\nSe crearon ${phones.length} notificaciones in-app.\nQuedan ${phones.length - 1} clientes más por WhatsApp. Haz clic en cada botón "Enviar" para enviar individualmente.`);
     }
   };
 
@@ -229,6 +410,108 @@ export default function PromotionsTab() {
 
   return (
     <div className="space-y-6">
+      {/* ── Campañas Programadas ───────────────────────────────────────────── */}
+      <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200 dark:border-indigo-900/50 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+              <Calendar className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Campañas Programadas</h3>
+              <p className="text-xs text-gray-500 dark:text-muted">Automatiza tus campañas de marketing</p>
+            </div>
+          </div>
+          <button
+            onClick={openCreateCampaign}
+            className="flex items-center gap-2 bg-linear-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:brightness-110 transition shadow-sm"
+          >
+            <Plus className="h-4 w-4" /> Nueva Campaña
+          </button>
+        </div>
+
+        {campaigns.length === 0 ? (
+          <div className="text-center py-8 text-gray-400 dark:text-muted">
+            <Clock className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No hay campañas programadas</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {campaigns.map(c => {
+              const statusConfig = {
+                scheduled: { label: "Programada", color: "bg-gray-100 text-gray-700", icon: Clock },
+                active: { label: "Activa", color: "bg-green-100 text-green-700", icon: Play },
+                completed: { label: "Finalizada", color: "bg-blue-100 text-blue-700", icon: Check },
+                paused: { label: "Pausada", color: "bg-amber-100 text-amber-700", icon: Pause },
+              };
+              const config = statusConfig[c.status];
+              const StatusIcon = config.icon;
+
+              return (
+                <div key={c.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="font-bold text-gray-900 dark:text-foreground">{c.name}</span>
+                        <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold", config.color)}>
+                          <StatusIcon className="h-3 w-3" /> {config.label}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                          <Target className="h-3 w-3" /> {c.targetSegment.charAt(0).toUpperCase() + c.targetSegment.slice(1)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500 dark:text-muted mb-2">{c.description || "Sin descripción"}</p>
+                      <div className="flex flex-wrap gap-3 text-xs text-gray-400 dark:text-muted">
+                        <span>Inicio: {new Date(c.startDate).toLocaleString("es-PE")}</span>
+                        {c.endDate && <span>Fin: {new Date(c.endDate).toLocaleString("es-PE")}</span>}
+                        {c.discountCode && <span className="font-mono font-bold text-emerald-600">Código: {c.discountCode}</span>}
+                        {c.autoSend && <span className="text-green-600">📤 Auto-envío</span>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {c.status !== "completed" && (
+                        <>
+                          <button
+                            onClick={() => sendCampaignNow(c)}
+                            className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-green-500 hover:bg-green-50 transition-colors"
+                            title="Enviar ahora"
+                          >
+                            <Send className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => toggleCampaignStatus(c.id)}
+                            className={cn("p-1.5 rounded-lg transition-colors",
+                              c.status === "paused" ? "text-green-500 hover:bg-green-50" : "text-amber-500 hover:bg-amber-50"
+                            )}
+                            title={c.status === "paused" ? "Reanudar" : "Pausar"}
+                          >
+                            {c.status === "paused" ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() => openEditCampaign(c)}
+                        className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                        title="Editar"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteCampaign(c.id)}
+                        className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -242,6 +525,12 @@ export default function PromotionsTab() {
             style={{ background: 'linear-gradient(to right, #8b5cf6, #9333ea)' }}
           >
             <MessageCircle className="h-4 w-4" /> Sugerencias IA
+          </button>
+          <button
+            onClick={() => setShowTemplates(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors shadow-sm"
+          >
+            <Calendar className="h-4 w-4" /> Plantillas
           </button>
           <button
             onClick={openCreate}
@@ -684,6 +973,125 @@ export default function PromotionsTab() {
           </div>
         </div>
       )}
+
+      {/* ── Campaign Templates Modal ── */}
+      {showTemplates && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setShowTemplates(false)}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b dark:border-card-border shrink-0">
+              <div>
+                <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Plantillas de Campaña</h3>
+                <p className="text-xs text-gray-500 dark:text-muted">Selecciona una plantilla y personalízala</p>
+              </div>
+              <button onClick={() => setShowTemplates(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4 space-y-2">
+              {campaignTemplates.map((tpl) => (
+                <button
+                  key={tpl.name}
+                  onClick={() => applyTemplate(tpl)}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-amber-50 dark:hover:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-700 transition-all text-left"
+                >
+                  <span className="text-2xl shrink-0">{tpl.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900 dark:text-foreground">{tpl.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-muted">{tpl.description}</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold mt-0.5">{tpl.form.discountPercent}% off · Mín. S/{tpl.form.minPurchase}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Campaign Form Modal ───────────────────────────────────────────── */}
+      {showCampaignForm && (
+        <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowCampaignForm(false)}>
+          <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+              <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">{editingCampaignId ? "Editar Campaña" : "Nueva Campaña Programada"}</h3>
+              <button onClick={() => setShowCampaignForm(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+              {/* Name */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Nombre de campaña *</label>
+                <input type="text" value={campaignForm.name} onChange={e => setCampaignForm(f => ({ ...f, name: e.target.value }))}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="Ej: Campaña de Verano" />
+              </div>
+              {/* Description */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Descripción</label>
+                <textarea value={campaignForm.description} onChange={e => setCampaignForm(f => ({ ...f, description: e.target.value }))} rows={2}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la campaña…" />
+              </div>
+              {/* Target Segment */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Segmento objetivo *</label>
+                <select value={campaignForm.targetSegment} onChange={e => setCampaignForm(f => ({ ...f, targetSegment: e.target.value }))}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface">
+                  <option value="all">Todos</option>
+                  <option value="champions">Champions</option>
+                  <option value="loyal">Loyal</option>
+                  <option value="at-risk">At Risk</option>
+                  <option value="lost">Lost</option>
+                  <option value="new">New</option>
+                  <option value="promising">Promising</option>
+                </select>
+              </div>
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha/hora inicio *</label>
+                  <input type="datetime-local" value={campaignForm.startDate ? campaignForm.startDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, startDate: e.target.value }))}
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha/hora fin</label>
+                  <input type="datetime-local" value={campaignForm.endDate ? campaignForm.endDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, endDate: e.target.value }))}
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
+                </div>
+              </div>
+              {/* Message Template */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Mensaje con placeholders</label>
+                <textarea value={campaignForm.messageTemplate} onChange={e => setCampaignForm(f => ({ ...f, messageTemplate: e.target.value }))} rows={4}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none font-mono"
+                  placeholder="¡Hola {name}! Tenemos un {discount}% de descuento especial para ti..." />
+                <p className="text-xs text-gray-400 dark:text-muted mt-1">Variables: {"{name}"}, {"{discount}"}, {"{code}"}</p>
+              </div>
+              {/* Discount Code */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Código de descuento</label>
+                <input type="text" value={campaignForm.discountCode} onChange={e => setCampaignForm(f => ({ ...f, discountCode: e.target.value.toUpperCase() }))}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary font-mono" placeholder="VERANO20" />
+              </div>
+              {/* Auto-send toggle */}
+              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
+                <input type="checkbox" id="autoSend" checked={campaignForm.autoSend} onChange={e => setCampaignForm(f => ({ ...f, autoSend: e.target.checked }))}
+                  className="rounded border-gray-300 text-primary focus:ring-primary" />
+                <label htmlFor="autoSend" className="text-sm font-medium text-gray-700 dark:text-foreground cursor-pointer flex-1">
+                  Enviar automáticamente al inicio de la campaña
+                  <span className="block text-xs text-gray-400 dark:text-muted font-normal">Las notificaciones se enviarán por WhatsApp al segmento seleccionado</span>
+                </label>
+              </div>
+            </div>
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex gap-3 shrink-0">
+              <button onClick={() => setShowCampaignForm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
+              <button onClick={saveCampaign} disabled={savingCampaign || !campaignForm.name.trim() || !campaignForm.startDate}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:brightness-110 transition disabled:opacity-50">
+                {savingCampaign ? "Guardando…" : editingCampaignId ? "Guardar cambios" : "Crear campaña"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

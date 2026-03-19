@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, startTransition, useCallback } from "react";
-import { Gift, X } from "lucide-react";
+import { Gift, X, Copy, Check } from "lucide-react";
 
 const SEGMENTS = [
   { label: "5% OFF", color: "#ef4444", value: 5 },
@@ -15,6 +15,8 @@ const SEGMENTS = [
 ];
 
 const STORAGE_KEY = "bsm-spin-played";
+const COUPON_KEY = "bsm-spin-coupon";
+const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
 const SEG_COUNT = SEGMENTS.length;
 const SEG_ANGLE = 360 / SEG_COUNT;
 
@@ -23,14 +25,43 @@ export default function SpinWheel() {
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<typeof SEGMENTS[0] | null>(null);
   const [rotation, setRotation] = useState(0);
+  const [couponCode, setCouponCode] = useState<string | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const played = localStorage.getItem(STORAGE_KEY);
-    if (!played) {
-      const timer = setTimeout(() => startTransition(() => setShow(true)), 15_000);
-      return () => clearTimeout(timer);
+    if (played) {
+      // Allow replay after 7 days
+      const ts = parseInt(played, 10);
+      if (!isNaN(ts) && Date.now() - ts < SEVEN_DAYS) return;
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(COUPON_KEY);
     }
+
+    let triggered = false;
+    const trigger = () => {
+      if (triggered) return;
+      triggered = true;
+      startTransition(() => setShow(true));
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(timer);
+    };
+
+    // Trigger on 60% scroll OR 35s, whichever comes first
+    const handleScroll = () => {
+      const scrollPct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+      if (scrollPct >= 0.6) trigger();
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    const timer = setTimeout(trigger, 35_000);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      clearTimeout(timer);
+    };
   }, []);
 
   // Draw wheel
@@ -80,21 +111,86 @@ export default function SpinWheel() {
     ctx.stroke();
   }, [show]);
 
+  const [couponError, setCouponError] = useState(false);
+
   const spin = useCallback(() => {
     if (spinning) return;
     setSpinning(true);
+    setCouponError(false);
 
     const winIdx = Math.floor(Math.random() * SEG_COUNT);
-    // Calculate rotation: 5 full spins + land on the winning segment
     const targetAngle = 360 * 5 + (360 - winIdx * SEG_ANGLE - SEG_ANGLE / 2);
     setRotation((prev) => prev + targetAngle);
 
-    setTimeout(() => {
+    setTimeout(async () => {
+      const prize = SEGMENTS[winIdx];
       setSpinning(false);
-      setResult(SEGMENTS[winIdx]);
+      setResult(prize);
       localStorage.setItem(STORAGE_KEY, Date.now().toString());
+
+      // Generate real coupon for winning prizes
+      if (prize.value !== -1) {
+        setCouponLoading(true);
+        setCouponError(false);
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 5000);
+          const res = await fetch("/api/coupons/spin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prize: prize.label,
+              type: prize.value === 0 ? "free_delivery" : prize.label.includes("%") ? "percent" : "fixed",
+              value: prize.value,
+            }),
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          if (res.ok) {
+            const data = await res.json() as { code: string };
+            setCouponCode(data.code);
+            localStorage.setItem(COUPON_KEY, data.code);
+          } else {
+            setCouponError(true);
+          }
+        } catch {
+          setCouponError(true);
+        }
+        setCouponLoading(false);
+      }
     }, 4000);
   }, [spinning]);
+
+  const retryCoupon = useCallback(async () => {
+    if (!result || result.value === -1) return;
+    setCouponLoading(true);
+    setCouponError(false);
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const res = await fetch("/api/coupons/spin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prize: result.label,
+          type: result.value === 0 ? "free_delivery" : result.label.includes("%") ? "percent" : "fixed",
+          value: result.value,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      if (res.ok) {
+        const data = await res.json() as { code: string };
+        setCouponCode(data.code);
+        localStorage.setItem(COUPON_KEY, data.code);
+      } else {
+        setCouponError(true);
+      }
+    } catch {
+      setCouponError(true);
+    }
+    setCouponLoading(false);
+  }, [result]);
 
   const dismiss = () => {
     setShow(false);
@@ -157,9 +253,36 @@ export default function SpinWheel() {
                   : `Ganaste: ${result.label}`}
               </p>
               {result.value !== -1 && (
-                <div className="bg-primary/10 rounded-xl px-4 py-3 mb-4">
+                <div className="bg-primary/10 rounded-xl px-4 py-3 mb-4 space-y-2">
                   <p className="text-lg font-extrabold text-primary">{result.label}</p>
-                  <p className="text-xs text-muted mt-1">Se aplica automáticamente en tu próxima compra</p>
+                  {couponLoading ? (
+                    <p className="text-xs text-muted animate-pulse">Generando tu cupón...</p>
+                  ) : couponCode ? (
+                    <div className="space-y-1.5">
+                      <p className="text-[10px] text-muted uppercase tracking-wider font-bold">Tu código de cupón</p>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try { await navigator.clipboard.writeText(couponCode); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* fallback */ }
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-surface rounded-lg border-2 border-dashed border-primary/40 hover:border-primary transition-colors"
+                      >
+                        <span className="font-mono text-base font-extrabold text-primary tracking-wide">{couponCode}</span>
+                        {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4 text-primary/50" />}
+                      </button>
+                      <p className="text-[10px] text-muted">Válido por 7 días · Úsalo en el checkout</p>
+                    </div>
+                  ) : couponError ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-red-500 font-semibold">No se pudo generar tu cupón</p>
+                      <button type="button" onClick={retryCoupon}
+                        className="text-xs font-bold text-primary hover:underline">
+                        Reintentar
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted mt-1">Se aplica automáticamente en tu próxima compra</p>
+                  )}
                 </div>
               )}
             </div>

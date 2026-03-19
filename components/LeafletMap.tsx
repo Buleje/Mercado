@@ -59,6 +59,17 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
       }).addTo(map);
       markerRef.current = marker;
 
+      // Fix gray tiles caused by modal animation — invalidate after container settles
+      setTimeout(() => { if (!destroyed) map.invalidateSize(); }, 250);
+
+      // Also re-invalidate on container resize (e.g., orientation change, accordion)
+      if (containerRef.current && typeof ResizeObserver !== "undefined") {
+        const ro = new ResizeObserver(() => { if (!destroyed) map.invalidateSize(); });
+        ro.observe(containerRef.current);
+        // Store for cleanup
+        (map as any)._roCleanup = () => ro.disconnect();
+      }
+
       if (onPickRef.current) {
         const reverseGeocode = async (lat: number, lng: number) => {
           try {
@@ -96,6 +107,7 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
     return () => {
       destroyed = true;
       if (mapRef.current) {
+        (mapRef.current as any)._roCleanup?.();
         mapRef.current.remove();
         mapRef.current = null;
         markerRef.current = null;

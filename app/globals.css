@@ -25,6 +25,11 @@
   color-scheme: dark;
   --color-background: #0f172a;
   --color-foreground: #e2e8f0;
+  --color-primary: #818cf8;        /* Indigo 400 — más legible sobre fondo oscuro */
+  --color-primary-dark: #6366f1;   /* Indigo 500 */
+  --color-primary-light: #a5b4fc;  /* Indigo 300 */
+  --color-secondary: #fbbf24;      /* Amber 400 */
+  --color-secondary-dark: #f59e0b; /* Amber 500 */
   --color-surface: #1e293b;
   --color-muted: #94a3b8;
   --color-card: #1e293b;
@@ -273,6 +278,16 @@ body {
   100% { transform: translateX(100%); }
 }
 
+@keyframes countdown {
+  0% { width: 100%; }
+  100% { width: 0%; }
+}
+
+@keyframes flashGreen {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3); }
+}
+
 /* Hide scrollbar for category filters */
 .scrollbar-hide {
   -ms-overflow-style: none;
@@ -285,6 +300,85 @@ body {
 @keyframes scrollX {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
+}
+
+/* ── Interactive UX FX Keyframes ─────────────────────────────────────── */
+
+/* Floating particles (FloatingParticles component) */
+@keyframes floatUp {
+  0%   { opacity: 0; transform: translateY(0) scale(1); }
+  8%   { opacity: 1; }
+  85%  { opacity: 0.6; }
+  100% { opacity: 0; transform: translateY(-120vh) scale(0.4); }
+}
+
+/* Ripple on click (useRipple hook) */
+@keyframes ripple {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* Morphing blob background (MorphingBlob component) */
+@keyframes morphBlob {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  20%       { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  40%       { border-radius: 50% 30% 60% 50% / 30% 70% 40% 60%; }
+  60%       { border-radius: 70% 40% 30% 60% / 50% 30% 60% 40%; }
+  80%       { border-radius: 40% 60% 50% 40% / 70% 40% 60% 30%; }
+}
+
+/* Gradient border rotation (animated CTA borders) */
+@keyframes rotateBorder {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Stagger word entrance */
+@keyframes wordIn {
+  from { opacity: 0; transform: translateY(20px) rotateX(-40deg); }
+  to   { opacity: 1; transform: translateY(0) rotateX(0deg); }
+}
+
+/* Pulsing glow ring for premium badges */
+@keyframes glowRing {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
+  50%       { box-shadow: 0 0 0 8px rgba(99,102,241,0.2); }
+}
+
+/* Tilt shine overlay (useTilt hook) */
+.tilt-card {
+  transform-style: preserve-3d;
+}
+.tilt-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1;
+}
+
+/* Animated gradient border wrapper */
+.gradient-border {
+  position: relative;
+  isolation: isolate;
+}
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, #6366f1, #818cf8, #f59e0b, #6366f1);
+  z-index: -1;
+  animation: rotateBorder 3s linear infinite;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.gradient-border:hover::before {
+  opacity: 1;
 }
 
 /* ── Explicit opacity variants — Tailwind v4 /N step safety net ── */
@@ -389,5 +483,86 @@ body {
 }
 .animate-scale-in-modal {
   animation: scaleInModal 0.28s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+/* ── Print styles ──────────────────────────────────────────────────────  */
+@media print {
+  /* Hide everything except print content */
+  body * { visibility: hidden !important; }
+  
+  /* Show print summary table */
+  .print-orders-summary,
+  .print-orders-summary * {
+    visibility: visible !important;
+  }
+  .print-orders-summary {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    color: #000 !important;
+    background: #fff !important;
+    font-size: 11px;
+    padding: 1rem;
+  }
+  .print-orders-summary table { width: 100%; }
+  .print-orders-summary th,
+  .print-orders-summary td { padding: 4px 6px; }
+  
+  /* Batch print preview styles (FEATURE 3) */
+  #print-content,
+  #print-content * {
+    visibility: visible !important;
+  }
+  #print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    max-width: 100%;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Shift receipt (ShiftControlTab) */
+  #shift-receipt,
+  #shift-receipt * {
+    visibility: visible !important;
+  }
+  #shift-receipt {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    width: 80mm;
+    max-width: 100%;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+  
+  /* Page breaks for each order */
+  #print-content > div {
+    page-break-after: always;
+    break-after: page;
+    margin: 0;
+    padding: 8mm;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+  
+  /* Remove last page break */
+  #print-content > div:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  
+  /* Optimize for thermal printers */
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
 }
 

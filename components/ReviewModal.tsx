@@ -10,23 +10,23 @@ const PRESETS: Record<"critical" | "neutral" | "positive", string[]> = {
   critical: [
     "El servicio tuvo inconvenientes esta vez. Espero que mejoren.",
     "Algunos productos no llegaron frescos. Es importante mejorar la calidad.",
-    "La atencion puede mejorar. Tuve que insistir varias veces con mi pedido.",
-    "Los productos no coincidian con lo que pedi. Necesita mas cuidado.",
-    "Esta vez no quede conforme, pero le dare otra oportunidad.",
+    "La atención puede mejorar. Tuve que insistir varias veces con mi pedido.",
+    "Los productos no coincidían con lo que pedí. Necesita más cuidado.",
+    "Esta vez no quedé conforme, pero le daré otra oportunidad.",
   ],
   neutral: [
-    "El servicio fue aceptable, aunque hay aspectos que podrian mejorar.",
-    "Los productos llegaron bien, pero la entrega tardo mas de lo esperado.",
+    "El servicio fue aceptable, aunque hay aspectos que podrían mejorar.",
+    "Los productos llegaron bien, pero la entrega tardó más de lo esperado.",
     "Experiencia normal. Espero que mejore en futuros pedidos.",
-    "Esta bien por ahora. La atencion fue correcta pero no excepcional.",
-    "Servicio correcto. Con algunas mejoras seria excelente.",
+    "Está bien por ahora. La atención fue correcta pero no excepcional.",
+    "Servicio correcto. Con algunas mejoras sería excelente.",
   ],
   positive: [
     "Excelente servicio, los productos llegaron frescos y a tiempo. Muy recomendado.",
-    "Todo perfecto, la atencion fue muy amable y el pedido llego completo.",
-    "Precios justos y productos de calidad. Sin duda volvere a pedir.",
-    "Super rapido el delivery. Los productos venian muy frescos.",
-    "Me encanto la facilidad de pedir por WhatsApp. Muy conveniente.",
+    "Todo perfecto, la atención fue muy amable y el pedido llegó completo.",
+    "Precios justos y productos de calidad. Sin duda volveré a pedir.",
+    "Súper rápido el delivery. Los productos venían muy frescos.",
+    "Me encantó la facilidad de pedir por WhatsApp. Muy conveniente.",
   ],
 };
 
@@ -86,16 +86,24 @@ export default function ReviewModal() {
     setPromptPulse(false);
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!canPublish) return;
     addReview({ name: customerName, location: customerLocation, text: activeText.trim(), rating });
+    // Persist to backend
+    try {
+      await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: customerName, location: customerLocation, text: activeText.trim(), rating }),
+      });
+    } catch { /* non-critical — review saved locally */ }
     setPublished(true);
     setTimeout(() => {
       closeReviewModal();
       setPublished(false);
       const el = document.getElementById("nuestros-clientes");
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 1800);
+    }, 3000);
   };
 
   const selectedStyle =
@@ -141,7 +149,7 @@ export default function ReviewModal() {
                   <span className="text-xl">⭐</span>
                 </div>
                 <div>
-                  <p className="font-bold text-white text-base leading-tight">¿Como fue tu experiencia?</p>
+                  <p className="font-bold text-white text-base leading-tight">¿Cómo fue tu experiencia?</p>
                   <p className="text-white/55 text-xs">{customerName}</p>
                 </div>
               </div>
@@ -178,7 +186,7 @@ export default function ReviewModal() {
                 <>
                   {/* Stars */}
                   <div>
-                    <p className="text-sm font-semibold text-foreground mb-2">Tu calificacion</p>
+                    <p className="text-sm font-semibold text-foreground mb-2">Tu calificación</p>
                     <div className="flex items-center gap-2">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <m.button

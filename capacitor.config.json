@@ -1,0 +1,36 @@
+{
+  "appId": "pe.bodegasanmartin.app",
+  "appName": "Bodega San Martín",
+  "webDir": "out",
+  "server": {
+    "url": "https://www.bodegasanmartin.pe",
+    "cleartext": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#6366f1",
+      "showSpinner": true,
+      "spinnerColor": "#ffffff"
+    },
+    "StatusBar": {
+      "backgroundColor": "#6366f1",
+      "style": "LIGHT"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    },
+    "Keyboard": {
+      "resize": "body",
+      "resizeOnFullScreen": true
+    }
+  },
+  "android": {
+    "backgroundColor": "#ffffff",
+    "allowMixedContent": false
+  },
+  "ios": {
+    "backgroundColor": "#ffffff",
+    "contentInset": "automatic"
+  }
+}

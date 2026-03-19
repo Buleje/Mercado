@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
     data: { products, customers, orders, reviews, settings, suppliers, purchases, sales, promotions, payables },
   };
 
-  logActivity("Backup", "configuracion", "Backup de datos descargado").catch(() => {});
+  const requestId = req.headers.get("x-request-id") ?? undefined;
+  logActivity("Backup", "configuracion", "Backup de datos descargado", undefined, "admin", requestId).catch(() => {});
 
   return new NextResponse(JSON.stringify(backup, null, 2), {
     headers: {

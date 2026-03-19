@@ -1,0 +1,124 @@
+/**
+ * Next.js Edge Middleware
+ *
+ * Runs on every matched request before it reaches any route handler.
+ * Responsibilities:
+ *  1. Inject a unique `x-request-id` header so every request is traceable.
+ *  2. Generate a per-request CSP nonce — eliminates `unsafe-inline` from script-src.
+ *  3. Attach Content-Security-Policy + hardening headers on every response.
+ *  4. Protect /admin/* routes — redirect unauthenticated visitors to /admin/login.
+ *  5. Global rate-limit on mutating (POST/PUT/PATCH/DELETE) API requests.
+ */
+
+import { NextRequest, NextResponse } from "next/server";
+import {
+  generateRequestId,
+  generateNonce,
+  isProtectedAdmin,
+  checkEdgeRateLimit,
+  buildCSP,
+  type RateLimitEntry,
+} from "@/lib/middleware-utils";
+
+// ── Edge rate limiter state (per-instance) ────────────────────────────────────
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+const RATE_LIMIT_MAX = 60;
+const RATE_LIMIT_WINDOW = 60_000; // 1 minute in ms
+// Stricter limit specifically for order creation (anti-spam / duplicate orders)
+const orderCreateRateMap = new Map<string, RateLimitEntry>();
+const ORDER_CREATE_MAX = 10;    // max 10 new orders per minute per IP
+const ORDER_CREATE_WINDOW = 60_000;
+// Purge expired entries every 2 minutes
+if (typeof globalThis !== "undefined") {
+  try {
+    setInterval(() => {
+      const now = Date.now();
+      for (const [key, entry] of rateLimitMap.entries()) {
+        if (now >= entry.resetAt) rateLimitMap.delete(key);
+      }
+      for (const [key, entry] of orderCreateRateMap.entries()) {
+        if (now >= entry.resetAt) orderCreateRateMap.delete(key);
+      }
+    }, 120_000);
+  } catch { /* Edge env may not support setInterval */ }
+}
+
+// ── Admin session cookie name ─────────────────────────────────────────────────
+
+const ADMIN_SESSION_COOKIE = "bsm_admin_session";
+
+// ── Main middleware ───────────────────────────────────────────────────────────
+
+export function middleware(req: NextRequest) {
+  const requestId = req.headers.get("x-request-id") ?? generateRequestId();
+  const nonce = generateNonce();
+
+  // ── Global rate-limit on mutating API requests ────────────────────────────
+  const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(req.method);
+  if (isMutating && req.nextUrl.pathname.startsWith("/api/")) {
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("x-real-ip") ??
+      "127.0.0.1";
+    if (!checkEdgeRateLimit(rateLimitMap, ip, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW)) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: { "x-request-id": requestId, "Retry-After": "60" },
+        }
+      );
+    }
+    // Stricter per-route limit: POST /api/orders (order creation anti-spam)
+    if (req.method === "POST" && req.nextUrl.pathname === "/api/orders") {
+      if (!checkEdgeRateLimit(orderCreateRateMap, ip, ORDER_CREATE_MAX, ORDER_CREATE_WINDOW)) {
+        return NextResponse.json(
+          { error: "Demasiados pedidos. Intenta de nuevo en un minuto." },
+          {
+            status: 429,
+            headers: { "x-request-id": requestId, "Retry-After": "60" },
+          }
+        );
+      }
+    }  }
+
+  // ── Admin auth guard ──────────────────────────────────────────────────────
+  if (isProtectedAdmin(req.nextUrl.pathname)) {
+    const token = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+    if (!token) {
+      const loginUrl = req.nextUrl.clone();
+      loginUrl.pathname = "/admin/login";
+      loginUrl.searchParams.set("from", req.nextUrl.pathname);
+      const redirect = NextResponse.redirect(loginUrl);
+      redirect.headers.set("x-request-id", requestId);
+      return redirect;
+    }
+  }
+
+  // ── Propagate nonce + request ID to route handlers / layout ──────────────
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-request-id", requestId);
+  requestHeaders.set("x-nonce", nonce);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+
+  // ── Echo identifiers back to the client ──────────────────────────────────
+  response.headers.set("x-request-id", requestId);
+
+  // ── Security headers ──────────────────────────────────────────────────────
+  response.headers.set("Content-Security-Policy", buildCSP(req.nextUrl.pathname, nonce));
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+
+  return response;
+}
+
+export const config = {
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|manifest|robots|sitemap|icons|images).*)",
+  ],
+};
+

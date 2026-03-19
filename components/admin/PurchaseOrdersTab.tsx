@@ -1,11 +1,12 @@
-﻿﻿"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   Trash2, Plus, ChevronDown, ChevronUp, Package,
-  X, Truck, FileText, ScanBarcode,
+  X, Truck, FileText, ScanBarcode, History,
+  TrendingUp, BarChart3,
 } from "lucide-react";
 import type { DbPurchaseOrder, DbSupplier, DbProduct, PurchaseStatus } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,11 @@ export default function PurchaseOrdersTab() {
   const [showCreate, setShowCreate] = useState(false);
   const [suppliers, setSuppliers] = useState<DbSupplier[]>([]);
   const [products, setProducts] = useState<DbProduct[]>([]);
+  
+  // Supplier filtering and history
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(null);
+  const [showSupplierHistory, setShowSupplierHistory] = useState(false);
+  const [expandedHistorySupplier, setExpandedHistorySupplier] = useState<string | null>(null);
 
   // Create form
   const [supplierId, setSupplierId] = useState("");
@@ -193,22 +199,211 @@ export default function PurchaseOrdersTab() {
     load();
   };
 
-  const totalSpent = orders.reduce((s, o) => s + o.total, 0);
   const itemsTotal = items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
+
+  // Filter orders by supplier
+  const filteredOrders = selectedSupplierId
+    ? orders.filter(o => o.supplierId === selectedSupplierId)
+    : orders;
+
+  // Supplier analytics
+  const getSupplierStats = (supplierId: string) => {
+    const supplierOrders = orders.filter(o => o.supplierId === supplierId);
+    const totalAmount = supplierOrders.reduce((s, o) => s + o.total, 0);
+    const avgAmount = supplierOrders.length > 0 ? totalAmount / supplierOrders.length : 0;
+    const lastPurchase = supplierOrders.length > 0 ? supplierOrders[0].createdAt : null;
+    
+    // Top 3 products
+    const productCounts: Record<string, { name: string; count: number; total: number }> = {};
+    for (const order of supplierOrders) {
+      for (const item of order.items) {
+        const key = String(item.productId);
+        if (!productCounts[key]) {
+          productCounts[key] = { name: item.name, count: 0, total: 0 };
+        }
+        productCounts[key].count += item.quantity;
+        productCounts[key].total += item.quantity * item.unitCost;
+      }
+    }
+    const topProducts = Object.values(productCounts)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 3);
+
+    // Monthly spending (last 6 months)
+    const monthlyData: Array<{ month: string; amount: number }> = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - i);
+      const monthKey = d.toISOString().slice(0, 7);
+      const monthLabel = d.toLocaleDateString("es-PE", { month: "short" });
+      const monthOrders = supplierOrders.filter(o => o.createdAt.startsWith(monthKey));
+      const monthTotal = monthOrders.reduce((s, o) => s + o.total, 0);
+      monthlyData.push({ month: monthLabel, amount: monthTotal });
+    }
+
+    return {
+      count: supplierOrders.length,
+      totalAmount,
+      avgAmount,
+      lastPurchase,
+      topProducts,
+      monthlyData,
+    };
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Órdenes de Compra</h2>
-          <p className="text-sm text-gray-500 dark:text-muted">{orders.length} órdenes · S/{totalSpent.toFixed(2)} acumulado</p>
+          <p className="text-sm text-gray-500 dark:text-muted">{filteredOrders.length} órdenes · S/{filteredOrders.reduce((s, o) => s + o.total, 0).toFixed(2)} acumulado</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <select
+            value={selectedSupplierId ?? ""}
+            onChange={(e) => setSelectedSupplierId(e.target.value || null)}
+            className="text-sm font-semibold rounded-lg border border-gray-200 dark:border-card-border px-3 py-2 outline-none focus:border-primary text-gray-700 dark:text-foreground bg-white dark:bg-card"
+          >
+            <option value="">Ver todo</option>
+            {suppliers.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          <button onClick={() => setShowSupplierHistory(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 dark:hover:bg-accent/80 px-4 py-2 rounded-lg transition-colors">
+            <History className="h-4 w-4" /> Historial
+          </button>
           <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-4 py-2 rounded-lg transition-colors shadow-sm">
             <Plus className="h-4 w-4" /> Nueva orden
           </button>
         </div>
       </div>
+
+      {/* Supplier History Cards */}
+      {showSupplierHistory && (
+        <div className="space-y-3">
+          {suppliers.filter(s => orders.some(o => o.supplierId === s.id)).map(supplier => {
+            const stats = getSupplierStats(supplier.id);
+            const isExpanded = expandedHistorySupplier === supplier.id;
+            const maxMonthAmount = Math.max(...stats.monthlyData.map(m => m.amount), 1);
+            
+            return (
+              <div key={supplier.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+                        <History className="h-5 w-5 text-primary" />
+                        {supplier.name}
+                      </h3>
+                      <p className="text-xs text-gray-400 dark:text-muted mt-0.5">
+                        {supplier.ruc && `RUC: ${supplier.ruc}`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setExpandedHistorySupplier(isExpanded ? null : supplier.id)}
+                      className="text-xs font-bold text-primary hover:text-primary-dark flex items-center gap-1"
+                    >
+                      {isExpanded ? "Ocultar" : "Ver historial completo"}
+                      {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                  
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                    <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3 border border-blue-100 dark:border-blue-900/30">
+                      <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase mb-1">Órdenes</p>
+                      <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{stats.count}</p>
+                    </div>
+                    <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 border border-emerald-100 dark:border-emerald-900/30">
+                      <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase mb-1">Total gastado</p>
+                      <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">S/{stats.totalAmount.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-purple-50 dark:bg-purple-950/20 rounded-xl p-3 border border-purple-100 dark:border-purple-900/30">
+                      <p className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase mb-1">Promedio</p>
+                      <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">S/{stats.avgAmount.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 border border-amber-100 dark:border-amber-900/30">
+                      <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase mb-1">Última compra</p>
+                      <p className="text-xs font-extrabold text-gray-900 dark:text-foreground">{stats.lastPurchase ? formatDate(stats.lastPurchase) : "—"}</p>
+                    </div>
+                  </div>
+
+                  {/* Top Products */}
+                  {stats.topProducts.length > 0 && (
+                    <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 mb-3 border border-gray-200 dark:border-card-border">
+                      <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase mb-2 flex items-center gap-1">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        Top 3 productos más comprados
+                      </p>
+                      <div className="space-y-1.5">
+                        {stats.topProducts.map((prod, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700 dark:text-foreground flex items-center gap-1.5">
+                              <span className="text-xs font-bold text-gray-400 dark:text-muted">#{idx + 1}</span>
+                              {prod.name}
+                              <span className="text-gray-400 dark:text-muted text-xs">({prod.count} und)</span>
+                            </span>
+                            <span className="font-semibold text-primary">S/{prod.total.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Monthly Chart */}
+                  <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 rounded-xl p-3 border border-indigo-100 dark:border-indigo-900/30">
+                    <p className="text-xs font-bold text-gray-700 dark:text-foreground uppercase mb-2 flex items-center gap-1">
+                      <BarChart3 className="h-3.5 w-3.5 text-primary" />
+                      Gastos mensuales (últimos 6 meses)
+                    </p>
+                    <div className="flex items-end gap-2 h-20">
+                      {stats.monthlyData.map((m, idx) => {
+                        const height = maxMonthAmount > 0 ? (m.amount / maxMonthAmount) * 100 : 0;
+                        return (
+                          <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                            <div className="w-full flex items-end justify-center" style={{ height: "64px" }}>
+                              <div
+                                className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t transition-all hover:from-primary-dark hover:to-primary"
+                                style={{ height: `${height}%` }}
+                                title={`${m.month}: S/${m.amount.toFixed(2)}`}
+                              ></div>
+                            </div>
+                            <p className="text-[9px] font-bold text-gray-500 dark:text-muted uppercase">{m.month}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded Timeline */}
+                {isExpanded && (
+                  <div className="border-t border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface p-4">
+                    <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase mb-3">Cronología completa de compras</p>
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
+                      {orders.filter(o => o.supplierId === supplier.id).map(order => (
+                        <div key={order.id} className="bg-white dark:bg-card rounded-xl p-3 border border-gray-200 dark:border-card-border">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-xs font-bold text-gray-900 dark:text-foreground">{formatDate(order.createdAt)}</span>
+                            <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold", STATUS_COLORS[order.status])}>
+                              {STATUS_LABELS[order.status]}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-muted">
+                            {order.items.length} producto{order.items.length !== 1 ? "s" : ""} · <span className="font-bold text-primary">S/{order.total.toFixed(2)}</span>
+                          </div>
+                          {order.notes && <p className="text-xs text-gray-400 dark:text-muted mt-1 italic">{order.notes}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Create order modal */}
       {showCreate && (
@@ -342,11 +537,13 @@ export default function PurchaseOrdersTab() {
       {/* Orders list */}
       {loading ? (
         <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">Cargando…</div>
-      ) : orders.length === 0 ? (
-        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">No hay órdenes de compra</div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
+          {selectedSupplierId ? "No hay órdenes para este proveedor" : "No hay órdenes de compra"}
+        </div>
       ) : (
         <div className="space-y-3">
-          {orders.map((o) => (
+          {filteredOrders.map((o) => (
             <div key={o.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden">
               <div className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex-1 min-w-0">
@@ -623,3 +820,4 @@ export default function PurchaseOrdersTab() {
     </div>
   );
 }
+

@@ -1,10 +1,13 @@
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import FreeDeliveryProgress from "@/components/FreeDeliveryProgress";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import TiendaClientShell from "@/components/TiendaClientShell";
+import { categories, products } from "@/data/products";
 import {
   ProductGridSkeleton,
   CategorySectionSkeleton,
@@ -12,42 +15,43 @@ import {
 } from "@/components/LoadingSkeleton";
 
 export const metadata: Metadata = {
-  title: "Tienda — Todos los productos",
+  title: "Tienda Online de Abarrotes en Pucallpa — Bodega San Martín",
   description:
-    "Explora nuestro catálogo completo de abarrotes, bebidas, carnes, snacks, limpieza y más. Delivery rápido en Pucallpa. Paga con Yape o efectivo.",
+    "Explora nuestro catálogo completo de abarrotes, bebidas, carnes, snacks, limpieza y más. Delivery gratis desde S/50 en Pucallpa. Paga con Yape o efectivo.",
+  alternates: {
+    canonical: "https://www.bodegasanmartin.pe/tienda",
+  },
+  openGraph: {
+    title: "Tienda Online — Bodega San Martín Pucallpa",
+    description: "Más de 500 productos con delivery gratis en Pucallpa. Abarrotes, bebidas, carnes, snacks y más. Paga con Yape o efectivo.",
+    url: "https://www.bodegasanmartin.pe/tienda",
+    type: "website",
+    locale: "es_PE",
+    siteName: "Bodega San Martín",
+    images: [{ url: "https://www.bodegasanmartin.pe/og-image.jpg", width: 1200, height: 630, alt: "Tienda online Bodega San Martín — Abarrotes en Pucallpa" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Tienda Online — Bodega San Martín Pucallpa",
+    description: "Más de 500 productos con delivery gratis en Pucallpa.",
+    images: ["https://www.bodegasanmartin.pe/og-image.jpg"],
+  },
 };
 
-// Above-the-fold
+// ── Above-the-fold (SSR + eager hydration) ──
 const CategoryBubbles   = dynamic(() => import("@/components/CategoryBubbles"));
 const DailySpecial      = dynamic(() => import("@/components/DailySpecial"));
 const CountdownBanner   = dynamic(() => import("@/components/CountdownBanner"));
 const FlashDeals        = dynamic(() => import("@/components/FlashDeals"));
 const SeasonalPromo     = dynamic(() => import("@/components/SeasonalPromo"));
 
-// Main catalog & sections
+// ── Main catalog & sections ──
 const PopularProducts   = dynamic(() => import("@/components/PopularProducts"));
 const FeaturedCarousel  = dynamic(() => import("@/components/FeaturedCarousel"));
 const CombosSection     = dynamic(() => import("@/components/CombosSection"));
 const ProductCatalog    = dynamic(() => import("@/components/ProductCatalog"));
-const RecentlyViewed    = dynamic(() => import("@/components/RecentlyViewed"));
-const FavoritesSection  = dynamic(() => import("@/components/FavoritesSection"));
-const RecipeSuggestions = dynamic(() => import("@/components/RecipeSuggestions"));
-const ReferralBanner    = dynamic(() => import("@/components/ReferralBanner"));
 const LastOrderBanner   = dynamic(() => import("@/components/LastOrderBanner"));
-const VolumeDiscount    = dynamic(() => import("@/components/VolumeDiscount"));
-const BackInStock       = dynamic(() => import("@/components/BackInStock"));
 const Footer            = dynamic(() => import("@/components/Footer"));
-
-// Interactive
-const CartSidebar       = dynamic(() => import("@/components/CartSidebar"));
-const CustomerModal     = dynamic(() => import("@/components/CustomerModal"));
-const ReviewModal       = dynamic(() => import("@/components/ReviewModal"));
-const CookieConsent     = dynamic(() => import("@/components/CookieConsent"));
-const SocialProofToast  = dynamic(() => import("@/components/SocialProofToast"));
-const SpinWheel         = dynamic(() => import("@/components/SpinWheel"));
-const MobileBottomNav   = dynamic(() => import("@/components/MobileBottomNav"));
-const UserAccountModal  = dynamic(() => import("@/components/UserAccountModal"));
-const StickyCartBar     = dynamic(() => import("@/components/StickyCartBar"));
 
 export default function TiendaPage() {
   return (
@@ -59,9 +63,38 @@ export default function TiendaPage() {
           { name: "Tienda", url: "https://www.bodegasanmartin.pe/tienda" },
         ]}
       />
+      {/* SEO: ItemList schema for category navigation */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            name: "Categorías de productos — Bodega San Martín",
+            description: "Catálogo completo de productos con delivery en Pucallpa.",
+            numberOfItems: categories.filter((c) => c.id !== "todos").length,
+            itemListElement: categories
+              .filter((c) => c.id !== "todos")
+              .map((cat, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                name: cat.label,
+                url: `https://www.bodegasanmartin.pe/tienda/categoria/${cat.id}`,
+              })),
+          }),
+        }}
+      />
       
       <AnnouncementBar />
       <Header />
+      {/* O1 — Visible breadcrumbs */}
+      <nav aria-label="Breadcrumb" className="bg-gray-50 dark:bg-card border-b border-gray-100 dark:border-card-border">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-2 flex items-center gap-1.5 text-xs text-muted">
+          <Link href="/" className="hover:text-primary transition-colors">Inicio</Link>
+          <span className="text-gray-300">/</span>
+          <span className="font-semibold text-foreground">Tienda</span>
+        </div>
+      </nav>
       <main id="main-content">
         {/* Shop hero banner */}
         <ShopHero />
@@ -72,12 +105,16 @@ export default function TiendaPage() {
         <Suspense fallback={<SectionLoadingSkeleton />}>
           <DailySpecial />
         </Suspense>
-        <SeasonalPromo />
+        <Suspense fallback={<SectionLoadingSkeleton />}>
+          <SeasonalPromo />
+        </Suspense>
         <CountdownBanner />
         <Suspense fallback={<SectionLoadingSkeleton />}>
           <FlashDeals />
         </Suspense>
-        <CategoryBubbles />
+        <Suspense fallback={<SectionLoadingSkeleton />}>
+          <CategoryBubbles />
+        </Suspense>
         <Suspense fallback={<ProductsLoadingSkeleton />}>
           <PopularProducts />
         </Suspense>
@@ -88,31 +125,12 @@ export default function TiendaPage() {
           <CombosSection />
         </Suspense>
         <Suspense fallback={<CatalogLoadingSkeleton />}>
-          <ProductCatalog />
+          <ProductCatalog initialProducts={products} />
         </Suspense>
-        <Suspense fallback={<SectionLoadingSkeleton />}>
-          <RecentlyViewed />
-        </Suspense>
-        <Suspense fallback={<SectionLoadingSkeleton />}>
-          <FavoritesSection />
-        </Suspense>
-        <Suspense fallback={<SectionLoadingSkeleton />}>
-          <RecipeSuggestions />
-        </Suspense>
-        <ReferralBanner />
+        {/* Below-fold sections + modals (client-only shell with ssr:false) */}
+        <TiendaClientShell />
       </main>
       <Footer />
-      <CartSidebar />
-      <CustomerModal />
-      <ReviewModal />
-      <CookieConsent />
-      <SocialProofToast />
-      <VolumeDiscount />
-      <BackInStock />
-      <SpinWheel />
-      <StickyCartBar />
-      <UserAccountModal />
-      <MobileBottomNav />
     </>
   );
 }
@@ -164,7 +182,7 @@ function ShopHero() {
 /* ── Loading States ── */
 function SectionLoadingSkeleton() {
   return (
-    <section className="py-12 sm:py-16 bg-surface">
+    <section className="py-12 sm:py-16 bg-surface min-h-70">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionSkeleton />
       </div>
@@ -174,7 +192,7 @@ function SectionLoadingSkeleton() {
 
 function ProductsLoadingSkeleton() {
   return (
-    <section className="py-16 sm:py-20 bg-white dark:bg-card">
+    <section className="py-16 sm:py-20 bg-white dark:bg-card min-h-120">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <CategorySectionSkeleton />
       </div>
@@ -184,7 +202,7 @@ function ProductsLoadingSkeleton() {
 
 function CatalogLoadingSkeleton() {
   return (
-    <section className="py-20 sm:py-28 bg-surface">
+    <section className="py-20 sm:py-28 bg-surface min-h-150">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Filters skeleton */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">

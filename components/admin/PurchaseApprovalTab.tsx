@@ -1,0 +1,208 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import {
+  CheckCircle, Download, Search, Eye, X,
+  Clock, XCircle, Send,
+  UserCheck, FileSignature,
+} from "lucide-react";
+import { cn, exportToCSV } from "@/lib/utils";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type ApprovalStatus = "pendiente" | "aprobado" | "rechazado" | "en-revision";
+type ApprovalLevel = "jefe-area" | "finanzas" | "gerencia";
+
+type ApprovalStep = {
+  level: ApprovalLevel;
+  approver: string;
+  status: ApprovalStatus;
+  date?: string;
+  comment?: string;
+};
+
+type PurchaseApproval = {
+  id: string;
+  ref: string;
+  description: string;
+  supplier: string;
+  total: number;
+  requestedBy: string;
+  requestDate: string;
+  urgency: "normal" | "urgente" | "crítica";
+  steps: ApprovalStep[];
+  currentLevel: ApprovalLevel;
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const fmt = (n: number) => "S/ " + n.toLocaleString("es-PE", { minimumFractionDigits: 2 });
+
+const STATUS_MAP: Record<ApprovalStatus, { label: string; color: string; icon: typeof CheckCircle }> = {
+  pendiente:    { label: "Pendiente",   color: "text-amber-600",   icon: Clock },
+  "en-revision":{ label: "En revisión", color: "text-blue-600",    icon: Eye },
+  aprobado:     { label: "Aprobado",    color: "text-emerald-600", icon: CheckCircle },
+  rechazado:    { label: "Rechazado",   color: "text-red-600",     icon: XCircle },
+};
+
+const LEVEL_LABELS: Record<ApprovalLevel, string> = {
+  "jefe-area": "Jefe de Área",
+  finanzas: "Finanzas",
+  gerencia: "Gerencia",
+};
+
+const urgencyStyle: Record<string, string> = {
+  normal: "text-gray-600 bg-gray-100 dark:bg-gray-800/30",
+  urgente: "text-amber-600 bg-amber-100 dark:bg-amber-900/30",
+  "crítica": "text-red-600 bg-red-100 dark:bg-red-900/30",
+};
+
+function overallStatus(steps: ApprovalStep[]): ApprovalStatus {
+  if (steps.some(s => s.status === "rechazado")) return "rechazado";
+  if (steps.every(s => s.status === "aprobado")) return "aprobado";
+  if (steps.some(s => s.status === "en-revision")) return "en-revision";
+  return "pendiente";
+}
+
+// ── Seed Data ─────────────────────────────────────────────────────────────────
+
+const APPROVALS: PurchaseApproval[] = [];
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function PurchaseApprovalTab() {
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"todos" | ApprovalStatus>("todos");
+  const [detail, setDetail] = useState<PurchaseApproval | null>(null);
+
+  const stats = useMemo(() => {
+    const pending = APPROVALS.filter(a => overallStatus(a.steps) === "pendiente" || overallStatus(a.steps) === "en-revision").length;
+    const approved = APPROVALS.filter(a => overallStatus(a.steps) === "aprobado").length;
+    const rejected = APPROVALS.filter(a => overallStatus(a.steps) === "rechazado").length;
+    const totalValue = APPROVALS.filter(a => overallStatus(a.steps) !== "rechazado").reduce((s, a) => s + a.total, 0);
+    return { pending, approved, rejected, totalValue };
+  }, []);
+
+  const filtered = useMemo(() => {
+    let list = APPROVALS;
+    if (filterStatus !== "todos") list = list.filter(a => overallStatus(a.steps) === filterStatus);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(a => a.ref.toLowerCase().includes(q) || a.supplier.toLowerCase().includes(q) || a.description.toLowerCase().includes(q));
+    }
+    return list;
+  }, [search, filterStatus]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+            <CheckCircle className="h-6 w-6 text-primary" /> Aprobación de Compras
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Flujo de aprobación multinivel para órdenes de compra</p>
+        </div>
+        <button onClick={() => exportToCSV(APPROVALS.map(a => ({ ref: a.ref, desc: a.description, proveedor: a.supplier, total: a.total, solicitante: a.requestedBy, fecha: a.requestDate, urgencia: a.urgency, estado: STATUS_MAP[overallStatus(a.steps)].label })), "aprobacion-compras")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <Download className="h-4 w-4" /> Exportar
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "En espera", value: String(stats.pending), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30", icon: Clock },
+          { label: "Aprobadas", value: String(stats.approved), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle },
+          { label: "Rechazadas", value: String(stats.rejected), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30", icon: XCircle },
+          { label: "Valor aprobable", value: fmt(stats.totalValue), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: Send },
+        ].map(({ label, value, color, bg, icon: Icon }) => (
+          <div key={label} className={cn("rounded-2xl p-4 flex items-start gap-3", bg)}>
+            <Icon className={cn("h-5 w-5 mt-0.5", color)} />
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-muted">{label}</p>
+              <p className={cn("text-xl font-extrabold", color)}>{value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar OC, proveedor, descripción..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+        </div>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value as typeof filterStatus)} className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground">
+          <option value="todos">Todos los estados</option>
+          {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+        </select>
+      </div>
+
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">OC</th><th className="px-4 py-3">Descripción</th><th className="px-4 py-3">Proveedor</th><th className="px-4 py-3">Total</th><th className="px-4 py-3">Urgencia</th><th className="px-4 py-3">Nivel actual</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3"></th></tr></thead>
+            <tbody>
+              {filtered.map(a => {
+                const os = overallStatus(a.steps);
+                const StatusIcon = STATUS_MAP[os].icon;
+                return (
+                  <tr key={a.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
+                    <td className="px-4 py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{a.ref}</td>
+                    <td className="px-4 py-3 text-gray-800 dark:text-foreground max-w-50 truncate">{a.description}</td>
+                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{a.supplier}</td>
+                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{fmt(a.total)}</td>
+                    <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", urgencyStyle[a.urgency])}>{a.urgency}</span></td>
+                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted">{LEVEL_LABELS[a.currentLevel]}</td>
+                    <td className="px-4 py-3"><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[os].color)}><StatusIcon className="h-3.5 w-3.5" />{STATUS_MAP[os].label}</span></td>
+                    <td className="px-4 py-3"><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Detail Modal — Approval Pipeline */}
+      {detail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.ref}</h3>
+                <p className="text-xs text-gray-400">{detail.description}</p>
+              </div>
+              <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div><p className="text-xs text-gray-400">Proveedor</p><p className="font-bold text-gray-800 dark:text-foreground">{detail.supplier}</p></div>
+              <div><p className="text-xs text-gray-400">Total</p><p className="font-bold text-gray-800 dark:text-foreground">{fmt(detail.total)}</p></div>
+              <div><p className="text-xs text-gray-400">Solicitante</p><p className="font-bold text-gray-800 dark:text-foreground">{detail.requestedBy}</p></div>
+              <div><p className="text-xs text-gray-400">Fecha solicitud</p><p className="font-bold text-gray-800 dark:text-foreground">{detail.requestDate}</p></div>
+            </div>
+
+            <h4 className="font-bold text-sm text-gray-700 dark:text-foreground flex items-center gap-1"><FileSignature className="h-4 w-4" /> Pipeline de aprobación</h4>
+            <div className="space-y-3">
+              {detail.steps.map((step, i) => {
+                const StepIcon = STATUS_MAP[step.status].icon;
+                return (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="flex flex-col items-center">
+                      <StepIcon className={cn("h-5 w-5", STATUS_MAP[step.status].color)} />
+                      {i < detail.steps.length - 1 && <div className="w-0.5 h-6 bg-gray-200 dark:bg-card-border mt-1" />}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-gray-700 dark:text-foreground">{LEVEL_LABELS[step.level]}</p>
+                      <p className="text-xs text-gray-500 flex items-center gap-1"><UserCheck className="h-3 w-3" />{step.approver} {step.date && <span>· {step.date}</span>}</p>
+                      {step.comment && <p className="text-xs text-gray-400 italic mt-0.5">&quot;{step.comment}&quot;</p>}
+                    </div>
+                    <span className={cn("text-xs font-bold", STATUS_MAP[step.status].color)}>{STATUS_MAP[step.status].label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

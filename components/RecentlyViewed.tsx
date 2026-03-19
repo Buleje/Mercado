@@ -20,6 +20,8 @@ export function trackView(product: Product) {
   const items = getRecent().filter(p => p.id !== product.id);
   items.unshift(product);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)));
+  // Notify RecentlyViewed component to refresh its list
+  window.dispatchEvent(new Event("bsm:productViewed"));
 }
 
 export default function RecentlyViewed() {

@@ -1,0 +1,68 @@
+import "server-only";
+import { NextRequest, NextResponse } from "next/server";
+import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+async function requirePlatform(req: NextRequest) {
+  const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
+  if (!token) return null;
+  return getPlatformSession(token);
+}
+
+// PATCH /api/superadmin/tenants/[slug]
+// Body: { plan?, active? }
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> },
+) {
+  const session = await requirePlatform(req);
+  if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const { slug } = await params;
+
+  let body: { plan?: string; active?: boolean };
+  try { body = await req.json(); } catch { body = {}; }
+
+  const updates: Record<string, unknown> = {};
+
+  if (body.plan !== undefined) {
+    if (!["free", "pro", "business", "enterprise"].includes(body.plan)) {
+      return NextResponse.json({ error: "Plan inválido" }, { status: 400 });
+    }
+    updates.plan = body.plan;
+  }
+
+  if (body.active !== undefined) {
+    updates.active = Boolean(body.active);
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return NextResponse.json({ error: "Nada que actualizar" }, { status: 400 });
+  }
+
+  const tenant = await prisma.tenant.update({
+    where: { slug },
+    data: updates,
+    select: { id: true, slug: true, name: true, plan: true, active: true },
+  });
+
+  // Log activity
+  const details: string[] = [];
+  if (body.plan !== undefined) details.push(`plan → ${body.plan}`);
+  if (body.active !== undefined) details.push(body.active ? "reactivated" : "suspended");
+  await prisma.activityLog.create({
+    data: {
+      action: body.active !== undefined ? (body.active ? "tenant_reactivated" : "tenant_suspended") : "plan_changed",
+      entity: "tenant",
+      entityId: slug,
+      detail: details.join(", "),
+      user: `superadmin:${session.username}`,
+      tenantId: slug,
+    },
+  }).catch(() => {});
+
+  console.log(`[SuperAdmin] ${session.username} updated tenant ${slug}:`, updates);
+  return NextResponse.json({ tenant });
+}

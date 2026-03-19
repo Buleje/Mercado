@@ -3,12 +3,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { SettingsDB, type DbSettings } from "@/lib/jsondb";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
+import { hash } from "bcryptjs";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
-    return NextResponse.json(await SettingsDB.get());
+    const settings = await SettingsDB.get();
+    // Never expose credentials or security toggles to public callers
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { adminPassword: _pw, adminBypassLogin: _bypass, ...publicSettings } = settings as DbSettings & { adminPassword?: string; adminBypassLogin?: boolean };
+    return NextResponse.json(publicSettings, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    });
   } catch (e) {
-    console.error("[settings] GET error:", e);
+    logger.error("[settings] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -41,16 +51,22 @@ export async function PUT(req: NextRequest) {
       ...(body.yapePhone !== undefined && { yapePhone: body.yapePhone }),
       ...(body.cashEnabled !== undefined && { cashEnabled: body.cashEnabled }),
       ...(body.navLinks !== undefined && { navLinks: body.navLinks }),
-      ...(body.adminPassword !== undefined && { adminPassword: body.adminPassword }),
+      // Hash the admin password with bcrypt before persisting (never store plaintext)
+      ...(body.adminPassword !== undefined && body.adminPassword !== "" && {
+        adminPassword: await hash(body.adminPassword, 12),
+      }),
       ...(body.maintenanceMode !== undefined && { maintenanceMode: body.maintenanceMode }),
       ...(body.maintenanceMessage !== undefined && { maintenanceMessage: body.maintenanceMessage }),
-      ...(body.adminBypassLogin !== undefined && { adminBypassLogin: body.adminBypassLogin }),
+      // adminBypassLogin is permanently disabled — this toggle must never be re-enabled via API
+      ...(body.homepageContent !== undefined && { homepageContent: body.homepageContent }),
+      ...(body.comboTemplates !== undefined && { comboTemplates: body.comboTemplates }),
     };
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");
-    logActivity("Editar", "configuracion", `Configuración actualizada: ${changed || "general"}` ).catch(() => {});
+    const requestId = req.headers.get("x-request-id") ?? undefined;
+    logActivity("Editar", "configuracion", `Configuración actualizada: ${changed || "general"}`, undefined, "admin", requestId).catch(() => {});
     return NextResponse.json(await SettingsDB.set(updated));
   } catch (e) {
-    console.error("[settings] PUT error:", e);
+    logger.error("[settings] PUT error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
 }

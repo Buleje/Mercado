@@ -3,23 +3,25 @@
 import { useState, useEffect, startTransition } from "react";
 import Image from "next/image";
 import { BellRing, ShoppingCart, X, Package } from "lucide-react";
-import { products } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 
 const STORAGE_KEY = "bsm-back-in-stock-notified";
+const STOCK_CACHE_KEY = "bsm-stock-snapshot";
 
-/* Simulate a product that was out of stock and is now back */
-function getBackInStockProduct() {
-  const now = new Date();
-  // Rotate which product is "back in stock" each day
-  const dayHash = now.getFullYear() * 1000 + now.getMonth() * 31 + now.getDate();
-  const idx = (dayHash * 3 + 7) % products.length;
-  return products[idx];
-}
+type StockProduct = {
+  id: number;
+  name: string;
+  price: number;
+  image: string;
+  unit: string;
+  stock?: number;
+  category: string;
+  active: boolean;
+};
 
 export default function BackInStock() {
   const { addItem } = useCart();
-  const [product, setProduct] = useState<typeof products[0] | null>(null);
+  const [product, setProduct] = useState<StockProduct | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -27,9 +29,39 @@ export default function BackInStock() {
     const today = new Date().toDateString();
     if (notified === today) return;
 
-    const timer = setTimeout(() => {
-      startTransition(() => setProduct(getBackInStockProduct()));
-    }, 25_000);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/products");
+        if (!res.ok) return;
+        const current: StockProduct[] = await res.json();
+        if (!Array.isArray(current)) return;
+
+        // Load previous stock snapshot
+        let prev: Record<number, number> = {};
+        try {
+          const raw = localStorage.getItem(STOCK_CACHE_KEY);
+          if (raw) prev = JSON.parse(raw);
+        } catch { /* ignore */ }
+
+        // Find products that were out of stock (0 or missing) and are now in stock
+        const backInStock = current.filter(p =>
+          p.active && (p.stock ?? 0) > 0 && (prev[p.id] ?? 0) === 0 && prev[p.id] !== undefined
+        );
+
+        // Save current snapshot for next comparison
+        const snapshot: Record<number, number> = {};
+        for (const p of current) snapshot[p.id] = p.stock ?? 0;
+        localStorage.setItem(STOCK_CACHE_KEY, JSON.stringify(snapshot));
+
+        // Show the first back-in-stock product found
+        if (backInStock.length > 0) {
+          startTransition(() => setProduct(backInStock[0]));
+        } else if (Object.keys(prev).length === 0) {
+          // First visit — seed the snapshot but don't show notification
+          return;
+        }
+      } catch { /* silent */ }
+    }, 15_000);
     return () => clearTimeout(timer);
   }, []);
 

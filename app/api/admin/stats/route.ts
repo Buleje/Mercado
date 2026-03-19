@@ -9,7 +9,7 @@ import { prisma } from "@/lib/prisma";
  * Uses COUNT and SUM queries directly instead of loading full datasets.
  */
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -17,17 +17,23 @@ export async function GET(req: NextRequest) {
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const startOfWeek = new Date(startOfToday);
     startOfWeek.setDate(startOfWeek.getDate() - 6); // rolling 7 days
+    const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
 
     const [
       pendingOrders,
+      oldPendingOrders,
       todayOrders,
       todayRevenueResult,
       lowStockProducts,
       weekOrders,
       totalCustomers,
+      overduePayables,
     ] = await Promise.all([
       // Active pending orders
       prisma.order.count({ where: { status: "pendiente" } }),
+
+      // Pending orders waiting > 30 minutes
+      prisma.order.count({ where: { status: "pendiente", createdAt: { lt: thirtyMinutesAgo } } }),
 
       // Orders placed today
       prisma.order.count({ where: { createdAt: { gte: startOfToday } } }),
@@ -58,6 +64,9 @@ export async function GET(req: NextRequest) {
 
       // Total customers
       prisma.customer.count(),
+
+      // Overdue payables (due before now and not fully paid)
+      prisma.payable.count({ where: { dueDate: { lt: now }, status: { not: "pagado" } } }),
     ]);
 
     // Low stock: Prisma doesn't support "fieldA <= fieldB" directly, use $queryRaw
@@ -72,11 +81,13 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       pendingOrders,
+      oldPendingOrders,
       todayOrders,
       todayRevenue: Number((todayRevenueResult._sum.total ?? 0).toFixed(2)),
       lowStockProducts: lowStockCount,
       weekOrders,
       totalCustomers,
+      overduePayables,
       generatedAt: now.toISOString(),
     });
   } catch (e) {

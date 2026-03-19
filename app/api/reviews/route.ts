@@ -1,17 +1,36 @@
 export const dynamic = 'force-dynamic'
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ReviewsDB } from "@/lib/jsondb";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    return NextResponse.json(await ReviewsDB.getAll());
+    const { searchParams } = new URL(req.url);
+    const all = searchParams.get("all") === "1";
+    const productIdParam = searchParams.get("productId");
+    const productId = productIdParam ? Number(productIdParam) : undefined;
+
+    if (all) {
+      const reviews = await ReviewsDB.getAll();
+      return NextResponse.json(reviews);
+    }
+
+    // Public: only approved; optional productId filter
+    const reviews = await ReviewsDB.getApproved(productId);
+    return NextResponse.json(reviews, {
+      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+    });
   } catch (e) {
-    console.error("[reviews] GET error:", e);
+    logger.error("[reviews] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
 
 export async function POST(req: Request) {
+  const rl = applyRateLimit(req, "STRICT", "reviews");
+  if (rl) return rl;
+
   try {
     const body = await req.json() as {
       id: string;
@@ -20,18 +39,21 @@ export async function POST(req: Request) {
       text: string;
       rating: number;
       phone?: string;
+      productId?: number;
       date: string;
     };
     if (!body.text?.trim() || !body.rating) {
       return NextResponse.json({ error: "text and rating are required" }, { status: 400 });
     }
-    const review = ReviewsDB.add({
+    const review = await ReviewsDB.add({
       id: body.id,
       name: body.name ?? "",
       location: body.location ?? "",
       text: body.text,
       rating: body.rating,
       phone: body.phone ?? null,
+      productId: body.productId ?? null,
+      status: "pending",
       date: body.date,
     });
     return NextResponse.json(review);

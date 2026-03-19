@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       badge: body.badge || undefined,
       active: true,
     });
-    await logActivity("Crear", "producto", `Producto creado: ${product.name} (S/${product.price})`, String(product.id));
+    await logActivity("Crear", "producto", `Producto creado: ${product.name} (S/${product.price})`, String(product.id), "admin", req.headers.get("x-request-id") ?? undefined);
     return NextResponse.json(product);
   } catch {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });

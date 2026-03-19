@@ -1,17 +1,22 @@
 "use client";
 
 import { useState, useEffect, startTransition, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { RotateCcw, ChevronRight, Package } from "lucide-react";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
 
+const QuickReorderModal = dynamic(() => import("@/components/QuickReorderModal"));
+
 interface OrderItem {
+  productId?: number;
   name: string;
   quantity: number;
   price: number;
-  image?: string;
+  unit: string;
+  image: string;
 }
 
 interface LastOrder {
@@ -24,11 +29,12 @@ interface LastOrder {
 
 export default function LastOrderBanner() {
   const { customer } = useCustomer();
-  const { addItem } = useCart();
+  const { addMultiple } = useCart();
   const { showToast } = useToast();
   const [order, setOrder] = useState<LastOrder | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [avgFrequency, setAvgFrequency] = useState<number | null>(null);
   const [now] = useState(() => Date.now());
+  const [showReorderModal, setShowReorderModal] = useState(false);
 
   useEffect(() => {
     if (!customer?.phone) return;
@@ -37,12 +43,23 @@ export default function LastOrderBanner() {
 
     (async () => {
       try {
-        const res = await fetch(`/api/orders?phone=${encodeURIComponent(phone)}&limit=1`);
+        const res = await fetch(`/api/orders?phone=${encodeURIComponent(phone)}&limit=5`);
         if (!res.ok) return;
         const data = await res.json();
-        const orders = Array.isArray(data) ? data : data.orders;
+        const orders: LastOrder[] = Array.isArray(data) ? data : data.orders;
         if (orders?.length > 0 && !cancelled) {
           startTransition(() => setOrder(orders[0]));
+
+          // Calculate average frequency between orders
+          if (orders.length >= 2) {
+            const dates = orders.map(o => new Date(o.createdAt).getTime()).sort((a, b) => b - a);
+            const gaps: number[] = [];
+            for (let i = 0; i < dates.length - 1; i++) {
+              gaps.push(Math.round((dates[i] - dates[i + 1]) / 86_400_000));
+            }
+            const avg = Math.round(gaps.reduce((s, g) => s + g, 0) / gaps.length);
+            if (avg > 0 && !cancelled) startTransition(() => setAvgFrequency(avg));
+          }
         }
       } catch {
         // Silent fail
@@ -62,21 +79,14 @@ export default function LastOrderBanner() {
   if (!order || !customer?.phone) return null;
 
   const handleReorder = () => {
-    setLoading(true);
-    let added = 0;
-    for (const item of order.items) {
-      addItem({
-        id: Number(item.name.replace(/\D/g, "").slice(0, 4)) || Math.random(),
-        name: item.name,
-        price: item.price,
-        image: item.image || "",
-        category: "",
-        unit: "und",
-      });
-      added++;
+    setShowReorderModal(true);
+  };
+
+  const handleReorderConfirm = (selected: { product: { id: number; name: string; price: number; image: string; unit: string; category: string }; quantity: number }[]) => {
+    if (selected.length) {
+      addMultiple(selected);
+      showToast(`${selected.reduce((sum, s) => sum + s.quantity, 0)} productos agregados`, "");
     }
-    showToast(`${added} productos agregados del pedido anterior`, "");
-    setTimeout(() => setLoading(false), 500);
   };
 
   return (
@@ -101,7 +111,7 @@ export default function LastOrderBanner() {
                 {order.items.slice(0, 3).map((i) => i.name).join(", ")}
                 {order.items.length > 3 && ` y ${order.items.length - 3} más`}
               </p>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-3 mt-1 flex-wrap">
                 <span className="text-xs font-bold text-primary">S/{order.total.toFixed(2)}</span>
                 <a
                   href={`/pedido/${order.id}`}
@@ -109,25 +119,50 @@ export default function LastOrderBanner() {
                 >
                   Ver detalle <ChevronRight className="h-3 w-3" />
                 </a>
+                {avgFrequency && avgFrequency > 0 && (
+                  <span className={cn(
+                    "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                    daysSince >= avgFrequency
+                      ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                      : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                  )}>
+                    {daysSince >= avgFrequency
+                      ? `⏰ Sueles pedir cada ~${avgFrequency}d — ¡Toca reordenar!`
+                      : `📊 Pides cada ~${avgFrequency} días`}
+                  </span>
+                )}
               </div>
             </div>
 
             {/* Reorder button */}
             <button
               onClick={handleReorder}
-              disabled={loading}
               className={cn(
                 "shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm",
                 "bg-primary text-white hover:bg-primary-dark active:scale-95",
-                loading && "opacity-60 pointer-events-none"
               )}
             >
-              <RotateCcw className={cn("h-4 w-4", loading && "animate-spin")} />
+              <RotateCcw className="h-4 w-4" />
               Reordenar
             </button>
           </div>
         </div>
       </div>
+
+      {/* Quick Reorder Modal */}
+      {showReorderModal && order && (
+        <QuickReorderModal
+          items={order.items.map((i) => ({
+            ...i,
+            unit: i.unit || "und",
+            image: i.image || "",
+          }))}
+          orderId={order.id}
+          orderDate={new Date(order.createdAt).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
+          onClose={() => setShowReorderModal(false)}
+          onConfirm={handleReorderConfirm}
+        />
+      )}
     </section>
   );
 }

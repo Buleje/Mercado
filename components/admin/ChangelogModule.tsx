@@ -1,0 +1,215 @@
+"use client";
+
+import {
+  FlaskConical,
+  Rocket,
+  Wrench,
+  Sparkles,
+  ShieldCheck,
+  Zap,
+  CheckCircle2,
+  Package,
+  ExternalLink,
+} from "lucide-react";
+
+type ChangeType = "feat" | "fix" | "perf" | "security" | "refactor";
+
+type ChangeEntry = {
+  type: ChangeType;
+  text: string;
+};
+
+type Release = {
+  version: string;
+  date: string;
+  status: "current" | "previous" | "planned";
+  summary: string;
+  changes: ChangeEntry[];
+};
+
+const TYPE_META: Record<ChangeType, { label: string; color: string; bg: string }> = {
+  feat:     { label: "Feature",    color: "text-indigo-700 dark:text-indigo-300",  bg: "bg-indigo-100 dark:bg-indigo-900/30" },
+  fix:      { label: "Fix",        color: "text-red-700 dark:text-red-300",        bg: "bg-red-100 dark:bg-red-900/30" },
+  perf:     { label: "Perf",       color: "text-amber-700 dark:text-amber-300",    bg: "bg-amber-100 dark:bg-amber-900/30" },
+  security: { label: "Seguridad",  color: "text-green-700 dark:text-green-300",    bg: "bg-green-100 dark:bg-green-900/30" },
+  refactor: { label: "Refactor",   color: "text-violet-700 dark:text-violet-300",  bg: "bg-violet-100 dark:bg-violet-900/30" },
+};
+
+const RELEASES: Release[] = [
+  {
+    version: "v1.0.0-beta",
+    date: "18 de marzo, 2026",
+    status: "current",
+    summary: "Lanzamiento beta inicial de la plataforma completa.",
+    changes: [
+      { type: "feat", text: "Tienda con 500+ productos, categorías y búsqueda fuzzy con tolerancia a errores (Levenshtein)" },
+      { type: "feat", text: "Carrito lateral con animaciones, upsell automático y persistencia localStorage" },
+      { type: "feat", text: "Panel admin con 30+ módulos: POS, CRM, inventario, finanzas, logística, analytics BI" },
+      { type: "feat", text: "Sistema de fidelización: puntos, tiers (Bronce / Plata / Oro / Diamante) y canje" },
+      { type: "feat", text: "Pedidos por WhatsApp con integración de estado y notificaciones en tiempo real" },
+      { type: "feat", text: "PWA + Service Worker: instalable en móviles, soporte offline parcial" },
+      { type: "feat", text: "Checkout modal con Stripe y opción de pago con Yape / efectivo / contra entrega" },
+      { type: "feat", text: "Programa de cupones y descuentos con validación por mínimo de compra" },
+      { type: "feat", text: "Modo mantenimiento, anuncio bar y dark mode con persistencia" },
+      { type: "feat", text: "Panel visitantes y survey de bienvenida beta" },
+      { type: "perf", text: "react-window FixedSizeList para virtualización de lista larga de productos" },
+      { type: "perf", text: "requestIdleCallback para diferir 21 modales pesados al idle del browser" },
+      { type: "perf", text: "ProductCatalog: initialProducts como Server Prop (productos fuera del bundle cliente)" },
+      { type: "perf", text: "Imágenes optimizadas con next/image + placeholder blur + sizes correctos por breakpoint" },
+      { type: "security", text: "Rate limiting en endpoints sensibles (checkout, auth, newsletter)" },
+      { type: "security", text: "Validación de inputs con Zod en todas las rutas API" },
+      { type: "security", text: "Roles y permisos granulares por módulo en el panel admin" },
+      { type: "refactor", text: "StoreProviders.tsx: 9 context providers consolidados en 1 componente" },
+      { type: "refactor", text: "QuickViewModal extraído a dynamic import (~350 líneas fuera del bundle inicial)" },
+    ],
+  },
+  {
+    version: "v1.1.0",
+    date: "Abril 2026 (planificado)",
+    status: "planned",
+    summary: "Mejoras de checkout, notificaciones push y accesibilidad.",
+    changes: [
+      { type: "feat", text: "Notificaciones push via Web Push API para estado de pedidos" },
+      { type: "feat", text: "Checkout con Stripe Elements embebido (sin redirección)" },
+      { type: "feat", text: "Accesibilidad WCAG 2.1 AA: contraste, focus visible, live regions" },
+      { type: "perf", text: "Redis cache para /api/products y /api/settings (reduce DB queries en 80%)" },
+      { type: "feat", text: "Página /sobre-nosotros con historia del negocio y fotos del equipo" },
+    ],
+  },
+  {
+    version: "v2.0.0",
+    date: "2026 Q3 (futuro)",
+    status: "planned",
+    summary: "Arquitectura multi-tienda, app nativa y IA.",
+    changes: [
+      { type: "feat", text: "Multi-sede: gestionar múltiples bodegas desde un solo panel" },
+      { type: "feat", text: "App móvil nativa con Capacitor (iOS + Android)" },
+      { type: "feat", text: "Motor de recomendaciones con IA (collaborative filtering)" },
+      { type: "feat", text: "Facturación electrónica SUNAT integrada" },
+    ],
+  },
+];
+
+function TypeBadge({ type }: { type: ChangeType }) {
+  const meta = TYPE_META[type];
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold leading-none shrink-0 ${meta.bg} ${meta.color}`}>
+      {meta.label}
+    </span>
+  );
+}
+
+export default function ChangelogModule() {
+  const stats = [
+    { icon: Package, label: "Versión actual", value: "v1.0.0-beta", color: "text-indigo-500" },
+    { icon: Sparkles, label: "Features lanzadas", value: "30+", color: "text-violet-500" },
+    { icon: Zap, label: "Optimizaciones perf.", value: "4", color: "text-amber-500" },
+    { icon: ShieldCheck, label: "Mejoras de seguridad", value: "3", color: "text-emerald-500" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-extrabold text-foreground flex items-center gap-2">
+            <FlaskConical className="h-5 w-5 text-amber-500" />
+            Changelog del Proyecto
+          </h1>
+          <p className="text-sm text-muted mt-0.5">Historial de releases y cambios de versión.</p>
+        </div>
+        <a
+          href="/about"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold bg-primary/8 text-primary hover:bg-primary/15 transition-colors border border-primary/20"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          Ver página /about
+        </a>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            className="rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border p-4 flex items-center gap-3"
+          >
+            <s.icon className={`h-5 w-5 shrink-0 ${s.color}`} />
+            <div>
+              <p className="text-[11px] text-muted leading-none mb-0.5">{s.label}</p>
+              <p className="text-lg font-extrabold text-foreground leading-tight">{s.value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Release Timeline */}
+      <div className="space-y-5">
+        {RELEASES.map((release) => (
+          <div
+            key={release.version}
+            className={`rounded-2xl border ${
+              release.status === "current"
+                ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/60 dark:bg-indigo-950/20"
+                : "border-gray-200 dark:border-card-border bg-white dark:bg-card"
+            } overflow-hidden`}
+          >
+            {/* Release header */}
+            <div className={`flex items-center justify-between px-5 py-4 ${
+              release.status === "current"
+                ? "border-b border-indigo-200 dark:border-indigo-800"
+                : "border-b border-gray-100 dark:border-card-border"
+            }`}>
+              <div className="flex items-center gap-3">
+                {release.status === "current" ? (
+                  <Rocket className="h-5 w-5 text-indigo-500" />
+                ) : (
+                  <Wrench className="h-5 w-5 text-gray-400" />
+                )}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-base font-extrabold ${
+                      release.status === "current" ? "text-indigo-700 dark:text-indigo-300" : "text-foreground"
+                    }`}>
+                      {release.version}
+                    </span>
+                    {release.status === "current" && (
+                      <span className="flex items-center gap-1 rounded-full px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-bold">
+                        <span className="h-1 w-1 rounded-full bg-white animate-pulse" />
+                        Actual
+                      </span>
+                    )}
+                    {release.status === "planned" && (
+                      <span className="rounded-full px-2 py-0.5 bg-gray-200 dark:bg-surface text-gray-500 dark:text-muted text-[10px] font-bold">
+                        Planificado
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted mt-0.5">{release.summary}</p>
+                </div>
+              </div>
+              <span className="text-xs text-muted font-medium shrink-0">{release.date}</span>
+            </div>
+
+            {/* Changes list */}
+            <div className="px-5 py-4">
+              <ul className="space-y-2.5">
+                {release.changes.map((change, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
+                    <CheckCircle2 className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${
+                      release.status === "current" ? "text-indigo-400" : "text-gray-300 dark:text-gray-600"
+                    }`} />
+                    <TypeBadge type={change.type} />
+                    <span className="text-sm text-foreground/80 leading-relaxed">{change.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

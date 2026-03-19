@@ -8,19 +8,31 @@ const AdjustSchema = z.object({
   action: z.literal("adjust"),
   productId: z.number().positive(),
   newStock: z.number().min(0),
+  warehouseId: z.string().optional(),
   notes: z.string().max(300).optional(),
 });
 
 const MovementSchema = z.object({
   productId: z.number().positive(),
   type: z.string().min(1).max(50),
+  lossType: z.string().max(50).optional(),
   quantity: z.number().positive(),
   reference: z.string().max(100).optional(),
+  warehouseId: z.string().optional(),
   notes: z.string().max(300).optional(),
 });
 
+const BulkAdjustSchema = z.object({
+  action: z.literal("bulk-adjust"),
+  items: z.array(z.object({
+    productId: z.number().positive(),
+    newStock: z.number().min(0),
+    notes: z.string().max(300).optional(),
+  })).min(1).max(200),
+});
+
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
   const { searchParams } = new URL(req.url);
@@ -48,9 +60,28 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    const { productId, newStock, notes } = parsed.data;
-    const movement = await InventoryMovementsDB.adjust(productId, newStock, notes);
+    const { productId, newStock, warehouseId, notes } = parsed.data;
+    const movement = await InventoryMovementsDB.adjust(productId, newStock, warehouseId, notes, auth.username);
     return NextResponse.json(movement, { status: 201 });
+  }
+
+  if (raw.action === "bulk-adjust") {
+    const parsed = BulkAdjustSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+        { status: 400 }
+      );
+    }
+    const results = await Promise.allSettled(
+      parsed.data.items.map((item) => InventoryMovementsDB.adjust(item.productId, item.newStock, undefined, item.notes, auth.username))
+    );
+    const succeeded = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results.filter((r) => r.status === "rejected").length;
+    const succeededIds = parsed.data.items
+      .filter((_, i) => results[i].status === "fulfilled")
+      .map((item) => item.productId);
+    return NextResponse.json({ ok: true, succeeded, failed, succeededIds }, { status: 201 });
   }
 
   // Default: record a movement
@@ -61,13 +92,16 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
-  const { productId, type, quantity, reference, notes } = parsed.data;
+  const { productId, type, lossType, quantity, reference, warehouseId, notes } = parsed.data;
   const movement = await InventoryMovementsDB.record({
     productId,
     type,
+    lossType,
     quantity,
     reference,
+    warehouseId,
     notes,
+    createdBy: auth.username,
   });
   return NextResponse.json(movement, { status: 201 });
 }

@@ -17,7 +17,7 @@ export function GoogleAnalytics() {
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', '${GA_MEASUREMENT_ID}');
+          gtag('config', '${GA_MEASUREMENT_ID}', { transport_type: 'beacon' });
         `}
       </Script>
     </>
@@ -60,7 +60,7 @@ export function MicrosoftClarity() {
   if (!clarityId) return null;
 
   return (
-    <Script id="microsoft-clarity" strategy="afterInteractive">
+    <Script id="microsoft-clarity" strategy="lazyOnload">
       {`
         (function(c,l,a,r,i,t,y){
           c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};

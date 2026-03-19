@@ -3,8 +3,9 @@
 import { useState, useEffect, useCallback, startTransition } from "react";
 import { X, ChevronRight, Sparkles } from "lucide-react";
 import { dispatchAppEvent } from "@/lib/events";
+import { useSettings } from "@/contexts/settings-context";
 
-const MESSAGES = [
+const FALLBACK_MESSAGES = [
   { text: "🚚 Delivery gratis en compras desde S/50", link: "#productos", highlight: "S/50" },
   { text: "🎉 Nuevos productos cada semana — ¡Descúbrelos!", link: "#productos", highlight: "cada semana" },
   { text: "💳 Paga con Yape o efectivo contra entrega", link: "#productos", highlight: "Yape" },
@@ -12,10 +13,30 @@ const MESSAGES = [
 ];
 
 const ROTATE_MS = 5000;
+const DISMISS_KEY = "bsm-announcement-dismissed";
+
+/* Simple hash of message texts to detect content changes */
+function messagesHash(msgs: typeof FALLBACK_MESSAGES): string {
+  return msgs.map(m => m.text).join("|");
+}
 
 export default function AnnouncementBar() {
+  const { homepage: hp } = useSettings();
+  const messages = hp.announcementMessages?.length ? hp.announcementMessages : FALLBACK_MESSAGES;
+  const hash = messagesHash(messages);
   const [idx, setIdx] = useState(0);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const raw = localStorage.getItem(DISMISS_KEY);
+      if (!raw) return false;
+      const stored = JSON.parse(raw) as { hash: string; ts: number };
+      // Re-show if messages changed or after 24 hours
+      if (stored.hash !== messagesHash(hp.announcementMessages?.length ? hp.announcementMessages : FALLBACK_MESSAGES)) return false;
+      if (Date.now() - stored.ts > 86_400_000) return false;
+      return true;
+    } catch { return false; }
+  });
   const [scrollHidden, setScrollHidden] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -26,10 +47,10 @@ export default function AnnouncementBar() {
   useEffect(() => {
     if (dismissed) return;
     const t = setInterval(() => {
-      setIdx((i) => (i + 1) % MESSAGES.length);
+      setIdx((i) => (i + 1) % messages.length);
     }, ROTATE_MS);
     return () => clearInterval(t);
-  }, [dismissed]);
+  }, [dismissed, messages.length]);
 
   // Hide on scroll, restore when back at top
   useEffect(() => {
@@ -48,13 +69,14 @@ export default function AnnouncementBar() {
 
   const handleDismiss = useCallback(() => {
     setDismissed(true);
+    try { localStorage.setItem(DISMISS_KEY, JSON.stringify({ hash, ts: Date.now() })); } catch { /* silent */ }
     // Dispatch event so Header can adjust its top
     dispatchAppEvent("announcementDismissed", {});
-  }, []);
+  }, [hash]);
 
-  if (!mounted || dismissed) return null;
+  if (!mounted || dismissed || hp.announcementEnabled === false) return null;
 
-  const msg = MESSAGES[idx];
+  const msg = messages[idx];
 
   return (
     <div

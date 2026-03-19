@@ -1,22 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ShoppingCart, Sparkles, Package } from "lucide-react";
-import { products, categories } from "@/data/products";
+import type { Product, Category } from "@/data/products";
 import { useInView } from "@/hooks/use-in-view";
 import ProductSchema from "./ProductSchema";
 import { trackProductView } from "@/lib/analytics";
-
-/* Pick 8 featured products — prefer those with badges */
-const featured = [
-  ...products.filter((p) => p.badge),
-  ...products.filter((p) => !p.badge),
-].slice(0, 8);
-
-/* Pick 4 categories to showcase */
-const showcaseCategories = categories.filter((c) => c.id !== "todos").slice(0, 4);
+import { useSettings } from "@/contexts/settings-context";
 
 function PreviewImage({ src, alt, eager }: { src: string; alt: string; eager: boolean }) {
   const [err, setErr] = useState(false);
@@ -37,6 +29,7 @@ function PreviewImage({ src, alt, eager }: { src: string; alt: string; eager: bo
       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
       loading={eager ? "eager" : "lazy"}
       priority={eager}
+      fetchPriority={eager ? "high" : "auto"}
       onError={() => setErr(true)}
     />
   );
@@ -44,6 +37,20 @@ function PreviewImage({ src, alt, eager }: { src: string; alt: string; eager: bo
 
 export default function ProductsPreview() {
   const [ref, inView] = useInView({ threshold: 0.1 });
+  const { homepage: hp } = useSettings();
+  const [featured, setFeatured] = useState<Product[]>([]);
+  const [showcaseCategories, setShowcaseCategories] = useState<Category[]>([]);
+
+  // Lazy-load products data — avoids 32 KB in initial JS bundle
+  useEffect(() => {
+    void import("@/data/products").then(({ products, categories }) => {
+      setFeatured([
+        ...products.filter((p: Product) => p.badge),
+        ...products.filter((p: Product) => !p.badge),
+      ].slice(0, 8));
+      setShowcaseCategories(categories.filter((c: Category) => c.id !== "todos").slice(0, 4));
+    });
+  }, []);
 
   return (
     <section ref={ref} className="py-20 sm:py-28 bg-surface relative overflow-hidden">
@@ -58,19 +65,19 @@ export default function ProductsPreview() {
         <div className={`text-center mb-14 transition-all duration-700 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
             <Sparkles className="h-3.5 w-3.5" />
-            Lo más pedido
+            {hp.previewBadge}
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
-            Productos{" "}
+            {hp.previewTitle}{" "}
             <span className="text-primary relative">
-              destacados
+              {hp.previewTitleAccent}
               <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/30" viewBox="0 0 100 12" preserveAspectRatio="none">
                 <path d="M0 8 Q25 0 50 6 Q75 12 100 4" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
               </svg>
             </span>
           </h2>
           <p className="mt-5 text-base sm:text-lg text-muted max-w-2xl mx-auto">
-            Los favoritos de nuestros clientes, siempre frescos y a los mejores precios.
+            {hp.previewSubtitle}
           </p>
         </div>
 
@@ -150,7 +157,7 @@ export default function ProductsPreview() {
             className="group inline-flex items-center gap-3 bg-primary hover:bg-primary-dark text-white font-extrabold text-base rounded-2xl px-10 py-4.5 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:-translate-y-0.5"
           >
             <ShoppingCart className="h-5 w-5" />
-            Ver todos los productos
+            {hp.previewCtaText}
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
           <p className="text-sm text-muted mt-3">

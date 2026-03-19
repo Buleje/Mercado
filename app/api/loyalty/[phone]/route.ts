@@ -1,73 +1,72 @@
-export const dynamic = 'force-dynamic'
+﻿export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import { InventoryMovementsDB } from "@/lib/jsondb";
+import { LoyaltyDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { z } from "zod";
+
+// -- GET /api/loyalty/[phone] -- public, rate-limited -------------------------
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ phone: string }> }
+) {
+  const ip = getClientIp(req);
+  const { allowed } = rateLimit(`loyalty-get:${ip}`, 60, 60);
+  if (!allowed) return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
+
+  const { phone } = await params;
+  try {
+    const data = await LoyaltyDB.getByPhone(normalizePhone(phone));
+    if (!data) return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
+    return NextResponse.json({ ...data, tiers: LoyaltyDB.TIERS });
+  } catch (e) {
+    console.error("[loyalty] GET error:", e);
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
+}
 
 const AdjustSchema = z.object({
-  action: z.literal("adjust"),
-  productId: z.number().positive(),
-  newStock: z.number().min(0),
-  notes: z.string().max(300).optional(),
+  points: z.number().int().refine((n) => n !== 0, "points must be non-zero"),
+  reason: z.string().max(200).optional(),
 });
 
-const MovementSchema = z.object({
-  productId: z.number().positive(),
-  type: z.string().min(1).max(50),
-  quantity: z.number().positive(),
-  reference: z.string().max(100).optional(),
-  notes: z.string().max(300).optional(),
-});
-
-export async function GET(req: NextRequest) {
+// -- PATCH /api/loyalty/[phone] -- admin only, manual point adjustment --------
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ phone: string }> }
+) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
-  const { searchParams } = new URL(req.url);
-  const productId = searchParams.get("productId");
-
-  if (productId) {
-    const movements = await InventoryMovementsDB.getByProduct(Number(productId));
-    return NextResponse.json(movements);
+  const { phone } = await params;
+  let raw: unknown;
+  try { raw = await req.json(); } catch {
+    return NextResponse.json({ error: "JSON invalido" }, { status: 400 });
   }
 
-  return NextResponse.json(await InventoryMovementsDB.getAll());
-}
-
-export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "almacenero"]);
-  if (auth instanceof NextResponse) return auth;
-
-  const raw = await req.json();
-
-  if (raw.action === "adjust") {
-    const parsed = AdjustSchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
-        { status: 400 }
-      );
-    }
-    const { productId, newStock, notes } = parsed.data;
-    const movement = await InventoryMovementsDB.adjust(productId, newStock, notes);
-    return NextResponse.json(movement, { status: 201 });
-  }
-
-  // Default: record a movement
-  const parsed = MovementSchema.safeParse(raw);
+  const parsed = AdjustSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+      { error: "Datos invalidos", issues: parsed.error.issues.map((i) => i.message) },
       { status: 400 }
     );
   }
-  const { productId, type, quantity, reference, notes } = parsed.data;
-  const movement = await InventoryMovementsDB.record({
-    productId,
-    type,
-    quantity,
-    reference,
-    notes,
-  });
-  return NextResponse.json(movement, { status: 201 });
+
+  try {
+    const normalized = normalizePhone(phone);
+    const { points } = parsed.data;
+    if (points > 0) {
+      const result = await LoyaltyDB.accruePoints(normalized, points);
+      if (!result) return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
+      return NextResponse.json(result);
+    } else {
+      const ok = await LoyaltyDB.redeemPoints(normalized, Math.abs(points));
+      if (!ok) return NextResponse.json({ error: "Puntos insuficientes" }, { status: 422 });
+      const data = await LoyaltyDB.getByPhone(normalized);
+      return NextResponse.json(data);
+    }
+  } catch (e) {
+    console.error("[loyalty] PATCH error:", e);
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
 }

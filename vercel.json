@@ -4,5 +4,55 @@
     "app/api/**": {
       "maxDuration": 30
     }
-  }
+  },
+  "git": {
+    "deploymentEnabled": true
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" }
+      ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/stock-alerts",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/birthday-coupons",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/daily-digest",
+      "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/reorder-alerts",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/email-automation",
+      "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/cron/reminders",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/trial-expiry",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/billing/webhook-replay",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/superadmin-alerts",
+      "schedule": "0 */1 * * *"
+    }
+  ]
 }

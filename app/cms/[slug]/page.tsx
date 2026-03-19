@@ -28,14 +28,27 @@ export async function generateMetadata({
     };
   }
 
+  const pageUrl = `https://www.bodegasanmartin.pe/cms/${params.slug}`;
+
   return {
     title: page.metaTitle || page.title,
-    description: page.metaDescription || page.description,
-    openGraph: page.ogImage
-      ? {
-          images: [page.ogImage],
-        }
-      : undefined,
+    description: page.metaDescription || page.description || undefined,
+    alternates: { canonical: pageUrl },
+    openGraph: {
+      title: page.metaTitle || page.title,
+      description: page.metaDescription || page.description || undefined,
+      url: pageUrl,
+      type: "article",
+      locale: "es_PE",
+      siteName: "Bodega San Martín",
+      ...(page.ogImage ? { images: [{ url: page.ogImage, width: 1200, height: 630, alt: page.title }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: page.metaTitle || page.title,
+      description: page.metaDescription || page.description || undefined,
+      ...(page.ogImage ? { images: [page.ogImage] } : {}),
+    },
   };
 }
 
@@ -73,6 +86,27 @@ export default async function DynamicPage({
 
   return (
     <main className="dynamic-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: page.title,
+            description: page.metaDescription || page.description,
+            url: `https://www.bodegasanmartin.pe/cms/${params.slug}`,
+            ...(page.ogImage ? { image: page.ogImage } : {}),
+            author: { "@type": "Organization", name: "Bodega San Martín" },
+            publisher: {
+              "@type": "Organization",
+              name: "Bodega San Martín",
+              logo: { "@type": "ImageObject", url: "https://www.bodegasanmartin.pe/og-image.jpg" },
+            },
+            datePublished: page.createdAt ?? new Date().toISOString(),
+            dateModified: page.updatedAt ?? new Date().toISOString(),
+          }),
+        }}
+      />
       {visibleBlocks.map((block) => {
         const BlockComponent = BLOCK_COMPONENTS[block.type];
 

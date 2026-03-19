@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { prisma } from "@/lib/prisma";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -20,7 +21,7 @@ const SaleSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
@@ -40,15 +41,29 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   const data = parsed.data;
   const total = data.items.reduce((s, i) => s + i.price * i.quantity, 0);
+
+  // Look up costPrice for each product to capture COGS at sale time
+  const pIds = data.items.map(i => i.productId);
+  const costMap = new Map<number, number>();
+  if (pIds.length > 0) {
+    const prods = await prisma.product.findMany({ where: { id: { in: pIds } }, select: { id: true, costPrice: true, price: true } });
+    for (const p of prods) costMap.set(p.id, p.costPrice ?? p.price * 0.7);
+  }
+  const itemsWithCost = data.items.map(i => ({ ...i, costPrice: costMap.get(i.productId) }));
+  const totalCogs = itemsWithCost.reduce((s, i) => s + (i.costPrice ?? i.price * 0.7) * i.quantity, 0);
+
   const id = `sale-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const cashierId = !( auth instanceof NextResponse) ? auth.username : undefined;
   const sale = await SalesDB.add({
     id,
-    items: data.items,
+    items: itemsWithCost,
     total,
+    totalCogs,
     payment: data.payment ?? "efectivo",
     amountPaid: data.amountPaid ?? total,
     change: (data.amountPaid ?? total) - total,
     customerPhone: data.customerPhone || undefined,
+    cashierId,
     createdAt: new Date().toISOString(),
   });
 

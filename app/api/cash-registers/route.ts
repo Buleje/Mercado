@@ -4,8 +4,18 @@ import { CashRegistersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
+
+  const { searchParams } = new URL(req.url);
+  const cursor = searchParams.get("cursor") ?? undefined;
+  const limitParam = searchParams.get("limit");
+
+  if (limitParam !== null || cursor) {
+    const limit = Math.min(Math.max(1, parseInt(limitParam ?? "25", 10)), 200);
+    const result = await CashRegistersDB.getAllPaginated(limit, cursor);
+    return NextResponse.json(result);
+  }
 
   return NextResponse.json(await CashRegistersDB.getAll());
 }

@@ -1,14 +1,17 @@
 "use client";
 
 import { usePreferences, exportPreferences, importPreferences, type UserPreferences } from "@/hooks/use-preferences";
+import { useTheme } from "@/contexts/theme-context";
 import { Settings, Download, Upload, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRef, useState } from "react";
 
 export function PreferencesPanel() {
   const { preferences, updatePreference, resetPreferences } = usePreferences();
+  const { setTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [importError, setImportError] = useState(false);
 
   const handleExport = () => {
     const json = exportPreferences();
@@ -37,7 +40,8 @@ export function PreferencesPanel() {
         // Reload page to apply preferences
         window.location.reload();
       } else {
-        alert("Error al importar preferencias. Archivo inválido.");
+        setImportError(true);
+        setTimeout(() => setImportError(false), 4000);
       }
     };
     reader.readAsText(file);
@@ -99,12 +103,24 @@ export function PreferencesPanel() {
         </div>
       )}
 
+      {/* Import Error Message */}
+      {importError && (
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-700 dark:text-red-300 font-semibold">
+            ✗ Archivo inválido. Verifica que sea un JSON de preferencias exportado.
+          </p>
+        </div>
+      )}
+
       {/* Appearance */}
       <Section title="Apariencia">
         <Select
           label="Tema"
           value={preferences.theme || "system"}
-          onChange={(value) => updatePreference("theme", value as UserPreferences["theme"])}
+          onChange={(value) => {
+              updatePreference("theme", value as UserPreferences["theme"]);
+              setTheme(value as "light" | "dark" | "system");
+            }}
           options={[
             { value: "light", label: "Claro" },
             { value: "dark", label: "Oscuro" },

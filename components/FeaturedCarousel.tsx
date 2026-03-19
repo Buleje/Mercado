@@ -19,8 +19,10 @@ function calc() {
 }
 
 function subscribeResize(cb: () => void) {
-  window.addEventListener("resize", cb);
-  return () => window.removeEventListener("resize", cb);
+  let timer: ReturnType<typeof setTimeout>;
+  const debounced = () => { clearTimeout(timer); timer = setTimeout(cb, 150); };
+  window.addEventListener("resize", debounced);
+  return () => { clearTimeout(timer); window.removeEventListener("resize", debounced); };
 }
 
 function useVisibleCount() {
@@ -37,6 +39,7 @@ export default function FeaturedCarousel() {
   const maxIdx = Math.max(0, n - visibleCount);
   const idx = Math.min(rawIdx, maxIdx);
   const pausedRef = useRef(false);
+  const lastClickRef = useRef(0);
 
   // Unconditional nav for buttons and keyboard
   const goNext = useCallback(() => setIdx(i => (i >= maxIdx ? 0 : i + 1)), [maxIdx]);
@@ -108,7 +111,7 @@ export default function FeaturedCarousel() {
                   <div className="flex flex-col sm:flex-row">
                     <div className="relative aspect-square sm:w-40 shrink-0 bg-gray-50 dark:bg-surface">
                       {product.image ? (
-                        <Image src={product.image} alt={product.name} fill className="object-cover" sizes="160px" />
+                        <Image src={product.image} alt={product.name} fill className="object-cover" sizes="160px" placeholder="blur" blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNCIgaGVpZ2h0PSI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNlNWU3ZWIiLz48L3N2Zz4=" />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-8 w-8" /></div>
                       )}
@@ -129,7 +132,7 @@ export default function FeaturedCarousel() {
                       <div className="flex items-end justify-between mt-3">
                         <span className="text-lg font-extrabold text-primary">S/{product.price.toFixed(2)}</span>
                         <button
-                          onClick={() => { addItem(product); showToast(product.name, product.image); }}
+                          onClick={() => { const now = Date.now(); if (now - lastClickRef.current < 300) return; lastClickRef.current = now; addItem(product); showToast(product.name, product.image); }}
                           className="flex items-center gap-1 bg-primary text-white rounded-xl px-3 py-2 text-xs font-bold hover:bg-primary/90 active:scale-95 transition-all shadow-md"
                         >
                           <Plus className="h-3.5 w-3.5" /> Agregar

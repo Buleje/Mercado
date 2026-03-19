@@ -1,8 +1,11 @@
 export const dynamic = 'force-dynamic'
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { OrdersDB, CustomersDB } from "@/lib/jsondb";
+import { requireAdmin } from "@/lib/require-admin";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return NextResponse.json(

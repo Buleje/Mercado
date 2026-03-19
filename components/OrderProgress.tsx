@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, startTransition } from "react";
-import { Package, Truck, CheckCircle2, Clock, X, ChevronDown, ChevronUp, AlertCircle } from "lucide-react";
+import { useState, useEffect, startTransition, useCallback } from "react";
+import { Package, Truck, CheckCircle2, Clock, X, ChevronDown, ChevronUp, AlertCircle, Star, Printer } from "lucide-react";
 
 type TrackedOrder = {
   id: string;
   status: "confirmado" | "preparando" | "en_camino" | "entregado";
   createdAt: string;
+  customerName?: string;
 };
 
 const STEPS = [
@@ -64,6 +65,7 @@ export default function OrderProgress() {
           id: detail.orderId,
           status: "confirmado",
           createdAt: new Date().toISOString(),
+          customerName: detail.customerName,
         };
         localStorage.setItem("bsm-active-order", JSON.stringify(newOrder));
         startTransition(() => { setOrder(newOrder); setDismissed(false); setShowAsModal(true); });
@@ -90,7 +92,110 @@ export default function OrderProgress() {
     };
   }, []);
 
-  if (!order || dismissed || order.status === "entregado") return null;
+  /* AA3: NPS survey after delivery */
+  const [npsRating, setNpsRating] = useState(0);
+  const [npsSent, setNpsSent] = useState(false);
+  const [npsHover, setNpsHover] = useState(0);
+  const [npsComment, setNpsComment] = useState("");
+  const [npsStep, setNpsStep] = useState<"rate" | "comment">("rate");
+
+  const submitNps = useCallback((rating: number, comment?: string) => {
+    setNpsRating(rating);
+    setNpsSent(true);
+    try { localStorage.setItem(`bsm-nps-${order?.id}`, String(rating)); } catch { /* silent */ }
+    // Persist to backend
+    fetch("/api/surveys", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        orderId: order?.id,
+        phone: order?.customerName, // best approximation from tracked data
+        rating,
+        comment: comment ?? "",
+      }),
+    }).catch(() => { /* silent – localStorage is fallback */ });
+  }, [order]);
+
+  /* AC2: Downloadable receipt */
+  const printReceipt = useCallback(() => {
+    if (!order) return;
+    const now = new Date().toLocaleString("es-PE");
+    const html = `<html><head><title>Recibo</title><style>body{font-family:monospace;width:280px;margin:0 auto;padding:16px;color:#1a1a1a}h3{text-align:center;margin:0 0 4px}p{margin:2px 0;font-size:11px}.line{border-top:1px dashed #999;margin:8px 0}.total{font-size:14px;font-weight:bold;text-align:right}@media print{body{padding:8px}}</style></head><body><h3>🛒 Bodega San Martín</h3><p style="text-align:center;color:#666">Recibo de pedido</p><div class="line"></div><p><b>Pedido:</b> #${order.id.slice(-6)}</p><p><b>Fecha:</b> ${now}</p>${order.customerName ? `<p><b>Cliente:</b> ${order.customerName}</p>` : ""}<div class="line"></div><p class="total">¡Gracias por tu compra!</p></body></html>`;
+    const w = window.open("", "_blank", "width=320,height=400");
+    if (w) { w.document.write(html); w.document.close(); w.print(); }
+  }, [order]);
+
+  if (!order || dismissed) return null;
+
+  // Show NPS survey when delivered
+  if (order.status === "entregado") {
+    const alreadyRated = (() => { try { return !!localStorage.getItem(`bsm-nps-${order.id}`); } catch { return false; } })();
+    if (alreadyRated && !npsSent) return null;
+    if (npsSent) {
+      // Brief thank-you then auto-hide
+      return (
+        <div className="fixed top-20 right-4 z-40 w-72 bg-card border border-border rounded-2xl shadow-2xl p-4 text-center animate-[fadeDown_0.3s_ease-out]">
+          <p className="text-sm font-bold text-foreground">¡Gracias por tu calificación! ⭐</p>
+          <p className="text-xs text-muted mt-1">{npsRating >= 4 ? "¡Nos alegra que te gustó!" : "Trabajaremos en mejorar."}</p>
+          <button onClick={() => setDismissed(true)} className="mt-2 text-xs text-primary font-semibold hover:underline">Cerrar</button>
+        </div>
+      );
+    }
+    return (
+      <div className="fixed top-20 right-4 z-40 w-72 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-[fadeDown_0.3s_ease-out]">
+        <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/10 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+            <span className="text-xs font-bold text-foreground">¡Pedido entregado!</span>
+          </div>
+          <button onClick={() => setDismissed(true)} className="p-1 rounded-lg hover:bg-black/5 transition-colors">
+            <X className="w-3.5 h-3.5 text-muted" />
+          </button>
+        </div>
+        <div className="px-4 py-4 text-center space-y-3">
+          {npsStep === "rate" ? (
+            <>
+              <p className="text-sm font-semibold text-foreground">¿Cómo fue tu experiencia?</p>
+              <div className="flex justify-center gap-1">
+                {[1, 2, 3, 4, 5].map(s => (
+                  <button key={s} onMouseEnter={() => setNpsHover(s)} onMouseLeave={() => setNpsHover(0)} onClick={() => { setNpsRating(s); setNpsStep("comment"); }} className="p-1 transition-transform hover:scale-125">
+                    <Star className={`w-7 h-7 ${s <= (npsHover || npsRating) ? "fill-amber-400 text-amber-400" : "text-gray-300 dark:text-gray-600"}`} />
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex justify-center gap-0.5">
+                {[1, 2, 3, 4, 5].map(s => (
+                  <Star key={s} className={`w-4 h-4 ${s <= npsRating ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
+                ))}
+              </div>
+              <textarea
+                value={npsComment}
+                onChange={e => setNpsComment(e.target.value)}
+                placeholder="¿Algún comentario? (opcional)"
+                maxLength={500}
+                rows={2}
+                className="w-full text-xs rounded-lg border border-border bg-background p-2 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+              />
+              <div className="flex gap-2 justify-center">
+                <button onClick={() => submitNps(npsRating, npsComment)} className="px-3 py-1.5 text-xs font-semibold bg-primary text-white rounded-lg hover:opacity-90 transition-opacity">
+                  Enviar
+                </button>
+                <button onClick={() => submitNps(npsRating)} className="px-3 py-1.5 text-xs text-muted hover:text-foreground transition-colors">
+                  Omitir
+                </button>
+              </div>
+            </>
+          )}
+          <button onClick={printReceipt} className="flex items-center gap-1.5 mx-auto text-[10px] text-muted hover:text-primary transition-colors">
+            <Printer className="h-3 w-3" /> Descargar recibo
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const currentIdx = STATUS_INDEX[order.status] ?? 0;
 
@@ -130,18 +235,21 @@ export default function OrderProgress() {
   // Show as centered modal when order just created
   if (showAsModal) {
     return (
-      <div className="fixed inset-0 z-[6002] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-6002 flex items-center justify-center p-4">
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAsModal(false)} />
         <div className="relative bg-white dark:bg-card rounded-3xl shadow-2xl border border-gray-100 dark:border-card-border w-full max-w-sm overflow-hidden animate-[scaleIn_0.25s_ease-out]">
           {/* Modal header */}
-          <div className="px-6 pt-6 pb-4 text-center border-b border-gray-100 dark:border-card-border bg-gradient-to-b from-primary/5 to-transparent">
+          <div className="px-6 pt-6 pb-4 text-center border-b border-gray-100 dark:border-card-border bg-linear-to-b from-primary/5 to-transparent">
             <div className="flex items-center justify-center gap-2 mb-3">
               <div className="relative">
                 <AlertCircle className="w-8 h-8 text-amber-500 animate-pulse" />
                 <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-amber-500 animate-ping" />
               </div>
             </div>
-            <h3 className="text-xl font-extrabold text-foreground">¡Pedido recibido!</h3>
+            <h3 className="text-xl font-extrabold text-foreground">
+              {order.customerName ? `¡Gracias, ${order.customerName}!` : "¡Pedido recibido!"}
+            </h3>
+            {order.customerName && <p className="text-xs text-primary font-semibold mt-0.5">Tu pedido está en camino 🎉</p>}
             <p className="text-sm text-muted mt-1">
               Pedido <span className="font-bold text-primary">#{order.id.slice(-6)}</span> — Confirmado
             </p>

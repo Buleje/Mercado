@@ -9,23 +9,29 @@ import {
   useSyncExternalStore,
   useMemo,
 } from "react";
+import dynamic from "next/dynamic";
+import { FixedSizeList, type ListChildComponentProps } from "react-window";
 import Image from "next/image";
-import { Plus, Minus, ShoppingCart, ArrowRight, Sparkles, Package, Search, X, ArrowUpDown, Heart, SlidersHorizontal, Clock, Star } from "lucide-react";
-import { products, categories } from "@/data/products";
+import Link from "next/link";
+import { Plus, Minus, ShoppingCart, ArrowRight, Package, Search, X, ArrowUpDown, SlidersHorizontal, Clock, LayoutGrid, List, ExternalLink } from "lucide-react";
+import { categories } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
-import { useFavorites } from "@/contexts/favorites-context";
 import { cn } from "@/lib/utils";
 import { onAppEvent } from "@/lib/events";
 import type { Product } from "@/data/products";
 import { ProductCard } from "./ProductCard";
 import { useCachedData } from "@/hooks/use-cached-data";
+import { levenshteinDistance } from "@/hooks/use-advanced-search";
+
+// QuickViewModal loaded on-demand only when user clicks "Vista rápida"
+const QuickViewModal = dynamic(() => import("@/components/QuickViewModal"), { ssr: false });
 
 type LiveProduct = Product & { stock?: number; stockMin?: number };
 
 // Only real categories (not "todos")
 const realCategories = categories.filter((c) => c.id !== "todos");
-const INITIAL_SECTIONS = 2; // show only 2 sections at start
+const INITIAL_SECTIONS = realCategories.length; // show all sections
 
 type SortKey = "relevancia" | "precio-asc" | "precio-desc" | "nombre";
 const SORT_OPTIONS: { id: SortKey; label: string }[] = [
@@ -43,6 +49,63 @@ function sortProducts(list: LiveProduct[], key: SortKey): LiveProduct[] {
   else if (key === "nombre") sorted.sort((a, b) => a.name.localeCompare(b.name));
   return sorted;
 }
+
+const LIST_ROW_HEIGHT = 80; // px — matches ListProductRow height
+const VIRTUAL_LIST_THRESHOLD = 12; // virtualize when > 12 items in list mode
+
+// ── Per-category color themes ─────────────────────────────────────────────────
+const CAT_THEME: Record<string, { emojiBg: string; dot: string; pillHover: string; linkBtn: string; sectionBorder: string }> = {
+  "frutas-verduras": {
+    emojiBg:       "bg-emerald-50 dark:bg-emerald-950/30",
+    dot:           "bg-emerald-500",
+    pillHover:     "hover:border-emerald-400 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:text-emerald-400 dark:hover:bg-emerald-950/30",
+    linkBtn:       "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white",
+    sectionBorder: "border-l-4 border-l-emerald-400",
+  },
+  "abarrotes": {
+    emojiBg:       "bg-amber-50 dark:bg-amber-950/30",
+    dot:           "bg-amber-500",
+    pillHover:     "hover:border-amber-400 hover:text-amber-700 hover:bg-amber-50 dark:hover:text-amber-400 dark:hover:bg-amber-950/30",
+    linkBtn:       "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-500 hover:text-white",
+    sectionBorder: "border-l-4 border-l-amber-400",
+  },
+  "carnes": {
+    emojiBg:       "bg-red-50 dark:bg-red-950/30",
+    dot:           "bg-red-500",
+    pillHover:     "hover:border-red-400 hover:text-red-700 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-950/30",
+    linkBtn:       "bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 hover:bg-red-500 hover:text-white",
+    sectionBorder: "border-l-4 border-l-red-400",
+  },
+  "lacteos": {
+    emojiBg:       "bg-sky-50 dark:bg-sky-950/30",
+    dot:           "bg-sky-500",
+    pillHover:     "hover:border-sky-400 hover:text-sky-700 hover:bg-sky-50 dark:hover:text-sky-400 dark:hover:bg-sky-950/30",
+    linkBtn:       "bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400 hover:bg-sky-500 hover:text-white",
+    sectionBorder: "border-l-4 border-l-sky-400",
+  },
+  "bebidas": {
+    emojiBg:       "bg-violet-50 dark:bg-violet-950/30",
+    dot:           "bg-violet-500",
+    pillHover:     "hover:border-violet-400 hover:text-violet-700 hover:bg-violet-50 dark:hover:text-violet-400 dark:hover:bg-violet-950/30",
+    linkBtn:       "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 hover:bg-violet-500 hover:text-white",
+    sectionBorder: "border-l-4 border-l-violet-400",
+  },
+  "limpieza": {
+    emojiBg:       "bg-cyan-50 dark:bg-cyan-950/30",
+    dot:           "bg-cyan-500",
+    pillHover:     "hover:border-cyan-400 hover:text-cyan-700 hover:bg-cyan-50 dark:hover:text-cyan-400 dark:hover:bg-cyan-950/30",
+    linkBtn:       "bg-cyan-50 dark:bg-cyan-950/30 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-500 hover:text-white",
+    sectionBorder: "border-l-4 border-l-cyan-400",
+  },
+};
+const DEFAULT_CAT_THEME = {
+  emojiBg:       "bg-primary/8 dark:bg-primary/15",
+  dot:           "bg-primary",
+  pillHover:     "hover:border-primary hover:text-primary hover:bg-primary/5",
+  linkBtn:       "bg-primary/8 dark:bg-primary/15 text-primary hover:bg-primary hover:text-white",
+  sectionBorder: "border-l-4 border-l-primary/40",
+};
+function getCatTheme(id: string) { return CAT_THEME[id] ?? DEFAULT_CAT_THEME; }
 
 // ── Skeleton Card ─────────────────────────────────────────────────────────────
 function SkeletonCard() {
@@ -71,8 +134,8 @@ function SkeletonSection() {
           <div className="h-3 bg-gray-200 dark:bg-surface rounded-full w-28" />
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
       </div>
@@ -80,291 +143,177 @@ function SkeletonSection() {
   );
 }
 
-// ── Category Section ──────────────────────────────────────────────────────────
-function CategorySection({ categoryId, highlight, productList, onQuickView }: { categoryId: string; highlight: boolean; productList: LiveProduct[]; onQuickView: (p: LiveProduct) => void }) {
-  const cat = categories.find((c) => c.id === categoryId);
-  const catProducts = productList.filter((p) => p.category === categoryId);
-
-  if (!cat || catProducts.length === 0) return null;
+// ── U1: List View Row ─────────────────────────────────────────────────────────
+function ListProductRow({ product, onQuickView }: { product: LiveProduct; onQuickView: (p: LiveProduct) => void }) {
+  const { items, addItem, updateQty } = useCart();
+  const { showToast } = useToast();
+  const cartItem = items.find((i) => i.id === product.id);
+  const qty = cartItem?.quantity ?? 0;
+  const isOutOfStock = product.stock != null && product.stock <= 0;
+  const isLowStock = !isOutOfStock && product.stock != null && product.stockMin != null && product.stock <= product.stockMin;
 
   return (
     <div
-      id={`cat-${categoryId}`}
-      className={cn(
-        "rounded-2xl p-5 sm:p-6 transition-all duration-500 animate-[fadeUp_0.4s_ease-out]",
-        highlight ? "ring-2 ring-primary ring-offset-4 bg-primary/3" : "bg-white dark:bg-card"
-      )}
+      onClick={() => onQuickView(product)}
+      className="flex items-center gap-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3 hover:shadow-md hover:border-primary/20 transition-all cursor-pointer"
     >
-      <div className="flex items-center gap-3 mb-6">
-        <span className="flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/8 dark:bg-primary/15 text-2xl leading-none shrink-0">{cat.emoji}</span>
-        <div className="flex-1">
-          <h3 className="text-xl font-extrabold text-foreground">{cat.label}</h3>
-          <p className="text-sm text-muted">{catProducts.length} productos disponibles</p>
-        </div>
-        <span className="hidden sm:flex items-center gap-1 text-xs font-bold text-primary bg-primary/8 dark:bg-primary/15 px-3 py-1.5 rounded-full">
-          <Package className="h-3 w-3" /> {catProducts.length}
-        </span>
+      <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-50 dark:bg-surface shrink-0">
+        {product.image ? (
+          <Image src={product.image} alt={product.name} fill className="object-cover" sizes="64px" />
+        ) : (
+          <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-6 w-6" /></div>
+        )}
+        {product.badge && (
+          <span className="absolute top-0.5 left-0.5 rounded-full px-1.5 py-0.5 text-[8px] font-bold uppercase text-white bg-primary shadow-sm leading-none">{product.badge}</span>
+        )}
       </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-        {catProducts.map((product) => (
-          <ProductCard key={product.id} product={product} onQuickView={onQuickView} />
-        ))}
+      <div className="flex-1 min-w-0">
+        <h4 className="text-sm font-bold text-foreground truncate">{product.name}</h4>
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-muted">{product.unit}</p>
+          {isLowStock && (
+            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-1.5 py-0.5 rounded-full animate-pulse">¡Quedan {product.stock}!</span>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <span className="text-base font-extrabold text-primary">S/{product.price.toFixed(2)}</span>
+        {isOutOfStock ? (
+          <span className="text-[10px] font-bold text-red-500 bg-red-50 dark:bg-red-500/10 px-2 py-1 rounded-full">Agotado</span>
+        ) : qty === 0 ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); addItem(product); showToast(product.name, product.image); }}
+            className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all shadow-sm"
+            aria-label={`Agregar ${product.name}`}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        ) : (
+          <div className="flex items-center bg-primary rounded-xl overflow-hidden shadow-sm" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => updateQty(product.id, qty - 1)} className="h-9 w-8 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Minus className="h-3.5 w-3.5" /></button>
+            <span className="w-6 text-center font-bold text-white text-sm">{qty}</span>
+            <button onClick={() => { addItem(product); showToast(product.name, product.image); }} className="h-9 w-8 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Plus className="h-3.5 w-3.5" /></button>
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ── Quick View Modal ──────────────────────────────────────────────────────────
-function QuickViewModal({ product, onClose }: { product: LiveProduct; onClose: () => void }) {
-  const { items, addItem, updateQty } = useCart();
-  const { showToast } = useToast();
-  const { isFavorite, toggle: toggleFav } = useFavorites();
-  const cartItem = items.find((i) => i.id === product.id);
-  const qty = cartItem?.quantity ?? 0;
-  const isOutOfStock = product.stock != null && product.stock <= 0;
-  const [tab, setTab] = useState<"info" | "reviews" | "related">("info");
-  const fav = isFavorite(String(product.id));
+// ── Category Section ──────────────────────────────────────────────────────────
+const MAX_CAT_VISIBLE = 8; // Show limited products per category, rest behind "Show more"
 
-  // Fetch reviews for this product - with caching
-  const { data: reviews = [] } = useCachedData<Array<{ name: string; rating: number; comment: string; createdAt: string }>>(
-    `reviews-${product.id}`,
-    async () => {
-      const response = await fetch(`/api/reviews?productId=${product.id}`);
-      if (!response.ok) return [];
-      const data = await response.json();
-      return Array.isArray(data) ? data.slice(0, 5) : [];
-    },
-    {
-      staleTime: 5 * 60 * 1000, // 5 minutes - reviews don't change frequently
-      refetchOnFocus: false, // Don't refetch reviews on focus
-    }
-  );
+function CategorySection({ categoryId, highlight, productList, onQuickView, viewMode }: { categoryId: string; highlight: boolean; productList: LiveProduct[]; onQuickView: (p: LiveProduct) => void; viewMode: "grid" | "list" }) {
+  const cat = categories.find((c) => c.id === categoryId);
+  const catProducts = productList.filter((p) => p.category === categoryId);
+  const [showAll, setShowAll] = useState(false);
+  const theme = getCatTheme(categoryId);
 
-  // Escape key closes modal
+  // IntersectionObserver: only render product grid when section is near viewport
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setIsVisible(true); observer.disconnect(); } },
+      { rootMargin: "300px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
-  // Track as recently viewed
-  useEffect(() => {
-    try {
-      const key = "bsm-recently-viewed";
-      const saved: Product[] = JSON.parse(localStorage.getItem(key) || "[]");
-      const filtered = saved.filter((p: Product) => p.id !== product.id);
-      filtered.unshift(product);
-      localStorage.setItem(key, JSON.stringify(filtered.slice(0, 12)));
-      window.dispatchEvent(new Event("bsm:productViewed"));
-    } catch {}
-  }, [product]);
+  const visibleProducts = showAll ? catProducts : catProducts.slice(0, MAX_CAT_VISIBLE);
+  const hiddenCount = catProducts.length - MAX_CAT_VISIBLE;
 
-  const handleAdd = () => {
-    if (isOutOfStock) return;
-    addItem(product);
-    showToast(product.name, product.image);
-  };
-
-  const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
-  const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;
+  if (!cat || catProducts.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-      <div
-        className="relative bg-white dark:bg-card rounded-t-3xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto animate-[scaleIn_0.2s_ease-out] border border-gray-100 dark:border-card-border"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button onClick={onClose} className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 dark:bg-card/80 hover:bg-white dark:hover:bg-card transition-colors shadow-md" aria-label="Cerrar">
-          <X className="h-5 w-5 text-gray-600 dark:text-muted" />
-        </button>
-
-        {/* Mobile drag handle */}
-        <div className="sm:hidden flex justify-center pt-2 pb-1">
-          <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
-        </div>
-
-        {/* Image */}
-        <div className="relative aspect-video sm:aspect-4/3 bg-gray-50 dark:bg-surface">
-          {product.image ? (
-            <Image src={product.image} alt={product.name} fill className="object-cover" sizes="(max-width: 672px) 100vw, 672px" loading="lazy" />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-16 w-16" /></div>
-          )}
-          {product.badge && (
-            <span className="absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-bold uppercase text-white bg-primary shadow-sm">{product.badge}</span>
-          )}
-          {/* Fav button */}
-          <button
-            onClick={(e) => { e.stopPropagation(); toggleFav(String(product.id)); }}
-            className={cn(
-              "absolute top-3 right-14 z-10 flex items-center justify-center h-10 w-10 rounded-full transition-all shadow-md",
-              fav ? "bg-red-500 text-white" : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-red-500"
-            )}
-            aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
-          >
-            <Heart className={cn("h-5 w-5", fav && "fill-current")} />
-          </button>
-        </div>
-
-        {/* Product info bar */}
-        <div className="p-5 sm:p-6 pb-3 border-b border-gray-100 dark:border-card-border">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="text-xl sm:text-2xl font-extrabold text-foreground mb-1">{product.name}</h3>
-              <p className="text-sm text-muted">
-                {categories.find(c => c.id === product.category)?.emoji} {categories.find(c => c.id === product.category)?.label ?? product.category}
-                {reviews.length > 0 && (
-                  <span className="ml-3 inline-flex items-center gap-1">
-                    <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />
-                    <span className="font-semibold text-foreground">{avgRating.toFixed(1)}</span>
-                    <span className="text-muted">({reviews.length})</span>
-                  </span>
-                )}
-              </p>
-            </div>
-            <div className="text-right shrink-0">
-              <span className="text-2xl sm:text-3xl font-extrabold text-primary">S/{product.price.toFixed(2)}</span>
-              <span className="block text-sm text-muted">por {product.unit}</span>
-            </div>
+    <div
+      ref={sectionRef}
+      id={`cat-${categoryId}`}
+      className={cn(
+        "rounded-2xl p-5 sm:p-6 transition-all duration-500 animate-[fadeUp_0.4s_ease-out]",
+        theme.sectionBorder,
+        highlight ? "ring-2 ring-primary ring-offset-4 bg-primary/3" : "bg-white dark:bg-card"
+      )}
+    >
+      <div className="flex items-center gap-3 mb-6">
+        <span className={cn("flex items-center justify-center h-12 w-12 rounded-2xl text-2xl leading-none shrink-0", theme.emojiBg)}>{cat.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link href={`/tienda/categoria/${categoryId}`} className="group">
+              <h3 className="text-xl font-extrabold text-foreground group-hover:text-primary transition-colors">{cat.label}</h3>
+            </Link>
+            <span className={cn("hidden sm:inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold text-white", theme.dot)}>
+              {catProducts.length}
+            </span>
           </div>
-
-          {/* Stock + Add to cart */}
-          <div className="flex items-center justify-between mt-4">
-            <div>
-              {product.stock != null && (
-                <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", product.stock <= 0 ? "bg-red-50 text-red-500 dark:bg-red-500/10" : product.stock <= (product.stockMin ?? 5) ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10" : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10")}>
-                  {product.stock <= 0 ? "Agotado" : `${product.stock} en stock`}
-                </span>
-              )}
-            </div>
-            {qty === 0 ? (
-              <button onClick={handleAdd} disabled={isOutOfStock} className="flex items-center gap-2 bg-primary text-white rounded-xl px-6 py-3 font-bold shadow-md hover:bg-primary-dark active:scale-95 transition-all disabled:opacity-50">
-                <ShoppingCart className="h-5 w-5" /> Agregar al carrito
-              </button>
-            ) : (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center bg-primary rounded-xl overflow-hidden shadow-md">
-                  <button onClick={() => updateQty(product.id, qty - 1)} className="h-11 w-10 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Minus className="h-4 w-4" /></button>
-                  <span className="w-8 text-center font-bold text-white">{qty}</span>
-                  <button onClick={handleAdd} className="h-11 w-10 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"><Plus className="h-4 w-4" /></button>
-                </div>
-                <span className="text-sm font-semibold text-primary">En carrito</span>
-              </div>
-            )}
-          </div>
+          <p className="text-sm text-muted">{catProducts.length} productos disponibles</p>
         </div>
+        <Link
+          href={`/tienda/categoria/${categoryId}`}
+          className={cn("hidden sm:flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full transition-colors", theme.linkBtn)}
+        >
+          <Package className="h-3 w-3" /> Ver página <ExternalLink className="h-3 w-3 ml-0.5" />
+        </Link>
+      </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-100 dark:border-card-border">
-          {([["info", "Detalles"], ["reviews", "Reseñas"], ["related", "Relacionados"]] as const).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={cn(
-                "flex-1 py-3 text-sm font-semibold transition-all border-b-2",
-                tab === key
-                  ? "text-primary border-primary bg-primary/5"
-                  : "text-muted border-transparent hover:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
-              )}
+      {isVisible ? (
+        <>
+          {/* Virtualized list when category is expanded in list mode with many items */}
+          {showAll && viewMode === "list" && catProducts.length > VIRTUAL_LIST_THRESHOLD ? (
+            <FixedSizeList
+              height={Math.min(catProducts.length * LIST_ROW_HEIGHT, 480)}
+              itemCount={catProducts.length}
+              itemSize={LIST_ROW_HEIGHT}
+              width="100%"
+              className="scrollbar-thin"
             >
-              {label} {key === "reviews" && reviews.length > 0 && `(${reviews.length})`}
+              {({ index, style }: ListChildComponentProps) => (
+                <div style={{ ...style, paddingBottom: 4 }}>
+                  <ListProductRow product={catProducts[index]} onQuickView={onQuickView} />
+                </div>
+              )}
+            </FixedSizeList>
+          ) : (
+            <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3" : "space-y-2"}>
+              {visibleProducts.map((product) => (
+                viewMode === "list" ? (
+                  <ListProductRow key={product.id} product={product} onQuickView={onQuickView} />
+                ) : (
+                  <ProductCard key={product.id} product={product} onQuickView={onQuickView} />
+                )
+              ))}
+            </div>
+          )}
+
+          {hiddenCount > 0 && !showAll && (
+            <button
+              onClick={() => setShowAll(true)}
+              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5 transition-colors"
+            >
+              <ArrowRight className="h-4 w-4" />
+              Ver {hiddenCount} producto{hiddenCount !== 1 ? "s" : ""} más
             </button>
+          )}
+          {showAll && catProducts.length > MAX_CAT_VISIBLE && (
+            <button
+              onClick={() => setShowAll(false)}
+              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-gray-200 dark:border-card-border text-muted text-sm font-semibold hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
+            >
+              Ver menos
+            </button>
+          )}
+        </>
+      ) : (
+        /* Placeholder skeleton while section is off-screen */
+        <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3" : "space-y-2"}>
+          {Array.from({ length: Math.min(catProducts.length, MAX_CAT_VISIBLE) }).map((_, i) => (
+            <div key={i} className="aspect-square bg-gray-100 dark:bg-surface rounded-2xl animate-pulse" />
           ))}
         </div>
-
-        {/* Tab content */}
-        <div className="p-5 sm:p-6">
-          {tab === "info" && (
-            <div className="space-y-4 animate-[fadeUp_0.2s_ease-out]">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-surface dark:bg-surface rounded-xl p-3 text-center">
-                  <p className="text-xs text-muted mb-1">Categoría</p>
-                  <p className="font-bold text-foreground text-sm">{categories.find(c => c.id === product.category)?.label}</p>
-                </div>
-                <div className="bg-surface dark:bg-surface rounded-xl p-3 text-center">
-                  <p className="text-xs text-muted mb-1">Unidad</p>
-                  <p className="font-bold text-foreground text-sm">{product.unit}</p>
-                </div>
-                {product.badge && (
-                  <div className="bg-surface dark:bg-surface rounded-xl p-3 text-center">
-                    <p className="text-xs text-muted mb-1">Etiqueta</p>
-                    <p className="font-bold text-primary text-sm">{product.badge}</p>
-                  </div>
-                )}
-                <div className="bg-surface dark:bg-surface rounded-xl p-3 text-center">
-                  <p className="text-xs text-muted mb-1">Precio</p>
-                  <p className="font-bold text-primary text-sm">S/{product.price.toFixed(2)}/{product.unit}</p>
-                </div>
-              </div>
-              <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-4 border border-primary/10">
-                <p className="text-sm text-foreground font-medium">
-                  🚚 <strong>Delivery gratis</strong> en Pucallpa. Paga con <strong>Yape</strong> o <strong>efectivo</strong> contra entrega.
-                </p>
-              </div>
-            </div>
-          )}
-
-          {tab === "reviews" && (
-            <div className="space-y-3 animate-[fadeUp_0.2s_ease-out]">
-              {reviews.length === 0 ? (
-                <div className="text-center py-8">
-                  <Star className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-muted text-sm">Aún no hay reseñas para este producto</p>
-                  <p className="text-xs text-muted mt-1">¡Sé el primero en opinar!</p>
-                </div>
-              ) : (
-                reviews.map((r, i) => (
-                  <div key={i} className="bg-surface dark:bg-surface rounded-xl p-4 border border-gray-100 dark:border-card-border">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-bold text-sm text-foreground">{r.name}</span>
-                      <div className="flex items-center gap-0.5">
-                        {Array.from({ length: 5 }).map((_, s) => (
-                          <Star key={s} className={cn("h-3.5 w-3.5", s < r.rating ? "text-amber-500 fill-amber-500" : "text-gray-300")} />
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-sm text-muted">{r.comment}</p>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {tab === "related" && (
-            <div className="grid grid-cols-2 gap-3 animate-[fadeUp_0.2s_ease-out]">
-              {relatedProducts.length === 0 ? (
-                <div className="col-span-2 text-center py-8">
-                  <Package className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-muted text-sm">No hay productos relacionados</p>
-                </div>
-              ) : (
-                relatedProducts.map((rp) => (
-                  <div key={rp.id} className="bg-surface dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
-                    <div className="relative aspect-square bg-gray-50 dark:bg-card">
-                      {rp.image && <Image src={rp.image} alt={rp.name} fill className="object-cover" sizes="200px" loading="lazy" />}
-                    </div>
-                    <div className="p-3">
-                      <p className="text-sm font-semibold text-foreground line-clamp-1">{rp.name}</p>
-                      <div className="flex items-center justify-between mt-1.5">
-                        <span className="font-extrabold text-primary text-sm">S/{rp.price.toFixed(2)}</span>
-                        <button
-                          onClick={() => { addItem(rp); showToast(rp.name, rp.image); }}
-                          className="h-7 w-7 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all"
-                          aria-label={`Agregar ${rp.name}`}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -389,8 +338,30 @@ function saveSearchTerm(term: string) {
 function fuzzyScore(text: string, query: string): number {
   if (!query) return 0;
   const t = text.toLowerCase(), q = query.toLowerCase();
-  if (t.includes(q)) return 100 + (q.length / t.length) * 50; // exact substring match gets top score
-  // check if all chars of query appear in order (fuzzy)
+
+  // Exact substring — highest priority
+  if (t.includes(q)) return 100 + (q.length / t.length) * 50;
+
+  // Word-level matching: check how many query words are found in the text
+  const qWords = q.split(/\s+/).filter(Boolean);
+  const tWords = t.split(/\s+/).filter(Boolean);
+  let wordHits = 0;
+  for (const qw of qWords) {
+    if (tWords.some(tw => tw.includes(qw) || qw.includes(tw))) wordHits++;
+  }
+  if (wordHits === qWords.length) return 85;
+  if (wordHits > 0) return 60;
+
+  // Levenshtein tolerance per word (handles 1-2 char typos)
+  let editHits = 0;
+  for (const qw of qWords) {
+    const maxDist = qw.length <= 4 ? 1 : qw.length <= 7 ? 2 : 3;
+    if (tWords.some(tw => levenshteinDistance(qw, tw) <= maxDist)) editHits++;
+  }
+  if (editHits === qWords.length) return 50;
+  if (editHits > 0) return 30;
+
+  // In-order character matching (original fuzzy)
   let ti = 0, qi = 0, score = 0;
   while (ti < t.length && qi < q.length) {
     if (t[ti] === q[qi]) { qi++; score += 10 - ti * 0.1; }
@@ -399,89 +370,26 @@ function fuzzyScore(text: string, query: string): number {
   return qi === q.length ? Math.max(1, score) : 0;
 }
 
-// ── Ver Más Block ─────────────────────────────────────────────────────────────
-function ShowMoreBlock({ onExpand }: { onExpand: () => void }) {
-  const remaining = realCategories.length - INITIAL_SECTIONS;
-  const hiddenCats = realCategories.slice(INITIAL_SECTIONS);
-  return (
-    <div
-      className="relative overflow-hidden rounded-3xl bg-white dark:bg-card border border-gray-100 dark:border-card-border shadow-xl animate-[fadeUp_0.5s_ease-out]"
-    >
-      {/* Top gradient accent bar */}
-      <div className="absolute top-0 left-0 right-0 h-1.5" style={{ background: "linear-gradient(90deg, #6366f1, #f59e0b, #6366f1)" }} />
-      {/* Background decorations */}
-      <div className="absolute -top-14 -right-14 h-56 w-56 rounded-full bg-primary/5 pointer-events-none" />
-      <div className="absolute -bottom-10 -left-10 h-44 w-44 rounded-full bg-secondary/5 pointer-events-none" />
-
-      <div className="relative z-10 flex flex-col lg:flex-row items-center gap-10 px-8 pt-10 pb-12 sm:px-14">
-        {/* Left: text */}
-        <div className="flex-1 text-center lg:text-left">
-          <div className="inline-flex items-center gap-2 bg-primary/8 border border-primary/15 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-primary mb-5">
-            <Sparkles className="h-3.5 w-3.5" />
-            Descubre más
-          </div>
-          <h3 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-3 tracking-tight leading-tight">
-            ¡Hay más para ti!<br />
-            <span className="text-primary">Más categorías</span> disponibles
-          </h3>
-          <p className="text-foreground/60 text-base max-w-sm leading-relaxed mb-5">
-            Tenemos{" "}
-            <span className="text-secondary font-bold">{remaining} categorías más</span>{" "}
-            con todo lo que tu familia necesita.
-          </p>
-
-          {/* Pills */}
-          <div className="flex flex-wrap justify-center lg:justify-start gap-2">
-            {hiddenCats.map((cat) => (
-              <span
-                key={cat.id}
-                className="inline-flex items-center gap-1.5 bg-primary/8 border border-primary/15 text-primary rounded-full px-3.5 py-1.5 text-sm font-semibold"
-              >
-                {cat.emoji} {cat.label}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Right: animated CTA */}
-        <div className="shrink-0 flex flex-col items-center gap-3">
-          <div className="animate-[bounceY_2.5s_ease-in-out_infinite]">
-            <div className="relative">
-              {/* Pulsing ring */}
-              <div className="absolute inset-0 rounded-2xl bg-secondary/40 animate-[pulseRing_2s_ease-in-out_infinite]" />
-              <button
-                onClick={onExpand}
-                className="relative group inline-flex items-center gap-3 bg-secondary text-white rounded-2xl px-10 py-5 font-extrabold text-xl shadow-2xl shadow-secondary/35 hover:bg-[#e8903d] hover:scale-[1.07] active:scale-[0.93] transition-all duration-200"
-              >
-                Ver todo el catálogo
-                <span className="animate-[nudgeX_1s_ease-in-out_infinite]">
-                  <ArrowRight className="h-6 w-6" />
-                </span>
-              </button>
-            </div>
-          </div>
-          <p className="text-foreground/40 text-xs font-medium">
-            {hiddenCats.map((c) => c.label).join(" · ")} y más…
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function ProductCatalog() {
-  const [expanded, setExpanded] = useState(false);
+export default function ProductCatalog({ initialProducts = [] }: { initialProducts?: LiveProduct[] }) {
+  const [expanded, setExpanded] = useState(true);
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("relevancia");
   const [showPriceFilter, setShowPriceFilter] = useState(false);
+  const [filterOnSale, setFilterOnSale] = useState(false);
+  const [filterAvailable, setFilterAvailable] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<LiveProduct | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [suggestions, setSuggestions] = useState<LiveProduct[]>([]);
   const [suggestionIdx, setSuggestionIdx] = useState(-1);
   const [searchPage, setSearchPage] = useState(1);
+  /* U1: Grid/List view toggle */
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    if (typeof window === "undefined") return "grid";
+    return (localStorage.getItem("bsm-view-mode") as "grid" | "list") || "grid";
+  });
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -499,13 +407,18 @@ export default function ProductCatalog() {
     }
   );
 
-  // Compute productList from API data
+  // Compute productList from API data.
+  // Images are always taken from static data (authoritative source) so stale DB photo IDs
+  // never cause 404s even when the DB was seeded before a static-data image fix.
   const productList = useMemo(() => {
     if (apiProducts && Array.isArray(apiProducts) && apiProducts.length > 0) {
-      return apiProducts.filter((p) => p.active !== false);
+      const staticImageMap = new Map(initialProducts.map(p => [p.id, p.image]));
+      return apiProducts
+        .filter((p) => p.active !== false)
+        .map(p => ({ ...p, image: staticImageMap.get(p.id) ?? p.image }));
     }
-    return products; // Fallback to static data
-  }, [apiProducts]);
+    return initialProducts; // Fallback to static data
+  }, [apiProducts, initialProducts]);
 
   // Compute maxPrice from productList
   const maxPrice = useMemo(() => {
@@ -532,20 +445,24 @@ export default function ProductCatalog() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Save search on commit (debounced) + compute suggestions
+  // Save search on commit (debounced) + compute suggestions with debounce
   const searchCommitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const suggestTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
     clearTimeout(searchCommitTimer.current);
+    clearTimeout(suggestTimer.current);
     const term = search.trim();
     if (term.length >= 2) {
-      // Suggestions: top-5 fuzzy matches for the dropdown
-      const scored = productList
-        .map(p => ({ p, score: fuzzyScore(p.name, term) }))
-        .filter(({ score }) => score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 5)
-        .map(({ p }) => p);
-      startTransition(() => { setSuggestions(scored); setSuggestionIdx(-1); });
+      // Debounce suggestions computation (300ms) to avoid CPU work per keystroke
+      suggestTimer.current = setTimeout(() => {
+        const scored = productList
+          .map(p => ({ p, score: fuzzyScore(p.name, term) }))
+          .filter(({ score }) => score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 5)
+          .map(({ p }) => p);
+        startTransition(() => { setSuggestions(scored); setSuggestionIdx(-1); });
+      }, 300);
       searchCommitTimer.current = setTimeout(() => {
         saveSearchTerm(term);
         setSearchHistory(getSearchHistory());
@@ -553,7 +470,10 @@ export default function ProductCatalog() {
     } else {
       startTransition(() => setSuggestions([]));
     }
-    return () => clearTimeout(searchCommitTimer.current);
+    return () => {
+      clearTimeout(searchCommitTimer.current);
+      clearTimeout(suggestTimer.current);
+    };
   }, [search, productList]);
 
   // Listen for category selection events from Header mega menu
@@ -582,15 +502,21 @@ export default function ProductCatalog() {
   // Reset to first page whenever search term or filters change
   useEffect(() => {
     startTransition(() => setSearchPage(1));
-  }, [search, sort, priceRange]);
+  }, [search, sort, priceRange, filterOnSale, filterAvailable]);
 
   const visibleCategories = expanded
     ? realCategories
     : realCategories.slice(0, INITIAL_SECTIONS);
 
-  // Normalize search term
-  const searchTerm = search.trim().toLowerCase();
-  const filteredProducts = sortProducts(
+  // Debounced search term to avoid running fuzzy scoring on every keystroke
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const searchTerm = debouncedSearch;
+  const filteredProducts = useMemo(() => sortProducts(
     (searchTerm
       ? productList
           .map(p => ({ p, score: fuzzyScore(p.name, searchTerm) + fuzzyScore(p.category, searchTerm) }))
@@ -598,9 +524,12 @@ export default function ProductCatalog() {
           .sort((a, b) => b.score - a.score)
           .map(({ p }) => p)
       : productList
-    ).filter(p => p.price >= priceRange[0] && p.price <= priceRange[1]),
+    )
+      .filter(p => p.price >= priceRange[0] && p.price <= priceRange[1])
+      .filter(p => !filterOnSale || (p.badge && /\d+%|oferta|promo|sale/i.test(p.badge)))
+      .filter(p => !filterAvailable || p.stock === undefined || p.stock > 0),
     sort
-  );
+  ), [searchTerm, productList, priceRange, filterOnSale, filterAvailable, sort]);
 
   const handleQuickView = useCallback((p: LiveProduct) => setQuickViewProduct(p), []);
 
@@ -705,6 +634,47 @@ export default function ProductCatalog() {
               <SlidersHorizontal className="h-4 w-4" />
               <span className="hidden sm:inline">Precio</span>
             </button>
+            <button
+              onClick={() => setFilterOnSale(v => !v)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-sm whitespace-nowrap",
+                filterOnSale
+                  ? "border-red-400 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400"
+                  : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-red-400"
+              )}
+            >
+              <span className="hidden sm:inline">🏷️ Oferta</span>
+              <span className="sm:hidden">🏷️</span>
+            </button>
+            <button
+              onClick={() => setFilterAvailable(v => !v)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-sm whitespace-nowrap",
+                filterAvailable
+                  ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400"
+                  : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-emerald-400"
+              )}
+            >
+              <span className="hidden sm:inline">✅ Disponible</span>
+              <span className="sm:hidden">✅</span>
+            </button>
+            {/* U1: Grid/List toggle */}
+            <div className="flex items-center bg-gray-100 dark:bg-accent rounded-xl p-0.5 shadow-sm">
+              <button
+                onClick={() => { setViewMode("grid"); localStorage.setItem("bsm-view-mode", "grid"); }}
+                className={cn("p-2.5 rounded-lg transition-all", viewMode === "grid" ? "bg-white dark:bg-card text-primary shadow-sm" : "text-gray-400 hover:text-gray-600")}
+                aria-label="Vista cuadrícula"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => { setViewMode("list"); localStorage.setItem("bsm-view-mode", "list"); }}
+                className={cn("p-2.5 rounded-lg transition-all", viewMode === "list" ? "bg-white dark:bg-card text-primary shadow-sm" : "text-gray-400 hover:text-gray-600")}
+                aria-label="Vista lista"
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -728,36 +698,68 @@ export default function ProductCatalog() {
 
         {/* Category Filter Pills */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-8 -mx-4 px-4 sm:mx-0 sm:px-0">
-          {realCategories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => {
-                if (!expanded) {
-                  const idx = realCategories.indexOf(cat);
-                  if (idx >= INITIAL_SECTIONS) {
-                    setExpanded(true);
-                    setTimeout(() => {
-                      const el = document.getElementById(`cat-${cat.id}`);
-                      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                    }, 120);
-                  } else {
+          {realCategories.map((cat) => {
+            const theme = getCatTheme(cat.id);
+            return (
+              <a
+                key={cat.id}
+                href={`/tienda/categoria/${cat.id}`}
+                onClick={(e) => {
+                  // If already on the catalog page, scroll instead of navigating
+                  if (window.location.pathname === "/tienda" || window.location.pathname === "/") {
+                    e.preventDefault();
                     const el = document.getElementById(`cat-${cat.id}`);
                     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
                   }
-                } else {
-                  const el = document.getElementById(`cat-${cat.id}`);
-                  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                }
-              }}
-              className="shrink-0 flex items-center gap-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-95 transition-all duration-200 whitespace-nowrap shadow-sm"
-            >
-              <span className="text-base">{cat.emoji}</span>
-              {cat.label}
-            </button>
-          ))}
+                }}
+                className={cn(
+                  "shrink-0 flex items-center gap-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground active:scale-95 transition-all duration-200 whitespace-nowrap shadow-sm",
+                  theme.pillHover
+                )}
+              >
+                <span className="text-base">{cat.emoji}</span>
+                {cat.label}
+              </a>
+            );
+          })}
         </div>
 
-        {/* API error notice — shown only when fetch failed (still shows static fallback data) */}
+        {/* Active filters bar */}
+        {(search || filterOnSale || filterAvailable || (priceRange[0] > 0 || priceRange[1] < maxPrice)) && (
+          <div className="max-w-3xl mx-auto mb-3 flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-semibold text-muted">Filtros activos:</span>
+            {search && (
+              <span className="flex items-center gap-1 text-xs font-semibold bg-primary/10 text-primary px-2.5 py-1 rounded-full">
+                🔍 &ldquo;{search}&rdquo;
+                <button onClick={() => setSearch("")} className="ml-0.5 hover:text-primary-dark"><X className="h-3 w-3" /></button>
+              </span>
+            )}
+            {filterOnSale && (
+              <span className="flex items-center gap-1 text-xs font-semibold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 px-2.5 py-1 rounded-full">
+                🏷️ Oferta
+                <button onClick={() => setFilterOnSale(false)} className="ml-0.5"><X className="h-3 w-3" /></button>
+              </span>
+            )}
+            {filterAvailable && (
+              <span className="flex items-center gap-1 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-full">
+                ✅ Disponible
+                <button onClick={() => setFilterAvailable(false)} className="ml-0.5"><X className="h-3 w-3" /></button>
+              </span>
+            )}
+            {(priceRange[0] > 0 || priceRange[1] < maxPrice) && (
+              <span className="flex items-center gap-1 text-xs font-semibold bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-full">
+                S/{priceRange[0]}–S/{priceRange[1]}
+                <button onClick={() => setPriceRange([0, maxPrice])} className="ml-0.5"><X className="h-3 w-3" /></button>
+              </span>
+            )}
+            <button
+              onClick={() => { setSearch(""); setFilterOnSale(false); setFilterAvailable(false); setPriceRange([0, maxPrice]); }}
+              className="text-xs font-bold text-muted hover:text-foreground ml-auto underline underline-offset-2"
+            >
+              Limpiar todo
+            </button>
+          </div>
+        )}
         {apiError && (
           <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-700/40 text-xs text-amber-700 dark:text-amber-400">
             <span>⚠️ No se pudo cargar el catálogo actualizado. Mostrando datos de muestra.</span>
@@ -780,11 +782,33 @@ export default function ProductCatalog() {
           ) : searchTerm ? (
             // When searching, show all matching products in a flat grid
             filteredProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <Search className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 font-semibold">No se encontraron productos</p>
-                <p className="text-sm text-gray-400 mt-1">Intenta con otro término de búsqueda</p>
-              </div>
+              (() => {
+                // Find the closest product name to suggest
+                const bestMatch = productList
+                  .map(p => ({ p, d: levenshteinDistance(p.name.toLowerCase(), search.trim().toLowerCase()) }))
+                  .sort((a, b) => a.d - b.d)[0];
+                const suggestion = bestMatch && bestMatch.d <= Math.max(3, Math.floor(search.trim().length / 2)) ? bestMatch.p.name : null;
+                return (
+                  <div className="text-center py-12">
+                    <Search className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                    <p className="text-gray-500 font-semibold">No se encontraron productos</p>
+                    {suggestion ? (
+                      <p className="text-sm text-gray-400 mt-2">
+                        ¿Quisiste decir{" "}
+                        <button
+                          onClick={() => setSearch(suggestion)}
+                          className="text-primary font-semibold hover:underline"
+                        >
+                          &ldquo;{suggestion}&rdquo;
+                        </button>
+                        ?
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-400 mt-1">Intenta con otro término de búsqueda</p>
+                    )}
+                  </div>
+                );
+              })()
             ) : (
               <div className="bg-white dark:bg-card rounded-2xl p-5 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -795,9 +819,13 @@ export default function ProductCatalog() {
                     )}
                   </p>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3" : "space-y-2"}>
                   {paginatedSearchProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} onQuickView={handleQuickView} />
+                    viewMode === "list" ? (
+                      <ListProductRow key={product.id} product={product} onQuickView={handleQuickView} />
+                    ) : (
+                      <ProductCard key={product.id} product={product} onQuickView={handleQuickView} />
+                    )
                   ))}
                 </div>
                 {totalSearchPages > 1 && (
@@ -844,17 +872,11 @@ export default function ProductCatalog() {
                 highlight={highlighted === cat.id}
                 productList={productList}
                 onQuickView={handleQuickView}
+                viewMode={viewMode}
               />
             ))
           )}
         </div>
-
-        {/* Ver Más Block */}
-        {!expanded && !searchTerm && (
-          <div className="mt-8">
-            <ShowMoreBlock onExpand={() => setExpanded(true)} />
-          </div>
-        )}
 
         {/* Cart summary CTA (shown when cart has items) */}
         <CartFloatCTA />

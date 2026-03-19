@@ -36,12 +36,17 @@ export default function About() {
               ofrecer productos de primera calidad a precios accesibles, con delivery rápido
               y pago fácil por Yape o efectivo.
             </p>
-            <p className="text-lg text-foreground/70 leading-relaxed mb-8">
+            <p className="text-lg text-foreground/70 leading-relaxed mb-4">
               Hoy somos una tienda de consumo masivo en Pucallpa con entrega a domicilio.
               Vendemos abarrotes, bebidas, golosinas, carne, pollo, productos de limpieza
               y artículos para el hogar. Seleccionamos cuidadosamente cada producto
               para que tú y tu familia disfruten siempre lo mejor. Compra desde casa,
               pedidos online las 24 horas.
+            </p>
+            <p className="text-lg text-foreground/70 leading-relaxed mb-8">
+              Nuestro compromiso: si recibes un producto en mal estado, te lo cambiamos
+              o devolvemos tu dinero. Trabajamos con proveedores locales de Pucallpa y Ucayali
+              para garantizar frescura y los mejores precios de la zona.
             </p>
 
             <div className="flex flex-wrap gap-4">

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, X } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Wallet, Loader2, Plus, Trash2, Calendar, TrendingUp, X, BarChart2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Expense = { id: string; category: string; description: string; amount: number; date: string; recurring: boolean };
@@ -27,6 +27,7 @@ export default function ExpensesTab() {
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [tick, setTick] = useState(0);
+  const [historicExpenses, setHistoricExpenses] = useState<Expense[]>([]);
 
   // filters
   const [from, setFrom] = useState(() => {
@@ -54,6 +55,33 @@ export default function ExpensesTab() {
     }).catch(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [from, to, tick]);
+
+  // Fetch last 6 months for the comparison chart (independent of date filter)
+  useEffect(() => {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+    sixMonthsAgo.setDate(1);
+    const fromStr = sixMonthsAgo.toISOString().slice(0, 10);
+    const toStr = new Date().toISOString().slice(0, 10);
+    fetch(`/api/expenses?from=${fromStr}&to=${toStr}&limit=1000`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setHistoricExpenses(data))
+      .catch(() => {});
+  }, [tick]);
+
+  const monthlyExpenseData = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+      const total = historicExpenses
+        .filter(e => {
+          const ed = new Date(e.date);
+          return ed.getMonth() === d.getMonth() && ed.getFullYear() === d.getFullYear();
+        })
+        .reduce((s, e) => s + e.amount, 0);
+      return { label: d.toLocaleDateString("es-PE", { month: "short" }), total };
+    });
+  }, [historicExpenses]);
 
   const add = async () => {
     if (!form.description || !form.amount || Number(form.amount) <= 0) return;
@@ -121,6 +149,38 @@ export default function ExpensesTab() {
         </div>
       )}
 
+      {/* Monthly expense trend chart */}
+      {monthlyExpenseData.some(m => m.total > 0) && (() => {
+        const maxVal = Math.max(...monthlyExpenseData.map(m => m.total), 1);
+        return (
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart2 className="h-4 w-4 text-primary" />
+              <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground">Gastos mensuales (6 meses)</h3>
+            </div>
+            <div className="flex items-end gap-2 h-28">
+              {monthlyExpenseData.map((m, i) => {
+                const barH = m.total > 0 ? Math.max((m.total / maxVal) * 80, 4) : 4;
+                const isCurrent = i === 5;
+                return (
+                  <div key={i} className="flex flex-col items-center gap-1 flex-1 group">
+                    <span className="text-[9px] font-bold text-gray-400 dark:text-muted opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      S/{m.total.toFixed(0)}
+                    </span>
+                    <div
+                      className={cn("w-full rounded-t-md transition-all", isCurrent ? "bg-red-500" : "bg-red-300/70 dark:bg-red-400/40")}
+                      style={{ height: `${barH}px`, opacity: m.total > 0 ? 1 : 0.25 }}
+                      title={`${m.label}: S/${m.total.toFixed(2)}`}
+                    />
+                    <p className="text-[10px] text-gray-400 dark:text-muted capitalize">{m.label}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
@@ -176,3 +236,4 @@ export default function ExpensesTab() {
     </div>
   );
 }
+

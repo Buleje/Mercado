@@ -1,15 +1,17 @@
 "use client";
 
-import { useRef, useEffect, useState, startTransition } from "react";
+import { useRef, useEffect, useState, startTransition, useCallback } from "react";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
-import { X, Plus, Minus, Trash2, ShoppingCart, MessageCircle, Clipboard, Share2, CheckCircle2, Download, MessageCircleOff, Package, Tag, Truck } from "lucide-react";
+import { X, Plus, Minus, Trash2, ShoppingCart, MessageCircle, Clipboard, Share2, CheckCircle2, Download, MessageCircleOff, Package, Tag, Truck, Gift, Link2, Printer, Clock } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
 import { useSettings } from "@/contexts/settings-context";
 import { usePromotions } from "@/contexts/promotions-context";
 import { sendOrder, type SendResult } from "@/lib/order-utils";
+import { products as allProducts } from "@/data/products";
+import CartUpsellSection from "@/components/CartUpsellSection";
 
 /** Renders a cart item image with graceful error fallback */
 function CartItemImage({ src, alt }: { src: string; alt: string }) {
@@ -34,7 +36,7 @@ function CartItemImage({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function CartSidebar() {
-  const { items, isOpen, count, total, close, removeItem, updateQty, clear, markOrderPending, openConfirmModal, clearPendingOrder, openCheckout } =
+  const { items, isOpen, count, total, close, removeItem, updateQty, setItemNote, clear, markOrderPending, openConfirmModal, clearPendingOrder, openCheckout, addItem } =
     useCart();
   const { customer } = useCustomer();
   const { mode } = useSettings();
@@ -43,9 +45,138 @@ export default function CartSidebar() {
   const [sendResult, setSendResult] = useState<SendResult | null>(null);
   const [sending, setSending] = useState(false);
 
+  /* Y4: WhatsApp message preview */
+  const [showPreview, setShowPreview] = useState(false);
+
+  /* Z3: Coupon field in cart */
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponMsg, setCouponMsg] = useState("");
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+
+  /* Smart cross-sell: real co-purchase data */
+  type CoPurchased = { id: number; name: string; image: string; price: number; unit: string };
+  const [coPurchased, setCoPurchased] = useState<CoPurchased[]>([]);
+  const coPurchaseRef = useRef("");
+
+  const fetchCoPurchased = useCallback(async (ids: number[]) => {
+    const key = ids.sort().join(",");
+    if (key === coPurchaseRef.current || ids.length === 0) return;
+    coPurchaseRef.current = key;
+    try {
+      const res = await fetch(`/api/products/co-purchased?ids=${key}&limit=4`);
+      if (res.ok) {
+        const data = await res.json();
+        startTransition(() => setCoPurchased(Array.isArray(data) ? data : []));
+      }
+    } catch { /* silent */ }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && items.length > 0) {
+      const ids = items.map(i => i.id).filter(id => id > 0);
+      fetchCoPurchased(ids);
+    }
+  }, [isOpen, items, fetchCoPurchased]);
+  const validateCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setValidatingCoupon(true);
+    setCouponMsg("");
+    try {
+      const res = await fetch("/api/coupons/validate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: couponCode.trim(), cartTotal: total }) });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        setCouponDiscount(data.discount ?? 0);
+        setCouponMsg(`✅ -S/${(data.discount ?? 0).toFixed(2)}`);
+      } else {
+        setCouponDiscount(0);
+        setCouponMsg(data.message ?? "Cupón inválido");
+      }
+    } catch { setCouponMsg("Error al validar"); setCouponDiscount(0); }
+    setValidatingCoupon(false);
+  };
+
+  /* Z4: Print cart as shopping list */
+  const printCart = () => {
+    const now = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
+    const rows = items.map((i, idx) => `<tr><td style="padding:4px 8px;border-bottom:1px solid #eee">${idx + 1}</td><td style="padding:4px 8px;border-bottom:1px solid #eee">${i.name}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:center">${i.quantity}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right">S/${(i.price * i.quantity).toFixed(2)}</td></tr>`).join("");
+    const html = `<html><head><title>Lista de compras</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#1a1a1a}table{width:100%;border-collapse:collapse}th{text-align:left;padding:6px 8px;border-bottom:2px solid #333;font-size:13px}td{font-size:12px}.total{margin-top:12px;text-align:right;font-size:16px;font-weight:bold}h2{margin:0 0 4px}p{margin:0 0 12px;color:#666;font-size:12px}@media print{body{padding:12px}}</style></head><body><h2>🛒 Bodega San Martín</h2><p>Lista de compras — ${now}</p><table><thead><tr><th>#</th><th>Producto</th><th style="text-align:center">Cant.</th><th style="text-align:right">Subtotal</th></tr></thead><tbody>${rows}</tbody></table>${discount > 0 ? `<p class="total" style="font-size:13px;color:#888">Desc. promo: -S/${discount.toFixed(2)}</p>` : ""}${couponDiscount > 0 ? `<p class="total" style="font-size:13px;color:#888">Cupón: -S/${couponDiscount.toFixed(2)}</p>` : ""}<p class="total">Total: S/${finalTotal.toFixed(2)}</p></body></html>`;
+    const w = window.open("", "_blank", "width=400,height=600");
+    if (w) { w.document.write(html); w.document.close(); w.print(); }
+  };
+
+  /* W2: First order detection */
+
+  /* AB2: Cart reservation timer (30 min from first item add) */
+  const [reserveTime, setReserveTime] = useState("");
+  const CART_RESERVE_KEY = "bsm-cart-reserve-start";
+  useEffect(() => {
+    if (items.length === 0) { setReserveTime(""); try { localStorage.removeItem(CART_RESERVE_KEY); } catch {} return; }
+    let start = Number(localStorage.getItem(CART_RESERVE_KEY));
+    if (!start || start < Date.now() - 30 * 60_000) {
+      start = Date.now();
+      localStorage.setItem(CART_RESERVE_KEY, String(start));
+    }
+    const calc = () => {
+      const left = 30 * 60_000 - (Date.now() - start);
+      if (left <= 0) { setReserveTime(""); return; }
+      const m = Math.floor(left / 60000);
+      const s = Math.floor((left % 60000) / 1000);
+      setReserveTime(`${m}:${String(s).padStart(2, "0")}`);
+    };
+    calc();
+    const t = setInterval(calc, 1000);
+    return () => clearInterval(t);
+  }, [items.length]);
+  const [isFirstOrder, setIsFirstOrder] = useState(false);
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const hasOrdered = localStorage.getItem("bsm-has-ordered");
+      setIsFirstOrder(!hasOrdered);
+    } catch { /* silent */ }
+  }, [isOpen]);
+
+  /* W3: Share cart link */
+  const [linkCopied, setLinkCopied] = useState(false);
+  const shareCart = () => {
+    if (!items.length) return;
+    const payload = items.map(i => `${i.id}:${i.quantity}`).join(",");
+    const url = `${window.location.origin}/tienda?cart=${encodeURIComponent(payload)}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2500);
+    }).catch(() => { /* clipboard denied */ });
+  };
+
+  /* W3: Hydrate cart from shared link */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const cartParam = params.get("cart");
+    if (!cartParam) return;
+    // Remove param from URL so it doesn't re-trigger
+    const url = new URL(window.location.href);
+    url.searchParams.delete("cart");
+    window.history.replaceState({}, "", url.toString());
+    // Parse and add items
+    const entries = cartParam.split(",");
+    for (const entry of entries) {
+      const [id, qtyStr] = entry.split(":");
+      const qty = parseInt(qtyStr, 10);
+      if (!id || !qty || qty < 1) continue;
+      const numId = Number(id);
+      const product = allProducts.find(p => p.id === numId);
+      if (product) {
+        for (let i = 0; i < qty; i++) addItem(product);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const promo = getBestPromotion(total, customer?.phone);
   const discount = promo ? total * (promo.discountPercent / 100) : 0;
-  const finalTotal = total - discount;
+  const finalTotal = total - discount - couponDiscount;
 
   // Reset state when cart is closed
   useEffect(() => {
@@ -82,7 +213,7 @@ export default function CartSidebar() {
     markOrderPending();
     // Dispatch order tracking event so OrderProgress widget appears
     const orderId = `WA-${Date.now().toString(36).toUpperCase()}`;
-    window.dispatchEvent(new CustomEvent("bsm:orderCreated", { detail: { orderId } }));
+    window.dispatchEvent(new CustomEvent("bsm:orderCreated", { detail: { orderId, customerName: customer?.name } }));
     setTimeout(() => openConfirmModal(), 1800);
   };
 
@@ -98,7 +229,7 @@ export default function CartSidebar() {
             transition={{ duration: 0.2 }}
             onClick={close}
             aria-hidden="true"
-            className="fixed inset-0 z-6000 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-6000 bg-black/50 sm:backdrop-blur-sm"
           />
 
           {/* Panel */}
@@ -117,10 +248,15 @@ export default function CartSidebar() {
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b bg-primary/5">
               <div className="flex items-center gap-3">
                 <ShoppingCart className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-bold text-foreground">
-                  Tu Carrito{" "}
-                  <span className="text-primary">({count})</span>
-                </h2>
+                <div>
+                  <h2 className="text-lg font-bold text-foreground">
+                    Tu Carrito{" "}
+                    <span className="text-primary">({count})</span>
+                  </h2>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider ${mode === "checkout" ? "text-primary" : "text-emerald-600"}`}>
+                    {mode === "checkout" ? "Pedido en línea" : "Pedido por WhatsApp"}
+                  </span>
+                </div>
               </div>
               <button
                 onClick={close}
@@ -181,11 +317,34 @@ export default function CartSidebar() {
                   </button>
                 </div>
               ) : (
-                items.map((item) => (
+                <>
+                {/* T2: Birthday discount banner */}
+                {(() => {
+                  if (!customer?.birthday) return null;
+                  const now = new Date();
+                  const today = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+                  if (customer.birthday !== today) return null;
+                  return (
+                    <div className="mx-1 mb-2 flex items-center gap-2.5 rounded-xl bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800/30 px-3 py-2.5">
+                      <span className="text-xl">🎂</span>
+                      <div>
+                        <p className="text-xs font-bold text-pink-700 dark:text-pink-300">¡Feliz cumpleaños, {customer.name?.split(" ")[0]}!</p>
+                        <p className="text-[10px] text-pink-500 dark:text-pink-400">Tienes 10% de descuento hoy — aplica automático al pagar</p>
+                      </div>
+                    </div>
+                  );
+                })()}
+                {items.map((item) => (
                   <div
                     key={item.id}
-                    className="flex gap-3 bg-gray-50 dark:bg-card rounded-xl p-3"
+                    className={`flex gap-3 bg-gray-50 dark:bg-card rounded-xl p-3 relative${(item as { stock?: number }).stock === 0 ? " opacity-50" : ""}`}
                   >
+                    {/* Out of stock overlay */}
+                    {(item as { stock?: number }).stock === 0 && (
+                      <div className="absolute inset-0 z-10 bg-white/60 dark:bg-black/40 rounded-xl flex items-center justify-center">
+                        <span className="text-xs font-bold text-red-600 bg-red-50 dark:bg-red-900/30 px-3 py-1 rounded-full">Agotado</span>
+                      </div>
+                    )}
                     {/* Image */}
                     <div className="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden bg-white">
                       <CartItemImage src={item.image} alt={item.name} />
@@ -196,6 +355,21 @@ export default function CartSidebar() {
                       <h3 className="font-semibold text-sm text-foreground leading-tight line-clamp-2">
                         {item.name}
                       </h3>
+                      {(item as { stock?: number }).stock != null &&
+                        (item as { stock?: number }).stock! > 0 &&
+                        (item as { stock?: number }).stock! <= 5 && (
+                          <p className="text-[10px] text-amber-500 font-semibold mt-0.5 flex items-center gap-1">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                            ¡Solo {(item as { stock?: number }).stock} en stock!
+                          </p>
+                        )}
+                      {(item as { stock?: number }).stock != null &&
+                        (item as { stock?: number }).stock! > 0 &&
+                        item.quantity >= (item as { stock?: number }).stock! && (
+                          <p className="text-[10px] text-red-500 font-semibold mt-0.5">
+                            Máximo disponible alcanzado
+                          </p>
+                        )}
                       <p className="text-xs text-muted mt-0.5">
                         S/{item.price.toFixed(2)} / {item.unit}
                       </p>
@@ -207,23 +381,28 @@ export default function CartSidebar() {
                             onClick={() =>
                               updateQty(item.id, item.quantity - 1)
                             }
-                            className="p-1.5 hover:bg-gray-50 rounded-l-lg transition-colors"
+                            className="p-2.5 hover:bg-gray-50 rounded-l-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                             aria-label="Reducir cantidad"
                           >
-                            <Minus className="h-3.5 w-3.5 text-muted" />
+                            <Minus className="h-4 w-4 text-muted" />
                           </button>
                           <span className="px-3 text-sm font-semibold min-w-8 text-center">
                             {item.quantity}
                           </span>
-                          <button
-                            onClick={() =>
-                              updateQty(item.id, item.quantity + 1)
-                            }
-                            className="p-1.5 hover:bg-gray-50 rounded-r-lg transition-colors"
-                            aria-label="Aumentar cantidad"
-                          >
-                            <Plus className="h-3.5 w-3.5 text-muted" />
-                          </button>
+                          {(() => {
+                            const stock = (item as { stock?: number }).stock;
+                            const atMax = stock != null && stock > 0 && item.quantity >= stock;
+                            return (
+                              <button
+                                onClick={() => !atMax && updateQty(item.id, item.quantity + 1)}
+                                disabled={atMax}
+                                className={`p-2.5 rounded-r-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${atMax ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"}`}
+                                aria-label="Aumentar cantidad"
+                              >
+                                <Plus className="h-4 w-4 text-muted" />
+                              </button>
+                            );
+                          })()}
                         </div>
 
                         {/* Subtotal + Delete */}
@@ -233,22 +412,48 @@ export default function CartSidebar() {
                           </span>
                           <button
                             onClick={() => removeItem(item.id)}
-                            className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                             aria-label={`Eliminar ${item.name}`}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-5 w-5" />
                           </button>
                         </div>
                       </div>
+                      {/* Q1 — Per-item note */}
+                      <input
+                        type="text"
+                        value={item.note ?? ""}
+                        onChange={e => setItemNote(item.id, e.target.value)}
+                        placeholder="Nota: ej. sin cebolla, bien maduro…"
+                        maxLength={80}
+                        className="mt-1.5 w-full text-[11px] text-gray-600 dark:text-muted placeholder:text-gray-300 bg-white dark:bg-surface border border-gray-100 dark:border-card-border rounded-lg px-2.5 py-1.5 outline-none focus:border-primary/40 transition-colors"
+                      />
                     </div>
                   </div>
-                ))
+                ))}
+                </>
               )}
             </div>
 
             {/* Footer */}
             {items.length > 0 && (
               <div className="border-t dark:border-card-border px-4 sm:px-6 py-4 sm:py-5 pb-safe space-y-3 sm:space-y-4 bg-white dark:bg-background shrink-0">
+
+            {/* AB2: Cart reservation timer */}
+                {reserveTime && (
+                  <div className="flex items-center justify-center gap-1.5 text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/10 rounded-lg px-3 py-1.5 border border-amber-100 dark:border-amber-700/20">
+                    <Clock className="h-3 w-3" />
+                    Tu carrito se reserva por <span className="font-bold tabular-nums">{reserveTime}</span>
+                  </div>
+                )}
+
+            {/* Collapsible details section */}
+                <details className="group">
+                  <summary className="flex items-center justify-between cursor-pointer list-none text-xs font-semibold text-primary hover:text-primary-dark transition-colors py-1">
+                    <span>Ver descuentos y detalles</span>
+                    <svg className="h-4 w-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                  </summary>
+                  <div className="space-y-3 pt-2">
 
             {/* Promotion banner */}
                 {promo && (
@@ -259,6 +464,17 @@ export default function CartSidebar() {
                       <p className="text-xs text-emerald-600">-{promo.discountPercent}% aplicado</p>
                     </div>
                     <p className="font-bold text-emerald-700 text-sm shrink-0">-S/{discount.toFixed(2)}</p>
+                  </div>
+                )}
+
+                {/* W2: First order discount banner */}
+                {isFirstOrder && !promo && items.length > 0 && (
+                  <div className="flex items-center gap-2 bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-700/30 rounded-xl px-3 py-2.5">
+                    <Gift className="h-4 w-4 text-violet-600 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-violet-700 dark:text-violet-300">¡Es tu primera compra! 🎉</p>
+                      <p className="text-[10px] text-violet-600 dark:text-violet-400">Realiza tu pedido y recibe un regalo sorpresa en tu primera entrega</p>
+                    </div>
                   </div>
                 )}
 
@@ -320,13 +536,51 @@ export default function CartSidebar() {
                   );
                 })()}
 
+                {/* F3 — Loyalty points preview */}
+                {customer && finalTotal > 0 && (
+                  <div className="flex items-center gap-2 bg-violet-50 dark:bg-violet-950/30 rounded-xl px-3 py-2.5 border border-violet-100 dark:border-violet-800/30">
+                    <span className="text-base leading-none">⭐</span>
+                    <span className="text-xs text-violet-700 dark:text-violet-300">
+                      Ganarás ~<span className="font-bold">{Math.floor(finalTotal / 10) * 5} pts</span> con este pedido
+                    </span>
+                  </div>
+                )}
+
+                {/* I3 — Enhanced upsell: threshold push + combos + co-purchased */}
+                <CartUpsellSection
+                  items={items}
+                  cartTotal={finalTotal}
+                  coPurchased={coPurchased}
+                  onAddItem={addItem}
+                />
+
+                  </div>
+                </details>
+
+                {/* Z3: Coupon field */}
+                <div>
+                  <button onClick={() => setCouponOpen(o => !o)} className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                    <Tag className="h-3.5 w-3.5" />
+                    {couponDiscount > 0 ? `Cupón aplicado (-S/${couponDiscount.toFixed(2)})` : "¿Tienes un cupón?"}
+                  </button>
+                  {couponOpen && (
+                    <div className="mt-2 flex gap-2">
+                      <input value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder="Código" className="flex-1 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-accent/30 px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary" onKeyDown={e => e.key === "Enter" && validateCoupon()} />
+                      <button onClick={validateCoupon} disabled={validatingCoupon || !couponCode.trim()} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
+                        {validatingCoupon ? "..." : "Aplicar"}
+                      </button>
+                    </div>
+                  )}
+                  {couponMsg && <p className={`text-[10px] mt-1 ${couponDiscount > 0 ? "text-green-600" : "text-red-500"}`}>{couponMsg}</p>}
+                </div>
+
                 {/* Total */}
                 <div className="flex items-center justify-between">
                   <span className="text-base font-semibold text-muted">
                     Total
                   </span>
                   <div className="text-right">
-                    {promo && (
+                    {(promo || couponDiscount > 0) && (
                       <p className="text-sm text-gray-400 line-through leading-none mb-0.5">
                         S/{total.toFixed(2)}
                       </p>
@@ -351,7 +605,7 @@ export default function CartSidebar() {
                 ) : (
 
                   <m.button
-                    onClick={handleOrder}
+                    onClick={() => setShowPreview(true)}
                     disabled={sending}
                     whileHover={{ scale: sending ? 1 : 1.02 }}
                     whileTap={{ scale: sending ? 1 : 0.97 }}
@@ -372,6 +626,62 @@ export default function CartSidebar() {
                     )}
                   </m.button>
                 )}
+
+                {/* Y4: WhatsApp message preview */}
+                <AnimatePresence>
+                  {showPreview && !sending && (
+                    <m.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="rounded-xl border border-[#25D366]/30 bg-[#dcf8c6] dark:bg-[#005c4b]/30 p-3 space-y-2">
+                        <p className="text-[10px] font-bold text-[#075e54] dark:text-emerald-400 uppercase tracking-wide">Vista previa del mensaje</p>
+                        <div className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono leading-relaxed max-h-32 overflow-y-auto">
+                          {`🛒 *Pedido — Bodega San Martín*\n\n${items.map(i => `• ${i.quantity}× ${i.name} — S/${(i.price * i.quantity).toFixed(2)}`).join("\n")}\n\n💰 *Total: S/${finalTotal.toFixed(2)}*${promo ? `\n🏷️ Descuento: -S/${discount.toFixed(2)}` : ""}${couponDiscount > 0 ? `\n🎟️ Cupón: -S/${couponDiscount.toFixed(2)}` : ""}`}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setShowPreview(false)}
+                            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-xs font-semibold text-muted hover:bg-white/50 transition-colors"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => { setShowPreview(false); handleOrder(); }}
+                            className="flex-1 py-2 rounded-lg bg-[#25D366] text-white text-xs font-bold hover:bg-[#20BD5A] transition-colors"
+                          >
+                            Confirmar y enviar
+                          </button>
+                        </div>
+                      </div>
+                    </m.div>
+                  )}
+                </AnimatePresence>
+
+                {/* W3: Share cart link */}
+                {items.length > 0 && (
+                  <button
+                    onClick={shareCart}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary/10 transition-colors"
+                  >
+                    <Link2 className="h-4 w-4" />
+                    {linkCopied ? "¡Link copiado!" : "Compartir carrito"}
+                  </button>
+                )}
+
+                {/* Z4: Print cart */}
+                {items.length > 0 && (
+                  <button
+                    onClick={printCart}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-accent/30 px-4 py-2 text-xs font-semibold text-muted hover:bg-gray-100 dark:hover:bg-accent/50 transition-colors"
+                  >
+                    <Printer className="h-3.5 w-3.5" />
+                    Imprimir lista de compras
+                  </button>
+                )}
+
                 <AnimatePresence>
                   {sendResult && (
                     <m.div

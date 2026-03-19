@@ -1,0 +1,59 @@
+version: 2
+
+updates:
+  # ── npm dependencies ──────────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/bodega-san-martin"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Lima"
+    open-pull-requests-limit: 10
+    # Automatically merge patch-level updates; review minor/major manually
+    versioning-strategy: auto
+    groups:
+      # Batch all Next.js / React updates together
+      nextjs:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      # Batch all Prisma updates together
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+      # Batch all testing tooling updates together
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "@testing-library/*"
+          - "playwright"
+          - "@playwright/*"
+      # Batch all Tailwind updates together
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+    ignore:
+      # Pin major versions — review these manually
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+
+  # ── GitHub Actions ────────────────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Lima"
+    open-pull-requests-limit: 5

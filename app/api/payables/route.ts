@@ -4,7 +4,7 @@ import { PayablesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
   try {

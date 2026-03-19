@@ -6,11 +6,17 @@ import {
   useReducer,
   useEffect,
   useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 import type { Product } from "@/data/products";
 
-export type CartItem = Product & { quantity: number };
+// Unique identifier for this browser tab — prevents BroadcastChannel self-echo loop
+const TAB_ID = typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+
+const MAX_QTY = 20;
+
+export type CartItem = Product & { quantity: number; note?: string };
 
 type CartState = {
   items: CartItem[];
@@ -36,7 +42,8 @@ type CartAction =
   | { type: "OPEN_CONFIRM_MODAL"; fromCheckout?: boolean }
   | { type: "CLOSE_CONFIRM_MODAL" }
   | { type: "OPEN_CHECKOUT" }
-  | { type: "CLOSE_CHECKOUT" };
+  | { type: "CLOSE_CHECKOUT" }
+  | { type: "SET_ITEM_NOTE"; payload: { id: number; note: string } };
 
 function reducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
@@ -55,6 +62,7 @@ function reducer(state: CartState, action: CartAction): CartState {
     case "ADD_ITEM": {
       const existing = state.items.find((i) => i.id === action.payload.id);
       if (existing) {
+        if (existing.quantity >= MAX_QTY) return state;
         return {
           ...state,
           items: state.items.map((i) =>
@@ -72,9 +80,9 @@ function reducer(state: CartState, action: CartAction): CartState {
       for (const entry of action.payload) {
         const idx = items.findIndex((i) => i.id === entry.product.id);
         if (idx >= 0) {
-          items[idx] = { ...items[idx], quantity: items[idx].quantity + entry.quantity };
+          items[idx] = { ...items[idx], quantity: Math.min(items[idx].quantity + entry.quantity, MAX_QTY) };
         } else {
-          items.push({ ...entry.product, quantity: entry.quantity });
+          items.push({ ...entry.product, quantity: Math.min(entry.quantity, MAX_QTY) });
         }
       }
       return { ...state, items };
@@ -88,7 +96,7 @@ function reducer(state: CartState, action: CartAction): CartState {
       return {
         ...state,
         items: state.items.map((i) =>
-          i.id === action.payload.id ? { ...i, quantity: action.payload.qty } : i
+          i.id === action.payload.id ? { ...i, quantity: Math.min(action.payload.qty, MAX_QTY) } : i
         ),
       };
     }
@@ -102,6 +110,8 @@ function reducer(state: CartState, action: CartAction): CartState {
       return { ...state, isOpen: false };
     case "HYDRATE":
       return { ...state, items: action.payload };
+    case "SET_ITEM_NOTE":
+      return { ...state, items: state.items.map(i => i.id === action.payload.id ? { ...i, note: action.payload.note || undefined } : i) };
     default:
       return state;
   }
@@ -126,6 +136,7 @@ type CartCtx = {
   addMultiple: (items: { product: Product; quantity: number }[]) => void;
   removeItem: (id: number) => void;
   updateQty: (id: number, qty: number) => void;
+  setItemNote: (id: number, note: string) => void;
   clear: () => void;
   toggle: () => void;
   open: () => void;
@@ -138,6 +149,7 @@ const defaultState: CartState = { items: [], isOpen: false, hasPendingOrder: fal
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, defaultState);
+  const hydratedRef = useRef(false);
 
   // Hydrate from localStorage after mount to avoid SSR/client mismatch
   useEffect(() => {
@@ -168,6 +180,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch {}
+    // Mark hydration complete AFTER all dispatches above
+    hydratedRef.current = true;
   }, []);
 
   // Multi-tab cart sync with BroadcastChannel API
@@ -178,9 +192,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const channel = new BroadcastChannel("bsm-cart-sync");
 
-    // Listen to messages from other tabs
+    // Listen to messages from other tabs (skip own messages to avoid self-echo loop)
     const handleMessage = (event: MessageEvent) => {
       if (!event.data || typeof event.data !== "object") return;
+      if (event.data.tabId === TAB_ID) return;
 
       const { type, payload } = event.data;
 
@@ -212,8 +227,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Persist to localStorage
+  // Persist to localStorage — only after hydration to prevent overwriting saved cart
   useEffect(() => {
+    if (!hydratedRef.current) return;
     localStorage.setItem("bsm-cart", JSON.stringify(state.items));
     // Track last-modified timestamp for abandoned-cart recovery
     if (state.items.length > 0) {
@@ -227,13 +243,61 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined" && "BroadcastChannel" in window) {
       try {
         const channel = new BroadcastChannel("bsm-cart-sync");
-        channel.postMessage({ type: "CART_UPDATE", payload: state.items });
+        channel.postMessage({ type: "CART_UPDATE", payload: state.items, tabId: TAB_ID });
         channel.close();
       } catch {
         // Silently fail if BroadcastChannel fails
       }
     }
   }, [state.items]);
+
+  // Sync cart to server when customer is identified (debounced)
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    const phone = (() => {
+      try {
+        const c = localStorage.getItem("bsm-customer");
+        if (c) { const p = JSON.parse(c); return p?.phone?.replace(/\D/g, ""); }
+      } catch { /* ignore */ }
+      return null;
+    })();
+    if (!phone || phone.length < 6 || state.items.length === 0) return;
+
+    const timeout = setTimeout(() => {
+      fetch(`/api/cart/${encodeURIComponent(phone)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: state.items }),
+      }).catch(() => { /* silent — local cart is primary */ });
+    }, 2000); // 2s debounce
+
+    return () => clearTimeout(timeout);
+  }, [state.items]);
+
+  // On mount: if customer is identified, try to restore from server if local is empty
+  useEffect(() => {
+    const phone = (() => {
+      try {
+        const c = localStorage.getItem("bsm-customer");
+        if (c) { const p = JSON.parse(c); return p?.phone?.replace(/\D/g, ""); }
+      } catch { /* ignore */ }
+      return null;
+    })();
+    if (!phone || phone.length < 6) return;
+
+    const localCart = localStorage.getItem("bsm-cart");
+    const localItems = localCart ? JSON.parse(localCart) : [];
+    if (Array.isArray(localItems) && localItems.length > 0) return; // local has items, skip
+
+    fetch(`/api/cart/${encodeURIComponent(phone)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data.items) && data.items.length > 0) {
+          dispatch({ type: "HYDRATE", payload: data.items });
+        }
+      })
+      .catch(() => { /* silent */ });
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("bsm-pending", state.hasPendingOrder ? "1" : "0");
@@ -242,7 +306,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined" && "BroadcastChannel" in window) {
       try {
         const channel = new BroadcastChannel("bsm-cart-sync");
-        channel.postMessage({ type: "PENDING_STATUS", payload: state.hasPendingOrder });
+        channel.postMessage({ type: "PENDING_STATUS", payload: state.hasPendingOrder, tabId: TAB_ID });
         channel.close();
       } catch {
         // Silently fail
@@ -253,13 +317,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const count = state.items.reduce((acc, i) => acc + i.quantity, 0);
   const total = state.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
 
-  const addItem = useCallback((p: Product) => dispatch({ type: "ADD_ITEM", payload: p }), []);
+  const addItem = useCallback((p: Product) => {
+    dispatch({ type: "ADD_ITEM", payload: p });
+    /* W4: Play pop sound on add */
+    try {
+      const ac = new AudioContext();
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(880, ac.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1400, ac.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.18, ac.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.12);
+      osc.start(ac.currentTime);
+      osc.stop(ac.currentTime + 0.12);
+    } catch { /* audio not available */ }
+  }, []);
   const addMultiple = useCallback((items: { product: Product; quantity: number }[]) => dispatch({ type: "ADD_MULTIPLE", payload: items }), []);
   const removeItem = useCallback((id: number) => dispatch({ type: "REMOVE_ITEM", payload: id }), []);
   const updateQty = useCallback(
     (id: number, qty: number) => dispatch({ type: "UPDATE_QTY", payload: { id, qty } }),
     []
   );
+  const setItemNote = useCallback((id: number, note: string) => dispatch({ type: "SET_ITEM_NOTE", payload: { id, note } }), []);
   const clear = useCallback(() => dispatch({ type: "CLEAR" }), []);
   const toggle = useCallback(() => dispatch({ type: "TOGGLE" }), []);
   const openCart = useCallback(() => dispatch({ type: "OPEN" }), []);
@@ -273,7 +355,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ items: state.items, isOpen: state.isOpen, count, total, hasPendingOrder: state.hasPendingOrder, confirmModalOpen: state.confirmModalOpen, confirmFromCheckout: state.confirmFromCheckout, checkoutOpen: state.checkoutOpen, markOrderPending, clearPendingOrder, openConfirmModal, closeConfirmModal, openCheckout, closeCheckout, addItem, addMultiple, removeItem, updateQty, clear, toggle, open: openCart, close }}
+      value={{ items: state.items, isOpen: state.isOpen, count, total, hasPendingOrder: state.hasPendingOrder, confirmModalOpen: state.confirmModalOpen, confirmFromCheckout: state.confirmFromCheckout, checkoutOpen: state.checkoutOpen, markOrderPending, clearPendingOrder, openConfirmModal, closeConfirmModal, openCheckout, closeCheckout, addItem, addMultiple, removeItem, updateQty, setItemNote, clear, toggle, open: openCart, close }}
     >
       {children}
     </CartContext.Provider>

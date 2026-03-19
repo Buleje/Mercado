@@ -33,6 +33,25 @@ function renderItems(items: OrderItem[]): string {
 const PAYMENT_LABELS: Record<string, string> = { efectivo: "Efectivo 💵", yape: "Yape 📱", plin: "Plin 📲", tarjeta: "Tarjeta 💳" };
 
 const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
+  pendiente: (o) => {
+    const items = o.items?.length ? `\n\n*Tu pedido:*\n${renderItems(o.items)}\n\n` : "\n\n";
+    const pay = o.paymentMethod ? `💳 Pago: ${PAYMENT_LABELS[o.paymentMethod] ?? o.paymentMethod}\n` : "";
+    return (
+      `🏪 *Bodega San Martín*\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `📋 *PEDIDO RECIBIDO*\n` +
+      `Pedido #${shortId(o.id)}\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `Hola *${o.customerName}* 👋 ¡Recibimos tu pedido!` +
+      items +
+      `💰 *Total: S/${o.total.toFixed(2)}*\n` +
+      pay +
+      `⏳ Estamos procesando tu pedido. Te avisamos cuando sea confirmado.\n\n` +
+      `📍 Seguimiento en tiempo real:\n${getTrackingUrl(o.id)}\n\n` +
+      `_Gracias por comprar en Bodega San Martín_ 🙏`
+    );
+  },
+
   confirmado: (o) => {
     const items = o.items?.length ? `\n\n*Tu pedido:*\n${renderItems(o.items)}\n\n` : "\n\n";
     const pay = o.paymentMethod ? `💳 Pago: ${PAYMENT_LABELS[o.paymentMethod] ?? o.paymentMethod}\n` : "";

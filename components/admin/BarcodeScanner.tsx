@@ -1,4 +1,4 @@
-﻿﻿"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Camera, X, Loader2 } from "lucide-react";
@@ -151,3 +151,4 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
     </div>
   );
 }
+

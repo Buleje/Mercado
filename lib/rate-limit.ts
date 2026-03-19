@@ -91,8 +91,8 @@ export function getClientIp(req: { headers: { get(name: string): string | null }
     return vercelIp.split(",")[0].trim();
   }
 
-  // Fallback
-  return "unknown";
+  // Fallback — treat as localhost (loopback)
+  return "127.0.0.1";
 }
 
 /**
@@ -101,15 +101,45 @@ export function getClientIp(req: { headers: { get(name: string): string | null }
  */
 export function applyRateLimit(
   req: { headers: { get(name: string): string | null } },
+  limiter: FactoryLimiter
+): Response | null;
+export function applyRateLimit(
+  req: { headers: { get(name: string): string | null } },
   preset: keyof typeof RateLimitPresets,
+  keyPrefix?: string
+): Response | null;
+export function applyRateLimit(
+  req: { headers: { get(name: string): string | null } },
+  limiterOrPreset: FactoryLimiter | keyof typeof RateLimitPresets,
   keyPrefix: string = "api"
 ): Response | null {
-  // Skip rate limiting in development — no proxy headers means all requests
-  // share the same 'unknown' key, which instantly exhausts the quota on retries.
-  if (process.env.NODE_ENV !== "production") return null;
-
   const ip = getClientIp(req);
-  const { maxReqs, windowSec } = RateLimitPresets[preset];
+
+  // Factory-limiter path (used in tests and direct middleware usage)
+  if (typeof limiterOrPreset !== "string") {
+    const allowed = limiterOrPreset.check(ip);
+    if (!allowed) {
+      const retryAfterSec = Math.ceil(limiterOrPreset.windowMs / 1000);
+      return new Response(
+        JSON.stringify({
+          error: "Too many requests",
+          message: "Rate limit exceeded. Please try again later.",
+        }),
+        {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": retryAfterSec.toString(),
+          },
+        }
+      );
+    }
+    return null;
+  }
+
+  // Preset string path — skip enforcement outside production
+  if (process.env.NODE_ENV !== "production") return null;
+  const { maxReqs, windowSec } = RateLimitPresets[limiterOrPreset];
   const result = rateLimit(`${keyPrefix}:${ip}`, maxReqs, windowSec);
 
   if (!result.allowed) {
@@ -147,3 +177,57 @@ export function createRateLimitHeaders(result: RateLimitResult, maxReqs: number)
     "X-RateLimit-Reset": new Date(result.resetAt).toISOString(),
   };
 }
+
+/** Interface for a factory-style rate limiter instance */
+export interface FactoryLimiter {
+  check(clientId: string): boolean;
+  readonly windowMs: number;
+  readonly clients: Map<string, { count: number; resetAt: number }>;
+}
+
+/**
+ * Factory-style rate limiter — creates an isolated, per-instance limiter.
+ * Provides a `check(clientId)` boolean method and purges expired entries on each call.
+ */
+export function createRateLimiter(opts: { maxRequests: number; windowMs: number }): FactoryLimiter {
+  const _clients = new Map<string, { count: number; resetAt: number }>();
+  return {
+    check(clientId: string): boolean {
+      const now = Date.now();
+      // Purge expired entries on every check to prevent unbounded growth
+      for (const [key, e] of _clients) {
+        if (now >= e.resetAt) _clients.delete(key);
+      }
+      // Zero maxRequests means block everything
+      if (opts.maxRequests <= 0) return false;
+      const entry = _clients.get(clientId);
+      if (!entry) {
+        _clients.set(clientId, { count: 1, resetAt: now + opts.windowMs });
+        return true;
+      }
+      if (entry.count >= opts.maxRequests) return false;
+      entry.count++;
+      return true;
+    },
+    get windowMs() {
+      return opts.windowMs;
+    },
+    get clients() {
+      return _clients;
+    },
+  };
+}
+
+/** Alias: `getClientId` → `getClientIp` for backward compatibility */
+export const getClientId = getClientIp;
+
+/**
+ * Rate limit presets using `{ maxRequests, windowMs }` format for use with `createRateLimiter`.
+ * Use `RateLimitPresets` (with `maxReqs`/`windowSec`) for the lower-level `rateLimit()` function.
+ */
+export const RATE_LIMIT_PRESETS = {
+  STRICT:   { maxRequests: 5,   windowMs: 15 * 60 * 1000 },
+  MODERATE: { maxRequests: 50,  windowMs:      60 * 1000 },
+  GENEROUS: { maxRequests: 100, windowMs:      60 * 1000 },
+  AUTH:     { maxRequests: 3,   windowMs: 60 * 60 * 1000 },
+} as const;

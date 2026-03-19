@@ -1,98 +1,116 @@
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { ProductsDB } from "@/lib/jsondb";
+import { ProductsDB, PriceHistoryDB } from "@/lib/jsondb";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
+import { invalidate } from "@/lib/cache";
 
-const ProductPostSchema = z.object({
-  name: z.string().min(1).max(150),
-  category: z.string().min(1).max(100),
-  price: z.number().positive(),
+const ProductUpdateSchema = z.object({
+  name: z.string().min(1).max(150).optional(),
+  category: z.string().min(1).max(100).optional(),
+  price: z.number().positive().optional(),
+  costPrice: z.number().min(0).optional().nullable(),
   image: z.string().max(500).optional(),
   unit: z.string().max(20).optional(),
-  badge: z.string().max(50).optional(),
-  stock: z.number().min(0).optional(),
-  stockMin: z.number().min(0).optional(),
+  badge: z.string().max(50).optional().nullable(),
+  barcode: z.string().max(100).optional().nullable(),
+  stock: z.number().min(0).optional().nullable(),
+  stockMin: z.number().min(0).optional().nullable(),
+  stockMax: z.number().min(0).optional().nullable(),
+  active: z.boolean().optional(),
+  expiryDate: z.string().optional().nullable(),
 });
 
-export async function GET(req: NextRequest) {
+type RouteCtx = { params: Promise<{ id: string }> };
+
+export async function GET(_req: NextRequest, ctx: RouteCtx) {
   try {
-    const { searchParams } = new URL(req.url);
-    const category   = searchParams.get("category");
-    const search     = searchParams.get("q");
-    const onlyActive = searchParams.get("active");
-    const limitParam = searchParams.get("limit");
-    const pageParam  = searchParams.get("page");
-
-    let products = await ProductsDB.getAll();
-
-    if (category && category !== "todos") {
-      products = products.filter(p => p.category === category);
-    }
-    if (search) {
-      const q = search.toLowerCase();
-      products = products.filter(p => p.name.toLowerCase().includes(q));
-    }
-    if (onlyActive === "true") {
-      products = products.filter(p => p.active !== false);
-    }
-
-    const total = products.length;
-
-    // Pagination – only applied when ?limit= is provided; keeps existing callers working
-    if (limitParam) {
-      const limit = Math.min(Math.max(parseInt(limitParam, 10) || 20, 1), 200);
-      const page  = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
-      const start = (page - 1) * limit;
-      products = products.slice(start, start + limit);
-
-      return NextResponse.json(products, {
-        headers: {
-          "X-Total-Count": String(total),
-          "X-Page": String(page),
-          "X-Limit": String(limit),
-          "X-Total-Pages": String(Math.ceil(total / limit)),
-        },
-      });
-    }
-
-    return NextResponse.json(products);
+    const { id } = await ctx.params;
+    const product = await ProductsDB.getById(Number(id));
+    if (!product) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    return NextResponse.json(product);
   } catch (e) {
-    console.error("[products] GET error:", e);
+    logger.error("[products/id] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
 
-export async function POST(req: NextRequest) {
+async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
   try {
+    const { id } = await ctx.params;
+    const numId = Number(id);
+    const existing = await ProductsDB.getById(numId);
+    if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+
     const raw = await req.json();
-    const parsed = ProductPostSchema.safeParse(raw);
+    const parsed = ProductUpdateSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 }
       );
     }
+
     const body = parsed.data;
-    const all = await ProductsDB.getAll();
-    const newId = all.length > 0 ? Math.max(...all.map((p) => p.id)) + 1 : 1;
-    const product = await ProductsDB.upsert({
-      id: newId,
-      name: body.name,
-      category: body.category,
-      price: body.price,
-      image: body.image ?? "",
-      unit: body.unit ?? "und",
-      badge: body.badge || undefined,
-      active: true,
+    const updated = await ProductsDB.upsert({
+      ...existing,
+      ...body,
+      id: numId,
+      costPrice: body.costPrice ?? existing.costPrice,
+      badge: body.badge ?? existing.badge,
+      barcode: body.barcode ?? existing.barcode,
+      stock: body.stock ?? existing.stock,
+      stockMin: body.stockMin ?? existing.stockMin,
+      stockMax: body.stockMax ?? existing.stockMax,
     });
-    await logActivity("Crear", "producto", `Producto creado: ${product.name} (S/${product.price})`, String(product.id));
-    return NextResponse.json(product);
-  } catch {
-    return NextResponse.json({ error: "invalid request" }, { status: 400 });
+
+    // Record price history when price actually changed
+    if (body.price != null && body.price !== existing.price) {
+      await PriceHistoryDB.record(numId, existing.price, body.price).catch(() => {});
+    }
+
+    const requestId = req.headers.get("x-request-id") ?? undefined;
+    await logActivity(
+      "Editar",
+      "producto",
+      `Producto actualizado: ${updated.name} (S/${updated.price})`,
+      String(updated.id),
+      "admin",
+      requestId,
+    );
+    invalidate(`dashboard:${auth.tenantId}`);
+    return NextResponse.json(updated);
+  } catch (e) {
+    logger.error("[products/id] PUT/PATCH error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
+}
+
+export const PUT = handleUpdate;
+export const PATCH = handleUpdate;
+
+export async function DELETE(req: NextRequest, ctx: RouteCtx) {
+  const auth = await requireAdmin(req, ["admin", "almacenero"]);
+  if (auth instanceof NextResponse) return auth;
+
+  try {
+    const { id } = await ctx.params;
+    const numId = Number(id);
+    const existing = await ProductsDB.getById(numId);
+    if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+
+    await ProductsDB.delete(numId);
+    const requestId = req.headers.get("x-request-id") ?? undefined;
+    await logActivity("Eliminar", "producto", `Producto eliminado: ${existing.name}`, String(numId), "admin", requestId);
+    invalidate(`dashboard:${auth.tenantId}`);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    logger.error("[products/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

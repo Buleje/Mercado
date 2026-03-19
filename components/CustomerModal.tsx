@@ -265,6 +265,7 @@ export default function CustomerModal() {
   const [view, setView] = useState<View>("profile");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [birthday, setBirthday] = useState("");
   const [lookingUp, setLookingUp] = useState(false);
   const [phoneNotFound, setPhoneNotFound] = useState(false);
   const [editLocId, setEditLocId] = useState<string | null>(null);
@@ -276,6 +277,7 @@ export default function CustomerModal() {
       startTransition(() => {
         setName(customer?.name ?? "");
         setPhone(customer?.phone ?? "");
+        setBirthday(customer?.birthday ?? "");
         setPhoneNotFound(false);
         setLookingUp(false);
         setView(customer ? (openMode === "profile" ? "profile" : "edit-info") : "phone-lookup");
@@ -302,7 +304,7 @@ export default function CustomerModal() {
     e.preventDefault();
     if (!name.trim()) return;
     const base = customer ?? { location: "", reference: "" };
-    register({ name: name.trim(), phone: phone.trim() || customer?.phone, location: base.location, reference: base.reference, locations: customer?.locations, activeLocationId: customer?.activeLocationId });
+    register({ name: name.trim(), phone: phone.trim() || customer?.phone, location: base.location, reference: base.reference, locations: customer?.locations, activeLocationId: customer?.activeLocationId, ...(birthday ? { birthday } : {}) });
     if (!customer) setView("add-loc");
     else setView("profile");
   };
@@ -491,7 +493,10 @@ export default function CustomerModal() {
                           className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3"
                         >
                           <span className="text-amber-500 text-lg">📝</span>
-                          <p className="text-sm font-semibold text-amber-700">Número nuevo — completemos tus datos</p>
+                          <div>
+                            <p className="text-sm font-semibold text-amber-700">¡Bienvenido/a! Eres nuevo en Bodega San Martín</p>
+                            <p className="text-xs text-amber-600 mt-0.5">Completemos tus datos para tu primer pedido</p>
+                          </div>
                         </m.div>
                       )}
 
@@ -576,8 +581,11 @@ export default function CustomerModal() {
                                   {isActive && <CheckCircle2 className="h-3.5 w-3.5 text-white fill-white" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] font-bold text-muted uppercase tracking-wider mb-0.5">
+                                    {loc.id === "default" ? "📍 Dirección principal" : `📍 Dirección ${locations.indexOf(loc) + 1}`}
+                                  </p>
                                   <p className={cn("text-sm font-semibold truncate", isActive ? "text-primary" : "text-foreground")}>{loc.location}</p>
-                                  <p className="text-xs text-muted mt-0.5 flex items-center gap-1"><Home className="h-3 w-3 shrink-0" />{loc.reference}</p>
+                                  <p className="text-xs text-muted mt-0.5 flex items-center gap-1"><Home className="h-3 w-3 shrink-0" /> Ref: {loc.reference}</p>
                                   <div className="mt-2 rounded-lg overflow-hidden border border-gray-200" style={{ height: 90 }}>
                                     <iframe src={mapEmbedSrc(coords.lat, coords.lon, 0.008)} width="100%" height="100%" style={{ border: 0, display: "block", pointerEvents: "none" }} title="mapa" />
                                   </div>
@@ -654,6 +662,17 @@ export default function CustomerModal() {
                               className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-foreground placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                             />
                           </div>
+                        </div>
+                        {/* T2: Birthday field */}
+                        <div>
+                          <label className="block text-sm font-semibold text-foreground mb-1.5">Cumpleaños (opcional)</label>
+                          <input
+                            type="date"
+                            value={birthday ? `2000-${birthday}` : ""}
+                            onChange={(e) => { const v = e.target.value; if (v) setBirthday(v.slice(5)); else setBirthday(""); }}
+                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-foreground placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                          />
+                          <p className="text-[10px] text-muted mt-1">🎂 Te daremos un 10% de descuento en tu cumpleaños</p>
                         </div>
                         <div className="flex gap-3">
                           {customer && (

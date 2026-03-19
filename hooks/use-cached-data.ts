@@ -56,6 +56,12 @@ interface UseCachedDataOptions<T> {
    * @default true
    */
   enabled?: boolean;
+
+  /**
+   * Polling interval in milliseconds. 0 = disabled.
+   * @default 0
+   */
+  refetchInterval?: number;
 }
 
 interface UseCachedDataReturn<T> {
@@ -135,6 +141,7 @@ export function useCachedData<T>(
     onSuccess,
     onError,
     enabled = true,
+    refetchInterval = 0,
   } = options;
 
   const [data, setData] = useState<T | undefined>(() => {
@@ -301,6 +308,15 @@ export function useCachedData<T>(
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
   }, [refetchOnReconnect, enabled, fetchData]);
+
+  // Polling interval
+  useEffect(() => {
+    if (!refetchInterval || refetchInterval <= 0 || !enabled) return;
+    const id = setInterval(() => {
+      if (document.visibilityState === "visible") fetchData(true);
+    }, refetchInterval);
+    return () => clearInterval(id);
+  }, [refetchInterval, enabled, fetchData]);
 
   // Cleanup on unmount
   useEffect(() => {

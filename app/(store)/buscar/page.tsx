@@ -1,0 +1,44 @@
+import type { Metadata } from "next";
+import dynamic from "next/dynamic";
+import Header from "@/components/Header";
+import AnnouncementBar from "@/components/AnnouncementBar";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
+import Footer from "@/components/Footer";
+import { SearchTrigger } from "./SearchTrigger";
+
+const ProductCatalog = dynamic(() => import("@/components/ProductCatalog"));
+const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
+const CustomerModal = dynamic(() => import("@/components/CustomerModal"));
+const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
+const UserAccountModal = dynamic(() => import("@/components/UserAccountModal"));
+
+export const metadata: Metadata = {
+  title: "Buscar productos — Bodega San Martín",
+  description:
+    "Busca entre todos nuestros productos de abarrotes, bebidas, carnes, snacks, limpieza y más. Delivery rápido en Pucallpa.",
+  robots: { index: false, follow: true },
+};
+
+export default function BuscarPage() {
+  return (
+    <>
+      <BreadcrumbSchema
+        items={[
+          { name: "Inicio", url: "https://www.bodegasanmartin.pe/" },
+          { name: "Buscar", url: "https://www.bodegasanmartin.pe/buscar" },
+        ]}
+      />
+      <AnnouncementBar />
+      <Header />
+      <main id="main-content" className="min-h-screen">
+        <SearchTrigger />
+        <ProductCatalog />
+      </main>
+      <Footer />
+      <CartSidebar />
+      <CustomerModal />
+      <MobileBottomNav />
+      <UserAccountModal />
+    </>
+  );
+}

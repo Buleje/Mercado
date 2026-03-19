@@ -1,18 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, startTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback, startTransition } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
   ChevronDown, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
-  Sun, Moon, Search, Trophy, Gift, History, PackageCheck, User, ClipboardList,
+  Sun, Moon, Search, Trophy, Gift, History, PackageCheck, User, ClipboardList, Mic, Bell, Flame,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
 import { useSettings, DEFAULT_NAV_LINKS } from "@/contexts/settings-context";
 import { useTheme } from "@/contexts/theme-context";
-import { products } from "@/data/products";
+import type { Product } from "@/data/products";
 import { cn } from "@/lib/utils";
 import { dispatchAppEvent, onAppEvent } from "@/lib/events";
 
@@ -34,17 +35,23 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
 
 const categoryMenuItems = [
   { id: "frutas-verduras", label: "Frutas y Verduras", emoji: "🥬", icon: Leaf,
-    desc: "Productos frescos del día" },
+    desc: "Productos frescos del día",
+    iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconColor: "text-emerald-700 dark:text-emerald-400" },
   { id: "abarrotes", label: "Abarrotes", emoji: "🏪", icon: Package,
-    desc: "Arroz, fideos, aceite y más" },
+    desc: "Arroz, fideos, aceite y más",
+    iconBg: "bg-amber-100 dark:bg-amber-900/40", iconColor: "text-amber-700 dark:text-amber-400" },
   { id: "carnes", label: "Carnes", emoji: "🥩", icon: Beef,
-    desc: "Carnes frescas de calidad" },
+    desc: "Carnes frescas de calidad",
+    iconBg: "bg-red-100 dark:bg-red-900/40", iconColor: "text-red-600 dark:text-red-400" },
   { id: "lacteos", label: "Lácteos", emoji: "🧀", icon: Milk,
-    desc: "Leche, queso, yogurt" },
+    desc: "Leche, queso, yogurt",
+    iconBg: "bg-sky-100 dark:bg-sky-900/40", iconColor: "text-sky-600 dark:text-sky-400" },
   { id: "bebidas", label: "Bebidas", emoji: "🥤", icon: GlassWater,
-    desc: "Agua, gaseosas, jugos" },
+    desc: "Agua, gaseosas, jugos",
+    iconBg: "bg-blue-100 dark:bg-blue-900/40", iconColor: "text-blue-600 dark:text-blue-400" },
   { id: "limpieza", label: "Limpieza", emoji: "🧹", icon: Sparkles,
-    desc: "Todo para tu hogar limpio" },
+    desc: "Todo para tu hogar limpio",
+    iconBg: "bg-violet-100 dark:bg-violet-900/40", iconColor: "text-violet-600 dark:text-violet-400" },
 ];
 
 const inicioMenuItems = [
@@ -57,10 +64,23 @@ const inicioMenuItems = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [megaOpen, setMegaOpen] = useState(false);
   const [mobileCatOpen, setMobileCatOpen] = useState(false);
-  const [inicioOpen, setInicioOpen] = useState(false);
   const [mobileInicioOpen, setMobileInicioOpen] = useState(false);
+  // Single active dropdown — prevents two menus visible simultaneously
+  const [activeDropdown, setActiveDropdown] = useState<"inicio" | "categorias" | null>(null);
+  const megaOpen = activeDropdown === "categorias";
+  const inicioOpen = activeDropdown === "inicio";
+  const dropdownTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openDropdown = (which: "inicio" | "categorias") => {
+    if (dropdownTimeout.current) { clearTimeout(dropdownTimeout.current); dropdownTimeout.current = null; }
+    setActiveDropdown(which);
+  };
+  const closeDropdown = () => {
+    dropdownTimeout.current = setTimeout(() => setActiveDropdown(null), 120);
+  };
+  const cancelClose = () => {
+    if (dropdownTimeout.current) { clearTimeout(dropdownTimeout.current); dropdownTimeout.current = null; }
+  };
   const [scrolled, setScrolled] = useState(false);
   const [cartBounce, setCartBounce] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -70,12 +90,65 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [orderStatusChanged, setOrderStatusChanged] = useState(false);
+  /* X4: Voice search + ordering */
+  const [listening, setListening] = useState(false);
+  const [voiceResult, setVoiceResult] = useState<{ type: "added"; product: string; qty: number } | null>(null);
+
+  /* AC4: Track recent searches for trending suggestions */
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem("bsm-recent-searches") || "[]").slice(0, 5); } catch { return []; }
+  });
+  const recordSearch = useCallback((term: string) => {
+    setRecentSearches(prev => {
+      const next = [term, ...prev.filter(s => s.toLowerCase() !== term.toLowerCase())].slice(0, 5);
+      try { localStorage.setItem("bsm-recent-searches", JSON.stringify(next)); } catch { /* silent */ }
+      return next;
+    });
+  }, []);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Lazy-loaded product data refs — avoids 32 KB in initial JS bundle
+  const productsRef = useRef<Product[] | null>(null);
+  const levenshteinRef = useRef<((a: string, b: string) => number) | null>(null);
+
+  /* Trending products — top sellers from selling-fast localStorage data */
+  const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
+
+  // Load products + levenshtein lazily after mount
+  useEffect(() => {
+    void Promise.all([
+      import("@/data/products"),
+      import("@/hooks/use-advanced-search"),
+    ]).then(([{ products: p }, { levenshteinDistance: ld }]) => {
+      productsRef.current = p;
+      levenshteinRef.current = ld;
+      // Populate trending products once data is available
+      try {
+        const now = Date.now();
+        const data: Record<string, number[]> = JSON.parse(localStorage.getItem("bsm-selling-fast") || "{}");
+        const scored = Object.entries(data)
+          .map(([id, timestamps]) => ({
+            id: Number(id),
+            count: (timestamps || []).filter(t => now - t < 86_400_000).length,
+          }))
+          .filter(x => x.count >= 2)
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 4);
+        setTrendingProducts(
+          scored
+            .map(s => p.find((prod: Product) => prod.id === s.id))
+            .filter(Boolean) as Product[]
+        );
+      } catch { /* no-op */ }
+    });
+  }, []);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const prevCount = useRef(0);
   const prevOrderStatus = useRef<string | null>(null);
   const router = useRouter();
-  const { count, toggle } = useCart();
+  const pathname = usePathname();
+  const { count, toggle, addItem } = useCart();
   const { customer, openModal: openCustomerModal, openAccountModal, openOrderStatusModal, clear } = useCustomer();
   const { navLinks: storedNavLinks } = useSettings();
   const { resolved: theme, toggle: toggleTheme } = useTheme();
@@ -84,6 +157,50 @@ export default function Header() {
 
   // Loyalty data
   const [loyalty, setLoyalty] = useState<{ loyaltyPoints: number; loyaltyTier: string; totalSpent: number } | null>(null);
+
+  // Notification inbox
+  type NotifItem = { id: string; type: string; title: string; body: string; link?: string; read: boolean; createdAt: string };
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifs, setNotifs] = useState<NotifItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  // Fetch notifications when customer exists
+  useEffect(() => {
+    if (!customer?.phone) return;
+    const phone = customer.phone;
+    let cancelled = false;
+    const fetchNotifs = async () => {
+      try {
+        const r = await fetch(`/api/customer-notifications?phone=${encodeURIComponent(phone)}`);
+        if (r.ok && !cancelled) {
+          const data = await r.json();
+          setNotifs(data.notifications ?? []);
+          setUnreadCount(data.unreadCount ?? 0);
+        }
+      } catch { /* silent */ }
+    };
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 60000); // poll every 60s
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [customer?.phone]);
+
+  // Close notif dropdown on outside click
+  useEffect(() => {
+    if (!notifOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [notifOpen]);
+
+  const markAllRead = async () => {
+    if (!customer?.phone) return;
+    await fetch(`/api/customer-notifications?phone=${encodeURIComponent(customer.phone!)}&all=1`, { method: "PATCH" });
+    setNotifs(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -122,8 +239,7 @@ export default function Header() {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (megaRef.current && !megaRef.current.contains(e.target as Node)) {
-        setMegaOpen(false);
-        setInicioOpen(false);
+        setActiveDropdown(null);
       }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
@@ -173,15 +289,50 @@ export default function Header() {
       .catch(() => {});
   }, [customer?.phone]);
 
-  // Search autocomplete
+  // Search autocomplete — fuzzy with Levenshtein typo tolerance (debounced)
   useEffect(() => {
     if (searchQuery.trim().length < 2) { startTransition(() => setSuggestions([])); return; }
+    const p = productsRef.current;
+    const ld = levenshteinRef.current;
+    if (!p || !ld) { startTransition(() => setSuggestions([])); return; }
+    const timer = setTimeout(() => {
     const q = searchQuery.trim().toLowerCase();
-    const matches = products
-      .filter(p => p.name.toLowerCase().includes(q))
-      .map(p => p.name)
-      .slice(0, 6);
-    startTransition(() => setSuggestions(matches));
+    const qWords = q.split(/\s+/).filter(Boolean);
+    const scored = p
+      .map(prod => {
+        const t = prod.name.toLowerCase();
+        const tWords = t.split(/\s+/).filter(Boolean);
+        let score = 0;
+        // Exact substring → highest
+        if (t.includes(q)) { score = 100 + (q.length / t.length) * 50; }
+        else {
+          // Word-level hits
+          let wordHits = 0;
+          for (const qw of qWords) {
+            if (tWords.some(tw => tw.includes(qw) || qw.includes(tw))) wordHits++;
+          }
+          if (wordHits === qWords.length) score = 85;
+          else if (wordHits > 0) score = 60;
+          else {
+            // Levenshtein per word
+            let editHits = 0;
+            for (const qw of qWords) {
+              const maxDist = qw.length <= 4 ? 1 : qw.length <= 7 ? 2 : 3;
+              if (tWords.some(tw => ld(qw, tw) <= maxDist)) editHits++;
+            }
+            if (editHits === qWords.length) score = 50;
+            else if (editHits > 0) score = 30;
+          }
+        }
+        return { name: prod.name, score };
+      })
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6)
+      .map(x => x.name);
+    startTransition(() => setSuggestions(scored));
+    }, 200); // 200ms debounce
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   // Focus search input when opened
@@ -200,6 +351,7 @@ export default function Header() {
     setSearchOpen(false);
     setSearchQuery("");
     setSuggestions([]);
+    recordSearch(name);
     // Navigate to tienda and trigger search
     const el = document.getElementById("productos");
     if (el) {
@@ -221,22 +373,54 @@ export default function Header() {
     }
   };
 
+  /* X4: Voice search + voice ordering via Web Speech API */
+  const startVoiceSearch = () => {
+    const SR = (window as unknown as Record<string, unknown>).SpeechRecognition ?? (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
+    if (!SR) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recognition = new (SR as any)();
+    recognition.lang = "es-PE";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (e: any) => {
+      const transcript: string | undefined = e.results?.[0]?.[0]?.transcript;
+      if (!transcript) return;
+
+      // Voice ordering: detect intent like "agrega 2 cerveza" or "quiero arroz"
+      const orderMatch = transcript.match(/^(?:agrega|añade|pon|quiero|dame|necesito|mete)\s+(\d+)?\s*(.+?)(?:\s+al\s+carrito)?$/i);
+      if (orderMatch) {
+        const qty = parseInt(orderMatch[1] || "1", 10);
+        const query = orderMatch[2].trim().toLowerCase();
+        // fuzzy match product
+        const prods = productsRef.current;
+        if (!prods) return;
+        const match = prods.find(p => p.name.toLowerCase().includes(query))
+          || prods.find(p => query.split(/\s+/).every(w => p.name.toLowerCase().includes(w)));
+        if (match) {
+          for (let i = 0; i < Math.min(qty, 10); i++) addItem(match);
+          setVoiceResult({ type: "added", product: match.name, qty: Math.min(qty, 10) });
+          setTimeout(() => setVoiceResult(null), 4000);
+          return;
+        }
+      }
+
+      // Fallback: regular search
+      setSearchQuery(transcript);
+      handleSearchSelect(transcript);
+    };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    setListening(true);
+    recognition.start();
+  };
+
   const handleCategoryClick = (categoryId: string) => {
-    setMegaOpen(false);
+    setActiveDropdown(null);
     setMobileOpen(false);
     setMobileCatOpen(false);
-    // Broadcast to ProductCatalog via DOM event
-    dispatchAppEvent("selectCategory", { categoryId });
-    // Navigate to shop if not there
-    const el = document.getElementById("productos");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    } else {
-      router.push("/tienda");
-      setTimeout(() => {
-        dispatchAppEvent("selectCategory", { categoryId });
-      }, 800);
-    }
+    // Navigate to dedicated category page
+    router.push(`/tienda/categoria/${categoryId}`);
   };
 
   const navLinkCls = cn(
@@ -248,105 +432,119 @@ export default function Header() {
     switch (id) {
       case "inicio":
         return (
-          <div key="inicio" className="relative">
+          <div key="inicio" className="relative"
+            onMouseEnter={() => openDropdown("inicio")}
+            onMouseLeave={closeDropdown}
+          >
             <button
-              onClick={() => setInicioOpen((o) => !o)}
-              onMouseEnter={() => setInicioOpen(true)}
+              onClick={() => setActiveDropdown(prev => prev === "inicio" ? null : "inicio")}
               aria-expanded={inicioOpen}
               aria-haspopup="true"
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
                 scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
-                inicioOpen && (scrolled ? "text-primary bg-primary/5" : "text-white bg-white/10")
+                inicioOpen && (scrolled ? "text-primary bg-primary/8" : "text-white bg-white/15")
               )}
             >
               Inicio
-              <span className={cn("transition-transform duration-200 inline-block", inicioOpen && "rotate-180")}>
-                <ChevronDown className="h-4 w-4" />
-              </span>
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", inicioOpen && "rotate-180")} />
             </button>
-            {inicioOpen && (
-              <div
-                onMouseLeave={() => setInicioOpen(false)}
-                className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-72 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden animate-[megaIn_0.18s_ease-out]"
-              >
-                <div className="p-2 space-y-0.5">
-                  {inicioMenuItems.map((item) => (
-                    <a
-                      key={item.id}
-                      href={item.href}
-                      onClick={() => setInicioOpen(false)}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-transparent text-left transition-all hover:shadow-sm hover:border-primary/20 hover:bg-primary/5 group"
-                    >
-                      <span className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/8 text-xl leading-none shrink-0 group-hover:bg-primary/15 transition-colors">
-                        {item.emoji}
-                      </span>
-                      <div>
-                        <p className="font-bold text-sm leading-tight text-foreground group-hover:text-primary transition-colors">{item.label}</p>
-                        <p className="text-[11px] text-muted mt-0.5">{item.desc}</p>
-                      </div>
-                    </a>
-                  ))}
-                </div>
+            <div
+              onMouseEnter={cancelClose}
+              onMouseLeave={closeDropdown}
+              className={cn(
+                "absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden transition-all duration-200 origin-top",
+                inicioOpen ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+              )}
+            >
+              {/* Dropdown header */}
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-primary/5 to-indigo-500/5">
+                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Navegación</p>
               </div>
-            )}
+              <div className="p-2 space-y-0.5">
+                {inicioMenuItems.map((item) => (
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    onClick={() => setActiveDropdown(null)}
+                    className="flex items-center gap-3 p-2.5 rounded-xl border border-transparent text-left transition-all duration-150 hover:shadow-sm hover:border-primary/15 hover:bg-primary/5 group"
+                  >
+                    <span className="flex items-center justify-center h-9 w-9 rounded-xl bg-gray-100 dark:bg-surface text-lg leading-none shrink-0 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-150">
+                      {item.emoji}
+                    </span>
+                    <div>
+                      <p className="font-bold text-sm leading-tight text-foreground group-hover:text-primary transition-colors">{item.label}</p>
+                      <p className="text-[11px] text-muted mt-0.5">{item.desc}</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
         );
       case "tienda":
         return <Link key="tienda" href="/tienda" className={navLinkCls}>Tienda</Link>;
       case "categorias":
         return (
-          <div key="categorias" className="relative">
+          <div key="categorias" className="relative"
+            onMouseEnter={() => openDropdown("categorias")}
+            onMouseLeave={closeDropdown}
+          >
             <button
-              onClick={() => setMegaOpen((o) => !o)}
-              onMouseEnter={() => setMegaOpen(true)}
+              onClick={() => setActiveDropdown(prev => prev === "categorias" ? null : "categorias")}
               aria-expanded={megaOpen}
               aria-haspopup="true"
               aria-controls="mega-menu"
               aria-label="Menú de categorías"
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
                 scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
-                megaOpen && (scrolled ? "text-primary bg-primary/5" : "text-white bg-white/10")
+                megaOpen && (scrolled ? "text-primary bg-primary/8" : "text-white bg-white/15")
               )}
             >
               Categorías
-              <span className={cn("transition-transform duration-200 inline-block", megaOpen && "rotate-180")}>
-                <ChevronDown className="h-4 w-4" />
-              </span>
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", megaOpen && "rotate-180")} />
             </button>
-            {megaOpen && (
-              <div
-                id="mega-menu"
-                role="menu"
-                onMouseLeave={() => setMegaOpen(false)}
-                className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-120 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden animate-[megaIn_0.18s_ease-out]"
-              >
-                <div className="grid grid-cols-2 gap-1.5 p-3">
-                  {categoryMenuItems.map((cat) => (
-                    <Link
-                      key={cat.id}
-                      href="/tienda"
-                      onClick={() => { setMegaOpen(false); handleCategoryClick(cat.id); }}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-transparent text-left transition-all hover:shadow-md hover:border-primary/20 hover:bg-primary/5 group"
-                    >
-                      <span className="flex items-center justify-center h-11 w-11 rounded-xl bg-primary/8 text-xl leading-none shrink-0 group-hover:bg-primary/15 transition-colors">
-                        {cat.emoji}
-                      </span>
-                      <div>
-                        <p className="font-bold text-sm leading-tight text-foreground group-hover:text-primary transition-colors">{cat.label}</p>
-                        <p className="text-[11px] text-muted mt-0.5">{cat.desc}</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-                <div className="px-4 py-2.5 bg-primary/5 dark:bg-primary/8 border-t border-gray-100 dark:border-card-border">
-                  <Link href="/tienda" onClick={() => setMegaOpen(false)} className="text-sm font-bold text-primary hover:underline">
-                    Ver todos los productos →
-                  </Link>
-                </div>
+            <div
+              id="mega-menu"
+              role="menu"
+              onMouseEnter={cancelClose}
+              onMouseLeave={closeDropdown}
+              className={cn(
+                "absolute top-full left-1/2 -translate-x-1/2 mt-2 w-120 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden transition-all duration-200 origin-top",
+                megaOpen ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+              )}
+            >
+              {/* Dropdown header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-indigo-50 to-primary/5 dark:from-indigo-950/30 dark:to-primary/8">
+                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Categorías</p>
+                <span className="text-[10px] text-muted font-medium">{categoryMenuItems.length} secciones</span>
               </div>
-            )}
+              <div className="grid grid-cols-2 gap-1 p-2.5">
+                {categoryMenuItems.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    href="/tienda"
+                    onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-transparent text-left transition-all duration-150 hover:shadow-md hover:border-gray-200 dark:hover:border-card-border hover:bg-gray-50 dark:hover:bg-surface/50 group"
+                  >
+                    <span className={cn("flex items-center justify-center h-10 w-10 rounded-xl text-xl leading-none shrink-0 transition-all duration-150 group-hover:scale-110", cat.iconBg)}>
+                      {cat.emoji}
+                    </span>
+                    <div>
+                      <p className="font-bold text-sm leading-tight text-foreground group-hover:text-primary transition-colors">{cat.label}</p>
+                      <p className="text-[11px] text-muted mt-0.5">{cat.desc}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <div className="px-3 py-2.5 bg-linear-to-r from-primary/5 to-indigo-500/5 dark:from-primary/10 dark:to-indigo-500/10 border-t border-gray-100 dark:border-card-border">
+                <Link href="/tienda" onClick={() => setActiveDropdown(null)}
+                  className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-sm font-bold text-primary hover:bg-primary/8 transition-colors">
+                  Ver todos los productos →
+                </Link>
+              </div>
+            </div>
           </div>
         );
       default:
@@ -416,17 +614,19 @@ export default function Header() {
                       key={cat.id}
                       href="/tienda"
                       onClick={() => { setMobileOpen(false); setMobileCatOpen(false); handleCategoryClick(cat.id); }}
-                      className="flex items-center gap-2 p-3 rounded-xl border border-gray-100 text-left transition-colors hover:border-primary/25 hover:bg-primary/5"
+                      className="flex items-center gap-2.5 p-3 rounded-xl border border-gray-100 dark:border-card-border text-left transition-all hover:shadow-sm hover:border-primary/20"
                     >
-                      <span className="text-xl">{cat.emoji}</span>
-                      <span className="text-sm font-bold text-foreground">{cat.label}</span>
+                      <span className={cn("flex items-center justify-center h-9 w-9 rounded-lg text-xl leading-none shrink-0", cat.iconBg)}>
+                        {cat.emoji}
+                      </span>
+                      <span className="text-sm font-bold text-foreground leading-tight">{cat.label}</span>
                     </Link>
                   ))}
                 </div>
                 <Link
                   href="/tienda"
                   onClick={() => { setMobileOpen(false); setMobileCatOpen(false); }}
-                  className="block mx-4 mb-2 text-center text-sm font-bold text-primary hover:underline py-2"
+                  className="flex items-center justify-center gap-1.5 mx-4 mb-3 py-2.5 rounded-xl bg-primary/8 text-sm font-bold text-primary transition-colors hover:bg-primary/15"
                 >
                   Ver todos los productos →
                 </Link>
@@ -475,10 +675,20 @@ export default function Header() {
               <Store className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div className="hidden sm:flex flex-col">
-              <span className={cn("text-base sm:text-xl font-bold leading-tight transition-colors",
-                scrolled ? "text-primary-dark" : "text-white")}>
-                Bodega San Martín
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={cn("text-base sm:text-xl font-bold leading-tight transition-colors",
+                  scrolled ? "text-primary-dark" : "text-white")}>
+                  Bodega San Martín
+                </span>
+                <span className={cn(
+                  "inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold leading-none tracking-wide border",
+                  scrolled
+                    ? "bg-amber-500/15 text-amber-700 border-amber-500/25 dark:bg-amber-400/15 dark:text-amber-400 dark:border-amber-400/25"
+                    : "bg-amber-400/25 text-amber-200 border-amber-400/35"
+                )}>
+                  v1 Beta
+                </span>
+              </div>
               <span className={cn("hidden sm:block text-[10px] tracking-widest uppercase transition-colors",
                 scrolled ? "text-primary/60" : "text-white/60")}>
                 Pucallpa · Ucayali
@@ -610,21 +820,34 @@ export default function Header() {
               )}
             </div>
 
-            {/* Loyalty points badge — desktop */}
+            {/* Loyalty points badge — desktop with tier glow animation */}
             {loyalty && customer && (
               <a
                 href="/cuenta"
                 className={cn(
-                  "flex items-center gap-1.5 rounded-full text-xs font-bold transition-all duration-200 px-2.5 py-1.5",
+                  "relative flex items-center gap-1.5 rounded-full text-xs font-bold transition-all duration-300 px-2.5 py-1.5 group overflow-hidden",
                   scrolled
-                    ? "bg-secondary/15 text-secondary hover:bg-secondary/25"
+                    ? loyalty.loyaltyTier === "oro" || loyalty.loyaltyTier === "diamante"
+                      ? "bg-amber-100 text-amber-700 hover:bg-amber-200 ring-1 ring-amber-300/50"
+                      : loyalty.loyaltyTier === "plata"
+                        ? "bg-gray-100 text-gray-600 hover:bg-gray-200 ring-1 ring-gray-300/50"
+                        : "bg-secondary/15 text-secondary hover:bg-secondary/25"
                     : "bg-white/15 backdrop-blur-sm text-white border border-white/20 hover:bg-white/25"
                 )}
                 title={`Nivel ${loyalty.loyaltyTier} · ${loyalty.loyaltyPoints} puntos`}
               >
-                {loyalty.loyaltyTier === "diamante" ? "💎" : loyalty.loyaltyTier === "oro" ? "🥇" : loyalty.loyaltyTier === "plata" ? "🥈" : "🥉"}
-                <span>{loyalty.loyaltyPoints}</span>
-                <Gift className="h-3 w-3" />
+                {/* Shimmer animation for gold/diamond tiers */}
+                {(loyalty.loyaltyTier === "oro" || loyalty.loyaltyTier === "diamante") && (
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-linear-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+                )}
+                <span className={cn(
+                  "text-sm leading-none",
+                  loyalty.loyaltyTier === "oro" || loyalty.loyaltyTier === "diamante" ? "animate-bounce" : ""
+                )} style={loyalty.loyaltyTier === "oro" || loyalty.loyaltyTier === "diamante" ? { animationDuration: "2s" } : undefined}>
+                  {loyalty.loyaltyTier === "diamante" ? "💎" : loyalty.loyaltyTier === "oro" ? "🥇" : loyalty.loyaltyTier === "plata" ? "🥈" : "🥉"}
+                </span>
+                <span className="relative">{loyalty.loyaltyPoints}</span>
+                <Gift className="h-3 w-3 relative" />
               </a>
             )}
           </nav>
@@ -662,6 +885,79 @@ export default function Header() {
                 ? <Sun className="h-4.5 w-4.5" />
                 : <Moon className="h-4.5 w-4.5" />}
             </button>
+
+            {/* Notification bell */}
+            {customer && (
+              <div className="relative" ref={notifRef}>
+                <button
+                  onClick={() => setNotifOpen(!notifOpen)}
+                  className={cn(
+                    "relative flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                    scrolled
+                      ? "text-foreground hover:bg-primary/10 hover:text-primary"
+                      : "text-white/70 hover:text-white hover:bg-white/15"
+                  )}
+                  aria-label="Notificaciones"
+                >
+                  <Bell className="h-4.5 w-4.5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+                {/* Dropdown */}
+                {notifOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] max-h-[70vh] overflow-y-auto bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border z-50">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-card-border">
+                      <p className="text-sm font-bold text-gray-900 dark:text-foreground">Notificaciones</p>
+                      {unreadCount > 0 && (
+                        <button onClick={markAllRead} className="text-xs text-violet-600 hover:text-violet-800 font-semibold">
+                          Marcar todo leído
+                        </button>
+                      )}
+                    </div>
+                    {notifs.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-sm text-gray-400 dark:text-muted">
+                        No tienes notificaciones
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-50 dark:divide-card-border">
+                        {notifs.map(n => (
+                          <button
+                            key={n.id}
+                            onClick={() => {
+                              if (n.link) router.push(n.link);
+                              if (!n.read) {
+                                fetch(`/api/customer-notifications?id=${n.id}`, { method: "PATCH" }).catch(() => {});
+                                setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+                                setUnreadCount(prev => Math.max(0, prev - 1));
+                              }
+                              setNotifOpen(false);
+                            }}
+                            className={cn(
+                              "w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-surface transition-colors",
+                              !n.read && "bg-violet-50/50 dark:bg-violet-900/10"
+                            )}
+                          >
+                            <div className="flex items-start gap-2">
+                              {!n.read && <span className="mt-1.5 w-2 h-2 rounded-full bg-violet-500 shrink-0" />}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">{n.title}</p>
+                                <p className="text-xs text-gray-500 dark:text-muted mt-0.5 line-clamp-2">{n.body}</p>
+                                <p className="text-[10px] text-gray-400 dark:text-muted mt-1">
+                                  {new Date(n.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Cart */}
             <button
@@ -731,8 +1027,9 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Category quick-strip — mobile only */}
-        <div className="lg:hidden overflow-x-auto scrollbar-hide flex gap-1.5 px-2 pb-2 pt-0.5">
+        {/* Category quick-strip — only on /tienda pages */}
+        {(pathname === "/tienda" || pathname?.startsWith("/tienda/")) && (
+        <div className="overflow-x-auto scrollbar-hide flex gap-1.5 px-2 pb-2 pt-0.5 lg:justify-center lg:border-t lg:border-white/10 lg:pt-2">
           {categoryMenuItems.map(cat => (
             <button
               key={cat.id}
@@ -748,7 +1045,20 @@ export default function Header() {
               {cat.label}
             </button>
           ))}
+          <Link
+            href="/tienda"
+            onClick={() => {}}
+            className={cn(
+              "flex items-center gap-1 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition-colors shrink-0",
+              scrolled
+                ? "bg-primary text-white hover:bg-primary-dark"
+                : "bg-white/25 text-white border border-white/30 hover:bg-white/35"
+            )}
+          >
+            Ver todos →
+          </Link>
         </div>
+        )}
       </div>
 
       {/* Mobile Menu */}
@@ -792,13 +1102,23 @@ export default function Header() {
                   <span>Mis pedidos</span>
                 </a>
 
-                {/* Loyalty — mobile */}
+                {/* Loyalty — mobile with tier animation */}
                 {loyalty && customer && (
                   <a
                     href="/cuenta"
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/10 text-secondary font-semibold hover:bg-secondary/20 transition-colors"
+                    className={cn(
+                      "relative flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-colors overflow-hidden",
+                      loyalty.loyaltyTier === "oro" || loyalty.loyaltyTier === "diamante"
+                        ? "bg-amber-50 dark:bg-amber-900/15 text-amber-700 dark:text-amber-400 hover:bg-amber-100"
+                        : loyalty.loyaltyTier === "plata"
+                          ? "bg-gray-100 dark:bg-gray-800/30 text-gray-600 dark:text-gray-300 hover:bg-gray-200"
+                          : "bg-secondary/10 text-secondary hover:bg-secondary/20"
+                    )}
                   >
+                    {(loyalty.loyaltyTier === "oro" || loyalty.loyaltyTier === "diamante") && (
+                      <span className="absolute inset-0 -translate-x-full animate-[shimmer_3s_ease-in-out_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
+                    )}
                     <Trophy className="h-5 w-5" />
                     <span className="flex-1">
                       {loyalty.loyaltyTier === "diamante" ? "💎" : loyalty.loyaltyTier === "oro" ? "🥇" : loyalty.loyaltyTier === "plata" ? "🥈" : "🥉"}{" "}
@@ -853,6 +1173,20 @@ export default function Header() {
                   className="flex-1 text-lg text-foreground bg-transparent outline-none placeholder:text-muted"
                   autoComplete="off"
                 />
+                {/* X4: Voice search button */}
+                <button
+                  onClick={startVoiceSearch}
+                  className={cn(
+                    "p-2 rounded-lg transition-colors",
+                    listening
+                      ? "bg-red-100 dark:bg-red-900/30 text-red-500 animate-pulse"
+                      : "hover:bg-gray-100 dark:hover:bg-surface text-muted"
+                  )}
+                  aria-label="Búsqueda o pedido por voz"
+                  title="Buscar o pedir por voz (ej: 'agrega 2 cerveza')"
+                >
+                  <Mic className="h-5 w-5" />
+                </button>
                 <button
                   onClick={() => setSearchOpen(false)}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors"
@@ -879,6 +1213,70 @@ export default function Header() {
                 </div>
               )}
 
+              {/* No results state */}
+              {searchQuery.trim().length >= 2 && suggestions.length === 0 && (
+                <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-4 text-center">
+                  <p className="text-sm font-bold text-foreground">No encontramos &ldquo;{searchQuery.trim()}&rdquo;</p>
+                  <p className="text-xs text-muted mt-1">Prueba con otro término o explora nuestras categorías</p>
+                  <div className="flex flex-wrap gap-2 justify-center mt-3">
+                    {categoryMenuItems.slice(0, 4).map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface border border-gray-200 dark:border-card-border text-xs font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+                      >
+                        <span>{cat.emoji}</span> {cat.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AC4: Trending / recent searches */}
+              {searchQuery.length === 0 && recentSearches.length > 0 && (
+                <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">🔥 Búsquedas recientes</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {recentSearches.map(term => (
+                      <button
+                        key={term}
+                        onClick={() => handleSearchSelect(term)}
+                        className="px-3 py-1.5 rounded-full bg-primary/5 dark:bg-primary/10 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Trending products — popular items being added to cart */}
+              {searchQuery.length === 0 && trendingProducts.length > 0 && (
+                <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1">
+                    <Flame className="h-3 w-3 text-orange-500" /> Productos populares ahora
+                  </p>
+                  <div className="space-y-1">
+                    {trendingProducts.map(p => (
+                      <button
+                        key={p.id}
+                        onClick={() => handleSearchSelect(p.name)}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-foreground hover:bg-primary/5 hover:text-primary transition-colors text-left"
+                      >
+                        {p.image && (
+                          <Image src={p.image} alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover bg-gray-100 shrink-0" unoptimized={p.image.startsWith("data:")} />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <span className="font-semibold text-xs block truncate">{p.name}</span>
+                          <span className="text-[10px] text-muted">S/{p.price.toFixed(2)}</span>
+                        </div>
+                        <Flame className="h-3 w-3 text-orange-400 shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Quick categories */}
               {searchQuery.length === 0 && (
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
@@ -899,6 +1297,12 @@ export default function Header() {
               )}
             </div>
           </div>
+        </div>
+      )}
+      {/* Voice ordering confirmation toast */}
+      {voiceResult && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold animate-bounce">
+          ✅ {voiceResult.qty}x {voiceResult.product} agregado al carrito
         </div>
       )}
     </header>

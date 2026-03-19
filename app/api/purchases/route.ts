@@ -13,14 +13,14 @@ const PurchaseItemSchema = z.object({
 });
 
 const PurchaseSchema = z.object({
-  supplierId: z.string().min(1),
+  supplierId: z.string().default(""),
   supplierName: z.string().max(200).optional(),
   items: z.array(PurchaseItemSchema).min(1, "at least one item required"),
   notes: z.string().max(1000).optional(),
 });
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
   try {

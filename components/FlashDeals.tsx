@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Flame, Plus, Package, Zap } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
+import { useSettings } from "@/contexts/settings-context";
 import { products } from "@/data/products";
 import type { Product } from "@/data/products";
 
@@ -28,23 +29,33 @@ function pad(n: number) {
 }
 
 // Pick 4 random products as daily "flash deals" with fake discounts
-function pickDeals(): Array<Product & { originalPrice: number; discount: number }> {
+function pickDeals(discount: number): Array<Product & { originalPrice: number; discount: number }> {
   const shuffled = [...products].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 4).map((p) => {
-    const discount = [10, 15, 20, 25, 30][Math.floor(Math.random() * 5)];
-    return {
-      ...p,
-      originalPrice: +(p.price / (1 - discount / 100)).toFixed(2),
-      discount,
-    };
-  });
+  return shuffled.slice(0, 4).map((p) => ({
+    ...p,
+    originalPrice: +(p.price / (1 - discount / 100)).toFixed(2),
+    discount,
+  }));
+}
+
+// Build deals from admin-selected IDs, or fall back to random
+function buildAdminDeals(ids: number[], discount: number): Array<Product & { originalPrice: number; discount: number }> {
+  const selected = ids
+    .map(id => products.find(p => p.id === id))
+    .filter(Boolean) as Product[];
+  if (selected.length === 0) return [];
+  return selected.slice(0, 6).map(p => ({
+    ...p,
+    originalPrice: +(p.price / (1 - discount / 100)).toFixed(2),
+    discount,
+  }));
 }
 
 const DEALS_KEY = "bsm-flash-deals";
 const DEALS_DATE_KEY = "bsm-flash-deals-date";
 
-function loadOrCreateDeals() {
-  if (typeof window === "undefined") return pickDeals();
+function loadOrCreateDeals(discount: number) {
+  if (typeof window === "undefined") return pickDeals(discount);
   const today = new Date().toDateString();
   const savedDate = localStorage.getItem(DEALS_DATE_KEY);
   if (savedDate === today) {
@@ -53,22 +64,27 @@ function loadOrCreateDeals() {
       if (saved.length > 0) return saved;
     } catch {}
   }
-  const deals = pickDeals();
+  const deals = pickDeals(discount);
   localStorage.setItem(DEALS_KEY, JSON.stringify(deals));
   localStorage.setItem(DEALS_DATE_KEY, today);
   return deals;
 }
 
 export default function FlashDeals() {
+  const { homepage: hp } = useSettings();
   const [deals, setDeals] = useState<Array<Product & { originalPrice: number; discount: number }>>([]);
   const [endTime] = useState(getEndOfDay);
   const [time, setTime] = useState(getTimeLeft(endTime));
   const { addItem } = useCart();
   const { showToast } = useToast();
+  const discount = hp.flashDealDiscount ?? 20;
 
   useEffect(() => {
-    startTransition(() => setDeals(loadOrCreateDeals()));
-  }, []);
+    // Prefer admin-selected deals, fall back to random daily picks
+    const adminIds = hp.flashDealIds ?? [];
+    const adminDeals = adminIds.length > 0 ? buildAdminDeals(adminIds, discount) : [];
+    startTransition(() => setDeals(adminDeals.length > 0 ? adminDeals : loadOrCreateDeals(discount)));
+  }, [hp.flashDealIds, discount]);
 
   useEffect(() => {
     const t = setInterval(() => setTime(getTimeLeft(endTime)), 1000);
@@ -77,8 +93,28 @@ export default function FlashDeals() {
 
   if (deals.length === 0) return null;
 
+  /* JSON-LD Offer schema for flash deals */
+  const flashOffersSchema = {
+    "@context": "https://schema.org",
+    "@type": "OfferCatalog",
+    name: "Ofertas Relámpago — Bodega San Martín",
+    itemListElement: deals.map((d) => ({
+      "@type": "Offer",
+      name: d.name,
+      price: (d.originalPrice - d.originalPrice * d.discount / 100).toFixed(2),
+      priceCurrency: "PEN",
+      availability: "https://schema.org/InStock",
+      priceValidUntil: endTime.toISOString().split("T")[0],
+      eligibleRegion: { "@type": "Place", name: "Pucallpa, Ucayali, Perú" },
+    })),
+  };
+
   return (
     <section className="py-10 sm:py-14 bg-orange-50/70 dark:bg-surface">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(flashOffersSchema) }}
+      />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">

@@ -193,8 +193,26 @@ export default function Testimonials() {
   const prevIdx = (safeCurrent - 1 + n) % n;
   const nextIdx = (safeCurrent + 1) % n;
 
+  // Review schema for static testimonials (SSR-safe, not dependent on dynamic reviews)
+  const reviewSchema = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    "@id": "https://www.bodegasanmartin.pe/#grocery-store",
+    review: STATIC_TESTIMONIALS.map((t, i) => ({
+      "@type": "Review",
+      author: { "@type": "Person", name: t.name },
+      datePublished: ["2025-09-15", "2025-10-02", "2025-11-20"][i],
+      reviewBody: t.text,
+      reviewRating: { "@type": "Rating", ratingValue: String(t.rating), bestRating: "5" },
+    })),
+  };
+
   return (
     <section ref={sectionRef} id="nuestros-clientes" className="py-20 sm:py-28 bg-primary/5">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewSchema) }}
+      />
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Title */}
         <div className="text-center mb-14">

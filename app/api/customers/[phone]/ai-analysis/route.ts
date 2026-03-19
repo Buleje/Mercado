@@ -52,6 +52,10 @@ export async function POST(req: Request) {
       loyaltyPoints: 0,
       loyaltyTier: "Nuevo",
       totalSpent: 0,
+      creditBalance: 0,
+      notifOrderUpdates: true,
+      notifPromotions: true,
+      notifRestock: true,
     });
     return NextResponse.json(record);
   } catch {

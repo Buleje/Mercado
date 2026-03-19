@@ -1,26 +1,90 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Ticket, Plus, Trash2, Check, X, Loader2, Copy } from "lucide-react";
+import { Ticket, Plus, Trash2, Check, X, Loader2, Copy, Gift, Sparkles, Zap, UserPlus, PartyPopper, Settings, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Coupon = {
   id: string; code: string; description: string;
-  discountType: "percent" | "fixed"; discountValue: number;
+  discountType: "percent" | "fixed" | "giftcard"; discountValue: number;
+  balance?: number;
   minPurchase?: number; maxUses?: number; usedCount: number;
   active: boolean; expiresAt?: string; createdAt: string;
+};
+
+type AutoRule = {
+  id: string;
+  type: "birthday" | "first-purchase" | "inactive" | "min-spend" | "referral";
+  enabled: boolean;
+  config: {
+    discountType?: "percent" | "fixed";
+    discountValue?: number;
+    validityDays?: number;
+    inactiveDays?: number;
+    minSpend?: number;
+    autoSend?: boolean;
+  };
+};
+
+type GeneratedCouponLog = {
+  id: string;
+  date: string;
+  customer: string;
+  ruleType: string;
+  couponCode: string;
+  status: "sent" | "pending" | "used";
 };
 
 export default function CouponsTab() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ code: "", description: "", discountType: "percent" as "percent" | "fixed", discountValue: 10, minPurchase: 0, maxUses: 0, expiresAt: "" });
+  const [form, setForm] = useState({ code: "", description: "", discountType: "percent" as "percent" | "fixed" | "giftcard", discountValue: 10, balance: 0, minPurchase: 0, maxUses: 0, expiresAt: "" });
+
+  // Auto-rules state
+  const [autoRules, setAutoRules] = useState<AutoRule[]>(() => {
+    try {
+      const stored = localStorage.getItem("coupon-auto-rules");
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return [
+      { id: "birthday", type: "birthday", enabled: false, config: { discountType: "percent", discountValue: 10, validityDays: 7, autoSend: false } },
+      { id: "first-purchase", type: "first-purchase", enabled: false, config: { discountType: "percent", discountValue: 15, validityDays: 30, autoSend: false } },
+      { id: "inactive", type: "inactive", enabled: false, config: { discountType: "percent", discountValue: 20, inactiveDays: 30, validityDays: 14, autoSend: false } },
+      { id: "min-spend", type: "min-spend", enabled: false, config: { discountType: "fixed", discountValue: 10, minSpend: 100, autoSend: false } },
+      { id: "referral", type: "referral", enabled: false, config: { discountType: "percent", discountValue: 10, validityDays: 30, autoSend: false } },
+    ];
+  });
+  const [editingRule, setEditingRule] = useState<AutoRule | null>(null);
+  const [showRuleConfig, setShowRuleConfig] = useState(false);
+  const [generatedLogs, setGeneratedLogs] = useState<GeneratedCouponLog[]>(() => {
+    try {
+      const stored = localStorage.getItem("coupon-generated-logs");
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return [];
+  });
+  const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
+  const [templatePattern, setTemplatePattern] = useState("BDAY{MMDD}{RND3}");
 
   const load = useCallback(() => {
     fetch("/api/coupons").then(r => r.json()).then(setCoupons).catch(() => {}).finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  // Save auto-rules to localStorage
+  useEffect(() => {
+    if (autoRules.length > 0) {
+      localStorage.setItem("coupon-auto-rules", JSON.stringify(autoRules));
+    }
+  }, [autoRules]);
+
+  // Save logs to localStorage
+  useEffect(() => {
+    if (generatedLogs.length >= 0) {
+      localStorage.setItem("coupon-generated-logs", JSON.stringify(generatedLogs));
+    }
+  }, [generatedLogs]);
 
   const handleCreate = async () => {
     if (!form.code.trim() || !form.discountValue) return;
@@ -34,7 +98,7 @@ export default function CouponsTab() {
         expiresAt: form.expiresAt || undefined,
       }),
     });
-    if (res.ok) { load(); setShowForm(false); setForm({ code: "", description: "", discountType: "percent", discountValue: 10, minPurchase: 0, maxUses: 0, expiresAt: "" }); }
+    if (res.ok) { load(); setShowForm(false); setForm({ code: "", description: "", discountType: "percent", discountValue: 10, balance: 0, minPurchase: 0, maxUses: 0, expiresAt: "" }); }
   };
 
   const toggleActive = async (c: Coupon) => {
@@ -48,10 +112,140 @@ export default function CouponsTab() {
     load();
   };
 
+  // Auto-rules management
+  const toggleRule = (id: string) => {
+    setAutoRules(prev => prev.map(r => r.id === id ? { ...r, enabled: !r.enabled } : r));
+  };
+
+  const openRuleConfig = (rule: AutoRule) => {
+    setEditingRule(rule);
+    setShowRuleConfig(true);
+  };
+
+  const saveRuleConfig = () => {
+    if (!editingRule) return;
+    setAutoRules(prev => prev.map(r => r.id === editingRule.id ? editingRule : r));
+    setShowRuleConfig(false);
+    setEditingRule(null);
+  };
+
+  const generateTestCoupon = () => {
+    const rnd = Math.random().toString(36).substring(2, 5).toUpperCase();
+    const mmdd = new Date().toISOString().slice(5, 10).replace("-", "");
+    const code = templatePattern.replace("{MMDD}", mmdd).replace("{RND3}", rnd);
+    alert(`Código generado: ${code}`);
+    return code;
+  };
+
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  const ruleConfigs = {
+    birthday: { label: "Cumpleaños", icon: PartyPopper, color: "from-pink-500 to-rose-600", desc: "Cupón automático en cumpleaños del cliente" },
+    "first-purchase": { label: "Primera compra", icon: UserPlus, color: "from-emerald-500 to-teal-600", desc: "Bienvenida para nuevos clientes" },
+    inactive: { label: "Cliente inactivo", icon: Zap, color: "from-amber-500 to-orange-600", desc: "Reactivar clientes sin compras recientes" },
+    "min-spend": { label: "Gasto mínimo", icon: Gift, color: "from-purple-500 to-indigo-600", desc: "Recompensa por alcanzar monto acumulado" },
+    referral: { label: "Referidos", icon: Sparkles, color: "from-blue-500 to-cyan-600", desc: "Cupón para referidor y referido" },
+  };
 
   return (
     <div className="space-y-6">
+      {/* ── Reglas Automáticas ────────────────────────────────────────────── */}
+      <div className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-900/50 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Reglas Automáticas</h3>
+              <p className="text-xs text-gray-500 dark:text-muted">Genera cupones automáticamente</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowTemplateBuilder(true)}
+            className="flex items-center gap-2 bg-white dark:bg-card border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 px-4 py-2 rounded-xl text-sm font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition"
+          >
+            <Calendar className="h-4 w-4" /> Plantilla
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          {autoRules.map(rule => {
+            const config = ruleConfigs[rule.type];
+            const Icon = config.icon;
+            return (
+              <div key={rule.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className={cn("w-10 h-10 rounded-lg bg-linear-to-br flex items-center justify-center shrink-0", config.color)}>
+                    <Icon className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-bold text-gray-900 dark:text-foreground">{config.label}</span>
+                      {rule.enabled && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                          <Check className="h-3 w-3" /> Activa
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 dark:text-muted">{config.desc}</p>
+                    {rule.enabled && (
+                      <p className="text-xs text-gray-400 dark:text-muted mt-1">
+                        {rule.config.discountType === "percent" ? `${rule.config.discountValue}%` : `S/${rule.config.discountValue}`} descuento
+                        {rule.config.validityDays && ` · ${rule.config.validityDays} días validez`}
+                        {rule.config.autoSend && " · 📤 Auto-envío"}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => openRuleConfig(rule)}
+                      className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                      title="Configurar"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </button>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={rule.enabled} onChange={() => toggleRule(rule.id)} className="sr-only peer" />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Cupones Generados Automáticamente ─────────────────────────────── */}
+      {generatedLogs.length > 0 && (
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6">
+          <h3 className="font-extrabold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            Historial de cupones auto-generados
+          </h3>
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {generatedLogs.map(log => (
+              <div key={log.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-surface rounded-xl text-sm">
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-900 dark:text-foreground">{log.customer}</p>
+                  <p className="text-xs text-gray-400 dark:text-muted">
+                    {log.ruleType} · {new Date(log.date).toLocaleDateString()} · <span className="font-mono font-bold text-primary">{log.couponCode}</span>
+                  </p>
+                </div>
+                <span className={cn("inline-flex px-2 py-1 rounded-full text-xs font-bold",
+                  log.status === "sent" ? "bg-green-100 text-green-700" :
+                  log.status === "used" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                )}>
+                  {log.status === "sent" ? "Enviado" : log.status === "used" ? "Usado" : "Pendiente"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Cupones Manuales ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Ticket className="h-6 w-6 text-primary" />Cupones</h2>
         <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition">
@@ -72,13 +266,14 @@ export default function CouponsTab() {
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted">Tipo</label>
-              <select value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as "percent" | "fixed" }))} className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm">
+              <select value={form.discountType} onChange={e => setForm(f => ({ ...f, discountType: e.target.value as "percent" | "fixed" | "giftcard" }))} className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm">
                 <option value="percent">Porcentaje (%)</option>
                 <option value="fixed">Monto fijo (S/)</option>
+                <option value="giftcard">Gift Card (saldo)</option>
               </select>
             </div>
             <div>
-              <label className="text-xs font-bold text-gray-500 dark:text-muted">Valor *</label>
+              <label className="text-xs font-bold text-gray-500 dark:text-muted">{form.discountType === "giftcard" ? "Saldo inicial (S/) *" : "Valor *"}</label>
               <input type="number" value={form.discountValue} onChange={e => setForm(f => ({ ...f, discountValue: Number(e.target.value) }))} className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
             </div>
             <div>
@@ -113,7 +308,7 @@ export default function CouponsTab() {
               </div>
               <p className="text-sm text-gray-500 dark:text-muted">{c.description || "Sin descripción"}</p>
               <div className="flex flex-wrap gap-3 mt-1 text-xs text-gray-400 dark:text-muted">
-                <span className="font-bold text-emerald-600">{c.discountType === "percent" ? `${c.discountValue}%` : `S/${c.discountValue}`}</span>
+                <span className="font-bold text-emerald-600">{c.discountType === "percent" ? `${c.discountValue}%` : c.discountType === "giftcard" ? `GC S/${(c.balance ?? c.discountValue).toFixed(2)}` : `S/${c.discountValue}`}</span>
                 {c.minPurchase ? <span>Min: S/{c.minPurchase}</span> : null}
                 {c.maxUses ? <span>Usos: {c.usedCount}/{c.maxUses}</span> : <span>Usos: {c.usedCount}/∞</span>}
                 {c.expiresAt && <span>Exp: {new Date(c.expiresAt).toLocaleDateString()}</span>}
@@ -128,6 +323,116 @@ export default function CouponsTab() {
           </div>
         ))}
       </div>
+
+      {/* ── Rule Configuration Modal ──────────────────────────────────────── */}
+      {showRuleConfig && editingRule && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setShowRuleConfig(false)}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
+              <div>
+                <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Configurar Regla</h3>
+                <p className="text-xs text-gray-500 dark:text-muted">{ruleConfigs[editingRule.type].label}</p>
+              </div>
+              <button onClick={() => setShowRuleConfig(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Tipo de descuento</label>
+                <select value={editingRule.config.discountType} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, discountType: e.target.value as "percent" | "fixed" } })}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface">
+                  <option value="percent">Porcentaje (%)</option>
+                  <option value="fixed">Monto fijo (S/)</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Valor del descuento</label>
+                <input type="number" value={editingRule.config.discountValue} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, discountValue: Number(e.target.value) } })}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+              </div>
+              {editingRule.type !== "min-spend" && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Días de validez</label>
+                  <input type="number" value={editingRule.config.validityDays} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, validityDays: Number(e.target.value) } })}
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                </div>
+              )}
+              {editingRule.type === "inactive" && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Días de inactividad antes de activar</label>
+                  <input type="number" value={editingRule.config.inactiveDays} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, inactiveDays: Number(e.target.value) } })}
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                </div>
+              )}
+              {editingRule.type === "min-spend" && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Gasto mínimo acumulado (S/)</label>
+                  <input type="number" value={editingRule.config.minSpend} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, minSpend: Number(e.target.value) } })}
+                    className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
+                </div>
+              )}
+              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
+                <input type="checkbox" id="ruleAutoSend" checked={editingRule.config.autoSend} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, autoSend: e.target.checked } })}
+                  className="rounded border-gray-300 text-primary focus:ring-primary" />
+                <label htmlFor="ruleAutoSend" className="text-sm font-medium text-gray-700 dark:text-foreground cursor-pointer flex-1">
+                  Enviar automáticamente por WhatsApp
+                </label>
+              </div>
+            </div>
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex gap-3">
+              <button onClick={() => setShowRuleConfig(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
+              <button onClick={saveRuleConfig} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Template Builder Modal ────────────────────────────────────────── */}
+      {showTemplateBuilder && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setShowTemplateBuilder(false)}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
+              <div>
+                <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Constructor de Plantilla</h3>
+                <p className="text-xs text-gray-500 dark:text-muted">Define el patrón de códigos automáticos</p>
+              </div>
+              <button onClick={() => setShowTemplateBuilder(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Patrón</label>
+                <input type="text" value={templatePattern} onChange={e => setTemplatePattern(e.target.value.toUpperCase())}
+                  className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary font-mono" placeholder="BDAY{MMDD}{RND3}" />
+                <p className="text-xs text-gray-400 dark:text-muted mt-2">
+                  Variables: <span className="font-mono">{"{MMDD}"}</span> (mes/día), <span className="font-mono">{"{RND3}"}</span> (3 dígitos random)
+                </p>
+              </div>
+              <div className="bg-gray-50 dark:bg-surface p-4 rounded-xl">
+                <p className="text-xs font-bold text-gray-500 dark:text-muted mb-2">Plantillas sugeridas:</p>
+                <div className="space-y-1">
+                  {["BDAY{MMDD}{RND3}", "NEW{RND3}", "REACT{MMDD}", "GIFT{RND3}", "VIP{MMDD}{RND3}"].map(p => (
+                    <button key={p} onClick={() => setTemplatePattern(p)}
+                      className="w-full text-left px-3 py-2 rounded-lg text-sm font-mono bg-white dark:bg-card border border-gray-200 dark:border-card-border hover:border-primary transition-colors">
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button onClick={generateTestCoupon}
+                className="w-full py-2.5 rounded-xl text-sm font-semibold text-primary bg-primary/10 hover:bg-primary/20 transition-colors">
+                Generar código de prueba
+              </button>
+            </div>
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border">
+              <button onClick={() => setShowTemplateBuilder(false)} className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

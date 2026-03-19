@@ -1,14 +1,19 @@
 export const dynamic = 'force-dynamic'
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { BundlesDB } from "@/lib/jsondb";
+import { requireAdmin } from "@/lib/require-admin";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+  const searchParams = req.nextUrl.searchParams;
   const activeOnly = searchParams.get("active") === "true";
   return NextResponse.json(activeOnly ? await BundlesDB.getActive() : await BundlesDB.getAll());
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
   const body = await req.json();
   if (!body.name || !body.price || !Array.isArray(body.items) || body.items.length === 0) {
     return NextResponse.json({ error: "name, price, and items required" }, { status: 400 });

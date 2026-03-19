@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Gift, ArrowRight, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useCart } from "@/contexts/cart-context";
+import { useSettings } from "@/contexts/settings-context";
 import { trackExitIntentShown, trackExitIntentAction } from "@/lib/analytics";
 
 interface ExitIntentModalProps {
@@ -17,6 +18,9 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
   const [show, setShow] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const { count, total, toggle } = useCart();
+  const { homepage: hp } = useSettings();
+  const promoCode = hp.exitPromoCode || "BIENVENIDO";
+  const promoMin = hp.exitPromoMinAmount ?? 50;
 
   useEffect(() => {
     // Check if already shown in this session
@@ -51,11 +55,36 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
       document.addEventListener("mouseleave", handleMouseLeave);
     }
 
+    // Mobile: detect tab switch / background via visibilitychange
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        const shown = sessionStorage.getItem("bsm:exitIntentShown");
+        if (shown !== "true" || forceShow) {
+          // Show when user returns
+          const handleReturn = () => {
+            if (document.visibilityState === "visible") {
+              setShow(true);
+              sessionStorage.setItem("bsm:exitIntentShown", "true");
+              trackExitIntentShown(count > 0);
+              document.removeEventListener("visibilitychange", handleReturn);
+            }
+          };
+          document.addEventListener("visibilitychange", handleReturn);
+        }
+      }
+    };
+
+    if (!mediaQuery.matches) {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    }
+
     const handleMediaChange = () => {
       if (mediaQuery.matches) {
         document.addEventListener("mouseleave", handleMouseLeave);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
       } else {
         document.removeEventListener("mouseleave", handleMouseLeave);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
       }
     };
 
@@ -63,6 +92,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
 
     return () => {
       document.removeEventListener("mouseleave", handleMouseLeave);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       mediaQuery.removeEventListener("change", handleMediaChange);
     };
   }, [enabled, forceShow, count]);
@@ -79,7 +109,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
 
   return (
     <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeDown_0.25s_ease-out]">
-      <div className="relative bg-white dark:bg-card rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]">
+      <div role="dialog" aria-modal="true" aria-label="Oferta antes de irte" className="relative bg-white dark:bg-card rounded-3xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden animate-[scaleIn_0.3s_ease-out]">
         {/* Close button */}
         <button
           onClick={handleClose}
@@ -144,12 +174,12 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
                 ¡Espera! 🎁
               </h2>
               <p className="text-muted text-base mb-6">
-                Aprovecha <strong className="text-primary">delivery GRATIS</strong> en tu primera compra mayor a S/50
+                Aprovecha <strong className="text-primary">delivery GRATIS</strong> en tu primera compra mayor a S/{promoMin}
               </p>
               <div className="bg-linear-to-r from-secondary/10 to-primary/10 rounded-2xl p-5 mb-6 border-2 border-dashed border-primary/20">
                 <p className="text-sm font-semibold text-muted mb-2">Código de descuento</p>
-                <p className="text-3xl font-black text-primary tracking-wider">BIENVENIDO</p>
-                <p className="text-xs text-muted mt-2">Válido en compras mayores a S/50</p>
+                <p className="text-3xl font-black text-primary tracking-wider">{promoCode}</p>
+                <p className="text-xs text-muted mt-2">Válido en compras mayores a S/{promoMin}</p>
               </div>
               <div className="flex flex-col gap-3">
                 <Link

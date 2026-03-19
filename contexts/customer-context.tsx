@@ -23,6 +23,7 @@ export type Customer = {
   reference: string;
   locations?: SavedLocation[];
   activeLocationId?: string;
+  birthday?: string; // MM-DD
 };
 
 type CustomerCtx = {
@@ -80,6 +81,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
           reference: data.reference,
           locations: data.locations ?? [],
           activeLocationId: data.activeLocationId ?? null,
+          birthday: data.birthday ?? null,
         }),
       }).catch(() => {});
     }

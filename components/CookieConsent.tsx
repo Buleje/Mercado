@@ -29,14 +29,19 @@ export default function CookieConsent() {
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-60 p-4 sm:p-6 animate-[fadeUp_0.4s_ease-out]">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cookie-consent-title"
+      className="fixed bottom-0 left-0 right-0 z-60 p-4 sm:p-6 animate-[fadeUp_0.4s_ease-out]"
+    >
       <div className="mx-auto max-w-2xl bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border p-5 sm:p-6">
         <div className="flex items-start gap-4">
           <div className="shrink-0 flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 text-primary">
             <Shield className="h-5 w-5" />
           </div>
           <div className="flex-1">
-            <h3 className="font-bold text-foreground text-sm mb-1">🍪 Usamos cookies</h3>
+            <h3 id="cookie-consent-title" className="font-bold text-foreground text-sm mb-1">🍪 Usamos cookies</h3>
             <p className="text-xs text-muted leading-relaxed">
               Utilizamos cookies y almacenamiento local para mejorar tu experiencia de compra, 
               recordar tu carrito y preferencias. No compartimos tu información con terceros.

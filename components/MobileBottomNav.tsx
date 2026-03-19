@@ -2,7 +2,7 @@
 
 import { useState, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Home, Store, Heart, ShoppingCart, User } from "lucide-react";
+import { Home, Store, Search, ShoppingCart, User } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { id: "home", label: "Inicio", icon: Home, action: "go-home" },
   { id: "tienda", label: "Tienda", icon: Store, action: "go-tienda" },
-  { id: "favs", label: "Favoritos", icon: Heart, action: "scroll-favs" },
+  { id: "buscar", label: "Buscar", icon: Search, action: "go-buscar" },
   { id: "cart", label: "Carrito", icon: ShoppingCart, action: "cart" },
   { id: "cuenta", label: "Cuenta", icon: User, action: "account" },
 ] as const;
@@ -35,7 +35,7 @@ export default function MobileBottomNav() {
   }, []);
 
   const handleTap = (action: string) => {
-    setActive(action === "go-home" ? "home" : action === "go-tienda" ? "tienda" : action === "scroll-favs" ? "favs" : action);
+    setActive(action === "go-home" ? "home" : action === "go-tienda" ? "tienda" : action === "go-buscar" ? "buscar" : action);
 
     switch (action) {
       case "go-home":
@@ -44,16 +44,9 @@ export default function MobileBottomNav() {
       case "go-tienda":
         router.push("/tienda");
         break;
-      case "scroll-favs": {
-        // If already on /tienda within reach of #favoritos, scroll; otherwise navigate with anchor
-        const favEl = document.getElementById("favoritos");
-        if (favEl) {
-          favEl.scrollIntoView({ behavior: "smooth" });
-        } else {
-          router.push("/tienda#favoritos");
-        }
+      case "go-buscar":
+        router.push("/buscar");
         break;
-      }
       case "cart":
         openCart();
         break;

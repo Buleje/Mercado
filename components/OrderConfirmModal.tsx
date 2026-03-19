@@ -1,21 +1,60 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { X, CheckCircle2, Clock, XCircle, MessageCircleOff } from "lucide-react";
+import { X, CheckCircle2, Clock, XCircle, MessageCircleOff, ShoppingBag } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useReviews } from "@/contexts/reviews-context";
 import { useCustomer } from "@/contexts/customer-context";
+import { useSettings } from "@/contexts/settings-context";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 
-const WA_NUMBER = "51916409675";
-const CONFIRM_MSG = "Hola! Recibi con exito el pedido. Muchas gracias Bodega San Martin!";
-const REJECT_MSG = "Hola, tuve un problema con mi pedido y necesito asistencia.";
+const DEFAULT_WA = "51916409675";
+
+function extractWaNumber(url?: string): string {
+  if (!url) return DEFAULT_WA;
+  const match = url.match(/wa\.me\/(\d+)/);
+  return match?.[1] ?? DEFAULT_WA;
+}
+
+type LastOrder = { id: string; items: { name: string; qty: number; price: number }[]; total: number } | null;
 
 export default function OrderConfirmModal() {
   const { confirmModalOpen, closeConfirmModal, clearPendingOrder, confirmFromCheckout } = useCart();
   const { openReviewModal } = useReviews();
   const { customer } = useCustomer();
+  const { homepage } = useSettings();
+  const WA_NUMBER = extractWaNumber(homepage.footerWhatsApp);
   useScrollLock(confirmModalOpen);
+
+  // Load last order info — initial read from localStorage, updated by bsm:orderCreated event
+  const [lastOrder, setLastOrder] = useState<LastOrder>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("bsm-last-order");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+
+  useEffect(() => {
+    const handler = () => {
+      try {
+        const raw = localStorage.getItem("bsm-last-order");
+        setLastOrder(raw ? JSON.parse(raw) : null);
+      } catch { setLastOrder(null); }
+    };
+    window.addEventListener("bsm:orderCreated", handler);
+    return () => window.removeEventListener("bsm:orderCreated", handler);
+  }, []);
+
+  const orderId = lastOrder?.id ?? "";
+  const shortId = orderId ? `#${orderId.slice(-6).toUpperCase()}` : "";
+  const CONFIRM_MSG = orderId
+    ? `Hola! Recibi con exito el pedido ${shortId}. Muchas gracias Bodega San Martin!`
+    : "Hola! Recibi con exito el pedido. Muchas gracias Bodega San Martin!";
+  const REJECT_MSG = orderId
+    ? `Hola, tuve un problema con mi pedido ${shortId} y necesito asistencia.`
+    : "Hola, tuve un problema con mi pedido y necesito asistencia.";
 
   const handleConfirm = () => {
     clearPendingOrder();
@@ -23,8 +62,8 @@ export default function OrderConfirmModal() {
       const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(CONFIRM_MSG)}`;
       window.open(url, "_blank", "noopener");
     }
+    try { localStorage.removeItem("bsm-last-order"); } catch { /* ignore */ }
     closeConfirmModal();
-    // Open review modal after short delay
     const name = customer?.name ?? "Cliente";
     const loc = customer?.location ?? "Pucallpa";
     setTimeout(() => openReviewModal(name, loc), 500);
@@ -34,6 +73,7 @@ export default function OrderConfirmModal() {
     clearPendingOrder();
     const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(REJECT_MSG)}`;
     window.open(url, "_blank", "noopener");
+    try { localStorage.removeItem("bsm-last-order"); } catch { /* ignore */ }
     closeConfirmModal();
   };
 
@@ -66,7 +106,7 @@ export default function OrderConfirmModal() {
             className="fixed inset-0 flex items-center justify-center p-4 pointer-events-none"
             style={{ zIndex: 8001 }}
           >
-            <div className="pointer-events-auto w-full max-w-sm bg-white dark:bg-background rounded-2xl shadow-2xl overflow-hidden">
+            <div className="pointer-events-auto w-full max-w-sm bg-white dark:bg-background rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-label="Confirmar recepción">
               {/* Header strip */}
               <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(90deg, #4f46e5, #6366f1, #4f46e5)" }}>
                 <div className="flex items-center gap-3">
@@ -103,10 +143,37 @@ export default function OrderConfirmModal() {
                   <p className="text-lg font-bold text-foreground leading-tight">
                     ¿Ya recibiste tu pedido?
                   </p>
+                  {shortId && (
+                    <p className="text-xs font-bold text-primary">{shortId}</p>
+                  )}
                   <p className="text-sm text-muted leading-relaxed">
                     Confirma la recepcion o reporta cualquier problema con tu pedido.
                   </p>
                 </div>
+
+                {/* Order summary */}
+                {lastOrder && lastOrder.items.length > 0 && (
+                  <div className="rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-surface/50 border-b border-gray-100 dark:border-card-border">
+                      <ShoppingBag className="h-3.5 w-3.5 text-muted" />
+                      <p className="text-[10px] font-bold text-muted uppercase tracking-wider">Resumen del pedido</p>
+                    </div>
+                    <div className="divide-y divide-gray-50 dark:divide-card-border max-h-32 overflow-y-auto">
+                      {lastOrder.items.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between px-3 py-1.5">
+                          <p className="text-xs text-foreground truncate flex-1 mr-2">
+                            {item.name} <span className="text-muted">×{item.qty}</span>
+                          </p>
+                          <p className="text-xs font-semibold text-foreground shrink-0">S/{(item.price * item.qty).toFixed(2)}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between px-3 py-2 bg-primary/5 border-t border-gray-100 dark:border-card-border">
+                      <p className="text-xs font-bold text-foreground">Total</p>
+                      <p className="text-sm font-extrabold text-primary">S/{lastOrder.total.toFixed(2)}</p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Confirm — green */}
                 <m.button

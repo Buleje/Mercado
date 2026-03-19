@@ -3,10 +3,16 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
+import { prisma } from "@/lib/prisma";
+import { headers } from "next/headers";
+import { unstable_cache } from "next/cache";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import InstallPrompt from "@/components/InstallPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { ToastContainer } from "@/components/ToastContainer";
 import { ThemeProvider } from "@/contexts/theme-context";
+import CommandPalette from "@/components/CommandPalette";
+import ClientEffects from "@/components/ui/ClientEffects";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.bodegasanmartin.pe"),
@@ -83,22 +89,27 @@ export const metadata: Metadata = {
       "Compra abarrotes online con delivery en Pucallpa. Pago por Yape o efectivo.",
     images: ["/og-image.jpg"],
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
+  robots: process.env.VERCEL_ENV === "preview" || process.env.VERCEL_ENV === "development"
+    ? { index: false, follow: false }
+    : {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-video-preview": -1,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+        },
+      },
   verification: {
-    google: "tu-codigo-de-verificacion-google",
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
   },
   alternates: {
     canonical: "https://www.bodegasanmartin.pe",
+    languages: {
+      "es-PE": "https://www.bodegasanmartin.pe",
+    },
   },
 };
 
@@ -109,23 +120,54 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-export default function RootLayout({
+// Cache review stats for 5 min — avoids a DB round-trip on every SSR request
+const getCachedReviewStats = unstable_cache(
+  async () => {
+    try {
+      const agg = await prisma.review.aggregate({ _avg: { rating: true }, _count: { rating: true } });
+      if (agg._count.rating > 0) {
+        return {
+          ratingValue: (agg._avg.rating ?? 4.9).toFixed(1),
+          ratingCount: String(agg._count.rating),
+        };
+      }
+    } catch { /* use defaults */ }
+    return { ratingValue: undefined, ratingCount: undefined };
+  },
+  ["review-stats"],
+  { revalidate: 300 }
+);
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Run headers() and DB query in parallel — shaves 100-500ms off TTFB
+  const [reqHeaders, { ratingValue, ratingCount }] = await Promise.all([
+    headers(),
+    getCachedReviewStats(),
+  ]);
+  const requestId = reqHeaders.get("x-request-id") ?? undefined;
+  // Per-request nonce for CSP — matches what middleware set in x-nonce
+  const nonce = reqHeaders.get("x-nonce") ?? undefined;
+
   return (
-    <html lang="es" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="es-PE" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
-        <SchemaMarkup />
+        {requestId && <meta name="x-request-id" content={requestId} />}
+        <SchemaMarkup ratingValue={ratingValue} ratingCount={ratingCount} />
         
-        {/* Resource Hints: Preconnect to critical origins */}
-        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://images.openfoodfacts.org" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://static.openfoodfacts.org" crossOrigin="anonymous" />
-        
-        {/* DNS Prefetch: Analytics and external services */}
-        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        {/* Critical preconnects — max 4 (more hurts performance per Lighthouse) */}
+        <link rel="preconnect" href="https://www.googletagmanager.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://region1.google-analytics.com" crossOrigin="anonymous" />
+        {process.env.NEXT_PUBLIC_SUPABASE_URL && (
+          <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} crossOrigin="anonymous" />
+        )}
+        {/* DNS Prefetch for secondary/image origins — cheaper than preconnect */}
+        <link rel="dns-prefetch" href="https://images.unsplash.com" />
+        <link rel="dns-prefetch" href="https://images.openfoodfacts.org" />
+        <link rel="dns-prefetch" href="https://static.openfoodfacts.org" />
         <link rel="dns-prefetch" href="https://www.google-analytics.com" />
         <link rel="dns-prefetch" href="https://www.clarity.ms" />
         <link rel="dns-prefetch" href="https://c.clarity.ms" />
@@ -143,12 +185,14 @@ export default function RootLayout({
         
         {/* Filtrar TODOS los errores de extensiones - Ejecutar PRIMERO */}
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `!function(){"use strict";var e=console.error;console.error=function(){for(var o=[],r=0;r<arguments.length;r++)o[r]=arguments[r];var n=o.join(" ");n.includes("bootstrap-autofill")||n.includes("extension")||n.includes("chrome-extension")||n.includes("Cache")||e.apply(console,o)};var o=function(e){if(!e)return!1;var o=e.toString?e.toString():"",r=e.filename||"",n=e.stack||"",t=e.message||"";return r.includes("extension")||r.includes("bootstrap-autofill")||r.includes("chrome-extension")||r.includes("moz-extension")||o.includes("extension")||o.includes("Cache")||n.includes("extension")||n.includes("bootstrap-autofill")||n.includes("chrome-extension")||n.includes("Cache")||t.includes("extension")||t.includes("Cache")};window.addEventListener("error",(function(e){if(o(e))return e.preventDefault(),e.stopImmediatePropagation(),!0}),!0),window.addEventListener("unhandledrejection",(function(e){if(o(e.reason))return e.preventDefault(),e.stopImmediatePropagation(),console.log("[Filtrado] Error de extensión bloqueado"),!0}),!0)}();`,
           }}
         />
         {/* Evitar flash de tema incorrecto */}
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `(function(){try{var t=localStorage.getItem("bsm-theme");var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})()`,
           }}
@@ -157,6 +201,8 @@ export default function RootLayout({
       <body className="antialiased">
         <ThemeProvider>
         <ErrorBoundary>
+        {/* Global interactive UX layer */}
+        <ClientEffects />
         {/* Skip to content — accesibilidad */}
         <a
           href="#main-content"
@@ -166,7 +212,9 @@ export default function RootLayout({
         </a>
         <ServiceWorkerRegistrar />
         <InstallPrompt />
+        <CommandPalette />
         {children}
+        <ToastContainer position="bottom-right" />
         </ErrorBoundary>
         </ThemeProvider>
       </body>

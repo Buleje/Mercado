@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { PromotionsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
 
 const PromotionSchema = z.object({
   name: z.string().min(1, "name required").max(200),
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
   const all = await PromotionsDB.getAll();
 
   // Admin sees full data including targetPhones
-  const auth = await requireAdmin(req);
+  const auth = await requireAdmin(req, ["admin"]);
   if (!(auth instanceof NextResponse)) {
     return NextResponse.json(all);
   }
@@ -34,9 +35,13 @@ export async function GET(req: NextRequest) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     .map(({ targetPhones, ...rest }) => rest);
 
-  return NextResponse.json(publicPromos);
+  return NextResponse.json(publicPromos, {
+    headers: {
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+    },
+  });
   } catch (e) {
-    console.error("[promotions] GET error:", e);
+    logger.error("[promotions] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json([], { status: 200 });
   }
 }
@@ -49,19 +54,25 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   const data = parsed.data;
   const id = `promo-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const promo = await PromotionsDB.add({
-    id,
-    name: data.name,
-    description: data.description || "",
-    discountPercent: data.discountPercent ?? 0,
-    minPurchase: data.minPurchase,
-    imageUrl: data.imageUrl || undefined,
-    message: data.message || undefined,
-    targetType: data.targetType || "all",
-    targetPhones: data.targetPhones || undefined,
-    active: data.active ?? true,
-    createdAt: new Date().toISOString(),
-    expiresAt: data.expiresAt || undefined,
-  });
-  return NextResponse.json(promo, { status: 201 });
+  try {
+    const promo = await PromotionsDB.add({
+      id,
+      name: data.name,
+      description: data.description || "",
+      discountPercent: data.discountPercent ?? 0,
+      minPurchase: data.minPurchase,
+      imageUrl: data.imageUrl || undefined,
+      message: data.message || undefined,
+      targetType: data.targetType || "all",
+      targetPhones: data.targetPhones || undefined,
+      active: data.active ?? true,
+      createdAt: new Date().toISOString(),
+      expiresAt: data.expiresAt || undefined,
+    });
+    logger.info("[promotions] POST created", { id: promo.id, name: promo.name, requestId: req.headers.get("x-request-id") ?? undefined });
+    return NextResponse.json(promo, { status: 201 });
+  } catch (e) {
+    logger.error("[promotions] POST error", { err: e instanceof Error ? e.message : String(e), requestId: req.headers.get("x-request-id") ?? undefined });
+    return NextResponse.json({ error: "Error al crear promoción" }, { status: 503 });
+  }
 }

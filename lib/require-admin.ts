@@ -1,27 +1,22 @@
 import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionPayload, SESSION } from "@/lib/session";
-import type { AdminRole } from "@/lib/session";
+import type { AdminRole, SessionPayload } from "@/lib/session";
 
 /**
  * Verify the admin session from an API request.
- * Returns the session payload if valid, or a 401/403 response.
- *
- * Features:
- * - Token validation
- * - Role-based access control
- * - Basic security logging
- * - IP tracking for audit
+ * Returns the session payload (role, username, tenantId) if valid,
+ * or a 401/403 NextResponse.
  *
  * Usage:
  *   const auth = await requireAdmin(req, ["admin", "cajero"]);
  *   if (auth instanceof NextResponse) return auth;
- *   // auth is { role, username }
+ *   const db = prismaForTenant(auth.tenantId);
  */
 export async function requireAdmin(
   req: NextRequest,
   allowedRoles?: AdminRole[],
-): Promise<{ role: AdminRole; username: string } | NextResponse> {
+): Promise<SessionPayload | NextResponse> {
   const token = req.cookies.get(SESSION.COOKIE_NAME)?.value;
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? 
              req.headers.get("x-real-ip") ?? 
@@ -29,36 +24,29 @@ export async function requireAdmin(
   const path = req.nextUrl.pathname;
   const method = req.method;
 
-  // No token provided
   if (!token) {
-    console.warn(`[AUTH] Unauthorized access attempt: ${method} ${path} from ${ip}`);
+    console.warn(`[AUTH] Unauthorized: ${method} ${path} from ${ip}`);
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  // Token validation
   const payload = await getSessionPayload(token);
   if (!payload) {
     console.warn(`[AUTH] Invalid/expired token: ${method} ${path} from ${ip}`);
     return NextResponse.json({ error: "session expired" }, { status: 401 });
   }
 
-  // Role validation
   if (allowedRoles && !allowedRoles.includes(payload.role)) {
     console.warn(
-      `[AUTH] Forbidden: ${payload.username} (${payload.role}) attempted ${method} ${path} (requires: ${allowedRoles.join(", ")})`
+      `[AUTH] Forbidden: ${payload.username} (${payload.role}) → ${method} ${path}`
     );
     return NextResponse.json(
-      { 
-        error: "forbidden",
-        message: `This action requires one of the following roles: ${allowedRoles.join(", ")}` 
-      }, 
+      { error: "forbidden", message: `Requires: ${allowedRoles.join(", ")}` },
       { status: 403 }
     );
   }
 
-  // Success - log in development for debugging
   if (process.env.NODE_ENV === "development") {
-    console.log(`[AUTH] Authorized: ${payload.username} (${payload.role}) → ${method} ${path}`);
+    console.log(`[AUTH] OK: ${payload.username} (${payload.role}) tenant:${payload.tenantId} → ${method} ${path}`);
   }
 
   return payload;

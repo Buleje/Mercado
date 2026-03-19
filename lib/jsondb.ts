@@ -32,6 +32,8 @@ import type {
   Bundle as PBundle,
   BundleItem as PBundleItem,
   NotificationLog as PNotificationLog,
+  SurveyResponse as PSurveyResponse,
+  Warehouse as PWarehouse,
 } from "@/lib/generated/prisma/client";
 
 // ── Types (same shapes the route handlers expect) ─────────────────────────────
@@ -45,11 +47,19 @@ export type DbCustomer = {
   reference: string;
   locations: DbSavedLocation[];
   activeLocationId: string | null;
+  birthday?: string;
   aiNotes?: string;
   aiNotesDate?: string;
   loyaltyPoints: number;
   loyaltyTier: string;
   totalSpent: number;
+  privateNotes?: string;
+  referralCode?: string;
+  referredBy?: string;
+  creditBalance: number;
+  notifOrderUpdates: boolean;
+  notifPromotions: boolean;
+  notifRestock: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -61,7 +71,11 @@ export type DbReview = {
   text: string;
   rating: number;
   phone: string | null;
+  productId?: number | null;
+  status: "pending" | "approved" | "rejected";
   date: string;
+  adminReply?: string;
+  adminReplyDate?: string;
 };
 
 export type DbProduct = {
@@ -71,6 +85,7 @@ export type DbProduct = {
   price: number;
   costPrice?: number;
   image: string;
+  description?: string;
   unit: string;
   badge?: string;
   barcode?: string;
@@ -84,9 +99,11 @@ export type DbOrderItem = {
   id: number;
   name: string;
   price: number;
+  costPrice?: number;
   quantity: number;
   unit: string;
   image: string;
+  note?: string;
 };
 
 export type DbOrderCustomer = {
@@ -103,6 +120,7 @@ export type DbOrder = {
   customer: DbOrderCustomer;
   items: DbOrderItem[];
   total: number;
+  totalCogs?: number;
   status: OrderStatus;
   notes?: string;
   paymentMethod?: "yape" | "efectivo";
@@ -114,6 +132,12 @@ export type DbOrder = {
   appliedPromoId?: string;
   discountAmount?: number;
   deliverySlot?: string;
+  /** Idempotency key: if set, duplicate requests with the same key return the existing order */
+  idempotencyKey?: string;
+  /** Repartidor asignado al pedido */
+  riderName?: string;
+  /** Soft delete timestamp — null means the order is active */
+  deletedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -143,6 +167,8 @@ export type DbSettings = {
   maintenanceMode?: boolean;
   maintenanceMessage?: string;
   adminBypassLogin?: boolean;
+  homepageContent?: Record<string, unknown>;
+  comboTemplates?: Array<{ id: string; name: string; description: string; emoji: string; categories: string[]; size: number; discount: number }>;
 };
 
 export type DbSupplier = {
@@ -182,6 +208,7 @@ export type DbSaleItem = {
   productId: number;
   name: string;
   price: number;
+  costPrice?: number;
   quantity: number;
   unit: string;
 };
@@ -190,10 +217,12 @@ export type DbSale = {
   id: string;
   items: DbSaleItem[];
   total: number;
+  totalCogs?: number;
   payment: "efectivo" | "yape" | "plin" | "tarjeta";
   amountPaid: number;
   change: number;
   customerPhone?: string;
+  cashierId?: string;
   createdAt: string;
 };
 
@@ -257,6 +286,7 @@ function mapProduct(p: PProduct): DbProduct {
     price: p.price,
     ...(p.costPrice != null && { costPrice: p.costPrice }),
     image: p.image,
+    ...(p.description != null && { description: p.description }),
     unit: p.unit,
     ...(p.badge != null && { badge: p.badge }),
     ...(p.barcode != null && { barcode: p.barcode }),
@@ -275,18 +305,33 @@ function mapCustomer(c: PCustomer & { locations: PSavedLocation[] }): DbCustomer
     reference: c.reference,
     locations: c.locations.map((l: PSavedLocation) => ({ id: l.id, location: l.location, reference: l.reference })),
     activeLocationId: c.activeLocationId,
+    birthday: c.birthday ? toISO(c.birthday) : undefined,
     aiNotes: c.aiNotes ?? undefined,
     aiNotesDate: c.aiNotesDate ? toISO(c.aiNotesDate) : undefined,
     loyaltyPoints: c.loyaltyPoints,
     loyaltyTier: c.loyaltyTier,
     totalSpent: c.totalSpent,
+    privateNotes: c.privateNotes ?? undefined,
+    referralCode: c.referralCode ?? undefined,
+    referredBy: c.referredBy ?? undefined,
+    creditBalance: c.creditBalance,
+    notifOrderUpdates: c.notifOrderUpdates,
+    notifPromotions: c.notifPromotions,
+    notifRestock: c.notifRestock,
     createdAt: toISO(c.createdAt),
     updatedAt: toISO(c.updatedAt),
   };
 }
 
 function mapReview(r: PReview): DbReview {
-  return { id: r.id, name: r.name, location: r.location, text: r.text, rating: r.rating, phone: r.phone, date: toISO(r.date) };
+  return {
+    id: r.id, name: r.name, location: r.location, text: r.text, rating: r.rating,
+    phone: r.phone ?? null, productId: (r.productId as number | null | undefined) ?? null,
+    status: (r.status ?? "approved") as DbReview["status"],
+    date: toISO(r.date),
+    ...((r as Record<string, unknown>).adminReply != null && { adminReply: (r as Record<string, unknown>).adminReply as string }),
+    ...((r as Record<string, unknown>).adminReplyDate != null && { adminReplyDate: toISO((r as Record<string, unknown>).adminReplyDate as Date) }),
+  };
 }
 
 function mapOrder(o: POrder & { items: POrderItem[] }): DbOrder {
@@ -298,12 +343,21 @@ function mapOrder(o: POrder & { items: POrderItem[] }): DbOrder {
       location: o.customerLocation,
       reference: o.customerReference,
     },
-    items: o.items.map((i: POrderItem) => ({ id: i.productId ?? 0, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit, image: i.image })),
+    items: o.items.map((i: POrderItem) => ({ id: i.productId ?? 0, name: i.name, price: i.price, ...(i.costPrice != null && { costPrice: i.costPrice }), quantity: i.quantity, unit: i.unit, image: i.image })),
     total: o.total,
+    ...(o.totalCogs != null && { totalCogs: o.totalCogs }),
     status: o.status as OrderStatus,
     ...(o.notes != null && { notes: o.notes }),
     ...(o.paymentMethod != null && { paymentMethod: o.paymentMethod as "yape" | "efectivo" }),
     ...(o.yapeOperationNumber != null && { yapeOperationNumber: o.yapeOperationNumber }),
+    ...(o.deuda != null && { deuda: o.deuda }),
+    ...(o.appliedCouponCode != null && { appliedCouponCode: o.appliedCouponCode }),
+    ...(o.couponDiscount != null && { couponDiscount: o.couponDiscount }),
+    ...(o.appliedPromoId != null && { appliedPromoId: o.appliedPromoId }),
+    ...(o.discountAmount != null && { discountAmount: o.discountAmount }),
+    ...((o as Record<string, unknown>).idempotencyKey != null && { idempotencyKey: (o as Record<string, unknown>).idempotencyKey as string }),
+    ...((o as Record<string, unknown>).riderName != null && { riderName: (o as Record<string, unknown>).riderName as string }),
+    ...((o as Record<string, unknown>).deletedAt != null && { deletedAt: toISO((o as Record<string, unknown>).deletedAt as Date) }),
     createdAt: toISO(o.createdAt),
     updatedAt: toISO(o.updatedAt),
   };
@@ -313,6 +367,10 @@ function mapSettings(s: PSettings): DbSettings {
   let navLinks: NavLinkItem[] | undefined;
   if (s.navLinksJson) {
     try { navLinks = JSON.parse(s.navLinksJson); } catch { /* ignore */ }
+  }
+  let parsedComboTemplates: DbSettings["comboTemplates"] | undefined;
+  if ((s as Record<string, unknown>).comboTemplatesJson) {
+    try { parsedComboTemplates = JSON.parse((s as Record<string, unknown>).comboTemplatesJson as string); } catch { /* ignore */ }
   }
   return {
     mode: s.mode as StoreMode,
@@ -335,6 +393,7 @@ function mapSettings(s: PSettings): DbSettings {
     maintenanceMode: s.maintenanceMode,
     ...(s.maintenanceMessage != null && { maintenanceMessage: s.maintenanceMessage }),
     adminBypassLogin: s.adminBypassLogin,
+    ...(parsedComboTemplates && { comboTemplates: parsedComboTemplates }),
   };
 }
 
@@ -363,10 +422,11 @@ function mapPurchaseOrder(po: PPurchaseOrder & { items: PPurchaseItem[] }): DbPu
 function mapSale(s: PSale & { items: PSaleItem[] }): DbSale {
   return {
     id: s.id,
-    items: s.items.map((i: PSaleItem) => ({ productId: i.productId, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit })),
-    total: s.total, payment: s.payment as DbSale["payment"],
+    items: s.items.map((i: PSaleItem) => ({ productId: i.productId, name: i.name, price: i.price, ...(i.costPrice != null && { costPrice: i.costPrice }), quantity: i.quantity, unit: i.unit })),
+    total: s.total, ...(s.totalCogs != null && { totalCogs: s.totalCogs }), payment: s.payment as DbSale["payment"],
     amountPaid: s.amountPaid, change: s.change,
     ...(s.customerPhone != null && { customerPhone: s.customerPhone }),
+    ...(s.cashierId != null && { cashierId: s.cashierId }),
     createdAt: toISO(s.createdAt),
   };
 }
@@ -408,17 +468,20 @@ function mapPayable(p: PPayable & { payments: PPayment[] }): DbPayable {
 
 export const ProductsDB = {
   async getAll(): Promise<DbProduct[]> {
-    const rows = await prisma.product.findMany({ orderBy: { id: "asc" } });
+    // Fetch all, then filter soft-deleted in-memory until `prisma generate` runs after migration 20260316
+    const allRows = await prisma.product.findMany({ orderBy: { id: "asc" } });
+    const rows = allRows.filter(r => (r as Record<string, unknown>).deletedAt == null);
     if (rows.length === 0) {
       const { products } = await import("@/data/products");
       for (const p of products) {
         await prisma.product.upsert({
           where: { id: p.id },
-          create: { id: p.id, name: p.name, category: p.category, price: p.price, image: p.image, unit: p.unit, badge: p.badge, active: true },
-          update: {},
+          create: { id: p.id, name: p.name, category: p.category, price: p.price, image: p.image, description: p.description ?? null, unit: p.unit, badge: p.badge, active: true },
+          update: { image: p.image, description: p.description ?? null }, // keep image + description in sync
         });
       }
-      return (await prisma.product.findMany({ orderBy: { id: "asc" } })).map(mapProduct);
+      const seeded = await prisma.product.findMany({ orderBy: { id: "asc" } });
+      return seeded.filter(r => (r as Record<string, unknown>).deletedAt == null).map(mapProduct);
     }
     return rows.map(mapProduct);
   },
@@ -429,7 +492,9 @@ export const ProductsDB = {
   async upsert(product: DbProduct): Promise<DbProduct> {
     const d = {
       name: product.name, category: product.category, price: product.price,
-      costPrice: product.costPrice, image: product.image, unit: product.unit,
+      costPrice: product.costPrice, image: product.image,
+      description: product.description ?? null,
+      unit: product.unit,
       badge: product.badge, barcode: product.barcode, stock: product.stock,
       stockMin: product.stockMin, stockMax: product.stockMax, active: product.active,
     };
@@ -440,7 +505,13 @@ export const ProductsDB = {
     });
     return mapProduct(row);
   },
+  /** Soft-delete: sets deletedAt instead of physically removing the row. */
   async delete(id: number): Promise<void> {
+    // Use raw SQL until `prisma generate` is re-run after migration 20260316
+    await prisma.$executeRaw`UPDATE "Product" SET "deletedAt" = NOW() WHERE id = ${id}`.catch(() => {});
+  },
+  /** Hard-delete: permanently removes the row (admin use only). */
+  async hardDelete(id: number): Promise<void> {
     await prisma.product.delete({ where: { id } }).catch(() => {});
   },
 };
@@ -464,11 +535,13 @@ export const CustomersDB = {
         phone: data.phone, name: data.name,
         location: data.location ?? "", reference: data.reference ?? "",
         activeLocationId: data.activeLocationId ?? null,
+        ...(data.birthday && { birthday: new Date(data.birthday) }),
         locations: { create: locs },
       },
       update: {
         name: data.name, location: data.location ?? "", reference: data.reference ?? "",
         activeLocationId: data.activeLocationId ?? null,
+        ...(data.birthday !== undefined && { birthday: data.birthday ? new Date(data.birthday) : null }),
         locations: { deleteMany: {}, create: locs },
       },
       include: { locations: true },
@@ -480,6 +553,41 @@ export const CustomersDB = {
   },
   async updateAiNotes(phone: string, aiNotes: string): Promise<void> {
     await prisma.customer.update({ where: { phone: normalizePhone(phone) }, data: { aiNotes, aiNotesDate: new Date() } });
+  },
+  async updatePrivateNotes(phone: string, privateNotes: string): Promise<void> {
+    await prisma.customer.update({ where: { phone: normalizePhone(phone) }, data: { privateNotes } });
+  },
+  async updateCreditBalance(phone: string, delta: number): Promise<number> {
+    const c = await prisma.customer.update({
+      where: { phone: normalizePhone(phone) },
+      data: { creditBalance: { increment: delta } },
+    });
+    return c.creditBalance;
+  },
+  /** Generate a unique referral code for a customer if they don't have one */
+  async ensureReferralCode(phone: string): Promise<string> {
+    const normalized = normalizePhone(phone);
+    const c = await prisma.customer.findUnique({ where: { phone: normalized }, select: { referralCode: true } });
+    if (c?.referralCode) return c.referralCode;
+    // Generate 6-char alphanumeric code
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    await prisma.customer.update({ where: { phone: normalized }, data: { referralCode: code } }).catch(() => {});
+    return code;
+  },
+  /** Apply a referral code: credits 50 points to referrer, links referredBy */
+  async applyReferralCode(phone: string, code: string): Promise<{ success: boolean; message: string }> {
+    const normalized = normalizePhone(phone);
+    const c = await prisma.customer.findUnique({ where: { phone: normalized } });
+    if (!c) return { success: false, message: "Cliente no encontrado" };
+    if (c.referredBy) return { success: false, message: "Ya usaste un código de referido" };
+    if (c.referralCode === code) return { success: false, message: "No puedes usar tu propio código" };
+    const referrer = await prisma.customer.findUnique({ where: { referralCode: code } });
+    if (!referrer) return { success: false, message: "Código no válido" };
+    // Award 50 points to referrer
+    await prisma.customer.update({ where: { phone: referrer.phone }, data: { loyaltyPoints: { increment: 50 } } });
+    // Link referredBy on the new customer
+    await prisma.customer.update({ where: { phone: normalized }, data: { referredBy: referrer.phone } });
+    return { success: true, message: "Código aplicado correctamente" };
   },
 };
 
@@ -510,7 +618,7 @@ export const LoyaltyDB = {
     const normalized = normalizePhone(phone);
     const c = await prisma.customer.findUnique({ where: { phone: normalized } });
     if (!c) return null;
-    return { phone: c.phone, name: c.name, loyaltyPoints: c.loyaltyPoints, loyaltyTier: c.loyaltyTier, totalSpent: c.totalSpent };
+    return { phone: c.phone, name: c.name, loyaltyPoints: c.loyaltyPoints, loyaltyTier: c.loyaltyTier, totalSpent: c.totalSpent, referralCode: c.referralCode ?? null, creditBalance: c.creditBalance };
   },
   /** Accrue points for a completed order/sale */
   async accruePoints(phone: string, amount: number) {
@@ -546,13 +654,31 @@ export const ReviewsDB = {
   async getAll(): Promise<DbReview[]> {
     return (await prisma.review.findMany({ orderBy: { date: "desc" } })).map(mapReview);
   },
+  async getApproved(productId?: number): Promise<DbReview[]> {
+    const where = productId != null
+      ? { status: "approved", productId }
+      : { status: "approved" };
+    return (await prisma.review.findMany({ where, orderBy: { date: "desc" } })).map(mapReview);
+  },
   async add(r: DbReview): Promise<DbReview> {
+    const productIdVal = r.productId ?? null;
     const row = await prisma.review.upsert({
       where: { id: r.id },
-      create: { id: r.id, name: r.name, location: r.location, text: r.text, rating: r.rating, phone: r.phone, date: new Date(r.date) },
-      update: { name: r.name, location: r.location, text: r.text, rating: r.rating, phone: r.phone, date: new Date(r.date) },
+      create: { id: r.id, name: r.name, location: r.location, text: r.text, rating: r.rating, phone: r.phone, ...(productIdVal != null && { productId: productIdVal }), status: r.status ?? "pending", date: new Date(r.date) },
+      update: { name: r.name, location: r.location, text: r.text, rating: r.rating, phone: r.phone, ...(productIdVal != null && { productId: productIdVal }), status: r.status ?? "pending", date: new Date(r.date) },
     });
     return mapReview(row);
+  },
+  async updateStatus(id: string, status: DbReview["status"]): Promise<void> {
+    await prisma.review.update({ where: { id }, data: { status } }).catch(() => {});
+  },
+  async updateReply(id: string, adminReply: string | null): Promise<void> {
+    await prisma.$executeRaw`
+      UPDATE "Review"
+      SET "adminReply" = ${adminReply},
+          "adminReplyDate" = ${adminReply != null ? new Date() : null}
+      WHERE id = ${id}
+    `.catch(() => {});
   },
   async delete(id: string): Promise<void> {
     await prisma.review.delete({ where: { id } }).catch(() => {});
@@ -565,6 +691,84 @@ export const OrdersDB = {
   async getAll(): Promise<DbOrder[]> {
     return (await prisma.order.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapOrder);
   },
+
+  /**
+   * Fetch orders with optional DB-level filtering (no in-memory scan).
+   * Use this instead of getAll() + array.filter() in the legacy GET path.
+   */
+  async getAllFiltered(opts?: {
+    status?: string;
+    since?: string;
+    phone?: string;
+  }): Promise<DbOrder[]> {
+    const where: Record<string, unknown> = {};
+    if (opts?.status) {
+      const statuses = opts.status.split(",").map((s) => s.trim());
+      where.status = { in: statuses };
+    }
+    if (opts?.since) {
+      const since = new Date(opts.since);
+      if (!isNaN(since.getTime())) {
+        where.createdAt = { gte: since };
+      }
+    }
+    if (opts?.phone) {
+      where.customerPhone = normalizePhone(opts.phone);
+    }
+    return (await prisma.order.findMany({
+      where,
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+    })).map(mapOrder);
+  },
+
+  /**
+   * Cursor-based pagination — efficient for large order volumes.
+   * Returns up to `limit` orders plus the cursor for the next page.
+   */
+  async getPage(opts: {
+    cursor?: string;
+    limit?: number;
+    status?: string;
+    since?: string;
+    phone?: string;
+  }): Promise<{ orders: DbOrder[]; nextCursor: string | null; total: number }> {
+    const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
+
+    // Build DB-level where clause (pushed to Postgres, no in-memory scan)
+    const where: Record<string, unknown> = {};
+    if (opts.status) {
+      const statuses = opts.status.split(",").map((s) => s.trim());
+      where.status = { in: statuses };
+    }
+    if (opts.since) {
+      const since = new Date(opts.since);
+      if (!isNaN(since.getTime())) {
+        where.createdAt = { gte: since };
+      }
+    }
+    if (opts.phone) {
+      where.customerPhone = normalizePhone(opts.phone);
+    }
+
+    const [rows, total] = await prisma.$transaction([
+      prisma.order.findMany({
+        where,
+        include: { items: true },
+        orderBy: { createdAt: "desc" },
+        take: limit + 1,
+        ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+    return { orders: items.map(mapOrder), nextCursor, total };
+  },
+
   async getById(id: string): Promise<DbOrder | null> {
     const row = await prisma.order.findUnique({ where: { id }, include: { items: true } });
     return row ? mapOrder(row) : null;
@@ -576,7 +780,7 @@ export const OrdersDB = {
       orderBy: { createdAt: "desc" },
     })).map(mapOrder);
   },
-  async add(order: DbOrder): Promise<DbOrder> {
+  async add(order: DbOrder, tenantId = "main"): Promise<DbOrder> {
     // Ensure the customer exists in the DB before linking via FK
     const phone = order.customer.phone ? normalizePhone(order.customer.phone) : null;
     if (phone) {
@@ -624,23 +828,33 @@ export const OrdersDB = {
     const row = await prisma.order.create({
       data: {
         id: order.id,
+        tenantId,
         customerName: order.customer.name,
         customerPhone: phone,
         customerLocation: order.customer.location ?? "",
         customerReference: order.customer.reference ?? "",
-        total: order.total, status: order.status as never,
+        total: order.total, totalCogs: order.totalCogs ?? null, status: order.status as never,
         notes: order.notes, paymentMethod: order.paymentMethod,
         yapeOperationNumber: order.yapeOperationNumber,
+        deuda: order.deuda ?? null,
+        appliedCouponCode: order.appliedCouponCode ?? null,
+        couponDiscount: order.couponDiscount ?? null,
+        appliedPromoId: order.appliedPromoId ?? null,
+        discountAmount: order.discountAmount ?? null,
         items: {
           create: order.items.map((i) => ({
             productId: i.id > 0 ? i.id : null,
-            name: i.name, price: i.price,
+            name: i.name, price: i.price, costPrice: i.costPrice ?? null,
             quantity: i.quantity, unit: i.unit, image: i.image,
           })),
         },
       },
       include: { items: true },
     });
+    // Persist idempotency key via raw SQL (field added in migration 20260316; types update after prisma generate)
+    if (order.idempotencyKey) {
+      await prisma.$executeRaw`UPDATE "Order" SET "idempotencyKey" = ${order.idempotencyKey} WHERE id = ${row.id}`.catch(() => {});
+    }
     return mapOrder(row);
   },
   async update(id: string, patch: Partial<DbOrder>): Promise<DbOrder | null> {
@@ -651,7 +865,9 @@ export const OrdersDB = {
     if (patch.notes !== undefined) data.notes = patch.notes;
     if (patch.paymentMethod !== undefined) data.paymentMethod = patch.paymentMethod;
     if (patch.yapeOperationNumber !== undefined) data.yapeOperationNumber = patch.yapeOperationNumber;
+    if (patch.deuda !== undefined) data.deuda = patch.deuda;
     if (patch.total !== undefined) data.total = patch.total;
+    if (patch.riderName !== undefined) data.riderName = patch.riderName;
     if (patch.customer) {
       if (patch.customer.name) data.customerName = patch.customer.name;
       if (patch.customer.phone) data.customerPhone = normalizePhone(patch.customer.phone);
@@ -688,6 +904,7 @@ export const SettingsDB = {
       ...(s.maintenanceMode !== undefined && { maintenanceMode: s.maintenanceMode }),
       ...(s.maintenanceMessage !== undefined && { maintenanceMessage: s.maintenanceMessage }),
       ...(s.adminBypassLogin !== undefined && { adminBypassLogin: s.adminBypassLogin }),
+      ...(s.comboTemplates !== undefined && { comboTemplatesJson: JSON.stringify(s.comboTemplates) }),
     };
     const row = await prisma.settings.upsert({ where: { id: 1 }, create: { id: 1, ...d }, update: d });
     return mapSettings(row);
@@ -773,9 +990,9 @@ export const SalesDB = {
   async add(sale: DbSale): Promise<DbSale> {
     const row = await prisma.sale.create({
       data: {
-        id: sale.id, total: sale.total, payment: sale.payment,
-        amountPaid: sale.amountPaid, change: sale.change, customerPhone: sale.customerPhone,
-        items: { create: sale.items.map((i) => ({ productId: i.productId, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit })) },
+        id: sale.id, total: sale.total, totalCogs: sale.totalCogs ?? null, payment: sale.payment,
+        amountPaid: sale.amountPaid, change: sale.change, customerPhone: sale.customerPhone, cashierId: sale.cashierId ?? null,
+        items: { create: sale.items.map((i) => ({ productId: i.productId, name: i.name, price: i.price, costPrice: i.costPrice ?? null, quantity: i.quantity, unit: i.unit })) },
       },
       include: { items: true },
     });
@@ -915,11 +1132,14 @@ export type DbInventoryMovement = {
   id: string;
   productId: number;
   type: InventoryMovementType;
+  lossType?: string;
   quantity: number;
   previousStock: number;
   newStock: number;
   reference?: string;
   notes?: string;
+  warehouseId?: string;
+  createdBy?: string;
   createdAt: string;
 };
 
@@ -951,9 +1171,12 @@ function mapCashRegister(r: PCashRegister & { movements: PCashMovement[] }): DbC
 function mapInventoryMovement(m: PInventoryMovement): DbInventoryMovement {
   return {
     id: m.id, productId: m.productId, type: m.type as InventoryMovementType,
+    ...(m.lossType != null && { lossType: m.lossType }),
     quantity: m.quantity, previousStock: m.previousStock, newStock: m.newStock,
     ...(m.reference != null && { reference: m.reference }),
     ...(m.notes != null && { notes: m.notes }),
+    ...((m as unknown as { warehouseId?: string | null }).warehouseId != null && { warehouseId: (m as unknown as { warehouseId: string }).warehouseId }),
+    ...((m as unknown as { createdBy?: string | null }).createdBy != null && { createdBy: (m as unknown as { createdBy: string }).createdBy }),
     createdAt: toISO(m.createdAt),
   };
 }
@@ -963,6 +1186,17 @@ function mapInventoryMovement(m: PInventoryMovement): DbInventoryMovement {
 export const CashRegistersDB = {
   async getAll(): Promise<DbCashRegister[]> {
     return (await prisma.cashRegister.findMany({ include: { movements: { orderBy: { createdAt: "desc" } } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
+  },
+  async getAllPaginated(limit = 25, cursor?: string): Promise<{ items: DbCashRegister[]; nextCursor: string | null }> {
+    const rows = await prisma.cashRegister.findMany({
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      include: { movements: { orderBy: { createdAt: "desc" } } },
+      orderBy: { openedAt: "desc" },
+    });
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    return { items: items.map(mapCashRegister), nextCursor: hasMore ? items[items.length - 1].id : null };
   },
   async getOpen(): Promise<DbCashRegister | null> {
     const row = await prisma.cashRegister.findFirst({ where: { status: "abierta" }, include: { movements: { orderBy: { createdAt: "desc" } } } });
@@ -1017,7 +1251,7 @@ export const InventoryMovementsDB = {
   async getByProduct(productId: number): Promise<DbInventoryMovement[]> {
     return (await prisma.inventoryMovement.findMany({ where: { productId }, orderBy: { createdAt: "desc" } })).map(mapInventoryMovement);
   },
-  async record(data: { productId: number; type: string; quantity: number; reference?: string; notes?: string }): Promise<DbInventoryMovement> {
+  async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string }): Promise<DbInventoryMovement> {
     // Atomic: read current stock, compute new stock, update product, create movement
     const product = await prisma.product.findUnique({ where: { id: data.productId } });
     const prevStock = product?.stock ?? 0;
@@ -1026,21 +1260,25 @@ export const InventoryMovementsDB = {
     await prisma.product.update({ where: { id: data.productId }, data: { stock: Math.max(0, newStock) } });
     const row = await prisma.inventoryMovement.create({
       data: {
-        productId: data.productId, type: data.type, quantity: data.quantity,
+        productId: data.productId, type: data.type, lossType: data.lossType, quantity: data.quantity,
         previousStock: prevStock, newStock: Math.max(0, newStock),
         reference: data.reference, notes: data.notes,
+        ...(data.warehouseId ? { warehouseId: data.warehouseId } : {}),
+        ...(data.createdBy ? { createdBy: data.createdBy } : {}),
       },
     });
     return mapInventoryMovement(row);
   },
-  async adjust(productId: number, newStock: number, notes?: string): Promise<DbInventoryMovement> {
+  async adjust(productId: number, newStock: number, warehouseId?: string, notes?: string, createdBy?: string): Promise<DbInventoryMovement> {
     const product = await prisma.product.findUnique({ where: { id: productId } });
     const prevStock = product?.stock ?? 0;
     const diff = newStock - prevStock;
     const type = diff >= 0 ? "ajuste_positivo" : "ajuste_negativo";
     await prisma.product.update({ where: { id: productId }, data: { stock: Math.max(0, newStock) } });
     const row = await prisma.inventoryMovement.create({
-      data: { productId, type, quantity: Math.abs(diff), previousStock: prevStock, newStock: Math.max(0, newStock), notes },
+      data: { productId, type, quantity: Math.abs(diff), previousStock: prevStock, newStock: Math.max(0, newStock), notes,
+        ...(warehouseId ? { warehouseId } : {}),
+        ...(createdBy ? { createdBy } : {}) },
     });
     return mapInventoryMovement(row);
   },
@@ -1056,8 +1294,9 @@ export type DbCoupon = {
   id: string;
   code: string;
   description: string;
-  discountType: "percent" | "fixed";
+  discountType: "percent" | "fixed" | "giftcard";
   discountValue: number;
+  balance?: number;
   minPurchase?: number;
   maxUses?: number;
   usedCount: number;
@@ -1069,7 +1308,8 @@ export type DbCoupon = {
 function mapCoupon(c: PCoupon): DbCoupon {
   return {
     id: c.id, code: c.code, description: c.description,
-    discountType: c.discountType as "percent" | "fixed", discountValue: c.discountValue,
+    discountType: c.discountType as "percent" | "fixed" | "giftcard", discountValue: c.discountValue,
+    ...(c.balance != null && { balance: c.balance }),
     ...(c.minPurchase != null && { minPurchase: c.minPurchase }),
     ...(c.maxUses != null && { maxUses: c.maxUses }),
     usedCount: c.usedCount, active: c.active,
@@ -1083,7 +1323,7 @@ export const CouponsDB = {
     return (await prisma.coupon.findMany({ orderBy: { createdAt: "desc" } })).map(mapCoupon);
   },
   async getByCode(code: string): Promise<DbCoupon | null> {
-    const row = await prisma.coupon.findUnique({ where: { code: code.toUpperCase().trim() } });
+    const row = await prisma.coupon.findFirst({ where: { code: code.toUpperCase().trim() } });
     return row ? mapCoupon(row) : null;
   },
   async add(c: Omit<DbCoupon, "id" | "createdAt" | "usedCount">): Promise<DbCoupon> {
@@ -1091,6 +1331,7 @@ export const CouponsDB = {
       data: {
         code: c.code.toUpperCase().trim(), description: c.description,
         discountType: c.discountType, discountValue: c.discountValue,
+        balance: c.discountType === "giftcard" ? (c.balance ?? c.discountValue) : null,
         minPurchase: c.minPurchase, maxUses: c.maxUses,
         active: c.active, expiresAt: c.expiresAt ? new Date(c.expiresAt) : null,
       },
@@ -1105,6 +1346,7 @@ export const CouponsDB = {
     if (patch.description !== undefined) data.description = patch.description;
     if (patch.discountType !== undefined) data.discountType = patch.discountType;
     if (patch.discountValue !== undefined) data.discountValue = patch.discountValue;
+    if (patch.balance !== undefined) data.balance = patch.balance;
     if (patch.minPurchase !== undefined) data.minPurchase = patch.minPurchase;
     if (patch.maxUses !== undefined) data.maxUses = patch.maxUses;
     if (patch.active !== undefined) data.active = patch.active;
@@ -1112,12 +1354,20 @@ export const CouponsDB = {
     const row = await prisma.coupon.update({ where: { id }, data });
     return mapCoupon(row);
   },
-  async redeem(code: string): Promise<DbCoupon | null> {
-    const row = await prisma.coupon.findUnique({ where: { code: code.toUpperCase().trim() } });
+  async redeem(code: string, deductAmount?: number): Promise<DbCoupon | null> {
+    const row = await prisma.coupon.findFirst({ where: { code: code.toUpperCase().trim() } });
     if (!row || !row.active) return null;
     if (row.expiresAt && row.expiresAt < new Date()) return null;
     if (row.maxUses && row.usedCount >= row.maxUses) return null;
-    const updated = await prisma.coupon.update({ where: { id: row.id }, data: { usedCount: row.usedCount + 1 } });
+    const data: Record<string, unknown> = { usedCount: row.usedCount + 1 };
+    // Deduct balance for giftcard type
+    if (row.discountType === "giftcard" && deductAmount != null) {
+      const currentBalance = row.balance ?? row.discountValue;
+      const newBalance = Math.max(0, currentBalance - deductAmount);
+      data.balance = newBalance;
+      if (newBalance <= 0) data.active = false;
+    }
+    const updated = await prisma.coupon.update({ where: { id: row.id }, data });
     return mapCoupon(updated);
   },
   async delete(id: string): Promise<void> {
@@ -1142,6 +1392,9 @@ export type DbReturn = {
   orderId?: string;
   reason: string;
   total: number;
+  photoUrl?: string;
+  customerPhone?: string;
+  creditApplied: boolean;
   items: DbReturnItem[];
   createdAt: string;
 };
@@ -1152,6 +1405,9 @@ function mapReturn(r: PReturn & { items: PReturnItem[] }): DbReturn {
     ...(r.saleId != null && { saleId: r.saleId }),
     ...(r.orderId != null && { orderId: r.orderId }),
     reason: r.reason, total: r.total,
+    ...(r.photoUrl != null && { photoUrl: r.photoUrl }),
+    ...(r.customerPhone != null && { customerPhone: r.customerPhone }),
+    creditApplied: r.creditApplied ?? false,
     items: r.items.map((i: PReturnItem) => ({ id: i.id, productId: i.productId, name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })),
     createdAt: toISO(r.createdAt),
   };
@@ -1161,11 +1417,13 @@ export const ReturnsDB = {
   async getAll(): Promise<DbReturn[]> {
     return (await prisma.return.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapReturn);
   },
-  async add(r: { saleId?: string; orderId?: string; reason: string; items: Omit<DbReturnItem, "id">[] }): Promise<DbReturn> {
+  async add(r: { saleId?: string; orderId?: string; reason: string; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: Omit<DbReturnItem, "id">[] }): Promise<DbReturn> {
     const total = r.items.reduce((s, i) => s + i.price * i.quantity, 0);
     const row = await prisma.return.create({
       data: {
         saleId: r.saleId, orderId: r.orderId, reason: r.reason, total,
+        photoUrl: r.photoUrl, customerPhone: r.customerPhone ? normalizePhone(r.customerPhone) : undefined,
+        creditApplied: r.creditApplied ?? false,
         items: { create: r.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })) },
       },
       include: { items: true },
@@ -1317,6 +1575,51 @@ export const AdminChatDB = {
   },
 };
 
+// ── Customer Live Chat DB ─────────────────────────────────────────────────────
+
+type PChatMessage = { id: string; customerPhone: string; customerName: string; sender: string; message: string; read: boolean; createdAt: Date };
+
+export type DbChatMessage = {
+  id: string;
+  customerPhone: string;
+  customerName: string;
+  sender: "customer" | "admin";
+  message: string;
+  read: boolean;
+  createdAt: string;
+};
+
+function mapChatMessage(m: PChatMessage): DbChatMessage {
+  return { id: m.id, customerPhone: m.customerPhone, customerName: m.customerName, sender: m.sender as DbChatMessage["sender"], message: m.message, read: m.read, createdAt: toISO(m.createdAt) };
+}
+
+export const ChatDB = {
+  async getByPhone(phone: string, limit = 50): Promise<DbChatMessage[]> {
+    return (await prisma.chatMessage.findMany({ where: { customerPhone: phone }, orderBy: { createdAt: "asc" }, take: limit })).map(mapChatMessage);
+  },
+  async getConversations(): Promise<{ phone: string; name: string; lastMessage: string; lastAt: string; unread: number }[]> {
+    const msgs = await prisma.chatMessage.findMany({ orderBy: { createdAt: "desc" } });
+    const map = new Map<string, { name: string; lastMessage: string; lastAt: Date; unread: number }>();
+    for (const m of msgs) {
+      if (!map.has(m.customerPhone)) {
+        map.set(m.customerPhone, { name: m.customerName, lastMessage: m.message, lastAt: m.createdAt, unread: 0 });
+      }
+      if (m.sender === "customer" && !m.read) {
+        const c = map.get(m.customerPhone)!;
+        c.unread++;
+      }
+    }
+    return Array.from(map.entries()).map(([phone, c]) => ({ phone, name: c.name, lastMessage: c.lastMessage, lastAt: toISO(c.lastAt), unread: c.unread }));
+  },
+  async add(customerPhone: string, customerName: string, sender: "customer" | "admin", message: string): Promise<DbChatMessage> {
+    const row = await prisma.chatMessage.create({ data: { customerPhone, customerName, sender, message } });
+    return mapChatMessage(row);
+  },
+  async markRead(customerPhone: string): Promise<void> {
+    await prisma.chatMessage.updateMany({ where: { customerPhone, sender: "customer", read: false }, data: { read: true } });
+  },
+};
+
 // ── Supplier Evaluations DB ───────────────────────────────────────────────────
 
 export type DbSupplierEvaluation = {
@@ -1362,6 +1665,93 @@ export const SupplierEvaluationsDB = {
       quality: Math.round((agg._avg.quality ?? 3) * 10) / 10,
       price: Math.round((agg._avg.price ?? 3) * 10) / 10,
       count: agg._count,
+    };
+  },
+};
+
+// ── Survey / NPS ───────────────────────────────────────────────────────────────
+
+export type DbSurveyResponse = {
+  id: string;
+  orderId: string;
+  customerPhone: string | null;
+  rating: number;
+  comment: string;
+  type: string;
+  createdAt: Date;
+};
+
+function mapSurvey(r: PSurveyResponse): DbSurveyResponse {
+  return {
+    id: r.id,
+    orderId: r.orderId,
+    customerPhone: r.customerPhone,
+    rating: r.rating,
+    comment: r.comment,
+    type: r.type,
+    createdAt: r.createdAt,
+  };
+}
+
+export const SurveyDB = {
+  async submit(data: {
+    orderId: string;
+    customerPhone?: string;
+    rating: number;
+    comment?: string;
+    type?: string;
+  }): Promise<DbSurveyResponse> {
+    const r = await prisma.surveyResponse.upsert({
+      where: { orderId_type: { orderId: data.orderId, type: data.type ?? "nps" } },
+      update: { rating: data.rating, comment: data.comment ?? "", customerPhone: data.customerPhone ?? null },
+      create: {
+        orderId: data.orderId,
+        customerPhone: data.customerPhone ?? null,
+        rating: data.rating,
+        comment: data.comment ?? "",
+        type: data.type ?? "nps",
+      },
+    });
+    return mapSurvey(r);
+  },
+
+  async getByOrder(orderId: string): Promise<DbSurveyResponse | null> {
+    const r = await prisma.surveyResponse.findFirst({ where: { orderId } });
+    return r ? mapSurvey(r) : null;
+  },
+
+  async getAll(limit = 100): Promise<DbSurveyResponse[]> {
+    const rows = await prisma.surveyResponse.findMany({
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+    return rows.map(mapSurvey);
+  },
+
+  async stats(): Promise<{
+    total: number;
+    average: number;
+    distribution: Record<number, number>;
+  }> {
+    const [agg, all] = await Promise.all([
+      prisma.surveyResponse.aggregate({
+        where: { type: "nps" },
+        _avg: { rating: true },
+        _count: true,
+      }),
+      prisma.surveyResponse.findMany({
+        where: { type: "nps" },
+        select: { rating: true },
+      }),
+    ]);
+    const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (const r of all) {
+      distribution[r.rating] = (distribution[r.rating] || 0) + 1;
+    }
+    return {
+      total: agg._count,
+      average: Math.round((agg._avg.rating ?? 0) * 10) / 10,
+      distribution,
     };
   },
 };
@@ -1467,6 +1857,13 @@ export const NotificationLogsDB = {
   async getAll(): Promise<DbNotificationLog[]> {
     return (await prisma.notificationLog.findMany({ orderBy: { createdAt: "desc" }, take: 200 })).map(mapNotificationLog);
   },
+  async getByRecipient(phone: string): Promise<DbNotificationLog[]> {
+    return (await prisma.notificationLog.findMany({
+      where: { recipient: normalizePhone(phone) },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    })).map(mapNotificationLog);
+  },
   async add(data: Omit<DbNotificationLog, "id" | "createdAt">): Promise<DbNotificationLog> {
     const row = await prisma.notificationLog.create({ data });
     return mapNotificationLog(row);
@@ -1483,5 +1880,72 @@ export const AutoReorderDB = {
     return prods
       .filter(p => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin)
       .map(p => ({ id: p.id, name: p.name, stock: p.stock ?? 0, stockMin: p.stockMin ?? 0, stockMax: p.stockMax ?? (p.stockMin ?? 0) * 3, category: p.category, unit: p.unit }));
+  },
+};
+
+// ── Warehouses DB ─────────────────────────────────────────────────────────────
+
+export type DbWarehouse = {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  location: string;
+  manager: string;
+  capacity: number;
+  active: boolean;
+  tenantId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+function mapWarehouse(w: PWarehouse): DbWarehouse {
+  return {
+    id: w.id,
+    name: w.name,
+    code: w.code,
+    type: w.type,
+    location: w.location,
+    manager: w.manager,
+    capacity: w.capacity,
+    active: w.active,
+    tenantId: w.tenantId,
+    createdAt: toISO(w.createdAt),
+    updatedAt: toISO(w.updatedAt),
+  };
+}
+
+export const WarehousesDB = {
+  async getAll(tenantId = "main"): Promise<DbWarehouse[]> {
+    return (await prisma.warehouse.findMany({ where: { tenantId }, orderBy: { createdAt: "asc" } })).map(mapWarehouse);
+  },
+  async getById(id: string): Promise<DbWarehouse | null> {
+    const row = await prisma.warehouse.findUnique({ where: { id } });
+    return row ? mapWarehouse(row) : null;
+  },
+  async create(data: { name: string; code: string; type?: string; location?: string; manager?: string; capacity?: number }): Promise<DbWarehouse> {
+    const row = await prisma.warehouse.create({ data });
+    return mapWarehouse(row);
+  },
+  async update(id: string, data: Partial<{ name: string; location: string; manager: string; capacity: number; active: boolean }>): Promise<DbWarehouse | null> {
+    const row = await prisma.warehouse.update({ where: { id }, data });
+    return mapWarehouse(row);
+  },
+  async delete(id: string): Promise<boolean> {
+    try {
+      await prisma.warehouse.delete({ where: { id } });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  /** Ensure the default "Almacén Principal" exists; returns all warehouses. */
+  async ensureDefault(): Promise<DbWarehouse[]> {
+    const all = await this.getAll();
+    if (all.length === 0) {
+      await prisma.warehouse.create({ data: { name: "Almacén Principal", code: "ALM-001", type: "principal", location: "Tienda San Martín" } });
+      return this.getAll();
+    }
+    return all;
   },
 };

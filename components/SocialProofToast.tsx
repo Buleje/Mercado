@@ -47,6 +47,8 @@ export default function SocialProofToast() {
   const [dismissed, setDismissed] = useState(false);
   const counterRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks whether the user explicitly dismissed — prevents interval from re-showing
+  const userDismissedRef = useRef(false);
 
   useEffect(() => {
     // Only show social proof after user has completed their first order
@@ -55,6 +57,7 @@ export default function SocialProofToast() {
     // Don't show on first 10s of page load to avoid being annoying
     const initialDelay = setTimeout(() => {
       const show = () => {
+        if (userDismissedRef.current) return;
         counterRef.current += 1;
         startTransition(() => {
           setNotification(generateNotification(counterRef.current));
@@ -129,7 +132,7 @@ export default function SocialProofToast() {
 
           {/* Close button */}
           <button
-            onClick={() => setDismissed(true)}
+            onClick={() => { userDismissedRef.current = true; setDismissed(true); }}
             className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-surface transition-colors"
             aria-label="Cerrar"
           >

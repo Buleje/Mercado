@@ -1,0 +1,253 @@
+"use client";
+import { useState, useEffect } from "react";
+import { StickyNote, Plus, Trash2, Pin, PinOff, Edit3, Check, X, Search } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
+
+/* ── types ──────────────────────────────────────────────────── */
+type Note = {
+  id: string;
+  title: string;
+  content: string;
+  color: NoteColor;
+  pinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type NoteColor = "yellow" | "green" | "blue" | "pink" | "purple" | "orange";
+
+const COLOR_MAP: Record<NoteColor, { bg: string; border: string; darkBg: string; darkBorder: string }> = {
+  yellow: { bg: "bg-yellow-50", border: "border-yellow-200", darkBg: "dark:bg-yellow-950/20", darkBorder: "dark:border-yellow-800" },
+  green:  { bg: "bg-emerald-50", border: "border-emerald-200", darkBg: "dark:bg-emerald-950/20", darkBorder: "dark:border-emerald-800" },
+  blue:   { bg: "bg-blue-50", border: "border-blue-200", darkBg: "dark:bg-blue-950/20", darkBorder: "dark:border-blue-800" },
+  pink:   { bg: "bg-pink-50", border: "border-pink-200", darkBg: "dark:bg-pink-950/20", darkBorder: "dark:border-pink-800" },
+  purple: { bg: "bg-purple-50", border: "border-purple-200", darkBg: "dark:bg-purple-950/20", darkBorder: "dark:border-purple-800" },
+  orange: { bg: "bg-orange-50", border: "border-orange-200", darkBg: "dark:bg-orange-950/20", darkBorder: "dark:border-orange-800" },
+};
+
+const COLOR_DOTS: Record<NoteColor, string> = {
+  yellow: "bg-yellow-400", green: "bg-emerald-400", blue: "bg-blue-400",
+  pink: "bg-pink-400", purple: "bg-purple-400", orange: "bg-orange-400",
+};
+
+/* ── seed notes ─────────────────────────────────────────────── */
+const INITIAL_NOTES: Note[] = [];
+
+/* ── component ──────────────────────────────────────────────── */
+export default function QuickNotesTab() {
+  const [notes, setNotes] = useState<Note[]>(INITIAL_NOTES);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editColor, setEditColor] = useState<NoteColor>("yellow");
+  const [showNew, setShowNew] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newContent, setNewContent] = useState("");
+  const [newColor, setNewColor] = useState<NoteColor>("yellow");
+
+  // Load notes from API on mount
+  useEffect(() => {
+    let active = true;
+    fetch("/api/notes")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: Note[]) => {
+        if (active) {
+          setNotes(data.map(n => ({
+            ...n,
+            createdAt: n.createdAt?.slice(0, 16).replace("T", " ") ?? "",
+            updatedAt: n.updatedAt?.slice(0, 16).replace("T", " ") ?? "",
+          })));
+        }
+      })
+      .catch(() => { /* silent */ })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const filtered = notes
+    .filter(n => !search || n.title.toLowerCase().includes(search.toLowerCase()) || n.content.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return b.updatedAt.localeCompare(a.updatedAt);
+    });
+
+  const handleAdd = async () => {
+    if (!newTitle.trim()) return;
+    try {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle.trim(), content: newContent.trim(), color: newColor, pinned: false }),
+      });
+      if (res.ok) {
+        const n = await res.json();
+        setNotes(prev => [{ ...n, createdAt: n.createdAt.slice(0, 16).replace("T", " "), updatedAt: n.updatedAt.slice(0, 16).replace("T", " ") }, ...prev]);
+        toast.success("Nota creada");
+      } else { toast.error("Error al crear la nota"); }
+    } catch { toast.error("Error al crear la nota"); }
+    setNewTitle(""); setNewContent(""); setNewColor("yellow"); setShowNew(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    setNotes(prev => prev.filter(n => n.id !== id));
+    try {
+      await fetch(`/api/notes?id=${id}`, { method: "DELETE" });
+      toast.success("Nota eliminada");
+    } catch { toast.error("Error al eliminar la nota"); }
+  };
+
+  const handlePin = async (id: string) => {
+    const note = notes.find(n => n.id === id);
+    if (!note) return;
+    const newPinned = !note.pinned;
+    setNotes(prev => prev.map(n => n.id === id ? { ...n, pinned: newPinned } : n));
+    try {
+      await fetch(`/api/notes?id=${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pinned: newPinned }),
+      });
+    } catch { toast.error("Error al actualizar la nota"); }
+  };
+
+  const startEdit = (note: Note) => {
+    setEditingId(note.id); setEditTitle(note.title); setEditContent(note.content); setEditColor(note.color);
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || !editTitle.trim()) return;
+    const now = new Date().toISOString().slice(0, 16).replace("T", " ");
+    setNotes(prev => prev.map(n => n.id === editingId ? { ...n, title: editTitle.trim(), content: editContent.trim(), color: editColor, updatedAt: now } : n));
+    try {
+      await fetch(`/api/notes?id=${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editTitle.trim(), content: editContent.trim(), color: editColor }),
+      });
+      toast.success("Nota guardada");
+    } catch { toast.error("Error al guardar la nota"); }
+    setEditingId(null);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-foreground">Notas Rápidas</h2>
+          <p className="text-sm text-gray-500 dark:text-muted mt-1">Apuntes, recordatorios y pendientes del día a día</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar notas..." className="pl-9 pr-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary w-48" />
+          </div>
+          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20">
+            <Plus className="h-4 w-4" /> Nueva nota
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="flex items-center gap-6 text-sm">
+        <span className="text-gray-500 dark:text-muted">{notes.length} notas</span>
+        <span className="text-amber-600 font-semibold">{notes.filter(n => n.pinned).length} fijadas</span>
+      </div>
+
+      {/* Notes grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 animate-pulse">
+              <div className="h-4 bg-gray-200 dark:bg-surface rounded-full w-3/4 mb-3" />
+              <div className="space-y-2 mb-4">
+                <div className="h-3 bg-gray-100 dark:bg-surface/60 rounded-full w-full" />
+                <div className="h-3 bg-gray-100 dark:bg-surface/60 rounded-full w-5/6" />
+                <div className="h-3 bg-gray-100 dark:bg-surface/60 rounded-full w-2/3" />
+              </div>
+              <div className="h-2.5 bg-gray-100 dark:bg-surface/60 rounded-full w-1/3" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* New note card */}
+            {showNew && (
+              <div className="bg-white dark:bg-card rounded-2xl border-2 border-primary/50 p-4 shadow-lg">
+                <input type="text" value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="Título de la nota..." className="w-full text-sm font-bold text-gray-900 dark:text-foreground bg-transparent outline-none mb-2 placeholder:text-gray-400" autoFocus />
+                <textarea value={newContent} onChange={e => setNewContent(e.target.value)} placeholder="Contenido..." rows={3} className="w-full text-sm text-gray-700 dark:text-foreground bg-transparent outline-none resize-none mb-3 placeholder:text-gray-400" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    {(Object.keys(COLOR_DOTS) as NoteColor[]).map(c => (
+                      <button key={c} onClick={() => setNewColor(c)} className={cn("w-5 h-5 rounded-full border-2 transition-transform", COLOR_DOTS[c], newColor === c ? "border-gray-900 dark:border-white scale-125" : "border-transparent")} />
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setShowNew(false); setNewTitle(""); setNewContent(""); }} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4" /></button>
+                    <button onClick={handleAdd} disabled={!newTitle.trim()} className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 disabled:opacity-50"><Check className="h-4 w-4" /></button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Note cards */}
+            {filtered.map(note => {
+              const colors = COLOR_MAP[note.color];
+              const isEditing = editingId === note.id;
+              return (
+                <div key={note.id} className={cn("rounded-2xl border p-4 transition-shadow hover:shadow-md", colors.bg, colors.border, colors.darkBg, colors.darkBorder)}>
+                  {isEditing ? (
+                    <>
+                      <input type="text" value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full text-sm font-bold text-gray-900 dark:text-foreground bg-transparent outline-none mb-2" />
+                      <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={3} className="w-full text-sm text-gray-700 dark:text-foreground bg-transparent outline-none resize-none mb-3" />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          {(Object.keys(COLOR_DOTS) as NoteColor[]).map(c => (
+                            <button key={c} onClick={() => setEditColor(c)} className={cn("w-5 h-5 rounded-full border-2 transition-transform", COLOR_DOTS[c], editColor === c ? "border-gray-900 dark:border-white scale-125" : "border-transparent")} />
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => setEditingId(null)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4" /></button>
+                          <button onClick={saveEdit} className="p-1.5 rounded-lg bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4" /></button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="font-bold text-gray-900 dark:text-foreground text-sm leading-snug pr-2">{note.title}</h3>
+                        <button onClick={() => handlePin(note.id)} className="p-1 rounded-lg text-gray-400 hover:text-amber-500 transition-colors shrink-0">
+                          {note.pinned ? <Pin className="h-3.5 w-3.5 text-amber-500" /> : <PinOff className="h-3.5 w-3.5" />}
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-muted leading-relaxed mb-3 line-clamp-4">{note.content}</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-gray-400 dark:text-muted">{note.updatedAt}</p>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => startEdit(note)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-white/50 dark:hover:bg-accent transition-colors"><Edit3 className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => handleDelete(note.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-white/50 dark:hover:bg-accent transition-colors"><Trash2 className="h-3.5 w-3.5" /></button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {filtered.length === 0 && !showNew && (
+            <div className="text-center py-12">
+              <StickyNote className="h-12 w-12 text-gray-300 dark:text-muted mx-auto mb-3" />
+              <p className="text-gray-400 dark:text-muted font-semibold">No hay notas{search ? " que coincidan" : ""}</p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}

@@ -7,8 +7,10 @@ import type { AdminRole } from "@/lib/session";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { resolveTenantSlug } from "@/lib/resolve-tenant";
 import fs from "fs/promises";
 import path from "path";
+import { logger } from "@/lib/logger";
 
 type LegacyAdminUser = { id: string; username: string; password: string; role: AdminRole; name: string };
 
@@ -30,7 +32,7 @@ async function checkPassword(input: string, stored: string): Promise<boolean> {
   return input === stored;
 }
 
-function makeCookie(token: string) {
+function makeCookie() {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -47,6 +49,10 @@ export async function POST(req: Request) {
     return rateLimitResponse;
   }
 
+  /** Tenant resolved by edge middleware from the subdomain header. */
+  const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
+  const tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+
   try {
   const body = await req.json() as { username?: string; password?: string };
   const { username, password } = body;
@@ -59,7 +65,7 @@ export async function POST(req: Request) {
   let dbUsers: { username: string; passwordHash: string; role: string; name: string }[] = [];
   try {
     dbUsers = await prisma.adminUser.findMany({
-      where: { active: true, ...(username ? { username } : {}) },
+      where: { active: true, tenantId, ...(username ? { username } : {}) },
     });
   } catch {
     // DB unavailable — continue with fallback auth
@@ -67,45 +73,44 @@ export async function POST(req: Request) {
 
   for (const u of dbUsers) {
     if (await checkPassword(password, u.passwordHash)) {
-      const token = await createSessionToken(u.role as AdminRole, u.username);
+      const token = await createSessionToken(u.role as AdminRole, u.username, tenantId, u.name);
       const response = NextResponse.json({ ok: true, role: u.role, name: u.name });
-      response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie(token));
+      response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
       return response;
     }
   }
 
-  // â”€â”€ Fallback: legacy admin-users.json (used during migration window) â”€â”€â”€â”€â”€â”€
+  // ── Fallback: legacy admin-users.json (used during migration window) ──────
   if (dbUsers.length === 0) {
     const legacyUsers = await getLegacyUsers();
     const candidates = username ? legacyUsers.filter((u) => u.username === username) : legacyUsers;
     for (const u of candidates) {
       if (await checkPassword(password, u.password)) {
-        const token = await createSessionToken(u.role, u.username);
+        const token = await createSessionToken(u.role, u.username, tenantId, u.name);
         const response = NextResponse.json({ ok: true, role: u.role, name: u.name });
-        response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie(token));
+        response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
         return response;
       }
     }
   }
 
-  // â”€â”€ Final fallback: admin password stored in Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  let adminPassword = "admin2024";
+  // ── Final fallback: admin password stored in Settings (no hardcoded default) ──
   try {
     const settings = await SettingsDB.get();
-    adminPassword = settings.adminPassword ?? adminPassword;
+    const adminPassword = settings.adminPassword;
+    if (adminPassword && await checkPassword(password, adminPassword)) {
+      const token = await createSessionToken("admin", "admin", tenantId, "Administrador");
+      const response = NextResponse.json({ ok: true, role: "admin", name: "Administrador" });
+      response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
+      return response;
+    }
   } catch {
-    // Settings DB unavailable — use default password
-  }
-  if (await checkPassword(password, adminPassword)) {
-    const token = await createSessionToken("admin", "admin");
-    const response = NextResponse.json({ ok: true, role: "admin", name: "Administrador" });
-    response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie(token));
-    return response;
+    // Settings DB unavailable — skip this fallback
   }
 
   return NextResponse.json({ error: "incorrect credentials" }, { status: 401 });
   } catch (e) {
-    console.error("[auth/login] error:", e);
+    logger.error("[auth/login] Unhandled error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "server error" }, { status: 500 });
   }
 }

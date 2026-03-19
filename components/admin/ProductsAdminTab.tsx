@@ -1,0 +1,747 @@
+"use client";
+
+import { useState, useCallback, useEffect, useRef } from "react";
+import Image from "next/image";
+import {
+  Plus, Pencil, Trash2, Search, X, Package, CheckCircle, XCircle,
+  ChevronUp, ChevronDown, RefreshCw, Eye, EyeOff, Save, AlertTriangle,
+  ImageOff, LayoutGrid, List, Filter, Download, Upload,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { categories } from "@/data/products";
+
+// ── Types ────────────────────────────────────────────────────────────────────
+
+type Product = {
+  id: number;
+  name: string;
+  category: string;
+  price: number;
+  costPrice?: number;
+  unit: string;
+  image?: string;
+  badge?: string;
+  description?: string;
+  stock?: number;
+  stockMin?: number;
+  active?: boolean;
+};
+
+const DEFAULT_FORM: Omit<Product, "id"> = {
+  name: "",
+  category: "abarrotes",
+  price: 0,
+  costPrice: undefined,
+  unit: "unidad",
+  image: "",
+  badge: "",
+  description: "",
+  stock: undefined,
+  stockMin: undefined,
+  active: true,
+};
+
+const CATEGORY_OPTS = categories.filter((c) => c.id !== "todos");
+const UNIT_OPTS = ["kg", "unidad", "bolsa", "botella", "lata", "frasco", "caja", "paquete", "litro", "atado", "bandeja", "pack", "rollo", "barra", "bloque", "spray"];
+const BADGE_OPTS = ["", "Popular", "Oferta", "Nuevo", "Premium", "Fresco", "Temporada", "Peruano", "Ahorra más", "Amaz\u00f3nico", "Antibacterial", "Listo para cocinar"];
+
+// ── Notification Toast ───────────────────────────────────────────────────────
+
+function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
+  return (
+    <div className={cn(
+      "fixed bottom-6 right-6 z-9999 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-semibold animate-[scaleIn_0.2s_ease-out]",
+      type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+    )}>
+      {type === "success" ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+      {msg}
+    </div>
+  );
+}
+
+// ── Product Form Modal ───────────────────────────────────────────────────────
+
+function ProductFormModal({
+  initial,
+  onSave,
+  onClose,
+  saving,
+}: {
+  initial: Omit<Product, "id"> & { id?: number };
+  onSave: (data: Omit<Product, "id"> & { id?: number }) => void;
+  onClose: () => void;
+  saving: boolean;
+}) {
+  const [form, setForm] = useState(initial);
+  const [imgError, setImgError] = useState(false);
+  const nameRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    nameRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const set = (k: keyof typeof form, v: unknown) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    if (k === "image") setImgError(false);
+  };
+
+  const valid = form.name.trim().length >= 2 && form.price > 0 && form.unit.trim().length > 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-card-border animate-[scaleIn_0.2s_ease-out]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-white dark:bg-card z-10 flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
+          <h2 className="text-lg font-extrabold text-foreground">
+            {form.id ? "Editar producto" : "Nuevo producto"}
+          </h2>
+          <button
+            onClick={onClose}
+            className="h-8 w-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Image preview */}
+          {form.image && !imgError ? (
+            <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border">
+              <Image
+                src={form.image}
+                alt="Preview"
+                fill
+                className="object-cover"
+                onError={() => setImgError(true)}
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="aspect-video w-full rounded-xl bg-gray-50 dark:bg-surface border border-dashed border-gray-300 dark:border-card-border flex items-center justify-center text-gray-300">
+              <ImageOff className="h-10 w-10" />
+            </div>
+          )}
+
+          {/* Name */}
+          <div>
+            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Nombre *</label>
+            <input
+              ref={nameRef}
+              value={form.name}
+              onChange={(e) => set("name", e.target.value)}
+              placeholder="Ej: Arroz Extra 5kg"
+              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            />
+          </div>
+
+          {/* Category + Unit */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Categoría *</label>
+              <select
+                value={form.category}
+                onChange={(e) => set("category", e.target.value)}
+                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              >
+                {CATEGORY_OPTS.map((c) => (
+                  <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Unidad *</label>
+              <select
+                value={form.unit}
+                onChange={(e) => set("unit", e.target.value)}
+                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              >
+                {UNIT_OPTS.map((u) => <option key={u} value={u}>{u}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Price + Cost + Stock */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Precio S/ *</label>
+              <input
+                type="number"
+                min={0}
+                step={0.1}
+                value={form.price === 0 ? "" : form.price}
+                onChange={(e) => set("price", parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Costo S/</label>
+              <input
+                type="number"
+                min={0}
+                step={0.1}
+                value={form.costPrice ?? ""}
+                onChange={(e) => set("costPrice", e.target.value === "" ? undefined : parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+              {form.costPrice != null && form.price > 0 && (
+                <p className="text-[10px] text-emerald-600 mt-0.5">Margen: {((1 - form.costPrice / form.price) * 100).toFixed(0)}%</p>
+              )}
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Stock</label>
+              <input
+                type="number"
+                min={0}
+                value={form.stock ?? ""}
+                onChange={(e) => set("stock", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
+                placeholder="—"
+                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Stock mín.</label>
+              <input
+                type="number"
+                min={0}
+                value={form.stockMin ?? ""}
+                onChange={(e) => set("stockMin", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
+                placeholder="5"
+                className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              />
+            </div>
+          </div>
+
+          {/* Image URL */}
+          <div>
+            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">URL de Imagen</label>
+            <input
+              value={form.image ?? ""}
+              onChange={(e) => set("image", e.target.value)}
+              placeholder="https://images.unsplash.com/photo-..."
+              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            />
+          </div>
+
+          {/* Badge */}
+          <div>
+            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Etiqueta</label>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {BADGE_OPTS.map((b) => (
+                <button
+                  key={b || "ninguna"}
+                  type="button"
+                  onClick={() => set("badge", b)}
+                  className={cn(
+                    "px-2.5 py-1 rounded-full text-xs font-semibold border transition-all",
+                    form.badge === b
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-gray-200 dark:border-card-border text-gray-500 hover:border-primary/50"
+                  )}
+                >
+                  {b || "Sin etiqueta"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Descripción</label>
+            <textarea
+              value={form.description ?? ""}
+              onChange={(e) => set("description", e.target.value)}
+              rows={2}
+              placeholder="Descripción breve del producto…"
+              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary resize-none"
+            />
+          </div>
+
+          {/* Active toggle */}
+          <div className="flex items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl px-4 py-3">
+            <span className="text-sm font-semibold text-foreground flex-1">Visible en tienda</span>
+            <button
+              type="button"
+              onClick={() => set("active", !form.active)}
+              className={cn(
+                "relative h-6 w-11 rounded-full transition-colors duration-200",
+                form.active ? "bg-emerald-500" : "bg-gray-300 dark:bg-gray-600"
+              )}
+            >
+              <span className={cn(
+                "absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200",
+                form.active ? "translate-x-6" : "translate-x-1"
+              )} />
+            </button>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-white dark:bg-card px-6 py-4 border-t border-gray-100 dark:border-card-border flex items-center justify-end gap-2">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => valid && onSave(form)}
+            disabled={!valid || saving}
+            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary-dark active:scale-95 transition-all disabled:opacity-50"
+          >
+            {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {saving ? "Guardando…" : form.id ? "Guardar cambios" : "Crear producto"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Confirm Delete Modal ─────────────────────────────────────────────────────
+
+function ConfirmDelete({ name, onConfirm, onCancel }: { name: string; onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onCancel}>
+      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-200 dark:border-card-border" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+            <AlertTriangle className="h-5 w-5 text-red-500" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-foreground">¿Eliminar producto?</h3>
+            <p className="text-xs text-muted">Esta acción no se puede deshacer</p>
+          </div>
+        </div>
+        <p className="text-sm text-muted bg-gray-50 dark:bg-surface rounded-xl px-4 py-3 mb-5">
+          <strong className="text-foreground">&ldquo;{name}&rdquo;</strong> será eliminado del catálogo.
+        </p>
+        <div className="flex gap-2 justify-end">
+          <button onClick={onCancel} className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors">Cancelar</button>
+          <button onClick={onConfirm} className="px-5 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 active:scale-95 transition-all">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ───────────────────────────────────────────────────────────
+
+export default function ProductsAdminTab() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [catFilter, setCatFilter] = useState("todos");
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() =>
+    typeof window !== "undefined" ? (localStorage.getItem("admin-products-view") as "grid" | "list") || "list" : "list"
+  );
+  const [sortBy, setSortBy] = useState<"name" | "price" | "stock">("name");
+  const [sortAsc, setSortAsc] = useState(true);
+  const [modal, setModal] = useState<null | "create" | { product: Product }>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<null | { msg: string; type: "success" | "error" }>(null);
+
+  const showToast = useCallback((msg: string, type: "success" | "error") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/products");
+      if (!res.ok) throw new Error("Error cargando productos");
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data : []);
+    } catch {
+      showToast("Error cargando productos", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [showToast]);
+
+  useEffect(() => { void fetchProducts(); }, [fetchProducts]);
+
+  /* ── CSV Import/Export ──────────────────── */
+  const csvInputRef = useRef<HTMLInputElement>(null);
+  const [csvImporting, setCsvImporting] = useState(false);
+
+  const handleExportCSV = () => {
+    window.open("/api/products/csv", "_blank");
+  };
+
+  const handleImportCSV = async (file: File) => {
+    setCsvImporting(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/products/csv", { method: "POST", body: fd });
+      const result = await res.json();
+      if (res.ok) {
+        showToast(`CSV importado: ${result.created} nuevos, ${result.updated} actualizados${result.errors ? `, ${result.errors} errores` : ""}`, "success");
+        await fetchProducts();
+      } else {
+        showToast(result.error ?? "Error al importar CSV", "error");
+      }
+    } catch {
+      showToast("Error al importar CSV", "error");
+    } finally {
+      setCsvImporting(false);
+    }
+  };
+
+  const handleSave = async (data: Omit<Product, "id"> & { id?: number }) => {
+    setSaving(true);
+    try {
+      const method = data.id ? "PATCH" : "POST";
+      const url = data.id ? `/api/products/${data.id}` : "/api/products";
+      const body = { ...data };
+      if (!data.id) delete (body as { id?: number }).id;
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      showToast(data.id ? "Producto actualizado" : "Producto creado", "success");
+      setModal(null);
+      await fetchProducts();
+    } catch {
+      showToast("Error al guardar", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleActive = async (p: Product) => {
+    try {
+      const res = await fetch(`/api/products/${p.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !p.active }),
+      });
+      if (!res.ok) throw new Error();
+      setProducts((prev) => prev.map((x) => x.id === p.id ? { ...x, active: !p.active } : x));
+      showToast(!p.active ? "Producto activado" : "Producto ocultado", "success");
+    } catch {
+      showToast("Error al actualizar visibilidad", "error");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/products/${deleteTarget.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      showToast("Producto eliminado", "success");
+      setDeleteTarget(null);
+      await fetchProducts();
+    } catch {
+      showToast("Error al eliminar", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleSort = (key: "name" | "price" | "stock") => {
+    if (sortBy === key) setSortAsc((v) => !v);
+    else { setSortBy(key); setSortAsc(true); }
+  };
+
+  const filtered = products
+    .filter((p) =>
+      (catFilter === "todos" || p.category === catFilter) &&
+      (!search || p.name.toLowerCase().includes(search.toLowerCase()))
+    )
+    .sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === "name") cmp = a.name.localeCompare(b.name);
+      else if (sortBy === "price") cmp = a.price - b.price;
+      else if (sortBy === "stock") cmp = (a.stock ?? -1) - (b.stock ?? -1);
+      return sortAsc ? cmp : -cmp;
+    });
+
+  const SortIcon = ({ col }: { col: "name" | "price" | "stock" }) =>
+    sortBy === col
+      ? sortAsc ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />
+      : <ChevronUp className="h-3 w-3 opacity-30" />;
+
+  if (loading) {
+    return (
+      <div className="space-y-3 animate-pulse">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="h-16 bg-gray-100 dark:bg-surface rounded-xl" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Header row */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-5">
+        <div>
+          <h3 className="text-lg font-extrabold text-foreground">Catálogo de Productos</h3>
+          <p className="text-xs text-muted mt-0.5">{filtered.length} de {products.length} productos</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchProducts}
+            className="h-9 w-9 rounded-xl border border-gray-200 dark:border-card-border flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/50 transition-colors"
+            title="Recargar"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
+          <div className="flex bg-gray-100 dark:bg-accent rounded-xl p-0.5">
+            {(["list", "grid"] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => { setViewMode(mode); localStorage.setItem("admin-products-view", mode); }}
+                className={cn("p-2 rounded-lg transition-all", viewMode === mode ? "bg-white dark:bg-card text-primary shadow-sm" : "text-gray-400 hover:text-gray-600")}
+              >
+                {mode === "list" ? <List className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-accent text-gray-600 dark:text-muted text-sm font-semibold hover:bg-gray-200 transition-colors"
+            title="Exportar productos a CSV"
+          >
+            <Download className="h-4 w-4" /> CSV
+          </button>
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv"
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportCSV(f); e.target.value = ""; }}
+          />
+          <button
+            onClick={() => csvInputRef.current?.click()}
+            disabled={csvImporting}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-accent text-gray-600 dark:text-muted text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50"
+            title="Importar productos desde CSV"
+          >
+            <Upload className="h-4 w-4" /> {csvImporting ? "Importando…" : "Importar"}
+          </button>
+          <button
+            onClick={() => setModal("create")}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary-dark active:scale-95 transition-all"
+          >
+            <Plus className="h-4 w-4" /> Nuevo
+          </button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre…"
+            className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-gray-400 shrink-0" />
+          <select
+            value={catFilter}
+            onChange={(e) => setCatFilter(e.target.value)}
+            className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+          >
+            <option value="todos">Todas las categorías</option>
+            {CATEGORY_OPTS.map((c) => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Empty state */}
+      {filtered.length === 0 && (
+        <div className="text-center py-14 text-muted">
+          <Package className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+          <p className="font-semibold">No se encontraron productos</p>
+          <p className="text-sm mt-1">Intenta otro término de búsqueda o categoría</p>
+        </div>
+      )}
+
+      {/* List view */}
+      {viewMode === "list" && filtered.length > 0 && (
+        <div className="rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
+          {/* Table header */}
+          <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 items-center bg-gray-50 dark:bg-surface px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted">
+            <span className="w-10">Img</span>
+            <button onClick={() => toggleSort("name")} className="flex items-center gap-1 hover:text-foreground">Producto <SortIcon col="name" /></button>
+            <span className="w-24 text-center">Categoría</span>
+            <button onClick={() => toggleSort("price")} className="flex items-center gap-1 hover:text-foreground w-16 justify-end">Precio <SortIcon col="price" /></button>
+            <button onClick={() => toggleSort("stock")} className="flex items-center gap-1 hover:text-foreground w-16 justify-center">Stock <SortIcon col="stock" /></button>
+            <span className="w-20 text-right">Acciones</span>
+          </div>
+          {/* Rows */}
+          <div className="divide-y divide-gray-100 dark:divide-card-border">
+            {filtered.map((p) => {
+              const cat = CATEGORY_OPTS.find((c) => c.id === p.category);
+              const isLow = p.stock !== undefined && p.stockMin !== undefined && p.stock <= p.stockMin && p.stock > 0;
+              const isOut = p.stock !== undefined && p.stock <= 0;
+              return (
+                <div
+                  key={p.id}
+                  className={cn(
+                    "grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 items-center px-4 py-3 hover:bg-gray-50/50 dark:hover:bg-surface/50 transition-colors",
+                    p.active === false && "opacity-50"
+                  )}
+                >
+                  {/* Thumbnail */}
+                  <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-surface shrink-0 relative">
+                    {p.image ? (
+                      <Image src={p.image} alt={p.name} fill className="object-cover" sizes="40px" unoptimized />
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-gray-300"><Package className="h-5 w-5" /></div>
+                    )}
+                  </div>
+                  {/* Name + badges */}
+                  <div className="min-w-0">
+                    <p className={cn("text-sm font-semibold text-foreground truncate", p.active === false && "line-through")}>{p.name}</p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] text-muted">{p.unit}</span>
+                      {p.badge && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{p.badge}</span>
+                      )}
+                      {p.description && (
+                        <span className="text-[10px] text-muted truncate max-w-40 hidden sm:inline">{p.description}</span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Category */}
+                  <span className="text-[11px] text-muted w-24 text-center truncate">{cat?.emoji} {cat?.label}</span>
+                  {/* Price */}
+                  <span className="text-sm font-extrabold text-primary w-16 text-right">S/{p.price.toFixed(2)}</span>
+                  {/* Stock */}
+                  <span className={cn(
+                    "text-xs font-bold w-16 text-center",
+                    isOut ? "text-red-500" : isLow ? "text-amber-500" : "text-emerald-600"
+                  )}>
+                    {p.stock !== undefined ? p.stock : "—"}
+                  </span>
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 w-20 justify-end">
+                    <button
+                      onClick={() => handleToggleActive(p)}
+                      className={cn(
+                        "h-7 w-7 rounded-lg flex items-center justify-center transition-colors",
+                        p.active === false
+                          ? "text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                          : "text-emerald-500 hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-surface"
+                      )}
+                      title={p.active === false ? "Activar" : "Ocultar"}
+                    >
+                      {p.active === false ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => setModal({ product: p })}
+                      className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
+                      title="Editar"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(p)}
+                      className="h-7 w-7 rounded-lg flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      title="Eliminar"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Grid view */}
+      {viewMode === "grid" && filtered.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {filtered.map((p) => {
+            const cat = CATEGORY_OPTS.find((c) => c.id === p.category);
+            const isOut = p.stock !== undefined && p.stock <= 0;
+            return (
+              <div
+                key={p.id}
+                className={cn(
+                  "bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border overflow-hidden group",
+                  p.active === false && "opacity-50"
+                )}
+              >
+                <div className="relative aspect-square bg-gray-50 dark:bg-surface">
+                  {p.image ? (
+                    <Image src={p.image} alt={p.name} fill className="object-cover" sizes="200px" unoptimized />
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-gray-200"><Package className="h-10 w-10" /></div>
+                  )}
+                  {/* Overlay actions */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                    <button onClick={() => setModal({ product: p })} className="h-8 w-8 rounded-full bg-white text-primary flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => handleToggleActive(p)} className="h-8 w-8 rounded-full bg-white text-gray-600 flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                      {p.active === false ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                    </button>
+                    <button onClick={() => setDeleteTarget(p)} className="h-8 w-8 rounded-full bg-white text-red-500 flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  {isOut && <span className="absolute top-1.5 right-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-red-500 text-white">Agotado</span>}
+                  {p.active === false && <span className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-gray-500 text-white">Oculto</span>}
+                  {p.badge && p.active !== false && <span className="absolute top-1.5 left-1.5 text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-primary text-white">{p.badge}</span>}
+                </div>
+                <div className="p-2.5">
+                  <p className="text-xs font-semibold text-foreground truncate">{p.name}</p>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-xs font-extrabold text-primary">S/{p.price.toFixed(2)}</span>
+                    <span className="text-[10px] text-muted">{cat?.emoji} {p.stock !== undefined ? `${p.stock} uds.` : ""}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Modals */}
+      {modal !== null && (
+        <ProductFormModal
+          initial={modal === "create" ? { ...DEFAULT_FORM } : { ...modal.product }}
+          onSave={handleSave}
+          onClose={() => setModal(null)}
+          saving={saving}
+        />
+      )}
+      {deleteTarget && (
+        <ConfirmDelete
+          name={deleteTarget.name}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
+    </>
+  );
+}

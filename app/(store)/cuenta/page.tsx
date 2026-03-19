@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback, startTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import {
-  ShoppingBag, Phone, ArrowLeft, Package, Clock, CheckCircle2,
+  Phone, ArrowLeft, Package, Clock, CheckCircle2,
   Truck, XCircle, Receipt, Loader2, Search, Award, RotateCcw,
   ListChecks, Tag, User, MapPin, Plus, Trash2, Pencil,
   ChevronDown, Heart, Filter, Gift, Percent, Star, ShoppingCart,
   MessageSquare, ThumbsUp, Repeat, TrendingUp, Bell,
-  Sparkles, ArrowRight, Info,
+  Sparkles, ArrowRight, Info, Cake, Wallet,
 } from "lucide-react";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
@@ -19,6 +20,11 @@ import { usePromotions } from "@/contexts/promotions-context";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/data/products";
 import type { SavedLocation } from "@/contexts/customer-context";
+import Header from "@/components/Header";
+import AnnouncementBar from "@/components/AnnouncementBar";
+
+const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
+const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 
 /* ── Types ───────────────────────────────────────────────────────── */
 
@@ -31,6 +37,7 @@ type Order = {
 type LoyaltyData = {
   phone?: string; name?: string; loyaltyPoints?: number; loyaltyTier: string;
   totalSpent?: number; tiers?: { name: string; minSpent: number }[];
+  referralCode?: string | null; creditBalance?: number;
 };
 type ShoppingList = {
   id: string; customerPhone: string; name: string;
@@ -66,13 +73,14 @@ function fmtDate(iso: string) {
 /* ── Tabs Config ─────────────────────────────────────────────────── */
 
 const TABS = [
-  { id: "pedidos", label: "Pedidos", icon: Receipt },
-  { id: "favoritos", label: "Favoritos", icon: Heart },
-  { id: "listas", label: "Listas", icon: ListChecks },
-  { id: "puntos", label: "Puntos", icon: Award },
-  { id: "ofertas", label: "Ofertas", icon: Tag },
-  { id: "resenas", label: "Reseñas", icon: MessageSquare },
-  { id: "perfil", label: "Perfil", icon: User },
+  { id: "pedidos",     label: "Pedidos",   icon: Receipt      },
+  { id: "favoritos",  label: "Favoritos",  icon: Heart        },
+  { id: "listas",     label: "Listas",    icon: ListChecks   },
+  { id: "puntos",     label: "Puntos",    icon: Award        },
+  { id: "ofertas",    label: "Ofertas",   icon: Tag          },
+  { id: "resenas",    label: "Reseñas",   icon: MessageSquare },
+  { id: "recurrentes", label: "Auto",     icon: Repeat       },
+  { id: "perfil",     label: "Perfil",    icon: User         },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -121,8 +129,6 @@ export default function CuentaPage() {
     setLoading(false);
   }, []);
 
-  const handleSearch = useCallback(() => { loadData(phone); }, [phone, loadData]);
-
   // Auto-load when customer phone is available
   useEffect(() => {
     if (customer?.phone && !identified && !loading) {
@@ -130,6 +136,15 @@ export default function CuentaPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customer?.phone]);
+
+  // Auto-open customer modal if no phone is known
+  useEffect(() => {
+    if (!customer?.phone && !identified && !loading) {
+      const t = setTimeout(() => openCustomerModal("profile"), 400);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleReorder = useCallback((items: OrderItem[]) => {
     const reorderItems = items.filter((i) => i.productId).map((i) => ({
@@ -147,72 +162,129 @@ export default function CuentaPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
-      {/* Header */}
-      <header className="bg-white dark:bg-card border-b border-gray-100 dark:border-card-border sticky top-0 z-30">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link href="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-card-border transition-colors text-gray-400 hover:text-gray-600 dark:text-muted">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-gray-900 dark:text-foreground">Mi Panel</h1>
-            <p className="text-xs text-gray-400 dark:text-muted">Bodega San Martín</p>
+      {/* ── Main site navigation ─────────────────────────────────── */}
+      <AnnouncementBar />
+      <Header />
+
+      {/* ── Hero header — matches site gradient ──────────────────── */}
+      <div
+        className="pt-32 sm:pt-36 pb-10 sm:pb-14"
+        style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)" }}
+      >
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center gap-3 mb-6">
+            <Link
+              href="/"
+              className="p-2 -ml-1 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-white/80 hover:text-white"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">Mi Panel</h1>
+              <p className="text-xs text-white/60 mt-0.5">Bodega San Martín · Pucallpa</p>
+            </div>
+            {identified && loyalty && (
+              <div className="shrink-0 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/15 flex items-center gap-1.5">
+                <Award className="h-4 w-4 text-amber-300" />
+                <div>
+                  <p className="text-sm font-extrabold text-white leading-none">{loyalty.loyaltyPoints ?? 0}</p>
+                  <p className="text-[10px] text-white/60">puntos</p>
+                </div>
+              </div>
+            )}
           </div>
-          {identified && loyalty && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
-              <Award className="h-3.5 w-3.5" />
-              {loyalty.loyaltyPoints ?? 0} pts
+
+          {/* Stats row — inside hero */}
+          {identified && orders !== null && !loading && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-4 text-center">
+                <p className="text-2xl font-extrabold text-white leading-tight">{orderCount}</p>
+                <p className="text-[11px] text-white/60 font-medium mt-1">Pedidos</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-4 text-center">
+                <p className="text-base sm:text-lg font-extrabold text-white leading-tight">{fmt(totalSpent)}</p>
+                <p className="text-[11px] text-white/60 font-medium mt-1">Gastado</p>
+              </div>
+              <div className={cn(
+                "rounded-2xl border p-4 text-center backdrop-blur-sm",
+                activeOrders.length > 0 ? "bg-amber-400/20 border-amber-400/30" : "bg-white/10 border-white/10"
+              )}>
+                <p className={cn("text-2xl font-extrabold leading-tight", activeOrders.length > 0 ? "text-amber-300" : "text-white")}>{activeOrders.length}</p>
+                <p className={cn("text-[11px] font-medium mt-1", activeOrders.length > 0 ? "text-amber-300/80" : "text-white/60")}>Activos</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl border border-white/10 p-4 text-center">
+                <p className="text-2xl font-extrabold text-white leading-tight">{loyalty?.loyaltyPoints ?? 0}</p>
+                <p className="text-[11px] text-white/60 font-medium mt-1">Puntos</p>
+              </div>
+            </div>
+          )}
+
+          {/* Loading indicator inside hero */}
+          {loading && (
+            <div className="flex items-center justify-center py-6">
+              <Loader2 className="h-6 w-6 text-white/60 animate-spin" />
+              <span className="ml-2 text-white/60 text-sm">Cargando tu panel…</span>
             </div>
           )}
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-3xl mx-auto px-4 py-5 space-y-5">
-        {/* Phone Identification */}
-        {!identified && (
-          <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Phone className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-sm font-bold text-gray-900 dark:text-foreground">Identifícate</h2>
-                <p className="text-xs text-gray-400 dark:text-muted">Ingresa tu número para ver tu panel</p>
-              </div>
+      <main id="main-content" className="max-w-5xl mx-auto px-4 sm:px-6 mt-6 space-y-4 pb-28">
+
+        {/* D2: Loading skeleton while fetching account data */}
+        {loading && !identified && (
+          <div className="space-y-3 mt-4 animate-pulse">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3 text-center">
+                  <div className="h-4 w-4 bg-gray-100 dark:bg-surface rounded-full mx-auto mb-2" />
+                  <div className="h-5 bg-gray-100 dark:bg-surface rounded-full w-12 mx-auto mb-1" />
+                  <div className="h-3 bg-gray-100 dark:bg-surface rounded-full w-10 mx-auto" />
+                </div>
+              ))}
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="flex gap-2">
-              <input
-                type="tel" inputMode="numeric" placeholder="Ej: 961234567"
-                value={phone} onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, ""))}
-                maxLength={15}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-card-border dark:bg-background dark:text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              />
-              <button type="submit" disabled={loading || phone.length < 6}
-                className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                Entrar
-              </button>
-            </form>
-            {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
-            <p className="text-xs text-gray-400 dark:text-muted mt-3 text-center">
-              &iquest;Primera vez?{" "}
-              <button onClick={() => openCustomerModal("profile")} className="text-primary font-semibold hover:underline">
-                Regístrate aquí
-              </button>
-            </p>
+            <div className="h-11 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border" />
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-surface shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-24 bg-gray-100 dark:bg-surface rounded-full" />
+                    <div className="h-2 w-36 bg-gray-100 dark:bg-surface rounded-full" />
+                  </div>
+                  <div className="h-4 w-12 bg-gray-100 dark:bg-surface rounded-full" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Identified: Stats + Tabs */}
+        {/* Not identified — prompt to use the nav account button */}
+        {!identified && !loading && (
+          <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border shadow-sm p-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+              <User className="h-8 w-8 text-primary/50" />
+            </div>
+            <div>
+              <h2 className="text-base font-extrabold text-foreground">Identifícate para continuar</h2>
+              <p className="text-sm text-muted mt-1.5 max-w-xs mx-auto leading-relaxed">
+                Haz clic en tu icono de cuenta en la barra de navegación para acceder a tu panel.
+              </p>
+            </div>
+            <button
+              onClick={() => openCustomerModal("profile")}
+              className="w-full py-3 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-md shadow-primary/20 flex items-center justify-center gap-2"
+            >
+              <User className="h-4 w-4" />
+              Iniciar sesión
+            </button>
+            {error && <p className="text-xs text-red-500">{error}</p>}
+          </div>
+        )}
+
+        {/* Identified: Quick Actions + Tabs */}
         {identified && orders && (
           <>
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <StatCard icon={Receipt} value={orderCount} label="Pedidos" color="text-violet-500" />
-              <StatCard icon={ShoppingBag} value={fmt(totalSpent)} label="Gastado" color="text-emerald-500" />
-              <StatCard icon={Package} value={activeOrders.length} label="Activos" color="text-amber-500" />
-              <StatCard icon={Award} value={loyalty?.loyaltyPoints ?? 0} label="Puntos" color="text-sky-500" />
-            </div>
-
             {/* Quick Actions */}
             <div className="flex gap-2 overflow-x-auto no-scrollbar">
               <QuickAction icon={ShoppingCart} label="Comprar" href="/#productos" />
@@ -249,6 +321,7 @@ export default function CuentaPage() {
               {activeTab === "puntos" && <PuntosTab loyalty={loyalty} orders={orders ?? []} />}
               {activeTab === "ofertas" && <OfertasTab />}
               {activeTab === "resenas" && <ResenasTab phone={phone} orders={orders ?? []} />}
+              {activeTab === "recurrentes" && <RecurrentesTab phone={phone} orders={orders ?? []} />}
               {activeTab === "perfil" && (
                 <PerfilTab loyalty={loyalty} onLogout={() => {
                   startTransition(() => { setIdentified(false); setOrders(null); setLoyalty(null); setPhone(""); });
@@ -273,18 +346,8 @@ export default function CuentaPage() {
           </Link>
         </div>
       </main>
-    </div>
-  );
-}
-
-/* ── Stat Card ───────────────────────────────────────────────────── */
-
-function StatCard({ icon: Icon, value, label, color }: { icon: React.ComponentType<{ className?: string }>; value: string | number; label: string; color: string }) {
-  return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3 text-center">
-      <Icon className={cn("h-4 w-4 mx-auto mb-1", color)} />
-      <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">{value}</p>
-      <p className="text-xs text-gray-400 dark:text-muted">{label}</p>
+      <CartSidebar />
+      <MobileBottomNav />
     </div>
   );
 }
@@ -305,13 +368,27 @@ function QuickAction({ icon: Icon, label, href, onClick }: {
 
 function PedidosTab({ orders, activeOrders, onReorder }: { orders: Order[]; activeOrders: Order[]; onReorder: (items: OrderItem[]) => void }) {
   const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [searchQ, setSearchQ] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const { addItem } = useCart();
   
   // Safe defaults
   const safeOrders = orders ?? [];
   const safeActiveOrders = activeOrders ?? [];
   
-  const filtered = statusFilter === "todos" ? safeOrders : safeOrders.filter(o => o.status === statusFilter);
+  const filtered = safeOrders.filter(o => {
+    if (statusFilter !== "todos" && o.status !== statusFilter) return false;
+    if (searchQ.trim()) {
+      const q = searchQ.toLowerCase();
+      const matchId = o.id?.toLowerCase().includes(q);
+      const matchProduct = o.items?.some(i => i.name.toLowerCase().includes(q));
+      if (!matchId && !matchProduct) return false;
+    }
+    if (dateFrom && o.createdAt.slice(0, 10) < dateFrom) return false;
+    if (dateTo && o.createdAt.slice(0, 10) > dateTo) return false;
+    return true;
+  });
 
   // Most purchased products
   const frequentProducts = (() => {
@@ -364,6 +441,22 @@ function PedidosTab({ orders, activeOrders, onReorder }: { orders: Order[]; acti
           </div>
         </div>
       )}
+
+      {/* Search + date filter */}
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <input type="text" value={searchQ} onChange={e => setSearchQ(e.target.value)}
+            placeholder="Buscar por producto o ID…"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border dark:bg-background dark:text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
+        </div>
+        <div className="flex gap-2">
+          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+            className="px-2 py-2 rounded-xl border border-gray-200 dark:border-card-border dark:bg-background dark:text-foreground text-xs" />
+          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+            className="px-2 py-2 rounded-xl border border-gray-200 dark:border-card-border dark:bg-background dark:text-foreground text-xs" />
+        </div>
+      </div>
 
       <div className="flex items-center gap-2 flex-wrap">
         <Filter className="h-3.5 w-3.5 text-gray-400" />
@@ -766,6 +859,95 @@ function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: O
       {/* Shimmer keyframes (injected once) */}
       <style>{`@keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }`}</style>
 
+      {/* Quick stats row */}
+      {(() => {
+        const allDelivered = safeOrders.filter(o => o.status === "entregado");
+        const now = new Date();
+        const thisMonth = allDelivered.filter(o => {
+          try { const d = new Date(o.createdAt); return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear(); } catch { return false; }
+        });
+        const monthPts = thisMonth.reduce((a, o) => a + Math.floor(o.total ?? 0), 0);
+        const avgPts = allDelivered.length ? Math.round(allDelivered.reduce((a, o) => a + Math.floor(o.total ?? 0), 0) / allDelivered.length) : 0;
+        return (
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Este mes", value: `+${monthPts}`, sub: "puntos" },
+              { label: "Promedio", value: `${avgPts}`, sub: "pts/compra" },
+              { label: "Compras", value: `${allDelivered.length}`, sub: "completadas" },
+            ].map(s => (
+              <div key={s.label} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3 text-center">
+                <p className="text-lg font-bold text-gray-900 dark:text-foreground">{s.value}</p>
+                <p className="text-[10px] text-gray-400 dark:text-muted">{s.label} &middot; {s.sub}</p>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
+      {/* Credit balance */}
+      {(loyalty.creditBalance ?? 0) > 0 && (
+        <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800 p-4 flex items-center gap-3">
+          <Wallet className="h-8 w-8 text-emerald-600 shrink-0" />
+          <div>
+            <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold uppercase tracking-wide">Saldo a favor</p>
+            <p className="text-2xl font-black text-emerald-600">S/{(loyalty.creditBalance ?? 0).toFixed(2)}</p>
+            <p className="text-[10px] text-emerald-600/70">Disponible para tu próxima compra</p>
+          </div>
+        </div>
+      )}
+
+      {/* Redeem points */}
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 space-y-3">
+        <h3 className="text-sm font-bold text-gray-900 dark:text-foreground flex items-center gap-1.5">
+          <Sparkles className="h-4 w-4 text-primary" /> Canjear puntos
+        </h3>
+        <div className="grid grid-cols-1 gap-2">
+          {[
+            { pts: 50,  reward: "S/2.50 de descuento" },
+            { pts: 100, reward: "S/5.00 de descuento" },
+            { pts: 200, reward: "S/12.00 de descuento" },
+            { pts: 500, reward: "Delivery gratis" },
+          ].map(r => {
+            const canRedeem = (loyalty.loyaltyPoints ?? 0) >= r.pts;
+            return (
+              <div key={r.pts} className={cn(
+                "flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border text-xs transition-all",
+                canRedeem ? "border-primary/30 bg-primary/5" : "border-gray-100 dark:border-card-border opacity-50"
+              )}>
+                <div className="flex items-center gap-2">
+                  <span className={cn("inline-flex items-center justify-center w-8 h-8 rounded-full text-[10px] font-bold", canRedeem ? "bg-primary/15 text-primary" : "bg-gray-100 dark:bg-background text-gray-400")}>
+                    {r.pts}
+                  </span>
+                  <span className={canRedeem ? "text-gray-700 dark:text-foreground/80 font-medium" : "text-gray-400 dark:text-muted"}>{r.reward}</span>
+                </div>
+                {canRedeem && <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />}
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-gray-400 dark:text-muted text-center">Menciona tus puntos al hacer tu pedido para canjear</p>
+      </div>
+
+      {/* How points work */}
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 space-y-2">
+        <h3 className="text-sm font-bold text-gray-900 dark:text-foreground flex items-center gap-1.5">
+          <Info className="h-4 w-4 text-primary" /> ¿Cómo funcionan?
+        </h3>
+        <div className="grid grid-cols-1 gap-1.5 text-xs text-gray-600 dark:text-foreground/70">
+          {[
+            "Ganas 1 punto por cada S/1 gastado en compras entregadas",
+            "Los puntos se acumulan y nunca expiran",
+            "Sube de nivel gastando más para desbloquear mejores beneficios",
+            "Canjea puntos mencionándolos al momento de tu pedido",
+          ].map((tip, i) => (
+            <div key={i} className="flex items-start gap-2">
+              <span className="mt-0.5 h-4 w-4 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold shrink-0">{i + 1}</span>
+              <span>{tip}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Progress + tiers panel */}
       <div className={cn("rounded-2xl border overflow-hidden", style.border, style.bg)}>
         <div className="p-5 space-y-3">
@@ -824,6 +1006,9 @@ function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: O
         </div>
       </div>
 
+      {/* Referral */}
+      <ReferralBlock phone={loyalty.phone} referralCode={loyalty.referralCode} />
+
       {/* Recent activity */}
       {deliveredOrders.length > 0 && (
         <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 space-y-3">
@@ -846,6 +1031,77 @@ function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: O
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ReferralBlock({ phone, referralCode }: { phone?: string; referralCode?: string | null }) {
+  const [code, setCode] = useState<string | null>(referralCode ?? null);
+  const [copied, setCopied] = useState(false);
+  const [applyCode, setApplyCode] = useState("");
+  const [applyMsg, setApplyMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!phone || code) return;
+    fetch(`/api/referrals?phone=${encodeURIComponent(phone)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { code: string } | null) => { if (d?.code) setCode(d.code); })
+      .catch(() => {});
+  }, [phone, code]);
+
+  function copyCode() {
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {});
+  }
+
+  async function handleApply(e: React.FormEvent) {
+    e.preventDefault();
+    if (!phone || !applyCode.trim()) return;
+    setLoading(true);
+    setApplyMsg(null);
+    try {
+      const res = await fetch("/api/referrals", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ phone, code: applyCode.trim() }) });
+      const data = await res.json() as { ok?: boolean; error?: string; message?: string };
+      setApplyMsg({ ok: !!data.ok, text: data.ok ? (data.message ?? "¡Código aplicado!") : (data.error ?? "Error") });
+    } catch { setApplyMsg({ ok: false, text: "Error de conexión" }); }
+    finally { setLoading(false); }
+  }
+
+  if (!phone) return null;
+  return (
+    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 space-y-3">
+      <h3 className="text-sm font-bold text-gray-900 dark:text-foreground flex items-center gap-1.5">
+        <Gift className="h-4 w-4 text-primary" /> Programa de referidos
+      </h3>
+      {/* My code */}
+      <div>
+        <p className="text-xs text-gray-500 dark:text-muted mb-1.5">Tu código de referido — comparte y gana 50 puntos por cada amigo</p>
+        <div className="flex items-center gap-2">
+          <span className="flex-1 text-center font-mono text-lg font-extrabold tracking-widest bg-primary/5 text-primary rounded-xl py-2 px-3 border border-primary/20">
+            {code ?? "Cargando..."}
+          </span>
+          <button onClick={copyCode} disabled={!code}
+            className="px-3 py-2 bg-primary text-white rounded-xl text-xs font-semibold disabled:opacity-50 transition-colors hover:bg-primary/90">
+            {copied ? "¡Copiado!" : "Copiar"}
+          </button>
+        </div>
+      </div>
+      {/* Apply a code */}
+      <div>
+        <p className="text-xs text-gray-500 dark:text-muted mb-1.5">¿Tienes un código de un amigo? Aplícalo aquí</p>
+        <form onSubmit={handleApply} className="flex gap-2">
+          <input value={applyCode} onChange={e => setApplyCode(e.target.value.toUpperCase())} placeholder="Ej: ABC123" maxLength={10}
+            className="flex-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-sm bg-white dark:bg-surface font-mono tracking-widest" />
+          <button type="submit" disabled={loading || !applyCode.trim()}
+            className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-semibold disabled:opacity-50 transition-colors hover:bg-primary/90">
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Aplicar"}
+          </button>
+        </form>
+        {applyMsg && (
+          <p className={cn("text-xs mt-1.5 font-medium", applyMsg.ok ? "text-emerald-600" : "text-red-500")}>{applyMsg.text}</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -1275,7 +1531,7 @@ function PerfilTab({ loyalty, onLogout }: { loyalty: LoyaltyData | null; onLogou
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 text-center">
           <Heart className="h-5 w-5 text-red-400 mx-auto mb-1" />
           <p className="text-lg font-bold text-gray-900 dark:text-foreground">{favCount}</p>
@@ -1286,6 +1542,7 @@ function PerfilTab({ loyalty, onLogout }: { loyalty: LoyaltyData | null; onLogou
           <p className="text-lg font-bold text-gray-900 dark:text-foreground">{locations.length}</p>
           <p className="text-xs text-gray-400 dark:text-muted">Direcciones</p>
         </div>
+        <BirthdayInput customer={customer} register={register} />
       </div>
 
       {/* Saved addresses */}
@@ -1426,23 +1683,120 @@ function OrderTimeline({ status }: { status: Order["status"] }) {
   );
 }
 
+/* ── Birthday Input ──────────────────────────────────────────────── */
+
+function BirthdayInput({ customer, register }: { customer: { name: string; phone?: string; location: string; reference: string; locations?: SavedLocation[]; activeLocationId?: string; birthday?: string }; register: (data: typeof customer) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [month, setMonth] = useState("");
+  const [day, setDay] = useState("");
+
+  const hasBirthday = !!customer.birthday;
+  const displayDate = hasBirthday
+    ? (() => {
+        const parts = customer.birthday!.split("-");
+        const m = parseInt(parts[0], 10);
+        const d = parseInt(parts[1], 10);
+        const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+        return `${d} ${months[m - 1] ?? ""}`;
+      })()
+    : null;
+
+  const save = () => {
+    const m = parseInt(month, 10);
+    const d = parseInt(day, 10);
+    if (m < 1 || m > 12 || d < 1 || d > 31) return;
+    const bd = `${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    register({ ...customer, birthday: bd });
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="bg-white dark:bg-card rounded-xl border border-primary/30 p-3 text-center col-span-1">
+        <div className="flex items-center gap-1 justify-center mb-1.5">
+          <input type="number" min={1} max={12} value={month} onChange={e => setMonth(e.target.value)}
+            className="w-10 rounded border border-gray-200 dark:border-card-border text-center text-xs py-1 dark:bg-background dark:text-foreground" placeholder="MM" />
+          <span className="text-gray-400">/</span>
+          <input type="number" min={1} max={31} value={day} onChange={e => setDay(e.target.value)}
+            className="w-10 rounded border border-gray-200 dark:border-card-border text-center text-xs py-1 dark:bg-background dark:text-foreground" placeholder="DD" />
+        </div>
+        <div className="flex gap-1 justify-center">
+          <button onClick={save} className="text-[10px] font-semibold text-primary hover:underline">Guardar</button>
+          <button onClick={() => setEditing(false)} className="text-[10px] text-gray-400 hover:underline">Cancelar</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <button onClick={() => setEditing(true)}
+      className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 text-center hover:border-primary/30 transition-colors">
+      <Cake className="h-5 w-5 text-pink-400 mx-auto mb-1" />
+      {hasBirthday ? (
+        <>
+          <p className="text-lg font-bold text-gray-900 dark:text-foreground">{displayDate}</p>
+          <p className="text-xs text-gray-400 dark:text-muted">Cumpleaños</p>
+        </>
+      ) : (
+        <>
+          <p className="text-xs font-semibold text-primary">Agregar</p>
+          <p className="text-[10px] text-gray-400 dark:text-muted">Cumpleaños</p>
+        </>
+      )}
+    </button>
+  );
+}
+
 /* ── Notification Preferences ────────────────────────────────────── */
 
 function NotificationPrefs() {
-  const [prefs, setPrefs] = useState(() => {
-    if (typeof window === "undefined") return { orderUpdates: true, promotions: true, restock: false };
-    try {
-      const raw = localStorage.getItem("bsm-notif-prefs");
-      if (raw) return JSON.parse(raw);
-    } catch { /* ignore */ }
-    return { orderUpdates: true, promotions: true, restock: false };
-  });
+  const { customer } = useCustomer();
+  const [prefs, setPrefs] = useState({ orderUpdates: true, promotions: true, restock: false });
+  const [loaded, setLoaded] = useState(false);
+
+  // Load prefs from DB when customer is available
+  useEffect(() => {
+    if (!customer?.phone) return;
+    fetch(`/api/customer-preferences?phone=${encodeURIComponent(customer.phone)}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data) {
+          setPrefs({
+            orderUpdates: data.notifOrderUpdates ?? true,
+            promotions: data.notifPromotions ?? true,
+            restock: data.notifRestock ?? false,
+          });
+        }
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, [customer?.phone]);
 
   const togglePref = (key: keyof typeof prefs) => {
     const next = { ...prefs, [key]: !prefs[key] };
     setPrefs(next);
-    localStorage.setItem("bsm-notif-prefs", JSON.stringify(next));
+    // Persist to DB
+    if (customer?.phone) {
+      const fieldMap: Record<string, string> = {
+        orderUpdates: "notifOrderUpdates",
+        promotions: "notifPromotions",
+        restock: "notifRestock",
+      };
+      fetch("/api/customer-preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: customer.phone, [fieldMap[key]]: next[key] }),
+      }).catch(() => {});
+    }
   };
+
+  if (!loaded && customer?.phone) {
+    return (
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-6 text-center">
+        <p className="text-xs text-muted animate-pulse">Cargando preferencias…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
@@ -1475,6 +1829,176 @@ function NotifToggle({ label, desc, enabled, onToggle }: { label: string; desc: 
           enabled ? "translate-x-5" : "translate-x-0.5")}
           style={{ width: "18px", height: "18px" }} />
       </button>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TAB EXTRA: PEDIDOS RECURRENTES (AUTO-COMPRA)
+   ══════════════════════════════════════════════════════════════════ */
+
+type RecurringEntry = {
+  orderId: string;
+  items: OrderItem[];
+  total: number;
+  frequency: "semanal" | "quincenal" | "mensual";
+  nextOrderDate: string;
+  active: boolean;
+};
+
+function RecurrentesTab({ phone, orders }: { phone: string; orders: Order[] }) {
+  const { addMultiple } = useCart();
+  const storageKey = `bsm-recurring-${phone.replace(/\D/g, "")}`;
+
+  const [entries, setEntries] = useState<RecurringEntry[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem(storageKey) ?? "[]"); } catch { return []; }
+  });
+
+  const persist = (next: RecurringEntry[]) => {
+    setEntries(next);
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
+  };
+
+  const deliveredOrders = orders.filter(o => o.status === "entregado" && (o.items?.length ?? 0) > 0);
+  const registeredIds   = new Set(entries.map(e => e.orderId));
+
+  const addRecurring = (order: Order, freq: RecurringEntry["frequency"]) => {
+    const daysMap = { semanal: 7, quincenal: 15, mensual: 30 } as const;
+    const next = new Date();
+    next.setDate(next.getDate() + daysMap[freq]);
+    persist([...entries.filter(e => e.orderId !== order.id), {
+      orderId: order.id, items: order.items ?? [], total: order.total ?? 0,
+      frequency: freq, nextOrderDate: next.toISOString(), active: true,
+    }]);
+  };
+
+  const removeEntry  = (id: string) => persist(entries.filter(e => e.orderId !== id));
+  const toggleActive = (id: string) => persist(entries.map(e => e.orderId === id ? { ...e, active: !e.active } : e));
+
+  const reorderNow = (entry: RecurringEntry) => {
+    const cartItems = entry.items
+      .filter(i => i.productId && i.price != null)
+      .map(i => ({
+        product: { id: i.productId!, name: i.name, price: i.price!, image: i.image, unit: i.unit, category: "" } as unknown as Product,
+        quantity: i.quantity,
+      }));
+    if (cartItems.length > 0) addMultiple(cartItems);
+    const daysMap = { semanal: 7, quincenal: 15, mensual: 30 } as const;
+    const nd = new Date(); nd.setDate(nd.getDate() + daysMap[entry.frequency]);
+    persist(entries.map(e => e.orderId === entry.orderId ? { ...e, nextOrderDate: nd.toISOString() } : e));
+  };
+
+  const dueEntries = entries.filter(e => e.active && new Date(e.nextOrderDate) <= new Date());
+
+  return (
+    <div className="space-y-4">
+      {/* Due-order banner */}
+      {dueEntries.length > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Clock className="h-4 w-4 text-amber-500" />
+            <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
+              {dueEntries.length} pedido automático{dueEntries.length > 1 ? "s" : ""} listo{dueEntries.length > 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="space-y-2">
+            {dueEntries.map(e => (
+              <div key={e.orderId} className="flex items-center justify-between gap-2">
+                <p className="text-xs text-amber-700 dark:text-amber-300 truncate flex-1">
+                  {e.items.length} prods · {fmt(e.total)}
+                </p>
+                <button onClick={() => reorderNow(e)}
+                  className="shrink-0 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 px-3 py-1.5 rounded-lg transition-colors">
+                  Pedir ahora
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Active recurring list */}
+      {entries.length > 0 && (
+        <div>
+          <h3 className="text-xs font-bold text-gray-700 dark:text-foreground/80 mb-2 flex items-center gap-1.5">
+            <Repeat className="h-3.5 w-3.5 text-primary" /> Mis pedidos automáticos ({entries.length})
+          </h3>
+          <div className="space-y-2">
+            {entries.map(e => (
+              <div key={e.orderId} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-gray-700 dark:text-foreground truncate">
+                      {e.items.length} productos · {fmt(e.total)}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-muted mt-0.5">
+                      Cada {e.frequency === "semanal" ? "semana" : e.frequency === "quincenal" ? "15 días" : "mes"}
+                      &nbsp;· Próximo: {fmtDate(e.nextOrderDate)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={() => toggleActive(e.orderId)}
+                      className={cn("w-8 h-4 rounded-full transition-colors relative shrink-0", e.active ? "bg-primary" : "bg-gray-200 dark:bg-surface")}
+                      title={e.active ? "Desactivar" : "Activar"}>
+                      <span className={cn("absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all", e.active ? "translate-x-4" : "translate-x-0.5")} />
+                    </button>
+                    <button onClick={() => removeEntry(e.orderId)} className="p-1 text-gray-300 hover:text-red-400 transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Configure from past delivered orders */}
+      {deliveredOrders.length > 0 && (
+        <div>
+          <h3 className="text-xs font-bold text-gray-700 dark:text-foreground/80 mb-2">
+            Configurar desde pedidos anteriores
+          </h3>
+          <div className="space-y-2">
+            {deliveredOrders.slice(0, 5).map(order => (
+              <div key={order.id} className={cn(
+                "bg-white dark:bg-card rounded-xl border p-3.5",
+                registeredIds.has(order.id) ? "border-primary/30 dark:border-primary/40" : "border-gray-100 dark:border-card-border"
+              )}>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-gray-700 dark:text-foreground">
+                      {(order.items ?? []).length} prod. · {fmt(order.total)} · {fmtDate(order.createdAt)}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-muted mt-0.5 truncate">
+                      {(order.items ?? []).slice(0, 3).map(i => i.name).join(", ")}
+                      {(order.items ?? []).length > 3 && ` +${(order.items ?? []).length - 3} más`}
+                    </p>
+                  </div>
+                  {registeredIds.has(order.id) ? (
+                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full shrink-0">Activo</span>
+                  ) : (
+                    <div className="flex items-center gap-1 shrink-0">
+                      {(["semanal", "quincenal", "mensual"] as const).map(freq => (
+                        <button key={freq} onClick={() => addRecurring(order, freq)}
+                          className="text-[10px] font-semibold px-2 py-1 rounded-lg bg-primary/8 text-primary hover:bg-primary/15 transition-colors">
+                          {freq === "semanal" ? "Sem." : freq === "quincenal" ? "15d" : "Mes"}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {deliveredOrders.length === 0 && entries.length === 0 && (
+        <EmptyState icon={Repeat} message="Aún no tienes pedidos entregados"
+          action="Cuando recibas tu primer pedido, podrás configurarlo como automático aquí" />
+      )}
     </div>
   );
 }

@@ -1,220 +1,255 @@
-export const dynamic = 'force-dynamic'
+﻿export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { OrdersDB, CouponsDB } from "@/lib/jsondb";
+import { OrdersDB, NotificationLogsDB, LoyaltyDB } from "@/lib/jsondb";
 import type { DbOrder } from "@/lib/jsondb";
-import { sendOrderNotification } from "@/lib/mailer";
+import { getWhatsAppLink, sendWhatsAppNotification } from "@/lib/whatsapp";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { sendPushToPhone } from "@/lib/push-sender";
+import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
+import { invalidate } from "@/lib/cache";
 
-const OrderItemSchema = z.object({
-  id: z.number(),
-  name: z.string().min(1).max(200),
-  price: z.number().min(0),
-  quantity: z.number().min(1),
-  unit: z.string().max(30).optional(),
-  image: z.string().max(500).optional(),
-  category: z.string().optional(),
-  badge: z.string().nullable().optional(),
-});
+const NOTIFIABLE_STATUSES = new Set(["confirmado", "en_camino", "entregado", "cancelado"]);
 
-const OrderPostSchema = z.object({
-  customer: z.object({
-    name: z.string().min(1).max(100),
-    phone: z.string().min(6).max(20),
-    location: z.string().max(500).optional(),
-    reference: z.string().max(300).optional(),
-  }),
-  items: z.array(OrderItemSchema).min(1),
-  total: z.number().min(0), // client hint; server will recompute
-  paymentMethod: z.enum(["yape", "efectivo"]).optional().default("efectivo"),
+// Valid order status transitions — prevents going backward (e.g. entregado → pendiente)
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  pendiente: ["confirmado", "cancelado"],
+  confirmado: ["en_camino", "cancelado"],
+  en_camino: ["entregado", "cancelado"],
+  entregado: [],    // Terminal state
+  cancelado: [],    // Terminal state
+};
+
+const PatchSchema = z.object({
+  status: z.enum(["pendiente", "confirmado", "en_camino", "entregado", "cancelado"]).optional(),
   notes: z.string().max(1000).optional(),
-  deliverySlot: z.string().max(100).optional(),
-  // Discount tracking fields
-  appliedCouponCode: z.string().max(50).optional(),
-  couponDiscount: z.number().min(0).optional(),     // server re-verifies this
-  appliedPromoId: z.string().max(200).optional(),
-  discountAmount: z.number().min(0).optional(),     // promo discount claimed by client
-  // Payment details
+  deuda: z.boolean().nullable().optional(),
+  paymentMethod: z.enum(["yape", "efectivo"]).optional(),
   yapeOperationNumber: z.string().max(50).optional(),
-  deuda: z.boolean().optional(),
+  riderName: z.string().max(80).optional(),
+  cancelReason: z.string().max(500).optional(),
+  adminNote: z.string().max(2000).optional(),
 });
 
-/** Retry a DB operation up to `retries` times with exponential backoff on connection errors. */
-async function withDbRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fn();
-    } catch (err: unknown) {
-      const isConnectionError =
-        err instanceof Error &&
-        (err.message.includes("Connection") ||
-          err.message.includes("ECONNREFUSED") ||
-          err.message.includes("ETIMEDOUT") ||
-          err.message.includes("connection") ||
-          err.message.includes("timeout"));
-      if (!isConnectionError || i === retries - 1) throw err;
-      await new Promise(r => setTimeout(r, 300 * Math.pow(2, i))); // 300ms, 600ms
-    }
-  }
-  throw new Error("Unreachable");
-}
-
-export async function GET(req: NextRequest) {
+// -- GET /api/orders/[id] -- fetch single order -------------------------------
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
+  const { id } = await params;
   try {
-    const { searchParams } = new URL(req.url);
-    const statusFilter = searchParams.get("status");      // e.g. "pendiente"
-    const limitParam   = searchParams.get("limit");       // default: all
-    const sinceParam   = searchParams.get("since");       // ISO date string
-    const phoneParam   = searchParams.get("phone");       // filter by customer phone
-
-    let orders = await withDbRetry(() => OrdersDB.getAll());
-
-    if (statusFilter) {
-      const statuses = statusFilter.split(",").map(s => s.trim());
-      orders = orders.filter(o => statuses.includes(o.status));
-    }
-    if (sinceParam) {
-      const since = new Date(sinceParam);
-      if (!isNaN(since.getTime())) {
-        orders = orders.filter(o => new Date(o.createdAt) >= since);
-      }
-    }
-    if (phoneParam) {
-      orders = orders.filter(o => o.customer.phone === phoneParam);
-    }
-    if (limitParam) {
-      const limit = Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 1000);
-      orders = orders.slice(0, limit);
-    }
-
-    return NextResponse.json(orders, {
-      headers: { "X-Total-Count": String(orders.length) },
-    });
+    const order = await OrdersDB.getById(id);
+    if (!order) return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
+    return NextResponse.json(order);
   } catch (e) {
-    console.error("[orders] GET error:", e);
+    logger.error("[orders/id] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
 
-export async function POST(req: NextRequest) {
-  // Rate limit: 5 orders per IP per 10 minutes
-  const ip = getClientIp(req);
-  const { allowed, resetAt } = rateLimit(`orders:${ip}`, 5, 600);
-  if (!allowed) {
+// -- PATCH /api/orders/[id] -- update status / notes / deuda -----------------
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+
+  const { id } = await params;
+  let raw: unknown;
+  try { raw = await req.json(); } catch {
+    return NextResponse.json({ error: "JSON invalido" }, { status: 400 });
+  }
+
+  const parsed = PatchSchema.safeParse(raw);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Demasiadas solicitudes. Intenta de nuevo en unos minutos." },
-      {
-        status: 429,
-        headers: { "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)) },
-      }
+      { error: "Datos invalidos", issues: parsed.error.issues.map(i => i.message) },
+      { status: 400 }
     );
   }
 
   try {
-    const raw = await req.json();
-    const parsed = OrderPostSchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
-        { status: 400 }
-      );
-    }
-    const body = parsed.data;
+    const existing = await OrdersDB.getById(id);
+    if (!existing) return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
 
-    // â”€â”€ Server-side total recomputation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Prevents price manipulation: always compute from item prices Ã— quantities
-    const itemsTotal = body.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-    // Re-verify coupon server-side when code is present
-    let serverCouponDiscount = 0;
-    let verifiedCouponCode: string | undefined;
-    if (body.appliedCouponCode) {
-      const coupon = await CouponsDB.getByCode(body.appliedCouponCode);
-      const now = new Date();
-      const valid =
-        coupon &&
-        coupon.active &&
-        (!coupon.expiresAt || new Date(coupon.expiresAt) > now) &&
-        (!coupon.maxUses || coupon.usedCount < coupon.maxUses) &&
-        (!coupon.minPurchase || itemsTotal >= coupon.minPurchase);
-      if (valid) {
-        serverCouponDiscount =
-          coupon.discountType === "percent"
-            ? Math.round((itemsTotal * coupon.discountValue) / 100 * 100) / 100
-            : Math.min(coupon.discountValue, itemsTotal);
-        verifiedCouponCode = coupon.code;
+    // Validate status transition if attempting to change status
+    if (parsed.data.status && parsed.data.status !== existing.status) {
+      const allowed = VALID_TRANSITIONS[existing.status] ?? [];
+      if (!allowed.includes(parsed.data.status)) {
+        return NextResponse.json(
+          { error: `No se puede cambiar de "${existing.status}" a "${parsed.data.status}". Transiciones válidas: ${allowed.join(", ") || "ninguna (estado final)"}` },
+          { status: 422 }
+        );
       }
     }
 
-    // Accept promo discount only when an appliedPromoId is supplied, capped at 99%
-    const maxPromoDiscount = itemsTotal * 0.99;
-    const promoDiscount = body.appliedPromoId && body.discountAmount
-      ? Math.min(body.discountAmount, maxPromoDiscount)
-      : 0;
+    const updated = await OrdersDB.update(id, parsed.data as Partial<DbOrder>);
+    if (!updated) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
 
-    const computedTotal = Math.max(0, itemsTotal - serverCouponDiscount - promoDiscount);
-    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    const statusChanged = parsed.data.status != null && parsed.data.status !== existing.status;
 
-    const now = new Date().toISOString();
-    const order: DbOrder = {
-      id: `ord-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      customer: {
-        name: body.customer.name,
-        phone: body.customer.phone,
-        location: body.customer.location ?? "",
-        reference: body.customer.reference ?? "",
-      },
-      items: body.items.map(i => ({
-        id: i.id,
-        name: i.name,
-        price: i.price,
-        quantity: i.quantity,
-        unit: i.unit ?? "und",
-        image: i.image ?? "",
-      })),
-      total: computedTotal,
-      status: "pendiente",
-      paymentMethod: body.paymentMethod ?? "efectivo",
-      notes: body.notes,
-      deliverySlot: body.deliverySlot,
-      yapeOperationNumber: body.yapeOperationNumber,
-      deuda: body.deuda,
-      ...(verifiedCouponCode && {
-        appliedCouponCode: verifiedCouponCode,
-        couponDiscount: serverCouponDiscount,
-      }),
-      ...(promoDiscount > 0 && {
-        appliedPromoId: body.appliedPromoId,
-        discountAmount: promoDiscount,
-      }),
-      createdAt: now,
-      updatedAt: now,
-    };
-    const saved = await withDbRetry(() => OrdersDB.add(order));
+    // Log status change to history (fire-and-forget)
+    if (statusChanged) {
+      prisma.orderStatusHistory.create({
+        data: {
+          orderId: id,
+          fromStatus: existing.status as never,
+          toStatus: parsed.data.status as never,
+          changedBy: "admin",
+          note: parsed.data.cancelReason ?? null,
+        },
+      }).catch(() => {});
 
-    // Increment coupon usage counter (fire-and-forget)
-    if (verifiedCouponCode) {
-      CouponsDB.redeem(verifiedCouponCode).catch(() => {});
+      // Persist cancel metadata on the Prisma Order if exists
+      if (parsed.data.status === "cancelado") {
+        prisma.order.update({
+          where: { id },
+          data: {
+            cancelReason: parsed.data.cancelReason ?? null,
+            cancelledAt: new Date(),
+          },
+        }).catch(() => {});
+      }
     }
-    // Fire-and-forget email notification (never blocks the response)
-    sendOrderNotification({
-      id: saved.id,
-      customerName: saved.customer.name,
-      customerPhone: saved.customer.phone,
-      customerLocation: saved.customer.location ?? "",
-      total: saved.total,
-      paymentMethod: saved.paymentMethod,
-      items: saved.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })),
-    }).catch(() => {});
-    logActivity("Crear", "pedido", `Nuevo pedido de ${saved.customer.name} por S/${saved.total.toFixed(2)}`, saved.id).catch(() => {});
-    return NextResponse.json(saved, { status: 201 });
+
+    // Accrue loyalty points when order is marked as delivered
+    if (statusChanged && parsed.data.status === "entregado" && updated.customer.phone) {
+      LoyaltyDB.accruePoints(updated.customer.phone, updated.total).catch(() => {});
+    }
+
+    // Check customer notification preferences for order updates
+    const custPrefs = (statusChanged && updated.customer.phone)
+      ? await prisma.customer.findUnique({
+          where: { phone: updated.customer.phone },
+          select: { notifOrderUpdates: true },
+        }).catch(() => null)
+      : null;
+    const wantsOrderNotifs = custPrefs?.notifOrderUpdates !== false;
+
+    if (statusChanged && parsed.data.status === "entregado" && updated.customer.phone && wantsOrderNotifs) {
+      // Send push notification with review prompt
+      sendPushToPhone(updated.customer.phone, {
+        title: "✅ ¡Pedido entregado!",
+        body: `Tu pedido de S/${updated.total.toFixed(2)} fue entregado. ¿Cómo estuvo? Déjanos tu reseña 🌟`,
+        url: `/pedido/${updated.id}`,
+      }).catch(() => {});
+    }
+
+    // Send push for other status changes
+    if (statusChanged && parsed.data.status !== "entregado" && updated.customer.phone && NOTIFIABLE_STATUSES.has(parsed.data.status!) && wantsOrderNotifs) {
+      const statusLabels: Record<string, string> = {
+        confirmado: "✅ Pedido confirmado",
+        en_camino: "🚚 Tu pedido va en camino",
+        cancelado: "❌ Pedido cancelado",
+      };
+      sendPushToPhone(updated.customer.phone, {
+        title: statusLabels[parsed.data.status!] ?? "Actualización de pedido",
+        body: `Pedido #${updated.id.slice(-6)} — S/${updated.total.toFixed(2)}`,
+        url: `/pedido/${updated.id}`,
+      }).catch(() => {});
+    }
+
+    // Build WhatsApp link when status advances to a customer-facing state
+    let whatsappLink: string | null = null;
+    let whatsappSent = false;
+    if (statusChanged && NOTIFIABLE_STATUSES.has(parsed.data.status!)) {
+      const orderInfo = {
+        id: updated.id,
+        customerName: updated.customer.name,
+        customerPhone: updated.customer.phone ?? "",
+        total: updated.total,
+        status: updated.status,
+        paymentMethod: updated.paymentMethod,
+        deliverySlot: updated.deliverySlot,
+        items: updated.items,
+      };
+
+      // Try auto-sending via WhatsApp API first (respects customer preference)
+      try {
+        if (wantsOrderNotifs) {
+          whatsappSent = await sendWhatsAppNotification(orderInfo);
+        }
+      } catch { /* API not configured or failed — fall back to link */ }
+
+      // Always generate the manual link as fallback
+      whatsappLink = getWhatsAppLink(orderInfo);
+
+      // Log notification (fire-and-forget)
+      if (updated.customer.phone) {
+        NotificationLogsDB.add({
+          type: `order_${updated.status}`,
+          recipient: updated.customer.phone,
+          message: whatsappSent
+            ? `WhatsApp auto-enviado: estado -> ${updated.status}`
+            : `WhatsApp link generado: estado -> ${updated.status}`,
+          status: whatsappSent ? "sent" : whatsappLink ? "link" : "skipped",
+          orderId: updated.id,
+        }).catch(() => {});
+      }
+    }
+
+    const requestId = req.headers.get("x-request-id") ?? undefined;
+    logActivity(
+      "Actualizar", "pedido",
+      `Pedido ${id.slice(-6)}${parsed.data.status ? ` -> ${parsed.data.status}` : " editado"}`,
+      id,
+      "admin",
+      requestId,
+    ).catch(() => {});
+
+    // Log to customer notification inbox
+    if (statusChanged && updated.customer.phone && NOTIFIABLE_STATUSES.has(parsed.data.status!)) {
+      const statusMsgs: Record<string, { title: string; body: string }> = {
+        confirmado: { title: "✅ Pedido confirmado", body: `Tu pedido #${updated.id.slice(-6)} fue confirmado. Estamos preparándolo.` },
+        en_camino: { title: "🚚 Pedido en camino", body: `Tu pedido #${updated.id.slice(-6)} va en camino. ¡Prepárate!` },
+        entregado: { title: "📦 Pedido entregado", body: `Tu pedido #${updated.id.slice(-6)} fue entregado. ¿Cómo estuvo? Déjanos tu reseña.` },
+        cancelado: { title: "❌ Pedido cancelado", body: `Tu pedido #${updated.id.slice(-6)} fue cancelado.` },
+      };
+      const msg = statusMsgs[parsed.data.status!];
+      if (msg) {
+        prisma.customerNotification.create({
+          data: {
+            customerPhone: updated.customer.phone,
+            type: "order",
+            title: msg.title,
+            body: msg.body,
+            link: `/pedido/${updated.id}`,
+          },
+        }).catch(() => {});
+      }
+    }
+
+    invalidate(`dashboard:${auth.tenantId}`);
+    return NextResponse.json({ ...updated, ...(whatsappLink && { whatsappLink }), ...(whatsappSent && { whatsappSent }) });
   } catch (e) {
-    console.error("[orders] POST error:", e);
+    logger.error("[orders/id] PATCH error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
+}
+
+// -- DELETE /api/orders/[id] -- remove order ----------------------------------
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+
+  const { id } = await params;
+  try {
+    await OrdersDB.delete(id);
+    const reqId = req.headers.get("x-request-id") ?? undefined;
+    logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, "admin", reqId).catch(() => {});
+    invalidate(`dashboard:${auth.tenantId}`);
+    return new NextResponse(null, { status: 204 });
+  } catch (e) {
+    logger.error("[orders/id] DELETE error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

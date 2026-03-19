@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
-import { ShoppingCart, Clock, Users, Sparkles, Package } from "lucide-react";
+import { ShoppingCart, Clock, Users, Sparkles, Package, Minus, Plus } from "lucide-react";
 import { products, type Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
@@ -64,10 +65,14 @@ function findProducts(ingredientNames: string[]): Product[] {
 export default function RecipeSuggestions() {
   const { addItem } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
+  /* V4: Portion multipliers per recipe */
+  const [portions, setPortions] = useState<Record<string, number>>({});
 
-  const addAllIngredients = (ingredientNames: string[]) => {
+  const addAllIngredients = (ingredientNames: string[], multiplier: number) => {
     const matched = findProducts(ingredientNames);
-    matched.forEach((p) => addItem(p));
+    matched.forEach((p) => {
+      for (let i = 0; i < Math.ceil(multiplier); i++) addItem(p);
+    });
   };
 
   return (
@@ -94,73 +99,88 @@ export default function RecipeSuggestions() {
         </div>
 
         {/* Recipe cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
           {RECIPES.map((recipe, i) => {
             const matched = findProducts(recipe.ingredients);
+            const multiplier = (portions[recipe.name] ?? recipe.servings) / recipe.servings;
+            const currentServings = portions[recipe.name] ?? recipe.servings;
+            const totalPrice = matched.reduce((sum, p) => sum + p.price * multiplier, 0);
 
             return (
               <div
                 key={recipe.name}
-                className={`group bg-card rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${
+                className={`group bg-card rounded-2xl shadow-sm ring-1 ring-black/5 dark:ring-white/5 overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col ${
                   inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
                 }`}
-                style={{ transitionDelay: inView ? `${i * 100}ms` : "0ms" }}
+                style={{ transitionDelay: inView ? `${i * 120}ms` : "0ms" }}
               >
-                {/* Gradient header — inline style avoids Tailwind purge */}
+                {/* Gradient header */}
                 <div
-                  className="relative px-5 py-5 text-white overflow-hidden"
+                  className="relative px-5 pt-5 pb-4 text-white overflow-hidden"
                   style={{ background: recipe.gradient }}
                 >
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-bl-full" />
-                  <div className="absolute bottom-0 left-0 w-12 h-12 bg-white/5 rounded-tr-full" />
-                  <span className="text-3xl block mb-2 drop-shadow-sm">{recipe.emoji}</span>
-                  <h3 className="text-base font-extrabold leading-tight relative">{recipe.name}</h3>
-                  <div className="flex items-center gap-3 text-xs text-white/80 mt-1.5 relative">
-                    <span className="flex items-center gap-1">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-bl-full" />
+                  <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/5 rounded-tr-full" />
+
+                  <span className="text-4xl block mb-2 drop-shadow-md relative">{recipe.emoji}</span>
+                  <h3 className="text-lg font-extrabold leading-tight relative">{recipe.name}</h3>
+
+                  {/* Meta info row */}
+                  <div className="flex items-center gap-4 mt-2.5 relative">
+                    <span className="flex items-center gap-1.5 bg-white/15 rounded-full px-2.5 py-1 text-xs font-semibold">
                       <Clock className="w-3 h-3" /> {recipe.time}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3 h-3" /> {recipe.servings} pers.
+                    {/* Adjustable portions */}
+                    <span className="flex items-center gap-1 bg-white/15 rounded-full px-2 py-1 text-xs font-semibold">
+                      <Users className="w-3 h-3" />
+                      <button onClick={(e) => { e.stopPropagation(); setPortions(p => ({ ...p, [recipe.name]: Math.max(1, currentServings - 1) })); }} className="h-5 w-5 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center transition-colors"><Minus className="w-3 h-3" /></button>
+                      <span className="font-bold text-white min-w-5 text-center">{currentServings}</span>
+                      <button onClick={(e) => { e.stopPropagation(); setPortions(p => ({ ...p, [recipe.name]: Math.min(20, currentServings + 1) })); }} className="h-5 w-5 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center transition-colors"><Plus className="w-3 h-3" /></button>
                     </span>
                   </div>
                 </div>
 
                 {/* Ingredients */}
-                <div className="p-4 sm:p-5 space-y-3">
-                  <p className="text-xs text-muted uppercase tracking-wider font-semibold">
-                    Ingredientes ({matched.length})
-                  </p>
-                  <div className="space-y-2.5">
-                    {matched.slice(0, 3).map((p) => (
-                      <div key={p.id} className="flex items-center gap-2.5">
-                        <div className="relative w-9 h-9 rounded-lg overflow-hidden bg-gray-50 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/5 shrink-0">
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs text-muted uppercase tracking-wider font-bold">
+                      Ingredientes ({matched.length})
+                    </p>
+                    {matched.length > 0 && (
+                      <p className="text-xs font-bold text-primary">
+                        Total: S/{totalPrice.toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 flex-1">
+                    {matched.map((p) => (
+                      <div key={p.id} className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                        <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-50 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/5 shrink-0">
                           {p.image
-                            ? <Image src={p.image} alt={p.name} fill sizes="36px" className="object-cover" />
+                            ? <Image src={p.image} alt={p.name} fill sizes="40px" className="object-cover" />
                             : <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-5 w-5" /></div>
                           }
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
-                          <p className="text-xs text-muted">S/{p.price.toFixed(2)}</p>
+                          <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
+                          <p className="text-xs text-muted font-medium">S/{(p.price * multiplier).toFixed(2)}</p>
                         </div>
                       </div>
                     ))}
-                    {matched.length > 3 && (
-                      <p className="text-xs text-muted">+{matched.length - 3} más</p>
-                    )}
                     {matched.length === 0 && (
-                      <p className="text-xs text-muted italic">Ingredientes no disponibles</p>
+                      <p className="text-xs text-muted italic py-2">Ingredientes no disponibles</p>
                     )}
                   </div>
 
                   {matched.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => addAllIngredients(recipe.ingredients)}
-                      className="w-full flex items-center justify-center gap-2 bg-primary text-white font-bold text-sm py-2.5 rounded-xl hover:bg-primary-dark active:scale-[0.97] transition-all shadow-sm"
+                      onClick={() => addAllIngredients(recipe.ingredients, multiplier)}
+                      className="w-full flex items-center justify-center gap-2 bg-primary text-white font-bold text-sm py-3 rounded-xl hover:bg-primary-dark active:scale-[0.97] transition-all shadow-md shadow-primary/20 mt-4"
                     >
                       <ShoppingCart className="w-4 h-4" />
-                      Agregar todo
+                      Agregar todo{multiplier > 1 ? ` (×${multiplier.toFixed(1)})` : ""}
                     </button>
                   )}
                 </div>

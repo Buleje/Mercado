@@ -1,16 +1,35 @@
 "use client";
 
-import { X, User, Phone, MapPin } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, User, Phone, MapPin, Star, Trophy, LogOut, Package } from "lucide-react";
 import { useCustomer } from "@/contexts/customer-context";
 
 export default function UserAccountModal() {
-  const { customer, closeAccountModal, accountModalOpen, openModal } = useCustomer();
+  const { customer, closeAccountModal, accountModalOpen, openModal, openOrderStatusModal, clear } = useCustomer();
+  const [loyalty, setLoyalty] = useState<{ loyaltyPoints: number; loyaltyTier: string } | null>(null);
+
+  useEffect(() => {
+    if (!accountModalOpen || !customer?.phone) { setLoyalty(null); return; }
+    const phone = customer.phone.replace(/\D/g, "").slice(-9);
+    if (phone.length < 6) return;
+    fetch(`/api/loyalty/${phone}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setLoyalty(data); })
+      .catch(() => {});
+  }, [accountModalOpen, customer?.phone]);
 
   if (!accountModalOpen) return null;
 
+  const tierColors: Record<string, string> = {
+    Bronce: "text-amber-700 bg-amber-50 border-amber-200",
+    Plata: "text-gray-600 bg-gray-50 border-gray-200",
+    Oro: "text-yellow-700 bg-yellow-50 border-yellow-200",
+    Platino: "text-purple-700 bg-purple-50 border-purple-200",
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-[scaleIn_0.2s_ease-out]">
+    <div className="fixed inset-0 z-7500 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease-out]">
+      <div role="dialog" aria-modal="true" aria-label="Mi cuenta" className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-[scaleIn_0.2s_ease-out]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border bg-primary/5">
           <div className="flex items-center gap-3">
@@ -58,6 +77,40 @@ export default function UserAccountModal() {
                   )}
                 </div>
               </div>
+
+              {/* Loyalty info */}
+              {loyalty && (
+                <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-card-border">
+                  <div className="flex items-center gap-3">
+                    <Star className="h-5 w-5 text-amber-500 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-muted">Puntos acumulados</p>
+                      <p className="text-sm font-bold text-amber-600">{loyalty.loyaltyPoints} pts</p>
+                    </div>
+                  </div>
+                  {loyalty.loyaltyTier && (
+                    <div className="flex items-center gap-3">
+                      <Trophy className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-xs text-muted">Tu nivel</p>
+                        <span className={`inline-block text-xs font-bold px-2.5 py-1 rounded-full border ${tierColors[loyalty.loyaltyTier] ?? "text-gray-600 bg-gray-50 border-gray-200"}`}>
+                          {loyalty.loyaltyTier}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Order status shortcut */}
+              <button
+                type="button"
+                onClick={() => { closeAccountModal(); openOrderStatusModal(); }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors"
+              >
+                <Package className="h-5 w-5 text-primary" />
+                <span className="text-sm font-semibold text-primary">Ver estado de mi pedido</span>
+              </button>
             </>
           ) : (
             <p className="text-center text-muted py-8">No hay información de cliente disponible</p>
@@ -65,7 +118,7 @@ export default function UserAccountModal() {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border space-y-2">
           <button
             onClick={() => {
               closeAccountModal();
@@ -75,6 +128,15 @@ export default function UserAccountModal() {
           >
             Editar información
           </button>
+          {customer && (
+            <button
+              onClick={() => { clear(); closeAccountModal(); }}
+              className="w-full py-2.5 rounded-xl border-2 border-red-200 text-red-500 font-semibold hover:bg-red-50 transition-colors flex items-center justify-center gap-2 text-sm"
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar sesión
+            </button>
+          )}
         </div>
       </div>
     </div>

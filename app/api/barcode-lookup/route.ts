@@ -1,9 +1,12 @@
 export const dynamic = 'force-dynamic'
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
+import { requireAdmin } from "@/lib/require-admin";
 
 // Lookup product info by barcode using Open Food Facts API
 // (covers many Peruvian national products with EAN-13 barcodes)
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   if (!code) return NextResponse.json({ error: "code required" }, { status: 400 });

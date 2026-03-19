@@ -2,30 +2,75 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { CashRegistersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { sendCashSummaryEmail } from "@/lib/mailer";
 
-export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
-
-  return NextResponse.json(await CashRegistersDB.getAll());
-}
-
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
-  const body = await req.json();
-  const { action } = body;
+  const { id } = await params;
+  const reg = await CashRegistersDB.getById(id);
+  if (!reg) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  return NextResponse.json(reg);
+}
 
-  if (action === "open") {
-    const openingAmount = Number(body.openingAmount) || 0;
-    // Check if there's already an open register
-    const open = await CashRegistersDB.getOpen();
-    if (open) {
-      return NextResponse.json({ error: "Ya hay una caja abierta" }, { status: 400 });
-    }
-    const reg = await CashRegistersDB.open(openingAmount, body.notes);
-    return NextResponse.json(reg, { status: 201 });
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
+  if (auth instanceof NextResponse) return auth;
+  const { id } = await params;
+  const body = await req.json() as { action: string; closingAmount?: number; notes?: string; type?: string; amount?: number; method?: string; description?: string; saleId?: string };
+
+  if (body.action === "close") {
+    const closingAmount = Number(body.closingAmount) || 0;
+    const reg = await CashRegistersDB.close(id, closingAmount, body.notes);
+    if (!reg) return NextResponse.json({ error: "Register not found" }, { status: 404 });
+
+    // Send summary email (fire and forget — do not block response)
+    const mvs = reg.movements;
+    const salesEfectivo = mvs.filter(m => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + m.amount, 0);
+    const salesDigital = mvs.filter(m => m.type === "venta" && m.method !== "efectivo").reduce((s, m) => s + m.amount, 0);
+    const salesCount = mvs.filter(m => m.type === "venta").length;
+    const totalIn = mvs.filter(m => m.type === "ingreso").reduce((s, m) => s + m.amount, 0);
+    const totalOut = mvs.filter(m => m.type === "egreso").reduce((s, m) => s + m.amount, 0);
+    void sendCashSummaryEmail({
+      registerId: reg.id,
+      openedAt: reg.openedAt,
+      closedAt: reg.closedAt ?? new Date().toISOString(),
+      openingAmount: reg.openingAmount,
+      closingAmount: reg.closingAmount ?? closingAmount,
+      expectedAmount: reg.expectedAmount ?? 0,
+      difference: reg.difference ?? 0,
+      salesEfectivo,
+      salesDigital,
+      salesCount,
+      totalIn,
+      totalOut,
+      notes: body.notes,
+    });
+
+    return NextResponse.json(reg);
   }
 
-  return NextResponse.json({ error: "action required (open)" }, { status: 400 });
+  if (body.action === "movement") {
+    const movement = await CashRegistersDB.addMovement(id, {
+      type: body.type ?? "ingreso",
+      amount: Number(body.amount) || 0,
+      method: body.method ?? "efectivo",
+      description: body.description ?? "",
+      saleId: body.saleId,
+    });
+    return NextResponse.json(movement, { status: 201 });
+  }
+
+  if (body.action === "arqueo") {
+    const arqueoAmount = Number(body.closingAmount) || 0;
+    const movement = await CashRegistersDB.addMovement(id, {
+      type: "arqueo",
+      amount: arqueoAmount,
+      method: "efectivo",
+      description: body.notes ? `Arqueo express: ${body.notes}` : "Arqueo express",
+    });
+    return NextResponse.json(movement, { status: 201 });
+  }
+
+  return NextResponse.json({ error: "action required: close | movement | arqueo" }, { status: 400 });
 }

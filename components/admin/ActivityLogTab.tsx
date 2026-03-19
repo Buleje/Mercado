@@ -63,18 +63,32 @@ export default function ActivityLogTab() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [entityFilter, setEntityFilter] = useState("todos");
+  const [logPage, setLogPage] = useState(1);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const LOG_PER_PAGE = 50;
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch("/api/activity-log?limit=200");
-      if (res.ok) setEntries(await res.json());
+      if (res.ok) {
+        setEntries(await res.json());
+        setLastUpdated(new Date());
+      }
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Auto-refresh every 30s
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const id = setInterval(load, 30_000);
+    return () => clearInterval(id);
+  }, [autoRefresh, load]);
 
   const entities = ["todos", ...Array.from(new Set(entries.map(e => e.entity)))];
 
@@ -86,6 +100,10 @@ export default function ActivityLogTab() {
     }
     return true;
   });
+
+  const logTotalPages = Math.max(1, Math.ceil(filtered.length / LOG_PER_PAGE));
+  const safeLogPage = Math.min(logPage, logTotalPages);
+  const paginatedLog = filtered.slice((safeLogPage - 1) * LOG_PER_PAGE, safeLogPage * LOG_PER_PAGE);
 
   const clearLog = async () => {
     if (!confirm("¿Limpiar todo el log de actividad?")) return;
@@ -103,6 +121,16 @@ export default function ActivityLogTab() {
           <span className="text-xs text-muted">({filtered.length})</span>
         </div>
         <div className="flex items-center gap-2 ml-auto">
+          <span className="text-[10px] text-muted whitespace-nowrap">Act. {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
+          <button
+            onClick={() => setAutoRefresh(p => !p)}
+            className={cn("flex items-center gap-1 px-3 py-1.5 text-xs font-semibold border rounded-lg transition-colors",
+              autoRefresh ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400" : "bg-white dark:bg-card border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-white/5"
+            )}
+            title={autoRefresh ? "Auto-refresh activo (30s)" : "Auto-refresh desactivado"}
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", autoRefresh && "animate-spin")} /> {autoRefresh ? "Auto" : "Manual"}
+          </button>
           <button onClick={load} className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} /> Actualizar
           </button>
@@ -119,7 +147,7 @@ export default function ActivityLogTab() {
           <input
             type="text"
             value={filter}
-            onChange={e => setFilter(e.target.value)}
+            onChange={e => { setFilter(e.target.value); setLogPage(1); }}
             placeholder="Buscar en el log..."
             className="w-full pl-9 pr-3 py-2 text-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
           />
@@ -128,7 +156,7 @@ export default function ActivityLogTab() {
           <Filter className="h-4 w-4 text-muted" />
           <select
             value={entityFilter}
-            onChange={e => setEntityFilter(e.target.value)}
+            onChange={e => { setEntityFilter(e.target.value); setLogPage(1); }}
             className="text-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 focus:ring-2 focus:ring-primary/30 outline-none"
           >
             {entities.map(e => (
@@ -147,7 +175,7 @@ export default function ActivityLogTab() {
             {entries.length === 0 ? "No hay actividad registrada aún" : "Sin resultados para este filtro"}
           </div>
         ) : (
-          filtered.slice(0, 100).map(entry => {
+          paginatedLog.map(entry => {
             const Icon = ENTITY_ICONS[entry.entity] ?? Activity;
             return (
               <div key={entry.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
@@ -173,6 +201,24 @@ export default function ActivityLogTab() {
           })
         )}
       </div>
+
+      {/* Log pagination */}
+      {!loading && filtered.length > LOG_PER_PAGE && (
+        <div className="flex items-center justify-center gap-2 pt-1">
+          <button disabled={safeLogPage <= 1} onClick={() => setLogPage(p => Math.max(1, p - 1))}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+            ← Anterior
+          </button>
+          <span className="text-xs text-gray-500 dark:text-muted">
+            Página {safeLogPage} de {logTotalPages} · {filtered.length} registros
+          </span>
+          <button disabled={safeLogPage >= logTotalPages} onClick={() => setLogPage(p => p + 1)}
+            className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+            Siguiente →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
+

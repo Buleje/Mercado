@@ -1,11 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
 import { ShoppingCart, TrendingUp } from "lucide-react";
 import { products } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
+import type { Product } from "@/data/products";
+
+// Tiny 4×4 gray placeholder for blur-up effect while images load
+const BLUR_DATA_URL = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNCIgaGVpZ2h0PSI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNlNWU3ZWIiLz48L3N2Zz4=";
 
 const RANK_STYLES = [
   { bg: "bg-amber-400", text: "text-amber-950", ring: "ring-amber-400/40", label: "#1" },
@@ -31,6 +35,13 @@ export default function PopularProducts() {
   const { addItem, items } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
   const popular = useMemo(() => getPopularProducts(), []);
+  const lastClickRef = useRef(0);
+  const guardedAdd = useCallback((p: Product) => {
+    const now = Date.now();
+    if (now - lastClickRef.current < 300) return;
+    lastClickRef.current = now;
+    addItem(p);
+  }, [addItem]);
 
   return (
     <section ref={ref} className="py-14 sm:py-20 bg-surface">
@@ -88,6 +99,9 @@ export default function PopularProducts() {
                     fill
                     sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 16vw"
                     className="object-cover group-hover:scale-108 transition-transform duration-500"
+                    placeholder="blur"
+                    blurDataURL={BLUR_DATA_URL}
+                    {...(i < 2 ? { priority: true } : { loading: "lazy" as const })}
                   />
                   {/* Badge — bottom right to avoid overlap with rank */}
                   {product.badge && (
@@ -116,7 +130,7 @@ export default function PopularProducts() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => addItem(product)}
+                      onClick={() => guardedAdd(product)}
                       className="bg-primary text-white rounded-full p-2 hover:bg-primary-dark active:scale-90 transition-all shadow-sm hover:shadow-md"
                       aria-label={`Agregar ${product.name}`}
                     >

@@ -1,9 +1,16 @@
 "use client";
 
+import { useCustomer } from "@/contexts/customer-context";
+
 const WA_NUMBER = "51916409675";
 const WA_MESSAGE = "Hola, quiero hacer un pedido";
 
 export default function WhatsAppButton() {
+  const { customer } = useCustomer();
+
+  // Hide when customer is logged in — they have the in-app LiveChatWidget instead
+  if (customer?.phone) return null;
+
   const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(WA_MESSAGE)}`;
 
   return (

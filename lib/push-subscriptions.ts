@@ -1,8 +1,9 @@
 /**
- * In-memory push subscription store.
- * On serverless (Vercel), subscriptions persist for the lifetime of the
- * function instance. Users re-subscribe on each visit so eventual loss is OK.
+ * Persistent push subscription store backed by PostgreSQL via Prisma.
+ * Replaces the old in-memory store so subscriptions survive restarts.
  */
+
+import { prisma } from "@/lib/prisma";
 
 export type StoredSubscription = {
   endpoint: string;
@@ -11,23 +12,39 @@ export type StoredSubscription = {
   createdAt: string;
 };
 
-let subscriptions: StoredSubscription[] = [];
-
 export const PushSubscriptionsStore = {
-  save(sub: Omit<StoredSubscription, "createdAt">): void {
-    const idx = subscriptions.findIndex((s) => s.endpoint === sub.endpoint);
-    const entry: StoredSubscription = { ...sub, createdAt: new Date().toISOString() };
-    if (idx >= 0) subscriptions[idx] = entry;
-    else subscriptions.push(entry);
+  async save(sub: Omit<StoredSubscription, "createdAt">): Promise<void> {
+    await prisma.pushSubscription.upsert({
+      where: { endpoint: sub.endpoint },
+      update: { p256dh: sub.keys.p256dh, auth: sub.keys.auth, phone: sub.phone ?? null },
+      create: { endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth, phone: sub.phone ?? null },
+    });
   },
-  remove(endpoint: string): void {
-    subscriptions = subscriptions.filter((s) => s.endpoint !== endpoint);
+
+  async remove(endpoint: string): Promise<void> {
+    await prisma.pushSubscription.deleteMany({ where: { endpoint } });
   },
-  getAll(): StoredSubscription[] {
-    return subscriptions;
+
+  async getAll(): Promise<StoredSubscription[]> {
+    const rows = await prisma.pushSubscription.findMany();
+    return rows.map((r) => ({
+      endpoint: r.endpoint,
+      keys: { p256dh: r.p256dh, auth: r.auth },
+      phone: r.phone ?? undefined,
+      createdAt: r.createdAt.toISOString(),
+    }));
   },
-  getByPhone(phone: string): StoredSubscription[] {
+
+  async getByPhone(phone: string): Promise<StoredSubscription[]> {
     const clean = phone.replace(/\D/g, "");
-    return subscriptions.filter((s) => s.phone?.replace(/\D/g, "") === clean);
+    const rows = await prisma.pushSubscription.findMany({
+      where: { phone: { contains: clean } },
+    });
+    return rows.map((r) => ({
+      endpoint: r.endpoint,
+      keys: { p256dh: r.p256dh, auth: r.auth },
+      phone: r.phone ?? undefined,
+      createdAt: r.createdAt.toISOString(),
+    }));
   },
 };

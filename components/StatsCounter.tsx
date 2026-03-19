@@ -3,28 +3,21 @@
 import { useEffect, useRef, useState, startTransition } from "react";
 import { ShoppingBag, Users, Truck, Star } from "lucide-react";
 import { useInView } from "@/hooks/use-in-view";
+import { useSettings } from "@/contexts/settings-context";
 
-const stats = [
-  {
-    icon: ShoppingBag, value: 500, suffix: "+", label: "Productos disponibles",
-    accent: "#6366f1",
-    accentGradient: "linear-gradient(to bottom, rgba(99,102,241,0.12), transparent)",
-  },
-  {
-    icon: Users, value: 1200, suffix: "+", label: "Clientes satisfechos",
-    accent: "#f59e0b",
-    accentGradient: "linear-gradient(to bottom, rgba(245,158,11,0.12), transparent)",
-  },
-  {
-    icon: Truck, value: 3500, suffix: "+", label: "Pedidos entregados",
-    accent: "#3b82f6",
-    accentGradient: "linear-gradient(to bottom, rgba(59,130,246,0.12), transparent)",
-  },
-  {
-    icon: Star, value: 4.8, suffix: "/5", label: "Calificación promedio", decimals: 1,
-    accent: "#f43f5e",
-    accentGradient: "linear-gradient(to bottom, rgba(244,63,94,0.12), transparent)",
-  },
+function parseStatValue(str: string): { value: number; suffix: string; decimals?: number } {
+  const match = str.match(/^([\d.]+)\s*(.*)$/);
+  if (!match) return { value: 0, suffix: str };
+  const num = parseFloat(match[1]);
+  const suf = match[2] || "";
+  return { value: num, suffix: suf, decimals: match[1].includes(".") ? 1 : 0 };
+}
+
+const statMeta = [
+  { icon: ShoppingBag, label: "Productos disponibles", accent: "#6366f1", accentGradient: "linear-gradient(to bottom, rgba(99,102,241,0.12), transparent)" },
+  { icon: Users, label: "Clientes satisfechos", accent: "#f59e0b", accentGradient: "linear-gradient(to bottom, rgba(245,158,11,0.12), transparent)" },
+  { icon: Truck, label: "Pedidos entregados", accent: "#3b82f6", accentGradient: "linear-gradient(to bottom, rgba(59,130,246,0.12), transparent)" },
+  { icon: Star, label: "Calificación promedio", accent: "#f43f5e", accentGradient: "linear-gradient(to bottom, rgba(244,63,94,0.12), transparent)" },
 ];
 
 function AnimatedNumber({ target, decimals = 0, started }: { target: number; decimals?: number; started: boolean }) {
@@ -56,6 +49,14 @@ function AnimatedNumber({ target, decimals = 0, started }: { target: number; dec
 export default function StatsCounter() {
   const [ref, inView] = useInView({ threshold: 0.3 });
   const [started, setStarted] = useState(false);
+  const { homepage: hp } = useSettings();
+
+  const stats = [
+    { ...statMeta[0], ...parseStatValue(hp.statProducts) },
+    { ...statMeta[1], ...parseStatValue(hp.statClients) },
+    { ...statMeta[2], ...parseStatValue(hp.statOrders) },
+    { ...statMeta[3], ...parseStatValue(hp.statRating) },
+  ];
 
   useEffect(() => {
     if (inView && !started) startTransition(() => setStarted(true));

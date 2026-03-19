@@ -36,6 +36,13 @@ export default function AbandonedCartRecovery() {
         const t = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
         setSavedTotal(t);
         setVisible(true);
+
+        // Fire abandoned-cart email (best-effort, does not block UI)
+        fetch("/api/abandoned-cart", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: cartItems, total: t }),
+        }).catch(() => {});
       } catch { /* ignore */ }
     }, 2000);
     return () => clearTimeout(t);

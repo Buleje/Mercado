@@ -73,7 +73,6 @@ describe("Rate Limiting", () => {
       limiter.check("client-2");
       limiter.check("client-3");
 
-      // @ts-expect-error - Accessing private property for testing
       expect(limiter.clients.size).toBe(3);
 
       // Advance time to expire entries
@@ -83,7 +82,6 @@ describe("Rate Limiting", () => {
       limiter.check("client-4");
 
       // Old entries should be cleaned
-      // @ts-expect-error - Accessing private property for testing
       expect(limiter.clients.size).toBe(1);
     });
   });
@@ -156,7 +154,7 @@ describe("Rate Limiting", () => {
 
       // Second request should fail
       const result2 = await applyRateLimit(request, limiter);
-      expect(result2).toBeInstanceOf(NextResponse);
+      expect(result2).toBeInstanceOf(Response);
       expect(result2?.status).toBe(429);
 
       const json = await result2?.json();
@@ -330,6 +328,92 @@ describe("Rate Limiting", () => {
 
       // Should block all requests
       expect(limiter.check("blocked-client")).toBe(false);
+    });
+  });
+
+  // ── Route-level presets: customers & orders ───────────────────────────────
+
+  describe("customers/orders route presets", () => {
+    it("GENEROUS preset allows 100 requests per minute", () => {
+      expect(RATE_LIMIT_PRESETS.GENEROUS).toEqual({
+        maxRequests: 100,
+        windowMs: 60 * 1000,
+      });
+    });
+
+    it("customers-get: passes 100 requests then blocks on 101st", async () => {
+      const limiter = createRateLimiter(RATE_LIMIT_PRESETS.GENEROUS);
+      for (let i = 0; i < 100; i++) {
+        expect(limiter.check("ip-customers-get")).toBe(true);
+      }
+      expect(limiter.check("ip-customers-get")).toBe(false);
+    });
+
+    it("customers-get: resets after window passes", async () => {
+      const limiter = createRateLimiter(RATE_LIMIT_PRESETS.GENEROUS);
+      for (let i = 0; i < 100; i++) {
+        limiter.check("ip-reset-test");
+      }
+      expect(limiter.check("ip-reset-test")).toBe(false);
+
+      vi.advanceTimersByTime(60 * 1000 + 1);
+      expect(limiter.check("ip-reset-test")).toBe(true);
+    });
+
+    it("orders-get: applyRateLimit returns null within GENEROUS limit", async () => {
+      const req = new NextRequest("http://localhost:3000/api/orders");
+      const limiter = createRateLimiter(RATE_LIMIT_PRESETS.GENEROUS);
+      const result = await applyRateLimit(req, limiter);
+      expect(result).toBeNull();
+    });
+
+    it("orders-get: applyRateLimit returns 429 when GENEROUS limit exceeded", async () => {
+      const limiter = createRateLimiter({ maxRequests: 1, windowMs: 60000 });
+      const req = new NextRequest("http://localhost:3000/api/orders");
+      await applyRateLimit(req, limiter);
+      const result = await applyRateLimit(req, limiter);
+      expect(result).toBeInstanceOf(Response);
+      expect(result?.status).toBe(429);
+    });
+
+    it("customers-post: MODERATE preset allows 50 requests per minute", () => {
+      expect(RATE_LIMIT_PRESETS.MODERATE).toEqual({
+        maxRequests: 50,
+        windowMs: 60 * 1000,
+      });
+    });
+
+    it("customers-post: blocks after MODERATE limit exceeded", async () => {
+      const limiter = createRateLimiter(RATE_LIMIT_PRESETS.MODERATE);
+      for (let i = 0; i < 50; i++) {
+        expect(limiter.check("ip-customers-post")).toBe(true);
+      }
+      expect(limiter.check("ip-customers-post")).toBe(false);
+    });
+
+    it("customers-patch: different prefix does not share counter with customers-get", async () => {
+      const limiter = createRateLimiter(RATE_LIMIT_PRESETS.GENEROUS);
+      // Exhaust for one logical key
+      for (let i = 0; i < 100; i++) {
+        limiter.check("ip-a-customers-get");
+      }
+      // A different key should still pass
+      expect(limiter.check("ip-a-customers-patch")).toBe(true);
+    });
+
+    it("orders-get: different IP does not share counter", async () => {
+      const limiter = createRateLimiter({ maxRequests: 1, windowMs: 60000 });
+      const req1 = new NextRequest("http://localhost:3000/api/orders", {
+        headers: { "x-forwarded-for": "1.2.3.4" },
+      });
+      const req2 = new NextRequest("http://localhost:3000/api/orders", {
+        headers: { "x-forwarded-for": "5.6.7.8" },
+      });
+      await applyRateLimit(req1, limiter);
+      const resultForReq1 = await applyRateLimit(req1, limiter);
+      const resultForReq2 = await applyRateLimit(req2, limiter);
+      expect(resultForReq1?.status).toBe(429);
+      expect(resultForReq2).toBeNull();
     });
   });
 });

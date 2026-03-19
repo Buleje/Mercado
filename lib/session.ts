@@ -8,10 +8,14 @@ const COOKIE_NAME = "bsm-admin-sess";
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getSecret(): string {
-  return (
-    process.env.AUTH_SECRET ??
-    "bsm-dev-fallback-2024-change-in-production"
-  );
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("AUTH_SECRET environment variable is required in production");
+    }
+    return "bsm-dev-fallback-2024-change-in-production";
+  }
+  return secret;
 }
 
 async function signHmac(secret: string, data: string): Promise<Uint8Array> {
@@ -58,10 +62,24 @@ function b64Decode(str: string): string {
 
 export type AdminRole = "admin" | "cajero" | "almacenero";
 
-export async function createSessionToken(role: AdminRole = "admin", username = "admin"): Promise<string> {
+export interface SessionPayload {
+  role: AdminRole;
+  username: string;
+  tenantId: string;
+  name?: string;
+}
+
+export async function createSessionToken(
+  role: AdminRole = "admin",
+  username = "admin",
+  tenantId = "main",
+  name = ""
+): Promise<string> {
   const payload = JSON.stringify({
     role,
     username,
+    tenantId,
+    name,
     exp: Date.now() + SESSION_DURATION_MS,
   });
   const encoded = b64Encode(payload);
@@ -71,25 +89,10 @@ export async function createSessionToken(role: AdminRole = "admin", username = "
 }
 
 export async function verifySessionToken(token: string): Promise<boolean> {
-  try {
-    const dotIdx = token.lastIndexOf(".");
-    if (dotIdx < 0) return false;
-    const encoded = token.slice(0, dotIdx);
-    const sig = token.slice(dotIdx + 1);
-    if (!(await verifyHmac(getSecret(), encoded, sig))) return false;
-    const payload = JSON.parse(b64Decode(encoded)) as {
-      exp: number;
-      role: string;
-    };
-    if (!["admin", "cajero", "almacenero"].includes(payload.role)) return false;
-    if (payload.exp < Date.now()) return false;
-    return true;
-  } catch {
-    return false;
-  }
+  return (await getSessionPayload(token)) !== null;
 }
 
-export async function getSessionPayload(token: string): Promise<{ role: AdminRole; username: string } | null> {
+export async function getSessionPayload(token: string): Promise<SessionPayload | null> {
   try {
     const dotIdx = token.lastIndexOf(".");
     if (dotIdx < 0) return null;
@@ -100,9 +103,17 @@ export async function getSessionPayload(token: string): Promise<{ role: AdminRol
       exp: number;
       role: AdminRole;
       username: string;
+      tenantId?: string;
+      name?: string;
     };
+    if (!["admin", "cajero", "almacenero"].includes(payload.role)) return null;
     if (payload.exp < Date.now()) return null;
-    return { role: payload.role, username: payload.username };
+    return {
+      role: payload.role,
+      username: payload.username,
+      tenantId: payload.tenantId ?? "main",
+      name: payload.name,
+    };
   } catch {
     return null;
   }

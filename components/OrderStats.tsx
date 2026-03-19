@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 interface OrderStatsProps {
   totalOrders: number;
   totalRevenue: number;
+  totalCogs?: number;
   pendingOrders: number;
   completedOrders: number;
   averageOrderValue: number;
@@ -19,6 +20,7 @@ interface OrderStatsProps {
 export function OrderStats({
   totalOrders,
   totalRevenue,
+  totalCogs,
   pendingOrders,
   completedOrders,
   averageOrderValue,
@@ -78,6 +80,17 @@ export function OrderStats({
         icon: Users,
         color: "text-rose-600 dark:text-rose-400",
         bgColor: "bg-rose-50 dark:bg-rose-950/20",
+      });
+    }
+    if (totalCogs !== undefined && totalCogs > 0) {
+      const profit = totalRevenue - totalCogs;
+      const margin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
+      stats.push({
+        label: `Ganancia (${margin.toFixed(0)}%)`,
+        value: `S/${profit.toFixed(2)}`,
+        icon: TrendingUp,
+        color: profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+        bgColor: profit >= 0 ? "bg-emerald-50 dark:bg-emerald-950/20" : "bg-red-50 dark:bg-red-950/20",
       });
     }
   }

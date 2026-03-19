@@ -4,6 +4,11 @@ import { z } from "zod";
 import { ProductsDB } from "@/lib/jsondb";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
+import { prismaForTenant } from "@/lib/tenant";
+import { prisma } from "@/lib/prisma";
+import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
+import { logger } from "@/lib/logger";
+import { invalidate } from "@/lib/cache";
 
 const ProductPostSchema = z.object({
   name: z.string().min(1).max(150),
@@ -53,13 +58,19 @@ export async function GET(req: NextRequest) {
           "X-Page": String(page),
           "X-Limit": String(limit),
           "X-Total-Pages": String(Math.ceil(total / limit)),
+          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
         },
       });
     }
 
-    return NextResponse.json(products);
+    return NextResponse.json(products, {
+      headers: {
+        "X-Total-Count": String(total),
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",
+      },
+    });
   } catch (e) {
-    console.error("[products] GET error:", e);
+    logger.error("[products] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -77,7 +88,22 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Plan limit check
     const body = parsed.data;
+
+    // Plan limit check
+    const tenant = await prisma.tenant.findFirst({ where: { slug: auth.tenantId } });
+    const limits = getPlanLimits(tenant?.plan ?? "free");
+    const db = prismaForTenant(auth.tenantId);
+    const currentProductCount = await db.product.count();
+    if (!withinLimit(currentProductCount, limits.maxProducts)) {
+      return NextResponse.json(
+        planLimitPayload("productos", currentProductCount, limits.maxProducts, tenant?.plan ?? "free"),
+        { status: 402 }
+      );
+    }
+
     const all = await ProductsDB.getAll();
     const newId = all.length > 0 ? Math.max(...all.map((p) => p.id)) + 1 : 1;
     const product = await ProductsDB.upsert({
@@ -90,7 +116,9 @@ export async function POST(req: NextRequest) {
       badge: body.badge || undefined,
       active: true,
     });
-    await logActivity("Crear", "producto", `Producto creado: ${product.name} (S/${product.price})`, String(product.id));
+    const requestId = req.headers.get("x-request-id") ?? undefined;
+    await logActivity("Crear", "producto", `Producto creado: ${product.name} (S/${product.price})`, String(product.id), "admin", requestId);
+    invalidate(`dashboard:${auth.tenantId}`);
     return NextResponse.json(product);
   } catch {
     return NextResponse.json({ error: "invalid request" }, { status: 400 });

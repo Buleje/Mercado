@@ -1,0 +1,130 @@
+﻿"use client";
+import { useState, useMemo } from "react";
+import { BarChart3, Download, TrendingUp, Package } from "lucide-react";
+import { cn, exportToCSV } from "@/lib/utils";
+
+/* ── Types ── */
+type ParetoProduct = {
+  id: number; name: string; category: string; revenue: number; units: number; margin: number;
+};
+
+/* ── Seed Data ── */
+const PRODUCTS: ParetoProduct[] = [];
+
+const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+
+export default function ParetoAnalysisTab() {
+  const [metric, setMetric] = useState<"revenue" | "units" | "margin">("revenue");
+
+  const sorted = useMemo(() => {
+    const val = (p: ParetoProduct) => metric === "revenue" ? p.revenue : metric === "units" ? p.units : (p.revenue * p.margin) / 100;
+    const s = [...PRODUCTS].sort((a, b) => val(b) - val(a));
+    const total = s.reduce((sum, p) => sum + val(p), 0);
+    let cumulative = 0;
+    return s.map(p => {
+      cumulative += val(p);
+      return { ...p, value: val(p), pct: (val(p) / total) * 100, cumPct: (cumulative / total) * 100, isTop: (cumulative / total) * 100 <= 80 || cumulative - val(p) < total * 0.8 };
+    });
+  }, [metric]);
+
+  const totalValue = sorted.reduce((s, p) => s + p.value, 0);
+  const topCount = sorted.filter(p => p.isTop).length;
+  const topPct = ((topCount / sorted.length) * 100).toFixed(0);
+  const topRevPct = sorted.filter(p => p.isTop).reduce((s, p) => s + p.pct, 0).toFixed(1);
+  const maxValue = sorted[0]?.value ?? 1;
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+            <BarChart3 className="h-6 w-6 text-indigo-500" /> Análisis Pareto (80/20)
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-muted mt-1">Identifica el 20% de productos que generan el 80% de resultados</p>
+        </div>
+        <button onClick={() => exportToCSV(sorted.map(p => ({ Producto: p.name, Categoría: p.category, Valor: p.value, Porcentaje: `${p.pct.toFixed(1)}%`, Acumulado: `${p.cumPct.toFixed(1)}%`, Top80: p.isTop ? "Sí" : "No" })), "pareto")} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+          <Download className="h-4 w-4" /> Exportar
+        </button>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Productos Top</p>
+          <p className="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">{topCount} de {sorted.length}</p>
+          <p className="text-xs text-gray-400">{topPct}% del catálogo</p>
+        </div>
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Generan</p>
+          <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{topRevPct}%</p>
+          <p className="text-xs text-gray-400">del total</p>
+        </div>
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Total {metric === "revenue" ? "Ingresos" : metric === "units" ? "Unidades" : "Margen"}</p>
+          <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">{metric === "units" ? totalValue.toLocaleString("es-PE") : fmt(totalValue)}</p>
+        </div>
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Resto ({sorted.length - topCount})</p>
+          <p className="text-2xl font-extrabold text-gray-400 dark:text-muted mt-1">{(100 - parseFloat(topRevPct)).toFixed(1)}%</p>
+          <p className="text-xs text-gray-400">del total</p>
+        </div>
+      </div>
+
+      {/* Metric selector */}
+      <div className="flex items-center gap-2">
+        {[
+          { key: "revenue" as const, label: "Ingresos", icon: TrendingUp },
+          { key: "units" as const, label: "Unidades", icon: Package },
+          { key: "margin" as const, label: "Margen Bruto", icon: BarChart3 },
+        ].map(m => (
+          <button key={m.key} onClick={() => setMetric(m.key)} className={cn("flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors", metric === m.key ? "bg-indigo-500 text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+            <m.icon className="h-4 w-4" /> {m.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Pareto Chart */}
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6">
+        <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4">Gráfico Pareto</h3>
+        <div className="space-y-2">
+          {sorted.map((p, i) => (
+            <div key={p.id} className="flex items-center gap-3">
+              <span className="w-5 text-xs font-bold text-gray-400 text-right">{i + 1}</span>
+              <span className="w-40 text-xs font-semibold text-gray-700 dark:text-foreground truncate">{p.name}</span>
+              <div className="flex-1 flex items-center gap-2">
+                <div className="flex-1 h-6 bg-gray-100 dark:bg-surface rounded-full overflow-hidden relative">
+                  <div className={cn("h-full rounded-full transition-all", p.isTop ? "bg-indigo-500" : "bg-gray-300 dark:bg-gray-600")} style={{ width: `${(p.value / maxValue) * 100}%` }} />
+                </div>
+                <span className="text-xs font-bold text-gray-500 dark:text-muted w-14 text-right">{p.pct.toFixed(1)}%</span>
+              </div>
+              {/* Cumulative line marker */}
+              <div className="w-20 flex items-center gap-1">
+                <div className="flex-1 h-1.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                  <div className={cn("h-full rounded-full", p.cumPct <= 80 ? "bg-emerald-400" : "bg-amber-400")} style={{ width: `${p.cumPct}%` }} />
+                </div>
+                <span className="text-[10px] font-bold text-gray-400 w-10 text-right">{p.cumPct.toFixed(0)}%</span>
+              </div>
+              <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", p.isTop ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400")}>{p.isTop ? "TOP" : "—"}</span>
+            </div>
+          ))}
+        </div>
+        {/* 80% line reference */}
+        <div className="mt-4 pt-3 border-t border-dashed border-gray-200 dark:border-card-border flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-emerald-400" />
+          <span className="text-xs text-gray-500 dark:text-muted">Línea 80% — Los productos marcados TOP representan ~80% del valor total</span>
+        </div>
+      </div>
+
+      {/* Insight */}
+      <div className="bg-indigo-50 dark:bg-indigo-950/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-5">
+        <h3 className="font-extrabold text-indigo-800 dark:text-indigo-300 text-sm">💡 Insight Pareto</h3>
+        <p className="text-sm text-indigo-700 dark:text-indigo-400 mt-2">
+          <strong>{topCount} productos ({topPct}% del catálogo)</strong> generan <strong>{topRevPct}%</strong> del {metric === "revenue" ? "ingreso" : metric === "units" ? "volumen" : "margen"}.
+          Enfoca promociones, stock y negociación con proveedores en estos productos para máximo impacto.
+          Los {sorted.length - topCount} productos restantes podrían revisarse para optimizar espacio en tienda.
+        </p>
+      </div>
+    </div>
+  );
+}

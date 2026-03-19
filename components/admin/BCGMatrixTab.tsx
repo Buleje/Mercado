@@ -1,0 +1,174 @@
+﻿"use client";
+import { useState, useMemo } from "react";
+import { Star, TrendingUp, HelpCircle, AlertTriangle, Download, Eye } from "lucide-react";
+import { cn, exportToCSV } from "@/lib/utils";
+
+/* ── Types ── */
+type Quadrant = "estrella" | "vaca" | "interrogante" | "perro";
+type Product = {
+  id: number; name: string; category: string; revenue: number; growth: number;
+  marketShare: number; units: number; quadrant: Quadrant;
+};
+
+/* ── Config ── */
+const Q_CONFIG: Record<Quadrant, { label: string; emoji: string; color: string; bg: string; desc: string }> = {
+  estrella: { label: "Estrellas", emoji: "⭐", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800", desc: "Alto crecimiento + alta participación. Invertir y potenciar." },
+  vaca: { label: "Vacas Lecheras", emoji: "🐄", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800", desc: "Bajo crecimiento + alta participación. Máximo beneficio, mínima inversión." },
+  interrogante: { label: "Interrogantes", emoji: "❓", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800", desc: "Alto crecimiento + baja participación. Evaluar si invertir o descartar." },
+  perro: { label: "Perros", emoji: "🐕", color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-950/20 border-gray-200 dark:border-gray-800", desc: "Bajo crecimiento + baja participación. Considerar eliminar." },
+};
+
+/* ── Seed Data ── */
+const PRODUCTS: Product[] = [];
+
+const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+
+export default function BCGMatrixTab() {
+  const [selectedQ, setSelectedQ] = useState<Quadrant | "todas">("todas");
+  const [detail, setDetail] = useState<Product | null>(null);
+
+  const grouped = useMemo(() => {
+    const g: Record<Quadrant, Product[]> = { estrella: [], vaca: [], interrogante: [], perro: [] };
+    PRODUCTS.forEach(p => g[p.quadrant].push(p));
+    return g;
+  }, []);
+
+  const filtered = selectedQ === "todas" ? PRODUCTS : PRODUCTS.filter(p => p.quadrant === selectedQ);
+  const totalRevenue = PRODUCTS.reduce((s, p) => s + p.revenue, 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+            <Star className="h-6 w-6 text-amber-500" /> Matriz BCG
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-muted mt-1">Clasifica productos por crecimiento y participación de mercado</p>
+        </div>
+        <button onClick={() => exportToCSV(PRODUCTS.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+          <Download className="h-4 w-4" /> Exportar
+        </button>
+      </div>
+
+      {/* Quadrant summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {(["estrella", "vaca", "interrogante", "perro"] as Quadrant[]).map(q => {
+          const c = Q_CONFIG[q];
+          const items = grouped[q];
+          const rev = items.reduce((s, p) => s + p.revenue, 0);
+          return (
+            <button key={q} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("rounded-2xl border-2 p-5 text-left transition-all hover:shadow-md", c.bg, selectedQ === q && "ring-2 ring-primary ring-offset-2 dark:ring-offset-card")}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">{c.emoji}</span>
+                <span className={cn("font-extrabold text-sm", c.color)}>{c.label}</span>
+              </div>
+              <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground">{items.length}</p>
+              <p className="text-xs text-gray-500 dark:text-muted mt-1">{fmt(rev)} ({((rev / totalRevenue) * 100).toFixed(0)}%)</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Visual Matrix */}
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6">
+        <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4">Mapa Visual BCG</h3>
+        <div className="relative w-full aspect-square max-w-[500px] mx-auto">
+          {/* Axes */}
+          <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
+            <div className="border-b-2 border-r-2 border-gray-200 dark:border-card-border bg-amber-50/50 dark:bg-amber-950/10 flex items-center justify-center text-xs font-bold text-amber-600 dark:text-amber-400 p-2">⭐ Estrellas</div>
+            <div className="border-b-2 border-gray-200 dark:border-card-border bg-blue-50/50 dark:bg-blue-950/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 p-2">❓ Interrogantes</div>
+            <div className="border-r-2 border-gray-200 dark:border-card-border bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-center text-xs font-bold text-emerald-600 dark:text-emerald-400 p-2">🐄 Vacas Lecheras</div>
+            <div className="bg-gray-50/50 dark:bg-gray-950/10 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400 p-2">🐕 Perros</div>
+          </div>
+          {/* Axis labels */}
+          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-gray-400">← Participación Mercado → Baja</div>
+          <div className="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-bold text-gray-400 whitespace-nowrap">← Tasa Crecimiento → Alta</div>
+          {/* Product dots */}
+          {PRODUCTS.map(p => {
+            const x = p.quadrant === "estrella" || p.quadrant === "vaca" ? 10 + Math.random() * 35 : 55 + Math.random() * 35;
+            const y = p.quadrant === "estrella" || p.quadrant === "interrogante" ? 10 + Math.random() * 35 : 55 + Math.random() * 35;
+            const size = Math.max(16, Math.min(40, (p.revenue / totalRevenue) * 300));
+            return (
+              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[8px] font-bold shadow-md hover:scale-110 transition-transform", p.quadrant === "estrella" ? "bg-amber-400 text-amber-900" : p.quadrant === "vaca" ? "bg-emerald-400 text-emerald-900" : p.quadrant === "interrogante" ? "bg-blue-400 text-blue-900" : "bg-gray-400 text-gray-900")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
+                {p.name.slice(0, 2)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Product Table */}
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border">
+          <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground">Detalle de Productos ({filtered.length})</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead><tr className="bg-gray-50 dark:bg-surface text-left">
+              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted">Producto</th>
+              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted">Categoría</th>
+              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted text-right">Ingreso</th>
+              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted text-right">Crecimiento</th>
+              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted text-right">Participación</th>
+              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted">Cuadrante</th>
+              <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted text-center">Acción</th>
+            </tr></thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+              {filtered.map(p => {
+                const c = Q_CONFIG[p.quadrant];
+                return (
+                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-surface">
+                    <td className="px-5 py-3 font-bold text-gray-900 dark:text-foreground">{p.name}</td>
+                    <td className="px-5 py-3 text-gray-500 dark:text-muted">{p.category}</td>
+                    <td className="px-5 py-3 text-right font-bold">{fmt(p.revenue)}</td>
+                    <td className={cn("px-5 py-3 text-right font-bold", p.growth >= 0 ? "text-emerald-600" : "text-red-500")}>{p.growth > 0 && "+"}{p.growth}%</td>
+                    <td className="px-5 py-3 text-right font-bold">{p.marketShare}%</td>
+                    <td className="px-5 py-3"><span className={cn("text-xs font-bold px-2 py-1 rounded-full", c.bg)}>{c.emoji} {c.label}</span></td>
+                    <td className="px-5 py-3 text-center">
+                      <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Recommendations */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {(["estrella", "vaca", "interrogante", "perro"] as Quadrant[]).map(q => {
+          const c = Q_CONFIG[q];
+          return (
+            <div key={q} className={cn("rounded-2xl border-2 p-5", c.bg)}>
+              <h4 className={cn("font-extrabold flex items-center gap-2", c.color)}>{c.emoji} {c.label}</h4>
+              <p className="text-sm text-gray-600 dark:text-muted mt-1">{c.desc}</p>
+              <p className="text-xs text-gray-400 dark:text-muted mt-2">{grouped[q].length} productos • {fmt(grouped[q].reduce((s, p) => s + p.revenue, 0))}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Detail modal */}
+      {detail && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+              <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
+              <button onClick={() => setDetail(null)} className="text-xl font-bold text-gray-400 hover:text-gray-600">×</button>
+            </div>
+            <div className="px-6 py-5 grid grid-cols-2 gap-3">
+              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>
+              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-emerald-600" : "text-red-500")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
+              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>
+              <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Unidades/mes</span><p className="font-bold">{detail.units}</p></div>
+              <div className="col-span-2 bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Cuadrante</span><p className="font-bold">{Q_CONFIG[detail.quadrant].emoji} {Q_CONFIG[detail.quadrant].label}</p></div>
+              <div className="col-span-2 bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3"><span className="text-xs font-bold text-blue-800 dark:text-blue-300">Recomendación</span><p className="text-xs text-blue-600 dark:text-blue-400 mt-1">{Q_CONFIG[detail.quadrant].desc}</p></div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

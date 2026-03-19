@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 
 /**
  * Search result with relevance score
@@ -148,6 +148,14 @@ export function useAdvancedSearch<T extends Record<string, unknown>>(
   options: SearchOptions<T>
 ) {
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  // Debounce: update debouncedQuery 250ms after the user stops typing
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 250);
+    return () => clearTimeout(timer);
+  }, [query]);
+
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
@@ -158,11 +166,11 @@ export function useAdvancedSearch<T extends Record<string, unknown>>(
     }
   });
   
-  // Perform search
+  // Perform search using the debounced query to avoid blocking on every keystroke
   const results = useMemo(() => {
-    if (!query.trim()) return items.map(item => ({ item, score: 1, matches: [] }));
-    return fuzzySearch(items, query, options);
-  }, [items, query, options]);
+    if (!debouncedQuery.trim()) return items.map(item => ({ item, score: 1, matches: [] }));
+    return fuzzySearch(items, debouncedQuery, options);
+  }, [items, debouncedQuery, options]);
   
   // Save to recent searches
   const saveRecentSearch = useCallback((searchQuery: string) => {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, startTransition } from "react";
 import { Clock, Flame, ChevronRight } from "lucide-react";
+import { useSettings } from "@/contexts/settings-context";
 
 function getTimeLeft() {
   const now = new Date();
@@ -28,6 +29,7 @@ function Digit({ value, label }: { value: number; label: string }) {
 export default function CountdownBanner() {
   const [time, setTime] = useState(getTimeLeft);
   const [mounted, setMounted] = useState(false);
+  const { homepage: hp } = useSettings();
 
   useEffect(() => {
     startTransition(() => setMounted(true));
@@ -37,7 +39,7 @@ export default function CountdownBanner() {
     return () => clearInterval(id);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || hp.countdownEnabled === false) return null;
 
   const scrollToDeals = () => {
     const el = document.getElementById("flash-deals") || document.getElementById("productos");
@@ -59,9 +61,9 @@ export default function CountdownBanner() {
           </div>
           <div>
             <h3 className="text-sm sm:text-base font-extrabold tracking-tight">
-              🔥 OFERTAS DEL DÍA
+              {hp.countdownTitle}
             </h3>
-            <p className="text-xs opacity-90">¡Aprovecha antes de la medianoche!</p>
+            <p className="text-xs opacity-90">{hp.countdownSubtitle}</p>
           </div>
         </div>
 
@@ -83,7 +85,7 @@ export default function CountdownBanner() {
           onClick={scrollToDeals}
           className="flex items-center gap-1.5 bg-white text-red-600 font-bold text-sm px-4 py-2 rounded-full hover:bg-white/90 transition-colors shadow-lg"
         >
-          Ver ofertas
+          {hp.countdownCtaText}
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>

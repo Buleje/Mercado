@@ -23,9 +23,13 @@ export function LoadingSpinner({
   className = '',
 }: LoadingSpinnerProps) {
   const content = (
-    <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
-      <Loader2 className={`${sizeClasses[size]} animate-spin text-emerald-600`} />
-      {text && <p className="text-sm text-gray-600 animate-pulse">{text}</p>}
+    <div
+      className={`flex flex-col items-center justify-center gap-3 ${className}`}
+      role="status"
+      aria-label={text ?? 'Cargando...'}
+    >
+      <Loader2 className={`${sizeClasses[size]} animate-spin text-emerald-600`} aria-hidden="true" />
+      {text && <p className="text-sm text-gray-600 animate-pulse" aria-hidden="true">{text}</p>}
     </div>
   );
 

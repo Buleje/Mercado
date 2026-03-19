@@ -1,4 +1,4 @@
-﻿﻿"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
 import {
@@ -329,3 +329,4 @@ export default function PayablesTab() {
     </div>
   );
 }
+

@@ -1,60 +1,35 @@
-export const dynamic = 'force-dynamic'
+﻿export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import { CustomersDB, normalizePhone } from "@/lib/jsondb";
-import { requireAdmin } from "@/lib/require-admin";
+import { OrdersDB, normalizePhone } from "@/lib/jsondb";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
-const LocationSchema = z.object({
-  id: z.string().min(1),
-  location: z.string().min(1).max(500),
-  reference: z.string().max(300),
-});
+// -- GET /api/customers/[phone]/orders -- public, rate-limited ----------------
+// Returns orders for a customer identified by phone number.
+// No admin auth -- customers look up their own orders from /cuenta.
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ phone: string }> }
+) {
+  const ip = getClientIp(req);
+  const { allowed } = rateLimit(`customer-orders:${ip}`, 30, 60);
+  if (!allowed) return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
 
-const CustomerPostSchema = z.object({
-  phone: z.string().min(6).max(20),
-  name: z.string().min(1).max(100),
-  location: z.string().max(500).optional(),
-  reference: z.string().max(300).optional(),
-  locations: z.array(LocationSchema).optional(),
-  activeLocationId: z.string().nullable().optional(),
-});
-
-export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
-
+  const { phone } = await params;
   try {
-    return NextResponse.json(await CustomersDB.getAll());
+    const orders = await OrdersDB.getByCustomerPhone(normalizePhone(phone));
+    // Return safe customer-facing fields only (no internal admin notes or full details)
+    const safe = orders.map((o) => ({
+      id: o.id,
+      status: o.status,
+      total: o.total,
+      paymentMethod: o.paymentMethod,
+      items: o.items.map((i) => ({ name: i.name, quantity: i.quantity, unit: i.unit, price: i.price, image: i.image })),
+      createdAt: o.createdAt,
+      updatedAt: o.updatedAt,
+    }));
+    return NextResponse.json(safe);
   } catch (e) {
-    console.error("[customers] GET error:", e);
+    console.error("[customers/orders] GET error:", e);
     return NextResponse.json({ error: "Database error" }, { status: 503 });
-  }
-}
-
-export async function POST(req: Request) {
-  try {
-    const raw = await req.json();
-    const parsed = CustomerPostSchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
-        { status: 400 }
-      );
-    }
-    const body = parsed.data;
-    const record = await CustomersDB.upsert({
-      phone: normalizePhone(body.phone),
-      name: body.name,
-      location: body.location ?? "",
-      reference: body.reference ?? "",
-      locations: body.locations ?? [],
-      activeLocationId: body.activeLocationId ?? null,
-      loyaltyPoints: 0,
-      loyaltyTier: "Nuevo",
-      totalSpent: 0,
-    });
-    return NextResponse.json(record);
-  } catch {
-    return NextResponse.json({ error: "invalid request" }, { status: 400 });
   }
 }

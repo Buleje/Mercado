@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { ShoppingCart, Plus, Sparkles, Tag, Package } from "lucide-react";
+import { ShoppingCart, Sparkles, Tag, Package } from "lucide-react";
 import { products, categories } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -60,8 +60,10 @@ const COMBO_TEMPLATES = [
   },
 ];
 
-function buildCombos(liveProducts: Product[]): Combo[] {
-  return COMBO_TEMPLATES.map((tmpl) => {
+type ComboTemplate = (typeof COMBO_TEMPLATES)[number];
+
+function buildCombos(liveProducts: Product[], templates: ComboTemplate[] = COMBO_TEMPLATES): Combo[] {
+  return templates.map((tmpl) => {
     // Pick products from the specified categories
     const pool = liveProducts.filter((p) => tmpl.categories.includes(p.category));
     // Pick one from each category (or fill from pool)
@@ -108,8 +110,18 @@ function ComboCard({ combo }: { combo: Combo }) {
 
   const handleAddAll = () => {
     setAdding(true);
-    combo.products.forEach((p) => addItem(p));
-    showToast(`${combo.name} agregado`, combo.products[0]?.image);
+    // Add combo as a single cart item with the discounted price
+    const comboProduct = {
+      id: Math.abs(combo.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) * -1000),
+      name: `${combo.emoji} ${combo.name}`,
+      price: combo.comboPrice,
+      image: combo.products[0]?.image ?? "",
+      unit: "combo",
+      category: "combos",
+      badge: `-${combo.discountPercent}%` as const,
+    };
+    addItem(comboProduct as Product);
+    showToast(`${combo.name} agregado como combo`, combo.products[0]?.image);
     setTimeout(() => setAdding(false), 600);
   };
 
@@ -144,16 +156,6 @@ function ComboCard({ combo }: { combo: Combo }) {
               )}
             </div>
           ))}
-        </div>
-        {/* Plus signs between images */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="flex items-center gap-1">
-            {combo.products.slice(1).map((_, i) => (
-              <div key={i} className="flex items-center justify-center h-6 w-6 rounded-full bg-primary text-white text-xs font-bold shadow-md" style={{ marginLeft: i === 0 ? "0" : "auto" }}>
-                <Plus className="h-3 w-3" />
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -208,6 +210,19 @@ function ComboCard({ combo }: { combo: Combo }) {
 export default function CombosSection() {
   const [combos, setCombos] = useState<Combo[]>([]);
   const [liveProducts, setLiveProducts] = useState<Product[]>(products);
+  const [settingsTemplates, setSettingsTemplates] = useState<ComboTemplate[] | null>(null);
+
+  // Load settings combo templates from admin configuration
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => {
+        if (s?.comboTemplates && Array.isArray(s.comboTemplates) && s.comboTemplates.length > 0) {
+          setSettingsTemplates(s.comboTemplates as ComboTemplate[]);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Use live products from API if available
   useEffect(() => {
@@ -223,7 +238,10 @@ export default function CombosSection() {
   }, []);
 
   // Build combos from available products (use useMemo to keep stable between renders)
-  const stableCombos = useMemo(() => buildCombos(liveProducts), [liveProducts]);
+  const stableCombos = useMemo(
+    () => buildCombos(liveProducts, settingsTemplates ?? COMBO_TEMPLATES),
+    [liveProducts, settingsTemplates]
+  );
   useEffect(() => { setCombos(stableCombos); }, [stableCombos]);
 
   if (combos.length === 0) return null;

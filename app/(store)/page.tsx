@@ -1,8 +1,34 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
-import AnnouncementBar from "@/components/AnnouncementBar";
+import { AnnouncementBar, StatsCounter, Benefits, CTABanner, RecommendedProducts } from "@/components/ClientSections";
+
+export const metadata: Metadata = {
+  title: "Bodega San Martín — Abarrotes con Delivery en Pucallpa | Yape y Efectivo",
+  description:
+    "Compra abarrotes, bebidas, carnes, pollo, golosinas y productos de limpieza online en Pucallpa. Delivery rápido a domicilio. Paga con Yape o efectivo. +500 productos, precios de bodega.",
+  alternates: {
+    canonical: "https://www.bodegasanmartin.pe",
+  },
+  openGraph: {
+    title: "Bodega San Martín — Abarrotes con Delivery en Pucallpa",
+    description:
+      "Tu bodega online en Pucallpa. +500 productos frescos con delivery rápido. Paga con Yape o efectivo.",
+    url: "https://www.bodegasanmartin.pe",
+    type: "website",
+    locale: "es_PE",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Bodega San Martín — Tienda de Abarrotes en Pucallpa con delivery a domicilio",
+      },
+    ],
+  },
+};
 import {
   StatsSkeleton,
   SectionSkeleton,
@@ -12,25 +38,15 @@ import {
 } from "@/components/LoadingSkeleton";
 
 // Landing page sections — optimized conversion flow
-const StatsCounter       = dynamic(() => import("@/components/StatsCounter"), { ssr: true });
-const ProductsPreview    = dynamic(() => import("@/components/ProductsPreview"), { ssr: true });
-const HowItWorks         = dynamic(() => import("@/components/HowItWorks"), { ssr: true });
-const Benefits           = dynamic(() => import("@/components/Benefits"), { ssr: true });
-const CTABanner          = dynamic(() => import("@/components/CTABanner"), { ssr: true });
-const Testimonials       = dynamic(() => import("@/components/Testimonials"), { ssr: true });
-const BrandStory         = dynamic(() => import("@/components/BrandStory"), { ssr: true });
-const FAQ                = dynamic(() => import("@/components/FAQ"), { ssr: true });
-const Contact            = dynamic(() => import("@/components/Contact"), { ssr: true });
-const Footer             = dynamic(() => import("@/components/Footer"), { ssr: true });
+const ProductsPreview    = dynamic(() => import("@/components/ProductsPreview"),    { ssr: true });
+const HowItWorks         = dynamic(() => import("@/components/HowItWorks"),         { ssr: true });
+const Testimonials       = dynamic(() => import("@/components/Testimonials"),       { ssr: true });
+const BrandStory         = dynamic(() => import("@/components/BrandStory"),         { ssr: true });
+const FAQ                = dynamic(() => import("@/components/FAQ"),                { ssr: true });
+const Contact            = dynamic(() => import("@/components/Contact"),            { ssr: true });
+const Footer             = dynamic(() => import("@/components/Footer"),             { ssr: true });
 
-// Essential modals & utilities (client-only, no SSR needed)
-const CartSidebar       = dynamic(() => import("@/components/CartSidebar"));
-const CustomerModal     = dynamic(() => import("@/components/CustomerModal"));
-const AccessibilityBar  = dynamic(() => import("@/components/AccessibilityBar"));
-const CookieConsent     = dynamic(() => import("@/components/CookieConsent"));
-const MobileBottomNav   = dynamic(() => import("@/components/MobileBottomNav"));
-const UserAccountModal  = dynamic(() => import("@/components/UserAccountModal"));
-const ExitIntentModal   = dynamic(() => import("@/components/ExitIntentModal"));
+import HomeClientShell from "@/components/HomeClientShell";
 
 export default function Home() {
   return (
@@ -50,6 +66,9 @@ export default function Home() {
         <Suspense fallback={<LoadingProducts />}>
           <ProductsPreview />
         </Suspense>
+
+        {/* Personalized recommendations / best-sellers */}
+        <RecommendedProducts />
 
         {/* How it works — 3-step process */}
         <Suspense fallback={<LoadingSection />}>
@@ -83,13 +102,7 @@ export default function Home() {
         </Suspense>
       </main>
       <Footer />
-      <CartSidebar />
-      <CustomerModal />
-      <CookieConsent />
-      <AccessibilityBar />
-      <UserAccountModal />
-      <MobileBottomNav />
-      <ExitIntentModal />
+      <HomeClientShell />
     </>
   );
 }

@@ -37,16 +37,35 @@ export default function InstallPrompt() {
       // Store the event for later use (cast to our interface)
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       
-      // Show our custom install prompt after a delay
-      setTimeout(() => {
-        setShowPrompt(true);
-      }, 5000); // Show after 5 seconds of browsing
+      // Show prompt based on engagement: user must scroll >40% AND spend >12s
+      let scrolledEnough = false;
+      let timeReady = false;
+      const tryShow = () => { if (scrolledEnough && timeReady) setShowPrompt(true); };
+
+      const onScroll = () => {
+        const scrollPct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+        if (scrollPct > 0.4) { scrolledEnough = true; window.removeEventListener("scroll", onScroll); tryShow(); }
+      };
+      window.addEventListener("scroll", onScroll, { passive: true });
+
+      const timer = setTimeout(() => { timeReady = true; tryShow(); }, 12000);
+
+      // Fallback: show after 30s regardless of scroll (e.g., on mobile with short pages)
+      const fallback = setTimeout(() => setShowPrompt(true), 30000);
+
+      // Cleanup stored for component unmount
+      (handleBeforeInstallPrompt as { _cleanup?: () => void })._cleanup = () => {
+        window.removeEventListener("scroll", onScroll);
+        clearTimeout(timer);
+        clearTimeout(fallback);
+      };
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      (handleBeforeInstallPrompt as { _cleanup?: () => void })._cleanup?.();
     };
   }, []);
 

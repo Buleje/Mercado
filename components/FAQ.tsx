@@ -8,22 +8,22 @@ const faqs = [
   {
     question: "¿Hacen delivery de abarrotes en todo Pucallpa?",
     answer:
-      "Sí, realizamos delivery de abarrotes en toda la zona urbana de Pucallpa. Nuestro servicio de entrega a domicilio cubre la mayoría de barrios y urbanizaciones. Consulta por WhatsApp si tienes dudas sobre la cobertura en tu zona.",
+      "Sí, realizamos delivery de abarrotes en toda la zona urbana de Pucallpa, incluyendo Callería, Yarinacocha, Manantay, Campo Verde y alrededores. Nuestro servicio de entrega a domicilio cubre la mayoría de barrios y urbanizaciones. Consulta por WhatsApp si tienes dudas sobre la cobertura en tu zona.",
   },
   {
     question: "¿Se puede pagar con Yape?",
     answer:
-      "¡Por supuesto! Aceptamos pagos con Yape para tu comodidad. También puedes pagar en efectivo contra entrega. Somos una tienda con Yape en Pucallpa para que compres de forma fácil y segura.",
+      "¡Por supuesto! Aceptamos pagos con Yape y Plin para tu comodidad. También puedes pagar en efectivo contra entrega. Somos una tienda con Yape en Pucallpa para que compres de forma fácil y segura.",
   },
   {
     question: "¿También aceptan efectivo contra entrega?",
     answer:
-      "Sí, aceptamos pago en efectivo al momento de la entrega. Nuestro repartidor llevará tu pedido y podrás pagarlo en el momento. Es una opción ideal si prefieres no usar medios digitales.",
+      "Sí, aceptamos pago en efectivo al momento de la entrega. Nuestro repartidor llevará tu pedido y podrás pagarlo en el momento. Si necesitas vuelto, indícalo al hacer tu pedido.",
   },
   {
     question: "¿Qué productos venden?",
     answer:
-      "Vendemos una amplia variedad de productos: abarrotes, bebidas, golosinas, carne, pollo, productos de limpieza, artículos para el hogar, snacks y más. Todo lo que necesitas para tu hogar o negocio lo encuentras en nuestra tienda virtual.",
+      "Vendemos más de 500 productos: abarrotes, bebidas, golosinas, carne, pollo, productos de limpieza, artículos para el hogar, snacks, frutas, verduras y lácteos. Todo lo que necesitas para tu hogar o negocio lo encuentras en nuestra tienda virtual.",
   },
   {
     question: "¿Venden bebidas, golosinas, carne y pollo?",
@@ -38,12 +38,32 @@ const faqs = [
   {
     question: "¿Cómo hago mi pedido online?",
     answer:
-      "Es muy fácil: navega por nuestro catálogo de productos, agrega lo que necesites al carrito y completa tu pedido. También puedes escribirnos directamente por WhatsApp. Aceptamos pagos por Yape o efectivo contra entrega.",
+      "Es muy fácil: navega por nuestro catálogo de productos en bodegasanmartin.pe, agrega lo que necesites al carrito y completa tu pedido. También puedes escribirnos directamente por WhatsApp al 916 409 675. Aceptamos pagos por Yape o efectivo contra entrega.",
   },
   {
     question: "¿Cuánto demora el delivery en Pucallpa?",
     answer:
-      "Nuestro delivery en Pucallpa es rápido. El tiempo de entrega depende de la zona, pero generalmente realizamos la entrega el mismo día. Para pedidos urgentes, contáctanos por WhatsApp y coordinamos la entrega más rápida posible.",
+      "Nuestro delivery en Pucallpa tiene un tiempo estimado de 30 minutos en zona urbana. Generalmente realizamos la entrega el mismo día. Para pedidos urgentes, contáctanos por WhatsApp y coordinamos la entrega más rápida posible.",
+  },
+  {
+    question: "¿El delivery es gratis?",
+    answer:
+      "Sí, el delivery es totalmente gratis para pedidos mayores a S/50 en toda la zona urbana de Pucallpa. Para pedidos menores, consulta el costo de envío por WhatsApp.",
+  },
+  {
+    question: "¿Puedo devolver un producto si no estoy satisfecho?",
+    answer:
+      "¡Claro! Si recibiste un producto en mal estado o diferente al pedido, te lo cambiamos o devolvemos tu dinero. Revisamos cada pedido antes de enviarlo para asegurar la mejor calidad. Avísanos dentro de las 24 horas de recibido tu pedido.",
+  },
+  {
+    question: "¿Desde cuándo opera Bodega San Martín?",
+    answer:
+      "Bodega San Martín opera desde 2011 en Pucallpa, Ucayali. Somos un negocio familiar con más de 13 años de experiencia atendiendo a familias de Pucallpa y alrededores con productos de calidad y delivery rápido.",
+  },
+  {
+    question: "¿Atienden los domingos?",
+    answer:
+      "Actualmente atendemos de lunes a sábado de 7:00 am a 9:00 pm. Los domingos puede haber horario reducido según disponibilidad. Consulta nuestro horario actualizado en la página o por WhatsApp.",
   },
 ];
 
@@ -51,8 +71,23 @@ export default function FAQ() {
   const [ref, inView] = useInView({ threshold: 0.1 });
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
+  /* Inline FAQPage schema — generated from the `faqs` array to stay in sync */
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    })),
+  };
+
   return (
     <section id="preguntas" className="py-20 sm:py-28 bg-surface" ref={ref}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <span className="inline-flex items-center gap-1.5 bg-primary/8 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">

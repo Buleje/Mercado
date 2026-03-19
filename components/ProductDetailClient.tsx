@@ -1,0 +1,466 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import {
+  Plus, Minus, ShoppingCart, Heart, Share2, ChevronRight,
+  Package, Truck, Shield, Clock, Star, GitCompareArrows,
+} from "lucide-react";
+import { useCart } from "@/contexts/cart-context";
+import { useToast } from "@/contexts/toast-context";
+import { useFavorites } from "@/contexts/favorites-context";
+import { useCompare } from "@/contexts/compare-context";
+import { useCachedData } from "@/hooks/use-cached-data";
+import { cn } from "@/lib/utils";
+import { products, categories, getProductSlug } from "@/data/products";
+import type { Product } from "@/data/products";
+import ProductGallery from "@/components/ProductGallery";
+import ProductReviewsSection from "@/components/ProductReviewsSection";
+
+type LiveProduct = Product & { stock?: number; stockMin?: number };
+
+interface ProductDetailClientProps {
+  product: Product;
+}
+
+export default function ProductDetailClient({ product }: ProductDetailClientProps) {
+  const { items, addItem, updateQty } = useCart();
+  const { showToast } = useToast();
+  const { isFavorite, toggle: toggleFav } = useFavorites();
+  const { add: addCompare, isIn: isCompare, remove: removeCompare } = useCompare();
+
+  const cartItem = items.find((i) => i.id === product.id);
+  const qty = cartItem?.quantity ?? 0;
+  const fav = isFavorite(String(product.id));
+  const compare = isCompare(product.id);
+  const [copied, setCopied] = useState(false);
+
+  // Fetch live stock data
+  const { data: liveProduct } = useCachedData<LiveProduct>(
+    `product-live-${product.id}`,
+    async () => {
+      const res = await fetch("/api/products");
+      if (!res.ok) return product;
+      const data = await res.json();
+      const found = (Array.isArray(data) ? data : []).find(
+        (p: LiveProduct) => p.id === product.id,
+      );
+      return found ?? product;
+    },
+    { staleTime: 60 * 1000 },
+  );
+
+  const stock = liveProduct?.stock;
+  const stockMin = liveProduct?.stockMin ?? 5;
+  const isOutOfStock = stock != null && stock <= 0;
+
+  // Fetch reviews for star display
+  const { data: reviews = [] } = useCachedData<
+    Array<{ name: string; rating: number; comment: string; createdAt: string }>
+  >(
+    `product-reviews-${product.id}`,
+    async () => {
+      const res = await fetch(`/api/reviews?productId=${product.id}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
+    { staleTime: 5 * 60 * 1000, refetchOnFocus: false },
+  );
+
+  // Fetch price history
+  const { data: priceHistory = [] } = useCachedData<Array<{ price: number; createdAt: string }>>(
+    `price-history-${product.id}`,
+    async () => {
+      const res = await fetch(`/api/price-history?productId=${product.id}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data.slice(-10) : [];
+    },
+    { staleTime: 30 * 60 * 1000, refetchOnFocus: false },
+  );
+
+  const avgRating =
+    reviews.length > 0
+      ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+      : 0;
+
+  // Track recently viewed
+  useEffect(() => {
+    try {
+      const key = "bsm-recently-viewed";
+      const saved: Product[] = JSON.parse(localStorage.getItem(key) || "[]");
+      const filtered = saved.filter((p: Product) => p.id !== product.id);
+      filtered.unshift(product);
+      localStorage.setItem(key, JSON.stringify(filtered.slice(0, 12)));
+      window.dispatchEvent(new Event("bsm:productViewed"));
+    } catch {}
+  }, [product]);
+
+  const handleAdd = () => {
+    if (isOutOfStock) return;
+    addItem(product);
+    showToast(product.name, product.image);
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: product.name, text: `${product.name} — S/${product.price.toFixed(2)}`, url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const category = categories.find((c) => c.id === product.category);
+  const relatedProducts = products
+    .filter((p) => p.category === product.category && p.id !== product.id)
+    .slice(0, 4);
+
+  // Build gallery images — main + alternative angle crops
+  const galleryImages = [
+    product.image,
+    product.image.replace("w=400&h=400", "w=800&h=600"),
+    product.image.replace("w=400&h=400", "w=600&h=800"),
+  ];
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-background">
+      {/* Breadcrumbs */}
+      <nav className="max-w-6xl mx-auto px-4 py-4" aria-label="Breadcrumb">
+        <ol className="flex items-center gap-1.5 text-sm text-muted flex-wrap">
+          <li>
+            <Link href="/" className="hover:text-primary transition-colors">
+              Inicio
+            </Link>
+          </li>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+          <li>
+            <Link href="/tienda" className="hover:text-primary transition-colors">
+              Tienda
+            </Link>
+          </li>
+          <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+          {category && (
+            <>
+              <li>
+                <Link
+                  href={`/tienda/categoria/${category.id}`}
+                  className="hover:text-primary transition-colors"
+                >
+                  {category.emoji} {category.label}
+                </Link>
+              </li>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            </>
+          )}
+          <li className="text-foreground font-medium truncate max-w-50">
+            {product.name}
+          </li>
+        </ol>
+      </nav>
+
+      {/* Main product section */}
+      <div className="max-w-6xl mx-auto px-4 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Gallery */}
+          <ProductGallery images={galleryImages} alt={product.name} />
+
+          {/* Product info */}
+          <div className="space-y-6">
+            {/* Title & meta */}
+            <div>
+              {product.badge && (
+                <span
+                  className={cn(
+                    "inline-block mb-3 px-3 py-1 rounded-full text-xs font-bold uppercase text-white",
+                    product.badge === "Oferta" && "bg-red-500",
+                    product.badge === "Popular" && "bg-secondary",
+                    product.badge === "Fresco" && "bg-emerald-500",
+                    product.badge === "Premium" && "bg-violet-600",
+                  )}
+                >
+                  {product.badge}
+                </span>
+              )}
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground leading-tight">
+                {product.name}
+              </h1>
+              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                {category && (
+                  <span className="text-sm text-muted">
+                    {category.emoji} {category.label}
+                  </span>
+                )}
+                {reviews.length > 0 && (
+                  <a
+                    href="#resenas"
+                    className="flex items-center gap-1 text-sm hover:text-primary transition-colors"
+                  >
+                    <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                    <span className="font-semibold text-foreground">
+                      {avgRating.toFixed(1)}
+                    </span>
+                    <span className="text-muted">({reviews.length} reseñas)</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Price */}
+            <div className="bg-gray-50 dark:bg-surface rounded-2xl p-5 border border-gray-100 dark:border-card-border">
+              <div className="flex items-end gap-2">
+                <span className="text-3xl sm:text-4xl font-extrabold text-primary">
+                  S/{product.price.toFixed(2)}
+                </span>
+                <span className="text-base text-muted mb-1">por {product.unit}</span>
+              </div>
+              {stock != null && (
+                <span
+                  className={cn(
+                    "inline-block mt-3 text-xs font-semibold px-3 py-1 rounded-full",
+                    stock <= 0
+                      ? "bg-red-50 text-red-500 dark:bg-red-500/10"
+                      : stock <= stockMin
+                        ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10"
+                        : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10",
+                  )}
+                >
+                  {stock <= 0
+                    ? "Agotado"
+                    : stock <= stockMin
+                      ? `¡Solo quedan ${stock}!`
+                      : `${stock} en stock`}
+                </span>
+              )}
+            </div>
+
+            {/* Add to cart */}
+            <div className="flex items-center gap-3">
+              {qty === 0 ? (
+                <button
+                  onClick={handleAdd}
+                  disabled={isOutOfStock}
+                  className="flex-1 flex items-center justify-center gap-2 bg-primary text-white rounded-xl px-6 py-4 font-bold text-base shadow-md hover:bg-primary-dark active:scale-[0.98] transition-all disabled:opacity-50"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  Agregar al carrito
+                </button>
+              ) : (
+                <div className="flex-1 flex items-center gap-3">
+                  <div className="flex items-center bg-primary rounded-xl overflow-hidden shadow-md">
+                    <button
+                      onClick={() => updateQty(product.id, qty - 1)}
+                      className="h-12 w-12 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"
+                    >
+                      <Minus className="h-5 w-5" />
+                    </button>
+                    <span className="w-12 text-center font-bold text-white text-lg">
+                      {qty}
+                    </span>
+                    <button
+                      onClick={handleAdd}
+                      className="h-12 w-12 text-white hover:bg-primary-dark transition-colors flex items-center justify-center"
+                    >
+                      <Plus className="h-5 w-5" />
+                    </button>
+                  </div>
+                  <span className="text-sm font-semibold text-primary">
+                    En carrito · S/{(product.price * qty).toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={() => toggleFav(String(product.id))}
+                className={cn(
+                  "h-12 w-12 rounded-xl flex items-center justify-center border-2 transition-all shrink-0",
+                  fav
+                    ? "bg-red-50 border-red-200 text-red-500 dark:bg-red-500/10 dark:border-red-500/30"
+                    : "border-gray-200 dark:border-card-border text-gray-400 hover:text-red-500 hover:border-red-200",
+                )}
+                aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
+              >
+                <Heart className={cn("h-5 w-5", fav && "fill-current")} />
+              </button>
+              <button
+                onClick={() =>
+                  compare ? removeCompare(product.id) : addCompare(product)
+                }
+                className={cn(
+                  "h-12 w-12 rounded-xl flex items-center justify-center border-2 transition-all shrink-0",
+                  compare
+                    ? "bg-primary/10 border-primary/30 text-primary"
+                    : "border-gray-200 dark:border-card-border text-gray-400 hover:text-primary hover:border-primary/30",
+                )}
+                aria-label={compare ? "Quitar de comparar" : "Comparar"}
+              >
+                <GitCompareArrows className="h-5 w-5" />
+              </button>
+              <button
+                onClick={handleShare}
+                className="h-12 w-12 rounded-xl flex items-center justify-center border-2 border-gray-200 dark:border-card-border text-gray-400 hover:text-primary hover:border-primary/30 transition-all shrink-0 relative"
+                aria-label="Compartir"
+              >
+                <Share2 className="h-5 w-5" />
+                {copied && (
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs bg-foreground text-white dark:bg-white dark:text-background px-2 py-1 rounded-lg whitespace-nowrap">
+                    ¡Copiado!
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Benefits */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { icon: Truck, text: "Delivery gratis en Pucallpa", color: "text-emerald-500" },
+                { icon: Clock, text: "Entrega en 30-60 minutos", color: "text-blue-500" },
+                { icon: Shield, text: "Pago seguro: Yape o efectivo", color: "text-violet-500" },
+                { icon: Package, text: "Productos frescos garantizados", color: "text-amber-500" },
+              ].map((b, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl p-3 border border-gray-100 dark:border-card-border"
+                >
+                  <b.icon className={cn("h-5 w-5 shrink-0", b.color)} />
+                  <span className="text-sm font-medium text-foreground">{b.text}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Price history */}
+            {priceHistory.length > 1 && (() => {
+              const prices = priceHistory.map((p) => p.price);
+              const min = Math.min(...prices);
+              const max = Math.max(...prices);
+              const range = max - min || 1;
+              const W = (priceHistory.length - 1) * 40;
+              const points = prices
+                .map((p, i) => `${i * 40},${50 - ((p - min) / range) * 42}`)
+                .join(" ");
+              return (
+                <div className="bg-white dark:bg-card rounded-xl p-4 border border-gray-100 dark:border-card-border">
+                  <p className="text-xs font-semibold text-muted mb-3">
+                    📈 Historial de precios
+                  </p>
+                  <div className="relative h-14">
+                    <svg
+                      viewBox={`0 0 ${W || 1} 55`}
+                      className="w-full h-full"
+                      preserveAspectRatio="none"
+                    >
+                      <defs>
+                        <linearGradient id="pdGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
+                          <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+                        </linearGradient>
+                      </defs>
+                      <path
+                        d={`${points
+                          .split(" ")
+                          .map((p, i) => (i === 0 ? `M${p}` : `L${p}`))
+                          .join(" ")} L${W},55 L0,55 Z`}
+                        fill="url(#pdGrad)"
+                      />
+                      <polyline
+                        points={points}
+                        fill="none"
+                        stroke="#6366f1"
+                        strokeWidth="2"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                      />
+                      {prices.map((p, i) => (
+                        <circle
+                          key={i}
+                          cx={i * 40}
+                          cy={50 - ((p - min) / range) * 42}
+                          r="3"
+                          fill={i === prices.length - 1 ? "#6366f1" : "#a5b4fc"}
+                          stroke="white"
+                          strokeWidth="1.5"
+                        />
+                      ))}
+                    </svg>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-gray-400 mt-1.5">
+                    <span>
+                      {new Date(priceHistory[0].createdAt).toLocaleDateString("es-PE", {
+                        day: "2-digit",
+                        month: "short",
+                      })}
+                    </span>
+                    <span className="font-semibold text-primary">
+                      S/{prices[prices.length - 1].toFixed(2)} actual
+                    </span>
+                    <span>
+                      {new Date(
+                        priceHistory[priceHistory.length - 1].createdAt,
+                      ).toLocaleDateString("es-PE", { day: "2-digit", month: "short" })}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Reviews section */}
+        <div className="mt-12 lg:mt-16">
+          <ProductReviewsSection productId={product.id} productName={product.name} />
+        </div>
+
+        {/* Related products */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-12 lg:mt-16">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-foreground mb-6">
+              Productos relacionados
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {relatedProducts.map((rp) => (
+                <Link
+                  key={rp.id}
+                  href={`/tienda/${getProductSlug(rp)}`}
+                  className="group bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden hover:shadow-lg transition-all"
+                >
+                  <div className="relative aspect-square bg-gray-50 dark:bg-surface">
+                    {rp.image && (
+                      <Image
+                        src={rp.image}
+                        alt={rp.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        sizes="(max-width: 640px) 50vw, 25vw"
+                      />
+                    )}
+                    {rp.badge && (
+                      <span className="absolute top-2 left-2 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase text-white bg-primary">
+                        {rp.badge}
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm font-semibold text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                      {rp.name}
+                    </p>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="font-extrabold text-primary text-sm">
+                        S/{rp.price.toFixed(2)}
+                      </span>
+                      <span className="text-xs text-muted">{rp.unit}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
