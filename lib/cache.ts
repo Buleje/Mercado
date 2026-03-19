@@ -75,9 +75,18 @@ class RedisStore implements CacheStore {
 
   constructor(url: string) {
     try {
-      // Dynamic require keeps ioredis optional — app works without it installed
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const Redis = require("ioredis");
+      // Use runtime-only require so Turbopack does not try to bundle ioredis.
+      const runtimeRequire = globalThis.Function("return require")() as (id: string) => unknown;
+      const Redis = runtimeRequire("ioredis") as new (
+        redisUrl: string,
+        options: { lazyConnect: boolean; maxRetriesPerRequest: number; enableReadyCheck: boolean }
+      ) => {
+        on(event: string, handler: (err: Error) => void): void;
+        get(key: string): Promise<string | null>;
+        set(key: string, value: string, mode: "EX", ttlSec: number): Promise<unknown>;
+        del(...keys: string[]): Promise<unknown>;
+        keys(pattern: string): Promise<string[]>;
+      };
       this.client = new Redis(url, {
         lazyConnect: true,
         maxRetriesPerRequest: 1,

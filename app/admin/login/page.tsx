@@ -10,7 +10,7 @@ export default function AdminLoginPage() {
   const fromRef = useRef<string | null>(null);
   const [username, setUsername] = useState("");
   const [pw, setPw] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [bypassLoading, setBypassLoading] = useState(false);
 
@@ -22,7 +22,7 @@ export default function AdminLoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(false);
+    setError(null);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -32,11 +32,11 @@ export default function AdminLoginPage() {
       if (res.ok) {
         router.push(fromRef.current ? decodeURIComponent(fromRef.current) : "/admin");
       } else {
-        setError(true);
-        setTimeout(() => setError(false), 2500);
+        setError("Credenciales incorrectas");
+        setTimeout(() => setError(null), 2500);
       }
     } catch {
-      setError(true);
+      setError("No se pudo iniciar sesión");
     } finally {
       setLoading(false);
     }
@@ -44,13 +44,20 @@ export default function AdminLoginPage() {
 
   const handleBypass = async () => {
     setBypassLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/auth/bypass", { method: "POST" });
       if (res.ok) {
         router.push(fromRef.current ? decodeURIComponent(fromRef.current) : "/admin");
+        return;
+      }
+      if (res.status === 404) {
+        setError("Entrar sin login está desactivado");
+      } else {
+        setError("No se pudo entrar sin login");
       }
     } catch {
-      console.error("Bypass error");
+      setError("No se pudo entrar sin login");
     }
     setBypassLoading(false);
   };
@@ -86,7 +93,7 @@ export default function AdminLoginPage() {
           />
           {error && (
             <p className="text-sm text-red-500 font-semibold">
-              Credenciales incorrectas
+              {error}
             </p>
           )}
           <button

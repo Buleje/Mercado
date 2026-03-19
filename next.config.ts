@@ -7,9 +7,6 @@ const bundleAnalyzer = withBundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
-  // Skip ESLint during production builds — it runs in CI instead
-  eslint: { ignoreDuringBuilds: true },
-
   // Skip TS type check during build — validated in CI via tsc --noEmit / npm run build
   typescript: { ignoreBuildErrors: true },
 
