@@ -7,6 +7,9 @@ const bundleAnalyzer = withBundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  // Skip ESLint during production builds — it runs in CI instead
+  eslint: { ignoreDuringBuilds: true },
+
   // Allow cross-origin dev requests from Cloudflare Tunnel / ngrok
   allowedDevOrigins: ["*.trycloudflare.com", "*.ngrok-free.app", "*.ngrok.io"],
 
