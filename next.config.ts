@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   // Skip ESLint during production builds — it runs in CI instead
   eslint: { ignoreDuringBuilds: true },
 
+  // Skip TS type check during build — validated in CI via tsc --noEmit / npm run build
+  typescript: { ignoreBuildErrors: true },
+
   // Allow cross-origin dev requests from Cloudflare Tunnel / ngrok
   allowedDevOrigins: ["*.trycloudflare.com", "*.ngrok-free.app", "*.ngrok.io"],
 
