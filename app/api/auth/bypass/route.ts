@@ -10,9 +10,18 @@ import { createSessionToken, SESSION } from "@/lib/session";
  */
 export async function POST() {
   try {
-    const settings = await SettingsDB.get();
     const envEnabled = process.env.ALLOW_ADMIN_BYPASS_LOGIN === "true";
-    const settingsEnabled = settings.adminBypassLogin === true;
+    let settingsEnabled = false;
+
+    if (!envEnabled) {
+      try {
+        const settings = await SettingsDB.get();
+        settingsEnabled = settings.adminBypassLogin === true;
+      } catch {
+        settingsEnabled = false;
+      }
+    }
+
     const bypassEnabled = process.env.NODE_ENV !== "production" || envEnabled || settingsEnabled;
 
     if (!bypassEnabled) {

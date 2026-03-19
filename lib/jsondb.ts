@@ -886,9 +886,14 @@ export const OrdersDB = {
 
 export const SettingsDB = {
   async get(): Promise<DbSettings> {
-    const row = await prisma.settings.findUnique({ where: { id: 1 } });
-    if (!row) return { mode: "whatsapp" };
-    return mapSettings(row);
+    try {
+      const row = await prisma.settings.findUnique({ where: { id: 1 } });
+      if (!row) return { mode: "whatsapp", adminBypassLogin: false };
+      return mapSettings(row);
+    } catch (error) {
+      console.warn("[settings] falling back to defaults:", error instanceof Error ? error.message : String(error));
+      return { mode: "whatsapp", adminBypassLogin: false };
+    }
   },
   async set(s: DbSettings): Promise<DbSettings> {
     const d = {
