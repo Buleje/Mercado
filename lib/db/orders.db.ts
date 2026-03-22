@@ -1,0 +1,346 @@
+import "server-only";
+import { prisma } from "@/lib/prisma";
+import type {
+  Order as POrder,
+  OrderItem as POrderItem,
+  DeliverySlot as PDeliverySlot,
+  Return as PReturn,
+  ReturnItem as PReturnItem,
+} from "@/lib/generated/prisma/client";
+import {
+  type DbOrder,
+  type DbOrderItem,
+  type DbOrderCustomer,
+  type OrderStatus,
+  normalizePhone,
+} from "./misc.db";
+
+// ── Local Types ───────────────────────────────────────────────────────────────
+
+export type DbDeliverySlot = {
+  id: string;
+  orderId: string;
+  date: string;
+  slot: string;
+  notes?: string;
+  createdAt: string;
+};
+
+export type DbReturnItem = {
+  id: number;
+  productId: number;
+  name: string;
+  quantity: number;
+  price: number;
+  unit: string;
+};
+
+export type DbReturn = {
+  id: string;
+  saleId?: string;
+  orderId?: string;
+  reason: string;
+  total: number;
+  photoUrl?: string;
+  customerPhone?: string;
+  creditApplied: boolean;
+  items: DbReturnItem[];
+  createdAt: string;
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function toISO(d: Date): string {
+  return d.toISOString();
+}
+
+// ── Mappers ───────────────────────────────────────────────────────────────────
+
+function mapOrder(o: POrder & { items: POrderItem[] }): DbOrder {
+  return {
+    id: o.id,
+    customer: {
+      name: o.customerName,
+      ...(o.customerPhone && { phone: o.customerPhone }),
+      location: o.customerLocation,
+      reference: o.customerReference,
+    },
+    items: o.items.map((i: POrderItem) => ({ id: i.productId ?? 0, name: i.name, price: i.price, ...(i.costPrice != null && { costPrice: i.costPrice }), quantity: i.quantity, unit: i.unit, image: i.image })),
+    total: o.total,
+    ...(o.totalCogs != null && { totalCogs: o.totalCogs }),
+    status: o.status as OrderStatus,
+    ...(o.notes != null && { notes: o.notes }),
+    ...(o.paymentMethod != null && { paymentMethod: o.paymentMethod as "yape" | "efectivo" }),
+    ...(o.yapeOperationNumber != null && { yapeOperationNumber: o.yapeOperationNumber }),
+    ...(o.deuda != null && { deuda: o.deuda }),
+    ...(o.appliedCouponCode != null && { appliedCouponCode: o.appliedCouponCode }),
+    ...(o.couponDiscount != null && { couponDiscount: o.couponDiscount }),
+    ...(o.appliedPromoId != null && { appliedPromoId: o.appliedPromoId }),
+    ...(o.discountAmount != null && { discountAmount: o.discountAmount }),
+    ...((o as Record<string, unknown>).idempotencyKey != null && { idempotencyKey: (o as Record<string, unknown>).idempotencyKey as string }),
+    ...((o as Record<string, unknown>).riderName != null && { riderName: (o as Record<string, unknown>).riderName as string }),
+    ...((o as Record<string, unknown>).deletedAt != null && { deletedAt: toISO((o as Record<string, unknown>).deletedAt as Date) }),
+    createdAt: toISO(o.createdAt),
+    updatedAt: toISO(o.updatedAt),
+  };
+}
+
+function mapDeliverySlot(d: PDeliverySlot): DbDeliverySlot {
+  return {
+    id: d.id, orderId: d.orderId, date: d.date, slot: d.slot,
+    ...(d.notes != null && { notes: d.notes }),
+    createdAt: toISO(d.createdAt),
+  };
+}
+
+function mapReturn(r: PReturn & { items: PReturnItem[] }): DbReturn {
+  return {
+    id: r.id,
+    ...(r.saleId != null && { saleId: r.saleId }),
+    ...(r.orderId != null && { orderId: r.orderId }),
+    reason: r.reason, total: r.total,
+    ...(r.photoUrl != null && { photoUrl: r.photoUrl }),
+    ...(r.customerPhone != null && { customerPhone: r.customerPhone }),
+    creditApplied: r.creditApplied ?? false,
+    items: r.items.map((i: PReturnItem) => ({ id: i.id, productId: i.productId, name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })),
+    createdAt: toISO(r.createdAt),
+  };
+}
+
+// ── Orders DB ─────────────────────────────────────────────────────────────────
+
+export const OrdersDB = {
+  async getAll(): Promise<DbOrder[]> {
+    return (await prisma.order.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapOrder);
+  },
+
+  /**
+   * Fetch orders with optional DB-level filtering (no in-memory scan).
+   * Use this instead of getAll() + array.filter() in the legacy GET path.
+   */
+  async getAllFiltered(opts?: {
+    status?: string;
+    since?: string;
+    phone?: string;
+  }): Promise<DbOrder[]> {
+    const where: Record<string, unknown> = {};
+    if (opts?.status) {
+      const statuses = opts.status.split(",").map((s) => s.trim());
+      where.status = { in: statuses };
+    }
+    if (opts?.since) {
+      const since = new Date(opts.since);
+      if (!isNaN(since.getTime())) {
+        where.createdAt = { gte: since };
+      }
+    }
+    if (opts?.phone) {
+      where.customerPhone = normalizePhone(opts.phone);
+    }
+    return (await prisma.order.findMany({
+      where,
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+    })).map(mapOrder);
+  },
+
+  /**
+   * Cursor-based pagination — efficient for large order volumes.
+   * Returns up to `limit` orders plus the cursor for the next page.
+   */
+  async getPage(opts: {
+    cursor?: string;
+    limit?: number;
+    status?: string;
+    since?: string;
+    phone?: string;
+  }): Promise<{ orders: DbOrder[]; nextCursor: string | null; total: number }> {
+    const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
+
+    // Build DB-level where clause (pushed to Postgres, no in-memory scan)
+    const where: Record<string, unknown> = {};
+    if (opts.status) {
+      const statuses = opts.status.split(",").map((s) => s.trim());
+      where.status = { in: statuses };
+    }
+    if (opts.since) {
+      const since = new Date(opts.since);
+      if (!isNaN(since.getTime())) {
+        where.createdAt = { gte: since };
+      }
+    }
+    if (opts.phone) {
+      where.customerPhone = normalizePhone(opts.phone);
+    }
+
+    const [rows, total] = await prisma.$transaction([
+      prisma.order.findMany({
+        where,
+        include: { items: true },
+        orderBy: { createdAt: "desc" },
+        take: limit + 1,
+        ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
+      }),
+      prisma.order.count({ where }),
+    ]);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+    return { orders: items.map(mapOrder), nextCursor, total };
+  },
+
+  async getById(id: string): Promise<DbOrder | null> {
+    const row = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+    return row ? mapOrder(row) : null;
+  },
+  async getByCustomerPhone(phone: string): Promise<DbOrder[]> {
+    return (await prisma.order.findMany({
+      where: { customerPhone: normalizePhone(phone) },
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+    })).map(mapOrder);
+  },
+  async add(order: DbOrder, tenantId = "main"): Promise<DbOrder> {
+    // Ensure the customer exists in the DB before linking via FK
+    const phone = order.customer.phone ? normalizePhone(order.customer.phone) : null;
+    if (phone) {
+      await prisma.customer.upsert({
+        where: { phone },
+        create: {
+          phone,
+          name: order.customer.name,
+          location: order.customer.location ?? "",
+          reference: order.customer.reference ?? "",
+        },
+        update: {
+          name: order.customer.name,
+          location: order.customer.location ?? "",
+          reference: order.customer.reference ?? "",
+        },
+      });
+    }
+    // Ensure all catalog products exist in the Product table so the FK constraint is
+    // always satisfied. Store-catalog IDs come from data/products.ts and may differ
+    // from the admin-managed DB product IDs.
+    const uniqueIds = [...new Set(order.items.map((i) => i.id).filter((id) => id > 0))];
+    if (uniqueIds.length > 0) {
+      const existing = new Set(
+        (await prisma.product.findMany({ where: { id: { in: uniqueIds } }, select: { id: true } }))
+          .map((p) => p.id)
+      );
+      let needsSequenceReset = false;
+      for (const item of order.items) {
+        if (item.id > 0 && !existing.has(item.id)) {
+          // Insert stub record for catalog product not yet in admin Product table
+          await prisma.$executeRaw`
+            INSERT INTO "Product" (id, name, category, price, unit, image)
+            VALUES (${item.id}, ${item.name}, 'tienda', ${item.price}, ${item.unit}, ${item.image ?? ''})
+            ON CONFLICT (id) DO NOTHING
+          `;
+          needsSequenceReset = true;
+        }
+      }
+      if (needsSequenceReset) {
+        // Keep the autoincrement sequence in sync so admin-created products get correct IDs
+        await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('"Product"', 'id'), (SELECT MAX(id) FROM "Product"))`;
+      }
+    }
+    const row = await prisma.order.create({
+      data: {
+        id: order.id,
+        tenantId,
+        customerName: order.customer.name,
+        customerPhone: phone,
+        customerLocation: order.customer.location ?? "",
+        customerReference: order.customer.reference ?? "",
+        total: order.total, totalCogs: order.totalCogs ?? null, status: order.status as never,
+        notes: order.notes, paymentMethod: order.paymentMethod,
+        yapeOperationNumber: order.yapeOperationNumber,
+        deuda: order.deuda ?? null,
+        appliedCouponCode: order.appliedCouponCode ?? null,
+        couponDiscount: order.couponDiscount ?? null,
+        appliedPromoId: order.appliedPromoId ?? null,
+        discountAmount: order.discountAmount ?? null,
+        items: {
+          create: order.items.map((i) => ({
+            productId: i.id > 0 ? i.id : null,
+            name: i.name, price: i.price, costPrice: i.costPrice ?? null,
+            quantity: i.quantity, unit: i.unit, image: i.image,
+          })),
+        },
+      },
+      include: { items: true },
+    });
+    // Persist idempotency key via raw SQL (field added in migration 20260316; types update after prisma generate)
+    if (order.idempotencyKey) {
+      await prisma.$executeRaw`UPDATE "Order" SET "idempotencyKey" = ${order.idempotencyKey} WHERE id = ${row.id}`.catch(() => {});
+    }
+    return mapOrder(row);
+  },
+  async update(id: string, patch: Partial<DbOrder>): Promise<DbOrder | null> {
+    const existing = await prisma.order.findUnique({ where: { id } });
+    if (!existing) return null;
+    const data: Record<string, unknown> = {};
+    if (patch.status) data.status = patch.status;
+    if (patch.notes !== undefined) data.notes = patch.notes;
+    if (patch.paymentMethod !== undefined) data.paymentMethod = patch.paymentMethod;
+    if (patch.yapeOperationNumber !== undefined) data.yapeOperationNumber = patch.yapeOperationNumber;
+    if (patch.deuda !== undefined) data.deuda = patch.deuda;
+    if (patch.total !== undefined) data.total = patch.total;
+    if (patch.riderName !== undefined) data.riderName = patch.riderName;
+    if (patch.customer) {
+      if (patch.customer.name) data.customerName = patch.customer.name;
+      if (patch.customer.phone) data.customerPhone = normalizePhone(patch.customer.phone);
+      if (patch.customer.location) data.customerLocation = patch.customer.location;
+      if (patch.customer.reference) data.customerReference = patch.customer.reference;
+    }
+    const row = await prisma.order.update({ where: { id }, data, include: { items: true } });
+    return mapOrder(row);
+  },
+  async delete(id: string): Promise<void> {
+    await prisma.order.delete({ where: { id } }).catch(() => {});
+  },
+};
+
+// ── Delivery Slots DB ─────────────────────────────────────────────────────────
+
+export const DeliverySlotsDB = {
+  async getByDate(date: string): Promise<DbDeliverySlot[]> {
+    return (await prisma.deliverySlot.findMany({ where: { date }, orderBy: { createdAt: "asc" } })).map(mapDeliverySlot);
+  },
+  async getByOrderId(orderId: string): Promise<DbDeliverySlot | null> {
+    const row = await prisma.deliverySlot.findUnique({ where: { orderId } });
+    return row ? mapDeliverySlot(row) : null;
+  },
+  async set(data: { orderId: string; date: string; slot: string; notes?: string }): Promise<DbDeliverySlot> {
+    const row = await prisma.deliverySlot.upsert({
+      where: { orderId: data.orderId },
+      create: data,
+      update: { date: data.date, slot: data.slot, notes: data.notes },
+    });
+    return mapDeliverySlot(row);
+  },
+};
+
+// ── Returns DB ────────────────────────────────────────────────────────────────
+
+export const ReturnsDB = {
+  async getAll(): Promise<DbReturn[]> {
+    return (await prisma.return.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapReturn);
+  },
+  async add(r: { saleId?: string; orderId?: string; reason: string; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: Omit<DbReturnItem, "id">[] }): Promise<DbReturn> {
+    const total = r.items.reduce((s, i) => s + i.price * i.quantity, 0);
+    const row = await prisma.return.create({
+      data: {
+        saleId: r.saleId, orderId: r.orderId, reason: r.reason, total,
+        photoUrl: r.photoUrl, customerPhone: r.customerPhone ? normalizePhone(r.customerPhone) : undefined,
+        creditApplied: r.creditApplied ?? false,
+        items: { create: r.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })) },
+      },
+      include: { items: true },
+    });
+    return mapReturn(row);
+  },
+};
