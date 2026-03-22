@@ -180,11 +180,11 @@ export default function CategoriesEditorTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Layers className="h-5 w-5 text-primary" />
             Gestión de Categorías
           </h2>
@@ -192,10 +192,10 @@ export default function CategoriesEditorTab() {
             Reordena, renombra y oculta categorías del catálogo
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={bulkGenerateSeo}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-all"
+            className="inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-all"
           >
             <Sparkles className="h-3.5 w-3.5" />
             Auto-generar SEO
@@ -204,7 +204,7 @@ export default function CategoriesEditorTab() {
             onClick={handleSave}
             disabled={!hasChanges || saving}
             className={cn(
-              "inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all",
+              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all",
               saved ? "bg-emerald-500" : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
@@ -231,7 +231,7 @@ export default function CategoriesEditorTab() {
               )}
             >
               {/* Main Category Row */}
-              <div className="flex items-center gap-3 px-4 py-3">
+              <div className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3">
                 <GripVertical className="h-4 w-4 text-gray-300 shrink-0" />
                 <span className="text-lg shrink-0 w-8 text-center">{cat.emoji}</span>
                 <input
@@ -279,7 +279,7 @@ export default function CategoriesEditorTab() {
               {isSeoExpanded && (
                 <div className="border-t border-gray-100 dark:border-card-border px-4 py-4 space-y-4 bg-gray-50/50 dark:bg-background/50">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-bold text-gray-700 dark:text-foreground flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-gray-700 dark:text-foreground flex flex-wrap items-center gap-2">
                       <Globe className="h-4 w-4 text-primary" />
                       SEO Metadata
                     </h3>
@@ -361,7 +361,7 @@ export default function CategoriesEditorTab() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Slug */}
                     <div>
                       <label className="flex items-center gap-1 text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">

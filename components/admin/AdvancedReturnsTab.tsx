@@ -95,10 +95,10 @@ export default function AdvancedReturnsTab() {
   }, [records]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <RotateCcw className="h-6 w-6 text-primary" /> Devoluciones Avanzadas
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">RMA, inspección, decisiones y estadísticas por motivo</p>
@@ -123,8 +123,8 @@ export default function AdvancedReturnsTab() {
       </div>
 
       {/* Reason distribution */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
-        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2 mb-3"><AlertTriangle className="h-4 w-4 text-amber-500" /> Motivos de devolución</h3>
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
+        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><AlertTriangle className="h-4 w-4 text-amber-500" /> Motivos de devolución</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {(Object.keys(REASON_META) as ReturnReason[]).map(reason => {
             const count = records.filter(r => r.reason === reason).length;
@@ -157,18 +157,18 @@ export default function AdvancedReturnsTab() {
 
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Pedido</th><th className="px-4 py-3">Producto</th><th className="px-4 py-3">Valor</th><th className="px-4 py-3">Motivo</th><th className="px-4 py-3">Decisión</th><th className="px-4 py-3"></th></tr></thead>
+          <table className="w-full min-w-[600px] text-sm">
+            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th><th className="px-2 sm:px-4 py-2 sm:py-3">Pedido</th><th className="px-2 sm:px-4 py-2 sm:py-3">Producto</th><th className="px-2 sm:px-4 py-2 sm:py-3">Valor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Motivo</th><th className="px-2 sm:px-4 py-2 sm:py-3">Decisión</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(r => (
                 <tr key={r.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
-                  <td className="px-4 py-3 text-gray-500">{r.date}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-foreground">{r.orderRef}</td>
-                  <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{r.product}<br/><span className="text-xs text-gray-400">{r.clientName}</span></td>
-                  <td className="px-4 py-3 font-bold text-red-600">{fmt(r.totalValue)}</td>
-                  <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", REASON_META[r.reason].bg, REASON_META[r.reason].color)}>{REASON_META[r.reason].label}</span></td>
-                  <td className="px-4 py-3"><span className={cn("text-xs font-bold", DECISION_META[r.decision].color)}>{DECISION_META[r.decision].label}</span></td>
-                  <td className="px-4 py-3"><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5 inline" /></button></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{r.date}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs text-gray-700 dark:text-foreground">{r.orderRef}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{r.product}<br/><span className="text-xs text-gray-400">{r.clientName}</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-red-600">{fmt(r.totalValue)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", REASON_META[r.reason].bg, REASON_META[r.reason].color)}>{REASON_META[r.reason].label}</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold", DECISION_META[r.decision].color)}>{DECISION_META[r.decision].label}</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5 inline" /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -178,12 +178,12 @@ export default function AdvancedReturnsTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.product}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {[["Pedido", detail.orderRef], ["Fecha", detail.date], ["Cliente", detail.clientName], ["Cantidad", String(detail.quantity)], ["Precio unitario", fmt(detail.unitPrice)], ["Valor total", fmt(detail.totalValue)], ["Motivo", REASON_META[detail.reason].label], ["Decisión", DECISION_META[detail.decision].label], ["Inspección", INSPECTION_META[detail.inspection].label], ["Restockeado", detail.restocked ? "Sí" : "No"], ["Procesado por", detail.processedBy]].map(([k, v]) => (
                 <div key={k}><p className="text-xs text-gray-400">{k}</p><p className="font-bold text-gray-800 dark:text-foreground">{v}</p></div>
               ))}

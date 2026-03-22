@@ -436,7 +436,7 @@ export default function MisPedidosPage() {
       {/* ── Hero header — matches site gradient ──────────────────── */}
       <div
         className="pt-32 sm:pt-36 pb-10 sm:pb-14"
-        style={{ background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)" }}
+        style={{ background: "linear-gradient(135deg, #245c43 0%, #2d6a4f 50%, #40916c 100%)" }}
       >
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-3 mb-6">

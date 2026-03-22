@@ -78,10 +78,10 @@ export default function ABTestsTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
           <FlaskConical className="h-6 w-6 text-primary" />A/B Testing
         </h2>
-        <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition">
+        <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition">
           <Plus className="w-4 h-4" />Nuevo Test
         </button>
       </div>
@@ -91,9 +91,9 @@ export default function ABTestsTab() {
       <div className="space-y-3">
         {tests.map(t => (
           <div key={t.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-bold text-gray-900 dark:text-foreground">{t.name}</h3>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${t.active ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-gray-100 text-gray-500 dark:bg-surface dark:text-muted"}`}>
                     {t.active ? "Activo" : "Inactivo"}
@@ -108,7 +108,7 @@ export default function ABTestsTab() {
                   ))}
                 </div>
               </div>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap gap-1">
                 <button onClick={() => loadResults(t.id)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition" title="Ver resultados">
                   <BarChart3 className="w-4 h-4 text-blue-500" />
                 </button>
@@ -134,7 +134,7 @@ export default function ABTestsTab() {
                       return (
                         <div key={r.variantId} className="bg-gray-50 dark:bg-surface rounded-xl p-3">
                           <p className="font-semibold text-sm">{variant?.label || r.variantId}</p>
-                          <div className="grid grid-cols-3 gap-2 mt-2 text-center">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2 text-center">
                             <div>
                               <p className="text-lg font-bold text-blue-600">{r.impressions}</p>
                               <p className="text-[10px] text-gray-400">Impresiones</p>
@@ -162,7 +162,7 @@ export default function ABTestsTab() {
       {/* Create modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCreate(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-3 sm:p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-extrabold text-foreground">Nuevo A/B Test</h3>
               <button onClick={() => setShowCreate(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-surface"><X className="w-4 h-4" /></button>
@@ -174,7 +174,7 @@ export default function ABTestsTab() {
               <div>
                 <p className="text-sm font-bold mb-2">Variantes</p>
                 {variants.map((v, i) => (
-                  <div key={i} className="flex gap-2 mb-2">
+                  <div key={i} className="flex flex-wrap gap-2 mb-2">
                     <input value={v.id} onChange={e => { const nv = [...variants]; nv[i] = { ...v, id: e.target.value }; setVariants(nv); }} placeholder="ID" className="w-16 px-2 py-1.5 border rounded-lg text-xs bg-white dark:bg-surface dark:border-card-border" />
                     <input value={v.label} onChange={e => { const nv = [...variants]; nv[i] = { ...v, label: e.target.value }; setVariants(nv); }} placeholder="Etiqueta" className="flex-1 px-2 py-1.5 border rounded-lg text-xs bg-white dark:bg-surface dark:border-card-border" />
                     <input type="number" value={v.weight} onChange={e => { const nv = [...variants]; nv[i] = { ...v, weight: +e.target.value }; setVariants(nv); }} className="w-16 px-2 py-1.5 border rounded-lg text-xs bg-white dark:bg-surface dark:border-card-border" />
@@ -186,7 +186,7 @@ export default function ABTestsTab() {
                 <button onClick={addVariant} className="text-xs text-primary hover:underline">+ Agregar variante</button>
               </div>
             </div>
-            <button onClick={create} disabled={!name.trim()} className="w-full mt-4 px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
+            <button onClick={create} disabled={!name.trim()} className="w-full mt-4 px-2 sm:px-4 py-1.5 sm:py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
               Crear Test
             </button>
           </div>

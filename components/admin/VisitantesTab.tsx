@@ -61,7 +61,7 @@ export default function VisitantesTab() {
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -80,17 +80,17 @@ export default function VisitantesTab() {
       {/* Stats bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center gap-2 text-muted text-xs mb-1">
+          <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1">
             <Users className="h-3.5 w-3.5" /> Total visitantes
           </div>
-          <p className="text-2xl font-bold text-foreground">{total}</p>
+          <p className="text-xl sm:text-2xl font-bold text-foreground">{total}</p>
         </div>
         {(["celular", "tablet", "computadora"] as const).map((d) => (
           <div key={d} className="bg-card border border-border rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted text-xs mb-1 capitalize">
+            <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1 capitalize">
               {DEVICE_ICONS[d]} {d}
             </div>
-            <p className="text-2xl font-bold text-foreground">{deviceCounts[d] ?? 0}</p>
+            <p className="text-xl sm:text-2xl font-bold text-foreground">{deviceCounts[d] ?? 0}</p>
           </div>
         ))}
       </div>
@@ -108,13 +108,13 @@ export default function VisitantesTab() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[600px] text-sm">
               <thead>
                 <tr className="border-b border-border bg-gray-50 dark:bg-surface text-left text-xs text-muted uppercase tracking-wide">
-                  <th className="px-4 py-3">Nombre</th>
-                  <th className="px-4 py-3">Dispositivos</th>
-                  <th className="px-4 py-3 hidden md:table-cell">Navegador</th>
-                  <th className="px-4 py-3">Fecha</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3">Nombre</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3">Dispositivos</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">Navegador</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th>
                 </tr>
               </thead>
               <tbody>
@@ -123,8 +123,8 @@ export default function VisitantesTab() {
                     key={row.id}
                     className={`border-b border-border last:border-0 hover:bg-gray-50/50 dark:hover:bg-surface/50 transition-colors ${i % 2 === 0 ? "" : "bg-gray-50/30 dark:bg-surface/20"}`}
                   >
-                    <td className="px-4 py-3 font-medium text-foreground">{row.name}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-medium text-foreground">{row.name}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap gap-1">
                         {row.devices.map((d) => (
                           <span
@@ -136,14 +136,14 @@ export default function VisitantesTab() {
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">
                       <span className="text-xs text-muted truncate max-w-50 block" title={row.userAgent ?? ""}>
                         {row.userAgent
                           ? row.userAgent.replace(/ \(.*\)/, "").slice(0, 60)
                           : "—"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-muted whitespace-nowrap">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-muted whitespace-nowrap">
                       {new Date(row.createdAt).toLocaleString("es-PE", {
                         day: "2-digit",
                         month: "short",
@@ -160,11 +160,11 @@ export default function VisitantesTab() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+          <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-t border-border">
             <span className="text-xs text-muted">
               Página {page} de {totalPages} · {total} registros
             </span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => load(page - 1)}
                 disabled={page <= 1 || loading}

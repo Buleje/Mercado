@@ -68,11 +68,11 @@ export default function PriceBenchmarkTab() {
   }, [items]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <BarChart3 className="h-6 w-6 text-primary" /> Benchmark de Precios
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Comparativa de precios vs competencia local para posicionamiento estratégico</p>
@@ -99,7 +99,7 @@ export default function PriceBenchmarkTab() {
 
       {/* Alert */}
       {stats.overpriced > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-red-700 dark:text-red-400 text-sm">Productos sobre el mercado</p>
@@ -127,18 +127,18 @@ export default function PriceBenchmarkTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Nuestro</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Comp. 1</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Comp. 2</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Comp. 3</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Prom. mercado</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Diferencia</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Posición</th>
-                <th className="px-4 py-3" />
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Nuestro</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Comp. 1</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Comp. 2</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Comp. 3</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Prom. mercado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Diferencia</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Posición</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -149,22 +149,22 @@ export default function PriceBenchmarkTab() {
                 const diffColor = i.diffPct > 10 ? "text-red-500" : i.diffPct > 3 ? "text-amber-600" : i.diffPct < -3 ? "text-emerald-600" : "text-gray-400";
                 return (
                   <tr key={i.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <p className="font-semibold text-gray-800 dark:text-foreground text-xs">{i.product}</p>
                       <p className="text-[10px] text-gray-400">{i.category}</p>
                     </td>
-                    <td className="px-4 py-3 text-right font-bold text-xs text-gray-800 dark:text-foreground">{fmt(i.ownPrice)}</td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-500">{i.competitor1.price != null ? fmt(i.competitor1.price) : "—"}</td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-500">{i.competitor2.price != null ? fmt(i.competitor2.price) : "—"}</td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-500">{i.competitor3.price != null ? fmt(i.competitor3.price) : "—"}</td>
-                    <td className="px-4 py-3 text-right text-xs font-semibold text-gray-600 dark:text-muted">{fmt(i.marketAvg)}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-xs text-gray-800 dark:text-foreground">{fmt(i.ownPrice)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-gray-500">{i.competitor1.price != null ? fmt(i.competitor1.price) : "—"}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-gray-500">{i.competitor2.price != null ? fmt(i.competitor2.price) : "—"}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-gray-500">{i.competitor3.price != null ? fmt(i.competitor3.price) : "—"}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-600 dark:text-muted">{fmt(i.marketAvg)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                       <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", diffColor)}>
                         <DiffIcon className="h-3 w-3" />{pct(i.diffPct)}
                       </span>
                     </td>
-                    <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", pos.bg, pos.color)}>{pos.label}</span></td>
-                    <td className="px-4 py-3"><button onClick={() => setDetail(i)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", pos.bg, pos.color)}>{pos.label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(i)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 );
               })}
@@ -174,8 +174,8 @@ export default function PriceBenchmarkTab() {
       </div>
 
       {/* Price distribution */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-3">
-        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3">
+        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
           <TrendingUp className="h-4 w-4 text-primary" /> Distribución de posicionamiento
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -195,7 +195,7 @@ export default function PriceBenchmarkTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">{detail.product}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

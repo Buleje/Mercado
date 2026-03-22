@@ -23,6 +23,22 @@ const CreateSchema = z.object({
 
 const UpdateSchema = CreateSchema.partial();
 
+/** Update Product.expiresAt to the earliest batch expiry date (fire-and-forget) */
+async function propagateExpiresAt(productId: number | null | undefined) {
+  if (!productId) return;
+  const batches = await prisma.batch.findMany({
+    where: { productId, quantity: { gt: 0 } },
+    select: { expiryDate: true },
+  });
+  const earliest = batches.length > 0
+    ? new Date(Math.min(...batches.map(b => b.expiryDate.getTime())))
+    : null;
+  await prisma.product.update({
+    where: { id: productId },
+    data: { expiresAt: earliest },
+  });
+}
+
 function mapBatch(b: {
   id: string; tenantId: string; lote: string; productName: string; productId: number | null;
   productCategory: string; quantity: number; unit: string; supplierId: string | null;
@@ -83,6 +99,8 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  propagateExpiresAt(parsed.data.productId).catch(() => {});
+
   return NextResponse.json(mapBatch(row), { status: 201 });
 }
 
@@ -113,6 +131,8 @@ export async function PATCH(req: NextRequest) {
     },
   });
 
+  propagateExpiresAt(existing.productId).catch(() => {});
+
   return NextResponse.json(mapBatch(row));
 }
 
@@ -129,7 +149,10 @@ export async function DELETE(req: NextRequest) {
   const existing = await prisma.batch.findFirst({ where: { id, tenantId: auth.tenantId } });
   if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
+  const productId = existing.productId;
   await prisma.batch.delete({ where: { id } });
+
+  propagateExpiresAt(productId).catch(() => {});
 
   return NextResponse.json({ ok: true });
 }

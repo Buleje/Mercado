@@ -141,16 +141,16 @@ export default function HRTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Users className="h-6 w-6 text-primary" /> Recursos Humanos
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de empleados, asistencia y recursos del personal</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => exportToCSV(employees.map(e => ({ nombre: e.name, dni: e.dni, cargo: e.role, departamento: e.department, telefono: e.phone, email: e.email, ingreso: e.startDate, antiguedad: yearsOf(e.startDate), salario: e.baseSalary, estado: e.status })), "empleados")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
@@ -179,9 +179,9 @@ export default function HRTab() {
 
       {/* New employee form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Registrar empleado</h3>
+            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Registrar empleado</h3>
             <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -208,17 +208,17 @@ export default function HRTab() {
               <input type="number" value={form.baseSalary} onChange={e => setForm(p => ({ ...p, baseSalary: parseFloat(e.target.value) || 0 }))} min="1025" step="25" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleAddEmployee} className="px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar</button>
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={handleAddEmployee} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar</button>
           </div>
         </div>
       )}
 
       {/* View tabs */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {(["empleados", "asistencia"] as const).map(v => (
-          <button key={v} onClick={() => setView(v)} className={cn("px-4 py-2 text-sm font-semibold rounded-xl capitalize transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl capitalize transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             {v.charAt(0).toUpperCase() + v.slice(1)}
           </button>
         ))}
@@ -241,21 +241,21 @@ export default function HRTab() {
               {departments.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
             {filteredEmployees.map(e => {
               const sm = STATUS_EMP[e.status];
               return (
-                <div key={e.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex items-start gap-4">
+                <div key={e.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex flex-wrap items-start gap-2 sm:gap-4">
                   <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center text-white font-extrabold text-sm shrink-0", e.color)}>{e.photoInitials}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-1">
+                    <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
                       <div>
                         <p className="font-bold text-gray-900 dark:text-foreground text-sm">{e.name}</p>
                         <p className="text-xs text-gray-500 dark:text-muted">{e.role} · {e.department}</p>
                       </div>
                       <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full shrink-0", sm.bg, sm.color)}>{sm.label}</span>
                     </div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-muted mt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-muted mt-2">
                       <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" /> DNI {e.dni}</span>
                       <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {yearsOf(e.startDate)}</span>
                       {e.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {e.phone}</span>}
@@ -273,18 +273,18 @@ export default function HRTab() {
       {/* Attendance view */}
       {view === "asistencia" && (
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <label className="text-sm font-semibold text-gray-700 dark:text-foreground">Fecha:</label>
             <input type="date" value={attDate} onChange={e => setAttDate(e.target.value)} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
           </div>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-y-hidden overflow-x-auto">
+            <table className="w-full min-w-[600px] text-sm">
               <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Empleado</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Cargo</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Estado de hoy</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Cambiar</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Empleado</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Cargo</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Estado de hoy</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Cambiar</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -294,20 +294,20 @@ export default function HRTab() {
                   const Icon = meta?.icon ?? Clock;
                   return (
                     <tr key={emp.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        <div className="flex flex-wrap items-center gap-2">
                           <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0", emp.color)}>{emp.photoInitials}</div>
                           <span className="font-semibold text-gray-800 dark:text-foreground">{emp.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted">{emp.role}</td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{emp.role}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                         {meta
                           ? <span className={cn("inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold", meta.bg, meta.color)}><Icon className="h-3 w-3" />{meta.label}</span>
                           : <span className="text-xs text-gray-400 dark:text-muted">Sin registrar</span>
                         }
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <div className="flex gap-1 flex-wrap">
                           {(Object.keys(STATUS_ATT) as AttendanceStatus[]).map(s => {
                             const m = STATUS_ATT[s];

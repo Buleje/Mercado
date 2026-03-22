@@ -7,6 +7,7 @@ import { verifySessionToken, SESSION } from "@/lib/session";
  * Set ROOT_DOMAIN=bodegasaas.com in production .env
  */
 const ROOT_DOMAIN = (process.env.ROOT_DOMAIN ?? "localhost").split(":")[0];
+const CUSTOM_DOMAIN_PREFIX = "custom--";
 
 /** Resolve tenantId from the incoming Host header. */
 function resolveTenantFromHost(req: NextRequest): string {
@@ -17,8 +18,10 @@ function resolveTenantFromHost(req: NextRequest): string {
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
     hostname.endsWith(".localhost");
+  const isVercelHost = hostname === "vercel.app" || hostname.endsWith(".vercel.app");
 
   if (isLocalhost) return "main";
+  if (isVercelHost) return "main";
 
   if (
     hostname.endsWith(`.${ROOT_DOMAIN}`) &&
@@ -29,7 +32,7 @@ function resolveTenantFromHost(req: NextRequest): string {
   }
 
   if (hostname !== ROOT_DOMAIN && hostname !== `www.${ROOT_DOMAIN}`) {
-    return `custom:${hostname}`;
+    return `${CUSTOM_DOMAIN_PREFIX}${hostname}`;
   }
 
   return "main";

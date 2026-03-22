@@ -1,5 +1,5 @@
-const CACHE_NAME = "bsm-v6";
-const CATALOG_CACHE = "bsm-catalog-v1";
+const CACHE_NAME = "bsm-v8";
+const CATALOG_CACHE = "bsm-catalog-v2";
 const STATIC_URLS = [
   "/",
   "/tienda",
@@ -12,9 +12,9 @@ const STATIC_URLS = [
   "/manifest.webmanifest",
   "/offline.html",
 ];
-const API_CACHE = "bsm-api-v3";
-const IMG_CACHE = "bsm-img-v3";
-const ASSET_CACHE = "bsm-assets-v1";
+const API_CACHE = "bsm-api-v4";
+const IMG_CACHE = "bsm-img-v4";
+const ASSET_CACHE = "bsm-assets-v3";
 
 // Max cached items per cache to prevent unbounded growth
 const IMG_CACHE_LIMIT = 200;
@@ -49,12 +49,14 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
 
+  // En localhost (desarrollo) NO interceptar nada para evitar módulos HMR cacheados
+  if (url.hostname === "localhost") return;
+
   // Ignorar extensiones del navegador
   if (
     url.protocol === "chrome-extension:" ||
     url.protocol === "moz-extension:" ||
-    url.protocol === "extension:" ||
-    url.hostname === "localhost" && url.port !== "3000"
+    url.protocol === "extension:"
   ) return;
 
   // Cache product images (Unsplash, OpenFoodFacts)

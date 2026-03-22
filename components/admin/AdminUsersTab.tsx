@@ -189,16 +189,16 @@ export default function AdminUsersTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
         <div>
           <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Usuarios del Panel</h2>
           <p className="text-sm text-gray-500 dark:text-muted">Gestiona accesos, roles y contraseñas</p>
         </div>
         <button
           onClick={openCreate}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 shadow-sm transition-colors"
+          className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 shadow-sm transition-colors"
         >
           <Plus className="h-4 w-4" /> Nuevo usuario
         </button>
@@ -206,22 +206,22 @@ export default function AdminUsersTab() {
 
       {/* Success toast */}
       {successMsg && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-semibold border border-emerald-200 dark:border-emerald-800">
+        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-semibold border border-emerald-200 dark:border-emerald-800">
           <Check className="h-4 w-4 shrink-0" /> {successMsg}
         </div>
       )}
 
       {/* Global error */}
       {error && !formMode && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-semibold border border-red-200 dark:border-red-800">
+        <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm font-semibold border border-red-200 dark:border-red-800">
           <X className="h-4 w-4 shrink-0" /> {error}
         </div>
       )}
 
       {/* Users list */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-y-hidden overflow-x-auto">
         {loading ? (
-          <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted gap-2">
+          <div className="h-40 flex flex-wrap items-center justify-center text-gray-400 dark:text-muted gap-2">
             <Loader2 className="h-5 w-5 animate-spin" /> Cargando…
           </div>
         ) : users.length === 0 ? (
@@ -230,7 +230,8 @@ export default function AdminUsersTab() {
             <p className="text-sm">No hay usuarios registrados</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-2 px-2">
+          <table className="w-full min-w-[600px] text-sm">
             <thead>
               <tr className="border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface">
                 <th className="text-left px-5 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Usuario</th>
@@ -246,7 +247,7 @@ export default function AdminUsersTab() {
                 return (
                   <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                           <span className="text-primary font-extrabold text-sm">{u.name.charAt(0).toUpperCase()}</span>
                         </div>
@@ -269,7 +270,7 @@ export default function AdminUsersTab() {
                       </span>
                     </td>
                     <td className="px-5 py-4">
-                      <div className="flex items-center gap-2 justify-end">
+                      <div className="flex flex-wrap items-center gap-2 justify-end">
                         <button
                           onClick={() => openEditInfo(u)}
                           title="Editar usuario"
@@ -298,6 +299,7 @@ export default function AdminUsersTab() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -405,8 +407,8 @@ export default function AdminUsersTab() {
       {/* ── Delete confirmation ────────────────────────────────────────────── */}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setConfirmDeleteId(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
                 <Trash2 className="h-5 w-5 text-red-500" />
               </div>
@@ -416,7 +418,7 @@ export default function AdminUsersTab() {
               </div>
             </div>
             {error && <p className="text-sm text-red-600 dark:text-red-400 mb-3">{error}</p>}
-            <div className="flex gap-3 mt-2">
+            <div className="flex flex-wrap gap-3 mt-2">
               <button
                 onClick={() => { setConfirmDeleteId(null); setError(null); }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors"
@@ -446,7 +448,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div>
       <label className="block text-xs font-bold text-gray-600 dark:text-muted mb-1.5 uppercase tracking-wide">{label}</label>
-      <div className="flex items-center gap-2">{children}</div>
+      <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
   );
 }
@@ -467,7 +469,7 @@ function RoleSelect({ value, onChange }: { value: string; onChange: (v: string) 
 function FormError({ msg }: { msg: string | null }) {
   if (!msg) return null;
   return (
-    <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm border border-red-100 dark:border-red-800">
+    <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-sm border border-red-100 dark:border-red-800">
       <X className="h-4 w-4 shrink-0" /> {msg}
     </div>
   );
@@ -475,9 +477,9 @@ function FormError({ msg }: { msg: string | null }) {
 
 function FormFooter({ onCancel, saving, label }: { onCancel: () => void; saving: boolean; label: string }) {
   return (
-    <div className="flex justify-end gap-3 pt-2">
+    <div className="flex flex-wrap justify-end gap-3 pt-2">
       <button type="button" onClick={onCancel}
-        className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+        className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">
         Cancelar
       </button>
       <button type="submit" disabled={saving}
@@ -493,8 +495,8 @@ function ModalWrapper({ title, onClose, children }: { title: string; onClose: ()
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
-          <h3 className="font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+          <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <UserCog className="h-5 w-5 text-primary" />
             {title}
           </h3>
@@ -502,7 +504,7 @@ function ModalWrapper({ title, onClose, children }: { title: string; onClose: ()
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="px-6 py-5">{children}</div>
+        <div className="px-3 sm:px-6 py-5">{children}</div>
       </div>
     </div>
   );

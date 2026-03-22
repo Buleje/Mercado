@@ -5,19 +5,10 @@ import {
   Package, LayoutGrid, List,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Product } from "@/types/erp";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Product {
-  id: number;
-  name: string;
-  category: string;
-  price: number;
-  unit: string;
-  barcode?: string | null;
-  stock?: number | null;
-  active: boolean;
-}
 
 type LabelSize = "pequena" | "mediana" | "grande";
 
@@ -181,11 +172,11 @@ export default function EtiquetasTab() {
   const allFiltered = filtered.length > 0 && selected.size === filtered.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Tag className="h-6 w-6 text-primary" /> Impresión de Etiquetas
           </h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Selecciona productos y genera etiquetas de precio para imprimir</p>
@@ -193,7 +184,7 @@ export default function EtiquetasTab() {
         <button
           onClick={handlePrint}
           disabled={selected.size === 0}
-          className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex flex-wrap items-center gap-2"
         >
           <Printer className="h-4 w-4" />
           Imprimir {selected.size > 0 ? `(${selected.size})` : "etiquetas"}
@@ -203,8 +194,8 @@ export default function EtiquetasTab() {
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
         {/* Left: Config panel */}
         <div className="xl:col-span-1 space-y-4">
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
-            <h3 className="font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2 text-sm">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
+            <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 text-sm">
               <Tag className="h-4 w-4 text-primary" /> Configuración
             </h3>
 
@@ -223,7 +214,7 @@ export default function EtiquetasTab() {
             {/* Copies */}
             <div>
               <label className="block text-xs font-bold text-gray-700 dark:text-foreground mb-2">Copias por producto</label>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <button onClick={() => setConfig(c => ({ ...c, copies: Math.max(1, c.copies - 1) }))} className="w-8 h-8 rounded-xl border border-gray-300 dark:border-card-border text-gray-700 dark:text-foreground font-bold flex items-center justify-center hover:bg-gray-50 dark:hover:bg-accent">−</button>
                 <span className="font-extrabold text-gray-900 dark:text-foreground w-6 text-center">{config.copies}</span>
                 <button onClick={() => setConfig(c => ({ ...c, copies: Math.min(10, c.copies + 1) }))} className="w-8 h-8 rounded-xl border border-gray-300 dark:border-card-border text-gray-700 dark:text-foreground font-bold flex items-center justify-center hover:bg-gray-50 dark:hover:bg-accent">+</button>
@@ -240,7 +231,7 @@ export default function EtiquetasTab() {
                   { key: "showUnit", label: "Unidad de medida" },
                   { key: "showStock", label: "Stock actual" },
                 ] as { key: keyof LabelConfig; label: string }[]).map(opt => (
-                  <label key={opt.key} className="flex items-center gap-2.5 cursor-pointer">
+                  <label key={opt.key} className="flex flex-wrap items-center gap-2.5 cursor-pointer">
                     <button onClick={() => setConfig(c => ({ ...c, [opt.key]: !c[opt.key] }))} className={cn("w-9 h-5 rounded-full transition-colors flex items-center", config[opt.key] ? "bg-primary" : "bg-gray-300 dark:bg-gray-600")}>
                       <span className={cn("block w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5", config[opt.key] ? "translate-x-4" : "translate-x-0")} />
                     </button>
@@ -286,15 +277,15 @@ export default function EtiquetasTab() {
             <select value={category} onChange={e => setCategory(e.target.value)} className="border border-gray-300 dark:border-card-border rounded-xl px-3 py-2.5 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground">
               {CATEGORIES.map(c => <option key={c}>{c}</option>)}
             </select>
-            <div className="flex gap-1 border border-gray-300 dark:border-card-border rounded-xl p-1">
+            <div className="flex flex-wrap gap-1 border border-gray-300 dark:border-card-border rounded-xl p-1">
               <button onClick={() => setViewMode("grid")} className={cn("p-1.5 rounded-lg", viewMode === "grid" ? "bg-primary text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-foreground")}><LayoutGrid className="h-4 w-4" /></button>
               <button onClick={() => setViewMode("list")} className={cn("p-1.5 rounded-lg", viewMode === "list" ? "bg-primary text-white" : "text-gray-500 hover:text-gray-700 dark:hover:text-foreground")}><List className="h-4 w-4" /></button>
             </div>
           </div>
 
           {/* Select all bar */}
-          <div className="flex items-center justify-between bg-gray-50 dark:bg-surface rounded-xl px-4 py-2.5">
-            <label className="flex items-center gap-2.5 cursor-pointer">
+          <div className="flex items-center justify-between bg-gray-50 dark:bg-surface rounded-xl px-2 sm:px-4 py-1.5 sm:py-2.5">
+            <label className="flex flex-wrap items-center gap-2.5 cursor-pointer">
               <button onClick={toggleAll} className="text-gray-600 dark:text-foreground">
                 {allFiltered ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
               </button>
@@ -323,7 +314,7 @@ export default function EtiquetasTab() {
                 const sel = selected.has(p.id);
                 return (
                   <button key={p.id} onClick={() => toggleSelect(p.id)} className={cn("text-left p-3 rounded-xl border-2 transition-all", sel ? "border-primary bg-primary/5 dark:bg-primary/10" : "border-gray-200 dark:border-card-border bg-white dark:bg-card hover:border-gray-400 dark:hover:border-gray-500")}>
-                    <div className="flex items-start justify-between gap-1 mb-2">
+                    <div className="flex flex-wrap items-start justify-between gap-1 mb-2">
                       <span className="text-[10px] text-gray-500 dark:text-muted uppercase font-bold">{p.category}</span>
                       {sel ? <CheckSquare className="h-4 w-4 text-primary shrink-0" /> : <Square className="h-4 w-4 text-gray-300 dark:text-gray-600 shrink-0" />}
                     </div>
@@ -343,7 +334,7 @@ export default function EtiquetasTab() {
               {filtered.map(p => {
                 const sel = selected.has(p.id);
                 return (
-                  <div key={p.id} onClick={() => toggleSelect(p.id)} className={cn("flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors", sel ? "bg-primary/5 dark:bg-primary/10" : "hover:bg-gray-50 dark:hover:bg-accent/50")}>
+                  <div key={p.id} onClick={() => toggleSelect(p.id)} className={cn("flex items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 cursor-pointer transition-colors", sel ? "bg-primary/5 dark:bg-primary/10" : "hover:bg-gray-50 dark:hover:bg-accent/50")}>
                     <button className="shrink-0">
                       {sel ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4 text-gray-300 dark:text-gray-600" />}
                     </button>
@@ -370,7 +361,7 @@ export default function EtiquetasTab() {
 
           {/* Print tip */}
           {selected.size > 0 && (
-            <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-900/30 rounded-xl p-4 flex items-start gap-3">
+            <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-900/30 rounded-xl p-4 flex flex-wrap items-start gap-3">
               <Printer className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <p className="text-xs text-emerald-700 dark:text-emerald-400">
                 Se generarán <strong>{selected.size * config.copies} etiquetas</strong> en formato A4 listas para imprimir. Usa papel adhesivo A4 para mejores resultados.

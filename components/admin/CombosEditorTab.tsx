@@ -110,11 +110,11 @@ export default function CombosEditorTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Package className="h-5 w-5 text-primary" />
             Editor de Combos
           </h2>
@@ -122,7 +122,7 @@ export default function CombosEditorTab() {
             {combos.length} combos · {enabledCount} activos
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={addCombo} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">
             <Plus className="h-3.5 w-3.5" /> Nuevo combo
           </button>
@@ -130,7 +130,7 @@ export default function CombosEditorTab() {
             onClick={handleSave}
             disabled={!hasChanges || saving}
             className={cn(
-              "inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all",
+              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all",
               saved ? "bg-emerald-500" : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
             )}
           >
@@ -144,8 +144,8 @@ export default function CombosEditorTab() {
       <div className="space-y-2">
         {combos.map((combo) => (
           <div key={combo.id} className={cn("bg-white dark:bg-card border rounded-2xl overflow-hidden shadow-sm transition-all", combo.enabled ? "border-gray-200 dark:border-card-border" : "border-gray-100 dark:border-card-border/50 opacity-60")}>
-            <button onClick={() => setExpanded(expanded === combo.id ? null : combo.id)} className="w-full flex items-center gap-3 px-5 py-4 text-left">
-              <span className="text-2xl">{combo.emoji}</span>
+            <button onClick={() => setExpanded(expanded === combo.id ? null : combo.id)} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left">
+              <span className="text-xl sm:text-2xl">{combo.emoji}</span>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-gray-900 dark:text-foreground">{combo.name}</p>
                 <p className="text-xs text-gray-500 dark:text-muted">{combo.categories.length} categorías · {combo.discount}% dto · {combo.size} productos</p>
@@ -172,7 +172,7 @@ export default function CombosEditorTab() {
                   <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Descripción</label>
                   <textarea value={combo.description} onChange={(e) => updateCombo(combo.id, { description: e.target.value })} rows={2} className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm resize-none" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 dark:text-muted mb-1">Productos por combo</label>
                     <input type="number" min={2} max={6} value={combo.size} onChange={(e) => updateCombo(combo.id, { size: parseInt(e.target.value) || 3 })} className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm" />
@@ -202,7 +202,7 @@ export default function CombosEditorTab() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-2">
-                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-foreground">
+                  <label className="flex flex-wrap items-center gap-2 text-sm font-medium text-gray-700 dark:text-foreground">
                     <button
                       type="button"
                       onClick={() => updateCombo(combo.id, { enabled: !combo.enabled })}

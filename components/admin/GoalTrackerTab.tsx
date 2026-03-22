@@ -25,10 +25,10 @@ export default function GoalTrackerTab() {
   const inProgress = goals.filter(g => g.status === "en-progreso").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Trophy className="h-6 w-6 text-primary" /> Tablero de Metas</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Trophy className="h-6 w-6 text-primary" /> Tablero de Metas</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Seguimiento visual de objetivos del negocio</p>
         </div>
         <button onClick={() => exportToCSV(goals.map(g => ({ titulo: g.title, actual: g.currentValue, meta: g.targetValue, unidad: g.unit, estado: g.status, prioridad: g.priority, fecha_limite: fmtDate(g.deadline) })), "metas")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10"><Download className="h-3.5 w-3.5" /> CSV</button>
@@ -41,7 +41,7 @@ export default function GoalTrackerTab() {
           { label: "Completadas", value: completed, color: "text-emerald-500", icon: Trophy },
           { label: "Tasa de éxito", value: `${goals.length > 0 ? Math.round((completed / goals.length) * 100) : 0}%`, color: "text-violet-500", icon: Star },
         ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 flex items-center gap-3">
+          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 flex flex-wrap items-center gap-3">
             <k.icon className={cn("h-5 w-5", k.color)} />
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
@@ -59,8 +59,8 @@ export default function GoalTrackerTab() {
             : Math.min((g.currentValue / g.targetValue) * 100, 100);
 
           return (
-            <div key={g.id} className={cn("bg-white dark:bg-card rounded-2xl border p-5", g.status === "completado" ? "border-emerald-200 dark:border-emerald-900/30" : "border-gray-200 dark:border-card-border")}>
-              <div className="flex items-start justify-between gap-3 mb-3">
+            <div key={g.id} className={cn("bg-white dark:bg-card rounded-2xl border p-3 sm:p-5", g.status === "completado" ? "border-emerald-200 dark:border-emerald-900/30" : "border-gray-200 dark:border-card-border")}>
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <h3 className="font-extrabold text-gray-900 dark:text-foreground">{g.title}</h3>

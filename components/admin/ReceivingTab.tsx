@@ -81,10 +81,10 @@ export default function ReceivingTab() {
   }, [search, filterStatus]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <PackageCheck className="h-6 w-6 text-primary" /> Recepción & Verificación
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Control de calidad en recepción de mercadería</p>
@@ -124,21 +124,21 @@ export default function ReceivingTab() {
 
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">Ref</th><th className="px-4 py-3">OC</th><th className="px-4 py-3">Proveedor</th><th className="px-4 py-3">Programada</th><th className="px-4 py-3">Recibida</th><th className="px-4 py-3">Inspector</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3">📷</th><th className="px-4 py-3">NC</th><th className="px-4 py-3"></th></tr></thead>
+          <table className="w-full min-w-[600px] text-sm">
+            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Ref</th><th className="px-2 sm:px-4 py-2 sm:py-3">OC</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Programada</th><th className="px-2 sm:px-4 py-2 sm:py-3">Recibida</th><th className="px-2 sm:px-4 py-2 sm:py-3">Inspector</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3">📷</th><th className="px-2 sm:px-4 py-2 sm:py-3">NC</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(r => (
                 <tr key={r.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
-                  <td className="px-4 py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{r.ref}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">{r.orderRef}</td>
-                  <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{r.supplier}</td>
-                  <td className="px-4 py-3 text-gray-500">{r.scheduledDate}</td>
-                  <td className="px-4 py-3 text-gray-500">{r.receivedDate || "-"}</td>
-                  <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted">{r.inspector}</td>
-                  <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[r.status].bg, STATUS_MAP[r.status].color)}>{STATUS_MAP[r.status].label}</span></td>
-                  <td className="px-4 py-3 text-center text-gray-500">{r.photos > 0 && <span className="flex items-center gap-0.5 text-xs"><Camera className="h-3 w-3" />{r.photos}</span>}</td>
-                  <td className="px-4 py-3">{r.nonConformities > 0 && <span className="bg-red-100 dark:bg-red-900/30 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{r.nonConformities}</span>}</td>
-                  <td className="px-4 py-3"><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{r.ref}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs text-gray-500">{r.orderRef}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{r.supplier}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{r.scheduledDate}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{r.receivedDate || "-"}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{r.inspector}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[r.status].bg, STATUS_MAP[r.status].color)}>{STATUS_MAP[r.status].label}</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-gray-500">{r.photos > 0 && <span className="flex items-center gap-0.5 text-xs"><Camera className="h-3 w-3" />{r.photos}</span>}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3">{r.nonConformities > 0 && <span className="bg-red-100 dark:bg-red-900/30 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{r.nonConformities}</span>}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -149,7 +149,7 @@ export default function ReceivingTab() {
       {/* Detail Modal — Item Inspection */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-2xl space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-2xl space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.ref}</h3>
@@ -159,7 +159,7 @@ export default function ReceivingTab() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[600px] text-sm">
                 <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-3 py-2">Producto</th><th className="px-3 py-2">Esperado</th><th className="px-3 py-2">Recibido</th><th className="px-3 py-2">Condición</th><th className="px-3 py-2">Notas</th></tr></thead>
                 <tbody>
                   {detail.items.map((it, i) => (
@@ -175,7 +175,7 @@ export default function ReceivingTab() {
               </table>
             </div>
 
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-500">
               <span className="flex items-center gap-1"><Camera className="h-4 w-4" /> {detail.photos} fotos</span>
               {detail.nonConformities > 0 && <span className="flex items-center gap-1 text-red-500"><XCircle className="h-4 w-4" /> {detail.nonConformities} no conformidades</span>}
             </div>

@@ -152,17 +152,17 @@ export default function AccountsReceivableTab() {
   const countOverdue = records.filter(r => r.status === "vencido").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <CreditCard className="h-6 w-6 text-primary" />
             Cuentas por Cobrar
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Créditos otorgados a clientes y gestión de cobranza</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={load} className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <RefreshCw className="h-4 w-4 text-gray-500 dark:text-muted" />
           </button>
@@ -176,7 +176,7 @@ export default function AccountsReceivableTab() {
       </div>
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
           { label: "Total por cobrar", value: fmt(totalPending), icon: CreditCard, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
           { label: "Cuentas vencidas", value: fmt(totalOverdue), icon: AlertTriangle, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
@@ -193,7 +193,7 @@ export default function AccountsReceivableTab() {
 
       {/* New form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Nueva cuenta por cobrar</h3>
             <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -213,9 +213,9 @@ export default function AccountsReceivableTab() {
               </div>
             ))}
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">Cancelar</button>
-            <button onClick={handleCreate} disabled={saving} className="px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60">
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">Cancelar</button>
+            <button onClick={handleCreate} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60">
               {saving ? "Guardando..." : "Crear"}
             </button>
           </div>
@@ -240,7 +240,7 @@ export default function AccountsReceivableTab() {
       {loading ? (
         <div className="flex items-center justify-center py-20"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4">
           {/* List */}
           <div className="lg:col-span-2 space-y-3">
             {filtered.length === 0 && <p className="text-center py-10 text-gray-400 dark:text-muted text-sm">Sin registros encontrados.</p>}
@@ -253,7 +253,7 @@ export default function AccountsReceivableTab() {
                   onClick={() => setSelected(ar)}
                   className={cn("bg-white dark:bg-card border rounded-2xl p-4 cursor-pointer hover:border-primary/40 transition-all", selected?.id === ar.id ? "border-primary shadow-sm" : "border-gray-200 dark:border-card-border")}
                 >
-                  <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
                     <div>
                       <p className="font-bold text-gray-900 dark:text-foreground text-sm">{ar.customerName}</p>
                       <p className="text-xs text-gray-500 dark:text-muted">{ar.description}</p>
@@ -280,7 +280,7 @@ export default function AccountsReceivableTab() {
           {/* Detail panel */}
           <div>
             {selected ? (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4 sticky top-20">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4 sticky top-20">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">{selected.customerName}</h3>
                   <button onClick={() => setSelected(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -299,7 +299,7 @@ export default function AccountsReceivableTab() {
                 {selected.status !== "pagado" && (
                   <div className="border-t border-gray-100 dark:border-card-border pt-4 space-y-3">
                     <p className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wide">Registrar pago</p>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div>
                         <label className="text-xs text-gray-500 dark:text-muted block mb-1">Monto</label>
                         <input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />

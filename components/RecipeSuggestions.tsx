@@ -38,7 +38,7 @@ const RECIPES: Recipe[] = [
     emoji: "🥗",
     time: "10 min",
     servings: 2,
-    gradient: "linear-gradient(135deg, #6366f1, #4f46e5)",
+    gradient: "linear-gradient(135deg, #2d6a4f, #245c43)",
     ingredients: ["lechuga", "tomate", "palta", "limón", "aceite"],
   },
   {

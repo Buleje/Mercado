@@ -43,16 +43,16 @@ export default function AutoSegmentsTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Users className="h-6 w-6 text-primary" /> Segmentación Automática</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Users className="h-6 w-6 text-primary" /> Segmentación Automática</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Crea segmentos dinámicos basados en reglas</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={openCreate} className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Plus className="h-4 w-4" /> Nuevo segmento</button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button onClick={openCreate} className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Plus className="h-4 w-4" /> Nuevo segmento</button>
           {segments.length > 0 && (
-            <button onClick={() => setSegments([])} className="flex items-center gap-2 px-4 py-2 rounded-xl border-2 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-bold hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+            <button onClick={() => setSegments([])} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl border-2 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-bold hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
               <Trash2 className="h-4 w-4" /> Borrar todo
             </button>
           )}
@@ -68,16 +68,16 @@ export default function AutoSegmentsTab() {
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
-            <p className={cn("text-2xl font-extrabold", k.color)}>{k.value}</p>
+            <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
         {segments.map(sg => (
-          <div key={sg.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2">
+          <div key={sg.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className={cn("h-3 w-3 rounded-full", sg.color)} />
                 <h3 className="font-bold text-gray-900 dark:text-foreground">{sg.name}</h3>
               </div>
@@ -88,7 +88,7 @@ export default function AutoSegmentsTab() {
             </div>
             <p className="text-xs text-gray-500 dark:text-muted mt-1 mb-3">{sg.description}</p>
 
-            <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-3">
               <div className="text-center">
                 <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{sg.customerCount}</p>
                 <p className="text-[10px] text-gray-400">Clientes</p>
@@ -119,7 +119,7 @@ export default function AutoSegmentsTab() {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 max-w-lg w-full mx-4 border border-gray-200 dark:border-card-border max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-3 sm:p-6 max-w-lg w-full mx-4 border border-gray-200 dark:border-card-border max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-4">{editSegment ? "Editar segmento" : "Nuevo segmento"}</h3>
             <div className="space-y-3">
               <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
@@ -127,7 +127,7 @@ export default function AutoSegmentsTab() {
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted mb-2 block">Reglas</label>
                 {formRules.map((r, i) => (
-                  <div key={i} className="flex gap-2 mb-2">
+                  <div key={i} className="flex flex-wrap gap-2 mb-2">
                     <select value={r.field} onChange={e => { const nr = [...formRules]; nr[i].field = e.target.value; setFormRules(nr); }} className="flex-1 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs">{FIELDS.map(f => <option key={f}>{f}</option>)}</select>
                     <select value={r.operator} onChange={e => { const nr = [...formRules]; nr[i].operator = e.target.value; setFormRules(nr); }} className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs">{OPERATORS.map(o => <option key={o}>{o}</option>)}</select>
                     <input value={r.value} onChange={e => { const nr = [...formRules]; nr[i].value = e.target.value; setFormRules(nr); }} className="flex-1 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs" placeholder="valor" />
@@ -137,9 +137,9 @@ export default function AutoSegmentsTab() {
                 <button onClick={() => setFormRules([...formRules, { field: FIELDS[0], operator: ">", value: "" }])} className="text-xs text-primary font-bold">+ Agregar regla</button>
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
-              <button onClick={save} className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
+            <div className="flex flex-wrap justify-end gap-2 mt-5">
+              <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={save} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
             </div>
           </div>
         </div>

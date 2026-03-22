@@ -91,13 +91,13 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border z-50 overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-card-border">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border">
+              <div className="flex flex-wrap items-center gap-2">
                 <Bell className="h-4 w-4 text-primary" />
                 <span className="text-sm font-extrabold text-gray-900 dark:text-foreground">Alertas</span>
                 {unread > 0 && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold bg-primary text-white">{unread}</span>}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {unread > 0 && (
                   <button onClick={markAllRead} className="text-[10px] font-semibold text-primary hover:underline">
                     Marcar todo leído
@@ -125,7 +125,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
                       key={alert.id}
                       onClick={() => handleClick(alert)}
                       className={cn(
-                        "w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0",
+                        "w-full flex items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0",
                         !alert.read && "bg-primary/[0.03]"
                       )}
                     >
@@ -133,7 +133,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
                         <Icon className={cn("h-4 w-4", meta.color)} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <p className={cn("text-xs font-bold text-gray-900 dark:text-foreground leading-tight", !alert.read && "font-extrabold")}>{alert.title}</p>
                           {alert.urgent && <span className="px-1 py-0.5 rounded text-[9px] font-extrabold bg-red-500 text-white shrink-0">URGENTE</span>}
                         </div>
@@ -147,7 +147,7 @@ export default function AlertCenter({ pendingOrders, lowStock, todayRevenue, ove
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-2.5 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border">
+            <div className="px-2 sm:px-4 py-1.5 sm:py-2.5 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border">
               <button
                 onClick={() => { onNavigate("actividad"); setOpen(false); }}
                 className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"

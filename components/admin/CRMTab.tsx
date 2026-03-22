@@ -86,10 +86,10 @@ export default function CRMTab() {
   }, [contacts]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Users className="h-6 w-6 text-primary" /> CRM Avanzado
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Pipeline de ventas, scoring y seguimiento 360° de clientes</p>
@@ -115,7 +115,7 @@ export default function CRMTab() {
 
       {/* Pipeline Kanban */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> Pipeline de ventas</h3>
+        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> Pipeline de ventas</h3>
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           {pipeline.map(p => {
             const meta = STAGE_META[p.stage];
@@ -158,7 +158,7 @@ export default function CRMTab() {
           const stg = STAGE_META[c.stage];
           return (
             <div key={c.id} onClick={() => setDetail(c)} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-2 hover:shadow-lg transition-shadow cursor-pointer">
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="font-bold text-sm text-gray-900 dark:text-foreground">{c.name}</p>
                   <p className="text-xs text-gray-400">{c.email}</p>
@@ -180,12 +180,12 @@ export default function CRMTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {[
                 ["Email", detail.email], ["Teléfono", detail.phone],
                 ["Etapa", STAGE_META[detail.stage].label], ["Scoring", SCORING_META[detail.scoring].label],
@@ -203,7 +203,7 @@ export default function CRMTab() {
               <div>
                 <p className="text-xs text-gray-400 mb-2">Tareas</p>
                 {detail.tasks.map((t, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs mb-1">
+                  <div key={i} className="flex flex-wrap items-center gap-2 text-xs mb-1">
                     <span className={t.done ? "text-emerald-500" : "text-amber-500"}>{t.done ? "✅" : "⏳"}</span>
                     <span className={cn("flex-1", t.done && "line-through text-gray-400")}>{t.text}</span>
                     <span className="text-gray-400">{t.dueDate}</span>

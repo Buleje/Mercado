@@ -39,7 +39,6 @@ export const metadata: Metadata = {
 };
 
 // ── Above-the-fold (SSR + eager hydration) ──
-const CategoryBubbles   = dynamic(() => import("@/components/CategoryBubbles"));
 const DailySpecial      = dynamic(() => import("@/components/DailySpecial"));
 const CountdownBanner   = dynamic(() => import("@/components/CountdownBanner"));
 const FlashDeals        = dynamic(() => import("@/components/FlashDeals"));
@@ -50,7 +49,6 @@ const PopularProducts   = dynamic(() => import("@/components/PopularProducts"));
 const FeaturedCarousel  = dynamic(() => import("@/components/FeaturedCarousel"));
 const CombosSection     = dynamic(() => import("@/components/CombosSection"));
 const ProductCatalog    = dynamic(() => import("@/components/ProductCatalog"));
-const LastOrderBanner   = dynamic(() => import("@/components/LastOrderBanner"));
 const Footer            = dynamic(() => import("@/components/Footer"));
 
 export default function TiendaPage() {
@@ -96,12 +94,7 @@ export default function TiendaPage() {
         </div>
       </nav>
       <main id="main-content">
-        {/* Shop hero banner */}
-        <ShopHero />
         <FreeDeliveryProgress />
-        <Suspense fallback={<SectionLoadingSkeleton />}>
-          <LastOrderBanner />
-        </Suspense>
         <Suspense fallback={<SectionLoadingSkeleton />}>
           <DailySpecial />
         </Suspense>
@@ -111,9 +104,6 @@ export default function TiendaPage() {
         <CountdownBanner />
         <Suspense fallback={<SectionLoadingSkeleton />}>
           <FlashDeals />
-        </Suspense>
-        <Suspense fallback={<SectionLoadingSkeleton />}>
-          <CategoryBubbles />
         </Suspense>
         <Suspense fallback={<ProductsLoadingSkeleton />}>
           <PopularProducts />
@@ -132,50 +122,6 @@ export default function TiendaPage() {
       </main>
       <Footer />
     </>
-  );
-}
-
-/* ── Compact hero for the shop page ── */
-function ShopHero() {
-  return (
-    <section className="relative bg-linear-to-br from-[#312e81] via-primary-dark to-[#1e1b4b] pt-32 pb-14 sm:pt-36 sm:pb-16 overflow-hidden">
-      {/* Decorative glow */}
-      <div className="absolute top-0 right-0 w-[40vw] h-[40vw] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[25vw] h-[25vw] bg-secondary/8 rounded-full blur-[100px] pointer-events-none" />
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-blue-300/80 mb-4 bg-blue-400/10 rounded-full px-4 py-1.5 border border-blue-400/15">
-          🛒 Catálogo completo
-        </span>
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight mb-4">
-          Todos nuestros{" "}
-          <span className="bg-linear-to-r from-emerald-300 via-cyan-300 to-amber-300 bg-clip-text text-transparent">
-            productos
-          </span>
-        </h1>
-        <p className="text-white/50 text-base sm:text-lg max-w-xl mx-auto mb-6">
-          Abarrotes, carnes, bebidas, limpieza y mucho más. Encuentra todo lo que necesitas para tu hogar.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
-          <span className="inline-flex items-center gap-1.5 bg-white/8 border border-white/10 rounded-full px-3 py-1.5 text-white/70">
-            🚚 Delivery gratis +S/50
-          </span>
-          <span className="inline-flex items-center gap-1.5 bg-white/8 border border-white/10 rounded-full px-3 py-1.5 text-white/70">
-            💳 Yape o efectivo
-          </span>
-          <span className="inline-flex items-center gap-1.5 bg-white/8 border border-white/10 rounded-full px-3 py-1.5 text-white/70">
-            ⏱ ~30 min delivery
-          </span>
-        </div>
-      </div>
-
-      {/* Wave */}
-      <div className="absolute bottom-0 left-0 right-0" aria-hidden="true">
-        <svg viewBox="0 0 1440 60" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
-          <path d="M0,30 C360,60 1080,0 1440,30 L1440,60 L0,60 Z" fill="var(--color-background)" />
-        </svg>
-      </div>
-    </section>
   );
 }
 

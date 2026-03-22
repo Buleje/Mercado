@@ -253,7 +253,7 @@ export default function PurchaseOrdersTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Órdenes de Compra</h2>
@@ -270,10 +270,10 @@ export default function PurchaseOrdersTab() {
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}
           </select>
-          <button onClick={() => setShowSupplierHistory(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 dark:hover:bg-accent/80 px-4 py-2 rounded-lg transition-colors">
+          <button onClick={() => setShowSupplierHistory(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 dark:hover:bg-accent/80 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors">
             <History className="h-4 w-4" /> Historial
           </button>
-          <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-4 py-2 rounded-lg transition-colors shadow-sm">
+          <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors shadow-sm">
             <Plus className="h-4 w-4" /> Nueva orden
           </button>
         </div>
@@ -292,7 +292,7 @@ export default function PurchaseOrdersTab() {
                 <div className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <h3 className="font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+                      <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                         <History className="h-5 w-5 text-primary" />
                         {supplier.name}
                       </h3>
@@ -357,7 +357,7 @@ export default function PurchaseOrdersTab() {
                       <BarChart3 className="h-3.5 w-3.5 text-primary" />
                       Gastos mensuales (últimos 6 meses)
                     </p>
-                    <div className="flex items-end gap-2 h-20">
+                    <div className="flex flex-wrap items-end gap-2 h-20">
                       {stats.monthlyData.map((m, idx) => {
                         const height = maxMonthAmount > 0 ? (m.amount / maxMonthAmount) * 100 : 0;
                         return (
@@ -413,7 +413,7 @@ export default function PurchaseOrdersTab() {
         >
           <div className="bg-white dark:bg-card w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-y-auto max-h-[90dvh]">
             <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+              <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" /> Nueva orden de compra
               </h3>
               <button onClick={() => setShowCreate(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -421,7 +421,7 @@ export default function PurchaseOrdersTab() {
               </button>
             </div>
             <form onSubmit={createOrder} className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Proveedor *</label>
                   <select required value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
@@ -439,7 +439,7 @@ export default function PurchaseOrdersTab() {
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-xs font-semibold text-gray-500 dark:text-muted">Productos de la orden</label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button type="button" onClick={() => setShowScanner(true)} className="text-xs font-bold text-gray-600 dark:text-muted hover:text-primary flex items-center gap-1 border border-gray-200 dark:border-card-border rounded-lg px-2.5 py-1 transition-colors">
                       <ScanBarcode className="h-3.5 w-3.5" /> Escanear
                     </button>
@@ -459,7 +459,7 @@ export default function PurchaseOrdersTab() {
                       : [];
                     return (
                       <div key={idx} className="bg-gray-50 dark:bg-surface rounded-xl p-2 space-y-1">
-                        <div className="flex items-start gap-2">
+                        <div className="flex flex-wrap items-start gap-2">
                           <div className="flex-1 relative">
                             <input
                               value={itemQueries[idx] ?? ""}
@@ -480,7 +480,7 @@ export default function PurchaseOrdersTab() {
                                     key={p.id}
                                     type="button"
                                     onMouseDown={() => { changeProduct(idx, p.id); setItemQueries(prev => prev.map((_, i) => i === idx ? p.name : _)); setOpenSearchIdx(null); }}
-                                    className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-surface flex items-center gap-2 text-sm border-b border-gray-100 dark:border-card-border last:border-0"
+                                    className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-surface flex flex-wrap items-center gap-2 text-sm border-b border-gray-100 dark:border-card-border last:border-0"
                                   >
                                     <div>
                                       <div className="font-medium text-gray-900 dark:text-foreground">{p.name}</div>
@@ -523,7 +523,7 @@ export default function PurchaseOrdersTab() {
                 )}
               </div>
 
-              <div className="flex gap-3 pt-1">
+              <div className="flex flex-wrap gap-3 pt-1">
                 <button type="button" onClick={() => setShowCreate(false)} className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
                 <button type="submit" disabled={saving || !supplierId || items.length === 0} className="flex-1 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando…" : "Crear orden de compra"}
@@ -559,7 +559,7 @@ export default function PurchaseOrdersTab() {
                   {o.notes && <p className="text-xs text-gray-500 dark:text-muted mt-0.5 italic">{o.notes}</p>}
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <select
                     value={o.status}
                     onChange={(e) => updateStatus(o.id, e.target.value as PurchaseStatus)}
@@ -589,7 +589,7 @@ export default function PurchaseOrdersTab() {
 
               {/* Expanded details */}
               {expanded === o.id && (
-                <div className="border-t border-gray-100 dark:border-card-border px-4 py-3 bg-gray-50 dark:bg-surface">
+                <div className="border-t border-gray-100 dark:border-card-border px-2 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-surface">
                   <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-2">Detalle de productos</p>
                   <div className="space-y-1.5">
                     {o.items.map((item, i) => (
@@ -625,7 +625,7 @@ export default function PurchaseOrdersTab() {
         >
           <div className="bg-white dark:bg-card w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl max-h-[85dvh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+              <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                 <Plus className="h-5 w-5 text-primary" /> Agregar producto
               </h3>
               <button onClick={() => setShowAddItemModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -644,7 +644,7 @@ export default function PurchaseOrdersTab() {
               >Nuevo producto</button>
             </div>
 
-            <div className="overflow-y-auto flex-1 p-5">
+            <div className="overflow-y-auto flex-1 p-3 sm:p-5">
               {addItemMode === "search" ? (
                 <div className="space-y-3">
                   <input
@@ -679,7 +679,7 @@ export default function PurchaseOrdersTab() {
                   {addItemSel && (
                     <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3 border border-gray-200 dark:border-card-border">
                       <p className="text-sm font-semibold text-gray-800 dark:text-foreground">{addItemSel.name}</p>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Cantidad</label>
                           <input

@@ -190,11 +190,11 @@ export default function AuditLogTab() {
   }, [entries]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <ScrollText className="h-6 w-6 text-primary" /> Auditoría Avanzada
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Registro de actividad detallado con trazabilidad completa</p>
@@ -205,7 +205,7 @@ export default function AuditLogTab() {
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center py-16 gap-3 text-gray-400 dark:text-muted">
+        <div className="flex flex-wrap items-center justify-center py-16 gap-3 text-gray-400 dark:text-muted">
           <Loader2 className="h-5 w-5 animate-spin" />
           <span className="text-sm font-semibold">Cargando registro de auditoría…</span>
         </div>
@@ -228,7 +228,7 @@ export default function AuditLogTab() {
 
       {/* Alert */}
       {stats.criticas > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-red-700 dark:text-red-400 text-sm">Eventos críticos detectados</p>
@@ -264,16 +264,16 @@ export default function AuditLogTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Severidad</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha/Hora</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Usuario</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Acción</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Módulo</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Descripción</th>
-                <th className="px-4 py-3" />
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Severidad</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha/Hora</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Usuario</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Acción</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Módulo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Descripción</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -284,18 +284,18 @@ export default function AuditLogTab() {
                 const ActIcon = act.icon;
                 return (
                   <tr key={e.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", sev.bg, sev.color)}>{sev.label}</span></td>
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{fmtDate(e.timestamp)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", sev.bg, sev.color)}>{sev.label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 whitespace-nowrap">{fmtDate(e.timestamp)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div>
                         <p className="font-semibold text-gray-800 dark:text-foreground text-xs">{e.user}</p>
                         <p className="text-[10px] text-gray-400">{e.role}</p>
                       </div>
                     </td>
-                    <td className="px-4 py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-semibold", act.color)}><ActIcon className="h-3 w-3" />{act.label}</span></td>
-                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted">{e.module}</td>
-                    <td className="px-4 py-3 text-xs text-gray-700 dark:text-foreground max-w-60 truncate">{e.description}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-semibold", act.color)}><ActIcon className="h-3 w-3" />{act.label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{e.module}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-700 dark:text-foreground max-w-60 truncate">{e.description}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <button onClick={() => setDetail(e)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button>
                     </td>
                   </tr>
@@ -312,7 +312,7 @@ export default function AuditLogTab() {
           <button
             onClick={loadMore}
             disabled={loadingMore}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
+            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface/50 disabled:opacity-50 transition-colors"
           >
             {loadingMore && <Loader2 className="h-4 w-4 animate-spin" />}
             {loadingMore ? "Cargando…" : "Cargar más eventos"}
@@ -323,7 +323,7 @@ export default function AuditLogTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del evento</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -335,7 +335,7 @@ export default function AuditLogTab() {
                 ["Severidad", SEVERITY_META[detail.severity].label], ["Descripción", detail.description],
                 ["Detalles", detail.details], ["IP", detail.ip],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
+                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-gray-500 dark:text-muted shrink-0">{k}</span>
                   <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
                 </div>

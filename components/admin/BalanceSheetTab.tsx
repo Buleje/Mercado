@@ -87,13 +87,13 @@ export default function BalanceSheetTab() {
     const subPrev = lines.reduce((s, l) => s + l.previousPeriod, 0);
     return (
       <div key={type}>
-        <h4 className="text-xs font-extrabold uppercase text-gray-500 dark:text-muted px-4 py-2 bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
+        <h4 className="text-xs font-extrabold uppercase text-gray-500 dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
           {TYPE_LABELS[type]}
         </h4>
         {lines.map(l => {
           const v = variation(l.currentPeriod, l.previousPeriod);
           return (
-            <div key={l.id} className="flex items-center px-4 py-2.5 border-b border-gray-100 dark:border-card-border hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors text-sm">
+            <div key={l.id} className="flex items-center px-2 sm:px-4 py-1.5 sm:py-2.5 border-b border-gray-100 dark:border-card-border hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors text-sm">
               <span className="flex-1 text-gray-700 dark:text-foreground">{l.name}</span>
               <span className="w-28 text-right font-semibold text-gray-800 dark:text-foreground">{fmt(l.currentPeriod)}</span>
               <span className="w-28 text-right text-gray-400">{fmt(l.previousPeriod)}</span>
@@ -104,7 +104,7 @@ export default function BalanceSheetTab() {
             </div>
           );
         })}
-        <div className="flex items-center px-4 py-2.5 border-b-2 border-gray-300 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 text-sm font-extrabold">
+        <div className="flex items-center px-2 sm:px-4 py-1.5 sm:py-2.5 border-b-2 border-gray-300 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 text-sm font-extrabold">
           <span className="flex-1 text-gray-600 dark:text-muted">Subtotal {TYPE_LABELS[type]}</span>
           <span className="w-28 text-right text-gray-800 dark:text-foreground">{fmt(subTotal)}</span>
           <span className="w-28 text-right text-gray-400">{fmt(subPrev)}</span>
@@ -115,16 +115,16 @@ export default function BalanceSheetTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Scale className="h-6 w-6 text-primary" /> Balance General
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Estado de situación patrimonial — Marzo 2026</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={() => setShowInfo(true)} className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:bg-gray-50 dark:hover:bg-accent">
             <Info className="h-4 w-4" />
           </button>
@@ -151,12 +151,12 @@ export default function BalanceSheetTab() {
       </div>
 
       {/* Balance T */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-4">
         {/* ACTIVOS */}
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/20 border-b border-gray-200 dark:border-card-border">
+          <div className="px-2 sm:px-4 py-2 sm:py-3 bg-blue-50 dark:bg-blue-950/20 border-b border-gray-200 dark:border-card-border">
             <h3 className="font-extrabold text-blue-700 dark:text-blue-400 text-sm">ACTIVOS</h3>
-            <div className="flex gap-6 text-xs mt-1">
+            <div className="flex flex-wrap gap-6 text-xs mt-1">
               <span className="font-semibold text-gray-500">Período actual</span>
               <span className="text-gray-400">Período anterior</span>
               <span className="text-gray-400">Var %</span>
@@ -164,7 +164,7 @@ export default function BalanceSheetTab() {
           </div>
           {renderSection("activo-corriente", grouped["activo-corriente"])}
           {renderSection("activo-no-corriente", grouped["activo-no-corriente"])}
-          <div className="flex items-center px-4 py-3 bg-blue-50 dark:bg-blue-950/20 text-sm font-extrabold">
+          <div className="flex items-center px-2 sm:px-4 py-2 sm:py-3 bg-blue-50 dark:bg-blue-950/20 text-sm font-extrabold">
             <span className="flex-1 text-blue-700 dark:text-blue-400">TOTAL ACTIVOS</span>
             <span className="w-28 text-right text-blue-700 dark:text-blue-400">{fmt(totals.totalActivos.current)}</span>
             <span className="w-28 text-right text-blue-400/60">{fmt(totals.totalActivos.previous)}</span>
@@ -174,9 +174,9 @@ export default function BalanceSheetTab() {
 
         {/* PASIVOS + PATRIMONIO */}
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-          <div className="px-4 py-3 bg-orange-50 dark:bg-orange-950/20 border-b border-gray-200 dark:border-card-border">
+          <div className="px-2 sm:px-4 py-2 sm:py-3 bg-orange-50 dark:bg-orange-950/20 border-b border-gray-200 dark:border-card-border">
             <h3 className="font-extrabold text-orange-700 dark:text-orange-400 text-sm">PASIVOS + PATRIMONIO</h3>
-            <div className="flex gap-6 text-xs mt-1">
+            <div className="flex flex-wrap gap-6 text-xs mt-1">
               <span className="font-semibold text-gray-500">Período actual</span>
               <span className="text-gray-400">Período anterior</span>
               <span className="text-gray-400">Var %</span>
@@ -185,7 +185,7 @@ export default function BalanceSheetTab() {
           {renderSection("pasivo-corriente", grouped["pasivo-corriente"])}
           {renderSection("pasivo-no-corriente", grouped["pasivo-no-corriente"])}
           {renderSection("patrimonio", grouped["patrimonio"])}
-          <div className="flex items-center px-4 py-3 bg-orange-50 dark:bg-orange-950/20 text-sm font-extrabold">
+          <div className="flex items-center px-2 sm:px-4 py-2 sm:py-3 bg-orange-50 dark:bg-orange-950/20 text-sm font-extrabold">
             <span className="flex-1 text-orange-700 dark:text-orange-400">TOTAL PASIVO + PATRIMONIO</span>
             <span className="w-28 text-right text-orange-700 dark:text-orange-400">{fmt(totals.totalPasPat.current)}</span>
             <span className="w-28 text-right text-orange-400/60">{fmt(totals.totalPasPat.previous)}</span>
@@ -202,7 +202,7 @@ export default function BalanceSheetTab() {
       )}
 
       {/* Composition chart */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4">Composición patrimonial</h3>
         <div className="space-y-3">
           {(["activo-corriente", "activo-no-corriente", "pasivo-corriente", "pasivo-no-corriente", "patrimonio"] as AccountType[]).map(type => {
@@ -211,7 +211,7 @@ export default function BalanceSheetTab() {
             const pctFill = maxVal > 0 ? (Math.abs(total) / maxVal) * 100 : 0;
             const isAsset = type.startsWith("activo");
             return (
-              <div key={type} className="flex items-center gap-3">
+              <div key={type} className="flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-gray-600 dark:text-muted w-32 truncate">{TYPE_LABELS[type]}</span>
                 <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-5 overflow-hidden">
                   <div className={cn("h-full rounded-full transition-all", isAsset ? "bg-blue-500" : type === "patrimonio" ? "bg-emerald-500" : "bg-orange-500")} style={{ width: `${Math.min(100, pctFill)}%` }} />
@@ -226,7 +226,7 @@ export default function BalanceSheetTab() {
       {/* Info modal */}
       {showInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowInfo(false)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Ratios Financieros</h3>
               <button onClick={() => setShowInfo(false)}><X className="h-4 w-4 text-gray-400" /></button>

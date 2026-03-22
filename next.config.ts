@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 import withBundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const bundleAnalyzer = withBundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
 });
@@ -70,12 +72,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       // Cache headers for static assets
+      // En desarrollo: no-store para que el browser NUNCA cachee chunks de HMR
+      // En producción: inmutable por 1 año (los hashes cambian en cada build)
       {
         source: "/_next/static/:path*",
         headers: [
           {
             key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
+            value: isProd
+              ? "public, max-age=31536000, immutable"
+              : "no-store, no-cache, must-revalidate",
           },
         ],
       },
@@ -130,10 +136,10 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(self)",
           },
-          {
+          ...(isProd ? [{
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
-          },
+          }] : []),
           {
             key: "Content-Security-Policy",
             value: [
@@ -142,13 +148,13 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://images.openfoodfacts.org https://static.openfoodfacts.org https://www.google-analytics.com https://*.tile.openstreetmap.org https://unpkg.com",
-              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms wss://*.supabase.co https://nominatim.openstreetmap.org",
+              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms wss://*.supabase.co https://nominatim.openstreetmap.org https://images.unsplash.com",
               "worker-src 'self' blob:",
               "frame-src 'none'",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
-              "upgrade-insecure-requests",
+              ...(isProd ? ["upgrade-insecure-requests"] : []),
             ].join("; "),
           },
         ],
@@ -165,13 +171,13 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://images.openfoodfacts.org https://static.openfoodfacts.org https://*.tile.openstreetmap.org",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://images.unsplash.com",
               "worker-src 'self' blob:",
               "frame-src 'none'",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
-              "upgrade-insecure-requests",
+              ...(isProd ? ["upgrade-insecure-requests"] : []),
             ].join("; "),
           },
           {
@@ -192,13 +198,13 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.stripe.com https://www.google-analytics.com",
-              "connect-src 'self' https://*.supabase.co https://api.stripe.com https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms",
+              "connect-src 'self' https://*.supabase.co https://api.stripe.com https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://images.unsplash.com",
               "frame-src https://js.stripe.com https://hooks.stripe.com",
               "worker-src 'self' blob:",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self' https://checkout.stripe.com",
-              "upgrade-insecure-requests",
+              ...(isProd ? ["upgrade-insecure-requests"] : []),
             ].join("; "),
           },
         ],

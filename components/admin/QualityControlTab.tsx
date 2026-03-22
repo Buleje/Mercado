@@ -100,16 +100,16 @@ export default function QualityControlTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-primary" /> Control de Calidad
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Inspecciones, no conformidades y acciones correctivas</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Nueva inspección
           </button>
@@ -137,7 +137,7 @@ export default function QualityControlTab() {
 
       {/* Alert */}
       {stats.rechazados > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-red-700 dark:text-red-400 text-sm">Productos rechazados</p>
@@ -148,7 +148,7 @@ export default function QualityControlTab() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-3">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground">Nueva inspección</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
             <input value={form.product} onChange={e => setForm(p => ({ ...p, product: e.target.value }))} placeholder="Producto *" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
@@ -166,9 +166,9 @@ export default function QualityControlTab() {
             <input value={form.observations} onChange={e => setForm(p => ({ ...p, observations: e.target.value }))} placeholder="Observaciones" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             <input value={form.corrective} onChange={e => setForm(p => ({ ...p, corrective: e.target.value }))} placeholder="Acción correctiva" className="col-span-full sm:col-span-2 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
           </div>
-          <div className="flex gap-2 justify-end">
+          <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-surface">Cancelar</button>
-            <button onClick={addInspection} className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90">Registrar</button>
+            <button onClick={addInspection} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90">Registrar</button>
           </div>
         </div>
       )}
@@ -192,17 +192,17 @@ export default function QualityControlTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Resultado</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Lote</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Tipo</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Inspector</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Observaciones</th>
-                <th className="px-4 py-3" />
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Resultado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Lote</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Tipo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Inspector</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Observaciones</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -212,14 +212,14 @@ export default function QualityControlTab() {
                 const Icon = meta.icon;
                 return (
                   <tr key={i.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-4 py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", meta.bg, meta.color)}><Icon className="h-3 w-3" />{meta.label}</span></td>
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{fmtDate(i.date)}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-800 dark:text-foreground">{i.product}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-gray-500">{i.batch}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted">{TYPE_META[i.type].label}</td>
-                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted">{i.inspector}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 max-w-50 truncate">{i.observations || "—"}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", meta.bg, meta.color)}><Icon className="h-3 w-3" />{meta.label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 whitespace-nowrap">{fmtDate(i.date)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-800 dark:text-foreground">{i.product}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono text-gray-500">{i.batch}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{TYPE_META[i.type].label}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{i.inspector}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 max-w-50 truncate">{i.observations || "—"}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <button onClick={() => setDetail(i)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button>
                     </td>
                   </tr>
@@ -233,9 +233,9 @@ export default function QualityControlTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm flex items-center gap-2"><Clipboard className="h-4 w-4 text-primary" /> Detalle de inspección</h3>
+              <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Clipboard className="h-4 w-4 text-primary" /> Detalle de inspección</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
             <div className="space-y-2 text-sm">
@@ -246,7 +246,7 @@ export default function QualityControlTab() {
                 ["Apariencia", detail.appearance || "—"], ["Vencimiento", detail.expiry ? fmtDate(detail.expiry) : "—"],
                 ["Observaciones", detail.observations || "—"], ["Acción correctiva", detail.corrective || "—"],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
+                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-gray-500 dark:text-muted shrink-0">{k}</span>
                   <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
                 </div>

@@ -80,11 +80,11 @@ export default function ProfitabilityTab() {
   const maxCatMargin = catSummary.length > 0 ? catSummary[0][1].margin : 1;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" /> Análisis de Rentabilidad
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Márgenes y rentabilidad por producto y categoría</p>
@@ -111,14 +111,14 @@ export default function ProfitabilityTab() {
       </div>
 
       {/* Category bar chart */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4">Margen bruto por categoría</h3>
         <div className="space-y-3">
           {catSummary.map(([cat, data]) => {
             const pctFill = maxCatMargin > 0 ? (data.margin / maxCatMargin) * 100 : 0;
             const mPct = data.revenue > 0 ? (data.margin / data.revenue) * 100 : 0;
             return (
-              <div key={cat} className="flex items-center gap-3">
+              <div key={cat} className="flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-gray-600 dark:text-muted w-20 truncate">{cat}</span>
                 <div className="flex-1 bg-gray-100 dark:bg-surface rounded-full h-5 overflow-hidden">
                   <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all" style={{ width: `${pctFill}%` }} />
@@ -152,38 +152,38 @@ export default function ProfitabilityTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">#</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoría</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Uds.</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Ingresos</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Costo</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Margen</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">%</th>
-                <th className="px-4 py-3" />
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">#</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoría</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Uds.</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Ingresos</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Costo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Margen</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">%</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
               {filtered.length === 0 && <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-400 text-sm">Sin datos.</td></tr>}
               {filtered.map((l, i) => (
                 <tr key={l.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                  <td className="px-4 py-3 text-xs text-gray-400">{i + 1}</td>
-                  <td className="px-4 py-3 font-semibold text-gray-800 dark:text-foreground">{l.product}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted">{l.category}</td>
-                  <td className="px-4 py-3 text-right text-gray-600 dark:text-muted">{l.unitsSold.toLocaleString("es-PE")}</td>
-                  <td className="px-4 py-3 text-right text-gray-700 dark:text-foreground">{fmt(l.revenue)}</td>
-                  <td className="px-4 py-3 text-right text-gray-500">{fmt(l.cogs)}</td>
-                  <td className={cn("px-4 py-3 text-right font-bold", l.grossMargin >= 0 ? "text-emerald-600" : "text-red-500")}>{fmt(l.grossMargin)}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-400">{i + 1}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-800 dark:text-foreground">{l.product}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{l.category}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-600 dark:text-muted">{l.unitsSold.toLocaleString("es-PE")}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-700 dark:text-foreground">{fmt(l.revenue)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-500">{fmt(l.cogs)}</td>
+                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.grossMargin >= 0 ? "text-emerald-600" : "text-red-500")}>{fmt(l.grossMargin)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                     <span className={cn("inline-flex items-center gap-0.5 text-xs font-bold", l.marginPct >= 35 ? "text-emerald-600" : l.marginPct >= 25 ? "text-amber-600" : "text-red-500")}>
                       {l.marginPct >= 35 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                       {pct(l.marginPct)}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-2 sm:px-4 py-2 sm:py-3">
                     <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button>
                   </td>
                 </tr>
@@ -191,12 +191,12 @@ export default function ProfitabilityTab() {
             </tbody>
             <tfoot className="border-t-2 border-gray-300 dark:border-card-border bg-gray-50 dark:bg-surface/50">
               <tr className="font-extrabold">
-                <td colSpan={3} className="px-4 py-3 text-xs uppercase text-gray-500">Totales</td>
-                <td className="px-4 py-3 text-right text-gray-700 dark:text-foreground">{totals.units.toLocaleString("es-PE")}</td>
-                <td className="px-4 py-3 text-right text-gray-700 dark:text-foreground">{fmt(totals.revenue)}</td>
-                <td className="px-4 py-3 text-right text-gray-500">{fmt(totals.cogs)}</td>
-                <td className="px-4 py-3 text-right text-emerald-600">{fmt(totals.grossMargin)}</td>
-                <td className="px-4 py-3 text-right text-emerald-600">{pct(totals.marginPct)}</td>
+                <td colSpan={3} className="px-2 sm:px-4 py-2 sm:py-3 text-xs uppercase text-gray-500">Totales</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-700 dark:text-foreground">{totals.units.toLocaleString("es-PE")}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-700 dark:text-foreground">{fmt(totals.revenue)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-500">{fmt(totals.cogs)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-emerald-600">{fmt(totals.grossMargin)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-emerald-600">{pct(totals.marginPct)}</td>
                 <td />
               </tr>
             </tfoot>
@@ -207,7 +207,7 @@ export default function ProfitabilityTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle de producto</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -219,7 +219,7 @@ export default function ProfitabilityTab() {
                 ["Ingresos", fmt(detail.revenue)], ["Costo de venta", fmt(detail.cogs)],
                 ["Margen bruto", fmt(detail.grossMargin)], ["% Margen", pct(detail.marginPct)],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
+                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-gray-500 dark:text-muted">{k}</span>
                   <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
                 </div>

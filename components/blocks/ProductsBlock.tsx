@@ -145,7 +145,7 @@ export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
                         category: product.category,
                         badge: product.badge,
                       })}
-                      className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-8 w-8 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-primary hover:text-white"
+                      className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-9 w-9 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-primary hover:text-white"
                       aria-label={`Agregar ${product.name} al carrito`}
                     >
                       <ShoppingCart className="h-4 w-4" />

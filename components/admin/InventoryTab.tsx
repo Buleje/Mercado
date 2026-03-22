@@ -474,7 +474,7 @@ export default function InventoryTab() {
           <div className="h-6 w-40 bg-gray-200 dark:bg-accent rounded-lg" />
           <div className="h-4 w-56 bg-gray-200 dark:bg-accent rounded" />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="h-8 w-64 bg-gray-200 dark:bg-accent rounded-lg" />
           <div className="h-8 w-24 bg-gray-200 dark:bg-accent rounded-lg" />
           <div className="h-8 w-28 bg-gray-200 dark:bg-accent rounded-lg" />
@@ -484,7 +484,7 @@ export default function InventoryTab() {
       <div className="h-9 w-full max-w-xs bg-gray-200 dark:bg-accent rounded-xl" />
       {/* Product row skeletons */}
       {[...Array(8)].map((_, i) => (
-        <div key={i} className="flex items-center gap-3 p-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border">
+        <div key={i} className="flex flex-wrap items-center gap-3 p-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border">
           <div className="h-10 w-10 bg-gray-200 dark:bg-accent rounded-lg shrink-0" />
           <div className="flex-1 space-y-2">
             <div className="h-4 bg-gray-200 dark:bg-accent rounded w-1/3" />
@@ -576,13 +576,13 @@ export default function InventoryTab() {
       {lowStockProducts.length > 0 && (
         <div className="bg-linear-to-r from-amber-50 to-red-50 dark:from-amber-950/20 dark:to-red-950/20 border-2 border-amber-300 dark:border-amber-700 rounded-2xl overflow-hidden shadow-sm">
           <div className="px-5 py-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center shrink-0">
                   <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+                  <h3 className="text-base font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                     Alertas de Orden de Compra
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100 text-xs font-bold">
                       {lowStockProducts.length}
@@ -593,7 +593,7 @@ export default function InventoryTab() {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={generateBulkOC}
                   disabled={generatingOC}
@@ -619,7 +619,7 @@ export default function InventoryTab() {
                   const suggestedQty = maxStock - (p.stock ?? 0);
                   const unitCost = p.costPrice ?? p.price * 0.7;
                   return (
-                    <div key={p.id} className="bg-white dark:bg-card border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex items-center gap-3">
+                    <div key={p.id} className="bg-white dark:bg-card border border-amber-200 dark:border-amber-800 rounded-xl p-3 flex flex-wrap items-center gap-3">
                       {p.image ? (
                         <Image src={p.image} alt={p.name} width={40} height={40} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0" />
                       ) : (
@@ -741,7 +741,7 @@ export default function InventoryTab() {
       {/* Content */}
       {/* CSV import result feedback */}
       {csvResult && (
-        <div className={`flex items-start gap-3 px-4 py-3 rounded-xl text-sm mb-2 ${csvResult.errors.length > 0 ? "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 text-amber-700 dark:text-amber-400" : "bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400"}`}>
+        <div className={`flex items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm mb-2 ${csvResult.errors.length > 0 ? "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 text-amber-700 dark:text-amber-400" : "bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400"}`}>
           <CheckCircle className="h-4 w-4 mt-0.5 shrink-0" />
           <div className="flex-1">
             <p className="font-bold">{csvResult.created} producto{csvResult.created !== 1 ? "s" : ""} importado{csvResult.created !== 1 ? "s" : ""} correctamente.</p>
@@ -778,7 +778,7 @@ export default function InventoryTab() {
                       </span>
                     </div>
                   )}
-                  <div className="flex items-start gap-3">
+                  <div className="flex flex-wrap items-start gap-3">
                     {p.image ? (
                       <Image src={p.image} alt={p.name} width={56} height={56} unoptimized={p.image.startsWith("data:")} className="rounded-xl object-cover border border-gray-100 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
                     ) : (
@@ -789,7 +789,7 @@ export default function InventoryTab() {
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-gray-900 dark:text-foreground text-sm leading-tight">{p.name}</p>
                       <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{cat?.emoji} {cat?.label ?? p.category} · {p.unit}</p>
-                      <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
+                      <div className="flex items-center gap-1.5 mt-1.5">
                         <span className="font-extrabold text-primary text-base">S/{p.price.toFixed(2)}</span>
                         {p.costPrice && <span className="text-xs text-gray-400 dark:text-muted">costo S/{p.costPrice.toFixed(2)}</span>}
                         {p.badge && <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold">{p.badge}</span>}
@@ -841,19 +841,19 @@ export default function InventoryTab() {
           {/* Desktop table */}
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hidden sm:block">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[600px] text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 dark:border-card-border text-left">
                     <th className="px-3 py-3 w-10">
                       <input type="checkbox" checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length} onChange={toggleSelectAll} className="rounded border-gray-300 text-primary focus:ring-primary" />
                     </th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Producto</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Categoría</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Precio</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider hidden md:table-cell">Badge</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Stock</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Estado</th>
-                    <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Acciones</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Producto</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Categoría</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Precio</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider hidden md:table-cell">Badge</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Stock</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Estado</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -864,8 +864,8 @@ export default function InventoryTab() {
                         <td className="px-3 py-3">
                           <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-gray-300 text-primary focus:ring-primary" />
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="font-semibold text-gray-900 dark:text-foreground">{p.name}</span>
                             {!p.active && (
                               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] font-bold">
@@ -874,16 +874,16 @@ export default function InventoryTab() {
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-600 dark:text-muted">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">
                           {categories.find(c => c.id === p.category)?.emoji} {categories.find(c => c.id === p.category)?.label ?? p.category}
                         </td>
-                        <td className="px-4 py-3 font-bold text-primary">S/{p.price.toFixed(2)}</td>
-                        <td className="px-4 py-3 hidden md:table-cell">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-primary">S/{p.price.toFixed(2)}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">
                           {p.badge ? <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">{p.badge}</span> : <span className="text-gray-300 dark:text-muted">—</span>}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3">
                           {p.stock !== undefined ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span className={cn("h-2.5 w-2.5 rounded-full shrink-0",
                                 (p.stock ?? 0) === 0 ? "bg-red-500" :
                                 lowStock ? "bg-amber-500" :
@@ -902,7 +902,7 @@ export default function InventoryTab() {
                             </div>
                           ) : <span className="text-gray-300 dark:text-muted">—</span>}
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3">
                           <button
                             onClick={() => toggleActive(p)}
                             className={cn(
@@ -914,7 +914,7 @@ export default function InventoryTab() {
                             {p.active ? "Activo" : "Inactivo"}
                           </button>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3">
                           <div className="flex items-center gap-1">
                             <button onClick={() => openEditModal(p)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar">
                               <Pencil className="h-4 w-4" />
@@ -952,17 +952,17 @@ export default function InventoryTab() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-2xl p-4 flex flex-col gap-1">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-red-500">Agotado</span>
-                    <span className="text-3xl font-extrabold text-red-600 dark:text-red-400">{agotado.length}</span>
+                    <span className="text-xl sm:text-3xl font-extrabold text-red-600 dark:text-red-400">{agotado.length}</span>
                     <span className="text-xs text-red-400">productos sin stock</span>
                   </div>
                   <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl p-4 flex flex-col gap-1">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-amber-500">Stock Bajo</span>
-                    <span className="text-3xl font-extrabold text-amber-600 dark:text-amber-400">{bajo.length}</span>
+                    <span className="text-xl sm:text-3xl font-extrabold text-amber-600 dark:text-amber-400">{bajo.length}</span>
                     <span className="text-xs text-amber-400">bajo mínimo</span>
                   </div>
                   <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-2xl p-4 flex flex-col gap-1">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-500">Normal</span>
-                    <span className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{normal.length}</span>
+                    <span className="text-xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{normal.length}</span>
                     <span className="text-xs text-emerald-400">con stock suficiente</span>
                   </div>
                   <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 rounded-2xl p-4 flex flex-col gap-1">
@@ -974,9 +974,9 @@ export default function InventoryTab() {
 
                 {/* ── Low-stock bar chart ───────────────────────── */}
                 {lowList.length > 0 && (
-                  <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm">
+                  <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+                      <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                         <AlertTriangle className="h-4 w-4 text-amber-500" />
                         Productos críticos — reordenar ya
                       </h3>
@@ -990,7 +990,7 @@ export default function InventoryTab() {
                         const barColor = stock === 0 ? "bg-red-500" : "bg-amber-400";
                         const reorderQty = Math.max(min * 3 - stock, min);
                         return (
-                          <div key={p.id} className="flex items-center gap-3">
+                          <div key={p.id} className="flex flex-wrap items-center gap-3">
                             <div className="w-32 sm:w-44 truncate text-xs font-semibold text-foreground">{p.name}</div>
                             <div className="flex-1 h-4 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                               <div
@@ -1016,16 +1016,16 @@ export default function InventoryTab() {
 
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[600px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Producto</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Categoría</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right">Stock</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right hidden sm:table-cell">Mín</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right hidden sm:table-cell">Máx</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider hidden md:table-cell">Vence</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right">Valor</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Producto</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Categoría</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right">Stock</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right hidden sm:table-cell">Mín</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right hidden sm:table-cell">Máx</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider hidden md:table-cell">Vence</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider text-right">Valor</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -1033,8 +1033,8 @@ export default function InventoryTab() {
                   const low = isLowStock(p);
                   return (
                     <tr key={p.id} className={cn("hover:bg-gray-50 dark:hover:bg-surface transition-colors", low && "bg-amber-50/40", !p.active && "opacity-50")}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3">
+                        <div className="flex flex-wrap items-center gap-2">
                           {p.image ? (
                             <Image src={p.image} alt="" width={32} height={32} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0" />
                           ) : (
@@ -1045,10 +1045,10 @@ export default function InventoryTab() {
                           <span className="font-semibold text-gray-900 dark:text-foreground truncate">{p.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-gray-500 dark:text-muted text-xs">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted text-xs">
                         {categories.find(c => c.id === p.category)?.emoji} {categories.find(c => c.id === p.category)?.label ?? p.category}
                       </td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                         {p.stock !== undefined ? (
                           <span className={cn(
                             "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold",
@@ -1061,9 +1061,9 @@ export default function InventoryTab() {
                           <span className="text-gray-300 dark:text-muted">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-right text-gray-500 dark:text-muted text-xs hidden sm:table-cell">{p.stockMin ?? "—"}</td>
-                      <td className="px-4 py-3 text-right text-gray-500 dark:text-muted text-xs hidden sm:table-cell">{p.stockMax ?? "—"}</td>
-                      <td className="px-4 py-3 hidden md:table-cell">{(() => {
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-500 dark:text-muted text-xs hidden sm:table-cell">{p.stockMin ?? "—"}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-500 dark:text-muted text-xs hidden sm:table-cell">{p.stockMax ?? "—"}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">{(() => {
                         const expiry = (p as DbProduct & { expiryDate?: string }).expiryDate;
                         if (!expiry) return <span className="text-gray-300 dark:text-muted">—</span>;
                         const expiryDate = new Date(expiry);
@@ -1079,7 +1079,7 @@ export default function InventoryTab() {
                           </div>
                         );
                       })()}</td>
-                      <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-foreground text-xs">{p.stock !== undefined ? fmt(p.stock * p.price) : "—"}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-gray-900 dark:text-foreground text-xs">{p.stock !== undefined ? fmt(p.stock * p.price) : "—"}</td>
                     </tr>
                   );
                 })}
@@ -1104,7 +1104,7 @@ export default function InventoryTab() {
             { key: "exceso", label: "Exceso", color: "border-blue-400 bg-blue-50 dark:bg-blue-950/20", badgeColor: "bg-blue-500", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
           ];
           return (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2 sm:gap-4">
               {columns.map(col => {
                 const items = filteredProducts.filter(col.filter);
                 return (
@@ -1172,17 +1172,17 @@ export default function InventoryTab() {
             <div className="space-y-4">
               {/* Summary card */}
               <div className="bg-linear-to-r from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 border border-primary/20 rounded-2xl p-4">
-                <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center">
                   <div>
-                    <p className="text-2xl font-extrabold text-primary">{counted}</p>
+                    <p className="text-xl sm:text-2xl font-extrabold text-primary">{counted}</p>
                     <p className="text-xs text-gray-600 dark:text-muted">Contados</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-extrabold text-amber-600">{differences}</p>
+                    <p className="text-xl sm:text-2xl font-extrabold text-amber-600">{differences}</p>
                     <p className="text-xs text-gray-600 dark:text-muted">Diferencias</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-extrabold text-red-600">{totalAdjustment}</p>
+                    <p className="text-xl sm:text-2xl font-extrabold text-red-600">{totalAdjustment}</p>
                     <p className="text-xs text-gray-600 dark:text-muted">Ajuste total (ud.)</p>
                   </div>
                 </div>
@@ -1197,7 +1197,7 @@ export default function InventoryTab() {
                   const diffColor = diff === 0 && counted !== null ? "border-emerald-300 bg-emerald-50/50" : Math.abs(diff) <= 3 ? "border-amber-300 bg-amber-50/50" : diff !== 0 ? "border-red-300 bg-red-50/50" : "border-gray-200 dark:border-card-border";
                   return (
                     <div key={p.id} className={cn("bg-white dark:bg-card rounded-2xl p-4 border transition-all", diffColor)}>
-                      <div className="flex items-start gap-3 mb-3">
+                      <div className="flex flex-wrap items-start gap-3 mb-3">
                         {p.image ? (
                           <Image src={p.image} alt={p.name} width={48} height={48} unoptimized={p.image.startsWith("data:")} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
                         ) : (
@@ -1243,7 +1243,7 @@ export default function InventoryTab() {
                   <button
                     onClick={saveStocktaking}
                     disabled={saving}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors shadow-lg disabled:opacity-60"
+                    className="flex flex-wrap items-center gap-2 px-3 sm:px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors shadow-lg disabled:opacity-60"
                   >
                     {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckSquare className="h-5 w-5" />}
                     {saving ? "Guardando conteo..." : "Guardar conteo físico"}
@@ -1268,7 +1268,7 @@ export default function InventoryTab() {
                 const meta = MOVEMENT_LABELS[m.type] ?? { label: m.type, color: "text-gray-600 dark:text-muted bg-gray-50 dark:bg-surface" };
                 const isPositive = ["compra", "devolucion", "ajuste_positivo"].includes(m.type);
                 return (
-                  <div key={m.id} className="px-4 py-3 flex items-center gap-3">
+                  <div key={m.id} className="px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center gap-3">
                     <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", isPositive ? "bg-emerald-50" : "bg-red-50")}>
                       {isPositive ? <ArrowUp className="h-4 w-4 text-emerald-500" /> : <ArrowDown className="h-4 w-4 text-red-500" />}
                     </div>
@@ -1343,7 +1343,7 @@ export default function InventoryTab() {
                 <p className="text-xs mt-1">Registra movimientos de tipo &quot;merma&quot; con su causa</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 {/* By loss type */}
                 <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
                   <h4 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3">Por tipo de p&eacute;rdida</h4>
@@ -1351,7 +1351,7 @@ export default function InventoryTab() {
                     {Object.entries(byType).map(([key, val]) => (
                       <div key={key} className="flex items-center justify-between text-xs p-2 rounded-lg bg-gray-50 dark:bg-surface">
                         <span className="font-semibold text-gray-700 dark:text-foreground">{LOSS_LABELS[key] ?? key}</span>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <span className="text-gray-400 dark:text-muted">{val.count} reg.</span>
                           <span className="font-bold text-red-600">{val.qty} ud.</span>
                         </div>
@@ -1398,7 +1398,7 @@ export default function InventoryTab() {
                 <p className="text-xs font-bold text-blue-700 uppercase tracking-wide flex items-center gap-1.5">
                   <Search className="h-3.5 w-3.5" /> Buscar en base nacional de productos
                 </p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <input
                     value={dbQuery}
                     onChange={(e) => setDbQuery(e.target.value)}
@@ -1422,7 +1422,7 @@ export default function InventoryTab() {
                         key={i}
                         type="button"
                         onClick={() => applyDbResult(r)}
-                        className="w-full text-left px-3 py-2.5 hover:bg-blue-50 flex items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
+                        className="w-full text-left px-3 py-2.5 hover:bg-blue-50 flex flex-wrap items-center gap-3 transition-colors border-b border-gray-50 last:border-0"
                       >
                         {r.image && (
                           <Image src={r.image} alt={r.name} width={40} height={40} className="rounded-lg object-cover border border-gray-100 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface" />
@@ -1436,7 +1436,7 @@ export default function InventoryTab() {
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Nombre *</label>
                   <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Arroz costeño 1kg" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
@@ -1484,7 +1484,7 @@ export default function InventoryTab() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Código de barras</label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <input value={addForm.barcode} onChange={(e) => setAddForm(f => ({ ...f, barcode: e.target.value }))} placeholder="7750000000000" className="flex-1 px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
                     <button type="button" onClick={() => setShowScanner(true)} className="px-3 py-2 rounded-lg border border-primary/30 text-primary hover:bg-primary/5 transition-colors">
                       <ScanBarcode className="h-4 w-4" />
@@ -1496,7 +1496,7 @@ export default function InventoryTab() {
               {/* IMPROVEMENT 3: Variant Management */}
               <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                     <p className="text-sm font-bold text-purple-900 dark:text-purple-100">Gestionar variantes / presentaciones</p>
                   </div>
@@ -1539,10 +1539,10 @@ export default function InventoryTab() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Imagen del producto</label>
-                  <div className="flex gap-3 items-start">
+                  <div className="flex flex-wrap gap-3 items-start">
                     {addForm.image && (
                       <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-gray-200 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
                         <Image src={addForm.image} alt="preview" fill unoptimized={addForm.image.startsWith("data:")} className="object-cover" />
@@ -1553,7 +1553,7 @@ export default function InventoryTab() {
                         type="button"
                         onClick={() => addImgRef.current?.click()}
                         disabled={imgUploading}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors text-sm font-medium disabled:opacity-50"
+                        className="w-full flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors text-sm font-medium disabled:opacity-50"
                       >
                         <Camera className="h-4 w-4" />
                         {imgUploading ? "Procesando…" : "Subir foto"}
@@ -1586,7 +1586,7 @@ export default function InventoryTab() {
                   </div>
                 </div>
               </div>
-              <div className="flex gap-3 pt-1">
+              <div className="flex flex-wrap gap-3 pt-1">
                 <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
                 <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando…" : "Agregar producto"}
@@ -1608,7 +1608,7 @@ export default function InventoryTab() {
               </button>
             </div>
             <div className="p-5 space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Nombre *</label>
                   <input required value={editForm.name ?? ""} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
@@ -1673,7 +1673,7 @@ export default function InventoryTab() {
               {/* IMPROVEMENT 3: Variant Management in Edit */}
               <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Layers className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                     <p className="text-sm font-bold text-purple-900 dark:text-purple-100">Gestionar variantes / presentaciones</p>
                   </div>
@@ -1716,10 +1716,10 @@ export default function InventoryTab() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Imagen del producto</label>
-                  <div className="flex gap-3 items-start">
+                  <div className="flex flex-wrap gap-3 items-start">
                     {editForm.image && (
                       <div className="relative h-16 w-16 rounded-xl overflow-hidden border border-gray-200 dark:border-card-border shrink-0 bg-gray-50 dark:bg-surface">
                         <Image src={editForm.image} alt="preview" fill unoptimized={editForm.image.startsWith("data:")} className="object-cover" />
@@ -1730,7 +1730,7 @@ export default function InventoryTab() {
                         type="button"
                         onClick={() => editImgRef.current?.click()}
                         disabled={imgUploading}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors text-sm font-medium disabled:opacity-50"
+                        className="w-full flex flex-wrap items-center justify-center gap-2 px-3 py-2 rounded-lg border border-dashed border-primary/40 text-primary hover:bg-primary/5 transition-colors text-sm font-medium disabled:opacity-50"
                       >
                         <Camera className="h-4 w-4" />
                         {imgUploading ? "Procesando…" : "Subir foto"}
@@ -1779,7 +1779,7 @@ export default function InventoryTab() {
                   <span className={cn("inline-block h-5 w-5 rounded-full bg-white dark:bg-card shadow transition-transform", editForm.active ? "translate-x-5" : "translate-x-0")} />
                 </button>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button type="button" onClick={closeEditModal} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
                 <button type="button" onClick={saveEdit} disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando…" : "Guardar cambios"}
@@ -1792,7 +1792,7 @@ export default function InventoryTab() {
 
       {/* Bulk action bar */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-primary text-white rounded-2xl shadow-2xl px-5 py-3 flex items-center gap-4 animate-[slideUp_0.2s_ease-out]">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-primary text-white rounded-2xl shadow-2xl px-5 py-3 flex flex-wrap items-center gap-2 sm:gap-4 animate-[slideUp_0.2s_ease-out]">
           <CheckSquare className="h-5 w-5 shrink-0" />
           <span className="text-sm font-bold">{selectedIds.size} seleccionado{selectedIds.size > 1 ? "s" : ""}</span>
           <button onClick={() => { setBulkField("active"); setBulkValue("true"); setBulkModal(true); }}
@@ -1841,11 +1841,11 @@ export default function InventoryTab() {
       {bulkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
+            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
               <h3 className="text-lg font-bold text-foreground">Edición masiva — {selectedIds.size} producto{selectedIds.size > 1 ? "s" : ""}</h3>
               <button onClick={() => setBulkModal(false)} className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"><X className="h-5 w-5" /></button>
             </div>
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-3 sm:px-6 py-5 space-y-4">
               <div>
                 <label className="text-xs font-bold text-gray-600 dark:text-muted">Campo a modificar</label>
                 <select value={bulkField} onChange={e => { setBulkField(e.target.value as typeof bulkField); setBulkValue(""); }}
@@ -1891,7 +1891,7 @@ export default function InventoryTab() {
                 )}
               </div>
             </div>
-            <div className="px-6 py-4 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border flex gap-3">
+            <div className="px-3 sm:px-6 py-4 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3">
               <button onClick={() => setBulkModal(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors">Cancelar</button>
               <button onClick={executeBulk} disabled={bulkSaving || (!bulkValue && bulkField !== "active")}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">

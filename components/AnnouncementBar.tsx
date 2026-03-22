@@ -83,7 +83,7 @@ export default function AnnouncementBar() {
       id="announcement-bar"
       className="fixed top-0 left-0 right-0 h-11 text-white text-center overflow-hidden shadow-lg"
       style={{
-        background: "linear-gradient(90deg, #4f46e5, #6366f1, #4f46e5)",
+        background: "linear-gradient(90deg, #245c43, #2d6a4f, #245c43)",
         zIndex: 60,
         transform: scrollHidden ? "translateY(-100%)" : "translateY(0)",
         transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",

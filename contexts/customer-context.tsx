@@ -18,6 +18,7 @@ export type SavedLocation = {
 
 export type Customer = {
   name: string;
+  dni?: string;
   phone?: string;
   location: string;
   reference: string;
@@ -77,6 +78,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({
           phone: data.phone,
           name: data.name,
+          dni: data.dni ?? null,
           location: data.location,
           reference: data.reference,
           locations: data.locations ?? [],
@@ -93,11 +95,12 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
       const res = await fetch(`/api/customers/${normalized}`);
       if (!res.ok) return null;
       const data = await res.json() as {
-        name: string; phone: string; location: string; reference: string;
+        name: string; dni?: string | null; phone: string; location: string; reference: string;
         locations: SavedLocation[]; activeLocationId: string | null;
       };
       return {
         name: data.name,
+        ...(data.dni ? { dni: data.dni } : {}),
         phone: data.phone,
         location: data.location,
         reference: data.reference,

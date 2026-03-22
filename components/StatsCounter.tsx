@@ -14,10 +14,10 @@ function parseStatValue(str: string): { value: number; suffix: string; decimals?
 }
 
 const statMeta = [
-  { icon: ShoppingBag, label: "Productos disponibles", accent: "#6366f1", accentGradient: "linear-gradient(to bottom, rgba(99,102,241,0.12), transparent)" },
-  { icon: Users, label: "Clientes satisfechos", accent: "#f59e0b", accentGradient: "linear-gradient(to bottom, rgba(245,158,11,0.12), transparent)" },
-  { icon: Truck, label: "Pedidos entregados", accent: "#3b82f6", accentGradient: "linear-gradient(to bottom, rgba(59,130,246,0.12), transparent)" },
-  { icon: Star, label: "Calificación promedio", accent: "#f43f5e", accentGradient: "linear-gradient(to bottom, rgba(244,63,94,0.12), transparent)" },
+  { icon: ShoppingBag, label: "Productos disponibles", accent: "#2d6a4f", accentGradient: "linear-gradient(to bottom, rgba(45,106,79,0.12), transparent)" },
+  { icon: Users, label: "Clientes satisfechos", accent: "#f4a261", accentGradient: "linear-gradient(to bottom, rgba(244,162,97,0.12), transparent)" },
+  { icon: Truck, label: "Pedidos entregados", accent: "#60a5fa", accentGradient: "linear-gradient(to bottom, rgba(96,165,250,0.12), transparent)" },
+  { icon: Star, label: "Calificación promedio", accent: "#fbbf24", accentGradient: "linear-gradient(to bottom, rgba(251,191,36,0.12), transparent)" },
 ];
 
 function AnimatedNumber({ target, decimals = 0, started }: { target: number; decimals?: number; started: boolean }) {
@@ -91,7 +91,7 @@ export default function StatsCounter() {
             <div
               key={stat.label}
               style={started ? { animationDelay: `${i * 120}ms` } : undefined}
-              className={`relative group rounded-2xl p-6 sm:p-8 text-center bg-white dark:bg-card border border-gray-100/80 dark:border-card-border hover:border-primary/25 hover:shadow-[0_8px_32px_rgba(99,102,241,0.08)] hover:-translate-y-0.5 transition-all duration-300 overflow-hidden ${
+              className={`relative group rounded-2xl p-6 sm:p-8 text-center bg-white dark:bg-card border border-gray-100/80 dark:border-card-border hover:border-primary/25 hover:shadow-[0_8px_32px_rgba(45,106,79,0.12)] hover:-translate-y-0.5 transition-all duration-300 overflow-hidden ${
                 started ? "animate-[fadeUp_0.5s_ease-out_both]" : "opacity-0"
               }`}
             >

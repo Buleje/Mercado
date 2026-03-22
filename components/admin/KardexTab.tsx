@@ -247,10 +247,10 @@ export default function KardexTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-extrabold text-gray-900 dark:text-foreground">
+          <h1 className="flex flex-wrap items-center gap-2 text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">
             <BookOpen className="h-6 w-6 text-primary" /> Kardex de Inventario <ModuleTooltip />
           </h1>
           <p className="mt-0.5 text-sm text-gray-500 dark:text-muted">Registro historico por producto: entradas, salidas y saldo valorizado</p>
@@ -283,7 +283,7 @@ export default function KardexTab() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-4">
         <KCard label="Saldo actual" value={`${stats.lastBalance} ${product.unit}`} sub={fmt(stats.lastBalance * (product.costPrice ?? 0))} icon={RefreshCw} color="text-blue-600" bg="bg-blue-50 dark:bg-blue-950/30" />
         <KCard label="Total entradas" value={`+${stats.inTotal} ${product.unit}`} sub="del periodo" icon={ArrowUpCircle} color="text-emerald-600" bg="bg-emerald-50 dark:bg-emerald-950/30" />
         <KCard label="Total salidas" value={`-${stats.outTotal} ${product.unit}`} sub="del periodo" icon={ArrowDownCircle} color="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/30" />
@@ -318,19 +318,19 @@ export default function KardexTab() {
           <span className="text-xs text-gray-400 dark:text-muted">{lines.length} movimientos</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="border-b border-gray-200 bg-gray-50 dark:border-card-border dark:bg-surface/50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Fecha</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Tipo</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Referencia</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Descripcion</th>
-                <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-emerald-600">Entrada</th>
-                <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-red-500">Salida</th>
-                <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Saldo</th>
-                <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Costo u.</th>
-                <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Costo total</th>
-                <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Almacen</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Fecha</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Tipo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Referencia</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Descripcion</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold uppercase tracking-wide text-emerald-600">Entrada</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold uppercase tracking-wide text-red-500">Salida</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Saldo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Costo u.</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Costo total</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Almacen</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -350,21 +350,21 @@ export default function KardexTab() {
                 const meta = TYPE_META[line.type] ?? TYPE_META.ajuste_negativo;
                 return (
                   <tr key={line.id} className="transition-colors hover:bg-gray-50/50 dark:hover:bg-surface/30">
-                    <td className="whitespace-nowrap px-4 py-3 text-xs text-gray-500 dark:text-muted">{fmtDate(line.date)}</td>
-                    <td className="px-4 py-3">
+                    <td className="whitespace-nowrap px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{fmtDate(line.date)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold", meta.bg, meta.color)}>
                         {meta.dir === "in" ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
                         {meta.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-700 dark:text-foreground">{line.reference}</td>
-                    <td className="max-w-60 truncate px-4 py-3 text-xs text-gray-600 dark:text-muted">{line.description}</td>
-                    <td className="px-4 py-3 text-right font-bold text-emerald-600">{line.qtyIn > 0 ? `+${line.qtyIn}` : "-"}</td>
-                    <td className="px-4 py-3 text-right font-bold text-red-500">{line.qtyOut > 0 ? `-${line.qtyOut}` : "-"}</td>
-                    <td className={cn("px-4 py-3 text-right font-extrabold", line.balance <= 0 ? "text-red-500" : line.balance <= 10 ? "text-amber-500" : "text-gray-800 dark:text-foreground")}>{line.balance}</td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-500 dark:text-muted">{fmt(line.costUnit)}</td>
-                    <td className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-foreground">{fmt(line.totalCost)}</td>
-                    <td className="px-4 py-3 text-xs text-gray-400 dark:text-muted">{line.warehouse}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-semibold text-gray-700 dark:text-foreground">{line.reference}</td>
+                    <td className="max-w-60 truncate px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{line.description}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-emerald-600">{line.qtyIn > 0 ? `+${line.qtyIn}` : "-"}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-red-500">{line.qtyOut > 0 ? `-${line.qtyOut}` : "-"}</td>
+                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", line.balance <= 0 ? "text-red-500" : line.balance <= 10 ? "text-amber-500" : "text-gray-800 dark:text-foreground")}>{line.balance}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-gray-500 dark:text-muted">{fmt(line.costUnit)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700 dark:text-foreground">{fmt(line.totalCost)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-400 dark:text-muted">{line.warehouse}</td>
                   </tr>
                 );
               })}

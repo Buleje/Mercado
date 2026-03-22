@@ -120,7 +120,7 @@ export default function PayablesTab() {
   }).filter(s => s.count > 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Cuentas por Pagar</h2>
@@ -128,8 +128,8 @@ export default function PayablesTab() {
             {filtered.length} cuentas · <span className="text-red-500 font-bold">S/{totalDebt.toFixed(2)}</span> por pagar · <span className="text-emerald-600 font-bold">S/{totalPaid.toFixed(2)}</span> pagado
           </p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-4 py-2 rounded-lg transition-colors shadow-sm">
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setShowAdd(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors shadow-sm">
             <Plus className="h-4 w-4" /> Nueva cuenta
           </button>
         </div>
@@ -150,7 +150,7 @@ export default function PayablesTab() {
               )}
             >
               <p className="font-bold text-gray-900 dark:text-foreground text-sm truncate">{s.name}</p>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex flex-wrap items-center gap-3 mt-1">
                 <span className="text-xs text-red-500 font-bold">Debe: S/{s.pending.toFixed(2)}</span>
                 <span className="text-xs text-emerald-600">Pagado: S/{s.totalPaid.toFixed(2)}</span>
               </div>
@@ -183,7 +183,7 @@ export default function PayablesTab() {
                       </span>
                     </div>
                     {p.description && <p className="text-sm text-gray-600 dark:text-muted mt-0.5">{p.description}</p>}
-                    <div className="flex items-center gap-4 text-xs text-gray-400 dark:text-muted mt-1">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-gray-400 dark:text-muted mt-1">
                       <span>Total: <span className="font-bold text-gray-700 dark:text-foreground">S/{p.amount.toFixed(2)}</span></span>
                       <span>Pagado: <span className="font-bold text-emerald-600">S/{p.paidAmount.toFixed(2)}</span></span>
                       <span>Restante: <span className="font-bold text-red-500">S/{remaining.toFixed(2)}</span></span>
@@ -198,7 +198,7 @@ export default function PayablesTab() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     {p.status !== "pagado" && (
                       <button
                         onClick={() => { setShowPayment(showPayment === p.id ? null : p.id); setPayForm({ amount: String(remaining.toFixed(2)), method: "efectivo", reference: "" }); }}
@@ -218,7 +218,7 @@ export default function PayablesTab() {
 
                 {/* Payment form */}
                 {showPayment === p.id && (
-                  <form onSubmit={(e) => registerPayment(e, p.id)} className="border-t border-gray-100 dark:border-card-border px-4 py-3 bg-emerald-50 flex flex-wrap items-end gap-3">
+                  <form onSubmit={(e) => registerPayment(e, p.id)} className="border-t border-gray-100 dark:border-card-border px-2 sm:px-4 py-2 sm:py-3 bg-emerald-50 flex flex-wrap items-end gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Monto (S/)</label>
                       <input
@@ -260,7 +260,7 @@ export default function PayablesTab() {
 
                 {/* Payment history */}
                 {expanded === p.id && (
-                  <div className="border-t border-gray-100 dark:border-card-border px-4 py-3 bg-gray-50 dark:bg-surface">
+                  <div className="border-t border-gray-100 dark:border-card-border px-2 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-surface">
                     <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-2">Historial de pagos</p>
                     {p.payments.length === 0 ? (
                       <p className="text-sm text-gray-400 dark:text-muted">Sin pagos registrados</p>
@@ -291,11 +291,11 @@ export default function PayablesTab() {
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
         <div className="bg-white dark:bg-card w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-y-auto max-h-[90dvh]">
           <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white dark:bg-card z-10">
-            <h3 className="font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</h3>
+            <h3 className="font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><CreditCard className="h-5 w-5 text-primary" /> Nueva cuenta por pagar</h3>
             <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-gray-500 dark:text-muted" /></button>
           </div>
           <form onSubmit={addPayable} className="p-5 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Proveedor *</label>
                 <select required value={addForm.supplierId} onChange={(e) => setAddForm(f => ({ ...f, supplierId: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm">
@@ -316,7 +316,7 @@ export default function PayablesTab() {
                 <input type="date" value={addForm.dueDate} onChange={(e) => setAddForm(f => ({ ...f, dueDate: e.target.value }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
               <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                 {saving ? "Guardando…" : "Crear cuenta"}

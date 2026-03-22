@@ -146,16 +146,16 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
   }, [audits]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Calculator className="h-6 w-6 text-primary" /> Arqueo de Caja Digital
             <ModuleTooltip />
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Conteo automático, discrepancias y cierre de turno</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {onNavigateToTurnos && (
             <button onClick={onNavigateToTurnos} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
               <ExternalLink className="h-4 w-4" /> Ir a Turnos
@@ -201,21 +201,21 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Turno</th><th className="px-4 py-3">Cajero/a</th><th className="px-4 py-3">Esperado</th><th className="px-4 py-3">Contado</th><th className="px-4 py-3">Diferencia</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3"></th></tr></thead>
+            <table className="w-full min-w-[600px] text-sm">
+              <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th><th className="px-2 sm:px-4 py-2 sm:py-3">Turno</th><th className="px-2 sm:px-4 py-2 sm:py-3">Cajero/a</th><th className="px-2 sm:px-4 py-2 sm:py-3">Esperado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Contado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Diferencia</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
               <tbody>
                 {audits.map(a => {
                   const SIcon = STATUS_MAP[a.status].icon;
                   return (
                     <tr key={a.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
-                      <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{a.date}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted capitalize">{a.shift}</td>
-                      <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{a.cashier}</td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-muted">{fmt(a.expectedAmount)}</td>
-                      <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{a.status !== "pendiente" ? fmt(a.countedAmount) : "—"}</td>
-                      <td className={cn("px-4 py-3 font-extrabold", a.difference === 0 ? "text-gray-400" : a.difference > 0 ? "text-blue-600" : "text-red-600")}>{a.status !== "pendiente" ? (a.difference > 0 ? "+" : "") + fmt(a.difference) : "—"}</td>
-                      <td className="px-4 py-3"><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[a.status].color)}><SIcon className="h-3.5 w-3.5" />{STATUS_MAP[a.status].label}</span></td>
-                      <td className="px-4 py-3"><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{a.date}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted capitalize">{a.shift}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{a.cashier}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">{fmt(a.expectedAmount)}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{a.status !== "pendiente" ? fmt(a.countedAmount) : "—"}</td>
+                      <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-extrabold", a.difference === 0 ? "text-gray-400" : a.difference > 0 ? "text-blue-600" : "text-red-600")}>{a.status !== "pendiente" ? (a.difference > 0 ? "+" : "") + fmt(a.difference) : "—"}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[a.status].color)}><SIcon className="h-3.5 w-3.5" />{STATUS_MAP[a.status].label}</span></td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
                     </tr>
                   );
                 })}
@@ -228,7 +228,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       {/* Detail Modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">Arqueo — {detail.date} {detail.shift}</h3>
@@ -237,7 +237,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 text-sm text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-center">
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><p className="text-xs text-gray-400">Esperado</p><p className="font-extrabold text-gray-800 dark:text-foreground">{fmt(detail.expectedAmount)}</p></div>
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><p className="text-xs text-gray-400">Contado</p><p className="font-extrabold text-gray-800 dark:text-foreground">{detail.status !== "pendiente" ? fmt(detail.countedAmount) : "-"}</p></div>
               <div className={cn("rounded-xl p-3", STATUS_MAP[detail.status].bg)}><p className="text-xs text-gray-400">Diferencia</p><p className={cn("font-extrabold", STATUS_MAP[detail.status].color)}>{detail.status !== "pendiente" ? (detail.difference > 0 ? "+" : "") + fmt(detail.difference) : "-"}</p></div>
@@ -246,7 +246,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
             {detail.denominations.length > 0 && (
               <div>
                 <h4 className="font-bold text-sm text-gray-700 dark:text-foreground mb-2 flex items-center gap-1"><Coins className="h-4 w-4" /> Desglose de denominaciones</h4>
-                <div className="grid grid-cols-2 gap-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                   {detail.denominations.filter(d => d.count > 0).map(d => (
                     <div key={`${d.type}-${d.value}`} className="flex items-center justify-between bg-gray-50 dark:bg-surface rounded-lg px-3 py-1.5 text-xs">
                       <span className="flex items-center gap-1 text-gray-600 dark:text-muted">

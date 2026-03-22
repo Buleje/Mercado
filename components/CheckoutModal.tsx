@@ -7,7 +7,7 @@ import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   X, ShoppingCart, User, MapPin, Home, Navigation,
   Loader2, CheckCircle2, ChevronRight, Phone,
-  Banknote, Hash, Clock, Award, Copy, Check,
+  Award, Tag, Hash, Clock, Banknote,
 } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
@@ -15,21 +15,15 @@ import { useSettings } from "@/contexts/settings-context";
 import { usePromotions } from "@/contexts/promotions-context";
 import { cn } from "@/lib/utils";
 import { trackPurchase } from "@/lib/analytics";
-import DeliveryEstimation from "@/components/DeliveryEstimation";
 import type { DbOrderItem } from "@/lib/jsondb";
 import type { SavedLocation, Customer } from "@/contexts/customer-context";
+import { StepBar, STEPS, YapePaymentPanel, CashChangeCalculator, type Step } from "@/components/checkout";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 const Confetti = dynamic(() => import("./Confetti"), { ssr: false });
 
-type Step = "cuenta" | "datos" | "pago" | "exito";
 type PaymentMethod = "yape" | "efectivo";
-
-const STEPS: { id: Step; label: string }[] = [
-  { id: "cuenta", label: "Tu cuenta" },
-  { id: "datos", label: "Tus datos" },
-  { id: "pago", label: "Pago" },
-];
+type DniLookupStatus = "idle" | "loading" | "success" | "error";
 
 function coordsFromLocation(loc: string) {
   const match = loc.match(/GPS:\s*([-\d.]+),\s*([-\d.]+)/);
@@ -70,36 +64,6 @@ function getDeliveryETA(slotId: string): string {
   }
 }
 
-function StepBar({ current }: { current: Step }) {
-  const idx = STEPS.findIndex((s) => s.id === current);
-  return (
-    <div className="flex items-center gap-0 px-6 py-3 bg-gray-50 dark:bg-card border-b dark:border-card-border">
-      {STEPS.map((s, i) => (
-        <div key={s.id} className="flex items-center flex-1 last:flex-none">
-          <div className="flex flex-col items-center">
-            <div className={cn(
-              "h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold transition-all",
-              i < idx ? "bg-primary text-white" :
-              i === idx ? "bg-primary text-white ring-4 ring-primary/20" :
-              "bg-gray-200 text-gray-400"
-            )}>
-              {i < idx ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
-            </div>
-            <span className={cn("text-[10px] font-semibold mt-1 whitespace-nowrap",
-              i <= idx ? "text-primary" : "text-gray-400"
-            )}>{s.label}</span>
-          </div>
-          {i < STEPS.length - 1 && (
-            <div className={cn("h-0.5 flex-1 mx-2 mb-4 transition-colors",
-              i < idx ? "bg-primary" : "bg-gray-200"
-            )} />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default function CheckoutModal() {
   const { items, total, checkoutOpen, closeCheckout, clear, close: closeCart, markOrderPending } = useCart();
   const { customer, register, findByPhone, openOrderStatusModal } = useCustomer();
@@ -113,11 +77,14 @@ export default function CheckoutModal() {
   const [dataError, setDataError] = useState("");
 
   // Customer data fields
+  const [dni, setDni] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
   const [reference, setReference] = useState("");
   const [notes, setNotes] = useState("");
+  const [dniLookupStatus, setDniLookupStatus] = useState<DniLookupStatus>("idle");
+  const [dniLookupMessage, setDniLookupMessage] = useState("");
   const [loadingGeo, setLoadingGeo] = useState(false);
   const [geoError, setGeoError] = useState("");
   const [showMap, setShowMap] = useState(false);
@@ -303,6 +270,9 @@ export default function CheckoutModal() {
       setDeliveryDate("");
       setDeliveryTime("");
       setUseCustomDateTime(false);
+      setDni(customer?.dni ?? "");
+      setDniLookupStatus("idle");
+      setDniLookupMessage("");
       setStreetType("Calle");
       setStreetName("");
       setStreetNumber("");
@@ -312,6 +282,7 @@ export default function CheckoutModal() {
       if (customer?.phone) fetchLoyaltyPoints(customer.phone);
 
       // Auto-fill from customer
+      setDni(customer?.dni ?? "");
       setName(customer?.name ?? "");
       setPhone(customer?.phone ?? "");
 
@@ -492,6 +463,7 @@ export default function CheckoutModal() {
     const found = await findByPhone(q);
     if (found) {
       setFoundCustomer(found);
+      setDni(found.dni ?? "");
       setName(found.name || "");
       setPhone(found.phone ?? q);
       fetchLoyaltyPoints(found.phone ?? q);
@@ -534,6 +506,7 @@ export default function CheckoutModal() {
 
     // Build effective values first so we can pre-flight validate
     const effectiveName = (name || effectiveCustomer?.name || "").trim();
+    const effectiveDni = dni.replace(/\D/g, "").slice(0, 8);
     const effectivePhone = (phone || effectiveCustomer?.phone || "").replace(/\D/g, "").slice(-9);
     const effectiveLoc = (location || effectiveCustomer?.location || "").trim();
     const effectiveRef = (reference || effectiveCustomer?.reference || "").trim();
@@ -542,6 +515,11 @@ export default function CheckoutModal() {
     // Pre-flight guard — should rarely trigger thanks to UI validation
     if (!effectiveName) {
       setSubmitError("Por favor ingresa tu nombre completo.");
+      setSubmitting(false);
+      return;
+    }
+    if (effectiveDni && !/^\d{8}$/.test(effectiveDni)) {
+      setSubmitError("El DNI debe tener 8 dígitos.");
       setSubmitting(false);
       return;
     }
@@ -631,6 +609,7 @@ export default function CheckoutModal() {
           }
           register({
             name: effectiveName,
+            ...(effectiveDni && { dni: effectiveDni }),
             phone: finalPhone,
             location: effectiveLoc || effectiveCustomer?.location || "",
             reference: effectiveRef || effectiveCustomer?.reference || "",
@@ -668,9 +647,14 @@ export default function CheckoutModal() {
     e.preventDefault();
     setDataError("");
     const effectiveName = (name || effectiveCustomer?.name || "").trim();
+    const effectiveDni = dni.replace(/\D/g, "").slice(0, 8);
     const effectiveLoc = (location || effectiveCustomer?.location || "").trim();
     if (!effectiveName) {
       setDataError("Por favor ingresa tu nombre completo.");
+      return;
+    }
+    if (effectiveDni && !/^\d{8}$/.test(effectiveDni)) {
+      setDataError("El DNI debe tener 8 dígitos.");
       return;
     }
     if (!effectiveLoc) {
@@ -706,6 +690,56 @@ export default function CheckoutModal() {
   };
 
   const canConfirm = paymentMethod === "efectivo" || (paymentMethod === "yape" && /^\d{6,20}$/.test(yapeOpNumber.trim()));
+
+  useEffect(() => {
+    const normalizedDni = dni.replace(/\D/g, "").slice(0, 8);
+
+    if (!normalizedDni) {
+      setDniLookupStatus("idle");
+      setDniLookupMessage("Escribe 8 números y traeremos el nombre desde RENIEC.");
+      return;
+    }
+
+    if (normalizedDni.length < 8) {
+      setDniLookupStatus("idle");
+      setDniLookupMessage(`Faltan ${8 - normalizedDni.length} dígitos para consultar RENIEC.`);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setDniLookupStatus("loading");
+        setDniLookupMessage("Buscando nombre en RENIEC...");
+
+        const res = await fetch(`/api/reniec/dni/${normalizedDni}`, {
+          method: "GET",
+          signal: controller.signal,
+        });
+
+        const data = await res.json() as { nombreCompleto?: string; error?: string };
+
+        if (!res.ok || !data.nombreCompleto) {
+          setDniLookupStatus("error");
+          setDniLookupMessage(data.error || "No encontramos datos para este DNI.");
+          return;
+        }
+
+        setName(data.nombreCompleto);
+        setDniLookupStatus("success");
+        setDniLookupMessage("Nombre completado automáticamente desde RENIEC.");
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setDniLookupStatus("error");
+        setDniLookupMessage(error instanceof Error ? error.message : "No se pudo consultar RENIEC.");
+      }
+    }, 450);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [dni]);
 
   if (!checkoutOpen) return null;
 
@@ -785,24 +819,24 @@ export default function CheckoutModal() {
               transform: 'translateZ(1px)',
             }}
           >
-            <div role="dialog" aria-modal="true" aria-label="Completar pedido" className="relative bg-white dark:bg-background rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg md:max-w-xl max-h-[95svh] flex flex-col overflow-hidden">
+            <div role="dialog" aria-modal="true" aria-label="Completar pedido" className={`relative bg-white dark:bg-background rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-h-[95svh] flex flex-col overflow-hidden transition-all duration-300 ${step === "pago" ? "sm:max-w-5xl" : "sm:max-w-2xl"}`}>
 
               <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
                 <div className="h-1 w-10 rounded-full bg-gray-200" />
               </div>
 
-              <div className="flex items-center justify-between px-5 py-4 shrink-0 bg-linear-to-r from-primary to-primary-dark">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center shadow-lg">
-                    <ShoppingCart className="h-5 w-5 text-white" />
+              <div className="flex items-center justify-between px-6 py-5 shrink-0 bg-linear-to-r from-primary to-primary-dark">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shadow-lg">
+                    <ShoppingCart className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="font-extrabold text-white text-lg leading-tight">Completar pedido</h2>
-                    <p className="text-xs text-white/70">Bodega San Martín · {items.length} {items.length === 1 ? "producto" : "productos"}</p>
+                    <h2 className="font-extrabold text-white text-xl leading-tight">Completar pedido</h2>
+                    <p className="text-sm text-white/70">Bodega San Martín · {items.length} {items.length === 1 ? "producto" : "productos"}</p>
                   </div>
                 </div>
-                <button onClick={closeCheckout} aria-label="Cerrar checkout" className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
-                  <X className="h-5 w-5 text-white" />
+                <button onClick={closeCheckout} aria-label="Cerrar checkout" className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+                  <X className="h-6 w-6 text-white" />
                 </button>
               </div>
 
@@ -835,86 +869,83 @@ export default function CheckoutModal() {
                   {/* ── Step: Cuenta ──────────────────────── */}
                   {step === "cuenta" && (
                     <m.div key="cuenta" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>
-                      <div className="px-5 py-6 space-y-5">
-                        <div className="text-center space-y-2">
-                          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                            <User className="h-8 w-8 text-primary" />
+                      <div className="px-6 py-5 space-y-4">
+                        <div className="flex items-center gap-4 mb-1">
+                          <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                            <User className="h-5 w-5 text-primary" />
                           </div>
-                          <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">¿Ya tienes cuenta?</h3>
-                          <p className="text-sm text-gray-400">
-                            Ingresa tu celular para cargar tus datos guardados automáticamente.
-                          </p>
+                          <div>
+                            <h3 className="text-base font-extrabold text-gray-900 dark:text-foreground">¿Ya tienes cuenta?</h3>
+                            <p className="text-sm text-gray-400">Ingresa tu celular para cargar tus datos guardados.</p>
+                          </div>
                         </div>
 
-                        {/* Quick-continue card if customer already in context */}
-                        {customer && (
-                          <>
-                            <div className="bg-primary/5 border-2 border-primary/20 rounded-2xl p-4">
-                              <p className="text-[10px] font-bold text-primary/70 uppercase tracking-wider mb-3">Cuenta guardada</p>
-                              <div className="flex items-center gap-3 mb-3">
-                                <div className="h-10 w-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-                                  <User className="h-5 w-5 text-primary" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="font-bold text-gray-900 dark:text-foreground text-sm leading-tight">{customer.name}</p>
-                                  {customer.phone && (
-                                    <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                                      <Phone className="h-3 w-3" />{customer.phone}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                setFoundCustomer(customer);
-                                setName(customer.name);
-                                setPhone(customer.phone ?? "");
-                                if (customer.phone) fetchLoyaltyPoints(customer.phone);
-                                const cLocs: SavedLocation[] = customer.locations?.length
-                                  ? customer.locations
-                                  : customer.location
-                                  ? [{ id: "default", location: customer.location, reference: customer.reference ?? "" }]
-                                  : [];
-                                if (cLocs.length > 0) {
-                                  const aId = customer.activeLocationId ?? cLocs[0].id;
-                                  const aLoc = cLocs.find((l) => l.id === aId) ?? cLocs[0];
-                                  setSelectedLocId(aId);
-                                  setLocation(aLoc.location ?? "");
-                                  setReference(aLoc.reference ?? "");
-                                  setMapCoords(coordsFromLocation(aLoc.location ?? ""));
-                                }
-                                setStep("datos");
-                              }}
-                                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20"
-                              >
-                                Continuar como {customer.name?.split(" ")[0] ?? "tí"} <ChevronRight className="h-4 w-4" />
-                              </button>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                              <span className="text-xs text-gray-400 font-medium">o buscar otro número</span>
-                              <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                            </div>
-                          </>
-                        )}
+                        {/* ── 3 columnas: cuenta guardada | buscar número | cliente nuevo ── */}
+                        <div className="grid grid-cols-3 gap-3">
 
-                        {/* Phone search */}
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">
-                              Número de celular
-                            </label>
+                          {/* Col 1: Cuenta guardada (o placeholder vacío) */}
+                          <div className={`rounded-2xl border-2 p-4 flex flex-col gap-3 ${
+                            customer ? "border-primary/20 bg-primary/5" : "border-dashed border-gray-200 dark:border-zinc-700 bg-gray-50/50 dark:bg-surface/20"
+                          }`}>
+                            <p className="text-xs font-bold text-primary/60 uppercase tracking-wider">Cuenta guardada</p>
+                            {customer ? (
+                              <>
+                                <div className="flex items-center gap-2.5">
+                                  <div className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                                    <User className="h-4 w-4 text-primary" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-bold text-gray-900 dark:text-foreground text-sm leading-tight truncate">{customer.name}</p>
+                                    {customer.phone && (
+                                      <p className="text-xs text-gray-500 truncate">{customer.phone}</p>
+                                    )}
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setFoundCustomer(customer);
+                                    setName(customer.name);
+                                    setPhone(customer.phone ?? "");
+                                    if (customer.phone) fetchLoyaltyPoints(customer.phone);
+                                    const cLocs: SavedLocation[] = customer.locations?.length
+                                      ? customer.locations
+                                      : customer.location
+                                      ? [{ id: "default", location: customer.location, reference: customer.reference ?? "" }]
+                                      : [];
+                                    if (cLocs.length > 0) {
+                                      const aId = customer.activeLocationId ?? cLocs[0].id;
+                                      const aLoc = cLocs.find((l) => l.id === aId) ?? cLocs[0];
+                                      setSelectedLocId(aId);
+                                      setLocation(aLoc.location ?? "");
+                                      setReference(aLoc.reference ?? "");
+                                      setMapCoords(coordsFromLocation(aLoc.location ?? ""));
+                                    }
+                                    setStep("datos");
+                                  }}
+                                  className="mt-auto w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-md shadow-primary/20"
+                                >
+                                  Continuar <ChevronRight className="h-4 w-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <p className="text-xs text-gray-400 leading-tight">No hay sesión activa</p>
+                            )}
+                          </div>
+
+                          {/* Col 2: Buscar número */}
+                          <div className="rounded-2xl border-2 border-gray-200 dark:border-zinc-700 p-4 flex flex-col gap-3">
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Buscar cuenta</p>
                             <div className="relative">
-                              <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                               <input
                                 type="tel"
                                 value={phoneQuery}
                                 onChange={(e) => { setPhoneQuery(e.target.value.replace(/[^\d]/g, "")); setPhoneNotFound(false); }}
-                                placeholder="Ej: 987654321"
+                                placeholder="987654321"
                                 maxLength={9}
                                 onKeyDown={(e) => e.key === "Enter" && handlePhoneSearch()}
-                                className={cn("w-full pl-10 pr-4 py-3 rounded-xl border-2 text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:ring-2 outline-none transition-all text-sm",
+                                className={cn("w-full pl-9 pr-3 py-2.5 rounded-xl border text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:ring-2 outline-none transition-all text-sm",
                                   phoneQuery.length === 0 ? "border-gray-200 dark:border-zinc-700 focus:border-primary focus:ring-primary/20"
                                   : phoneQueryValidation.valid ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-200"
                                   : "border-gray-200 dark:border-zinc-700 focus:border-primary focus:ring-primary/20"
@@ -922,42 +953,38 @@ export default function CheckoutModal() {
                               />
                             </div>
                             {phoneQuery.length > 0 && phoneQueryValidation.hint && (
-                              <p className={`text-[11px] mt-1 font-semibold ${phoneQueryValidation.color}`}>{phoneQueryValidation.hint}</p>
+                              <p className={`text-xs font-semibold ${phoneQueryValidation.color}`}>{phoneQueryValidation.hint}</p>
                             )}
+                            {phoneNotFound && (
+                              <p className="text-xs text-red-500 font-semibold">Número no encontrado</p>
+                            )}
+                            <button
+                              type="button"
+                              onClick={handlePhoneSearch}
+                              disabled={!phoneQueryValidation.valid || phoneSearching}
+                              className="mt-auto w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-md shadow-primary/20 disabled:opacity-50"
+                            >
+                              {phoneSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}
+                              {phoneSearching ? "Buscando…" : "Buscar"}
+                            </button>
                           </div>
 
-                          {phoneNotFound && (
-                            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30">
-                              <X className="h-4 w-4 text-red-500 shrink-0" />
-                              <p className="text-xs text-red-600 dark:text-red-400 font-semibold">
-                                No encontramos una cuenta con ese número.
-                              </p>
+                          {/* Col 3: Cliente nuevo */}
+                          <div className="rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 flex flex-col gap-3 items-center justify-between">
+                            <p className="text-xs font-bold text-primary/60 uppercase tracking-wider self-start">Soy nuevo</p>
+                            <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
+                              <User className="h-5 w-5 text-primary" />
                             </div>
-                          )}
-
-                          <button
-                            type="button"
-                            onClick={handlePhoneSearch}
-                            disabled={!phoneQueryValidation.valid || phoneSearching}
-                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20 disabled:opacity-50"
-                          >
-                            {phoneSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}
-                            {phoneSearching ? "Buscando cuenta…" : "Buscar mi cuenta"}
-                          </button>
-
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-                            <span className="text-xs text-gray-400 font-medium">o</span>
-                            <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+                            <p className="text-xs text-gray-400 text-center leading-tight">Registro rápido</p>
+                            <button
+                              type="button"
+                              onClick={handleSkipAccount}
+                              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-primary/40 text-sm font-bold text-primary hover:bg-primary/10 hover:border-primary/60 transition-all"
+                            >
+                              Continuar <ChevronRight className="h-4 w-4" />
+                            </button>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={handleSkipAccount}
-                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-primary/30 bg-primary/5 text-sm font-bold text-primary hover:bg-primary/10 hover:border-primary/50 transition-all"
-                          >
-                            Soy cliente nuevo <ChevronRight className="h-4 w-4" />
-                          </button>
                         </div>
                       </div>
                     </m.div>
@@ -986,47 +1013,32 @@ export default function CheckoutModal() {
                             </div>
                             {/* rows */}
                             <div className="divide-y divide-primary/10">
-                              <div className="flex items-center gap-3 px-4 py-3">
-                                <User className="h-4 w-4 text-primary/60 shrink-0" />
-                                <div>
-                                  <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider leading-none mb-0.5">Nombre</p>
-                                  <p className="text-sm font-bold text-gray-900 dark:text-foreground">{name}</p>
-                                </div>
+                              <div className="flex items-center gap-2.5 px-3 py-1.5">
+                                <User className="h-3.5 w-3.5 text-primary/60 shrink-0" />
+                                <span className="text-xs font-bold text-gray-900 dark:text-foreground">{name}</span>
                               </div>
                               {phone && (
-                                <div className="flex items-center gap-3 px-4 py-3">
-                                  <Phone className="h-4 w-4 text-primary/60 shrink-0" />
-                                  <div>
-                                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider leading-none mb-0.5">Teléfono</p>
-                                    <p className="text-sm font-semibold text-gray-800 dark:text-foreground">{phone}</p>
-                                  </div>
+                                <div className="flex items-center gap-2.5 px-3 py-1.5">
+                                  <Phone className="h-3.5 w-3.5 text-primary/60 shrink-0" />
+                                  <span className="text-xs text-gray-700 dark:text-foreground">{phone}</span>
                                 </div>
                               )}
                               {location && (
-                                <div className="flex items-start gap-3 px-4 py-3">
-                                  <MapPin className="h-4 w-4 text-primary/60 shrink-0 mt-0.5" />
-                                  <div>
-                                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider leading-none mb-0.5">Dirección</p>
-                                    <p className="text-sm font-semibold text-gray-800 dark:text-foreground">{location}</p>
-                                  </div>
+                                <div className="flex items-start gap-2.5 px-3 py-1.5">
+                                  <MapPin className="h-3.5 w-3.5 text-primary/60 shrink-0 mt-0.5" />
+                                  <span className="text-xs text-gray-700 dark:text-foreground leading-tight">{location}</span>
                                 </div>
                               )}
                               {reference && (
-                                <div className="flex items-start gap-3 px-4 py-3">
-                                  <Home className="h-4 w-4 text-primary/60 shrink-0 mt-0.5" />
-                                  <div>
-                                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider leading-none mb-0.5">Referencia</p>
-                                    <p className="text-sm font-semibold text-gray-800 dark:text-foreground">{reference}</p>
-                                  </div>
+                                <div className="flex items-start gap-2.5 px-3 py-1.5">
+                                  <Home className="h-3.5 w-3.5 text-primary/60 shrink-0 mt-0.5" />
+                                  <span className="text-xs text-gray-500 leading-tight">{reference}</span>
                                 </div>
                               )}
                               {loyaltyPoints !== null && loyaltyPoints > 0 && (
-                                <div className="flex items-center gap-3 px-4 py-3 bg-amber-50/60 dark:bg-amber-900/10">
-                                  <Award className="h-4 w-4 text-amber-500 shrink-0" />
-                                  <div>
-                                    <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider leading-none mb-0.5">Puntos acumulados</p>
-                                    <p className="text-sm font-bold text-amber-700 dark:text-amber-400">{loyaltyPoints} pts</p>
-                                  </div>
+                                <div className="flex items-center gap-2.5 px-3 py-1.5 bg-amber-50/60 dark:bg-amber-900/10">
+                                  <Award className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                  <span className="text-xs font-bold text-amber-700 dark:text-amber-400">{loyaltyPoints} pts</span>
                                 </div>
                               )}
                             </div>
@@ -1061,10 +1073,46 @@ export default function CheckoutModal() {
                         ) : (
                           /* ── CASO B: sin cuenta / editando → formulario completo ── */
                           <>
-                            {/* Name and Phone in grid for desktop */}
-                            <div className="grid md:grid-cols-2 gap-4">
-                              {/* Name */}
+                            {/* DNI, Name and Phone */}
+                            <div className="grid md:grid-cols-3 gap-4">
                               <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">DNI</label>
+                                <div className="relative">
+                                  <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                  <input
+                                    value={dni}
+                                    onChange={(e) => setDni(e.target.value.replace(/[^\d]/g, "").slice(0, 8))}
+                                    placeholder="Ej: 12345678"
+                                    inputMode="numeric"
+                                    maxLength={8}
+                                    className={cn(
+                                      "w-full pl-10 pr-10 py-3 rounded-xl border-2 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:ring-2 outline-none transition-all text-sm",
+                                      dniLookupStatus === "success"
+                                        ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-200"
+                                        : dniLookupStatus === "error"
+                                        ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                                        : "border-gray-200 focus:border-primary focus:ring-primary/20"
+                                    )}
+                                  />
+                                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                    {dniLookupStatus === "loading" ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : dniLookupStatus === "success" ? (
+                                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                    ) : null}
+                                  </div>
+                                </div>
+                                <p className={cn(
+                                  "text-[11px] mt-1 font-semibold",
+                                  dniLookupStatus === "error"
+                                    ? "text-red-500"
+                                    : dniLookupStatus === "success"
+                                    ? "text-emerald-600"
+                                    : "text-gray-400"
+                                )}>{dniLookupMessage}</p>
+                              </div>
+                              {/* Name */}
+                              <div className="md:col-span-1">
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Nombre completo *</label>
                                 <div className="relative">
                                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -1306,36 +1354,23 @@ export default function CheckoutModal() {
                               </button>
                             </div>
                           ) : (
-                            <>
-                              {/* Default: Lo antes posible */}
-                              <div className="px-4 py-4 rounded-xl border-2 border-primary bg-primary/5">
-                                <div className="flex items-center gap-3">
-                                  <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
-                                    <span className="text-2xl">⚡</span>
+                            <>                              
+                              {/* Default: Lo antes posible + custom date side by side */}
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="flex items-center gap-2 px-3 py-3 rounded-xl border-2 border-primary bg-primary/5">
+                                  <span className="text-xl shrink-0">⚡</span>
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-bold text-primary leading-tight">Lo antes posible</p>
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">Enviamos de inmediato</p>
                                   </div>
-                                  <div className="flex-1">
-                                    <p className="text-sm font-bold text-primary">Lo antes posible</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Preparamos y enviamos tu pedido de inmediato</p>
-                                  </div>
-                                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0 ml-auto" />
                                 </div>
+                                <button type="button" onClick={() => setUseCustomDateTime(true)}
+                                  className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl border-2 border-dashed border-primary/30 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">
+                                  <Clock className="h-4 w-4" />
+                                  ¿Fecha específica?
+                                </button>
                               </div>
-                              
-                              {/* Enhanced Delivery ETA */}
-                              <div className="mt-3">
-                                <DeliveryEstimation
-                                  deliverySlot={deliverySlot}
-                                  distanceKm={deliveryDistance}
-                                  orderCount={pendingOrdersCount}
-                                />
-                              </div>
-                              
-                              {/* Link to custom date/time */}
-                              <button type="button" onClick={() => setUseCustomDateTime(true)}
-                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border-2 border-dashed border-primary/30 text-sm font-semibold text-primary hover:bg-primary/5 transition-colors">
-                                <Clock className="h-4 w-4" />
-                                ¿Prefieres una fecha y hora específica?
-                              </button>
                             </>
                           )}
                         </div>
@@ -1365,32 +1400,23 @@ export default function CheckoutModal() {
                   {/* ── Step: Pago ───────────────────────── */}
                   {step === "pago" && (
                     <m.div key="pago" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                      <form onSubmit={handlePaymentSubmit} className="px-5 py-4">
-                        {/* Stock warnings */}
-                        {stockWarnings.length > 0 && (
-                          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3">
-                            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-1">⚠️ Problemas de stock</p>
-                            <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-0.5 list-disc list-inside">
-                              {stockWarnings.map((w, i) => <li key={i}>{w}</li>)}
-                            </ul>
-                          </div>
-                        )}
-                        <div className="lg:grid lg:grid-cols-[1fr_380px] lg:divide-x lg:divide-gray-100 dark:lg:divide-card-border">
+                      <form onSubmit={handlePaymentSubmit} className="px-6 py-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-[1fr_360px] divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-card-border gap-0">
 
                           {/* ─── Columna izquierda: detalle del pedido ─── */}
-                          <div className="space-y-4 lg:pr-6">
+                          <div className="space-y-4 pr-0 sm:pr-6 pb-5 sm:pb-0">
 
                             {/* Items list — redesigned */}
                             <div>
-                              <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                <ShoppingCart className="h-3.5 w-3.5" />
+                              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <ShoppingCart className="h-4 w-4" />
                                 Tu pedido ({items.length} {items.length === 1 ? "producto" : "productos"})
                               </p>
                               <div className="rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden bg-white dark:bg-card shadow-sm">
-                                <div className="max-h-60 overflow-y-auto divide-y divide-gray-50 dark:divide-card-border">
+                                <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 dark:divide-card-border">
                                   {items.map((item) => (
-                                    <div key={item.id} className="flex items-center gap-3 px-3.5 py-3 hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                                      <div className="relative h-12 w-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface shrink-0 ring-1 ring-gray-100 dark:ring-card-border">
+                                    <div key={item.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
+                                      <div className="relative h-14 w-14 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface shrink-0 ring-1 ring-gray-100 dark:ring-card-border">
                                         {item.image ? (
                                           /* eslint-disable-next-line @next/next/no-img-element */
                                           <img
@@ -1404,16 +1430,16 @@ export default function CheckoutModal() {
                                         )}
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-gray-800 dark:text-foreground truncate leading-tight">{item.name}</p>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                          <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold">
+                                        <p className="text-sm font-bold text-gray-800 dark:text-foreground truncate leading-tight">{item.name}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-md bg-primary/10 text-primary text-xs font-bold">
                                             ×{item.quantity}
                                           </span>
-                                          <span className="text-[10px] text-gray-400">{item.unit}</span>
+                                          <span className="text-xs text-gray-400">{item.unit}</span>
                                           {item.note && <span className="text-[10px] text-amber-500 truncate">📝 {item.note}</span>}
                                         </div>
                                       </div>
-                                      <p className="text-sm font-extrabold text-gray-900 dark:text-foreground shrink-0 tabular-nums">
+                                      <p className="text-base font-extrabold text-gray-900 dark:text-foreground shrink-0 tabular-nums">
                                         S/{(item.price * item.quantity).toFixed(2)}
                                       </p>
                                     </div>
@@ -1421,23 +1447,6 @@ export default function CheckoutModal() {
                                 </div>
                               </div>
                             </div>
-
-                            {/* R2: Dynamic wait time */}
-                            {(() => {
-                              const h = new Date().getHours();
-                              const base = h >= 11 && h <= 14 ? 45 : h >= 18 && h <= 21 ? 40 : 25;
-                              const extra = Math.floor(items.length / 5) * 5;
-                              const est = base + extra;
-                              return (
-                                <div className="flex items-center gap-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/30 px-4 py-2.5">
-                                  <span className="text-lg">🕐</span>
-                                  <div>
-                                    <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300">Tiempo estimado: {est}–{est + 15} min</p>
-                                    <p className="text-[10px] text-indigo-500 dark:text-indigo-400">{h >= 11 && h <= 14 ? "Hora pico almuerzo — puede demorar un poco más" : h >= 18 && h <= 21 ? "Hora pico cena" : "Buen momento para pedir"}</p>
-                                  </div>
-                                </div>
-                              );
-                            })()}
 
                             {/* Cupón */}
                             <div>
@@ -1470,18 +1479,7 @@ export default function CheckoutModal() {
                           </div>
 
                           {/* ─── Columna derecha: pago y resumen ─── */}
-                          <div className="space-y-4 mt-6 lg:mt-0 lg:pl-6">
-
-                            {/* W1: Pending orders alert */}
-                            {pendingOrdersCount > 0 && (
-                              <div className="flex items-center gap-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 px-4 py-2.5">
-                                <span className="text-lg">⚠️</span>
-                                <div>
-                                  <p className="text-xs font-bold text-amber-700 dark:text-amber-300">Tienes {pendingOrdersCount} pedido{pendingOrdersCount > 1 ? "s" : ""} activo{pendingOrdersCount > 1 ? "s" : ""}</p>
-                                  <p className="text-[10px] text-amber-600 dark:text-amber-400">Puedes continuar, pero tu pedido anterior aún está en proceso</p>
-                                </div>
-                              </div>
-                            )}
+                          <div className="space-y-4 pl-0 sm:pl-6 pt-5 sm:pt-0">
 
                             {/* R1: Tip */}
                             <div className="rounded-2xl border border-gray-100 dark:border-card-border p-3.5 bg-gray-50/50 dark:bg-surface/30">
@@ -1501,6 +1499,42 @@ export default function CheckoutModal() {
                                   </button>
                                 ))}
                               </div>
+                            </div>
+
+                            {/* Cupón de descuento */}
+                            <div className="rounded-2xl border border-gray-100 dark:border-card-border p-3.5 bg-gray-50/50 dark:bg-surface/30">
+                              <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                                <Tag className="h-4 w-4" /> Cupón de descuento
+                              </p>
+                              {couponApplied ? (
+                                <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 px-3 py-2">
+                                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                                  <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 flex-1">{couponMsg}</span>
+                                  <button type="button" onClick={() => { setCouponApplied(false); setCouponDiscount(0); setCouponCode(""); setCouponMsg(""); }} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Quitar</button>
+                                </div>
+                              ) : (
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={couponCode}
+                                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                    onKeyDown={(e) => e.key === "Enter" && validateCoupon()}
+                                    placeholder="CÓDIGO"
+                                    className="flex-1 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-card px-3 py-2 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={validateCoupon}
+                                    disabled={validatingCoupon || !couponCode.trim()}
+                                    className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold disabled:opacity-50 hover:bg-primary/90 transition-colors"
+                                  >
+                                    {validatingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
+                                  </button>
+                                </div>
+                              )}
+                              {couponMsg && !couponApplied && (
+                                <p className="text-xs text-red-500 mt-1.5">{couponMsg}</p>
+                              )}
                             </div>
 
                             {/* Totals */}
@@ -1674,8 +1708,6 @@ export default function CheckoutModal() {
                   {/* ── Step: Éxito ──────────────────────── */}
                   {step === "exito" && (
                     <m.div key="exito" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ type: "spring", damping: 20, stiffness: 250 }}>
-                      {/* Confetti celebration overlay */}
-                      <Confetti active />
                       <div className="px-5 py-10 flex flex-col items-center text-center space-y-5 relative">
                         {/* Animated pulsing ring behind icon */}
                         <div className="relative">
@@ -1728,222 +1760,4 @@ export default function CheckoutModal() {
   );
 }
 
-/* ── Yape Payment Panel ───────────────────────────────────────────────── */
-function YapePaymentPanel({ yape, finalTotal, yapeOpNumber, onOpNumberChange }: {
-  yape: { enabled: boolean; image?: string; name?: string; phone?: string };
-  finalTotal: number;
-  yapeOpNumber: string;
-  onOpNumberChange: (v: string) => void;
-}) {
-  const [copied, setCopied] = useState<"amount" | "phone" | null>(null);
-  const [countdown, setCountdown] = useState(600); // 10 min
-  const opInputRef = useRef<HTMLInputElement>(null);
-  const opEntered = /^\d{6,20}$/.test(yapeOpNumber.trim());
-
-  useEffect(() => {
-    const t = setInterval(() => setCountdown((c) => (c > 0 ? c - 1 : 0)), 1000);
-    return () => clearInterval(t);
-  }, []);
-
-  // Auto-focus the operation number field once QR is visible
-  useEffect(() => {
-    const t = setTimeout(() => opInputRef.current?.focus(), 600);
-    return () => clearTimeout(t);
-  }, []);
-
-  const copyText = async (text: string, type: "amount" | "phone") => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(type);
-      setTimeout(() => setCopied(null), 2000);
-    } catch { /* fallback: user copies manually */ }
-  };
-
-  const minutes = Math.floor(countdown / 60);
-  const seconds = countdown % 60;
-
-  return (
-    <div className="bg-linear-to-b from-purple-50 to-purple-100/50 rounded-2xl border border-purple-200 p-4 space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-bold text-purple-600 uppercase tracking-wider">Pago con Yape</p>
-        <div className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold",
-          countdown > 120 ? "bg-purple-200 text-purple-700" : "bg-red-100 text-red-600 animate-pulse")}>
-          <Clock className="h-3 w-3" />
-          {minutes}:{seconds.toString().padStart(2, "0")}
-        </div>
-      </div>
-
-      {/* Timeout expired — show retry */}
-      {countdown === 0 && !opEntered && (
-        <div className="flex flex-col items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-          <p className="text-xs font-bold text-red-600">⏰ Tiempo expirado</p>
-          <p className="text-xs text-red-500 text-center">El tiempo para completar el pago se agotó. Puedes reiniciar el temporizador.</p>
-          <button
-            type="button"
-            onClick={() => setCountdown(600)}
-            className="px-4 py-2 rounded-xl bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 transition-colors"
-          >
-            🔄 Reiniciar temporizador (10 min)
-          </button>
-        </div>
-      )}
-
-      {/* Steps */}
-      <div className="bg-white/70 rounded-xl p-3 space-y-2">
-        <div className="flex items-start gap-2">
-          <span className="shrink-0 h-5 w-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">1</span>
-          <p className="text-xs text-gray-600">Abre tu app <strong className="text-purple-700">Yape</strong> y escanea el QR o yapea al número</p>
-        </div>
-        <div className="flex items-start gap-2">
-          <span className="shrink-0 h-5 w-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">2</span>
-          <p className="text-xs text-gray-600">Ingresa el monto <strong className="text-purple-700">exacto</strong> que se muestra abajo</p>
-        </div>
-        <div className="flex items-start gap-2">
-          <span className="shrink-0 h-5 w-5 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">3</span>
-          <p className="text-xs text-gray-600">Copia el <strong className="text-purple-700">número de operación</strong> e ingrésalo aquí</p>
-        </div>
-      </div>
-
-      {/* Waiting indicator */}
-      {!opEntered && (
-        <div className="flex items-center gap-2 bg-purple-100/70 rounded-xl px-3 py-2">
-          <span className="flex h-2 w-2 relative">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-500 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-600" />
-          </span>
-          <p className="text-xs font-semibold text-purple-700">Esperando tu pago&hellip;</p>
-        </div>
-      )}
-      {opEntered && (
-        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-          <p className="text-xs font-semibold text-emerald-700">¡Número ingresado! Ya puedes confirmar el pedido</p>
-        </div>
-      )}
-
-      <div className="flex flex-col items-center gap-3">
-        {yape.image && (
-          <div className="relative w-44 h-44 rounded-2xl overflow-hidden border-2 border-purple-300 bg-white shadow-lg shadow-purple-200/50">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={yape.image} alt="Yape QR" className="w-full h-full object-contain p-1" />
-          </div>
-        )}
-        <div className="text-center space-y-1">
-          {yape.name && <p className="font-bold text-gray-900">{yape.name}</p>}
-          {yape.phone && (
-            <button
-              type="button"
-              onClick={() => copyText(yape.phone!, "phone")}
-              className="inline-flex items-center gap-1.5 text-sm font-mono text-purple-700 hover:text-purple-900 transition-colors"
-            >
-              {yape.phone}
-              {copied === "phone" ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5 opacity-50" />}
-            </button>
-          )}
-        </div>
-
-        {/* Amount with copy button */}
-        <button
-          type="button"
-          onClick={() => copyText(finalTotal.toFixed(2), "amount")}
-          className="w-full bg-purple-200/80 hover:bg-purple-200 rounded-xl px-4 py-3 text-center transition-colors group relative"
-        >
-          <p className="text-xs text-purple-600 font-semibold">Monto exacto a yapear</p>
-          <div className="flex items-center justify-center gap-2">
-            <p className="text-3xl font-extrabold text-purple-800">S/{finalTotal.toFixed(2)}</p>
-            {copied === "amount" ? (
-              <Check className="h-5 w-5 text-green-500" />
-            ) : (
-              <Copy className="h-5 w-5 text-purple-400 group-hover:text-purple-600 transition-colors" />
-            )}
-          </div>
-          <p className="text-[10px] text-purple-500 mt-0.5">{copied === "amount" ? "¡Copiado!" : "Toca para copiar"}</p>
-        </button>
-      </div>
-
-      <div>
-        <label className="block text-xs font-bold text-purple-600 mb-1.5 uppercase tracking-wider">Número de operación *</label>
-        <div className="relative">
-          <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-purple-400" />
-          <input
-            ref={opInputRef}
-            value={yapeOpNumber}
-            onChange={(e) => onOpNumberChange(e.target.value.replace(/\D/g, ""))}
-            placeholder="Ej: 123456789"
-            maxLength={20}
-            inputMode="numeric"
-            className={cn(
-              "w-full pl-10 pr-10 py-3 rounded-xl border-2 text-gray-900 placeholder:text-purple-300 focus:ring-2 outline-none transition-all text-sm font-mono bg-white",
-              opEntered
-                ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-200"
-                : "border-purple-200 focus:border-purple-500 focus:ring-purple-200"
-            )}
-          />
-          {opEntered && (
-            <CheckCircle2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
-          )}
-        </div>
-        <p className="text-[10px] text-purple-500 mt-1">
-          {yapeOpNumber.trim().length > 0 && !opEntered
-            ? "⚠️ El número de operación debe tener entre 6 y 20 dígitos"
-            : "Encuéntralo en tu comprobante de Yape · Solo números"}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/* ── Cash Change Calculator ────────────────────────────────── */
-function CashChangeCalculator({ finalTotal }: { finalTotal: number }) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const bills = [10, 20, 50, 100, 200];
-  const change = selected !== null ? selected - finalTotal : null;
-
-  return (
-    <div className="mt-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30">
-      <div className="flex items-center gap-2 mb-3">
-        <Banknote className="h-5 w-5 text-emerald-600" />
-        <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">
-          Pago contra entrega — Total: S/{finalTotal.toFixed(2)}
-        </p>
-      </div>
-      <p className="text-xs text-emerald-700 dark:text-emerald-300 mb-2">
-        ¿Con cuánto vas a pagar? Así preparamos tu vuelto
-      </p>
-      <div className="flex flex-wrap gap-2">
-        {bills.filter(b => b >= finalTotal).map(bill => (
-          <button
-            key={bill}
-            type="button"
-            onClick={() => setSelected(prev => prev === bill ? null : bill)}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-              selected === bill
-                ? "bg-emerald-600 text-white shadow-md scale-105"
-                : "bg-white dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:border-emerald-500"
-            }`}
-          >
-            S/{bill}
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={() => setSelected(null)}
-          className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-            selected === null
-              ? "bg-emerald-600 text-white shadow-md"
-              : "bg-white dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 hover:border-emerald-500"
-          }`}
-        >
-          Monto exacto
-        </button>
-      </div>
-      {change !== null && change > 0 && (
-        <div className="mt-3 p-2.5 rounded-lg bg-white dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700">
-          <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
-            Tu vuelto: S/{change.toFixed(2)}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
+/* Sub-components extracted to components/checkout/ */

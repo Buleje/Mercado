@@ -90,10 +90,10 @@ export default function MarketingAutomationTab() {
   }, [campaigns]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Megaphone className="h-6 w-6 text-primary" /> Marketing Automation
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Campañas automáticas, segmentación y seguimiento de ROI</p>
@@ -134,19 +134,19 @@ export default function MarketingAutomationTab() {
 
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Campaña</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Tipo</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Trigger</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Enviados</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Apertura</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Clicks</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Conv.</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Revenue</th>
-                <th className="px-4 py-3" />
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Campaña</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Tipo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Trigger</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Enviados</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Apertura</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Clicks</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Conv.</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Revenue</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -157,19 +157,19 @@ export default function MarketingAutomationTab() {
                 const TpIcon = tp.icon;
                 return (
                   <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <p className="font-semibold text-gray-800 dark:text-foreground text-xs">{c.name}</p>
                       <p className="text-[10px] text-gray-400">{c.segment}</p>
                     </td>
-                    <td className="px-4 py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-semibold", tp.color)}><TpIcon className="h-3 w-3" />{tp.label}</span></td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{TRIGGER_LABELS[c.trigger]}</td>
-                    <td className="px-4 py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{c.sentCount.toLocaleString("es-PE")}</td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-500">{pct(c.openRate)}</td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-500">{pct(c.clickRate)}</td>
-                    <td className="px-4 py-3 text-right text-xs font-bold text-emerald-600">{c.conversions}</td>
-                    <td className="px-4 py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{fmt(c.revenue)}</td>
-                    <td className="px-4 py-3"><button onClick={() => setDetail(c)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-semibold", tp.color)}><TpIcon className="h-3 w-3" />{tp.label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500">{TRIGGER_LABELS[c.trigger]}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{c.sentCount.toLocaleString("es-PE")}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-gray-500">{pct(c.openRate)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-gray-500">{pct(c.clickRate)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-emerald-600">{c.conversions}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{fmt(c.revenue)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(c)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 );
               })}
@@ -179,8 +179,8 @@ export default function MarketingAutomationTab() {
       </div>
 
       {/* Funnel */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-3">
-        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Embudo de conversión (campañas activas)</h3>
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3">
+        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Embudo de conversión (campañas activas)</h3>
         {(() => {
           const active = campaigns.filter(c => c.status === "activa");
           const totalSent = active.reduce((s, c) => s + c.sentCount, 0);
@@ -211,7 +211,7 @@ export default function MarketingAutomationTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">{detail.name}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -227,7 +227,7 @@ export default function MarketingAutomationTab() {
                 ["ROI", detail.cost > 0 ? pct(((detail.revenue - detail.cost) / detail.cost) * 100) : "—"],
                 ["Inicio", detail.startDate], ["Fin", detail.endDate ?? "En curso"],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
+                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-gray-500 dark:text-muted shrink-0">{k}</span>
                   <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
                 </div>

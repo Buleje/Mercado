@@ -169,16 +169,16 @@ export default function SuppliersTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Proveedores</h2>
           <p className="text-sm text-gray-500 dark:text-muted">{suppliers.length} registrados</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setShowAdd((v) => !v)}
-            className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-4 py-2 rounded-lg transition-colors shadow-sm"
+            className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors shadow-sm"
           >
             <Plus className="h-4 w-4" /> Nuevo proveedor
           </button>
@@ -188,15 +188,15 @@ export default function SuppliersTab() {
       {/* Payment Alerts Banner */}
       {(overduePayables.length > 0 || approachingPayables.length > 0) && (
         <div className="bg-linear-to-r from-red-50 to-amber-50 dark:from-red-950/20 dark:to-amber-950/20 border-l-4 border-red-500 dark:border-red-600 rounded-xl p-4 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-2 sm:gap-4">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex flex-wrap items-center gap-2 mb-2">
                 <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-500" />
                 <h3 className="font-bold text-gray-900 dark:text-foreground">Alertas de Pagos</h3>
               </div>
-              <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex flex-wrap gap-2 sm:gap-4 text-sm">
                 {overduePayables.length > 0 && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-semibold">
                       <AlertTriangle className="h-4 w-4" />
                       {overduePayables.length} vencido{overduePayables.length > 1 ? 's' : ''}
@@ -207,7 +207,7 @@ export default function SuppliersTab() {
                   </div>
                 )}
                 {approachingPayables.length > 0 && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
                       <Clock className="h-4 w-4" />
                       {approachingPayables.length} próximo{approachingPayables.length > 1 ? 's' : ''}
@@ -295,11 +295,11 @@ export default function SuppliersTab() {
                     <input value={editForm.email ?? ""} onChange={(e) => setEditForm(f => ({ ...f, email: e.target.value }))} placeholder="Email" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                     <input value={editForm.address ?? ""} onChange={(e) => setEditForm(f => ({ ...f, address: e.target.value }))} placeholder="Dirección" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm sm:col-span-2" />
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={saveEdit} disabled={saving} className="px-4 py-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-sm font-bold transition-colors">
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={saveEdit} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-sm font-bold transition-colors">
                       <Check className="h-4 w-4 inline mr-1" /> Guardar
                     </button>
-                    <button onClick={cancelEdit} className="px-4 py-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent text-sm font-semibold transition-colors">
+                    <button onClick={cancelEdit} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent text-sm font-semibold transition-colors">
                       <X className="h-4 w-4 inline mr-1" /> Cancelar
                     </button>
                   </div>
@@ -333,7 +333,7 @@ export default function SuppliersTab() {
                         );
                       })()}
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-muted mt-1 flex-wrap">
+                    <div className="flex items-center gap-2 sm:gap-4 text-sm text-gray-500 dark:text-muted mt-1 flex-wrap">
                       {s.phone && <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {s.phone}</span>}
                       {s.email && <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" /> {s.email}</span>}
                       {s.address && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {s.address}</span>}
@@ -359,7 +359,7 @@ export default function SuppliersTab() {
                       return (
                         <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
                           <p className="text-[10px] font-bold text-gray-400 dark:text-muted mb-1.5 uppercase tracking-wide">Compras últimos 6 meses</p>
-                          <div className="flex items-end gap-1 h-10">
+                          <div className="flex flex-wrap items-end gap-1 h-10">
                             {history.map((h, i) => (
                               <div key={i} className="flex flex-col items-center gap-0.5 flex-1">
                                 <div
@@ -399,7 +399,7 @@ export default function SuppliersTab() {
               <button onClick={() => setShowAdd(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"><X className="h-5 w-5 text-gray-500 dark:text-muted" /></button>
             </div>
             <form onSubmit={addSupplier} className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Nombre / Razón social *</label>
                   <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
@@ -425,7 +425,7 @@ export default function SuppliersTab() {
                   <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Información adicional…" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none" />
                 </div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
                 <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
                   {saving ? "Guardando…" : "Agregar proveedor"}

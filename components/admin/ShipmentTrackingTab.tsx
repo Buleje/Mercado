@@ -50,10 +50,10 @@ export default function ShipmentTrackingTab() {
   const stageIndex = (status: Shipment["status"]) => STAGES.findIndex(s => s.key === status);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Eye className="h-6 w-6 text-primary" /> Seguimiento de Envíos</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Eye className="h-6 w-6 text-primary" /> Seguimiento de Envíos</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Control en tiempo real de todas las entregas activas</p>
         </div>
         <button onClick={() => exportToCSV(filtered.map(s => ({ pedido: s.orderId, cliente: s.customer, direccion: s.address, repartidor: s.rider, estado: STATUS_CONFIG[s.status].label, total: s.total })), "seguimiento-envios")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10"><Download className="h-3.5 w-3.5" /> CSV</button>
@@ -81,7 +81,7 @@ export default function ShipmentTrackingTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar pedido, cliente o dirección…" />
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5">
           <Filter className="h-4 w-4 text-gray-400" />
           {["all", "preparando", "recogido", "en-camino", "entregado", "fallido"].map(s => (
             <button key={s} onClick={() => setFilterStatus(s)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>{s === "all" ? "Todos" : STATUS_CONFIG[s].label}</button>
@@ -92,10 +92,10 @@ export default function ShipmentTrackingTab() {
       {/* Shipment list */}
       <div className="space-y-3">
         {filtered.map(s => (
-          <div key={s.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <div key={s.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
                   <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{s.orderId}</h4>
                   <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", STATUS_CONFIG[s.status].color)}>{STATUS_CONFIG[s.status].label}</span>
                 </div>
@@ -113,7 +113,7 @@ export default function ShipmentTrackingTab() {
 
             {/* Stage tracker */}
             {s.status !== "fallido" && (
-              <div className="mt-4 flex items-center gap-0">
+              <div className="mt-4 flex flex-wrap items-center gap-0">
                 {STAGES.map((stage, i) => {
                   const current = stageIndex(s.status);
                   const complete = i <= current;
@@ -132,7 +132,7 @@ export default function ShipmentTrackingTab() {
             )}
 
             {s.status === "fallido" && (
-              <div className="mt-3 flex items-center gap-2 text-xs bg-red-50 dark:bg-red-950/10 text-red-700 dark:text-red-400 px-3 py-2 rounded-xl">
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs bg-red-50 dark:bg-red-950/10 text-red-700 dark:text-red-400 px-3 py-2 rounded-xl">
                 <Phone className="h-3.5 w-3.5 shrink-0" />
                 Contactar al cliente: {s.phone}
               </div>

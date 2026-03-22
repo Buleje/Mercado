@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import {
   useState,
@@ -6,14 +6,12 @@ import {
   useRef,
   useCallback,
   startTransition,
-  useSyncExternalStore,
   useMemo,
+  memo,
 } from "react";
 import dynamic from "next/dynamic";
-import { FixedSizeList, type ListChildComponentProps } from "react-window";
 import Image from "next/image";
-import Link from "next/link";
-import { Plus, Minus, ShoppingCart, ArrowRight, Package, Search, X, ArrowUpDown, SlidersHorizontal, Clock, LayoutGrid, List, ExternalLink } from "lucide-react";
+import { Plus, Minus, Package, Search, X, ArrowUpDown, SlidersHorizontal, Clock, LayoutGrid, List } from "lucide-react";
 import { categories } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -31,7 +29,6 @@ type LiveProduct = Product & { stock?: number; stockMin?: number };
 
 // Only real categories (not "todos")
 const realCategories = categories.filter((c) => c.id !== "todos");
-const INITIAL_SECTIONS = realCategories.length; // show all sections
 
 type SortKey = "relevancia" | "precio-asc" | "precio-desc" | "nombre";
 const SORT_OPTIONS: { id: SortKey; label: string }[] = [
@@ -49,9 +46,6 @@ function sortProducts(list: LiveProduct[], key: SortKey): LiveProduct[] {
   else if (key === "nombre") sorted.sort((a, b) => a.name.localeCompare(b.name));
   return sorted;
 }
-
-const LIST_ROW_HEIGHT = 80; // px — matches ListProductRow height
-const VIRTUAL_LIST_THRESHOLD = 12; // virtualize when > 12 items in list mode
 
 // ── Per-category color themes ─────────────────────────────────────────────────
 const CAT_THEME: Record<string, { emojiBg: string; dot: string; pillHover: string; linkBtn: string; sectionBorder: string }> = {
@@ -134,7 +128,7 @@ function SkeletonSection() {
           <div className="h-3 bg-gray-200 dark:bg-surface rounded-full w-28" />
         </div>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
@@ -144,7 +138,7 @@ function SkeletonSection() {
 }
 
 // ── U1: List View Row ─────────────────────────────────────────────────────────
-function ListProductRow({ product, onQuickView }: { product: LiveProduct; onQuickView: (p: LiveProduct) => void }) {
+function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; onQuickView: (p: LiveProduct) => void }) {
   const { items, addItem, updateQty } = useCart();
   const { showToast } = useToast();
   const cartItem = items.find((i) => i.id === product.id);
@@ -200,123 +194,7 @@ function ListProductRow({ product, onQuickView }: { product: LiveProduct; onQuic
   );
 }
 
-// ── Category Section ──────────────────────────────────────────────────────────
-const MAX_CAT_VISIBLE = 8; // Show limited products per category, rest behind "Show more"
-
-function CategorySection({ categoryId, highlight, productList, onQuickView, viewMode }: { categoryId: string; highlight: boolean; productList: LiveProduct[]; onQuickView: (p: LiveProduct) => void; viewMode: "grid" | "list" }) {
-  const cat = categories.find((c) => c.id === categoryId);
-  const catProducts = productList.filter((p) => p.category === categoryId);
-  const [showAll, setShowAll] = useState(false);
-  const theme = getCatTheme(categoryId);
-
-  // IntersectionObserver: only render product grid when section is near viewport
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setIsVisible(true); observer.disconnect(); } },
-      { rootMargin: "300px" }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  const visibleProducts = showAll ? catProducts : catProducts.slice(0, MAX_CAT_VISIBLE);
-  const hiddenCount = catProducts.length - MAX_CAT_VISIBLE;
-
-  if (!cat || catProducts.length === 0) return null;
-
-  return (
-    <div
-      ref={sectionRef}
-      id={`cat-${categoryId}`}
-      className={cn(
-        "rounded-2xl p-5 sm:p-6 transition-all duration-500 animate-[fadeUp_0.4s_ease-out]",
-        theme.sectionBorder,
-        highlight ? "ring-2 ring-primary ring-offset-4 bg-primary/3" : "bg-white dark:bg-card"
-      )}
-    >
-      <div className="flex items-center gap-3 mb-6">
-        <span className={cn("flex items-center justify-center h-12 w-12 rounded-2xl text-2xl leading-none shrink-0", theme.emojiBg)}>{cat.emoji}</span>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link href={`/tienda/categoria/${categoryId}`} className="group">
-              <h3 className="text-xl font-extrabold text-foreground group-hover:text-primary transition-colors">{cat.label}</h3>
-            </Link>
-            <span className={cn("hidden sm:inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full text-[10px] font-bold text-white", theme.dot)}>
-              {catProducts.length}
-            </span>
-          </div>
-          <p className="text-sm text-muted">{catProducts.length} productos disponibles</p>
-        </div>
-        <Link
-          href={`/tienda/categoria/${categoryId}`}
-          className={cn("hidden sm:flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full transition-colors", theme.linkBtn)}
-        >
-          <Package className="h-3 w-3" /> Ver página <ExternalLink className="h-3 w-3 ml-0.5" />
-        </Link>
-      </div>
-
-      {isVisible ? (
-        <>
-          {/* Virtualized list when category is expanded in list mode with many items */}
-          {showAll && viewMode === "list" && catProducts.length > VIRTUAL_LIST_THRESHOLD ? (
-            <FixedSizeList
-              height={Math.min(catProducts.length * LIST_ROW_HEIGHT, 480)}
-              itemCount={catProducts.length}
-              itemSize={LIST_ROW_HEIGHT}
-              width="100%"
-              className="scrollbar-thin"
-            >
-              {({ index, style }: ListChildComponentProps) => (
-                <div style={{ ...style, paddingBottom: 4 }}>
-                  <ListProductRow product={catProducts[index]} onQuickView={onQuickView} />
-                </div>
-              )}
-            </FixedSizeList>
-          ) : (
-            <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3" : "space-y-2"}>
-              {visibleProducts.map((product) => (
-                viewMode === "list" ? (
-                  <ListProductRow key={product.id} product={product} onQuickView={onQuickView} />
-                ) : (
-                  <ProductCard key={product.id} product={product} onQuickView={onQuickView} />
-                )
-              ))}
-            </div>
-          )}
-
-          {hiddenCount > 0 && !showAll && (
-            <button
-              onClick={() => setShowAll(true)}
-              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5 transition-colors"
-            >
-              <ArrowRight className="h-4 w-4" />
-              Ver {hiddenCount} producto{hiddenCount !== 1 ? "s" : ""} más
-            </button>
-          )}
-          {showAll && catProducts.length > MAX_CAT_VISIBLE && (
-            <button
-              onClick={() => setShowAll(false)}
-              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-gray-200 dark:border-card-border text-muted text-sm font-semibold hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
-            >
-              Ver menos
-            </button>
-          )}
-        </>
-      ) : (
-        /* Placeholder skeleton while section is off-screen */
-        <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3" : "space-y-2"}>
-          {Array.from({ length: Math.min(catProducts.length, MAX_CAT_VISIBLE) }).map((_, i) => (
-            <div key={i} className="aspect-square bg-gray-100 dark:bg-surface rounded-2xl animate-pulse" />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+const ListProductRow = memo(ListProductRowBase);
 
 // ── Search History ────────────────────────────────────────────────────────────
 const SEARCH_HISTORY_KEY = "bsm-search-history";
@@ -372,7 +250,6 @@ function fuzzyScore(text: string, query: string): number {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function ProductCatalog({ initialProducts = [] }: { initialProducts?: LiveProduct[] }) {
-  const [expanded, setExpanded] = useState(true);
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortKey>("relevancia");
@@ -479,7 +356,6 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
   // Listen for category selection events from Header mega menu
   useEffect(() => {
     const unsub = onAppEvent("selectCategory", ({ categoryId }) => {
-      setExpanded(true);
       setHighlighted(categoryId);
       clearTimeout(highlightTimer.current);
       highlightTimer.current = setTimeout(() => setHighlighted(null), 2500);
@@ -503,10 +379,6 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
   useEffect(() => {
     startTransition(() => setSearchPage(1));
   }, [search, sort, priceRange, filterOnSale, filterAvailable]);
-
-  const visibleCategories = expanded
-    ? realCategories
-    : realCategories.slice(0, INITIAL_SECTIONS);
 
   // Debounced search term to avoid running fuzzy scoring on every keystroke
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -696,34 +568,6 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
           </div>
         )}
 
-        {/* Category Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-8 -mx-4 px-4 sm:mx-0 sm:px-0">
-          {realCategories.map((cat) => {
-            const theme = getCatTheme(cat.id);
-            return (
-              <a
-                key={cat.id}
-                href={`/tienda/categoria/${cat.id}`}
-                onClick={(e) => {
-                  // If already on the catalog page, scroll instead of navigating
-                  if (window.location.pathname === "/tienda" || window.location.pathname === "/") {
-                    e.preventDefault();
-                    const el = document.getElementById(`cat-${cat.id}`);
-                    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }
-                }}
-                className={cn(
-                  "shrink-0 flex items-center gap-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-full px-4 py-2 text-sm font-semibold text-foreground active:scale-95 transition-all duration-200 whitespace-nowrap shadow-sm",
-                  theme.pillHover
-                )}
-              >
-                <span className="text-base">{cat.emoji}</span>
-                {cat.label}
-              </a>
-            );
-          })}
-        </div>
-
         {/* Active filters bar */}
         {(search || filterOnSale || filterAvailable || (priceRange[0] > 0 || priceRange[1] < maxPrice)) && (
           <div className="max-w-3xl mx-auto mb-3 flex items-center gap-2 flex-wrap">
@@ -760,6 +604,16 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             </button>
           </div>
         )}
+        {/* Product count bar — visible when filters are active (not in search mode) */}
+        {!searchTerm && (filterOnSale || filterAvailable || priceRange[0] > 0 || priceRange[1] < maxPrice) && (
+          <div className="max-w-3xl mx-auto mb-3 flex items-center gap-2">
+            <span className="text-xs font-semibold text-muted">
+              <span className="text-primary font-bold">{filteredProducts.length}</span>{" "}
+              producto{filteredProducts.length !== 1 ? "s" : ""} encontrado{filteredProducts.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+        )}
+
         {apiError && (
           <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-700/40 text-xs text-amber-700 dark:text-amber-400">
             <span>⚠️ No se pudo cargar el catálogo actualizado. Mostrando datos de muestra.</span>
@@ -776,7 +630,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
         <div className="space-y-8">
           {loading ? (
             // Skeleton loaders while products are being fetched
-            Array.from({ length: INITIAL_SECTIONS }).map((_, i) => (
+            Array.from({ length: realCategories.length }).map((_, i) => (
               <SkeletonSection key={i} />
             ))
           ) : searchTerm ? (
@@ -819,7 +673,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                     )}
                   </p>
                 </div>
-                <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-2.5 sm:gap-3" : "space-y-2"}>
+                <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3" : "space-y-2"}>
                   {paginatedSearchProducts.map((product) => (
                     viewMode === "list" ? (
                       <ListProductRow key={product.id} product={product} onQuickView={handleQuickView} />
@@ -865,21 +719,42 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               </div>
             )
           ) : (
-            visibleCategories.map((cat) => (
-              <CategorySection
-                key={cat.id}
-                categoryId={cat.id}
-                highlight={highlighted === cat.id}
-                productList={productList}
-                onQuickView={handleQuickView}
-                viewMode={viewMode}
-              />
-            ))
+            <div className="space-y-10">
+              {realCategories.map((cat) => {
+                const catProducts = filteredProducts.filter((p) => p.category === cat.id);
+                if (catProducts.length === 0) return null;
+                const theme = getCatTheme(cat.id);
+                return (
+                  <div
+                    key={cat.id}
+                    id={`cat-${cat.id}`}
+                    className={highlighted === cat.id ? "ring-2 ring-primary ring-offset-4 rounded-xl p-3 scroll-mt-4" : "scroll-mt-4"}
+                  >
+                    <div className={cn("flex items-center gap-2.5 mb-4 pl-3", theme.sectionBorder)}>
+                      <span className={cn("flex items-center justify-center h-9 w-9 rounded-xl text-xl leading-none shrink-0", theme.emojiBg)}>
+                        {cat.emoji}
+                      </span>
+                      <div>
+                        <h3 className="text-base font-extrabold text-foreground leading-tight">{cat.label}</h3>
+                        <p className="text-xs text-muted">{catProducts.length} producto{catProducts.length !== 1 ? "s" : ""}</p>
+                      </div>
+                    </div>
+                    <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3" : "space-y-2"}>
+                      {catProducts.map((product) =>
+                        viewMode === "list" ? (
+                          <ListProductRow key={product.id} product={product} onQuickView={handleQuickView} />
+                        ) : (
+                          <ProductCard key={product.id} product={product} onQuickView={handleQuickView} />
+                        )
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
 
-        {/* Cart summary CTA (shown when cart has items) */}
-        <CartFloatCTA />
       </div>
 
       {/* Quick View Modal */}
@@ -887,34 +762,6 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
         <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
       )}
     </section>
-  );
-}
-
-// ── Floating Cart CTA (inside products section) ───────────────────────────────
-function CartFloatCTA() {
-  const { count, total, toggle } = useCart();
-  const isClient = useSyncExternalStore(() => () => {}, () => true, () => false);
-  if (!isClient || count === 0) return null;
-
-  return (
-    <div className="mt-10 flex justify-center animate-[fadeUp_0.4s_ease-out]">
-      <button
-        onClick={toggle}
-        className="flex items-center gap-4 bg-primary text-white rounded-2xl px-6 py-4 shadow-2xl shadow-primary/30 hover:bg-primary-dark active:scale-[0.98] transition-all duration-200"
-      >
-        <div className="relative">
-          <ShoppingCart className="h-6 w-6" />
-          <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[10px] font-bold">
-            {count}
-          </span>
-        </div>
-        <div className="text-left">
-          <p className="text-xs font-medium text-white/70">Ver pedido</p>
-          <p className="font-bold text-base">S/{total.toFixed(2)} · {count} {count === 1 ? "producto" : "productos"}</p>
-        </div>
-        <ArrowRight className="h-5 w-5 text-white/70 ml-2" />
-      </button>
-    </div>
   );
 }
 

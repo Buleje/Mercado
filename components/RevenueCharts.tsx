@@ -30,7 +30,7 @@ interface AnalyticsData {
   monthlyRevenue: { month: string; revenue: number }[];
 }
 
-const PIE_COLORS = ["#6b7280", "#6366f1", "#8b5cf6", "#f59e0b"];
+const PIE_COLORS = ["#6b7280", "#2d6a4f", "#8b5cf6", "#f59e0b"];
 const PLAN_NAMES: Record<string, string> = { free: "Free", pro: "Pro", business: "Business", enterprise: "Enterprise" };
 
 export default function RevenueCharts() {
@@ -154,8 +154,8 @@ export default function RevenueCharts() {
           <AreaChart data={data.monthlyRevenue} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
             <defs>
               <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                <stop offset="5%" stopColor="#2d6a4f" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#2d6a4f" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -166,7 +166,7 @@ export default function RevenueCharts() {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={((value: any) => [`$${Number(value).toLocaleString()}`, "Revenue"]) as any}
             />
-            <Area type="monotone" dataKey="revenue" stroke="#6366f1" strokeWidth={2} fill="url(#revGrad)" />
+            <Area type="monotone" dataKey="revenue" stroke="#2d6a4f" strokeWidth={2} fill="url(#revGrad)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -186,7 +186,7 @@ export default function RevenueCharts() {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               formatter={((value: any) => [value, "Registros"]) as any}
             />
-            <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="count" fill="#2d6a4f" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

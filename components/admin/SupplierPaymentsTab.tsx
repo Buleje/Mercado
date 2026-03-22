@@ -68,10 +68,10 @@ export default function SupplierPaymentsTab() {
   }, [search, filterStatus]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <HandCoins className="h-6 w-6 text-primary" /> Pagos a Proveedores
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Programación, seguimiento y conciliación de pagos</p>
@@ -100,7 +100,7 @@ export default function SupplierPaymentsTab() {
 
       {/* Calendar hint — upcoming payments */}
       {PAYMENTS.filter(p => p.earlyDiscountPct && p.status !== "pagado").length > 0 && (
-        <div className="bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800/40 rounded-xl p-3 flex items-start gap-2">
+        <div className="bg-violet-50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-800/40 rounded-xl p-3 flex flex-wrap items-start gap-2">
           <BadgePercent className="h-5 w-5 text-violet-600 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-bold text-violet-700 dark:text-violet-400">Descuentos por pronto pago disponibles</p>
@@ -124,20 +124,20 @@ export default function SupplierPaymentsTab() {
 
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">Factura</th><th className="px-4 py-3">Proveedor</th><th className="px-4 py-3">Monto</th><th className="px-4 py-3">Pagado</th><th className="px-4 py-3">Saldo</th><th className="px-4 py-3">Vencimiento</th><th className="px-4 py-3">Método</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3"></th></tr></thead>
+          <table className="w-full min-w-[600px] text-sm">
+            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Factura</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Monto</th><th className="px-2 sm:px-4 py-2 sm:py-3">Pagado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Saldo</th><th className="px-2 sm:px-4 py-2 sm:py-3">Vencimiento</th><th className="px-2 sm:px-4 py-2 sm:py-3">Método</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(p => (
                 <tr key={p.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
-                  <td className="px-4 py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{p.invoiceRef}</td>
-                  <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{p.supplier}</td>
-                  <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{fmt(p.amount)}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-muted">{fmt(p.paid)}</td>
-                  <td className={cn("px-4 py-3 font-bold", p.amount - p.paid > 0 ? "text-amber-600" : "text-emerald-600")}>{fmt(p.amount - p.paid)}</td>
-                  <td className="px-4 py-3 text-gray-500 flex items-center gap-1"><Calendar className="h-3 w-3" />{p.dueDate}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500 flex items-center gap-1"><Banknote className="h-3 w-3" />{p.paymentMethod}</td>
-                  <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[p.status].bg, STATUS_MAP[p.status].color)}>{STATUS_MAP[p.status].label}</span></td>
-                  <td className="px-4 py-3"><button onClick={() => setDetail(p)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{p.invoiceRef}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{p.supplier}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{fmt(p.amount)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">{fmt(p.paid)}</td>
+                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-bold", p.amount - p.paid > 0 ? "text-amber-600" : "text-emerald-600")}>{fmt(p.amount - p.paid)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 flex items-center gap-1"><Calendar className="h-3 w-3" />{p.dueDate}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 flex items-center gap-1"><Banknote className="h-3 w-3" />{p.paymentMethod}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[p.status].bg, STATUS_MAP[p.status].color)}>{STATUS_MAP[p.status].label}</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(p)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -147,12 +147,12 @@ export default function SupplierPaymentsTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.invoiceRef}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {[["Proveedor", detail.supplier], ["Monto", fmt(detail.amount)], ["Pagado", fmt(detail.paid)], ["Saldo", fmt(detail.amount - detail.paid)], ["Vencimiento", detail.dueDate], ["Fecha pago", detail.paidDate || "-"], ["Método", detail.paymentMethod], ["Estado", STATUS_MAP[detail.status].label]].map(([k, v]) => (
                 <div key={k as string}><p className="text-xs text-gray-400">{k as string}</p><p className="font-bold text-gray-800 dark:text-foreground">{v as string}</p></div>
               ))}

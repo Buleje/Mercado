@@ -409,11 +409,11 @@ export default function PromotionsTab() {
   const inactive = promos.filter(p => !p.active);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* ── Campañas Programadas ───────────────────────────────────────────── */}
-      <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200 dark:border-indigo-900/50 rounded-2xl p-6">
+      <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200 dark:border-indigo-900/50 rounded-2xl p-3 sm:p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
               <Calendar className="h-5 w-5 text-white" />
             </div>
@@ -424,7 +424,7 @@ export default function PromotionsTab() {
           </div>
           <button
             onClick={openCreateCampaign}
-            className="flex items-center gap-2 bg-linear-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:brightness-110 transition shadow-sm"
+            className="flex flex-wrap items-center gap-2 bg-linear-to-r from-indigo-600 to-purple-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:brightness-110 transition shadow-sm"
           >
             <Plus className="h-4 w-4" /> Nueva Campaña
           </button>
@@ -449,7 +449,7 @@ export default function PromotionsTab() {
 
               return (
                 <div key={c.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
-                  <div className="flex items-start gap-3">
+                  <div className="flex flex-wrap items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span className="font-bold text-gray-900 dark:text-foreground">{c.name}</span>
@@ -518,23 +518,23 @@ export default function PromotionsTab() {
           <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Promociones</h2>
           <p className="text-sm text-gray-500 dark:text-muted">{active.length} activas · {inactive.length} inactivas</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => { setAiContext(""); setShowAiModal(true); requestAiSuggestions(); }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white hover:brightness-110 transition-all shadow-sm"
+            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-white hover:brightness-110 transition-all shadow-sm"
             style={{ background: 'linear-gradient(to right, #8b5cf6, #9333ea)' }}
           >
             <MessageCircle className="h-4 w-4" /> Sugerencias IA
           </button>
           <button
             onClick={() => setShowTemplates(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors shadow-sm"
           >
             <Calendar className="h-4 w-4" /> Plantillas
           </button>
           <button
             onClick={openCreate}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors shadow-sm"
           >
             <Plus className="h-4 w-4" /> Nueva
           </button>
@@ -561,7 +561,7 @@ export default function PromotionsTab() {
                     className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                     onClick={() => setDetailPromo(p)}
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex flex-wrap items-start gap-3">
                       {/* Image preview */}
                       {p.imageUrl && (
                         <div className="w-14 h-14 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden shrink-0">
@@ -659,7 +659,7 @@ export default function PromotionsTab() {
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary resize-none" placeholder="Detalles de la promoción…" />
               </div>
               {/* Discount + Min purchase */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Descuento %</label>
                   <input type="number" min={0} max={100} value={form.discountPercent} onChange={e => setForm(f => ({ ...f, discountPercent: Number(e.target.value) }))}
@@ -693,7 +693,7 @@ export default function PromotionsTab() {
               {/* Target type */}
               <div>
                 <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Público objetivo</label>
-                <div className="flex gap-2 mt-1">
+                <div className="flex flex-wrap gap-2 mt-1">
                   {[
                     { v: "all", l: "Todos", icon: Users },
                     { v: "group", l: "Grupo", icon: Users },
@@ -720,7 +720,7 @@ export default function PromotionsTab() {
                   </div>
                   <div className="max-h-40 overflow-y-auto rounded-xl border border-gray-200 dark:border-card-border divide-y divide-gray-100">
                     {filteredFormCustomers.map(c => (
-                      <label key={c.phone} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-surface cursor-pointer text-sm">
+                      <label key={c.phone} className="flex flex-wrap items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-surface cursor-pointer text-sm">
                         <input type="checkbox" checked={selectedPhones.has(c.phone)}
                           onChange={() => {
                             setSelectedPhones(prev => {
@@ -747,7 +747,7 @@ export default function PromotionsTab() {
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary text-gray-600 dark:text-muted" />
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex gap-3 shrink-0">
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
               <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
               <button onClick={savePromo} disabled={saving || !form.name.trim()}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors disabled:opacity-50">
@@ -827,10 +827,10 @@ export default function PromotionsTab() {
                 {detailPromo.expiresAt && <span>Expira: {formatDate(detailPromo.expiresAt)}</span>}
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex gap-3 shrink-0">
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
               <button
                 onClick={() => { setDetailPromo(null); openSendModal(detailPromo); }}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-green-500 hover:bg-green-600 transition-colors"
+                className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white bg-green-500 hover:bg-green-600 transition-colors"
               >
                 <Send className="h-4 w-4" /> Enviar por WhatsApp
               </button>
@@ -866,7 +866,7 @@ export default function PromotionsTab() {
               </div>
             </div>
             {/* Customer selection */}
-            <div className="px-5 py-3 border-b border-gray-100 dark:border-card-border shrink-0 flex items-center gap-2">
+            <div className="px-5 py-3 border-b border-gray-100 dark:border-card-border shrink-0 flex flex-wrap items-center gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted pointer-events-none" />
                 <input type="text" placeholder="Buscar cliente…" value={sendSearch} onChange={e => setSendSearch(e.target.value)}
@@ -881,7 +881,7 @@ export default function PromotionsTab() {
               {filteredSendCustomers.map(c => {
                 const selected = sendPhones.has(c.phone);
                 return (
-                  <div key={c.phone} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-surface">
+                  <div key={c.phone} className="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-surface">
                     <input type="checkbox" checked={selected}
                       onChange={() => {
                         setSendPhones(prev => {
@@ -913,7 +913,7 @@ export default function PromotionsTab() {
               <button
                 onClick={sendToAll}
                 disabled={sendPhones.size === 0}
-                className="w-full py-3 rounded-xl text-sm font-bold text-white bg-green-500 hover:bg-green-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl text-sm font-bold text-white bg-green-500 hover:bg-green-600 disabled:opacity-50 transition-colors flex flex-wrap items-center justify-center gap-2"
               >
                 <Send className="h-4 w-4" /> Enviar a todos los seleccionados
               </button>
@@ -927,7 +927,7 @@ export default function PromotionsTab() {
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/50" style={{ zIndex: 100 }} onClick={() => setShowAiModal(false)}>
           <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(to bottom right, #8b5cf6, #9333ea)' }}>
                   <MessageCircle className="h-4 w-4 text-white" />
                 </div>
@@ -956,8 +956,8 @@ export default function PromotionsTab() {
       {/* ── Delete Confirmation ───────────────────────────────────────────── */}
       {confirmDeleteId && (
         <div className="fixed inset-0 flex items-center justify-center p-4 bg-black/60" style={{ zIndex: 200 }} onClick={() => setConfirmDeleteId(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3 mb-4">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-sm p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex flex-wrap items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
               </div>
@@ -966,7 +966,7 @@ export default function PromotionsTab() {
                 <p className="text-sm text-gray-500 dark:text-muted">Esta acción no se puede deshacer.</p>
               </div>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
               <button onClick={confirmDelete} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 transition-colors">Sí, eliminar</button>
             </div>
@@ -992,9 +992,9 @@ export default function PromotionsTab() {
                 <button
                   key={tpl.name}
                   onClick={() => applyTemplate(tpl)}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-amber-50 dark:hover:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-700 transition-all text-left"
+                  className="w-full flex flex-wrap items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-amber-50 dark:hover:bg-amber-900/10 hover:border-amber-300 dark:hover:border-amber-700 transition-all text-left"
                 >
-                  <span className="text-2xl shrink-0">{tpl.icon}</span>
+                  <span className="text-xl sm:text-2xl shrink-0">{tpl.icon}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-gray-900 dark:text-foreground">{tpl.name}</p>
                     <p className="text-xs text-gray-500 dark:text-muted">{tpl.description}</p>
@@ -1045,7 +1045,7 @@ export default function PromotionsTab() {
                 </select>
               </div>
               {/* Dates */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha/hora inicio *</label>
                   <input type="datetime-local" value={campaignForm.startDate ? campaignForm.startDate.slice(0, 16) : ""} onChange={e => setCampaignForm(f => ({ ...f, startDate: e.target.value }))}
@@ -1072,7 +1072,7 @@ export default function PromotionsTab() {
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary font-mono" placeholder="VERANO20" />
               </div>
               {/* Auto-send toggle */}
-              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
+              <div className="flex flex-wrap items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
                 <input type="checkbox" id="autoSend" checked={campaignForm.autoSend} onChange={e => setCampaignForm(f => ({ ...f, autoSend: e.target.checked }))}
                   className="rounded border-gray-300 text-primary focus:ring-primary" />
                 <label htmlFor="autoSend" className="text-sm font-medium text-gray-700 dark:text-foreground cursor-pointer flex-1">
@@ -1081,7 +1081,7 @@ export default function PromotionsTab() {
                 </label>
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex gap-3 shrink-0">
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3 shrink-0">
               <button onClick={() => setShowCampaignForm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
               <button onClick={saveCampaign} disabled={savingCampaign || !campaignForm.name.trim() || !campaignForm.startDate}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:brightness-110 transition disabled:opacity-50">

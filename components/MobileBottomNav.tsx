@@ -68,7 +68,7 @@ export default function MobileBottomNav() {
       )}
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      <div className="flex items-center justify-around h-15">
+      <div className="flex items-center justify-around h-[74px]">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = active === item.id;
@@ -89,7 +89,7 @@ export default function MobileBottomNav() {
               <span className="relative">
                 <Icon className={cn("w-5.5 h-5.5 transition-transform duration-200", isActive && "scale-110")} strokeWidth={isActive ? 2.5 : 2} />
                 {item.id === "cart" && totalQty > 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 min-w-4.5 h-4.5 flex items-center justify-center px-1 text-[9px] font-bold bg-red-500 text-white rounded-full shadow-sm animate-[scaleIn_0.15s_ease-out]">
+                  <span className="absolute -top-1 -right-2 min-w-4.5 h-4.5 flex items-center justify-center px-1 text-[9px] font-bold bg-red-500 text-white rounded-full shadow-sm animate-[scaleIn_0.15s_ease-out]">
                     {totalQty > 99 ? "99+" : totalQty}
                   </span>
                 )}

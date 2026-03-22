@@ -178,11 +178,11 @@ export default function CashFlowTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Droplets className="h-6 w-6 text-primary" />
             Flujo de Caja
           </h1>
@@ -208,7 +208,7 @@ export default function CashFlowTab() {
       </div>
 
       {/* Opening balance */}
-      <div className="flex items-center gap-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-xl px-4 py-3">
+      <div className="flex flex-wrap items-center gap-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
         <Calendar className="h-5 w-5 text-blue-600 shrink-0" />
         <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">Saldo inicial del período:</span>
         <input
@@ -224,7 +224,7 @@ export default function CashFlowTab() {
 
       {/* Quick form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
           <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Registrar movimiento manual</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
@@ -247,9 +247,9 @@ export default function CashFlowTab() {
               <input type="number" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} placeholder="0.00" min="0" step="0.01" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
-            <button onClick={handleAddEntry} disabled={saving} className="px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60 transition-colors">
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
+            <button onClick={handleAddEntry} disabled={saving} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-60 transition-colors">
               {saving ? "Guardando..." : "Registrar"}
             </button>
           </div>
@@ -263,7 +263,7 @@ export default function CashFlowTab() {
       ) : (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {[
               { label: "Ingresos totales", value: totalInflow, icon: TrendingUp, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
               { label: "Egresos totales", value: totalOutflow, icon: TrendingDown, color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
@@ -280,7 +280,7 @@ export default function CashFlowTab() {
 
           {/* Alert if low balance days */}
           {warningDays.length > 0 && (
-            <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl px-4 py-3">
+            <div className="flex flex-wrap items-start gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
               <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-bold text-amber-700 dark:text-amber-400">Alerta de liquidez</p>
@@ -293,36 +293,36 @@ export default function CashFlowTab() {
           )}
 
           {/* View toggle */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {(["summary", "detail"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-4 py-2 text-sm font-semibold rounded-xl transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
                 {v === "summary" ? "Vista diaria" : "Movimientos"}
               </button>
             ))}
           </div>
 
           {view === "summary" ? (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-y-hidden overflow-x-auto">
+              <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
                   <tr>
-                    <th className="text-left px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Fecha</th>
-                    <th className="text-right px-4 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Ingresos</th>
-                    <th className="text-right px-4 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Egresos</th>
-                    <th className="text-right px-4 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Neto</th>
-                    <th className="text-right px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Saldo</th>
+                    <th className="text-left px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Fecha</th>
+                    <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Ingresos</th>
+                    <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Egresos</th>
+                    <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Neto</th>
+                    <th className="text-right px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Saldo</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                   {dailySummaries.map(day => (
                     <tr key={day.date} className={cn("hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors", day.hasWarning && "bg-amber-50/50 dark:bg-amber-950/10")}>
-                      <td className="px-6 py-3 font-medium text-gray-700 dark:text-foreground">{day.label}</td>
-                      <td className="px-4 py-3 text-right text-emerald-600 font-semibold">{day.inflow > 0 ? fmt(day.inflow) : "—"}</td>
-                      <td className="px-4 py-3 text-right text-red-500 font-semibold">{day.outflow > 0 ? fmt(day.outflow) : "—"}</td>
-                      <td className={cn("px-4 py-3 text-right font-semibold", day.net >= 0 ? "text-emerald-600" : "text-red-500")}>
+                      <td className="px-3 sm:px-6 py-3 font-medium text-gray-700 dark:text-foreground">{day.label}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-emerald-600 font-semibold">{day.inflow > 0 ? fmt(day.inflow) : "—"}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-red-500 font-semibold">{day.outflow > 0 ? fmt(day.outflow) : "—"}</td>
+                      <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold", day.net >= 0 ? "text-emerald-600" : "text-red-500")}>
                         {day.net >= 0 ? "+" : ""}{fmt(day.net)}
                       </td>
-                      <td className={cn("px-6 py-3 text-right font-bold", day.hasWarning ? "text-amber-600" : "text-gray-800 dark:text-foreground")}>
+                      <td className={cn("px-3 sm:px-6 py-3 text-right font-bold", day.hasWarning ? "text-amber-600" : "text-gray-800 dark:text-foreground")}>
                         {fmt(day.balance)}
                         {day.hasWarning && <AlertTriangle className="h-3.5 w-3.5 inline ml-1 text-amber-500" />}
                       </td>
@@ -335,26 +335,26 @@ export default function CashFlowTab() {
               )}
             </div>
           ) : (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-y-hidden overflow-x-auto">
+              <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
                   <tr>
-                    <th className="text-left px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Fecha</th>
-                    <th className="text-left px-4 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Descripción</th>
-                    <th className="text-left px-4 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Categoría</th>
-                    <th className="text-right px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Monto</th>
+                    <th className="text-left px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Fecha</th>
+                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Descripción</th>
+                    <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Categoría</th>
+                    <th className="text-right px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase tracking-wide">Monto</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                   {entries.map(e => (
                     <tr key={e.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
-                      <td className="px-6 py-3 text-gray-600 dark:text-muted text-xs">{e.date}</td>
-                      <td className="px-4 py-3 text-gray-800 dark:text-foreground">{e.description}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 sm:px-6 py-3 text-gray-600 dark:text-muted text-xs">{e.date}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-foreground">{e.description}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-surface capitalize text-gray-600 dark:text-muted">{e.category}</span>
                         {e.projected && <span className="ml-1 text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400">Proyectado</span>}
                       </td>
-                      <td className={cn("px-6 py-3 text-right font-bold", e.type === "ingreso" ? "text-emerald-600" : "text-red-500")}>
+                      <td className={cn("px-3 sm:px-6 py-3 text-right font-bold", e.type === "ingreso" ? "text-emerald-600" : "text-red-500")}>
                         {e.type === "ingreso" ? "+" : "−"}{fmt(e.amount)}
                       </td>
                     </tr>

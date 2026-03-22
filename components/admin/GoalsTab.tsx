@@ -127,7 +127,7 @@ export default function GoalsTab() {
   const avgPct = total > 0 ? Math.round(goals.reduce((sum, g) => sum + Math.min(100, g.target > 0 ? (g.current / g.target) * 100 : 0), 0) / total) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -136,7 +136,7 @@ export default function GoalsTab() {
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+          className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" /> Nueva Meta
         </button>
@@ -145,11 +145,11 @@ export default function GoalsTab() {
       {/* Summary chips */}
       {total > 0 && (
         <div className="flex flex-wrap gap-3">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/30">
+          <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/30">
             <CheckCircle2 className="h-4 w-4 text-emerald-500" />
             <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{achieved}/{total} logradas</span>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/30">
+          <div className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/30">
             <BarChart3 className="h-4 w-4 text-blue-500" />
             <span className="text-sm font-bold text-blue-700 dark:text-blue-400">Promedio global {avgPct}%</span>
           </div>
@@ -164,20 +164,20 @@ export default function GoalsTab() {
           <Target className="h-12 w-12 text-gray-300 dark:text-muted mx-auto mb-3" />
           <p className="text-gray-500 dark:text-muted font-semibold mb-1">Todavía no hay metas</p>
           <p className="text-gray-400 dark:text-muted text-sm mb-4">Crea tu primera meta para trackear el progreso del negocio.</p>
-          <button onClick={openCreate} className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+          <button onClick={openCreate} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             Crear primera meta
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
           {goals.map(g => {
             const meta = CATEGORY_META[g.category];
             const Icon = meta.icon;
             const pct = Math.min(100, g.target > 0 ? Math.round((g.current / g.target) * 100) : 0);
             return (
-              <div key={g.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4 hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
+              <div key={g.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4 hover:shadow-md transition-shadow">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", meta.bg)}>
                       <Icon className={cn("h-4.5 w-4.5", meta.color)} />
                     </div>
@@ -211,7 +211,7 @@ export default function GoalsTab() {
                 )}
 
                 {/* Quick update progress */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <input
                     type="number"
                     min={0}
@@ -234,7 +234,7 @@ export default function GoalsTab() {
       {/* Create/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={() => setShowForm(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-5" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md mx-4 p-3 sm:p-6 space-y-5" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">{editId ? "Editar meta" : "Nueva meta"}</h3>
               <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors">
@@ -250,10 +250,10 @@ export default function GoalsTab() {
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="ej. Ventas del mes"
-                  className="w-full px-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                  className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface text-gray-900 dark:text-foreground outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wide mb-1 block">Categoría</label>
                   <select
@@ -279,7 +279,7 @@ export default function GoalsTab() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wide mb-1 block">Meta (cantidad)</label>
                   <input
@@ -313,14 +313,14 @@ export default function GoalsTab() {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-1">
+            <div className="flex flex-wrap gap-3 pt-1">
               <button onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground text-sm font-semibold hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                 Cancelar
               </button>
               <button
                 onClick={save}
                 disabled={saving || !form.name.trim() || !form.target}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-60 transition-colors flex flex-wrap items-center justify-center gap-2"
               >
                 {saving ? "Guardando…" : <><Check className="h-4 w-4" />{editId ? "Guardar" : "Crear meta"}</>}
               </button>

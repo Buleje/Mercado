@@ -55,52 +55,52 @@ export default function AnomalyDetectionTab() {
   const criticalCount = ANOMALIES.filter(a => !resolvedIds.has(a.id) && (a.severity === "critica" || a.severity === "alta")).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <AlertTriangle className="h-6 w-6 text-amber-500" /> Detección de Anomalías
           </h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Detección automática de patrones inusuales en ventas, stock y operaciones</p>
         </div>
-        <button onClick={() => exportToCSV(ANOMALIES.map(a => ({ Fecha: a.date, Tipo: a.type, Severidad: a.severity, Titulo: a.title, Valor: a.value, Esperado: a.expected })), "anomalias")} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+        <button onClick={() => exportToCSV(ANOMALIES.map(a => ({ Fecha: a.date, Tipo: a.type, Severidad: a.severity, Titulo: a.title, Valor: a.value, Esperado: a.expected })), "anomalias")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Sin Resolver</p>
-          <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-1">{unresolvedCount}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-1">{unresolvedCount}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Críticas/Altas</p>
-          <p className="text-2xl font-extrabold text-red-600 dark:text-red-400 mt-1">{criticalCount}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-red-600 dark:text-red-400 mt-1">{criticalCount}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Total Detectadas</p>
-          <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">{ANOMALIES.length}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">{ANOMALIES.length}</p>
         </div>
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted uppercase">Resueltas</p>
-          <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{resolvedIds.size}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{resolvedIds.size}</p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        <select value={filter} onChange={e => setFilter(e.target.value as AnomalyType | "todas")} className="px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-gray-900 dark:text-foreground outline-none focus:border-primary">
+        <select value={filter} onChange={e => setFilter(e.target.value as AnomalyType | "todas")} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-gray-900 dark:text-foreground outline-none focus:border-primary">
           <option value="todas">Todos los tipos</option>
           {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
         </select>
-        <select value={sevFilter} onChange={e => setSevFilter(e.target.value as Severity | "todas")} className="px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-gray-900 dark:text-foreground outline-none focus:border-primary">
+        <select value={sevFilter} onChange={e => setSevFilter(e.target.value as Severity | "todas")} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-gray-900 dark:text-foreground outline-none focus:border-primary">
           <option value="todas">Todas severidades</option>
           <option value="critica">Crítica</option><option value="alta">Alta</option>
           <option value="media">Media</option><option value="baja">Baja</option>
         </select>
-        <label className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-muted cursor-pointer">
+        <label className="flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-600 dark:text-muted cursor-pointer">
           <input type="checkbox" checked={showResolved} onChange={e => setShowResolved(e.target.checked)} className="rounded" />
           Mostrar resueltas
         </label>
@@ -113,8 +113,8 @@ export default function AnomalyDetectionTab() {
           const Icon = config.icon;
           const isResolved = resolvedIds.has(a.id);
           return (
-            <div key={a.id} className={cn("bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 hover:shadow-md transition-shadow", isResolved && "opacity-60")}>
-              <div className="flex items-start gap-4">
+            <div key={a.id} className={cn("bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 hover:shadow-md transition-shadow", isResolved && "opacity-60")}>
+              <div className="flex flex-wrap items-start gap-2 sm:gap-4">
                 <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", config.color)}>
                   <Icon className="h-5 w-5" />
                 </div>
@@ -126,7 +126,7 @@ export default function AnomalyDetectionTab() {
                     {isResolved && <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">✓ Resuelta</span>}
                   </div>
                   <p className="text-sm text-gray-500 dark:text-muted mt-1">{a.description}</p>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-400 dark:text-muted">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-2 text-xs text-gray-400 dark:text-muted">
                     <span>{fmtDate(a.date)}</span>
                     <span>Módulo: {a.module}</span>
                     <span>Valor: {typeof a.value === "number" && a.value > 10 ? fmt(a.value) : a.value}</span>
@@ -136,7 +136,7 @@ export default function AnomalyDetectionTab() {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <button onClick={() => setSelected(a)} className="p-2 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
                   {!isResolved && (
                     <button onClick={() => setResolvedIds(prev => new Set([...prev, a.id]))} className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-xs font-bold hover:bg-emerald-600 transition-colors">
@@ -155,13 +155,13 @@ export default function AnomalyDetectionTab() {
       {selected && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
           <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{selected.title}</h3>
-              <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent text-xl font-bold">×</button>
+              <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent text-base sm:text-xl font-bold">×</button>
             </div>
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-3 sm:px-6 py-5 space-y-4">
               <p className="text-sm text-gray-600 dark:text-muted">{selected.description}</p>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Fecha</span><p className="font-bold">{fmtDate(selected.date)}</p></div>
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Módulo</span><p className="font-bold">{selected.module}</p></div>
                 <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Valor Detectado</span><p className="font-bold text-red-500">{selected.value}</p></div>

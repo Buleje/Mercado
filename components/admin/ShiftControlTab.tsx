@@ -234,18 +234,18 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Timer className="h-6 w-6 text-primary" />
             Control de Turnos
             <ModuleTooltip />
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Apertura, cierre y resumen de ventas por turno y cajero</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => { setLoadingData(true); loadShiftData(); }} disabled={loadingData} title="Actualizar datos de ventas" className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} /></button>
           {onNavigateToArqueo && (
             <button onClick={onNavigateToArqueo} title="Ver Arqueo de Caja" className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-primary/30 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition-colors">
@@ -262,7 +262,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
           { label: "Ventas hoy", value: fmt(stats.totalSalesToday), icon: BarChart2, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
           { label: "Pedidos hoy", value: String(stats.totalOrdersToday), icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
@@ -279,9 +279,9 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
 
       {/* Open shift form */}
       {showOpenForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex items-center gap-2"><Play className="h-4 w-4 text-emerald-500" /> Abrir nuevo turno</h3>
+            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Play className="h-4 w-4 text-emerald-500" /> Abrir nuevo turno</h3>
             <button onClick={() => setShowOpenForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -302,9 +302,9 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
               <input type="number" value={openForm.openingCash} onChange={e => setOpenForm(p => ({ ...p, openingCash: e.target.value }))} min="0" step="50" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowOpenForm(false)} className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleOpenShift} className="px-4 py-2 text-sm rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600">Abrir turno</button>
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button onClick={() => setShowOpenForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={handleOpenShift} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600">Abrir turno</button>
           </div>
         </div>
       )}
@@ -312,9 +312,9 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {/* Close shift form */}
       {showCloseForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowCloseForm(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex items-center gap-2"><Square className="h-4 w-4 text-red-500" /> Cerrar turno</h3>
+              <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Square className="h-4 w-4 text-red-500" /> Cerrar turno</h3>
               <button onClick={() => setShowCloseForm(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
             <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-2 text-sm">
@@ -339,7 +339,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                 />
               </div>
               {closeForm.closingCash && (
-                <div className={cn("flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold", parseFloat(closeForm.closingCash) === showCloseForm.expectedCash ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400" : parseFloat(closeForm.closingCash) > showCloseForm.expectedCash ? "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400" : "bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400")}>
+                <div className={cn("flex items-center justify-between rounded-xl px-2 sm:px-4 py-2 sm:py-3 text-sm font-bold", parseFloat(closeForm.closingCash) === showCloseForm.expectedCash ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400" : parseFloat(closeForm.closingCash) > showCloseForm.expectedCash ? "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400" : "bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400")}>
                   <span>Diferencia:</span>
                   <span>{parseFloat(closeForm.closingCash) >= showCloseForm.expectedCash ? "+" : ""}{fmt(parseFloat(closeForm.closingCash) - showCloseForm.expectedCash)}</span>
                 </div>
@@ -349,7 +349,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                 <textarea value={closeForm.notes} onChange={e => setCloseForm(p => ({ ...p, notes: e.target.value }))} rows={2} placeholder="Ej: Faltó billete de S/50..." className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground resize-none" />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={() => setShowCloseForm(null)} className="flex-1 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
               <button onClick={handleCloseShift} className="flex-1 py-2.5 text-sm rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600">Cerrar turno</button>
             </div>
@@ -358,9 +358,9 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       )}
 
       {/* View tabs */}
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {(["activos", "historial"] as const).map(v => (
-          <button key={v} onClick={() => setView(v)} className={cn("px-4 py-2 text-sm font-semibold rounded-xl transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             {v === "activos" ? `Turnos activos (${activeShifts.length})` : `Historial (${closedShifts.length})`}
           </button>
         ))}
@@ -370,15 +370,15 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {loadingData && (
         <div className="space-y-3">
           {[1, 2].map(i => (
-            <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 animate-pulse">
-              <div className="flex items-center gap-3 mb-4">
+            <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 animate-pulse">
+              <div className="flex flex-wrap items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-surface" />
                 <div className="flex-1 space-y-2">
                   <div className="h-4 bg-gray-200 dark:bg-surface rounded w-32" />
                   <div className="h-3 bg-gray-100 dark:bg-surface/50 rounded w-48" />
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {[1,2,3,4].map(j => <div key={j} className="h-12 rounded-xl bg-gray-100 dark:bg-surface/50" />)}
               </div>
             </div>
@@ -397,9 +397,9 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
         {visible.map(sh => {
           const isOpen = sh.status === "abierto";
           return (
-            <div key={sh.id} className={cn("bg-white dark:bg-card border rounded-2xl p-5 transition-all", isOpen ? "border-emerald-300 dark:border-emerald-800 shadow-sm" : "border-gray-200 dark:border-card-border")}>
-              <div className="flex items-start justify-between gap-3 mb-4">
-                <div className="flex items-center gap-3">
+            <div key={sh.id} className={cn("bg-white dark:bg-card border rounded-2xl p-3 sm:p-5 transition-all", isOpen ? "border-emerald-300 dark:border-emerald-800 shadow-sm" : "border-gray-200 dark:border-card-border")}>
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0", isOpen ? "bg-emerald-500" : "bg-gray-400 dark:bg-surface")}>
                     <User className="h-5 w-5" />
                   </div>
@@ -408,7 +408,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
                     <p className="text-xs text-gray-500 dark:text-muted capitalize">{sh.role} · {fmtDatetime(sh.openedAt)}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", isOpen ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-gray-100 text-gray-600 dark:bg-surface dark:text-muted")}>
                     {isOpen ? "Activo" : sh.status === "revisando" ? "Revisando" : `Cerrado — ${duration(sh.openedAt, sh.closedAt)}`}
                   </span>
@@ -458,7 +458,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
       {/* Print receipt modal */}
       {printingShift && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPrintingShift(null)}>
-          <div id="shift-receipt" className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-xs space-y-3" onClick={e => e.stopPropagation()}>
+          <div id="shift-receipt" className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-xs space-y-3" onClick={e => e.stopPropagation()}>
             <div className="text-center border-b border-dashed border-gray-300 dark:border-card-border pb-3">
               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Bodega San Martín</p>
               <p className="font-extrabold text-gray-900 dark:text-foreground mt-1">Recibo de Turno</p>
@@ -498,7 +498,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
               ))}
             </div>
             {printingShift.notes && <p className="text-xs text-gray-500 italic border-t border-dashed border-gray-300 dark:border-card-border pt-2">Obs: {printingShift.notes}</p>}
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-wrap gap-2 pt-2">
               <button onClick={() => setPrintingShift(null)} className="flex-1 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cerrar</button>
               <button onClick={() => window.print()} className="flex-1 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 flex items-center justify-center gap-1.5">
                 <Printer className="h-4 w-4" /> Imprimir

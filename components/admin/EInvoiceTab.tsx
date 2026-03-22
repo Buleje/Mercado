@@ -82,10 +82,10 @@ export default function EInvoiceTab() {
   }, [docs]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Receipt className="h-6 w-6 text-primary" /> Facturación Electrónica
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Comprobantes electrónicos SUNAT — Boletas, facturas, notas</p>
@@ -111,9 +111,9 @@ export default function EInvoiceTab() {
       </div>
 
       {/* IGV summary card */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
-        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2 mb-3"><FileText className="h-4 w-4 text-primary" /> Resumen tributario del mes</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
+        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><FileText className="h-4 w-4 text-primary" /> Resumen tributario del mes</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-sm">
           <div><p className="text-xs text-gray-400">Boletas emitidas</p><p className="font-bold text-gray-800 dark:text-foreground">{docs.filter(d => d.type === "boleta").length}</p></div>
           <div><p className="text-xs text-gray-400">Facturas emitidas</p><p className="font-bold text-gray-800 dark:text-foreground">{docs.filter(d => d.type === "factura").length}</p></div>
           <div><p className="text-xs text-gray-400">Notas de crédito</p><p className="font-bold text-gray-800 dark:text-foreground">{docs.filter(d => d.type === "nota-credito").length}</p></div>
@@ -122,7 +122,7 @@ export default function EInvoiceTab() {
       </div>
 
       {stats.rejected > 0 && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded-2xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-bold text-red-700 dark:text-red-400">Hay {stats.rejected} comprobante(s) rechazados por SUNAT</p>
@@ -150,20 +150,20 @@ export default function EInvoiceTab() {
       {/* Documents table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">Serie-Nro</th><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Tipo</th><th className="px-4 py-3">Cliente</th><th className="px-4 py-3">Total</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3"></th></tr></thead>
+          <table className="w-full min-w-[600px] text-sm">
+            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Serie-Nro</th><th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th><th className="px-2 sm:px-4 py-2 sm:py-3">Tipo</th><th className="px-2 sm:px-4 py-2 sm:py-3">Cliente</th><th className="px-2 sm:px-4 py-2 sm:py-3">Total</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(d => {
                 const StatusIcon = STATUS_META[d.status].icon;
                 return (
                   <tr key={d.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
-                    <td className="px-4 py-3 font-mono font-bold text-gray-800 dark:text-foreground">{d.serie}-{d.number}</td>
-                    <td className="px-4 py-3 text-gray-500">{d.date}</td>
-                    <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", TYPE_META[d.type].bg, TYPE_META[d.type].color)}>{TYPE_META[d.type].label}</span></td>
-                    <td className="px-4 py-3 text-gray-700 dark:text-foreground">{d.clientName}<br/><span className="text-xs text-gray-400">{d.clientRUC}</span></td>
-                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{fmt(d.total)}</td>
-                    <td className="px-4 py-3"><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_META[d.status].color)}><StatusIcon className="h-3 w-3" />{STATUS_META[d.status].label}</span></td>
-                    <td className="px-4 py-3"><button onClick={() => setDetail(d)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5 inline" /></button></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono font-bold text-gray-800 dark:text-foreground">{d.serie}-{d.number}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{d.date}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", TYPE_META[d.type].bg, TYPE_META[d.type].color)}>{TYPE_META[d.type].label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-foreground">{d.clientName}<br/><span className="text-xs text-gray-400">{d.clientRUC}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{fmt(d.total)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_META[d.status].color)}><StatusIcon className="h-3 w-3" />{STATUS_META[d.status].label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(d)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5 inline" /></button></td>
                   </tr>
                 );
               })}
@@ -174,12 +174,12 @@ export default function EInvoiceTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.serie}-{detail.number}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {[["Tipo", TYPE_META[detail.type].label], ["Fecha", detail.date], ["Cliente", detail.clientName], ["RUC", detail.clientRUC], ["Subtotal", fmt(detail.subtotal)], ["IGV (18%)", fmt(detail.igv)], ["Total", fmt(detail.total)], ["Items", String(detail.items)], ["Estado", STATUS_META[detail.status].label]].map(([k, v]) => (
                 <div key={k}><p className="text-xs text-gray-400">{k}</p><p className="font-bold text-gray-800 dark:text-foreground">{v}</p></div>
               ))}

@@ -27,7 +27,22 @@ Sentry.init({
    * The middleware echoes this header on every response so the browser
    * can read it and include it in crash reports for log correlation.
    */
-  beforeSend(event) {
+  beforeSend(event, hint) {
+    // Ignore errors from browser extensions (password managers, autofill overlays, etc.)
+    const err = hint?.originalException;
+    if (err instanceof Error) {
+      const stack = err.stack || "";
+      const msg = err.message || "";
+      if (
+        stack.includes("bootstrap-autofill") ||
+        stack.includes("chrome-extension") ||
+        stack.includes("moz-extension") ||
+        stack.includes("extension:") ||
+        msg.includes("bootstrap-autofill")
+      ) {
+        return null; // Drop the event — don't send to Sentry
+      }
+    }
     // Read the most recent request id stored by the fetch interceptor (if any)
     if (typeof document !== "undefined") {
       const requestId = document.head.querySelector<HTMLMetaElement>(

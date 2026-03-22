@@ -56,7 +56,7 @@ export default function CMSDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <Link
             href="/admin/cms/pages/new"
-            className="p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+            className="p-6 bg-linear-to-br from-blue-500 to-blue-600 text-white rounded-lg hover:shadow-lg transition-shadow"
           >
             <FileText className="w-8 h-8 mb-2" />
             <h3 className="font-bold">Páginas</h3>
@@ -65,7 +65,7 @@ export default function CMSDashboard() {
 
           <Link
             href="/admin/cms/media"
-            className="p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+            className="p-6 bg-linear-to-br from-purple-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-shadow"
           >
             <Image className="w-8 h-8 mb-2" />
             <h3 className="font-bold">Medios</h3>
@@ -74,7 +74,7 @@ export default function CMSDashboard() {
 
           <Link
             href="/admin/cms/theme"
-            className="p-6 bg-gradient-to-br from-pink-500 to-pink-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+            className="p-6 bg-linear-to-br from-pink-500 to-pink-600 text-white rounded-lg hover:shadow-lg transition-shadow"
           >
             <Palette className="w-8 h-8 mb-2" />
             <h3 className="font-bold">Tema</h3>
@@ -83,7 +83,7 @@ export default function CMSDashboard() {
 
           <Link
             href="/admin/cms/navigation"
-            className="p-6 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-shadow"
+            className="p-6 bg-linear-to-br from-green-500 to-green-600 text-white rounded-lg hover:shadow-lg transition-shadow"
           >
             <MenuIcon className="w-8 h-8 mb-2" />
             <h3 className="font-bold">Navegación</h3>

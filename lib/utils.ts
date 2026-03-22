@@ -30,3 +30,44 @@ export function exportToCSV(
   a.click();
   URL.revokeObjectURL(url);
 }
+
+// ─── Formatters ──────────────────────────────────────────────────────────────
+// Single source of truth — import from "@/lib/utils" in all admin tabs.
+
+/**
+ * Format a number as Peruvian Soles.
+ * @example formatCurrency(1234.5) → "S/ 1,234.50"
+ */
+export function formatCurrency(amount: number): string {
+  return `S/ ${amount.toLocaleString("es-PE", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+/**
+ * Format an ISO date string to a readable date in es-PE locale.
+ * @example formatDate("2024-03-15T00:00:00Z") → "15 mar. 2024"
+ */
+export function formatDate(iso: string | Date): string {
+  return new Date(iso).toLocaleDateString("es-PE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+/**
+ * Format an ISO datetime string to date + time in es-PE locale.
+ * @example formatDateTime("2024-03-15T14:30:00Z") → "15 mar. 2024, 14:30"
+ */
+export function formatDateTime(iso: string | Date): string {
+  return new Date(iso).toLocaleString("es-PE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+

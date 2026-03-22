@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
-import { ShoppingCart, Sparkles, Tag, Package } from "lucide-react";
+import { ShoppingCart, Sparkles, Tag, Package, Minus, Plus } from "lucide-react";
 import { products, categories } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -104,15 +104,17 @@ function buildCombos(liveProducts: Product[], templates: ComboTemplate[] = COMBO
 }
 
 function ComboCard({ combo }: { combo: Combo }) {
-  const { addItem } = useCart();
+  const { addItem, items: cartItems, updateQty } = useCart();
   const { showToast } = useToast();
   const [adding, setAdding] = useState(false);
+
+  const comboId = Math.abs(combo.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) * -1000);
 
   const handleAddAll = () => {
     setAdding(true);
     // Add combo as a single cart item with the discounted price
     const comboProduct = {
-      id: Math.abs(combo.id.split("").reduce((a, c) => a + c.charCodeAt(0), 0) * -1000),
+      id: comboId,
       name: `${combo.emoji} ${combo.name}`,
       price: combo.comboPrice,
       image: combo.products[0]?.image ?? "",
@@ -180,27 +182,41 @@ function ComboCard({ combo }: { combo: Combo }) {
         </div>
 
         {/* Price and CTA */}
-        <div className="flex items-end justify-between gap-2 mt-auto">
-          <div>
-            <span className="block text-xs text-muted line-through">S/{combo.originalTotal.toFixed(2)}</span>
-            <span className="text-xl font-extrabold text-primary">S/{combo.comboPrice.toFixed(2)}</span>
-            <span className="block text-[10px] text-emerald-600 font-semibold">
-              Ahorras S/{(combo.originalTotal - combo.comboPrice).toFixed(2)}
-            </span>
+        <div className="mt-auto">
+          <div className="flex items-end justify-between gap-2">
+            <div>
+              <span className="block text-xs text-muted line-through">S/{combo.originalTotal.toFixed(2)}</span>
+              <span className="text-xl font-extrabold text-primary">S/{combo.comboPrice.toFixed(2)}</span>
+              <span className="block text-[10px] text-emerald-600 font-semibold">
+                Ahorras S/{(combo.originalTotal - combo.comboPrice).toFixed(2)}
+              </span>
+            </div>
+            {(() => { const qty = cartItems.find(i => i.id === comboId)?.quantity ?? 0; return qty > 0 ? (
+              <div className="flex items-center gap-0.5 bg-primary rounded-full px-1 py-1 shrink-0">
+                <button onClick={() => updateQty(comboId, qty - 1)} className="h-7 w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Disminuir">
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="text-white font-extrabold text-sm min-w-5 text-center">{qty}</span>
+                <button onClick={() => updateQty(comboId, qty + 1)} className="h-7 w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Aumentar">
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleAddAll}
+                disabled={adding}
+                className={cn(
+                  "flex items-center justify-center h-11 w-11 rounded-2xl shadow-lg shrink-0",
+                  adding
+                    ? "bg-emerald-500 text-white scale-95"
+                    : "bg-primary text-white hover:bg-primary-dark hover:scale-105 active:scale-95"
+                )}
+                aria-label={adding ? "¡Combo agregado!" : "Agregar combo al carrito"}
+              >
+                <ShoppingCart className="h-5 w-5" />
+              </button>
+            ); })()}
           </div>
-          <button
-            onClick={handleAddAll}
-            disabled={adding}
-            className={cn(
-              "flex items-center gap-2 rounded-xl px-4 py-2.5 font-bold text-sm shadow-md transition-all duration-200",
-              adding
-                ? "bg-emerald-500 text-white scale-95"
-                : "bg-primary text-white hover:bg-primary-dark hover:scale-105 active:scale-95"
-            )}
-          >
-            <ShoppingCart className="h-4 w-4" />
-            {adding ? "¡Listo!" : "Agregar"}
-          </button>
         </div>
       </div>
     </div>

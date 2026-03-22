@@ -2,6 +2,7 @@
 
 import { useState, useEffect, startTransition } from "react";
 import { Type, Sun, Moon, RotateCcw } from "lucide-react";
+import { useTheme } from "@/contexts/theme-context";
 
 const STORAGE_KEY = "bsm-a11y-prefs";
 
@@ -28,6 +29,7 @@ export default function AccessibilityBar() {
   const [open, setOpen] = useState(false);
   const [prefs, setPrefs] = useState<A11yPrefs>({ fontSize: 0 });
   const [mounted, setMounted] = useState(false);
+  const { toggle: toggleTheme } = useTheme();
 
   useEffect(() => {
     startTransition(() => {
@@ -46,10 +48,6 @@ export default function AccessibilityBar() {
     if (prefs.fontSize === 1) html.classList.add("text-lg");
     else if (prefs.fontSize === 2) html.classList.add("text-xl");
   }, [prefs, mounted]);
-
-  const toggleTheme = () => {
-    document.documentElement.classList.toggle("dark");
-  };
 
   const reset = () => {
     setPrefs({ fontSize: 0 });

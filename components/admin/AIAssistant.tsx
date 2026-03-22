@@ -533,7 +533,7 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
       if (line.startsWith("- ") || line.startsWith("* ")) {
         const text = line.slice(2);
         return (
-          <div key={i} className="flex items-start gap-1.5 py-0.5">
+          <div key={i} className="flex flex-wrap items-start gap-1.5 py-0.5">
             <span className="text-primary mt-1 shrink-0">•</span>
             <span dangerouslySetInnerHTML={{ __html: formatInline(text, moduleRegex) }} />
           </div>
@@ -544,7 +544,7 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
       const numMatch = line.match(/^(\d+)\.\s/);
       if (numMatch) {
         return (
-          <div key={i} className="flex items-start gap-2 py-0.5">
+          <div key={i} className="flex flex-wrap items-start gap-2 py-0.5">
             <span className="text-primary font-bold shrink-0 text-xs w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5">{numMatch[1]}</span>
             <span dangerouslySetInnerHTML={{ __html: formatInline(line.slice(numMatch[0].length), moduleRegex) }} />
           </div>
@@ -649,7 +649,7 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
           )}
         >
           {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl shrink-0">
+          <div className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-violet-600 to-indigo-600 text-white rounded-t-2xl shrink-0">
             <div className="h-9 w-9 rounded-xl bg-white/20 flex items-center justify-center">
               <Bot className="h-5 w-5" />
             </div>
@@ -696,7 +696,7 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
           {/* ── Notifications banner ─────────────────────────────────────────── */}
           {notifications.length > 0 && showPanel === "chat" && (
             <div className="px-3 py-2 bg-red-50 dark:bg-red-950/20 border-b border-red-200 dark:border-red-800/40 shrink-0">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
                 <Bell className="h-3.5 w-3.5 text-red-500" />
                 <span className="text-[10px] font-bold text-red-700 dark:text-red-400 uppercase tracking-wider">Alertas proactivas</span>
                 <button onClick={() => setNotifications([])} className="ml-auto text-[9px] text-red-400 hover:underline">Cerrar</button>
@@ -710,14 +710,14 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
           {/* ── Stats panel ──────────────────────────────────────────────────── */}
           {showPanel === "stats" && (
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-              <h4 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2">
+              <h4 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                 <BarChart3 className="h-4 w-4 text-violet-500" /> Estadísticas de Uso
               </h4>
               {(() => {
                 const stats = getUsageStats();
                 return (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="bg-gray-50 dark:bg-accent/30 rounded-xl p-3 text-center">
                         <div className="text-xl font-extrabold text-violet-600">{stats.total}</div>
                         <div className="text-[10px] text-gray-500 dark:text-muted">Consultas totales</div>
@@ -750,7 +750,7 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
           {/* ── History panel ────────────────────────────────────────────────── */}
           {showPanel === "history" && (
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
-              <h4 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2">
+              <h4 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                 <Clock className="h-4 w-4 text-violet-500" /> Sesiones Anteriores
               </h4>
               {(() => {
@@ -772,10 +772,10 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
           {/* ── Chat panel (messages) ────────────────────────────────────────── */}
           {showPanel === "chat" && (
             <>
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scroll-smooth">
+              <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-2 sm:py-3 space-y-3 scroll-smooth">
                 {/* Offline banner inside chat */}
                 {isOffline && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800/40 text-[10px] text-amber-700 dark:text-amber-400">
+                  <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800/40 text-[10px] text-amber-700 dark:text-amber-400">
                     <WifiOff className="h-3.5 w-3.5 shrink-0" />
                     <span>Sin conexión — respuestas pre-calculadas disponibles</span>
                   </div>
@@ -820,12 +820,12 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
                 ))}
 
                 {loading && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <div className="w-7 h-7 rounded-lg bg-linear-to-br from-violet-500 to-indigo-500 flex items-center justify-center shrink-0">
                       <Bot className="h-3.5 w-3.5 text-white" />
                     </div>
-                    <div className="bg-gray-50 dark:bg-accent/50 rounded-2xl rounded-bl-md px-4 py-3 border border-gray-100 dark:border-card-border">
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <div className="bg-gray-50 dark:bg-accent/50 rounded-2xl rounded-bl-md px-2 sm:px-4 py-2 sm:py-3 border border-gray-100 dark:border-card-border">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400">
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         Analizando datos del negocio…
                       </div>
@@ -840,7 +840,7 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
               {messages.length <= 2 && !loading && (
                 <div className="px-4 pb-2 shrink-0">
                   <p className="text-[10px] font-semibold text-gray-400 dark:text-muted uppercase tracking-wider mb-2">Acciones rápidas</p>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {QUICK_ACTIONS.map(action => (
                       <button
                         key={action.label}
@@ -860,7 +860,7 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
 
               {/* Input area */}
               <div className="px-3 py-2.5 border-t border-gray-100 dark:border-card-border shrink-0">
-                <div className="flex items-end gap-2">
+                <div className="flex flex-wrap items-end gap-2">
                   <div className="flex-1 relative">
                     <textarea
                       ref={inputRef}

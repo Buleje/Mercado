@@ -106,13 +106,13 @@ async function checkAndAlert() {
         .join("");
       supplierSections += `
         <div style="margin-bottom:20px;">
-          <h3 style="font-size:14px;color:#6366f1;margin:0 0 8px;padding:8px 12px;background:#f5f3ff;border-radius:8px;">📦 ${supplier}</h3>
+          <h3 style="font-size:14px;color:#2d6a4f;margin:0 0 8px;padding:8px 12px;background:#f5f3ff;border-radius:8px;">📦 ${supplier}</h3>
           <table style="width:100%;border-collapse:collapse;">
             <thead><tr style="background:#f9fafb;">
-              <th style="text-align:left;padding:5px 8px;font-size:12px;color:#6366f1;">Producto</th>
-              <th style="text-align:center;padding:5px 8px;font-size:12px;color:#6366f1;">Stock</th>
-              <th style="text-align:center;padding:5px 8px;font-size:12px;color:#6366f1;">Mín.</th>
-              <th style="text-align:center;padding:5px 8px;font-size:12px;color:#6366f1;">Pedir</th>
+              <th style="text-align:left;padding:5px 8px;font-size:12px;color:#2d6a4f;">Producto</th>
+              <th style="text-align:center;padding:5px 8px;font-size:12px;color:#2d6a4f;">Stock</th>
+              <th style="text-align:center;padding:5px 8px;font-size:12px;color:#2d6a4f;">Mín.</th>
+              <th style="text-align:center;padding:5px 8px;font-size:12px;color:#2d6a4f;">Pedir</th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>
@@ -125,7 +125,7 @@ async function checkAndAlert() {
       subject: `🔄 Sugerencia de reabastecimiento — ${items.length} productos`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
-          <div style="background:#6366f1;padding:20px 24px;">
+          <div style="background:#2d6a4f;padding:20px 24px;">
             <h2 style="color:#fff;margin:0;font-size:18px;">🔄 Sugerencia de Reabastecimiento</h2>
             <p style="color:#c4b5fd;margin:4px 0 0;font-size:13px;">${items.length} productos necesitan reposición</p>
           </div>

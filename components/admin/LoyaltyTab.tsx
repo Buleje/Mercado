@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { Heart, Loader2, Search, Gift, Award, ArrowUpRight, NotebookPen, Save, DollarSign, Clock, Bell, Users2, Link, Copy, MessageSquare, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Customer } from "@/types/erp";
 
-type Customer = { phone: string; name: string; loyaltyPoints: number; loyaltyTier: string; totalSpent: number; privateNotes?: string; creditBalance?: number; referralCode?: string; referredBy?: string };
 type Tier = { name: string; minSpent: number; pointsMultiplier: number; color: string };
 
 const TIER_COLORS: Record<string, string> = {
@@ -210,7 +210,7 @@ export default function LoyaltyTab() {
         <div className="h-8 w-32 bg-gray-200 dark:bg-surface rounded-lg" />
       </div>
       {/* Tier badges */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {[1, 2, 3, 4].map(i => <div key={i} className="h-6 w-20 bg-gray-200 dark:bg-surface rounded-full" />)}
       </div>
       {/* Search */}
@@ -218,7 +218,7 @@ export default function LoyaltyTab() {
       {/* Customer rows */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
         {[1, 2, 3, 4, 5, 6].map(i => (
-          <div key={i} className="flex items-center gap-3">
+          <div key={i} className="flex flex-wrap items-center gap-3">
             <div className="h-10 w-10 bg-gray-200 dark:bg-surface rounded-xl shrink-0" />
             <div className="flex-1 space-y-1.5">
               <div className="h-3.5 bg-gray-200 dark:bg-surface rounded w-1/3" />
@@ -233,11 +233,11 @@ export default function LoyaltyTab() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Heart className="h-6 w-6 text-primary" />Programa de Fidelización</h2>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" />Programa de Fidelización</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
             <Clock className="h-4 w-4 text-gray-400" />
             <select
               value={expirationPolicy}
@@ -258,7 +258,7 @@ export default function LoyaltyTab() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
           { label: "Clientes", value: customers.length, icon: "👥" },
           { label: "Puntos Totales", value: totalPoints.toLocaleString(), icon: "⭐" },
@@ -266,7 +266,7 @@ export default function LoyaltyTab() {
           { label: "Diamante", value: customers.filter(c => c.loyaltyTier === "diamante").length, icon: "💎" },
         ].map(s => (
           <div key={s.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
-            <span className="text-2xl">{s.icon}</span>
+            <span className="text-xl sm:text-2xl">{s.icon}</span>
             <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{s.value}</p>
             <p className="text-xs text-gray-500 dark:text-muted">{s.label}</p>
           </div>
@@ -310,17 +310,17 @@ export default function LoyaltyTab() {
             </div>
           ) : (
             <>
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 text-center">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6 text-center">
                 <div className={cn("inline-block px-4 py-1 rounded-full text-sm font-extrabold uppercase mb-3", TIER_COLORS[selected.loyaltyTier] ?? "bg-gray-200 text-gray-600")}>{selected.loyaltyTier}</div>
                 <p className="font-extrabold text-lg text-gray-900 dark:text-foreground">{selected.name}</p>
                 <p className="text-sm text-gray-400">{selected.phone}</p>
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 mt-4">
                   <div>
-                    <p className="text-2xl font-extrabold text-primary">{selected.loyaltyPoints}</p>
+                    <p className="text-xl sm:text-2xl font-extrabold text-primary">{selected.loyaltyPoints}</p>
                     <p className="text-xs text-gray-400">Puntos</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground">S/{(selected.totalSpent ?? 0).toFixed(0)}</p>
+                    <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">S/{(selected.totalSpent ?? 0).toFixed(0)}</p>
                     <p className="text-xs text-gray-400">Gastado total</p>
                   </div>
                 </div>
@@ -328,11 +328,11 @@ export default function LoyaltyTab() {
 
               {/* Redeem */}
               <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
-                <h4 className="font-bold text-sm flex items-center gap-2"><Gift className="h-4 w-4 text-primary" />Canjear Puntos</h4>
+                <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><Gift className="h-4 w-4 text-primary" />Canjear Puntos</h4>
                 <p className="text-xs text-gray-400">1 punto = S/0.10 de descuento</p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <input type="number" value={redeemPts} onChange={e => setRedeemPts(e.target.value)} placeholder="Puntos a canjear" className="flex-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
-                  <button onClick={redeem} disabled={!redeemPts || Number(redeemPts) <= 0 || Number(redeemPts) > selected.loyaltyPoints} className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
+                  <button onClick={redeem} disabled={!redeemPts || Number(redeemPts) <= 0 || Number(redeemPts) > selected.loyaltyPoints} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
                     Canjear
                   </button>
                 </div>
@@ -343,7 +343,7 @@ export default function LoyaltyTab() {
 
               {/* Private Notes */}
               <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
-                <h4 className="font-bold text-sm flex items-center gap-2"><NotebookPen className="h-4 w-4 text-primary" />Notas Privadas</h4>
+                <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><NotebookPen className="h-4 w-4 text-primary" />Notas Privadas</h4>
                 <textarea
                   value={privateNotes}
                   onChange={e => setPrivateNotes(e.target.value)}
@@ -363,9 +363,9 @@ export default function LoyaltyTab() {
 
               {/* Credit Balance */}
               <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
-                <h4 className="font-bold text-sm flex items-center gap-2"><DollarSign className="h-4 w-4 text-primary" />Saldo a Favor</h4>
-                <p className="text-2xl font-extrabold text-emerald-600">S/{(selected.creditBalance ?? 0).toFixed(2)}</p>
-                <div className="flex gap-2">
+                <h4 className="font-bold text-sm flex flex-wrap items-center gap-2"><DollarSign className="h-4 w-4 text-primary" />Saldo a Favor</h4>
+                <p className="text-xl sm:text-2xl font-extrabold text-emerald-600">S/{(selected.creditBalance ?? 0).toFixed(2)}</p>
+                <div className="flex flex-wrap gap-2">
                   <input
                     type="number"
                     step="0.01"
@@ -377,7 +377,7 @@ export default function LoyaltyTab() {
                   <button
                     onClick={updateCredit}
                     disabled={!creditInput || creditSaving}
-                    className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50"
+                    className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50"
                   >
                     {creditSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
                   </button>
@@ -392,12 +392,12 @@ export default function LoyaltyTab() {
                 const { expirationDate, daysRemaining, percentRemaining } = expiration;
                 return (
                   <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
-                    <h4 className="font-bold text-sm flex items-center gap-2">
+                    <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
                       <Clock className="h-4 w-4 text-primary" />
                       Vencimiento de Puntos
                     </h4>
                     {daysRemaining < 30 && (
-                      <div className="flex items-start gap-2 p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg">
+                      <div className="flex flex-wrap items-start gap-2 p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-lg">
                         <AlertTriangle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
                         <p className="text-xs text-red-600 dark:text-red-400">Los puntos vencen pronto</p>
                       </div>
@@ -426,7 +426,7 @@ export default function LoyaltyTab() {
               {/* Notification Panel */}
               <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-sm flex items-center gap-2">
+                  <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
                     <Bell className="h-4 w-4 text-primary" />
                     Notificaciones de Puntos
                   </h4>
@@ -468,7 +468,7 @@ export default function LoyaltyTab() {
 
               {/* Referral Program */}
               <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3">
-                <h4 className="font-bold text-sm flex items-center gap-2">
+                <h4 className="font-bold text-sm flex flex-wrap items-center gap-2">
                   <Users2 className="h-4 w-4 text-primary" />
                   Programa de Referidos
                 </h4>
@@ -492,7 +492,7 @@ export default function LoyaltyTab() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="text-center p-2 bg-gray-50 dark:bg-surface rounded-lg">
                         <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{referralCount}</p>
                         <p className="text-xs text-gray-400">Referidos</p>
@@ -536,7 +536,7 @@ export default function LoyaltyTab() {
                     <p className="text-xs text-gray-400 mb-3">Este cliente aún no tiene código de referido</p>
                     <button
                       onClick={generateReferralCode}
-                      className="px-4 py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition"
+                      className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary/90 transition"
                     >
                       Generar código
                     </button>

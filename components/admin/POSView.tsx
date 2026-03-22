@@ -15,16 +15,13 @@ import dynamic from "next/dynamic";
 import { ChangeCalculator } from "@/components/ChangeCalculator";
 import { enqueue, syncPendingSales, pendingCount } from "@/lib/pos-offline-queue";
 import { isThermalPrintSupported, printThermal } from "@/lib/thermal-printer";
+import type { Product as BaseProduct, Sale, Customer } from "@/types/erp";
+type Product = Omit<BaseProduct, "id"> & { id: number; stock?: number; stockMin?: number };
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface Product {
-  id: number; name: string; category: string; price: number;
-  costPrice?: number; image: string; unit: string; badge?: string;
-  barcode?: string; stock?: number; stockMin?: number; active: boolean;
-}
 
 interface CartItem {
   product: Product;
@@ -366,7 +363,7 @@ export default function POSView() {
     <>
       {/* Offline indicator */}
       {!isOnline && (
-        <div className="flex items-center gap-2 p-2.5 mb-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30">
+        <div className="flex flex-wrap items-center gap-2 p-2.5 mb-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30">
           <span className="h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
           <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 flex-1">
             Sin conexión — Las ventas se guardan localmente y se sincronizan al reconectar
@@ -377,13 +374,13 @@ export default function POSView() {
         </div>
       )}
       {isOnline && offlinePending > 0 && (
-        <div className="flex items-center gap-2 p-2.5 mb-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30">
+        <div className="flex flex-wrap items-center gap-2 p-2.5 mb-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30">
           <Loader2 className="h-4 w-4 text-blue-500 animate-spin shrink-0" />
           <p className="text-xs text-blue-700 dark:text-blue-300">Sincronizando {offlinePending} ventas pendientes...</p>
         </div>
       )}
       {saleError && (
-        <div className="flex items-center gap-2 p-2.5 mb-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30">
+        <div className="flex flex-wrap items-center gap-2 p-2.5 mb-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30">
           <Info className="h-4 w-4 text-red-500 shrink-0" />
           <p className="text-xs text-red-700 dark:text-red-300 flex-1">{saleError}</p>
           <button onClick={() => setSaleError(null)} className="p-0.5 text-red-400 hover:text-red-600"><X className="h-3.5 w-3.5" /></button>
@@ -391,12 +388,15 @@ export default function POSView() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className={cn("font-extrabold text-gray-900 dark:text-foreground", expanded ? "text-2xl" : "text-xl")}>Punto de Venta <ModuleTooltip /></h2>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <h2 className={cn("font-extrabold text-gray-900 dark:text-foreground", expanded ? "text-xl sm:text-2xl" : "text-lg sm:text-xl")}>Punto de Venta</h2>
+            <ModuleTooltip />
+          </div>
           <p className="text-sm text-gray-500 dark:text-muted">{products.length} productos disponibles</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {cashRegisterOpen === false && (
             <span className="text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200 px-2.5 py-1 rounded-lg">Sin caja</span>
           )}
@@ -405,30 +405,30 @@ export default function POSView() {
           )}
           <button
             onClick={() => setShowScanner(true)}
-            className="flex items-center gap-1.5 text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-primary border border-primary/30 hover:bg-primary/5 px-3 py-2 rounded-xl transition-colors"
           >
             <ScanBarcode className="h-4 w-4" /> Escanear
           </button>
           <button
             onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-1.5 text-sm font-bold text-gray-700 dark:text-foreground border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-gray-700 dark:text-foreground border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-2 rounded-xl transition-colors"
           >
             <History className="h-4 w-4" />
-            <span className="hidden sm:inline">Historial</span>
+            <span className="hidden min-[390px]:inline sm:inline">Historial</span>
           </button>
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-3 py-2 rounded-lg transition-colors shadow-sm"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary-dark px-3 py-2 rounded-xl transition-colors shadow-sm"
             title={expanded ? "Reducir" : "Expandir"}
           >
             {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            <span className="hidden sm:inline">{expanded ? "Reducir" : "Expandir"}</span>
+            <span className="hidden min-[390px]:inline sm:inline">{expanded ? "Reducir" : "Expandir"}</span>
           </button>
         </div>
       </div>
 
       {/* Body: products + cart */}
-      <div className="flex flex-col lg:flex-row gap-4">
+      <div className="flex flex-col lg:flex-row gap-2 sm:gap-4">
         {/* Left: Products */}
         <div className={cn(
           "flex-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden flex flex-col",
@@ -448,7 +448,7 @@ export default function POSView() {
                 autoFocus
               />
             </div>
-            <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
+            <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
               {categories.map(c => (
                 <button
                   key={c.id}
@@ -475,7 +475,7 @@ export default function POSView() {
                     <Star className="h-3.5 w-3.5 text-yellow-500" />
                     <span className="text-xs font-bold text-gray-600 dark:text-muted">Favoritos</span>
                   </div>
-                  <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
+                  <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
                     {favorites.map(id => {
                       const p = products.find(pr => pr.id === id);
                       if (!p) return null;
@@ -515,7 +515,7 @@ export default function POSView() {
                     <Clock className="h-3.5 w-3.5 text-blue-500" />
                     <span className="text-xs font-bold text-gray-600 dark:text-muted">Recientes</span>
                   </div>
-                  <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
+                  <div className="flex flex-wrap gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
                     {recentProducts.slice(0, 6).map(id => {
                       const p = products.find(pr => pr.id === id);
                       if (!p) return null;
@@ -616,8 +616,8 @@ export default function POSView() {
           expanded ? "lg:w-96 xl:w-md" : "lg:w-80 xl:w-96"
         )} style={expanded ? undefined : { minHeight: "28rem", maxHeight: "calc(100vh - 14rem)" }}>
           {/* Cart header */}
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex items-center gap-2">
+          <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2">
               <ShoppingBasket className="h-4 w-4 text-primary" />
               Carrito
               {cartCount > 0 && (
@@ -644,7 +644,7 @@ export default function POSView() {
                 const itemTotal = item.product.price * item.quantity * discountMultiplier;
                 return (
                   <div key={item.product.id} className="rounded-lg border border-gray-100 dark:border-card-border p-2 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Image src={item.product.image} alt="" width={36} height={36} className="rounded-lg object-cover shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-gray-900 dark:text-foreground truncate">{item.product.name}</p>
@@ -693,7 +693,7 @@ export default function POSView() {
                       </button>
                     </div>
                     {editingDiscount === item.product.id && (
-                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-card-border flex items-center gap-2">
+                      <div className="mt-2 pt-2 border-t border-gray-100 dark:border-card-border flex flex-wrap items-center gap-2">
                         <label className="text-xs text-gray-500 dark:text-muted font-medium">Descuento:</label>
                         <input
                           type="number"
@@ -723,7 +723,7 @@ export default function POSView() {
               </div>
               <button
                 onClick={() => setShowPayment(true)}
-                className="w-full py-3 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-lg bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-colors flex flex-wrap items-center justify-center gap-2"
               >
                 <Banknote className="h-4 w-4" />
                 Cobrar {fmt(cartTotal)}
@@ -742,8 +742,8 @@ export default function POSView() {
       {showHistory && (
         <div className="fixed inset-y-0 right-0 z-40 w-80 bg-white dark:bg-card border-l border-gray-200 dark:border-card-border shadow-2xl flex flex-col">
           {/* Header */}
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-            <div className="flex items-center gap-2">
+          <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+            <div className="flex flex-wrap items-center gap-2">
               <History className="h-4 w-4 text-primary" />
               <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Historial del Turno</h3>
             </div>
@@ -757,9 +757,9 @@ export default function POSView() {
 
           {/* Total */}
           {!loadingHistory && salesHistory.length > 0 && (
-            <div className="px-4 py-3 bg-emerald-50 dark:bg-emerald-900/10 border-b border-emerald-100 dark:border-emerald-900/20">
+            <div className="px-2 sm:px-4 py-2 sm:py-3 bg-emerald-50 dark:bg-emerald-900/10 border-b border-emerald-100 dark:border-emerald-900/20">
               <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Total Ventas del Turno</p>
-              <p className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-500">
+              <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-500">
                 {fmt(salesHistory.reduce((sum, s) => sum + s.total, 0))}
               </p>
               <p className="text-xs text-emerald-600 mt-0.5">{salesHistory.length} {salesHistory.length === 1 ? "venta" : "ventas"}</p>
@@ -817,9 +817,9 @@ export default function POSView() {
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowPayment(false)}>
           <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             {/* Modal header — prominent total */}
-            <div className="px-6 py-5 border-b border-gray-100 dark:border-card-border text-center">
+            <div className="px-3 sm:px-6 py-5 border-b border-gray-100 dark:border-card-border text-center">
               <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wider mb-1">Total a cobrar</p>
-              <p className="text-3xl font-extrabold text-gray-900 dark:text-foreground">{fmt(cartTotal)}</p>
+              <p className="text-xl sm:text-3xl font-extrabold text-gray-900 dark:text-foreground">{fmt(cartTotal)}</p>
               <p className="text-xs text-gray-400 dark:text-muted mt-1">{cartCount} {cartCount === 1 ? "artículo" : "artículos"}</p>
               <button onClick={() => setShowPayment(false)} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
                 <X className="h-4 w-4 text-gray-400 dark:text-muted" />
@@ -827,10 +827,10 @@ export default function POSView() {
             </div>
 
             {/* Modal body */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-5 space-y-5">
               {/* Cash register warning */}
               {cashRegisterOpen === false && (
-                <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 flex items-start gap-2">
+                <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 flex flex-wrap items-start gap-2">
                   <Calculator className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-600">Sin caja abierta. La venta se registrará sin movimiento de caja.</p>
                 </div>
@@ -839,7 +839,7 @@ export default function POSView() {
               {/* Payment method */}
               <div>
                 <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2.5">Método de pago</p>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                   {([
                     { id: "efectivo" as const, label: "Efectivo", icon: Banknote, color: "emerald" },
                     { id: "yape" as const, label: "Yape", icon: Smartphone, color: "purple" },
@@ -883,7 +883,7 @@ export default function POSView() {
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Pagos divididos</p>
                   {splitPayments.map((entry, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
+                    <div key={idx} className="flex flex-wrap items-center gap-2">
                       <select
                         value={entry.method}
                         onChange={e => {
@@ -943,7 +943,7 @@ export default function POSView() {
 
               {/* Fiado info */}
               {paymentMethod === "fiado" && (
-                <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 flex items-start gap-2">
+                <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 flex flex-wrap items-start gap-2">
                   <HandCoins className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                   <div className="text-xs text-amber-600">
                     <p className="font-bold mb-0.5">Venta a crédito</p>
@@ -995,7 +995,7 @@ export default function POSView() {
                   {paidAmount >= cartTotal && paidAmount > 0 && (
                     <div className="mt-3 bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-center">
                       <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">Vuelto</p>
-                      <p className="text-2xl font-extrabold text-emerald-700 mt-0.5">{fmt(change)}</p>
+                      <p className="text-xl sm:text-2xl font-extrabold text-emerald-700 mt-0.5">{fmt(change)}</p>
                       <ChangeCalculator change={change} />
                     </div>
                   )}
@@ -1046,11 +1046,11 @@ export default function POSView() {
             </div>
 
             {/* Modal footer */}
-            <div className="px-6 py-4 border-t border-gray-100 dark:border-card-border">
+            <div className="px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
               <button
                 onClick={handleCompleteSale}
                 disabled={processing || cart.length === 0 || (splitMode && splitTotal < cartTotal) || (!splitMode && paymentMethod === "efectivo" && paidAmount < cartTotal) || (!splitMode && paymentMethod === "fiado" && !customerPhone.trim())}
-                className="w-full py-3.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex flex-wrap items-center justify-center gap-2"
               >
                 {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />}
                 {processing ? "Procesando..." : splitMode ? `Cobrar dividido ${fmt(cartTotal)}` : paymentMethod === "fiado" ? `Registrar fiado ${fmt(cartTotal)}` : `Cobrar ${fmt(cartTotal)}`}
@@ -1063,7 +1063,7 @@ export default function POSView() {
       {/* ── Sale Complete Modal ────────────────────────────────────────────── */}
       {saleComplete && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-3 sm:p-6 text-center">
             <div className="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
               <Check className="h-6 w-6 text-emerald-600" />
             </div>
@@ -1077,11 +1077,11 @@ export default function POSView() {
             ) : saleComplete.change > 0 ? (
               <div className="bg-amber-50 rounded-lg p-3 mb-4">
                 <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider">Vuelto</p>
-                <p className="text-2xl font-extrabold text-amber-600">{fmt(saleComplete.change)}</p>
+                <p className="text-xl sm:text-2xl font-extrabold text-amber-600">{fmt(saleComplete.change)}</p>
               </div>
             ) : null}
             <div className="flex flex-col gap-2">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <a
                   href={`/venta/${saleComplete.id}/recibo`}
                   target="_blank"

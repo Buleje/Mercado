@@ -32,13 +32,13 @@ export default function BackupRestoreTab() {
   const failedCount = backups.filter(b => b.status === "fallido").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Shield className="h-6 w-6 text-primary" /> Backup & Restaurar</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Shield className="h-6 w-6 text-primary" /> Backup & Restaurar</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Copias de seguridad y puntos de restauración</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => setView("backups")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "backups" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Backups</button>
           <button onClick={() => setView("config")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "config" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Configuración</button>
         </div>
@@ -61,22 +61,22 @@ export default function BackupRestoreTab() {
       {view === "backups" ? (
         <>
           <div className="flex justify-end">
-            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Play className="h-4 w-4" /> Crear backup manual</button>
+            <button className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Play className="h-4 w-4" /> Crear backup manual</button>
           </div>
           <div className="space-y-2">
             {backups.map(b => {
               const S = STATUS_CONFIG[b.status];
               return (
                 <div key={b.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", b.status === "fallido" ? "border-red-200 dark:border-red-900/30" : "border-gray-200 dark:border-card-border")}>
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
                       <S.icon className={cn("h-5 w-5 shrink-0", S.color)} />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{b.name}</h4>
                           <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", b.type === "auto" ? "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" : "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400")}>{b.type === "auto" ? "Automático" : "Manual"}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-[10px] text-gray-400 mt-0.5 flex-wrap">
+                        <div className="flex items-center gap-2 sm:gap-4 text-[10px] text-gray-400 mt-0.5 flex-wrap">
                           <span><Clock className="h-2.5 w-2.5 inline mr-0.5" />{fmtDate(b.createdAt)}</span>
                           <span><HardDrive className="h-2.5 w-2.5 inline mr-0.5" />{b.size}</span>
                           <span>Módulos: {b.modules.join(", ")}</span>
@@ -98,7 +98,7 @@ export default function BackupRestoreTab() {
           </div>
         </>
       ) : (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 space-y-5">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-6 space-y-5">
           <h3 className="font-extrabold text-gray-900 dark:text-foreground">Configuración de backup automático</h3>
           <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-card-border">
             <div><p className="font-bold text-sm text-gray-900 dark:text-foreground">Backup automático</p><p className="text-xs text-gray-500 dark:text-muted">Activar copias automáticas programadas</p></div>

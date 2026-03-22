@@ -30,8 +30,8 @@ const STEPS = [
     icon: Truck,
     title: "Recibe en tu puerta",
     desc: "Te llevamos tu pedido a domicilio en Pucallpa en menos de 30 minutos.",
-    color: "#6366f1",
-    shadow: "rgba(99,102,241,0.3)",
+    color: "#2d6a4f",
+    shadow: "rgba(45,106,79,0.3)",
     emoji: "🚚",
   },
 ];
@@ -194,7 +194,7 @@ export default function HowItWorks() {
               <linearGradient id="connGrad" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#3b82f6" />
                 <stop offset="50%" stopColor="#f59e0b" />
-                <stop offset="100%" stopColor="#6366f1" />
+                <stop offset="100%" stopColor="#2d6a4f" />
               </linearGradient>
             </defs>
             <path
@@ -207,7 +207,7 @@ export default function HowItWorks() {
             />
             {/* Arrow heads */}
             <polygon points="184,8 196,12 184,16" fill="#f59e0b" opacity="0.6" />
-            <polygon points="384,8 396,12 384,16" fill="#6366f1" opacity="0.6" />
+            <polygon points="384,8 396,12 384,16" fill="#2d6a4f" opacity="0.6" />
           </svg>
 
           {STEPS.map((step, i) => (

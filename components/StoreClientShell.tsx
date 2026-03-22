@@ -4,15 +4,12 @@ import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 
 const CheckoutModal = dynamic(() => import("@/components/CheckoutModal"), { ssr: false });
-const ScrollToTop = dynamic(() => import("@/components/ScrollToTop"), { ssr: false });
 const CompareBar = dynamic(() => import("@/components/CompareBar"), { ssr: false });
 const NotificationPrompt = dynamic(() => import("@/components/NotificationPrompt"), { ssr: false });
-const AbandonedCartRecovery = dynamic(() => import("@/components/AbandonedCartRecovery"), { ssr: false });
 const OrderStatusModalWrapper = dynamic(() => import("@/components/OrderStatusModalWrapper"), { ssr: false });
 const OrderConfirmModal = dynamic(() => import("@/components/OrderConfirmModal"), { ssr: false });
 const LiveChatWidget = dynamic(() => import("@/components/LiveChatWidget"), { ssr: false });
 const WebVitalsReporter = dynamic(() => import("@/components/WebVitalsReporter"), { ssr: false });
-const WelcomeSurveyModal = dynamic(() => import("@/components/WelcomeSurveyModal"), { ssr: false });
 
 /** Defer modal mounting until the browser is idle + delay after hydration */
 function useDeferredMount(delay = 2500) {
@@ -47,12 +44,9 @@ export default function StoreClientShell() {
       <OrderConfirmModal />
       <OrderStatusModalWrapper />
       <CompareBar />
-      <ScrollToTop />
       <NotificationPrompt />
-      <AbandonedCartRecovery />
       <LiveChatWidget />
       <WebVitalsReporter />
-      <WelcomeSurveyModal />
     </>
   );
 }

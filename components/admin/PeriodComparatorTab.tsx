@@ -119,10 +119,10 @@ export default function PeriodComparatorTab() {
   }).length, [data]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><GitCompareArrows className="h-6 w-6 text-primary" /> Comparador de Periodos</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><GitCompareArrows className="h-6 w-6 text-primary" /> Comparador de Periodos</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Compara métricas clave entre dos rangos de fecha</p>
         </div>
         <button onClick={() => exportToCSV(data.map(m => ({ metrica: m.label, [current.aLabel]: fmtNum(m.periodA, m.format), [current.bLabel]: fmtNum(m.periodB, m.format), cambio: `${((m.periodA - m.periodB) / m.periodB * 100).toFixed(1)}%` })), `comparador-${preset}`)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10 transition-colors"><Download className="h-3.5 w-3.5" /> Exportar CSV</button>
@@ -137,12 +137,12 @@ export default function PeriodComparatorTab() {
       </div>
 
       {/* Summary */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900 dark:text-foreground flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Resumen</h3>
+          <h3 className="font-bold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Resumen</h3>
           <span className="text-xs font-semibold text-emerald-600">{improvements}/{data.length} métricas mejoraron</span>
         </div>
-        <div className="grid grid-cols-3 gap-3 text-center text-xs font-bold text-gray-500 dark:text-muted mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center text-xs font-bold text-gray-500 dark:text-muted mb-3">
           <span>Métrica</span>
           <span className="text-blue-600">{current.aLabel}</span>
           <span className="text-violet-600">{current.bLabel}</span>

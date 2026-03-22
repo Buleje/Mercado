@@ -2,7 +2,8 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 
 /** Custom-domain prefix injected by edge middleware */
-const CUSTOM_PREFIX = "custom:";
+const CUSTOM_PREFIX = "custom--";
+const LEGACY_CUSTOM_PREFIX = "custom:";
 
 /**
  * In-process cache: custom_hostname → tenant_slug.
@@ -17,19 +18,18 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
  *
  * - "main"                  → "main"
  * - "acme"                  → "acme"          (subdomain, pass-through)
- * - "custom:www.tienda.com" → looks up Tenant.customDomain in DB
+ * - "custom--www.tienda.com" → looks up Tenant.customDomain in DB
  *
  * Returns null when a custom domain is not found in the DB (unknown visitor).
  */
 export async function resolveTenantSlug(
   rawTenantId: string
 ): Promise<string | null> {
-  if (!rawTenantId.startsWith(CUSTOM_PREFIX)) {
+  const hostname = getCustomDomainHostname(rawTenantId);
+  if (!hostname) {
     // Plain slug — trust as-is
     return rawTenantId;
   }
-
-  const hostname = rawTenantId.slice(CUSTOM_PREFIX.length).toLowerCase();
 
   // Cache hit
   const cached = cache.get(hostname);
@@ -52,4 +52,16 @@ export async function resolveTenantSlug(
 /** Invalidate a cached custom domain entry (call after updating/removing). */
 export function invalidateCustomDomainCache(hostname: string) {
   cache.delete(hostname.toLowerCase());
+}
+
+function getCustomDomainHostname(rawTenantId: string): string | null {
+  if (rawTenantId.startsWith(CUSTOM_PREFIX)) {
+    return rawTenantId.slice(CUSTOM_PREFIX.length).toLowerCase();
+  }
+
+  if (rawTenantId.startsWith(LEGACY_CUSTOM_PREFIX)) {
+    return rawTenantId.slice(LEGACY_CUSTOM_PREFIX.length).toLowerCase();
+  }
+
+  return null;
 }

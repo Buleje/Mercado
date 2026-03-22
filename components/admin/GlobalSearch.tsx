@@ -97,7 +97,7 @@ export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
         onClick={e => e.stopPropagation()}
       >
         {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-card-border">
+        <div className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3.5 border-b border-gray-100 dark:border-card-border">
           {loading
             ? <Loader2 className="h-5 w-5 text-gray-400 shrink-0 animate-spin" />
             : <Search className="h-5 w-5 text-gray-400 dark:text-muted shrink-0" />
@@ -124,7 +124,7 @@ export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
         {query.trim().length >= 2 && (
           <div className="max-h-96 overflow-y-auto">
             {results.length === 0 && !loading && (
-              <div className="flex items-center gap-3 px-4 py-8 text-gray-400 dark:text-muted text-sm justify-center">
+              <div className="flex flex-wrap items-center gap-3 px-4 py-8 text-gray-400 dark:text-muted text-sm justify-center">
                 <AlertTriangle className="h-5 w-5" />
                 Sin resultados para &ldquo;{query}&rdquo;
               </div>
@@ -137,7 +137,7 @@ export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
                   key={r.id}
                   onClick={() => handleSelect(r)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-surface transition-colors border-b border-gray-50 dark:border-card-border last:border-0",
+                    "w-full flex items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 text-left hover:bg-gray-50 dark:hover:bg-surface transition-colors border-b border-gray-50 dark:border-card-border last:border-0",
                     i === selected && "bg-primary/5 dark:bg-primary/10"
                   )}
                 >
@@ -148,7 +148,7 @@ export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
                     <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">{r.title}</p>
                     <p className="text-xs text-gray-400 dark:text-muted truncate">{r.subtitle}</p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     {r.badge && (
                       <span
                         className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
@@ -169,9 +169,9 @@ export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
 
         {/* Quick actions when empty */}
         {query.trim().length < 2 && (
-          <div className="px-4 py-3">
+          <div className="px-2 sm:px-4 py-2 sm:py-3">
             <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-2">Acceso rápido</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {[
                 { label: "Nuevo Pedido",    tab: "pedidos",    icon: ShoppingCart,  color: "text-amber-500 bg-amber-50" },
                 { label: "Inventario",      tab: "inventario", icon: Package,       color: "text-blue-500 bg-blue-50" },
@@ -198,8 +198,8 @@ export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
           </div>
         )}
 
-        <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border flex items-center justify-between">
-          <div className="flex items-center gap-3 text-[10px] text-gray-400 dark:text-muted">
+        <div className="px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border flex items-center justify-between">
+          <div className="flex flex-wrap items-center gap-3 text-[10px] text-gray-400 dark:text-muted">
             <span className="flex items-center gap-1"><kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">↑↓</kbd> navegar</span>
             <span className="flex items-center gap-1"><kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">Enter</kbd> ir</span>
           </div>

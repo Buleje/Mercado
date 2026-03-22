@@ -219,7 +219,7 @@ function CreateModal({ onClose, onSave }: ModalProps) {
           {/* Channel */}
           <div>
             <label className="block text-sm font-bold text-gray-700 dark:text-foreground mb-1">Canal de envío</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {(["whatsapp", "inapp", "ambos"] as CampaignChannel[]).map(c => (
                 <button key={c} onClick={() => setChannel(c)} className={cn("px-3 py-2 rounded-xl text-xs font-bold border-2 transition-all", channel === c ? "border-primary bg-primary/10 text-primary" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted")}>
                   {CHANNEL_LABEL[c]}
@@ -228,7 +228,7 @@ function CreateModal({ onClose, onSave }: ModalProps) {
             </div>
           </div>
           {/* Schedule */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button onClick={() => setSchedule(!schedule)} className={cn("w-10 h-5 rounded-full transition-colors", schedule ? "bg-primary" : "bg-gray-300 dark:bg-gray-600")}>
               <span className={cn("block w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5", schedule ? "translate-x-5" : "translate-x-0")} />
             </button>
@@ -241,9 +241,9 @@ function CreateModal({ onClose, onSave }: ModalProps) {
             </div>
           )}
         </div>
-        <div className="p-6 border-t border-gray-100 dark:border-card-border flex gap-3">
+        <div className="p-6 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3">
           <button onClick={onClose} className="flex-1 py-2.5 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Cancelar</button>
-          <button onClick={handleSave} disabled={!name.trim() || !message.trim()} className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          <button onClick={handleSave} disabled={!name.trim() || !message.trim()} className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex flex-wrap items-center justify-center gap-2">
             <Plus className="h-4 w-4" /> Crear campaña
           </button>
         </div>
@@ -447,10 +447,10 @@ export default function CampañasTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-4 py-2.5 rounded-xl shadow-lg text-sm font-bold flex items-center gap-2">
+        <div className="fixed top-4 right-4 z-50 bg-emerald-600 text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl shadow-lg text-sm font-bold flex flex-wrap items-center gap-2">
           <CheckCircle2 className="h-4 w-4" /> {toast}
         </div>
       )}
@@ -458,14 +458,14 @@ export default function CampañasTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div>
-          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Megaphone className="h-6 w-6 text-primary" /> Campañas de Marketing
           </h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">WhatsApp, notificaciones y mensajes masivos segmentados</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button onClick={handleExport} className="px-4 py-2 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Exportar</button>
-          <button onClick={() => setShowModal(true)} className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex items-center gap-2">
+          <button onClick={handleExport} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent">Exportar</button>
+          <button onClick={() => setShowModal(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center gap-2">
             <Plus className="h-4 w-4" /> Nueva campaña
           </button>
         </div>
@@ -481,7 +481,7 @@ export default function CampañasTab() {
           { label: "Ingresos generados", value: fmt(kpis.revenue), icon: BarChart3 },
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
               <k.icon className="h-4 w-4 text-primary" />
               <p className="text-xs text-gray-500 dark:text-muted font-bold">{k.label}</p>
             </div>
@@ -527,7 +527,7 @@ export default function CampañasTab() {
                   <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", CHANNEL_COLOR[c.channel])}>{CHANNEL_LABEL[c.channel]}</span>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-muted truncate mb-2">{c.message}</p>
-                <div className="flex flex-wrap gap-4 text-xs text-gray-500 dark:text-muted">
+                <div className="flex flex-wrap gap-2 sm:gap-4 text-xs text-gray-500 dark:text-muted">
                   <span className="flex items-center gap-1"><Users className="h-3 w-3" />{c.status === "completada" ? `${c.delivered} entregados` : `~${c.totalAudience} destinatarios`}</span>
                   {c.status === "completada" && <>
                     <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{Math.round(c.opened / Math.max(c.delivered, 1) * 100)}% apertura</span>
@@ -540,7 +540,7 @@ export default function CampañasTab() {
                   <span>{fmtDate(c.createdAt)}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
                 <button onClick={() => setDetail(c)} className="px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs font-bold text-gray-600 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex items-center gap-1">
                   <Eye className="h-3.5 w-3.5" /> Ver
                 </button>
@@ -575,7 +575,7 @@ export default function CampañasTab() {
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3">
                 <p className="text-sm text-gray-700 dark:text-foreground">{detail.message}</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   { label: "Audiencia", value: `${detail.totalAudience} clientes` },
                   { label: "Segmento", value: SEGMENT_LABEL[detail.segment] },
@@ -617,12 +617,12 @@ export default function CampañasTab() {
               {detail.scheduledAt && <p className="text-xs text-gray-500 dark:text-muted"><Clock className="h-3 w-3 inline mr-1" />Programado: {fmtDate(detail.scheduledAt)}</p>}
             </div>
             <div className="p-6 border-t border-gray-100 dark:border-card-border flex gap-3 flex-wrap">
-              <button onClick={() => handleDelete(detail.id)} className="px-4 py-2 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-50 dark:hover:bg-red-900/10">Eliminar</button>
-              <button onClick={() => exportCampaignPDF(detail)} className="px-4 py-2 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex items-center gap-2">
+              <button onClick={() => handleDelete(detail.id)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-xl text-sm font-bold hover:bg-red-50 dark:hover:bg-red-900/10">Eliminar</button>
+              <button onClick={() => exportCampaignPDF(detail)} className="px-2 sm:px-4 py-1.5 sm:py-2 border border-gray-300 dark:border-card-border rounded-xl text-sm font-bold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent flex flex-wrap items-center gap-2">
                 <FileDown className="h-4 w-4" /> PDF
               </button>
               {(detail.status === "borrador" || detail.status === "programada") && (
-                <button onClick={() => { handleSend(detail.id); setDetail(null); }} className="flex-1 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex items-center justify-center gap-2">
+                <button onClick={() => { handleSend(detail.id); setDetail(null); }} className="flex-1 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 flex flex-wrap items-center justify-center gap-2">
                   <Send className="h-4 w-4" /> Enviar ahora
                 </button>
               )}

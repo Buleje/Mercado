@@ -114,7 +114,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#6366f1",
+  themeColor: "#2d6a4f",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -154,7 +154,7 @@ export default async function RootLayout({
 
   return (
     <html lang="es-PE" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
-      <head>
+      <head suppressHydrationWarning>
         {requestId && <meta name="x-request-id" content={requestId} />}
         <SchemaMarkup ratingValue={ratingValue} ratingCount={ratingCount} />
         
@@ -194,7 +194,7 @@ export default async function RootLayout({
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("bsm-theme");var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})()`,
+            __html: `(function(){try{if(window.innerWidth<640)return;var t=localStorage.getItem("bsm-theme");var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})()`,
           }}
         />
       </head>

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback, startTransition } from "react
 import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
-  ChevronDown, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
+  ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
   Sun, Moon, Search, Trophy, Gift, History, PackageCheck, User, ClipboardList, Mic, Bell, Flame,
 } from "lucide-react";
 import Link from "next/link";
@@ -87,12 +87,17 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [announcementVisible, setAnnouncementVisible] = useState(true);
+  const [inlineSearchFocused, setInlineSearchFocused] = useState(false);
+  const inlineSearchRef = useRef<HTMLDivElement>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [orderStatusChanged, setOrderStatusChanged] = useState(false);
   /* X4: Voice search + ordering */
   const [listening, setListening] = useState(false);
   const [voiceResult, setVoiceResult] = useState<{ type: "added"; product: string; qty: number } | null>(null);
+  const categoryStripRef = useRef<HTMLDivElement>(null);
+  const [canScrollCategoriesLeft, setCanScrollCategoriesLeft] = useState(false);
+  const [canScrollCategoriesRight, setCanScrollCategoriesRight] = useState(false);
 
   /* AC4: Track recent searches for trending suggestions */
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
@@ -107,6 +112,21 @@ export default function Header() {
     });
   }, []);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const updateCategoryStripState = useCallback(() => {
+    const element = categoryStripRef.current;
+    if (!element) return;
+
+    const maxScrollLeft = element.scrollWidth - element.clientWidth;
+    setCanScrollCategoriesLeft(element.scrollLeft > 8);
+    setCanScrollCategoriesRight(maxScrollLeft - element.scrollLeft > 8);
+  }, []);
+
+  const scrollCategoryStrip = useCallback((direction: "left" | "right") => {
+    const element = categoryStripRef.current;
+    if (!element) return;
+    element.scrollBy({ left: direction === "right" ? 180 : -180, behavior: "smooth" });
+  }, []);
 
   // Lazy-loaded product data refs — avoids 32 KB in initial JS bundle
   const productsRef = useRef<Product[] | null>(null);
@@ -208,6 +228,20 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    updateCategoryStripState();
+    const element = categoryStripRef.current;
+    if (!element) return;
+
+    element.addEventListener("scroll", updateCategoryStripState, { passive: true });
+    window.addEventListener("resize", updateCategoryStripState);
+
+    return () => {
+      element.removeEventListener("scroll", updateCategoryStripState);
+      window.removeEventListener("resize", updateCategoryStripState);
+    };
+  }, [pathname, updateCategoryStripState]);
+
   // Listen for announcement bar visibility changes
   useEffect(() => {
     const hide = () => startTransition(() => setAnnouncementVisible(false));
@@ -243,6 +277,9 @@ export default function Header() {
       }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
+      }
+      if (inlineSearchRef.current && !inlineSearchRef.current.contains(e.target as Node)) {
+        setInlineSearchFocused(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -424,7 +461,7 @@ export default function Header() {
   };
 
   const navLinkCls = cn(
-    "px-4 py-2 rounded-lg text-sm font-medium transition-all",
+    "px-4 py-2.5 rounded-lg text-base font-semibold transition-all",
     scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10"
   );
 
@@ -441,43 +478,74 @@ export default function Header() {
               aria-expanded={inicioOpen}
               aria-haspopup="true"
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
+                "flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-base font-semibold",
                 scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
                 inicioOpen && (scrolled ? "text-primary bg-primary/8" : "text-white bg-white/15")
               )}
             >
               Inicio
-              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", inicioOpen && "rotate-180")} />
+              <ChevronDown className={cn("h-3.5 w-3.5", inicioOpen && "rotate-180")} />
             </button>
             <div
               onMouseEnter={cancelClose}
               onMouseLeave={closeDropdown}
               className={cn(
-                "absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden transition-all duration-200 origin-top",
+                "absolute top-full left-0 mt-2 w-145 min-w-135 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden",
                 inicioOpen ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
               )}
             >
-              {/* Dropdown header */}
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-primary/5 to-indigo-500/5">
+              {/* Sección navegación */}
+              <div className="px-4 py-3 border-b border-gray-100 bg-linear-to-r from-primary/5 to-primary/5">
                 <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Navegación</p>
               </div>
-              <div className="p-2 space-y-0.5">
+              <div className="grid grid-cols-2 gap-1 p-2.5">
                 {inicioMenuItems.map((item) => (
                   <a
                     key={item.id}
                     href={item.href}
                     onClick={() => setActiveDropdown(null)}
-                    className="flex items-center gap-3 p-2.5 rounded-xl border border-transparent text-left transition-all duration-150 hover:shadow-sm hover:border-primary/15 hover:bg-primary/5 group"
+                    className="flex items-center gap-3 p-2.5 rounded-xl border border-transparent hover:border-primary/15 hover:bg-primary/5 group"
                   >
-                    <span className="flex items-center justify-center h-9 w-9 rounded-xl bg-gray-100 dark:bg-surface text-lg leading-none shrink-0 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-150">
+                    <span className="flex items-center justify-center h-9 w-9 rounded-xl bg-gray-100 text-lg shrink-0 group-hover:bg-primary/10">
                       {item.emoji}
                     </span>
                     <div>
-                      <p className="font-bold text-sm leading-tight text-foreground group-hover:text-primary transition-colors">{item.label}</p>
+                      <p className="font-bold text-sm text-foreground group-hover:text-primary">{item.label}</p>
                       <p className="text-[11px] text-muted mt-0.5">{item.desc}</p>
                     </div>
                   </a>
                 ))}
+              </div>
+              {/* Sección categorías */}
+              <div className="px-4 py-3 border-t border-b border-gray-100 bg-linear-to-r from-primary/5 to-primary/5">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Categorías</p>
+                  <span className="text-[10px] text-muted font-medium">{categoryMenuItems.length} secciones</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-1 p-2.5">
+                {categoryMenuItems.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    href="/tienda"
+                    onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
+                    className="flex items-center gap-2.5 p-2.5 rounded-xl border border-transparent hover:shadow-sm hover:border-gray-200 hover:bg-gray-50 group"
+                  >
+                    <span className={cn("flex items-center justify-center h-9 w-9 rounded-xl text-xl shrink-0 group-hover:scale-110", cat.iconBg)}>
+                      {cat.emoji}
+                    </span>
+                    <div>
+                      <p className="font-bold text-xs text-foreground group-hover:text-primary">{cat.label}</p>
+                      <p className="text-[10px] text-muted mt-0.5">{cat.desc}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <div className="px-3 py-2.5 bg-linear-to-r from-primary/5 to-primary/5 border-t border-gray-100">
+                <Link href="/tienda" onClick={() => setActiveDropdown(null)}
+                  className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-sm font-bold text-primary hover:bg-primary/8">
+                  Ver todos los productos →
+                </Link>
               </div>
             </div>
           </div>
@@ -485,68 +553,7 @@ export default function Header() {
       case "tienda":
         return <Link key="tienda" href="/tienda" className={navLinkCls}>Tienda</Link>;
       case "categorias":
-        return (
-          <div key="categorias" className="relative"
-            onMouseEnter={() => openDropdown("categorias")}
-            onMouseLeave={closeDropdown}
-          >
-            <button
-              onClick={() => setActiveDropdown(prev => prev === "categorias" ? null : "categorias")}
-              aria-expanded={megaOpen}
-              aria-haspopup="true"
-              aria-controls="mega-menu"
-              aria-label="Menú de categorías"
-              className={cn(
-                "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
-                scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
-                megaOpen && (scrolled ? "text-primary bg-primary/8" : "text-white bg-white/15")
-              )}
-            >
-              Categorías
-              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", megaOpen && "rotate-180")} />
-            </button>
-            <div
-              id="mega-menu"
-              role="menu"
-              onMouseEnter={cancelClose}
-              onMouseLeave={closeDropdown}
-              className={cn(
-                "absolute top-full left-1/2 -translate-x-1/2 mt-2 w-120 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden transition-all duration-200 origin-top",
-                megaOpen ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
-              )}
-            >
-              {/* Dropdown header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-indigo-50 to-primary/5 dark:from-indigo-950/30 dark:to-primary/8">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Categorías</p>
-                <span className="text-[10px] text-muted font-medium">{categoryMenuItems.length} secciones</span>
-              </div>
-              <div className="grid grid-cols-2 gap-1 p-2.5">
-                {categoryMenuItems.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href="/tienda"
-                    onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-transparent text-left transition-all duration-150 hover:shadow-md hover:border-gray-200 dark:hover:border-card-border hover:bg-gray-50 dark:hover:bg-surface/50 group"
-                  >
-                    <span className={cn("flex items-center justify-center h-10 w-10 rounded-xl text-xl leading-none shrink-0 transition-all duration-150 group-hover:scale-110", cat.iconBg)}>
-                      {cat.emoji}
-                    </span>
-                    <div>
-                      <p className="font-bold text-sm leading-tight text-foreground group-hover:text-primary transition-colors">{cat.label}</p>
-                      <p className="text-[11px] text-muted mt-0.5">{cat.desc}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-              <div className="px-3 py-2.5 bg-linear-to-r from-primary/5 to-indigo-500/5 dark:from-primary/10 dark:to-indigo-500/10 border-t border-gray-100 dark:border-card-border">
-                <Link href="/tienda" onClick={() => setActiveDropdown(null)}
-                  className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-sm font-bold text-primary hover:bg-primary/8 transition-colors">
-                  Ver todos los productos →
-                </Link>
-              </div>
-            </div>
-          </div>
-        );
+        return null; // Categorías ahora está dentro del dropdown de Inicio
       default:
         return null;
     }
@@ -569,14 +576,14 @@ export default function Header() {
               </span>
             </button>
             {mobileInicioOpen && (
-              <div className="overflow-hidden animate-[fadeDown_0.2s_ease-out]">
+              <div className="overflow-hidden">
                 <div className="mx-4 my-2 space-y-1">
                   {inicioMenuItems.map((item) => (
                     <a
                       key={item.id}
                       href={item.href}
                       onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); }}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-card-border transition-colors hover:border-primary/25 hover:bg-primary/5"
+                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 hover:border-primary/25 hover:bg-primary/5"
                     >
                       <span className="text-xl">{item.emoji}</span>
                       <div>
@@ -585,6 +592,32 @@ export default function Header() {
                       </div>
                     </a>
                   ))}
+                  {/* Categorías dentro del menú inicio mobile */}
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="px-1 pb-2 text-[10px] font-bold text-primary uppercase tracking-widest">Categorías</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {categoryMenuItems.map((cat) => (
+                        <Link
+                          key={cat.id}
+                          href="/tienda"
+                          onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); handleCategoryClick(cat.id); }}
+                          className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-100 hover:border-primary/20 hover:bg-primary/5"
+                        >
+                          <span className={cn("flex items-center justify-center h-8 w-8 rounded-lg text-lg shrink-0", cat.iconBg)}>
+                            {cat.emoji}
+                          </span>
+                          <span className="text-xs font-bold text-foreground">{cat.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                    <Link
+                      href="/tienda"
+                      onClick={() => { setMobileOpen(false); setMobileInicioOpen(false); }}
+                      className="flex items-center justify-center gap-1.5 mt-2 py-2.5 rounded-xl bg-primary/8 text-sm font-bold text-primary"
+                    >
+                      Ver todos los productos →
+                    </Link>
+                  </div>
                 </div>
               </div>
             )}
@@ -593,47 +626,7 @@ export default function Header() {
       case "tienda":
         return <Link key="tienda" href="/tienda" onClick={() => setMobileOpen(false)} className={cls}>Tienda</Link>;
       case "categorias":
-        return (
-          <div key="categorias">
-            <button
-              onClick={() => setMobileCatOpen((o) => !o)}
-              aria-expanded={mobileCatOpen}
-              aria-label="Menú de categorías"
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors"
-            >
-              <span>Categorías</span>
-              <span className={cn("transition-transform duration-200 inline-block", mobileCatOpen && "rotate-180")}>
-                <ChevronDown className="h-4 w-4 text-muted" />
-              </span>
-            </button>
-            {mobileCatOpen && (
-              <div className="overflow-hidden animate-[fadeDown_0.2s_ease-out]">
-                <div className="mx-4 my-2 grid grid-cols-2 gap-2">
-                  {categoryMenuItems.map((cat) => (
-                    <Link
-                      key={cat.id}
-                      href="/tienda"
-                      onClick={() => { setMobileOpen(false); setMobileCatOpen(false); handleCategoryClick(cat.id); }}
-                      className="flex items-center gap-2.5 p-3 rounded-xl border border-gray-100 dark:border-card-border text-left transition-all hover:shadow-sm hover:border-primary/20"
-                    >
-                      <span className={cn("flex items-center justify-center h-9 w-9 rounded-lg text-xl leading-none shrink-0", cat.iconBg)}>
-                        {cat.emoji}
-                      </span>
-                      <span className="text-sm font-bold text-foreground leading-tight">{cat.label}</span>
-                    </Link>
-                  ))}
-                </div>
-                <Link
-                  href="/tienda"
-                  onClick={() => { setMobileOpen(false); setMobileCatOpen(false); }}
-                  className="flex items-center justify-center gap-1.5 mx-4 mb-3 py-2.5 rounded-xl bg-primary/8 text-sm font-bold text-primary transition-colors hover:bg-primary/15"
-                >
-                  Ver todos los productos →
-                </Link>
-              </div>
-            )}
-          </div>
-        );
+        return null; // Ya está dentro del menú Inicio
       default:
         return null;
     }
@@ -656,7 +649,7 @@ export default function Header() {
           background: "rgba(30,27,75,0.65)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
-          borderBottom: "1px solid rgba(99,102,241,0.18)",
+          borderBottom: "1px solid rgba(45,106,79,0.18)",
         }),
       }}
     >
@@ -668,8 +661,8 @@ export default function Header() {
             <div 
               className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl text-white shadow-lg"
               style={{ 
-                background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #3730a3 100%)",
-                boxShadow: "0 4px 12px rgba(99, 102, 241, 0.35)"
+                background: "linear-gradient(135deg, #2d6a4f 0%, #245c43 50%, #1b4332 100%)",
+                boxShadow: "0 4px 12px rgba(45, 106, 79, 0.35)"
               }}
             >
               <Store className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -678,7 +671,7 @@ export default function Header() {
               <div className="flex items-center gap-1.5">
                 <span className={cn("text-base sm:text-xl font-bold leading-tight transition-colors",
                   scrolled ? "text-primary-dark" : "text-white")}>
-                  Bodega San Martín
+                  San Martín
                 </span>
                 <span className={cn(
                   "inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold leading-none tracking-wide border",
@@ -689,38 +682,152 @@ export default function Header() {
                   v1 Beta
                 </span>
               </div>
-              <span className={cn("hidden sm:block text-[10px] tracking-widest uppercase transition-colors",
-                scrolled ? "text-primary/60" : "text-white/60")}>
-                Pucallpa · Ucayali
-              </span>
+
             </div>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-1" ref={megaRef}>
+          <nav className="hidden lg:flex items-center gap-2 flex-1 min-w-0" ref={megaRef}>
             {navLinks.filter(l => l.visible).map(l => renderDesktopNavItem(l.id))}
 
-            {/* Estado de pedido — desktop (always visible) */}
+            {/* Barra de búsqueda inline — en la nav, a la derecha de Tienda */}
+            <div className="relative flex-1 min-w-0 mx-2" ref={inlineSearchRef}>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
+                style={{ color: scrolled ? "var(--color-muted)" : "rgba(255,255,255,0.55)" }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setInlineSearchFocused(true)}
+                onKeyDown={(e) => { if (e.key === "Enter") { handleSearchSubmit(); setInlineSearchFocused(false); } if (e.key === "Escape") { setInlineSearchFocused(false); setSearchQuery(""); } }}
+                placeholder="¿Qué producto buscas?"
+                autoComplete="off"
+                className={cn(
+                  "w-full pl-9 pr-8 py-2 rounded-xl text-sm font-medium outline-none",
+                  scrolled
+                    ? "bg-gray-100 text-foreground placeholder:text-muted focus:ring-2 focus:ring-primary/30"
+                    : "bg-white/15 text-white border border-white/25 placeholder:text-white/50 focus:border-white/50 focus:bg-white/20"
+                )}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => { setSearchQuery(""); setInlineSearchFocused(false); }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                  aria-label="Limpiar búsqueda"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {inlineSearchFocused && (suggestions.length > 0 || searchQuery.length === 0) && (
+                <div className="absolute top-full mt-2 w-full min-w-72 bg-white dark:bg-card rounded-2xl shadow-xl border border-gray-100 dark:border-card-border overflow-hidden z-50 max-h-96 overflow-y-auto">
+                  {/* Sugerencias al escribir */}
+                  {suggestions.length > 0 && (
+                    <div className="pt-2 pb-1">
+                      <p className="px-4 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted">Sugerencias</p>
+                      {suggestions.map((name) => (
+                        <button
+                          key={name}
+                          onMouseDown={() => { handleSearchSelect(name); setInlineSearchFocused(false); }}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-primary/5 hover:text-primary text-left"
+                        >
+                          <Search className="h-3.5 w-3.5 text-muted shrink-0" />
+                          <HighlightMatch text={name} query={searchQuery} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Panel de bienvenida — aparece cuando no hay texto */}
+                  {searchQuery.length === 0 && (
+                    <>
+                      {/* Búsquedas recientes */}
+                      {recentSearches.length > 0 && (
+                        <div className="px-4 pt-3 pb-2 border-t border-gray-100 dark:border-card-border first:border-t-0">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">🔥 Recientes</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {recentSearches.slice(0, 4).map(term => (
+                              <button
+                                key={term}
+                                onMouseDown={() => { handleSearchSelect(term); setInlineSearchFocused(false); }}
+                                className="px-2.5 py-1 rounded-full bg-primary/5 text-xs font-semibold text-primary hover:bg-primary/15 transition-colors"
+                              >
+                                {term}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Categorías */}
+                      <div className="px-4 pt-3 pb-3 border-t border-gray-100 dark:border-card-border first:border-t-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Categorías</p>
+                        <div className="grid grid-cols-2 gap-1">
+                          {categoryMenuItems.slice(0, 8).map(cat => (
+                            <button
+                              key={cat.id}
+                              onMouseDown={() => { setInlineSearchFocused(false); handleCategoryClick(cat.id); }}
+                              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-foreground hover:bg-primary/5 hover:text-primary transition-colors text-left"
+                            >
+                              <span className="text-lg leading-none">{cat.emoji}</span>
+                              <span className="truncate text-xs">{cat.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Productos populares */}
+                      {trendingProducts.length > 0 && (
+                        <div className="px-4 pt-2 pb-3 border-t border-gray-100 dark:border-card-border">
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1">
+                            <Flame className="h-3 w-3 text-orange-500" /> Populares ahora
+                          </p>
+                          <div className="space-y-0.5">
+                            {trendingProducts.slice(0, 3).map(p => (
+                              <button
+                                key={p.id}
+                                onMouseDown={() => { handleSearchSelect(p.name); setInlineSearchFocused(false); }}
+                                className="w-full flex items-center gap-3 px-2 py-1.5 rounded-xl text-sm text-foreground hover:bg-primary/5 hover:text-primary text-left"
+                              >
+                                {p.image && (
+                                  <Image src={p.image} alt="" width={28} height={28} className="h-7 w-7 rounded-lg object-cover bg-gray-100 shrink-0" unoptimized={p.image.startsWith("data:")} />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <span className="font-semibold text-xs block truncate">{p.name}</span>
+                                  <span className="text-[10px] text-muted">S/{p.price.toFixed(2)}</span>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Estado de pedido — desktop: solo icono, grande si hay pedido */}
             <button
               id="order-status-nav-btn"
               onClick={() => { setOrderStatusChanged(false); openOrderStatusModal(); }}
               title="Ver estado de tu pedido"
               className={cn(
-                "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border",
+                "relative flex items-center justify-center rounded-full transition-all shrink-0",
                 hasActiveOrder
-                  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-700/50 hover:bg-amber-200 dark:hover:bg-amber-900/50"
+                  ? "h-11 w-11 bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 shadow-lg shadow-amber-400/30 hover:bg-amber-200"
                   : scrolled
-                    ? "bg-primary/8 text-primary border-primary/20 hover:bg-primary/15"
-                    : "bg-white/15 text-white border-white/20 hover:bg-white/25"
+                    ? "h-9 w-9 bg-primary/10 text-primary hover:bg-primary/20"
+                    : "h-9 w-9 bg-white/15 text-white hover:bg-white/25"
               )}
             >
-              <PackageCheck className="h-3.5 w-3.5 shrink-0" />
-              <span>Estado de pedido</span>
+              <PackageCheck className={cn("shrink-0", hasActiveOrder ? "h-5.5 w-5.5" : "h-5 w-5")} />
               {hasActiveOrder && (
-                <span className="relative flex h-2 w-2">
-                  {orderStatusChanged && <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping" />}
-                  <span className="relative h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                </span>
+                <>
+                  <span className="absolute inset-0 rounded-full bg-amber-400/30 animate-ping" />
+                  <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-amber-500">
+                    {orderStatusChanged && <span className="absolute inset-0 rounded-full bg-amber-400 animate-ping" />}
+                  </span>
+                </>
               )}
             </button>
 
@@ -854,11 +961,11 @@ export default function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {/* Search button */}
+            {/* Search button — solo en mobile (desktop usa la barra grande de abajo) */}
             <button
               onClick={() => setSearchOpen(true)}
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
+                "lg:hidden flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
                 scrolled
                   ? "text-foreground hover:bg-primary/10 hover:text-primary"
                   : "text-white/70 hover:text-white hover:bg-white/15"
@@ -869,117 +976,26 @@ export default function Header() {
               <Search className="h-4.5 w-4.5" />
             </button>
 
-            {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
-                scrolled
-                  ? "text-foreground hover:bg-primary/10 hover:text-primary"
-                  : "text-white/70 hover:text-white hover:bg-white/15"
-              )}
-              aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-              title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
-            >
-              {theme === "dark"
-                ? <Sun className="h-4.5 w-4.5" />
-                : <Moon className="h-4.5 w-4.5" />}
-            </button>
-
-            {/* Notification bell */}
-            {customer && (
-              <div className="relative" ref={notifRef}>
-                <button
-                  onClick={() => setNotifOpen(!notifOpen)}
-                  className={cn(
-                    "relative flex h-9 w-9 items-center justify-center rounded-full transition-all duration-200",
-                    scrolled
-                      ? "text-foreground hover:bg-primary/10 hover:text-primary"
-                      : "text-white/70 hover:text-white hover:bg-white/15"
-                  )}
-                  aria-label="Notificaciones"
-                >
-                  <Bell className="h-4.5 w-4.5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </button>
-                {/* Dropdown */}
-                {notifOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] max-h-[70vh] overflow-y-auto bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-200 dark:border-card-border z-50">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-card-border">
-                      <p className="text-sm font-bold text-gray-900 dark:text-foreground">Notificaciones</p>
-                      {unreadCount > 0 && (
-                        <button onClick={markAllRead} className="text-xs text-violet-600 hover:text-violet-800 font-semibold">
-                          Marcar todo leído
-                        </button>
-                      )}
-                    </div>
-                    {notifs.length === 0 ? (
-                      <div className="px-4 py-8 text-center text-sm text-gray-400 dark:text-muted">
-                        No tienes notificaciones
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-gray-50 dark:divide-card-border">
-                        {notifs.map(n => (
-                          <button
-                            key={n.id}
-                            onClick={() => {
-                              if (n.link) router.push(n.link);
-                              if (!n.read) {
-                                fetch(`/api/customer-notifications?id=${n.id}`, { method: "PATCH" }).catch(() => {});
-                                setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
-                                setUnreadCount(prev => Math.max(0, prev - 1));
-                              }
-                              setNotifOpen(false);
-                            }}
-                            className={cn(
-                              "w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-surface transition-colors",
-                              !n.read && "bg-violet-50/50 dark:bg-violet-900/10"
-                            )}
-                          >
-                            <div className="flex items-start gap-2">
-                              {!n.read && <span className="mt-1.5 w-2 h-2 rounded-full bg-violet-500 shrink-0" />}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">{n.title}</p>
-                                <p className="text-xs text-gray-500 dark:text-muted mt-0.5 line-clamp-2">{n.body}</p>
-                                <p className="text-[10px] text-gray-400 dark:text-muted mt-1">
-                                  {new Date(n.createdAt).toLocaleDateString("es-PE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                                </p>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Cart */}
             <button
               onClick={toggle}
               className={cn(
-                "relative flex items-center gap-2 rounded-full px-3 sm:px-4 py-2.5 text-sm font-semibold transition-all duration-200",
+                "relative flex items-center justify-center h-12 w-12 rounded-full transition-all duration-200",
                 scrolled
-                  ? "bg-primary text-white shadow-md hover:bg-primary-dark"
-                  : "bg-white/15 backdrop-blur-sm text-white border border-white/20 hover:bg-white/25"
+                  ? "bg-primary text-white shadow-lg hover:bg-primary-dark"
+                  : "bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
               )}
               aria-label="Abrir carrito"
             >
               <span className={cartBounce ? "inline-block animate-[cartBounce_0.5s_ease-out]" : "inline-block"}>
-                <ShoppingCart className="h-5 w-5" />
+                <ShoppingCart className="h-6 w-6" />
               </span>
-              <span className="hidden sm:inline">Carrito</span>
               {count > 0 && (
                 <span
                   key={count}
                   aria-live="polite"
                   aria-atomic="true"
-                  className="absolute -top-2 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[10px] font-bold text-white shadow-sm animate-[scaleIn_0.2s_ease-out]"
+                  className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-xs font-bold text-white shadow-md animate-[scaleIn_0.2s_ease-out]"
                 >
                   {count > 99 ? "99+" : count}
                 </span>
@@ -1029,34 +1045,59 @@ export default function Header() {
 
         {/* Category quick-strip — only on /tienda pages */}
         {(pathname === "/tienda" || pathname?.startsWith("/tienda/")) && (
-        <div className="overflow-x-auto scrollbar-hide flex gap-1.5 px-2 pb-2 pt-0.5 lg:justify-center lg:border-t lg:border-white/10 lg:pt-2">
-          {categoryMenuItems.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => handleCategoryClick(cat.id)}
+        <div className="relative px-3 pb-2 pt-0 lg:border-t lg:border-white/10 lg:px-4">
+          <button
+            type="button"
+            onClick={() => scrollCategoryStrip("left")}
+            className={cn(
+              "absolute left-1 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border bg-white/95 shadow-md transition-all lg:hidden",
+              scrolled ? "border-gray-200 text-primary" : "border-white/35 text-white bg-black/20 backdrop-blur",
+              canScrollCategoriesLeft ? "opacity-100" : "pointer-events-none opacity-30"
+            )}
+            aria-label="Mover categorías a la izquierda"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          <div ref={categoryStripRef} className="scrollbar-hide flex gap-3 overflow-x-auto px-7 lg:justify-center lg:px-0">
+            {categoryMenuItems.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryClick(cat.id)}
+                className={cn(
+                  "flex shrink-0 flex-col items-center gap-1 whitespace-nowrap px-3 py-1 text-xs font-bold transition-opacity",
+                  scrolled ? "text-primary hover:opacity-70" : "text-white hover:opacity-70"
+                )}
+              >
+                <span className="text-2xl leading-none">{cat.emoji}</span>
+                {cat.label}
+              </button>
+            ))}
+            <Link
+              href="/tienda"
+              onClick={() => {}}
               className={cn(
-                "flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shrink-0",
-                scrolled
-                  ? "bg-primary/8 text-primary hover:bg-primary/15"
-                  : "bg-white/15 text-white border border-white/20 hover:bg-white/25"
+                "flex shrink-0 flex-col items-center gap-1 whitespace-nowrap px-3 py-1 text-xs font-bold transition-opacity",
+                scrolled ? "text-primary hover:opacity-70" : "text-white hover:opacity-70"
               )}
             >
-              <span>{cat.emoji}</span>
-              {cat.label}
-            </button>
-          ))}
-          <Link
-            href="/tienda"
-            onClick={() => {}}
+              <span className="text-2xl leading-none">🔍</span>
+              Ver todos
+            </Link>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => scrollCategoryStrip("right")}
             className={cn(
-              "flex items-center gap-1 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition-colors shrink-0",
-              scrolled
-                ? "bg-primary text-white hover:bg-primary-dark"
-                : "bg-white/25 text-white border border-white/30 hover:bg-white/35"
+              "absolute right-1 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border bg-white/95 shadow-md transition-all lg:hidden",
+              scrolled ? "border-gray-200 text-primary" : "border-white/35 text-white bg-black/20 backdrop-blur",
+              canScrollCategoriesRight ? "opacity-100" : "pointer-events-none opacity-30"
             )}
+            aria-label="Mover categorías a la derecha"
           >
-            Ver todos →
-          </Link>
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
         )}
       </div>
@@ -1070,6 +1111,42 @@ export default function Header() {
           className="lg:hidden bg-white dark:bg-card border-t dark:border-card-border shadow-2xl overflow-hidden animate-[fadeDown_0.3s_ease-out]"
         >
             <div className="px-4 py-5 space-y-1">
+              {/* Buscador — mobile */}
+              <div className="relative mb-3">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-muted pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter" && searchQuery.trim()) { handleSearchSubmit(); setMobileOpen(false); } }}
+                  placeholder="¿Qué producto buscas?"
+                  autoComplete="off"
+                  className="w-full pl-10 pr-10 py-3 rounded-2xl text-sm font-medium bg-gray-100 text-foreground placeholder:text-muted outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                    aria-label="Limpiar"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+                {suggestions.length > 0 && (
+                  <div className="absolute top-full mt-1.5 w-full bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                    {suggestions.map((name) => (
+                      <button
+                        key={name}
+                        onMouseDown={() => { handleSearchSelect(name); setMobileOpen(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-primary/5 hover:text-primary text-left"
+                      >
+                        <Search className="h-3.5 w-3.5 text-muted shrink-0" />
+                        <HighlightMatch text={name} query={searchQuery} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               {navLinks.filter(l => l.visible).map(l => renderMobileNavItem(l.id))}
               <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
                 {/* Estado de pedido — mobile */}

@@ -90,17 +90,17 @@ export default function DeliveryScheduleTab() {
   if (loading) return <div className="text-center py-20 text-gray-500">Cargando...</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+        <h2 className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
           <Clock className="w-5 h-5 text-blue-400" />
           Horarios y Zonas de Delivery
         </h2>
         <button
           onClick={save}
           disabled={saving}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+          className={`flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition ${
             saved
               ? "bg-green-600 text-white"
               : "bg-blue-600 hover:bg-blue-700 text-white"
@@ -113,7 +113,7 @@ export default function DeliveryScheduleTab() {
 
       {/* Schedule */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-        <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
           <Clock className="w-4 h-4 text-amber-400" />
           Horarios por día
         </h3>
@@ -127,7 +127,7 @@ export default function DeliveryScheduleTab() {
                   : "bg-white/[0.02] border-white/5 opacity-60"
               }`}
             >
-              <label className="flex items-center gap-2 min-w-[140px]">
+              <label className="flex flex-wrap items-center gap-2 min-w-[140px]">
                 <input
                   type="checkbox"
                   checked={h.enabled}
@@ -159,7 +159,7 @@ export default function DeliveryScheduleTab() {
       {/* Zones */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-white flex flex-wrap items-center gap-2">
             <MapPin className="w-4 h-4 text-green-400" />
             Zonas de cobertura
           </h3>
@@ -227,7 +227,7 @@ export default function DeliveryScheduleTab() {
       {/* Free delivery threshold */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">
         <h3 className="text-sm font-semibold text-white mb-3">Delivery gratis</h3>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-gray-400">Monto mínimo para delivery gratis:</span>
           <div className="flex items-center gap-1">
             <span className="text-sm text-gray-500">S/</span>

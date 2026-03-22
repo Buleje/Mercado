@@ -130,13 +130,13 @@ export default function AutoAlertEngineTab() {
   useEffect(() => { loadAlerts(); }, []); // intentional: run once on mount
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Bell className="h-6 w-6 text-primary" /> Alertas Automáticas</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Bell className="h-6 w-6 text-primary" /> Alertas Automáticas</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Configura umbrales y recibe alertas cuando se disparan</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => { setLoading(true); loadAlerts(); }} disabled={loading} title="Actualizar alertas" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-gray-400 hover:text-primary disabled:opacity-40 transition-colors"><RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} /></button>
           <button onClick={() => setView("rules")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "rules" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Reglas</button>
           <button onClick={() => setView("logs")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "logs" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
@@ -156,7 +156,7 @@ export default function AutoAlertEngineTab() {
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
-            <p className={cn("text-2xl font-extrabold", k.color)}>{k.value}{k.total !== undefined && <span className="text-sm text-gray-400">/{k.total}</span>}</p>
+            <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}{k.total !== undefined && <span className="text-sm text-gray-400">/{k.total}</span>}</p>
           </div>
         ))}
       </div>
@@ -164,34 +164,34 @@ export default function AutoAlertEngineTab() {
       {view === "rules" ? (
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[600px] text-sm">
               <thead><tr className="bg-gray-50 dark:bg-surface text-left">
-                <th className="px-4 py-3 font-bold text-gray-500 dark:text-muted">Regla</th>
-                <th className="px-4 py-3 font-bold text-gray-500 dark:text-muted">Módulo</th>
-                <th className="px-4 py-3 font-bold text-gray-500 dark:text-muted">Condición</th>
-                <th className="px-4 py-3 font-bold text-gray-500 dark:text-muted">Disparos</th>
-                <th className="px-4 py-3 font-bold text-gray-500 dark:text-muted">Estado</th>
-                <th className="px-4 py-3 font-bold text-gray-500 dark:text-muted">Acciones</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Regla</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Módulo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Condición</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Disparos</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Estado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Acciones</th>
               </tr></thead>
               <tbody>
                 {rules.map(r => (
                   <tr key={r.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface/50">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className={cn("h-2 w-2 rounded-full", r.severity === "critical" ? "bg-red-500" : r.severity === "warning" ? "bg-amber-500" : "bg-blue-500")} />
                         <span className="font-semibold text-gray-900 dark:text-foreground">{r.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-muted">{r.module}</td>
-                    <td className="px-4 py-3"><code className="text-xs bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded">{r.condition} {r.operator} {r.threshold}</code></td>
-                    <td className="px-4 py-3 font-bold text-gray-700 dark:text-foreground">{r.triggered}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">{r.module}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><code className="text-xs bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded">{r.condition} {r.operator} {r.threshold}</code></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-700 dark:text-foreground">{r.triggered}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <button onClick={() => setRules(prev => prev.map(x => x.id === r.id ? { ...x, enabled: !x.enabled } : x))} className={cn("flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold", r.enabled ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-gray-100 text-gray-500 dark:bg-surface dark:text-muted")}>
                         {r.enabled ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
                         {r.enabled ? "Activa" : "Pausada"}
                       </button>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex items-center gap-1">
                         <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-gray-400 hover:text-primary"><Pencil className="h-3.5 w-3.5" /></button>
                         <button onClick={() => setRules(prev => prev.filter(x => x.id !== r.id))} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-gray-400 hover:text-red-500"><Trash2 className="h-3.5 w-3.5" /></button>
@@ -205,7 +205,7 @@ export default function AutoAlertEngineTab() {
         </div>
       ) : (
         <div>
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <Filter className="h-4 w-4 text-gray-400" />
             {["all", "critical", "warning", "info"].map(s => (
               <button key={s} onClick={() => setFilterSeverity(s)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", filterSeverity === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>{s === "all" ? "Todos" : s}</button>
@@ -241,24 +241,24 @@ export default function AutoAlertEngineTab() {
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-3 sm:p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-4">{editRule ? "Editar regla" : "Nueva regla"}</h3>
             <div className="space-y-3">
               <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Nombre</label><input value={formName} onChange={e => setFormName(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Nombre de la regla" /></div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Módulo</label><select value={formModule} onChange={e => setFormModule(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{MODULES.map(m => <option key={m}>{m}</option>)}</select></div>
                 <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Severidad</label><select value={formSeverity} onChange={e => setFormSeverity(e.target.value as AlertRule["severity"])} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm"><option value="info">Info</option><option value="warning">Warning</option><option value="critical">Crítico</option></select></div>
               </div>
               <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Campo/condición</label><input value={formCondition} onChange={e => setFormCondition(e.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="ej: stock_actual" /></div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Operador</label><select value={formOperator} onChange={e => setFormOperator(e.target.value as AlertRule["operator"])} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{OPERATORS.map(o => <option key={o}>{o}</option>)}</select></div>
                 <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Umbral</label><input type="number" value={formThreshold} onChange={e => setFormThreshold(+e.target.value)} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
               </div>
               <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Acción</label><select value={formAction} onChange={e => setFormAction(e.target.value as AlertRule["action"])} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm">{Object.entries(ACTIONS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></div>
             </div>
-            <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4 inline mr-1" />Cancelar</button>
-              <button onClick={saveRule} className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
+            <div className="flex flex-wrap justify-end gap-2 mt-5">
+              <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4 inline mr-1" />Cancelar</button>
+              <button onClick={saveRule} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
             </div>
           </div>
         </div>

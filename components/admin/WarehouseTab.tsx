@@ -367,16 +367,16 @@ export default function WarehouseTab() {
   const totalLow = warehouseStock.reduce((s, w) => s + w.lowStock, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Warehouse className="h-6 w-6 text-primary" /> Multi-Almacén <ModuleTooltip />
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de ubicaciones, stock por almacén y transferencias internas</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => { setLoadingData(true); loadWarehouseData(); }} disabled={loadingData} title="Actualizar datos de inventario" className="p-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-500 hover:text-primary disabled:opacity-40 transition-colors">
             <RefreshCw className={cn("h-4 w-4", loadingData && "animate-spin")} />
           </button>
@@ -397,11 +397,11 @@ export default function WarehouseTab() {
       </div>
 
       {/* KPIs row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="rounded-2xl bg-blue-50 dark:bg-blue-950/30 p-4">
           <Warehouse className="h-5 w-5 mb-2 text-blue-600" />
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Almacenes activos</p>
-          <p className="text-2xl font-extrabold text-blue-600">{warehouses.filter(w => w.active).length}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-blue-600">{warehouses.filter(w => w.active).length}</p>
         </div>
         <div className="rounded-2xl bg-violet-50 dark:bg-violet-950/30 p-4">
           <Package className="h-5 w-5 mb-2 text-violet-600" />
@@ -411,20 +411,20 @@ export default function WarehouseTab() {
         <div className="rounded-2xl bg-amber-50 dark:bg-amber-950/30 p-4">
           <AlertTriangle className="h-5 w-5 mb-2 text-amber-600" />
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Productos bajo mínimo</p>
-          <p className="text-2xl font-extrabold text-amber-600">{totalLow}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-amber-600">{totalLow}</p>
         </div>
         <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 p-4">
           <ArrowRightLeft className="h-5 w-5 mb-2 text-emerald-600" />
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Transferencias mes</p>
-          <p className="text-2xl font-extrabold text-emerald-600">{transfers.length}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-emerald-600">{transfers.length}</p>
         </div>
       </div>
 
       {/* Transfer form */}
       {showTransferForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex items-center gap-2"><ArrowRightLeft className="h-4 w-4 text-primary" /> Nueva transferencia</h3>
+            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><ArrowRightLeft className="h-4 w-4 text-primary" /> Nueva transferencia</h3>
             <button onClick={() => setShowTransferForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -504,21 +504,21 @@ export default function WarehouseTab() {
               <input type="text" value={transferForm.notes} onChange={e => setTransferForm(p => ({ ...p, notes: e.target.value }))} placeholder="Observaciones..." className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowTransferForm(false)} className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button onClick={() => setShowTransferForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
             <button onClick={handleTransfer} disabled={(() => {
               const sel = originProducts.find(s => String(s.productId) === String(transferForm.productId));
               return sel !== undefined && Number(transferForm.quantity) > sel.quantity;
-            })()} className="px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">Registrar transferencia</button>
+            })()} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">Registrar transferencia</button>
           </div>
         </div>
       )}
 
       {/* New warehouse form */}
       {showNewWhForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nuevo almacén</h3>
+            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nuevo almacén</h3>
             <button onClick={() => setShowNewWhForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -549,9 +549,9 @@ export default function WarehouseTab() {
               <input type="number" value={newWhForm.capacity} onChange={e => setNewWhForm(p => ({ ...p, capacity: e.target.value }))} placeholder="10000" min="1" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowNewWhForm(false)} className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleCreateWarehouse} disabled={creatingWh || !newWhForm.name.trim() || !newWhForm.code.trim()} className="px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-50">
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button onClick={() => setShowNewWhForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={handleCreateWarehouse} disabled={creatingWh || !newWhForm.name.trim() || !newWhForm.code.trim()} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90 disabled:opacity-50">
               {creatingWh ? "Creando..." : "Crear almacén"}
             </button>
           </div>
@@ -562,9 +562,9 @@ export default function WarehouseTab() {
       {loadingData && (
         <div className="space-y-3">
           {[1,2,3,4].map(i => (
-            <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 animate-pulse">
+            <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 animate-pulse">
               <div className="h-4 bg-gray-200 dark:bg-surface rounded w-40 mb-3" />
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[1,2,3].map(j => <div key={j} className="h-12 rounded-xl bg-gray-100 dark:bg-surface/50" />)}
               </div>
             </div>
@@ -574,9 +574,9 @@ export default function WarehouseTab() {
 
       {/* View tabs */}
       {!loadingData && (
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {(["almacenes", "stock", "transferencias"] as const).map(v => (
-          <button key={v} onClick={() => setView(v)} className={cn("px-4 py-2 text-sm font-semibold rounded-xl transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             {v.charAt(0).toUpperCase() + v.slice(1)}
           </button>
         ))}
@@ -608,19 +608,19 @@ export default function WarehouseTab() {
             )}
             <span className="text-xs text-gray-400 dark:text-muted ml-auto">{filteredWarehouses.length} almacén(es)</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
             {pagedWarehouses.map(w => (
-              <div key={w.id} className={cn("bg-white dark:bg-card border rounded-2xl p-5 space-y-4", w.lowStock > 0 ? "border-amber-200 dark:border-amber-800" : "border-gray-200 dark:border-card-border")}>
+              <div key={w.id} className={cn("bg-white dark:bg-card border rounded-2xl p-3 sm:p-5 space-y-4", w.lowStock > 0 ? "border-amber-200 dark:border-amber-800" : "border-gray-200 dark:border-card-border")}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="text-xs font-bold text-gray-400 font-mono">{w.code}</span>
                       <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">{TYPE_LABELS[w.type]}</span>
                     </div>
                     <h3 className="font-extrabold text-gray-900 dark:text-foreground">{w.name}</h3>
                     <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{w.location}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className={cn("h-2.5 w-2.5 rounded-full", w.active ? "bg-emerald-400" : "bg-gray-300")} />
                     {confirmDeleteId === w.id ? (
                       <div className="flex items-center gap-1">
@@ -638,7 +638,7 @@ export default function WarehouseTab() {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
                   <div className="bg-gray-50 dark:bg-surface/50 rounded-xl p-3">
                     <p className="text-xs text-gray-400 dark:text-muted mb-0.5">Productos</p>
                     <p className="font-extrabold text-gray-800 dark:text-foreground">{w.lines.length}</p>
@@ -691,17 +691,17 @@ export default function WarehouseTab() {
           </div>
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Almacén</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Producto</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Categoría</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Cantidad</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Mínimo</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Estado</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Valor</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Ajustar</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Almacén</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Producto</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Categoría</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Cantidad</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Mínimo</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Estado</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Valor</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Ajustar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -710,19 +710,19 @@ export default function WarehouseTab() {
                     const isLow = s.quantity <= s.minStock;
                     return (
                       <tr key={`${s.warehouseId}-${s.productId}`} className="hover:bg-gray-50/50 dark:hover:bg-surface/30">
-                        <td className="px-4 py-3 text-xs font-semibold text-gray-600 dark:text-muted">{wh?.name ?? s.warehouseId}</td>
-                        <td className="px-4 py-3 font-semibold text-gray-800 dark:text-foreground">{s.productName}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted">{s.category}</td>
-                        <td className="px-4 py-3 text-right font-bold text-gray-800 dark:text-foreground">{s.quantity} <span className="text-xs font-normal text-gray-400">{s.unit}</span></td>
-                        <td className="px-4 py-3 text-right text-xs text-gray-400">{s.minStock}</td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-semibold text-gray-600 dark:text-muted">{wh?.name ?? s.warehouseId}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-800 dark:text-foreground">{s.productName}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{s.category}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-gray-800 dark:text-foreground">{s.quantity} <span className="text-xs font-normal text-gray-400">{s.unit}</span></td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-gray-400">{s.minStock}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                           {isLow
                             ? <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"><AlertTriangle className="h-3 w-3" /> Bajo mínimo</span>
                             : <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"><CheckCircle className="h-3 w-3" /> OK</span>
                           }
                         </td>
-                        <td className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-foreground">{fmt(s.quantity * s.costAvg)}</td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700 dark:text-foreground">{fmt(s.quantity * s.costAvg)}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                           {adjustingId === s.productId ? (
                             <div className="flex items-center justify-end gap-1">
                               <input type="number" value={adjustValue} onChange={e => setAdjustValue(e.target.value)} min="0" className="w-16 text-xs border border-gray-300 dark:border-card-border rounded px-2 py-1 bg-white dark:bg-surface text-gray-700 dark:text-foreground" autoFocus />
@@ -753,8 +753,8 @@ export default function WarehouseTab() {
               ? { color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30", label: "Pendiente" }
               : { color: "text-red-700 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30", label: "Cancelado" };
             return (
-              <div key={t.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex items-center gap-3 flex-1">
+              <div key={t.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                <div className="flex flex-wrap items-center gap-3 flex-1">
                   <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <ArrowRightLeft className="h-4 w-4 text-primary" />
                   </div>

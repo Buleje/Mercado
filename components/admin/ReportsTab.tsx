@@ -319,7 +319,7 @@ export default function ReportsTab() {
             }
             .header h1 {
               margin: 0;
-              color: #1e293b;
+              color: #121f17;
               font-size: 28px;
             }
             .header .date {
@@ -361,11 +361,11 @@ export default function ReportsTab() {
               color: #475569;
             }
             .summary-value {
-              color: #1e293b;
+              color: #121f17;
               font-weight: 700;
             }
             h2 {
-              color: #1e293b;
+              color: #121f17;
               margin-top: 30px;
               margin-bottom: 15px;
               font-size: 18px;
@@ -546,7 +546,7 @@ export default function ReportsTab() {
         <p style="color:#64748b;font-size:14px;margin-top:0;">${monthLabel} — Bodega San Martín</p>
         <hr style="border:none;border-top:2px solid #2563eb;margin:15px 0;" />
 
-        <h3 style="color:#1e293b;margin-top:20px;">💰 Resumen Financiero</h3>
+        <h3 style="color:#121f17;margin-top:20px;">💰 Resumen Financiero</h3>
         <div class="summary">
           <div class="summary-item"><span class="summary-label">Ingresos totales:</span><span class="summary-value" style="color:#16a34a;">S/${totalRevenue.toFixed(2)}</span></div>
           <div class="summary-item"><span class="summary-label">Valor promedio de pedido:</span><span class="summary-value">S/${avgOrder.toFixed(2)}</span></div>
@@ -555,7 +555,7 @@ export default function ReportsTab() {
           <div class="summary-item"><span class="summary-label">Pagos vencidos:</span><span class="summary-value" style="color:#dc2626;">S/${overdueAmt.toFixed(2)}</span></div>
         </div>
 
-        <h3 style="color:#1e293b;margin-top:25px;">🏆 Top Productos del Período</h3>
+        <h3 style="color:#121f17;margin-top:25px;">🏆 Top Productos del Período</h3>
         <table><thead><tr><th>#</th><th>Producto</th><th>Unidades</th><th>Ingresos</th><th>Costo</th><th>Margen</th></tr></thead><tbody>
         ${topProducts.map((p, i) => {
           const margin = p.revenue > 0 ? ((p.revenue - p.cost) / p.revenue * 100).toFixed(1) : "0.0";
@@ -563,13 +563,13 @@ export default function ReportsTab() {
         }).join("")}
         </tbody></table>
 
-        <h3 style="color:#1e293b;margin-top:25px;">⚠️ Alertas de Inventario</h3>
+        <h3 style="color:#121f17;margin-top:25px;">⚠️ Alertas de Inventario</h3>
         ${lowStockProducts.length === 0
           ? '<p style="color:#16a34a;">✅ Todo el inventario está sobre el mínimo.</p>'
           : `<table><thead><tr><th>Producto</th><th>Stock actual</th><th>Stock mínimo</th></tr></thead><tbody>${lowStockProducts.slice(0, 15).map((p: { name: string; stock?: number; stockMin?: number }) => `<tr><td>${p.name}</td><td style="color:#dc2626;font-weight:700;">${p.stock || 0}</td><td>${p.stockMin || 5}</td></tr>`).join("")}</tbody></table>`
         }
 
-        <h3 style="color:#1e293b;margin-top:25px;">👥 Clientes</h3>
+        <h3 style="color:#121f17;margin-top:25px;">👥 Clientes</h3>
         <div class="summary">
           <div class="summary-item"><span class="summary-label">Total clientes:</span><span class="summary-value">${(customers || []).length}</span></div>
           <div class="summary-item"><span class="summary-label">Nuevos este mes:</span><span class="summary-value" style="color:#2563eb;">${newThisMonthCustomers}</span></div>
@@ -599,33 +599,33 @@ export default function ReportsTab() {
   }, [fetchData]);
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><FileText className="h-6 w-6 text-primary" />Reportes</h2>
+    <div className="space-y-3 sm:space-y-6">
+      <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><FileText className="h-6 w-6 text-primary" />Reportes</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
         {REPORTS.map(r => {
           const Icon = r.icon;
           const isGenerating = generating === r.type;
           const isFullMetrics = r.type === "metricas-completas";
           const isPdfOnly = r.pdfOnly;
           return (
-            <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-6 flex flex-col" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 flex flex-col"}>
-              <div className="flex items-center gap-3 mb-2">
+            <div key={r.type} className={r.type === "informe-mensual" ? "sm:col-span-2 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800 rounded-2xl p-3 sm:p-6 flex flex-col" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6 flex flex-col"}>
+              <div className="flex flex-wrap items-center gap-3 mb-2">
                 <div className={r.type === "informe-mensual" ? "p-2 rounded-xl bg-blue-600/10" : "p-2 rounded-xl bg-primary/10"}>
                   <Icon className={r.type === "informe-mensual" ? "h-6 w-6 text-blue-600" : "h-6 w-6 text-primary"} />
                 </div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">{r.label}</h3>
               </div>
               <p className="text-sm text-gray-500 dark:text-muted flex-1">{r.desc}</p>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex flex-wrap gap-2">
                 {!isPdfOnly && (
-                  <button onClick={() => generateCSV(r.type)} disabled={!!generating} className="flex-1 flex items-center justify-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
+                  <button onClick={() => generateCSV(r.type)} disabled={!!generating} className="flex-1 flex flex-wrap items-center justify-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50">
                     {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                     {isGenerating ? "Generando..." : "CSV"}
                   </button>
                 )}
                 {!isFullMetrics && (
-                  <button onClick={() => generatePDF(r.type)} disabled={!!generating} className={isPdfOnly ? "flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition disabled:opacity-50" : "flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition disabled:opacity-50"}>
+                  <button onClick={() => generatePDF(r.type)} disabled={!!generating} className={isPdfOnly ? "flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition disabled:opacity-50" : "flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition disabled:opacity-50"}>
                     {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
                     {isGenerating ? "Generando..." : isPdfOnly ? "Generar Informe PDF" : "PDF"}
                   </button>

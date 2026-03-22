@@ -1,10 +1,10 @@
 "use client";
-
+// v2
 import { useRef, useEffect, useState, startTransition, useCallback } from "react";
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
-import { X, Plus, Minus, Trash2, ShoppingCart, MessageCircle, Clipboard, Share2, CheckCircle2, Download, MessageCircleOff, Package, Tag, Truck, Gift, Link2, Printer, Clock } from "lucide-react";
+import { X, Plus, Minus, Trash2, ShoppingCart, MessageCircle, Clipboard, Share2, CheckCircle2, Download, MessageCircleOff, Package, Tag, Truck, Gift, Clock } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
 import { useSettings } from "@/contexts/settings-context";
@@ -138,18 +138,6 @@ export default function CartSidebar() {
     } catch { /* silent */ }
   }, [isOpen]);
 
-  /* W3: Share cart link */
-  const [linkCopied, setLinkCopied] = useState(false);
-  const shareCart = () => {
-    if (!items.length) return;
-    const payload = items.map(i => `${i.id}:${i.quantity}`).join(",");
-    const url = `${window.location.origin}/tienda?cart=${encodeURIComponent(payload)}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2500);
-    }).catch(() => { /* clipboard denied */ });
-  };
-
   /* W3: Hydrate cart from shared link */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -258,17 +246,29 @@ export default function CartSidebar() {
                   </span>
                 </div>
               </div>
-              <button
-                onClick={close}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                aria-label="Cerrar carrito"
-              >
-                <X className="h-5 w-5 text-muted" />
-              </button>
+              <div className="flex items-center gap-1">
+                {items.length > 0 && (
+                  <button
+                    onClick={() => { if (window.confirm("¿Seguro que quieres vaciar el carrito?")) clear(); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 transition-colors text-xs font-bold"
+                    aria-label="Vaciar carrito"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Vaciar todo
+                  </button>
+                )}
+                <button
+                  onClick={close}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  aria-label="Cerrar carrito"
+                >
+                  <X className="h-5 w-5 text-muted" />
+                </button>
+              </div>
             </div>
 
             {/* Items */}
-            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 space-y-2">
               {items.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center gap-5 py-10 px-2">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/8">
@@ -337,7 +337,7 @@ export default function CartSidebar() {
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className={`flex gap-3 bg-gray-50 dark:bg-card rounded-xl p-3 relative${(item as { stock?: number }).stock === 0 ? " opacity-50" : ""}`}
+                    className={`flex gap-3 bg-gray-50 dark:bg-card rounded-xl p-2.5 relative${(item as { stock?: number }).stock === 0 ? " opacity-50" : ""}`}
                   >
                     {/* Out of stock overlay */}
                     {(item as { stock?: number }).stock === 0 && (
@@ -346,7 +346,7 @@ export default function CartSidebar() {
                       </div>
                     )}
                     {/* Image */}
-                    <div className="relative h-20 w-20 shrink-0 rounded-lg overflow-hidden bg-white">
+                    <div className="relative h-16 w-16 shrink-0 rounded-lg overflow-hidden bg-white">
                       <CartItemImage src={item.image} alt={item.name} />
                     </div>
 
@@ -381,7 +381,7 @@ export default function CartSidebar() {
                             onClick={() =>
                               updateQty(item.id, item.quantity - 1)
                             }
-                            className="p-2.5 hover:bg-gray-50 rounded-l-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            className="p-2 hover:bg-gray-50 rounded-l-lg transition-colors min-h-9 min-w-9 flex items-center justify-center"
                             aria-label="Reducir cantidad"
                           >
                             <Minus className="h-4 w-4 text-muted" />
@@ -396,7 +396,7 @@ export default function CartSidebar() {
                               <button
                                 onClick={() => !atMax && updateQty(item.id, item.quantity + 1)}
                                 disabled={atMax}
-                                className={`p-2.5 rounded-r-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${atMax ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"}`}
+                                className={`p-2 rounded-r-lg transition-colors min-h-9 min-w-9 flex items-center justify-center ${atMax ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-50"}`}
                                 aria-label="Aumentar cantidad"
                               >
                                 <Plus className="h-4 w-4 text-muted" />
@@ -412,7 +412,7 @@ export default function CartSidebar() {
                           </span>
                           <button
                             onClick={() => removeItem(item.id)}
-                            className="p-2.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                            className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors min-h-9 min-w-9 flex items-center justify-center"
                             aria-label={`Eliminar ${item.name}`}
                           >
                             <Trash2 className="h-5 w-5" />
@@ -437,7 +437,7 @@ export default function CartSidebar() {
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="border-t dark:border-card-border px-4 sm:px-6 py-4 sm:py-5 pb-safe space-y-3 sm:space-y-4 bg-white dark:bg-background shrink-0">
+              <div className="border-t dark:border-card-border px-4 sm:px-6 py-3 pb-safe space-y-2 bg-white dark:bg-background shrink-0">
 
             {/* AB2: Cart reservation timer */}
                 {reserveTime && (
@@ -557,23 +557,6 @@ export default function CartSidebar() {
                   </div>
                 </details>
 
-                {/* Z3: Coupon field */}
-                <div>
-                  <button onClick={() => setCouponOpen(o => !o)} className="flex items-center gap-1.5 text-xs text-primary hover:underline">
-                    <Tag className="h-3.5 w-3.5" />
-                    {couponDiscount > 0 ? `Cupón aplicado (-S/${couponDiscount.toFixed(2)})` : "¿Tienes un cupón?"}
-                  </button>
-                  {couponOpen && (
-                    <div className="mt-2 flex gap-2">
-                      <input value={couponCode} onChange={e => setCouponCode(e.target.value)} placeholder="Código" className="flex-1 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-accent/30 px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary" onKeyDown={e => e.key === "Enter" && validateCoupon()} />
-                      <button onClick={validateCoupon} disabled={validatingCoupon || !couponCode.trim()} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white disabled:opacity-50">
-                        {validatingCoupon ? "..." : "Aplicar"}
-                      </button>
-                    </div>
-                  )}
-                  {couponMsg && <p className={`text-[10px] mt-1 ${couponDiscount > 0 ? "text-green-600" : "text-red-500"}`}>{couponMsg}</p>}
-                </div>
-
                 {/* Total */}
                 <div className="flex items-center justify-between">
                   <span className="text-base font-semibold text-muted">
@@ -585,7 +568,7 @@ export default function CartSidebar() {
                         S/{total.toFixed(2)}
                       </p>
                     )}
-                    <span className="text-2xl font-extrabold text-primary">
+                    <span className="text-xl font-extrabold text-primary">
                       S/{finalTotal.toFixed(2)}
                     </span>
                   </div>
@@ -597,7 +580,7 @@ export default function CartSidebar() {
                     onClick={handleOrder}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
-                    className="w-full flex items-center justify-center gap-3 rounded-xl bg-primary px-6 py-4 text-base font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark transition-all duration-200"
+                    className="w-full flex items-center justify-center gap-3 rounded-xl bg-primary px-6 py-3 text-base font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark transition-all duration-200"
                   >
                     <Package className="h-5 w-5" />
                     Completar pedido
@@ -609,7 +592,7 @@ export default function CartSidebar() {
                     disabled={sending}
                     whileHover={{ scale: sending ? 1 : 1.02 }}
                     whileTap={{ scale: sending ? 1 : 0.97 }}
-                    className="w-full flex items-center justify-center gap-3 rounded-xl bg-[#25D366] px-6 py-4 text-base font-bold text-white shadow-lg shadow-[#25D366]/20 hover:bg-[#20BD5A] transition-all duration-200 disabled:opacity-70 disabled:cursor-wait"
+                    className="w-full flex items-center justify-center gap-3 rounded-2xl bg-[#25D366] px-6 py-4 text-base font-extrabold text-white shadow-xl shadow-[#25D366]/30 hover:bg-[#20BD5A] transition-all duration-200 disabled:opacity-70 disabled:cursor-wait"
                   >
                     {sending ? (
                       <>
@@ -620,7 +603,7 @@ export default function CartSidebar() {
                       </>
                     ) : (
                       <>
-                        <MessageCircle className="h-5 w-5" />
+                        <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 shrink-0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" /></svg>
                         Pedir por WhatsApp
                       </>
                     )}
@@ -636,23 +619,28 @@ export default function CartSidebar() {
                       exit={{ opacity: 0, height: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="rounded-xl border border-[#25D366]/30 bg-[#dcf8c6] dark:bg-[#005c4b]/30 p-3 space-y-2">
-                        <p className="text-[10px] font-bold text-[#075e54] dark:text-emerald-400 uppercase tracking-wide">Vista previa del mensaje</p>
-                        <div className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono leading-relaxed max-h-32 overflow-y-auto">
+                      <div className="rounded-2xl border border-[#25D366]/40 bg-[#ecfdf5] dark:bg-[#005c4b]/30 p-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-[#25D366] flex items-center justify-center shrink-0">
+                            <svg viewBox="0 0 24 24" fill="white" className="h-4 w-4"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347" /></svg>
+                          </div>
+                          <p className="text-sm font-bold text-[#075e54] dark:text-emerald-300">Vista previa del pedido</p>
+                        </div>
+                        <div className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono leading-relaxed max-h-36 overflow-y-auto bg-white/60 dark:bg-black/20 rounded-xl px-3 py-2.5 border border-[#25D366]/20">
                           {`🛒 *Pedido — Bodega San Martín*\n\n${items.map(i => `• ${i.quantity}× ${i.name} — S/${(i.price * i.quantity).toFixed(2)}`).join("\n")}\n\n💰 *Total: S/${finalTotal.toFixed(2)}*${promo ? `\n🏷️ Descuento: -S/${discount.toFixed(2)}` : ""}${couponDiscount > 0 ? `\n🎟️ Cupón: -S/${couponDiscount.toFixed(2)}` : ""}`}
                         </div>
                         <div className="flex gap-2">
                           <button
                             onClick={() => setShowPreview(false)}
-                            className="flex-1 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-xs font-semibold text-muted hover:bg-white/50 transition-colors"
+                            className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-sm font-semibold text-muted hover:bg-white/50 transition-colors"
                           >
-                            Editar
+                            ← Editar
                           </button>
                           <button
                             onClick={() => { setShowPreview(false); handleOrder(); }}
-                            className="flex-1 py-2 rounded-lg bg-[#25D366] text-white text-xs font-bold hover:bg-[#20BD5A] transition-colors"
+                            className="flex-1 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-extrabold hover:bg-[#20BD5A] transition-colors shadow-lg shadow-[#25D366]/25"
                           >
-                            Confirmar y enviar
+                            Enviar ✓
                           </button>
                         </div>
                       </div>
@@ -660,27 +648,7 @@ export default function CartSidebar() {
                   )}
                 </AnimatePresence>
 
-                {/* W3: Share cart link */}
-                {items.length > 0 && (
-                  <button
-                    onClick={shareCart}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2.5 text-sm font-semibold text-primary hover:bg-primary/10 transition-colors"
-                  >
-                    <Link2 className="h-4 w-4" />
-                    {linkCopied ? "¡Link copiado!" : "Compartir carrito"}
-                  </button>
-                )}
 
-                {/* Z4: Print cart */}
-                {items.length > 0 && (
-                  <button
-                    onClick={printCart}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-accent/30 px-4 py-2 text-xs font-semibold text-muted hover:bg-gray-100 dark:hover:bg-accent/50 transition-colors"
-                  >
-                    <Printer className="h-3.5 w-3.5" />
-                    Imprimir lista de compras
-                  </button>
-                )}
 
                 <AnimatePresence>
                   {sendResult && (
@@ -724,14 +692,6 @@ export default function CartSidebar() {
                     </m.div>
                   )}
                 </AnimatePresence>
-
-                {/* Clear Cart */}
-                <button
-                  onClick={clear}
-                  className="w-full text-center text-sm text-muted hover:text-red-500 transition-colors py-1"
-                >
-                  Vaciar carrito
-                </button>
 
                 {/* "Didn't send" escape hatch — shown after fallback/clipboard result */}
                 <AnimatePresence>

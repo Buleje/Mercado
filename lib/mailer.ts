@@ -49,7 +49,7 @@ export async function sendOrderNotification(order: {
     subject: `🛒 Nuevo pedido — ${order.customerName} — S/${order.total.toFixed(2)}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
-        <div style="background:#6366f1;padding:20px 24px;">
+        <div style="background:#2d6a4f;padding:20px 24px;">
           <h2 style="color:#fff;margin:0;font-size:18px;">🛒 Nuevo pedido recibido</h2>
           <p style="color:#a8d5ba;margin:4px 0 0;font-size:13px;">ID: ${order.id}</p>
         </div>
@@ -65,15 +65,15 @@ export async function sendOrderNotification(order: {
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
               <tr style="background:#f0fdf4;">
-                <th style="text-align:left;padding:6px 8px;color:#6366f1;">Producto</th>
-                <th style="text-align:right;padding:6px 8px;color:#6366f1;">Subtotal</th>
+                <th style="text-align:left;padding:6px 8px;color:#2d6a4f;">Producto</th>
+                <th style="text-align:right;padding:6px 8px;color:#2d6a4f;">Subtotal</th>
               </tr>
             </thead>
             <tbody>${itemsHtml}</tbody>
             <tfoot>
               <tr style="background:#f0fdf4;">
                 <td style="padding:8px;font-weight:bold;color:#111;">Total</td>
-                <td style="padding:8px;text-align:right;font-weight:bold;color:#6366f1;font-size:16px;">S/${order.total.toFixed(2)}</td>
+                <td style="padding:8px;text-align:right;font-weight:bold;color:#2d6a4f;font-size:16px;">S/${order.total.toFixed(2)}</td>
               </tr>
             </tfoot>
           </table>
@@ -127,7 +127,7 @@ export async function sendCashSummaryEmail(summary: {
     subject: `🏦 Cierre de caja — ${fmtDate(summary.closedAt)} — ${fmt(summary.closingAmount)}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
-        <div style="background:#0f172a;padding:20px 24px;">
+        <div style="background:#0a0f0d;padding:20px 24px;">
           <h2 style="color:#fff;margin:0;font-size:18px;">🏦 Resumen de Cierre de Caja</h2>
           <p style="color:#94a3b8;margin:4px 0 0;font-size:13px;">ID: ${summary.registerId}</p>
         </div>
@@ -152,15 +152,15 @@ export async function sendCashSummaryEmail(summary: {
             ${summary.totalIn > 0 ? `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px 4px;color:#475569;">Ingresos manuales</td><td style="padding:8px 4px;text-align:right;color:#2563eb;">${fmt(summary.totalIn)}</td></tr>` : ""}
             ${summary.totalOut > 0 ? `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px 4px;color:#475569;">Egresos</td><td style="padding:8px 4px;text-align:right;color:#dc2626;">−${fmt(summary.totalOut)}</td></tr>` : ""}
             <tr style="border-bottom:2px solid #cbd5e1;background:#f1f5f9;">
-              <td style="padding:10px 4px;font-weight:700;color:#0f172a;">Efectivo esperado</td>
-              <td style="padding:10px 4px;text-align:right;font-weight:700;color:#6366f1;">${fmt(summary.expectedAmount)}</td>
+              <td style="padding:10px 4px;font-weight:700;color:#0a0f0d;">Efectivo esperado</td>
+              <td style="padding:10px 4px;text-align:right;font-weight:700;color:#2d6a4f;">${fmt(summary.expectedAmount)}</td>
             </tr>
             <tr style="border-bottom:1px solid #e2e8f0;">
               <td style="padding:8px 4px;color:#475569;">Efectivo contado</td>
               <td style="padding:8px 4px;text-align:right;font-weight:600;">${fmt(summary.closingAmount)}</td>
             </tr>
             <tr style="background:#f8fafc;">
-              <td style="padding:10px 4px;font-weight:700;color:#0f172a;">Diferencia</td>
+              <td style="padding:10px 4px;font-weight:700;color:#0a0f0d;">Diferencia</td>
               <td style="padding:10px 4px;text-align:right;font-weight:700;color:${diffColor};">${diffSign}${fmt(summary.difference)}</td>
             </tr>
           </table>

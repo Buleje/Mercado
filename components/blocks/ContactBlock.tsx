@@ -131,7 +131,7 @@ subtitle,
           {ctaTitle && (
             <div
               className="rounded-2xl p-8 sm:p-10 text-white shadow-xl"
-              style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
+              style={{ background: "linear-gradient(135deg, #2d6a4f, #245c43)" }}
             >
               <h3 className="text-2xl sm:text-3xl font-extrabold mb-4">
                 {ctaTitle}

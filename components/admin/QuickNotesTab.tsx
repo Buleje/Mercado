@@ -134,33 +134,33 @@ export default function QuickNotesTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-foreground">Notas Rápidas</h2>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">Notas Rápidas</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Apuntes, recordatorios y pendientes del día a día</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar notas..." className="pl-9 pr-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary w-48" />
           </div>
-          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20">
+          <button onClick={() => setShowNew(true)} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20">
             <Plus className="h-4 w-4" /> Nueva nota
           </button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="flex items-center gap-6 text-sm">
+      <div className="flex flex-wrap items-center gap-6 text-sm">
         <span className="text-gray-500 dark:text-muted">{notes.length} notas</span>
         <span className="text-amber-600 font-semibold">{notes.filter(n => n.pinned).length} fijadas</span>
       </div>
 
       {/* Notes grid */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 animate-pulse">
               <div className="h-4 bg-gray-200 dark:bg-surface rounded-full w-3/4 mb-3" />
@@ -175,7 +175,7 @@ export default function QuickNotesTab() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
             {/* New note card */}
             {showNew && (
               <div className="bg-white dark:bg-card rounded-2xl border-2 border-primary/50 p-4 shadow-lg">
@@ -187,7 +187,7 @@ export default function QuickNotesTab() {
                       <button key={c} onClick={() => setNewColor(c)} className={cn("w-5 h-5 rounded-full border-2 transition-transform", COLOR_DOTS[c], newColor === c ? "border-gray-900 dark:border-white scale-125" : "border-transparent")} />
                     ))}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button onClick={() => { setShowNew(false); setNewTitle(""); setNewContent(""); }} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4" /></button>
                     <button onClick={handleAdd} disabled={!newTitle.trim()} className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 disabled:opacity-50"><Check className="h-4 w-4" /></button>
                   </div>
@@ -211,7 +211,7 @@ export default function QuickNotesTab() {
                             <button key={c} onClick={() => setEditColor(c)} className={cn("w-5 h-5 rounded-full border-2 transition-transform", COLOR_DOTS[c], editColor === c ? "border-gray-900 dark:border-white scale-125" : "border-transparent")} />
                           ))}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <button onClick={() => setEditingId(null)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4" /></button>
                           <button onClick={saveEdit} className="p-1.5 rounded-lg bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4" /></button>
                         </div>

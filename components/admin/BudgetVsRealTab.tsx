@@ -53,23 +53,23 @@ export default function BudgetVsRealTab() {
   const underBudgetCount = filtered.filter(b => ((b.actual - b.budgeted) / b.budgeted) * 100 < -10).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-foreground">Presupuesto vs Real</h2>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">Presupuesto vs Real</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Compara gastos presupuestados contra ejecución real por mes</p>
         </div>
         <button
           onClick={() => exportToCSV(filtered.map(b => ({ Categoría: b.category, Departamento: b.department, Presupuestado: b.budgeted, Real: b.actual, Variación: ((b.actual - b.budgeted) / b.budgeted * 100).toFixed(1) + "%" })), "presupuesto-vs-real")}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
+          className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Total presupuestado</p>
           <p className="text-xl font-extrabold text-gray-900 dark:text-foreground mt-1">{fmt(totals.budgeted)}</p>
@@ -85,7 +85,7 @@ export default function BudgetVsRealTab() {
         </div>
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Alertas</p>
-          <div className="flex items-center gap-3 mt-1">
+          <div className="flex flex-wrap items-center gap-3 mt-1">
             <span className="text-red-600 font-extrabold text-lg">{overBudgetCount}</span>
             <span className="text-xs text-gray-400 dark:text-muted">sobre</span>
             <span className="text-emerald-600 font-extrabold text-lg">{underBudgetCount}</span>
@@ -101,7 +101,7 @@ export default function BudgetVsRealTab() {
           placeholder="Buscar categoría..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary transition-colors w-48"
+          className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary transition-colors w-48"
         />
         <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)} className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary">
           {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
@@ -120,16 +120,16 @@ export default function BudgetVsRealTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead>
               <tr className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
-                <th className="text-left px-4 py-3 text-gray-500 dark:text-muted font-semibold">Categoría</th>
-                <th className="text-left px-4 py-3 text-gray-500 dark:text-muted font-semibold">Depto</th>
-                <th className="text-right px-4 py-3 text-gray-500 dark:text-muted font-semibold">Presupuesto</th>
-                <th className="text-right px-4 py-3 text-gray-500 dark:text-muted font-semibold">Real</th>
-                <th className="text-right px-4 py-3 text-gray-500 dark:text-muted font-semibold">Variación</th>
-                <th className="text-center px-4 py-3 text-gray-500 dark:text-muted font-semibold">Barra</th>
-                <th className="text-center px-4 py-3 text-gray-500 dark:text-muted font-semibold">Estado</th>
+                <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Categoría</th>
+                <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Depto</th>
+                <th className="text-right px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Presupuesto</th>
+                <th className="text-right px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Real</th>
+                <th className="text-right px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Variación</th>
+                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Barra</th>
+                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -139,17 +139,17 @@ export default function BudgetVsRealTab() {
                 const status = Math.abs(variance) <= 10 ? "ok" : variance > 10 ? "over" : "under";
                 return (
                   <tr key={b.id} onClick={() => setDetail(b)} className="border-b border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface cursor-pointer transition-colors">
-                    <td className="px-4 py-3 font-semibold text-gray-900 dark:text-foreground">{b.category}</td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-muted">{b.department}</td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-700 dark:text-foreground">{fmt(b.budgeted)}</td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-gray-900 dark:text-foreground">{fmt(b.actual)}</td>
-                    <td className={cn("px-4 py-3 text-right font-bold", status === "over" ? "text-red-600" : status === "under" ? "text-emerald-600" : "text-gray-500 dark:text-muted")}>{fmtPct(variance)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900 dark:text-foreground">{b.category}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted">{b.department}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono text-gray-700 dark:text-foreground">{fmt(b.budgeted)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono font-bold text-gray-900 dark:text-foreground">{fmt(b.actual)}</td>
+                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", status === "over" ? "text-red-600" : status === "under" ? "text-emerald-600" : "text-gray-500 dark:text-muted")}>{fmtPct(variance)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="w-full h-2.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                         <div className={cn("h-full rounded-full transition-all", status === "over" ? "bg-red-500" : status === "under" ? "bg-emerald-500" : "bg-blue-500")} style={{ width: `${Math.min(pctUsed, 100)}%` }} />
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       {status === "ok" && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold"><CheckCircle className="h-3 w-3" /> OK</span>}
                       {status === "over" && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold"><AlertTriangle className="h-3 w-3" /> Exceso</span>}
                       {status === "under" && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold"><TrendingDown className="h-3 w-3" /> Ahorro</span>}
@@ -169,19 +169,19 @@ export default function BudgetVsRealTab() {
       {detail && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
           <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
+            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.category}</h3>
               <button onClick={() => setDetail(null)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
-            <div className="px-6 py-5 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="px-3 sm:px-6 py-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div><p className="text-xs text-gray-500 dark:text-muted">Departamento</p><p className="font-bold text-gray-900 dark:text-foreground">{detail.department}</p></div>
                 <div><p className="text-xs text-gray-500 dark:text-muted">Mes</p><p className="font-bold text-gray-900 dark:text-foreground">{detail.month}</p></div>
                 <div><p className="text-xs text-gray-500 dark:text-muted">Presupuestado</p><p className="font-bold text-gray-900 dark:text-foreground">{fmt(detail.budgeted)}</p></div>
                 <div><p className="text-xs text-gray-500 dark:text-muted">Real</p><p className="font-bold text-gray-900 dark:text-foreground">{fmt(detail.actual)}</p></div>
               </div>
               <div className={cn("rounded-xl p-4 text-center", detail.actual > detail.budgeted ? "bg-red-50 dark:bg-red-950/20" : "bg-emerald-50 dark:bg-emerald-950/20")}>
-                <p className={cn("text-2xl font-extrabold", detail.actual > detail.budgeted ? "text-red-600" : "text-emerald-600")}>{fmt(detail.actual - detail.budgeted)}</p>
+                <p className={cn("text-xl sm:text-2xl font-extrabold", detail.actual > detail.budgeted ? "text-red-600" : "text-emerald-600")}>{fmt(detail.actual - detail.budgeted)}</p>
                 <p className="text-xs text-gray-500 dark:text-muted mt-1">{detail.actual > detail.budgeted ? "Sobregasto" : "Ahorro"} ({fmtPct(((detail.actual - detail.budgeted) / detail.budgeted) * 100)})</p>
               </div>
             </div>

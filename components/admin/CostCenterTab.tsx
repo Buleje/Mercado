@@ -96,16 +96,16 @@ export default function CostCenterTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Layers className="h-6 w-6 text-primary" /> Centros de Costo
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Distribución y seguimiento de gastos operativos por centro</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => exportToCSV(filteredAllocations.map(a => ({ centro: centerName(a.centerId), fecha: a.date, concepto: a.concept, categoria: a.category, monto: a.amount, referencia: a.reference, notas: a.notes })), "centros-costo")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
@@ -133,9 +133,9 @@ export default function CostCenterTab() {
       </div>
 
       {/* View toggle */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-surface rounded-xl p-1 w-fit">
+      <div className="flex flex-wrap gap-1 bg-gray-100 dark:bg-surface rounded-xl p-1 w-fit">
         {([["centros", "Centros"], ["asignaciones", "Asignaciones"]] as const).map(([v, label]) => (
-          <button key={v} onClick={() => setView(v)} className={cn("px-4 py-2 text-sm font-semibold rounded-lg transition-colors", view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700")}>
+          <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-lg transition-colors", view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700")}>
             {label}
           </button>
         ))}
@@ -143,9 +143,9 @@ export default function CostCenterTab() {
 
       {/* Centers view */}
       {view === "centros" && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
           {centerStats.map(c => (
-            <div key={c.id} className={cn("bg-white dark:bg-card border rounded-2xl p-5", c.pct > 100 ? "border-red-200 dark:border-red-800" : c.pct > 85 ? "border-amber-200 dark:border-amber-800" : "border-gray-200 dark:border-card-border")}>
+            <div key={c.id} className={cn("bg-white dark:bg-card border rounded-2xl p-3 sm:p-5", c.pct > 100 ? "border-red-200 dark:border-red-800" : c.pct > 85 ? "border-amber-200 dark:border-amber-800" : "border-gray-200 dark:border-card-border")}>
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <span className="text-xs font-mono font-bold text-gray-400">{c.code}</span>
@@ -179,9 +179,9 @@ export default function CostCenterTab() {
         <div className="space-y-4">
           {/* New allocation form */}
           {showFormAlloc && (
-            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Asignar gasto a centro</h3>
+                <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Asignar gasto a centro</h3>
                 <button onClick={() => setShowFormAlloc(false)}><X className="h-4 w-4 text-gray-400" /></button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -210,9 +210,9 @@ export default function CostCenterTab() {
                   <input type="text" value={formAlloc.reference} onChange={e => setFormAlloc(p => ({ ...p, reference: e.target.value }))} placeholder="OC-2026-XXX" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
                 </div>
               </div>
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setShowFormAlloc(false)} className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-                <button onClick={handleAddAllocation} className="px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar</button>
+              <div className="flex flex-wrap gap-2 justify-end">
+                <button onClick={() => setShowFormAlloc(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+                <button onClick={handleAddAllocation} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar</button>
               </div>
             </div>
           )}
@@ -236,35 +236,35 @@ export default function CostCenterTab() {
           {/* Table */}
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Centro</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Concepto</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoría</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Monto</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Referencia</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Centro</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Concepto</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoría</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Monto</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Referencia</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
                   {filteredAllocations.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">Sin asignaciones.</td></tr>}
                   {filteredAllocations.map(a => (
                     <tr key={a.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30">
-                      <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{fmtDate(a.date)}</td>
-                      <td className="px-4 py-3 font-semibold text-gray-800 dark:text-foreground text-xs">{centerName(a.centerId)}</td>
-                      <td className="px-4 py-3 text-gray-700 dark:text-foreground">{a.concept}</td>
-                      <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted">{a.category}</td>
-                      <td className="px-4 py-3 text-right font-bold text-gray-800 dark:text-foreground">{fmt(a.amount)}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-gray-400">{a.reference || "—"}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 whitespace-nowrap">{fmtDate(a.date)}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-800 dark:text-foreground text-xs">{centerName(a.centerId)}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-foreground">{a.concept}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{a.category}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-gray-800 dark:text-foreground">{fmt(a.amount)}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono text-gray-400">{a.reference || "—"}</td>
                     </tr>
                   ))}
                 </tbody>
                 {filteredAllocations.length > 0 && (
                   <tfoot className="bg-gray-50 dark:bg-surface/50 border-t border-gray-200 dark:border-card-border">
                     <tr>
-                      <td colSpan={4} className="px-4 py-3 text-xs font-extrabold text-gray-600 dark:text-muted uppercase">Total</td>
-                      <td className="px-4 py-3 text-right font-extrabold text-gray-800 dark:text-foreground">{fmt(filteredAllocations.reduce((s, a) => s + a.amount, 0))}</td>
+                      <td colSpan={4} className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-extrabold text-gray-600 dark:text-muted uppercase">Total</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-gray-800 dark:text-foreground">{fmt(filteredAllocations.reduce((s, a) => s + a.amount, 0))}</td>
                       <td />
                     </tr>
                   </tfoot>

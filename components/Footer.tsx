@@ -49,14 +49,14 @@ export default function Footer() {
   const hoursLabel = todayEntry?.enabled ? `Hoy: ${todayEntry.open} – ${todayEntry.close}` : "Hoy: cerrado";
 
   const perks = [
-    { icon: Truck, label: "Delivery Gratis en Pucallpa", color: "#818cf8" },
+    { icon: Truck, label: "Delivery Gratis en Pucallpa", color: "#40916c" },
     { icon: MessageCircle, label: "Pedidos por WhatsApp", color: "#25D366" },
     { icon: Clock, label: hoursLabel, color: "#f4a261" },
     { icon: ShieldCheck, label: "Pago con Yape o Efectivo", color: "#60a5fa" },
   ];
 
   return (
-    <footer style={{ background: "linear-gradient(180deg, #4f46e5 0%, #3730a3 100%)" }} className="text-white">
+    <footer style={{ background: "linear-gradient(180deg, #2d6a4f 0%, #1b4332 100%)" }} className="text-white">
       {/* Perks Bar */}
       <div className="border-b border-white/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
@@ -85,8 +85,8 @@ export default function Footer() {
               <div
                 className="flex h-11 w-11 items-center justify-center rounded-2xl"
                 style={{
-                  background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #3730a3 100%)",
-                  boxShadow: "0 4px 12px rgba(99,102,241,0.35)",
+                  background: "linear-gradient(135deg, #2d6a4f 0%, #245c43 50%, #1b4332 100%)",
+                  boxShadow: "0 4px 12px rgba(45,106,79,0.35)",
                 }}
               >
                 <Store className="h-5 w-5 text-white" />
@@ -239,8 +239,9 @@ export default function Footer() {
               className="flex items-center gap-2 w-full sm:w-auto"
             >
               {nlStatus === "success" ? (
-                <div className="flex items-center gap-2 text-sm text-emerald-300 font-semibold">
-                  <CheckCircle2 className="h-4 w-4" /> ¡Suscrito!
+                <div className="flex items-center gap-2 text-sm text-emerald-300 font-bold animate-[scaleIn_0.3s_cubic-bezier(0.34,1.56,0.64,1)_both]">
+                  <CheckCircle2 className="h-5 w-5 animate-[pop_0.3s_ease-out]" />
+                  <span>¡Suscrito exitosamente! 🎉</span>
                 </div>
               ) : (
                 <>

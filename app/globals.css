@@ -5,17 +5,17 @@
 
 @theme inline {
   --color-background: #ffffff;
-  --color-foreground: #1a1a2e;
-  --color-primary: #6366f1;        /* Indigo 500 - Modern & Professional */
-  --color-primary-dark: #4f46e5;   /* Indigo 600 - Deep & Rich */
-  --color-primary-light: #818cf8;  /* Indigo 400 - Soft Highlight */
-  --color-secondary: #f59e0b;      /* Amber 500 - Warm Accent */
-  --color-secondary-dark: #d97706; /* Amber 600 - Deep Amber */
-  --color-accent: #3b82f6;         /* Blue 500 - Interactive */
-  --color-surface: #f8f9fa;
+  --color-foreground: #1a2e20;
+  --color-primary: #2d6a4f;        /* Forest Green - Brand Primary */
+  --color-primary-dark: #245c43;   /* Deep Forest Green */
+  --color-primary-light: #40916c;  /* Light Forest Green */
+  --color-secondary: #f4a261;      /* Warm Orange - Brand Secondary */
+  --color-secondary-dark: #e8904f; /* Deep Orange */
+  --color-accent: #52b788;         /* Mint Green - Interactive */
+  --color-surface: #f8faf9;
   --color-muted: #6b7280;
   --color-card: #ffffff;
-  --color-card-border: #dee2e6;
+  --color-card-border: #d8e0dc;
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
 }
@@ -23,18 +23,18 @@
 /* ── Modo Oscuro ────────────────────────────────────────────────────────── */
 .dark {
   color-scheme: dark;
-  --color-background: #0f172a;
-  --color-foreground: #e2e8f0;
-  --color-primary: #818cf8;        /* Indigo 400 — más legible sobre fondo oscuro */
-  --color-primary-dark: #6366f1;   /* Indigo 500 */
-  --color-primary-light: #a5b4fc;  /* Indigo 300 */
-  --color-secondary: #fbbf24;      /* Amber 400 */
-  --color-secondary-dark: #f59e0b; /* Amber 500 */
-  --color-surface: #1e293b;
-  --color-muted: #94a3b8;
-  --color-card: #1e293b;
-  --color-card-border: #334155;
-  --color-accent: #1e293b;
+  --color-background: #0a0f0d;
+  --color-foreground: #e8f0eb;
+  --color-primary: #40916c;        /* Light Forest Green — legible sobre fondo oscuro */
+  --color-primary-dark: #2d6a4f;   /* Forest Green */
+  --color-primary-light: #52b788;  /* Mint Green */
+  --color-secondary: #f4a261;      /* Warm Orange */
+  --color-secondary-dark: #e8904f; /* Deep Orange */
+  --color-surface: #121f17;
+  --color-muted: #8fa99a;
+  --color-card: #152019;
+  --color-card-border: #243830;
+  --color-accent: #52b788;
 }
 
 *,
@@ -43,15 +43,22 @@
   box-sizing: border-box;
 }
 
+/* Animaciones habilitadas — se respeta prefers-reduced-motion más abajo */
+
+/* ── Excepción: animaciones explícitamente permitidas ── */
+.animate-ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite !important;
+  animation-duration: 1s !important;
+  animation-iteration-count: infinite !important;
+}
+
 * {
-  scroll-behavior: smooth;
   min-width: 0;
 }
 
 html {
   overflow-x: clip;
   -webkit-text-size-adjust: 100%;
-  scroll-behavior: smooth;
 }
 
 body {
@@ -102,6 +109,26 @@ body {
 }
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ── Mobile Form & Touch Accessibility (Admin Panel) ── */
+@media (max-width: 767px) {
+  /* Evitar auto-zoom iOS Safari y asegurar objetivo táctil (44px) */
+  .admin-mobile-cards input:not([type="checkbox"]):not([type="radio"]),
+  .admin-mobile-cards select,
+  .admin-mobile-cards textarea,
+  [data-admin-shell="true"] input:not([type="checkbox"]):not([type="radio"]),
+  [data-admin-shell="true"] select,
+  [data-admin-shell="true"] textarea {
+    font-size: 16px !important;
+    min-height: 44px !important;
+  }
+
+  /* Reducir todos los grid en formularios de admin a 1 sola columna en móvil */
+  .admin-mobile-cards form .grid,
+  [data-admin-shell="true"] form .grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* CSS entrance animations (used for above-fold LCP elements) */
@@ -233,8 +260,8 @@ body {
 }
 
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.12); }
-  50%       { box-shadow: 0 0 24px 6px rgba(99, 102, 241, 0.06); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 106, 79, 0.12); }
+  50%       { box-shadow: 0 0 24px 6px rgba(45, 106, 79, 0.06); }
 }
 
 /* Animated gradient text — apply to a gradient-clipped span */
@@ -258,6 +285,84 @@ body {
 @keyframes shrink {
   from { width: 100%; }
   to { width: 0%; }
+}
+
+@media (max-width: 639px) {
+  .admin-mobile-cards table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .admin-mobile-cards thead {
+    display: none;
+  }
+
+  .admin-mobile-cards tbody {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .admin-mobile-cards tbody tr {
+    display: block;
+    border: 1px solid var(--color-card-border);
+    border-radius: 1rem;
+    background: var(--color-card);
+    padding: 0.85rem;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+    content-visibility: auto;
+    contain-intrinsic-size: 220px;
+  }
+
+  .admin-mobile-cards tbody td,
+  .admin-mobile-cards tbody th {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    border: 0 !important;
+    padding: 0.45rem 0 !important;
+    text-align: right;
+  }
+
+  .admin-mobile-cards tbody td::before,
+  .admin-mobile-cards tbody th::before {
+    content: attr(data-label);
+    flex: 0 0 42%;
+    text-align: left;
+    font-size: 0.7rem;
+    line-height: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+
+  .admin-mobile-cards tbody td > *,
+  .admin-mobile-cards tbody th > * {
+    min-width: 0;
+  }
+
+  .admin-mobile-cards tbody td .flex,
+  .admin-mobile-cards tbody th .flex,
+  .admin-mobile-cards tbody td .inline-flex,
+  .admin-mobile-cards tbody th .inline-flex {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 0.35rem;
+  }
+
+  .admin-mobile-cards tbody td button,
+  .admin-mobile-cards tbody th button,
+  .admin-mobile-cards tbody td a,
+  .admin-mobile-cards tbody th a {
+    max-width: 100%;
+  }
+
+  .admin-mobile-cards .overflow-x-auto table tbody tr {
+    margin-inline: 0;
+  }
 }
 
 @keyframes cartBounce {
@@ -343,8 +448,8 @@ body {
 
 /* Pulsing glow ring for premium badges */
 @keyframes glowRing {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0); }
-  50%       { box-shadow: 0 0 0 8px rgba(99,102,241,0.2); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(45,106,79,0); }
+  50%       { box-shadow: 0 0 0 8px rgba(45,106,79,0.2); }
 }
 
 /* Tilt shine overlay (useTilt hook) */
@@ -371,7 +476,7 @@ body {
   position: absolute;
   inset: -2px;
   border-radius: inherit;
-  background: conic-gradient(from 0deg, #6366f1, #818cf8, #f59e0b, #6366f1);
+  background: conic-gradient(from 0deg, #2d6a4f, #40916c, #f4a261, #2d6a4f);
   z-index: -1;
   animation: rotateBorder 3s linear infinite;
   opacity: 0;
@@ -384,42 +489,42 @@ body {
 /* ── Explicit opacity variants — Tailwind v4 /N step safety net ── */
 /* Ensures bg-primary/N, border-primary/N classes always render     */
 /* Placed outside @layer so they win over any generated utilities   */
-/* ── Primary (Indigo #6366f1 = 99, 102, 241) opacity helpers ─────────── */
-.bg-primary\/5  { background-color: rgba(99, 102, 241, 0.05); }
-.bg-primary\/8  { background-color: rgba(99, 102, 241, 0.08); }
-.bg-primary\/10 { background-color: rgba(99, 102, 241, 0.10); }
-.bg-primary\/12 { background-color: rgba(99, 102, 241, 0.12); }
-.bg-primary\/15 { background-color: rgba(99, 102, 241, 0.15); }
-.bg-primary\/20 { background-color: rgba(99, 102, 241, 0.20); }
-.bg-primary\/25 { background-color: rgba(99, 102, 241, 0.25); }
-/* ── Secondary (Amber #f59e0b = 245, 158, 11) opacity helpers ────────── */
-.bg-secondary\/10 { background-color: rgba(245, 158, 11, 0.10); }
-.bg-secondary\/15 { background-color: rgba(245, 158, 11, 0.15); }
-.bg-secondary\/20 { background-color: rgba(245, 158, 11, 0.20); }
-.bg-secondary\/25 { background-color: rgba(245, 158, 11, 0.25); }
+/* ── Primary (Forest Green #2d6a4f = 45, 106, 79) opacity helpers ─────── */
+.bg-primary\/5  { background-color: rgba(45, 106, 79, 0.05); }
+.bg-primary\/8  { background-color: rgba(45, 106, 79, 0.08); }
+.bg-primary\/10 { background-color: rgba(45, 106, 79, 0.10); }
+.bg-primary\/12 { background-color: rgba(45, 106, 79, 0.12); }
+.bg-primary\/15 { background-color: rgba(45, 106, 79, 0.15); }
+.bg-primary\/20 { background-color: rgba(45, 106, 79, 0.20); }
+.bg-primary\/25 { background-color: rgba(45, 106, 79, 0.25); }
+/* ── Secondary (Warm Orange #f4a261 = 244, 162, 97) opacity helpers ───── */
+.bg-secondary\/10 { background-color: rgba(244, 162, 97, 0.10); }
+.bg-secondary\/15 { background-color: rgba(244, 162, 97, 0.15); }
+.bg-secondary\/20 { background-color: rgba(244, 162, 97, 0.20); }
+.bg-secondary\/25 { background-color: rgba(244, 162, 97, 0.25); }
 /* ── Border helpers ──────────────────────────────────────────────────── */
-.border-primary\/10 { border-color: rgba(99, 102, 241, 0.10); }
-.border-primary\/15 { border-color: rgba(99, 102, 241, 0.15); }
-.border-primary\/20 { border-color: rgba(99, 102, 241, 0.20); }
-.border-primary\/25 { border-color: rgba(99, 102, 241, 0.25); }
-.border-primary\/30 { border-color: rgba(99, 102, 241, 0.30); }
+.border-primary\/10 { border-color: rgba(45, 106, 79, 0.10); }
+.border-primary\/15 { border-color: rgba(45, 106, 79, 0.15); }
+.border-primary\/20 { border-color: rgba(45, 106, 79, 0.20); }
+.border-primary\/25 { border-color: rgba(45, 106, 79, 0.25); }
+.border-primary\/30 { border-color: rgba(45, 106, 79, 0.30); }
 /* ── Hover helpers ───────────────────────────────────────────────────── */
-.hover\:bg-primary\/8:hover  { background-color: rgba(99, 102, 241, 0.08); }
-.hover\:bg-primary\/10:hover { background-color: rgba(99, 102, 241, 0.10); }
-.hover\:bg-primary\/15:hover { background-color: rgba(99, 102, 241, 0.15); }
-.hover\:bg-primary\/20:hover { background-color: rgba(99, 102, 241, 0.20); }
-.hover\:bg-secondary\/20:hover { background-color: rgba(245, 158, 11, 0.20); }
-.group-hover\:border-primary\/30:is(:where(.group):hover *) { border-color: rgba(99, 102, 241, 0.30); }
+.hover\:bg-primary\/8:hover  { background-color: rgba(45, 106, 79, 0.08); }
+.hover\:bg-primary\/10:hover { background-color: rgba(45, 106, 79, 0.10); }
+.hover\:bg-primary\/15:hover { background-color: rgba(45, 106, 79, 0.15); }
+.hover\:bg-primary\/20:hover { background-color: rgba(45, 106, 79, 0.20); }
+.hover\:bg-secondary\/20:hover { background-color: rgba(244, 162, 97, 0.20); }
+.group-hover\:border-primary\/30:is(:where(.group):hover *) { border-color: rgba(45, 106, 79, 0.30); }
 /* ── Extra opacity variants used across components ───────────────────── */
-.bg-primary\/3  { background-color: rgba(99, 102, 241, 0.03); }
-.bg-primary\/40 { background-color: rgba(99, 102, 241, 0.40); }
-.bg-primary\/60 { background-color: rgba(99, 102, 241, 0.60); }
-.hover\:bg-primary\/5:hover  { background-color: rgba(99, 102, 241, 0.05); }
-.hover\:bg-primary\/25:hover { background-color: rgba(99, 102, 241, 0.25); }
-.text-primary\/60 { color: rgba(99, 102, 241, 0.60); }
-.border-primary\/8  { border-color: rgba(99, 102, 241, 0.08); }
-.border-primary\/18 { border-color: rgba(99, 102, 241, 0.18); }
-.group-hover\:bg-primary\/15:is(:where(.group):hover *) { background-color: rgba(99, 102, 241, 0.15); }
+.bg-primary\/3  { background-color: rgba(45, 106, 79, 0.03); }
+.bg-primary\/40 { background-color: rgba(45, 106, 79, 0.40); }
+.bg-primary\/60 { background-color: rgba(45, 106, 79, 0.60); }
+.hover\:bg-primary\/5:hover  { background-color: rgba(45, 106, 79, 0.05); }
+.hover\:bg-primary\/25:hover { background-color: rgba(45, 106, 79, 0.25); }
+.text-primary\/60 { color: rgba(45, 106, 79, 0.60); }
+.border-primary\/8  { border-color: rgba(45, 106, 79, 0.08); }
+.border-primary\/18 { border-color: rgba(45, 106, 79, 0.18); }
+.group-hover\:bg-primary\/15:is(:where(.group):hover *) { background-color: rgba(45, 106, 79, 0.15); }
 
 /* ── Accessibility utilities ────────────────────────────────────────────  */
 /* Visually hidden but accessible to screen readers */

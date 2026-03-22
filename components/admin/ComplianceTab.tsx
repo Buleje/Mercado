@@ -41,10 +41,10 @@ export default function ComplianceTab() {
   const vencidos = obligations.filter(o => o.status === "vencido").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Scale className="h-6 w-6 text-primary" /> Cumplimiento SUNAT</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Scale className="h-6 w-6 text-primary" /> Cumplimiento SUNAT</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Control de obligaciones tributarias y regulatorias</p>
         </div>
         <button onClick={() => exportToCSV(filtered.map(o => ({ obligacion: o.title, entidad: o.entity, frecuencia: o.frequency, proximo_vencimiento: fmtDate(o.nextDue), estado: o.status, ultimo_presentado: fmtDate(o.lastFiled) })), "cumplimiento")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10"><Download className="h-3.5 w-3.5" /> CSV</button>
@@ -59,7 +59,7 @@ export default function ComplianceTab() {
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
-            <p className={cn("text-2xl font-extrabold", k.color)}>{k.value}</p>
+            <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}</p>
           </div>
         ))}
       </div>
@@ -69,7 +69,7 @@ export default function ComplianceTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar obligación…" />
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5">
           {["all", "al-dia", "proximo", "pendiente", "vencido"].map(s => (
             <button key={s} onClick={() => setFilterStatus(s)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>{s === "all" ? "Todos" : STATUS_CONFIG[s as keyof typeof STATUS_CONFIG].label}</button>
           ))}
@@ -81,15 +81,15 @@ export default function ComplianceTab() {
           const S = STATUS_CONFIG[o.status];
           const SIcon = S.icon;
           return (
-            <div key={o.id} className={cn("bg-white dark:bg-card rounded-2xl border p-5", o.status === "vencido" ? "border-red-200 dark:border-red-900/30" : o.status === "proximo" ? "border-blue-200 dark:border-blue-900/30" : "border-gray-200 dark:border-card-border")}>
-              <div className="flex items-start justify-between gap-3">
+            <div key={o.id} className={cn("bg-white dark:bg-card rounded-2xl border p-3 sm:p-5", o.status === "vencido" ? "border-red-200 dark:border-red-900/30" : o.status === "proximo" ? "border-blue-200 dark:border-blue-900/30" : "border-gray-200 dark:border-card-border")}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <h3 className="font-bold text-gray-900 dark:text-foreground">{o.title}</h3>
                     <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5", S.color)}><SIcon className="h-2.5 w-2.5" /> {S.label}</span>
                   </div>
                   <p className="text-xs text-gray-500 dark:text-muted mb-2">{o.description}</p>
-                  <div className="flex items-center gap-4 text-[10px] text-gray-400 flex-wrap">
+                  <div className="flex items-center gap-2 sm:gap-4 text-[10px] text-gray-400 flex-wrap">
                     <span className="flex items-center gap-0.5"><Building2 className="h-2.5 w-2.5" />{o.entity}</span>
                     <span className="flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{o.frequency}</span>
                     <span>Próx. vencimiento: <b className="text-gray-600 dark:text-muted">{fmtDate(o.nextDue)}</b></span>

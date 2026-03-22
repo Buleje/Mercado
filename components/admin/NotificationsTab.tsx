@@ -71,31 +71,31 @@ export default function NotificationsTab() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Bell className="h-6 w-6 text-primary" />Notificaciones WhatsApp</h2>
+        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Bell className="h-6 w-6 text-primary" />Notificaciones WhatsApp</h2>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
-          <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground">{logs.length}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">{logs.length}</p>
           <p className="text-xs text-gray-400">Total enviados</p>
         </div>
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
-          <p className="text-2xl font-extrabold text-emerald-600">{sentCount}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-emerald-600">{sentCount}</p>
           <p className="text-xs text-gray-400">Exitosos</p>
         </div>
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
-          <p className="text-2xl font-extrabold text-primary">{todayCount}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-primary">{todayCount}</p>
           <p className="text-xs text-gray-400">Hoy</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Send notification */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
-          <h3 className="font-extrabold flex items-center gap-2"><MessageCircle className="h-5 w-5 text-emerald-500" />Enviar Notificación</h3>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
+          <h3 className="font-extrabold flex flex-wrap items-center gap-2"><MessageCircle className="h-5 w-5 text-emerald-500" />Enviar Notificación</h3>
 
           {/* Order picker */}
           <div className="relative">
@@ -106,7 +106,7 @@ export default function NotificationsTab() {
           {!selectedOrder && filteredOrders.length > 0 && (
             <div className="max-h-48 overflow-y-auto space-y-1">
               {filteredOrders.map(o => (
-                <button key={o.id} onClick={() => { setSelectedOrder(o); setOrderSearch(""); setWaUrl(null); }} className="w-full text-left flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-surface border border-transparent hover:border-gray-200 dark:hover:border-card-border transition text-sm">
+                <button key={o.id} onClick={() => { setSelectedOrder(o); setOrderSearch(""); setWaUrl(null); }} className="w-full text-left flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-surface border border-transparent hover:border-gray-200 dark:hover:border-card-border transition text-sm">
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-gray-900 dark:text-foreground truncate">{o.customerName ?? "Sin nombre"}</p>
                     <p className="text-xs text-gray-400">{o.customerPhone} · #{o.id.slice(0, 8)}</p>
@@ -132,7 +132,7 @@ export default function NotificationsTab() {
                 </div>
                 <button onClick={() => { setSelectedOrder(null); setWaUrl(null); }} className="text-xs text-gray-400 underline">Cambiar</button>
               </div>
-              <div className="flex items-center gap-3 text-sm">
+              <div className="flex flex-wrap items-center gap-3 text-sm">
                 <span className="text-gray-500">Pedido #{selectedOrder.id.slice(0, 8)}</span>
                 <span className="font-bold">S/{selectedOrder.total?.toFixed(2)}</span>
                 <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase",
@@ -145,22 +145,22 @@ export default function NotificationsTab() {
           )}
 
           {waUrl && (
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3 space-y-2">
-              <p className="text-sm text-emerald-700 dark:text-emerald-400 flex items-center gap-2"><CheckCircle2 className="h-4 w-4" />Notificación registrada</p>
-              <a href={waUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition">
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-2 sm:px-4 py-2 sm:py-3 space-y-2">
+              <p className="text-sm text-emerald-700 dark:text-emerald-400 flex flex-wrap items-center gap-2"><CheckCircle2 className="h-4 w-4" />Notificación registrada</p>
+              <a href={waUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 transition">
                 <ExternalLink className="h-4 w-4" />Abrir WhatsApp
               </a>
             </div>
           )}
 
-          <button onClick={sendNotification} disabled={!selectedOrder || sending} className="w-full py-2.5 bg-emerald-500 text-white rounded-xl font-bold text-sm hover:bg-emerald-600 transition disabled:opacity-50 flex items-center justify-center gap-2">
+          <button onClick={sendNotification} disabled={!selectedOrder || sending} className="w-full py-2.5 bg-emerald-500 text-white rounded-xl font-bold text-sm hover:bg-emerald-600 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}Enviar por WhatsApp
           </button>
         </div>
 
         {/* Notification log */}
         <div className="space-y-3">
-          <h3 className="font-extrabold flex items-center gap-2"><Clock className="h-5 w-5 text-gray-400" />Historial de Envíos</h3>
+          <h3 className="font-extrabold flex flex-wrap items-center gap-2"><Clock className="h-5 w-5 text-gray-400" />Historial de Envíos</h3>
           {logs.length === 0 ? (
             <div className="text-center py-12 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
               <Bell className="h-12 w-12 text-gray-300 mx-auto mb-3" />
@@ -169,15 +169,15 @@ export default function NotificationsTab() {
           ) : (
             <div className="max-h-100 overflow-y-auto space-y-2">
               {logs.map(l => (
-                <div key={l.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-4 py-3 space-y-1">
+                <div key={l.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-2 sm:px-4 py-2 sm:py-3 space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
+                    <span className="text-sm font-bold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                       {STATUS_ICONS[l.status] ?? "📨"} {l.recipient}
                     </span>
                     <span className="text-[10px] text-gray-400">{new Date(l.createdAt).toLocaleString("es-PE")}</span>
                   </div>
                   <p className="text-xs text-gray-500 line-clamp-2">{l.message}</p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-surface text-gray-500">{TYPE_LABELS[l.type] ?? l.type}</span>
                     {l.orderId && <span className="text-[10px] text-gray-400">#{l.orderId.slice(0, 8)}</span>}
                   </div>

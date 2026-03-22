@@ -85,10 +85,10 @@ export default function ReferralTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Heart className="h-6 w-6 text-pink-500" /> Programa de Referidos
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Códigos, recompensas, conversión y ranking de referidores</p>
@@ -114,11 +114,11 @@ export default function ReferralTab() {
       </div>
 
       {/* Top Referrers */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
-        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2 mb-3"><Star className="h-4 w-4 text-amber-500" /> Ranking de referidores</h3>
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
+        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-3"><Star className="h-4 w-4 text-amber-500" /> Ranking de referidores</h3>
         <div className="space-y-2">
           {TOP_REFERRERS.map((tr, i) => (
-            <div key={tr.code} className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
+            <div key={tr.code} className="flex flex-wrap items-center gap-3 p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
               <span className={cn("w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold", i === 0 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : i === 1 ? "bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300" : "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400")}>{i + 1}</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-gray-800 dark:text-foreground truncate">{tr.name}</p>
@@ -150,18 +150,18 @@ export default function ReferralTab() {
 
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">Referidor</th><th className="px-4 py-3">Código</th><th className="px-4 py-3">Referido</th><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Recompensa</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3"></th></tr></thead>
+          <table className="w-full min-w-[600px] text-sm">
+            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Referidor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Código</th><th className="px-2 sm:px-4 py-2 sm:py-3">Referido</th><th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th><th className="px-2 sm:px-4 py-2 sm:py-3">Recompensa</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(r => (
                 <tr key={r.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20 transition-colors">
-                  <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{r.referrerName}</td>
-                  <td className="px-4 py-3 font-mono text-primary text-xs">{r.referrerCode}</td>
-                  <td className="px-4 py-3 text-gray-700 dark:text-foreground">{r.referredName}</td>
-                  <td className="px-4 py-3 text-gray-500">{r.referredDate}</td>
-                  <td className="px-4 py-3 text-xs"><span className="font-bold text-violet-600">{r.rewardValue}</span></td>
-                  <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_META[r.status].bg, STATUS_META[r.status].color)}>{STATUS_META[r.status].label}</span></td>
-                  <td className="px-4 py-3"><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5 inline" /></button></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{r.referrerName}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-primary text-xs">{r.referrerCode}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-foreground">{r.referredName}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{r.referredDate}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs"><span className="font-bold text-violet-600">{r.rewardValue}</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_META[r.status].bg, STATUS_META[r.status].color)}>{STATUS_META[r.status].label}</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5 inline" /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -171,12 +171,12 @@ export default function ReferralTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.referrerName} → {detail.referredName}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {[["Código", detail.referrerCode], ["Fecha", detail.referredDate], ["Recompensa", detail.rewardValue], ["Tipo", detail.rewardType], ["Estado", STATUS_META[detail.status].label], ["Convertido", detail.converted ? "Sí" : "No"], ["Compras del referido", String(detail.referredPurchases)], ["Gastado", fmt(detail.referredSpent)]].map(([k, v]) => (
                 <div key={k}><p className="text-xs text-gray-400">{k}</p><p className="font-bold text-gray-800 dark:text-foreground">{v}</p></div>
               ))}

@@ -47,10 +47,10 @@ export default function DeliveryCalendarTab() {
   });
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><CalendarDays className="h-6 w-6 text-primary" />Calendario de Entregas</h2>
+    <div className="space-y-3 sm:space-y-6">
+      <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><CalendarDays className="h-6 w-6 text-primary" />Calendario de Entregas</h2>
 
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex flex-wrap gap-2 overflow-x-auto pb-2">
         {dates.map(d => {
           const date = new Date(d + "T12:00:00");
           const day = date.toLocaleDateString("es-PE", { weekday: "short" });
@@ -67,7 +67,7 @@ export default function DeliveryCalendarTab() {
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4">
           {Object.entries(SLOT_CONFIG).map(([key, cfg]) => {
             const Icon = cfg.icon;
             const slotOrders = slots.filter(s => s.slot === key);
@@ -81,7 +81,7 @@ export default function DeliveryCalendarTab() {
                 <div className="space-y-2 min-h-15">
                   {slotOrders.length === 0 && <p className="text-xs text-gray-400 dark:text-muted text-center py-3">Sin entregas</p>}
                   {slotOrders.map(s => (
-                    <div key={s.id} className="flex items-center gap-2 text-sm bg-gray-50 dark:bg-surface rounded-lg px-3 py-2">
+                    <div key={s.id} className="flex flex-wrap items-center gap-2 text-sm bg-gray-50 dark:bg-surface rounded-lg px-3 py-2">
                       <Package className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                       <span className="font-medium truncate">#{s.orderId.slice(-6)}</span>
                       {s.notes && <span className="text-xs text-gray-400 truncate">— {s.notes}</span>}
@@ -97,7 +97,7 @@ export default function DeliveryCalendarTab() {
 
       {assigningOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setAssigningOrder(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-2xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <h3 className="font-extrabold text-gray-900 dark:text-foreground">Asignar pedido — {SLOT_CONFIG[assigningOrder]?.label}</h3>
             {orders.length === 0 && <p className="text-sm text-gray-400">No hay pedidos pendientes</p>}
             <div className="max-h-60 overflow-y-auto space-y-2">

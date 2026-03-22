@@ -41,22 +41,22 @@ export default function FloatingStoreCTA() {
 
   return (
     <div
-      className={`fixed bottom-24 right-6 z-40 transition-all duration-500 ${
+      className={`fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] left-4 z-40 transition-all duration-500 sm:bottom-6 sm:left-6 ${
         visible
           ? "opacity-100 translate-y-0 scale-100"
           : "opacity-0 translate-y-8 scale-75 pointer-events-none"
       }`}
     >
       {/* Subtle glow behind button */}
-      <span className="absolute inset-0 rounded-full bg-primary/25 blur-xl animate-pulse pointer-events-none" />
+      <span className="absolute inset-0 rounded-full bg-primary/25 blur-xl animate-[glowPulse_2.8s_ease-in-out_infinite] pointer-events-none" />
 
       <Link
         href="/tienda"
-        className="relative flex items-center gap-2 bg-primary text-white font-bold text-sm pl-4 pr-5 py-3 rounded-full shadow-lg shadow-primary/30 hover:shadow-xl hover:bg-primary-dark active:scale-95 transition-all duration-200 group"
+        className="relative flex items-center gap-2 rounded-full bg-primary pl-4 pr-5 py-3 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all duration-200 group hover:-translate-y-0.5 hover:shadow-xl hover:bg-primary-dark active:scale-95 motion-safe:animate-[float_3.2s_ease-in-out_infinite]"
       >
-        <ShoppingBag className="h-4.5 w-4.5" />
+        <ShoppingBag className="h-4.5 w-4.5 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110" />
         <span>Ir a la Tienda</span>
-        <ArrowRight className="h-3.5 w-3.5 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+        <ArrowRight className="h-3.5 w-3.5 opacity-60 transition-transform duration-300 group-hover:translate-x-1" />
       </Link>
     </div>
   );

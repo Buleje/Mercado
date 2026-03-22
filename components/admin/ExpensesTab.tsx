@@ -111,26 +111,26 @@ export default function ExpensesTab() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Wallet className="h-6 w-6 text-primary" />Control de Gastos</h2>
-        <button onClick={() => setShowForm(true)} className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition flex items-center gap-2"><Plus className="h-4 w-4" />Nuevo Gasto</button>
+        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Wallet className="h-6 w-6 text-primary" />Control de Gastos</h2>
+        <button onClick={() => setShowForm(true)} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition flex flex-wrap items-center gap-2"><Plus className="h-4 w-4" />Nuevo Gasto</button>
       </div>
 
       {/* Date filter + stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="sm:col-span-2 flex items-center gap-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4">
+        <div className="sm:col-span-2 flex flex-wrap items-center gap-2 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3">
           <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
           <input type="date" value={from} onChange={e => setFrom(e.target.value)} className="bg-transparent text-sm flex-1 min-w-0" />
           <span className="text-gray-300">→</span>
           <input type="date" value={to} onChange={e => setTo(e.target.value)} className="bg-transparent text-sm flex-1 min-w-0" />
         </div>
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
-          <p className="text-2xl font-extrabold text-red-600">S/{totalPeriod.toFixed(2)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-red-600">S/{totalPeriod.toFixed(2)}</p>
           <p className="text-xs text-gray-400">Este periodo</p>
         </div>
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
-          <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground">S/{totalAll.toFixed(2)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">S/{totalAll.toFixed(2)}</p>
           <p className="text-xs text-gray-400">Total histórico</p>
         </div>
       </div>
@@ -140,7 +140,7 @@ export default function ExpensesTab() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {summary.map(s => (
             <div key={s.category} className={cn("bg-white dark:bg-card border rounded-2xl p-3 text-center", s.category === maxCat?.category ? "border-red-300 dark:border-red-700" : "border-gray-200 dark:border-card-border")}>
-              <span className="text-2xl">{catEmoji(s.category)}</span>
+              <span className="text-xl sm:text-2xl">{catEmoji(s.category)}</span>
               <p className="font-extrabold text-sm text-gray-900 dark:text-foreground">S/{s.total.toFixed(0)}</p>
               <p className="text-[10px] text-gray-400 capitalize">{s.category} ({s.count})</p>
               {totalAll > 0 && <div className="mt-1 h-1 bg-gray-100 dark:bg-surface rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${(s.total / totalAll) * 100}%` }} /></div>}
@@ -154,11 +154,11 @@ export default function ExpensesTab() {
         const maxVal = Math.max(...monthlyExpenseData.map(m => m.total), 1);
         return (
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
               <BarChart2 className="h-4 w-4 text-primary" />
               <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground">Gastos mensuales (6 meses)</h3>
             </div>
-            <div className="flex items-end gap-2 h-28">
+            <div className="flex flex-wrap items-end gap-2 h-28">
               {monthlyExpenseData.map((m, i) => {
                 const barH = m.total > 0 ? Math.max((m.total / maxVal) * 80, 4) : 4;
                 const isCurrent = i === 5;
@@ -184,7 +184,7 @@ export default function ExpensesTab() {
       {/* Form modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl w-full max-w-md p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-2xl w-full max-w-md p-3 sm:p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-lg">Registrar Gasto</h3>
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5 text-gray-400" /></button>
@@ -193,18 +193,18 @@ export default function ExpensesTab() {
               {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>)}
             </select>
             <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">S/</span>
                 <input type="number" step="0.01" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0.00" className="w-full pl-8 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
               </div>
               <input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
             </div>
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex flex-wrap items-center gap-2 text-sm">
               <input type="checkbox" checked={form.recurring} onChange={e => setForm(f => ({ ...f, recurring: e.target.checked }))} className="rounded" />
               Gasto recurrente (mensual)
             </label>
-            <button onClick={add} disabled={saving || !form.description || !form.amount} className="w-full py-2.5 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex items-center justify-center gap-2">
+            <button onClick={add} disabled={saving || !form.description || !form.amount} className="w-full py-2.5 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center justify-center gap-2">
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Guardar Gasto
             </button>
           </div>
@@ -221,7 +221,7 @@ export default function ExpensesTab() {
       ) : (
         <div className="space-y-2 max-h-100 overflow-y-auto">
           {expenses.map(e => (
-            <div key={e.id} className="flex items-center gap-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-4 py-3">
+            <div key={e.id} className="flex flex-wrap items-center gap-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-2 sm:px-4 py-2 sm:py-3">
               <span className="text-xl">{catEmoji(e.category)}</span>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-gray-900 dark:text-foreground truncate">{e.description}</p>

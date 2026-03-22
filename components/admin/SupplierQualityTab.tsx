@@ -79,10 +79,10 @@ export default function SupplierQualityTab() {
   }, [search, sortField]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-primary" /> Calidad de Proveedores
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Scoring automático, incidencias y ranking de proveedores</p>
@@ -125,22 +125,22 @@ export default function SupplierQualityTab() {
       {/* Ranking Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">#</th><th className="px-4 py-3">Proveedor</th><th className="px-4 py-3">Categoría</th><th className="px-4 py-3">Puntualidad</th><th className="px-4 py-3">Calidad</th><th className="px-4 py-3">Precio</th><th className="px-4 py-3">Servicio</th><th className="px-4 py-3">General</th><th className="px-4 py-3">Trend</th><th className="px-4 py-3">Incid.</th><th className="px-4 py-3"></th></tr></thead>
+          <table className="w-full min-w-[600px] text-sm">
+            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">#</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Categoría</th><th className="px-2 sm:px-4 py-2 sm:py-3">Puntualidad</th><th className="px-2 sm:px-4 py-2 sm:py-3">Calidad</th><th className="px-2 sm:px-4 py-2 sm:py-3">Precio</th><th className="px-2 sm:px-4 py-2 sm:py-3">Servicio</th><th className="px-2 sm:px-4 py-2 sm:py-3">General</th><th className="px-2 sm:px-4 py-2 sm:py-3">Trend</th><th className="px-2 sm:px-4 py-2 sm:py-3">Incid.</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {sorted.map((s, i) => (
                 <tr key={s.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
-                  <td className="px-4 py-3 font-extrabold text-gray-400">{i + 1}</td>
-                  <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{s.name}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500">{s.category}</td>
-                  <td className={cn("px-4 py-3 font-bold", scoreColor(s.onTimeDelivery))}>{s.onTimeDelivery}%</td>
-                  <td className={cn("px-4 py-3 font-bold", scoreColor(s.qualityScore))}>{s.qualityScore}%</td>
-                  <td className={cn("px-4 py-3 font-bold", scoreColor(s.priceScore))}>{s.priceScore}%</td>
-                  <td className={cn("px-4 py-3 font-bold", scoreColor(s.serviceScore))}>{s.serviceScore}%</td>
-                  <td className="px-4 py-3"><span className={cn("text-sm font-extrabold px-2 py-0.5 rounded-full", scoreBg(s.overallScore), scoreColor(s.overallScore))}>{s.overallScore}%</span></td>
-                  <td className="px-4 py-3">{s.trend === "up" ? <TrendingUp className="h-4 w-4 text-emerald-500" /> : s.trend === "down" ? <TrendingDown className="h-4 w-4 text-red-500" /> : <span className="text-gray-400">—</span>}</td>
-                  <td className="px-4 py-3">{s.incidents.filter(inc => !inc.resolved).length > 0 && <span className="bg-red-100 dark:bg-red-900/30 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{s.incidents.filter(inc => !inc.resolved).length}</span>}</td>
-                  <td className="px-4 py-3"><button onClick={() => setDetail(s)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-gray-400">{i + 1}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{s.name}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500">{s.category}</td>
+                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-bold", scoreColor(s.onTimeDelivery))}>{s.onTimeDelivery}%</td>
+                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-bold", scoreColor(s.qualityScore))}>{s.qualityScore}%</td>
+                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-bold", scoreColor(s.priceScore))}>{s.priceScore}%</td>
+                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 font-bold", scoreColor(s.serviceScore))}>{s.serviceScore}%</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-sm font-extrabold px-2 py-0.5 rounded-full", scoreBg(s.overallScore), scoreColor(s.overallScore))}>{s.overallScore}%</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3">{s.trend === "up" ? <TrendingUp className="h-4 w-4 text-emerald-500" /> : s.trend === "down" ? <TrendingDown className="h-4 w-4 text-red-500" /> : <span className="text-gray-400">—</span>}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3">{s.incidents.filter(inc => !inc.resolved).length > 0 && <span className="bg-red-100 dark:bg-red-900/30 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">{s.incidents.filter(inc => !inc.resolved).length}</span>}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(s)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -151,7 +151,7 @@ export default function SupplierQualityTab() {
       {/* Detail Modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-lg space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
@@ -160,7 +160,7 @@ export default function SupplierQualityTab() {
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
               {[["Puntualidad", detail.onTimeDelivery], ["Calidad", detail.qualityScore], ["Precio", detail.priceScore], ["Servicio", detail.serviceScore]].map(([k, v]) => (
                 <div key={k as string} className={cn("rounded-xl p-3", scoreBg(v as number))}>
                   <p className="text-xs text-gray-500 dark:text-muted">{k as string}</p>
@@ -177,7 +177,7 @@ export default function SupplierQualityTab() {
                 <div className="space-y-2">
                   {detail.incidents.map(inc => (
                     <div key={inc.id} className="bg-gray-50 dark:bg-surface rounded-lg p-3 text-xs">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
                         <span className={cn("px-1.5 py-0.5 rounded font-bold", severityColor[inc.severity])}>{inc.severity.toUpperCase()}</span>
                         <span className="text-gray-400">{inc.date}</span>
                         <span className={cn("ml-auto text-xs font-bold", inc.resolved ? "text-emerald-600" : "text-red-600")}>{inc.resolved ? "Resuelto" : "Abierto"}</span>

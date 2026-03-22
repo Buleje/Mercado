@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { RotateCcw, Plus, Loader2, Check, X, Package, Camera, CreditCard, Image } from "lucide-react";
+import type { Sale, Customer } from "@/types/erp";
 
 type ReturnItem = { id?: string; productId: number; productName: string; quantity: number; price: number; unit: string };
 type Return = { id: string; saleId?: string; orderId?: string; reason: string; total: number; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: ReturnItem[]; createdAt: string };
-type Sale = { id: string; items: { productId: number; name: string; quantity: number; price: number; unit: string }[]; total: number; createdAt: string };
 
 export default function ReturnsTab() {
   const [returns, setReturns] = useState<Return[]>([]);
@@ -80,20 +80,20 @@ export default function ReturnsTab() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><RotateCcw className="h-6 w-6 text-primary" />Devoluciones</h2>
-        <button onClick={openForm} className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition"><Plus className="h-4 w-4" />Nueva Devolución</button>
+        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><RotateCcw className="h-6 w-6 text-primary" />Devoluciones</h2>
+        <button onClick={openForm} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition"><Plus className="h-4 w-4" />Nueva Devolución</button>
       </div>
 
       {creditSuccess && (
-        <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 text-sm font-bold px-4 py-3 rounded-xl flex items-center gap-2">
+        <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 text-sm font-bold px-2 sm:px-4 py-2 sm:py-3 rounded-xl flex flex-wrap items-center gap-2">
           <Check className="h-4 w-4" /> Crédito aplicado al saldo del cliente correctamente.
         </div>
       )}
 
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6 space-y-4">
           {!selectedSale ? (
             <div className="space-y-3">
               <p className="text-sm font-bold text-gray-600 dark:text-muted">Seleccionar venta a devolver:</p>
@@ -116,7 +116,7 @@ export default function ReturnsTab() {
               {selectedSale.id && <p className="text-sm font-bold text-gray-600 dark:text-muted">Venta #{selectedSale.id.slice(-6)} — Selecciona cantidades a devolver:</p>}
               <div className="space-y-2">
                 {returnItems.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-3 text-sm">
+                  <div key={idx} className="flex flex-wrap items-center gap-3 text-sm">
                     <Package className="h-4 w-4 text-gray-400 shrink-0" />
                     <span className="flex-1 truncate">{item.productName || `Producto #${idx + 1}`}</span>
                     <span className="text-gray-400">S/{item.price}</span>
@@ -135,7 +135,7 @@ export default function ReturnsTab() {
                   <Camera className="h-3.5 w-3.5" /> Foto del producto (opcional)
                 </label>
                 <input ref={photoInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoChange} className="hidden" />
-                <button type="button" onClick={() => photoInputRef.current?.click()} className="mt-1 flex items-center gap-2 px-3 py-2 border border-dashed border-gray-300 dark:border-card-border rounded-xl text-sm text-gray-500 dark:text-muted hover:border-primary hover:text-primary transition w-full justify-center">
+                <button type="button" onClick={() => photoInputRef.current?.click()} className="mt-1 flex flex-wrap items-center gap-2 px-3 py-2 border border-dashed border-gray-300 dark:border-card-border rounded-xl text-sm text-gray-500 dark:text-muted hover:border-primary hover:text-primary transition w-full justify-center">
                   <Image className="h-4 w-4" />{photoDataUrl ? "Cambiar foto" : "Seleccionar / tomar foto"}
                 </button>
                 {photoDataUrl && (
@@ -154,16 +154,16 @@ export default function ReturnsTab() {
                 </label>
                 <input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="Teléfono del cliente" className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
                 {customerPhone.trim() && (
-                  <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-muted cursor-pointer">
+                  <label className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-muted cursor-pointer">
                     <input type="checkbox" checked={applyCredit} onChange={e => setApplyCredit(e.target.checked)} className="rounded" />
                     Acreditar S/{returnItems.filter(i => i.quantity > 0).reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2)} al saldo del cliente
                   </label>
                 )}
               </div>
 
-              <div className="flex gap-2">
-                <button onClick={handleCreate} disabled={submitting || !reason.trim() || !returnItems.some(i => i.quantity > 0)} className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50"><Check className="h-4 w-4" />{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Procesar"}</button>
-                <button onClick={() => { setShowForm(false); setSelectedSale(null); }} className="flex items-center gap-2 bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted px-4 py-2 rounded-xl text-sm font-bold"><X className="h-4 w-4" />Cancelar</button>
+              <div className="flex flex-wrap gap-2">
+                <button onClick={handleCreate} disabled={submitting || !reason.trim() || !returnItems.some(i => i.quantity > 0)} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50"><Check className="h-4 w-4" />{submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Procesar"}</button>
+                <button onClick={() => { setShowForm(false); setSelectedSale(null); }} className="flex flex-wrap items-center gap-2 bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold"><X className="h-4 w-4" />Cancelar</button>
               </div>
             </div>
           )}
@@ -174,7 +174,7 @@ export default function ReturnsTab() {
         {returns.length === 0 && <p className="text-center text-gray-400 dark:text-muted py-8">No hay devoluciones registradas</p>}
         {returns.map(r => (
           <div key={r.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-            <div className="flex justify-between items-start gap-3">
+            <div className="flex flex-wrap justify-between items-start gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-bold text-sm text-gray-900 dark:text-foreground">Dev #{r.id.slice(-6)}</p>

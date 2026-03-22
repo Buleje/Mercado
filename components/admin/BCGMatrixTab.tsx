@@ -1,14 +1,12 @@
-﻿"use client";
+"use client";
 import { useState, useMemo } from "react";
 import { Star, TrendingUp, HelpCircle, AlertTriangle, Download, Eye } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
+import type { Product as BaseProduct } from "@/types/erp";
 
 /* ── Types ── */
 type Quadrant = "estrella" | "vaca" | "interrogante" | "perro";
-type Product = {
-  id: number; name: string; category: string; revenue: number; growth: number;
-  marketShare: number; units: number; quadrant: Quadrant;
-};
+type Product = Omit<BaseProduct, "id"> & { id: number; quadrant: Quadrant; revenue: number; growth: number; marketShare: number; units: number };
 
 /* ── Config ── */
 const Q_CONFIG: Record<Quadrant, { label: string; emoji: string; color: string; bg: string; desc: string }> = {
@@ -37,33 +35,33 @@ export default function BCGMatrixTab() {
   const totalRevenue = PRODUCTS.reduce((s, p) => s + p.revenue, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Star className="h-6 w-6 text-amber-500" /> Matriz BCG
           </h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Clasifica productos por crecimiento y participación de mercado</p>
         </div>
-        <button onClick={() => exportToCSV(PRODUCTS.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+        <button onClick={() => exportToCSV(PRODUCTS.map(p => ({ Producto: p.name, Categoría: p.category, Ingreso: p.revenue, Crecimiento: `${p.growth}%`, Participación: `${p.marketShare}%`, Cuadrante: Q_CONFIG[p.quadrant].label })), "bcg-matrix")} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
 
       {/* Quadrant summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
         {(["estrella", "vaca", "interrogante", "perro"] as Quadrant[]).map(q => {
           const c = Q_CONFIG[q];
           const items = grouped[q];
           const rev = items.reduce((s, p) => s + p.revenue, 0);
           return (
-            <button key={q} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("rounded-2xl border-2 p-5 text-left transition-all hover:shadow-md", c.bg, selectedQ === q && "ring-2 ring-primary ring-offset-2 dark:ring-offset-card")}>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">{c.emoji}</span>
+            <button key={q} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("rounded-2xl border-2 p-3 sm:p-5 text-left transition-all hover:shadow-md", c.bg, selectedQ === q && "ring-2 ring-primary ring-offset-2 dark:ring-offset-card")}>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="text-xl sm:text-2xl">{c.emoji}</span>
                 <span className={cn("font-extrabold text-sm", c.color)}>{c.label}</span>
               </div>
-              <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground">{items.length}</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">{items.length}</p>
               <p className="text-xs text-gray-500 dark:text-muted mt-1">{fmt(rev)} ({((rev / totalRevenue) * 100).toFixed(0)}%)</p>
             </button>
           );
@@ -71,11 +69,11 @@ export default function BCGMatrixTab() {
       </div>
 
       {/* Visual Matrix */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6">
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-6">
         <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4">Mapa Visual BCG</h3>
         <div className="relative w-full aspect-square max-w-[500px] mx-auto">
           {/* Axes */}
-          <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
+          <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2">
             <div className="border-b-2 border-r-2 border-gray-200 dark:border-card-border bg-amber-50/50 dark:bg-amber-950/10 flex items-center justify-center text-xs font-bold text-amber-600 dark:text-amber-400 p-2">⭐ Estrellas</div>
             <div className="border-b-2 border-gray-200 dark:border-card-border bg-blue-50/50 dark:bg-blue-950/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 p-2">❓ Interrogantes</div>
             <div className="border-r-2 border-gray-200 dark:border-card-border bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-center text-xs font-bold text-emerald-600 dark:text-emerald-400 p-2">🐄 Vacas Lecheras</div>
@@ -104,7 +102,7 @@ export default function BCGMatrixTab() {
           <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground">Detalle de Productos ({filtered.length})</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="bg-gray-50 dark:bg-surface text-left">
               <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted">Producto</th>
               <th className="px-5 py-3 font-bold text-gray-500 dark:text-muted">Categoría</th>
@@ -137,11 +135,11 @@ export default function BCGMatrixTab() {
       </div>
 
       {/* Recommendations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
         {(["estrella", "vaca", "interrogante", "perro"] as Quadrant[]).map(q => {
           const c = Q_CONFIG[q];
           return (
-            <div key={q} className={cn("rounded-2xl border-2 p-5", c.bg)}>
+            <div key={q} className={cn("rounded-2xl border-2 p-3 sm:p-5", c.bg)}>
               <h4 className={cn("font-extrabold flex items-center gap-2", c.color)}>{c.emoji} {c.label}</h4>
               <p className="text-sm text-gray-600 dark:text-muted mt-1">{c.desc}</p>
               <p className="text-xs text-gray-400 dark:text-muted mt-2">{grouped[q].length} productos • {fmt(grouped[q].reduce((s, p) => s + p.revenue, 0))}</p>
@@ -154,11 +152,11 @@ export default function BCGMatrixTab() {
       {detail && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
           <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
-              <button onClick={() => setDetail(null)} className="text-xl font-bold text-gray-400 hover:text-gray-600">×</button>
+              <button onClick={() => setDetail(null)} className="text-base sm:text-xl font-bold text-gray-400 hover:text-gray-600">×</button>
             </div>
-            <div className="px-6 py-5 grid grid-cols-2 gap-3">
+            <div className="px-3 sm:px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Ingreso</span><p className="font-bold">{fmt(detail.revenue)}</p></div>
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Crecimiento</span><p className={cn("font-bold", detail.growth >= 0 ? "text-emerald-600" : "text-red-500")}>{detail.growth > 0 && "+"}{detail.growth}%</p></div>
               <div className="bg-gray-50 dark:bg-surface rounded-xl p-3"><span className="text-xs text-gray-400">Participación</span><p className="font-bold">{detail.marketShare}%</p></div>

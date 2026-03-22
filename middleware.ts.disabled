@@ -1,0 +1,74 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getSessionPayload, SESSION } from '@/lib/session';
+
+// In-memory store para Rate Limiting (efectivo en self-hosted y Vercel Edge Cache)
+const rlCache = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(ip: string, maxReqs = 50, windowMs = 60000): boolean {
+  const now = Date.now();
+  const record = rlCache.get(ip);
+  if (!record || now > record.resetAt) {
+    rlCache.set(ip, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (record.count >= maxReqs) return false;
+  record.count += 1;
+  return true;
+}
+
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  const method = req.method;
+
+  // Solo interceptamos rutas de admin (api y frontend) excepto el login
+  if (
+    pathname.startsWith('/admin') && pathname !== '/admin/login' && pathname !== '/admin/register' ||
+    pathname.startsWith('/api/admin')
+  ) {
+    const token = req.cookies.get(SESSION.COOKIE_NAME)?.value;
+
+    if (!token) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+      }
+      return NextResponse.redirect(new URL('/admin/login', req.url));
+    }
+
+    const payload = await getSessionPayload(token);
+
+    if (!payload) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'session expired' }, { status: 401 });
+      }
+      return NextResponse.redirect(new URL('/admin/login', req.url));
+    }
+
+    // ─── Rate Limiting (Sólo mutaciones: POST, PUT, DELETE, PATCH) ───
+    if (pathname.startsWith('/api/') && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+      const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "0.0.0.0";
+      // Limitar a los endpoints críticos a 40 reqs por minuto
+      if (!checkRateLimit(ip, 40, 60000)) {
+        console.warn(`[SECURITY] IP ${ip} exceeded rate limit on ${pathname}`);
+        return NextResponse.json({ error: 'Too many requests. Por favor espera un minuto.' }, { status: 429 });
+      }
+    }
+
+    // Opcional: inyectar el payload en los headers para que el endpoint no deba refetch
+    // pero por seguridad Next.js recomienda pasar headers o dejar que requireAdmin re-valide ligero.
+    const res = NextResponse.next();
+    res.headers.set('x-admin-role', payload.role);
+    res.headers.set('x-admin-tenant', payload.tenantId);
+    res.headers.set('x-admin-user', payload.username);
+    return res;
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: [
+    '/admin/:path*',
+    '/api/admin/:path*',
+  ],
+};

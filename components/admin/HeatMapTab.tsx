@@ -50,13 +50,13 @@ export default function HeatMapTab() {
   }, { day: "Lun", sum: 0 });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Activity className="h-6 w-6 text-primary" /> Mapa de Calor</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Activity className="h-6 w-6 text-primary" /> Mapa de Calor</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Patrones de actividad por hora, día y producto</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => setView("sales")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "sales" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Ventas por hora</button>
           <button onClick={() => setView("products")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "products" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Productos por día</button>
         </div>
@@ -71,13 +71,13 @@ export default function HeatMapTab() {
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
-            <p className={cn("text-2xl font-extrabold", k.color)}>{k.value}</p>
+            <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}</p>
           </div>
         ))}
       </div>
 
       {view === "sales" ? (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 overflow-x-auto">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 overflow-x-auto">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4">Transacciones por hora y día de la semana</h3>
           <div className="min-w-[600px]">
             <div className="grid" style={{ gridTemplateColumns: `60px repeat(${HOURS.length}, 1fr)` }}>
@@ -100,7 +100,7 @@ export default function HeatMapTab() {
               ))}
             </div>
             {/* Legend */}
-            <div className="flex items-center gap-2 mt-4 justify-center">
+            <div className="flex flex-wrap items-center gap-2 mt-4 justify-center">
               <span className="text-[10px] text-gray-400">Menos</span>
               {[10, 30, 50, 70, 90].map(p => <div key={p} className={cn("h-4 w-8 rounded", `bg-primary/${p}`)} />)}
               <span className="text-[10px] text-gray-400">Más</span>
@@ -108,7 +108,7 @@ export default function HeatMapTab() {
           </div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 overflow-x-auto">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 overflow-x-auto">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4">Demanda por producto y día</h3>
           <div className="min-w-[500px]">
             <div className="grid" style={{ gridTemplateColumns: `150px repeat(${DAYS.length}, 1fr)` }}>

@@ -11,9 +11,11 @@ import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
+import { InventoryMovementsDB } from "@/lib/db/inventory.db";
 import { resolveTenantSlug } from "@/lib/resolve-tenant";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { logger } from "@/lib/logger";
+import { getOrSet } from "@/lib/cache";
 
 const OrderItemSchema = z.object({
   id: z.number(),
@@ -178,7 +180,12 @@ export async function POST(req: NextRequest) {
   if (limits.maxOrdersPerMonth !== -1) {
     const monthStart = new Date();
     monthStart.setUTCDate(1); monthStart.setUTCHours(0, 0, 0, 0);
-    const monthCount = await prisma.order.count({ where: { tenantId, createdAt: { gte: monthStart } } });
+    // Cache the count for 5 minutes (300s) to avoid heavy DB queries on every order intent
+    const monthCount = await getOrSet(
+      `orders:count:${tenantId}:${monthStart.getTime()}`,
+      300,
+      async () => await prisma.order.count({ where: { tenantId, createdAt: { gte: monthStart } } })
+    );
     if (!withinLimit(monthCount, limits.maxOrdersPerMonth)) {
       return NextResponse.json(
         planLimitPayload("pedidos/mes", monthCount, limits.maxOrdersPerMonth, tenantRow?.plan ?? "free"),
@@ -300,6 +307,14 @@ export async function POST(req: NextRequest) {
       updatedAt: now,
     };
     const saved = await withDbRetry(() => OrdersDB.add(order, tenantId));
+
+    // ── FEFO stock decrement: deduct from earliest-expiring batches first ────
+    for (const item of body.items) {
+      if (item.id > 0) {
+        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, saved.id, "venta_online").catch(() => {});
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────────
 
     // Increment coupon usage counter (fire-and-forget)
     if (verifiedCouponCode) {

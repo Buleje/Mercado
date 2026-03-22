@@ -227,7 +227,7 @@ export function Modal({
   const modalContent = (
     <div
       className={cn(
-        "fixed inset-0 flex items-center justify-center p-4",
+        "fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4",
         `z-${zIndex}`
       )}
       style={{ zIndex }}
@@ -249,9 +249,11 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
-          "relative bg-white dark:bg-card rounded-2xl shadow-2xl w-full",
+          "relative bg-white dark:bg-card w-full",
+          "rounded-t-3xl sm:rounded-2xl shadow-2xl",
           "border border-gray-200 dark:border-card-border",
-          "max-h-[90vh] overflow-y-auto",
+          "max-h-[95vh] sm:max-h-[90vh] overflow-y-auto",
+          "pb-[env(safe-area-inset-bottom)]", // Safe area bottom
           SIZE_CLASSES[size],
           ANIMATION_CLASSES[animation],
           className
@@ -276,11 +278,16 @@ export function Modal({
           </button>
         )}
 
+        {/* Handle for Bottom Sheet (mobile only) */}
+        <div className="sm:hidden flex justify-center pt-3 pb-1 w-full shrink-0">
+          <div className="h-1.5 w-12 bg-gray-300 dark:bg-gray-600 rounded-full" />
+        </div>
+
         {/* Title */}
         {title && (
           <h2
             id="modal-title"
-            className="text-xl font-bold text-foreground px-6 pt-6 pb-2"
+            className="text-xl font-bold text-foreground px-6 sm:pt-6 pt-2 pb-2"
           >
             {title}
           </h2>

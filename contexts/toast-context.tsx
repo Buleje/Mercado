@@ -56,57 +56,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast, dismissToast }}>
       {children}
-      {/* Toast Container */}
-      <div 
-        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-100 flex flex-col items-center gap-2 pointer-events-none w-full max-w-xs px-4"
-        role="status"
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={cn(
-              "relative flex items-center gap-3 bg-primary-dark dark:bg-card text-white rounded-2xl px-4 py-3 shadow-2xl shadow-black/30 w-full overflow-hidden border border-transparent dark:border-card-border pointer-events-auto",
-              toast.exiting
-                ? "animate-[toastOut_0.3s_ease-in_forwards]"
-                : "animate-[toastIn_0.3s_ease-out]"
-            )}
-            role="alert"
-            aria-label={`${toast.name} agregado al carrito`}
-          >
-            <div className="relative h-10 w-10 shrink-0 rounded-xl overflow-hidden bg-white/10">
-              {toast.image ? (
-                <Image
-                  src={toast.image}
-                  alt=""
-                  fill
-                  sizes="40px"
-                  className="object-cover"
-                  aria-hidden="true"
-                  onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
-                />
-              ) : null}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-white/70 dark:text-muted font-medium">Agregado al carrito</p>
-              <p className="text-sm font-bold leading-tight truncate dark:text-foreground">{toast.name}</p>
-            </div>
-            <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" aria-hidden="true" />
-            <button
-              onClick={() => dismissToast(toast.id)}
-              className="ml-1 shrink-0 rounded-full p-0.5 text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-              aria-label="Cerrar notificación"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-            {/* Progress bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10" aria-hidden="true">
-              <div className="h-full bg-emerald-400 animate-[shrink_2.8s_linear_forwards]" />
-            </div>
-          </div>
-        ))}
-      </div>
+
     </ToastContext.Provider>
   );
 }

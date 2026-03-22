@@ -39,13 +39,13 @@ export default function FleetManagementTab() {
   const maintCost = MAINT_LOG.reduce((s, m) => s + m.cost, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Truck className="h-6 w-6 text-primary" /> Gestión de Flota</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Truck className="h-6 w-6 text-primary" /> Gestión de Flota</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Control de vehículos, combustible y mantenimiento</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => setView("fleet")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "fleet" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Flota</button>
           <button onClick={() => setView("maintenance")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "maintenance" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Mantenimiento</button>
         </div>
@@ -76,14 +76,14 @@ export default function FleetManagementTab() {
             {filtered.map(v => (
               <div key={v.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
                 <button onClick={() => setExpandedId(expandedId === v.id ? null : v.id)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{TYPE_ICONS[v.type]}</span>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-xl sm:text-2xl">{TYPE_ICONS[v.type]}</span>
                     <div className="text-left">
                       <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{v.name}</h4>
                       <p className="text-xs text-gray-500 dark:text-muted">{v.plate} · {v.driver}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full", STATUS_CONFIG[v.status].color)}>{STATUS_CONFIG[v.status].label}</span>
                     {expandedId === v.id ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
                   </div>
@@ -108,7 +108,7 @@ export default function FleetManagementTab() {
                     </div>
                     {/* Maintenance warning */}
                     {new Date(v.nextMaintenance) <= new Date(Date.now() + 7 * 86400000) && (
-                      <div className="flex items-center gap-2 text-xs bg-amber-50 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400 px-3 py-2 rounded-xl">
+                      <div className="flex flex-wrap items-center gap-2 text-xs bg-amber-50 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400 px-3 py-2 rounded-xl">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                         Mantenimiento próximo: {fmtDate(v.nextMaintenance)}
                       </div>
@@ -120,23 +120,23 @@ export default function FleetManagementTab() {
           </div>
         </>
       ) : (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-y-hidden overflow-x-auto">
+          <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="bg-gray-50 dark:bg-surface text-left">
-              <th className="px-4 py-3 font-bold text-gray-500 dark:text-muted">Vehículo</th>
-              <th className="px-4 py-3 font-bold text-gray-500 dark:text-muted">Tipo</th>
-              <th className="px-4 py-3 font-bold text-gray-500 dark:text-muted">Fecha</th>
-              <th className="px-4 py-3 font-bold text-gray-500 dark:text-muted">Costo</th>
-              <th className="px-4 py-3 font-bold text-gray-500 dark:text-muted">Notas</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Vehículo</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Tipo</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Fecha</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Costo</th>
+              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Notas</th>
             </tr></thead>
             <tbody>
               {MAINT_LOG.map(m => (
                 <tr key={m.id} className="border-t border-gray-100 dark:border-card-border">
-                  <td className="px-4 py-3 font-semibold text-gray-900 dark:text-foreground">{m.vehicle}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-muted flex items-center gap-1"><Wrench className="h-3 w-3" /> {m.type}</td>
-                  <td className="px-4 py-3 text-gray-500 dark:text-muted">{fmtDate(m.date)}</td>
-                  <td className="px-4 py-3 font-bold text-gray-900 dark:text-foreground">{fmt(m.cost)}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted max-w-48 truncate">{m.notes}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900 dark:text-foreground">{m.vehicle}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted flex items-center gap-1"><Wrench className="h-3 w-3" /> {m.type}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted">{fmtDate(m.date)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-900 dark:text-foreground">{fmt(m.cost)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted max-w-48 truncate">{m.notes}</td>
                 </tr>
               ))}
             </tbody>

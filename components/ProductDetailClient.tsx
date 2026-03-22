@@ -356,8 +356,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     >
                       <defs>
                         <linearGradient id="pdGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-                          <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+                          <stop offset="0%" stopColor="#2d6a4f" stopOpacity="0.25" />
+                          <stop offset="100%" stopColor="#2d6a4f" stopOpacity="0.02" />
                         </linearGradient>
                       </defs>
                       <path
@@ -370,7 +370,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       <polyline
                         points={points}
                         fill="none"
-                        stroke="#6366f1"
+                        stroke="#2d6a4f"
                         strokeWidth="2"
                         strokeLinejoin="round"
                         strokeLinecap="round"
@@ -381,7 +381,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                           cx={i * 40}
                           cy={50 - ((p - min) / range) * 42}
                           r="3"
-                          fill={i === prices.length - 1 ? "#6366f1" : "#a5b4fc"}
+                          fill={i === prices.length - 1 ? "#2d6a4f" : "#52b788"}
                           stroke="white"
                           strokeWidth="1.5"
                         />

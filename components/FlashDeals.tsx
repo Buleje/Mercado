@@ -2,7 +2,7 @@
 
 import { useState, useEffect, startTransition } from "react";
 import Image from "next/image";
-import { Flame, Plus, Package, Zap } from "lucide-react";
+import { Flame, ShoppingCart, Package, Zap, Minus, Plus } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useSettings } from "@/contexts/settings-context";
@@ -30,8 +30,8 @@ function pad(n: number) {
 
 // Pick 4 random products as daily "flash deals" with fake discounts
 function pickDeals(discount: number): Array<Product & { originalPrice: number; discount: number }> {
-  const shuffled = [...products].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 4).map((p) => ({
+  const shuffled = [...products].filter((p) => !(p.stock != null && p.stock <= 0)).sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, 6).map((p) => ({
     ...p,
     originalPrice: +(p.price / (1 - discount / 100)).toFixed(2),
     discount,
@@ -42,9 +42,9 @@ function pickDeals(discount: number): Array<Product & { originalPrice: number; d
 function buildAdminDeals(ids: number[], discount: number): Array<Product & { originalPrice: number; discount: number }> {
   const selected = ids
     .map(id => products.find(p => p.id === id))
-    .filter(Boolean) as Product[];
+    .filter((p): p is Product => Boolean(p) && !(p!.stock != null && p!.stock <= 0));
   if (selected.length === 0) return [];
-  return selected.slice(0, 6).map(p => ({
+  return selected.slice(0, 8).map(p => ({
     ...p,
     originalPrice: +(p.price / (1 - discount / 100)).toFixed(2),
     discount,
@@ -75,7 +75,7 @@ export default function FlashDeals() {
   const [deals, setDeals] = useState<Array<Product & { originalPrice: number; discount: number }>>([]);
   const [endTime] = useState(getEndOfDay);
   const [time, setTime] = useState(getTimeLeft(endTime));
-  const { addItem } = useCart();
+  const { addItem, items, updateQty } = useCart();
   const { showToast } = useToast();
   const discount = hp.flashDealDiscount ?? 20;
 
@@ -143,10 +143,11 @@ export default function FlashDeals() {
         </div>
 
         {/* Deal Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {deals.map((deal) => (
-            <DealCard key={deal.id} deal={deal} onAdd={() => { addItem(deal); showToast(deal.name, deal.image); }} />
-          ))}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+          {deals.map((deal) => {
+            const qty = items.find(i => i.id === deal.id)?.quantity ?? 0;
+            return <DealCard key={deal.id} deal={deal} qty={qty} onAdd={() => { addItem(deal); showToast(deal.name, deal.image); }} onDec={() => updateQty(deal.id, qty - 1)} onInc={() => updateQty(deal.id, qty + 1)} />;
+          })}
         </div>
       </div>
     </section>
@@ -164,13 +165,11 @@ function TimeBox({ value, label }: { value: string; label: string }) {
   );
 }
 
-function DealCard({ deal, onAdd }: { deal: Product & { originalPrice: number; discount: number }; onAdd: () => void }) {
+function DealCard({ deal, qty, onAdd, onDec, onInc }: { deal: Product & { originalPrice: number; discount: number }; qty: number; onAdd: () => void; onDec: () => void; onInc: () => void }) {
   return (
-    <div
-      className="group relative bg-white dark:bg-card rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-    >
+    <div className="group relative bg-white dark:bg-card rounded-xl overflow-hidden border border-gray-100 dark:border-card-border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
       {/* Discount badge */}
-      <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-red-500 text-white rounded-full px-2.5 py-1 text-xs font-extrabold shadow-lg">
+      <div className="absolute top-1.5 left-1.5 z-10 bg-red-500 text-white rounded px-1.5 py-0.5 text-[10px] font-extrabold">
         -{deal.discount}%
       </div>
 
@@ -182,43 +181,45 @@ function DealCard({ deal, onAdd }: { deal: Product & { originalPrice: number; di
             alt={deal.name}
             fill
             loading="lazy"
-            className="object-cover group-hover:scale-110 transition-transform duration-500"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
           />
         ) : (
           <div className="h-full w-full flex items-center justify-center text-gray-300">
-            <Package className="h-10 w-10" />
+            <Package className="h-8 w-8" />
           </div>
         )}
-        {/* Urgency ribbon */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 pt-8" style={{ background: "linear-gradient(to top, rgba(239,68,68,0.82), transparent)" }}>
-          <p className="text-white text-[10px] font-bold uppercase tracking-wide">
-            ¡Solo por hoy!
-          </p>
-        </div>
       </div>
 
       {/* Body */}
-      <div className="p-3 sm:p-4">
+      <div className="p-3">
         <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 mb-2">
           {deal.name}
         </h3>
-        <div className="flex items-end justify-between gap-2">
+        <div className="flex items-center justify-between gap-1">
           <div>
-            <span className="text-base sm:text-lg font-extrabold text-red-500">
-              S/{deal.price.toFixed(2)}
-            </span>
-            <span className="block text-xs text-muted line-through">
-              S/{deal.originalPrice.toFixed(2)}
-            </span>
+            <span className="text-base font-extrabold text-red-500">S/{deal.price.toFixed(2)}</span>
+            <span className="block text-xs text-muted line-through">S/{deal.originalPrice.toFixed(2)}</span>
           </div>
-          <button
-            onClick={onAdd}
-            className="flex items-center justify-center h-10 w-10 rounded-xl bg-red-500 text-white shadow-md hover:bg-red-600 hover:scale-110 active:scale-95 transition-all duration-200"
-            aria-label={`Agregar ${deal.name}`}
-          >
-            <Plus className="h-5 w-5" />
-          </button>
+          {qty > 0 ? (
+            <div className="flex items-center gap-0.5 bg-red-500 rounded-full px-1 py-1 shrink-0 sm:px-1.5">
+              <button onClick={onDec} className="h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Disminuir">
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="text-white font-extrabold text-xs sm:text-sm min-w-4 sm:min-w-5 text-center">{qty}</span>
+              <button onClick={onInc} className="h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Aumentar">
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onAdd}
+              className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-xl bg-red-500 text-white hover:bg-red-600 active:scale-95 shrink-0"
+              aria-label={`Agregar ${deal.name}`}
+            >
+              <ShoppingCart className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
     </div>

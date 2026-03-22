@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react";
 import { RefreshCw, Loader2, CheckCircle2, ShoppingCart, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Product, Supplier } from "@/types/erp";
 
 type LowStockProduct = {
   id: string; name: string; stock: number; stockMin: number; stockMax: number;
   price: number; category: string; unit: string; suggestedQty: number;
 };
-type Supplier = { id: string; name: string; phone: string; categories: string[] };
 
 export default function AutoReorderTab() {
   const [products, setProducts] = useState<LowStockProduct[]>([]);
@@ -89,30 +89,30 @@ export default function AutoReorderTab() {
   const low = products.filter(p => stockLevel(p) === "low").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><RefreshCw className="h-6 w-6 text-primary" />Auto-Reorden Inteligente</h2>
+        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><RefreshCw className="h-6 w-6 text-primary" />Auto-Reorden Inteligente</h2>
         <button onClick={() => setTick(v => v + 1)} className="px-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl hover:bg-gray-50 dark:hover:bg-surface transition flex items-center gap-1"><RefreshCw className="h-3.5 w-3.5" />Actualizar</button>
       </div>
 
       {/* Stats bar */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 text-center">
-          <p className="text-2xl font-extrabold text-red-600">{critical}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-red-600">{critical}</p>
           <p className="text-xs text-red-500">Crítico</p>
         </div>
         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 text-center">
-          <p className="text-2xl font-extrabold text-amber-600">{low}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-amber-600">{low}</p>
           <p className="text-xs text-amber-500">Bajo</p>
         </div>
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-4 text-center">
-          <p className="text-2xl font-extrabold text-yellow-600">{products.length - critical - low}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-yellow-600">{products.length - critical - low}</p>
           <p className="text-xs text-yellow-500">Advertencia</p>
         </div>
       </div>
 
       {created && (
-        <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3 text-sm text-emerald-700 dark:text-emerald-400">
+        <div className="flex flex-wrap items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-2 sm:px-4 py-2 sm:py-3 text-sm text-emerald-700 dark:text-emerald-400">
           <CheckCircle2 className="h-4 w-4 shrink-0" />Orden de compra creada: <span className="font-mono font-bold">{created.slice(0, 8)}</span>
           <button onClick={() => setCreated(null)} className="ml-auto text-xs underline">Cerrar</button>
         </div>
@@ -128,7 +128,7 @@ export default function AutoReorderTab() {
         <>
           {/* Generate PO bar */}
           <div className="flex items-center gap-3 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex-wrap">
-            <label className="flex items-center gap-2 text-sm">
+            <label className="flex flex-wrap items-center gap-2 text-sm">
               <input type="checkbox" checked={selected.size === products.length} onChange={toggleAll} className="rounded" />
               <span className="font-bold text-gray-700 dark:text-foreground">{selected.size} seleccionados</span>
             </label>
@@ -137,14 +137,14 @@ export default function AutoReorderTab() {
               <option value="">Seleccionar proveedor...</option>
               {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
-            <button onClick={generatePO} disabled={selected.size === 0 || !supplierId || creating} className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50 flex items-center gap-2">
+            <button onClick={generatePO} disabled={selected.size === 0 || !supplierId || creating} className="px-2 sm:px-4 py-1.5 sm:py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary/90 transition disabled:opacity-50 flex flex-wrap items-center gap-2">
               {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShoppingCart className="h-4 w-4" />}Generar Orden
             </button>
           </div>
 
           {/* Product table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[600px] text-sm">
               <thead>
                 <tr className="text-left text-xs text-gray-400 uppercase border-b border-gray-200 dark:border-card-border">
                   <th className="pb-2 pr-2"></th>

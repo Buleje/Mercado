@@ -108,7 +108,7 @@ export default function OrderConfirmModal() {
           >
             <div className="pointer-events-auto w-full max-w-sm bg-white dark:bg-background rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-label="Confirmar recepción">
               {/* Header strip */}
-              <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(90deg, #4f46e5, #6366f1, #4f46e5)" }}>
+              <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(90deg, #245c43, #2d6a4f, #245c43)" }}>
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                     <Clock className="h-5 w-5 text-white" />

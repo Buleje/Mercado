@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
-import { ShoppingCart, TrendingUp } from "lucide-react";
+import { ShoppingCart, TrendingUp, Minus, Plus } from "lucide-react";
 import { products } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
@@ -19,20 +19,22 @@ const RANK_STYLES = [
 
 /* Simulate popularity order: products with badge "Popular" first, then "Oferta", rest shuffled deterministically */
 function getPopularProducts() {
-  const scored = products.map((p) => {
-    let score = 0;
-    if (p.badge === "Popular") score += 30;
-    if (p.badge === "Oferta") score += 20;
-    if (p.badge === "Fresco") score += 10;
-    // deterministic hash for stable order
-    score += ((p.id * 7 + 3) % 10);
-    return { ...p, score };
-  });
+  const scored = products
+    .filter((p) => !(p.stock != null && p.stock <= 0))
+    .map((p) => {
+      let score = 0;
+      if (p.badge === "Popular") score += 30;
+      if (p.badge === "Oferta") score += 20;
+      if (p.badge === "Fresco") score += 10;
+      // deterministic hash for stable order
+      score += ((p.id * 7 + 3) % 10);
+      return { ...p, score };
+    });
   return scored.sort((a, b) => b.score - a.score).slice(0, 6);
 }
 
 export default function PopularProducts() {
-  const { addItem, items } = useCart();
+  const { addItem, items, updateQty } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
   const popular = useMemo(() => getPopularProducts(), []);
   const lastClickRef = useRef(0);
@@ -66,11 +68,12 @@ export default function PopularProducts() {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
           {popular.map((product, i) => {
             const rank = RANK_STYLES[i] ?? null;
             const cartItem = items.find((ci) => ci.id === product.id);
             const qty = cartItem?.quantity ?? 0;
+            const isOutOfStock = product.stock != null && product.stock <= 0;
 
             return (
               <div
@@ -107,7 +110,7 @@ export default function PopularProducts() {
                   {product.badge && (
                     <span
                       className="absolute bottom-2 right-2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md"
-                      style={{ background: product.badge === "Popular" ? "#6366f1" : product.badge === "Oferta" ? "#ef4444" : product.badge === "Fresco" ? "#10b981" : "#6b7280" }}
+                      style={{ background: product.badge === "Popular" ? "#2d6a4f" : product.badge === "Oferta" ? "#ef4444" : product.badge === "Fresco" ? "#10b981" : "#6b7280" }}
                     >
                       {product.badge}
                     </span>
@@ -117,29 +120,39 @@ export default function PopularProducts() {
                 </div>
 
                 {/* Info */}
-                <div className="p-3">
-                  <h3 className="text-xs sm:text-sm font-semibold text-foreground line-clamp-2 leading-tight mb-2">
+                <div className="p-4">
+                  <h3 className="text-sm sm:text-base font-semibold text-foreground line-clamp-2 leading-tight mb-2.5">
                     {product.name}
                   </h3>
                   <div className="flex items-center justify-between gap-1">
                     <div>
-                      <p className="text-base font-extrabold text-primary leading-none">
+                      <p className="text-lg font-extrabold text-primary leading-none">
                         S/{product.price.toFixed(2)}
                       </p>
-                      <p className="text-[10px] text-muted mt-0.5">por {product.unit}</p>
+                      <p className="text-xs text-muted mt-0.5">por {product.unit}</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => guardedAdd(product)}
-                      className="bg-primary text-white rounded-full p-2 hover:bg-primary-dark active:scale-90 transition-all shadow-sm hover:shadow-md"
-                      aria-label={`Agregar ${product.name}`}
-                    >
-                      {qty > 0 ? (
-                        <span className="text-[10px] font-bold w-3.5 h-3.5 flex items-center justify-center">{qty}</span>
-                      ) : (
-                        <ShoppingCart className="w-3.5 h-3.5" />
-                      )}
-                    </button>
+                    {isOutOfStock ? (
+                      <span className="text-[10px] font-bold text-gray-400 border border-gray-200 rounded-full px-2 py-1">Agotado</span>
+                    ) : qty > 0 ? (
+                      <div className="flex items-center gap-0.5 bg-primary rounded-full px-1 py-1 shrink-0 sm:px-1.5">
+                        <button onClick={() => updateQty(product.id, qty - 1)} className="h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Disminuir">
+                          <Minus className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-white font-extrabold text-xs sm:text-sm min-w-4 sm:min-w-5 text-center">{qty}</span>
+                        <button onClick={() => updateQty(product.id, qty + 1)} className="h-6 w-6 sm:h-7 sm:w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Aumentar">
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => guardedAdd(product)}
+                        className="bg-primary text-white rounded-full p-3 hover:bg-primary-dark active:scale-90 transition-all shadow-sm hover:shadow-md"
+                        aria-label={`Agregar ${product.name}`}
+                      >
+                        <ShoppingCart className="w-5 h-5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 

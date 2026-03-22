@@ -2,7 +2,7 @@
 
 import { useEffect, useState, startTransition } from "react";
 import Link from "next/link";
-import { ShoppingCart, MessageCircle, ArrowRight, Truck, Star, Zap, Package } from "lucide-react";
+import { ShoppingCart, MessageCircle, ArrowRight, Truck, Star, Zap, Package, Clock } from "lucide-react";
 import { trackCTAClick, trackWhatsAppClick } from "@/lib/analytics";
 import { useSettings } from "@/contexts/settings-context";
 
@@ -23,7 +23,6 @@ export default function Hero() {
     startTransition(() => setGreeting(computeGreeting()));
   }, []);
 
-  /* Compute store open/closed status from delivery hours — client-only to avoid hydration mismatch */
   const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const [mounted, setMounted] = useState(false);
   const [storeStatus, setStoreStatus] = useState<{ open: boolean; label: string; closing?: boolean }>({ open: false, label: "" });
@@ -48,81 +47,109 @@ export default function Hero() {
       <style>{`
         @keyframes liveRing {
           0%   { transform: scale(1); opacity: 0.9; }
-          60%  { transform: scale(2.2); opacity: 0; }
-          100% { transform: scale(2.2); opacity: 0; }
+          60%  { transform: scale(2.4); opacity: 0; }
+          100% { transform: scale(2.4); opacity: 0; }
         }
-        @keyframes floatBadge {
-          0%,100% { transform: translateY(0) rotate(-2deg); }
-          50%      { transform: translateY(-8px) rotate(2deg); }
+        @keyframes floatA {
+          0%,100% { transform: translateY(0px) rotate(-1.5deg); }
+          50%     { transform: translateY(-10px) rotate(1.5deg); }
+        }
+        @keyframes floatB {
+          0%,100% { transform: translateY(0px) rotate(1deg); }
+          50%     { transform: translateY(-7px) rotate(-1deg); }
         }
         @keyframes chipIn {
-          from { opacity: 0; transform: translateY(12px) scale(0.9); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
+          from { opacity:0; transform:translateY(14px) scale(0.88); }
+          to   { opacity:1; transform:translateY(0) scale(1); }
         }
-        .hero-stat-chip { animation: chipIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275) both; }
+        @keyframes fadeDown {
+          from { opacity:0; transform:translateY(-14px); }
+          to   { opacity:1; transform:none; }
+        }
+        @keyframes fadeUp {
+          from { opacity:0; transform:translateY(18px); }
+          to   { opacity:1; transform:none; }
+        }
+        @keyframes shimmerSlide {
+          0%   { transform:translateX(-100%); }
+          100% { transform:translateX(100%); }
+        }
+        .hero-stat-chip { animation: chipIn 0.55s cubic-bezier(0.175,0.885,0.32,1.275) both; }
+        .hero-cta-primary:hover { transform:translateY(-2px); box-shadow: 0 12px 40px -6px rgba(45,106,79,0.65), 0 0 0 1px rgba(255,255,255,0.12), inset 0 1px 0 rgba(255,255,255,0.18) !important; }
+        .hero-cta-secondary:hover { background: rgba(240,244,241,0.1) !important; border-color: rgba(240,244,241,0.3) !important; }
+        .cat-card:hover { border-color: rgba(45,106,79,0.4) !important; background: rgba(45,106,79,0.1) !important; transform: translateY(-2px); }
       `}</style>
 
-      {/* Deep background */}
+      {/* ── Background: deep green-tinted dark ── */}
       <div className="absolute inset-0" style={{
-        background: "linear-gradient(155deg, #0d0a1f 0%, #1e1b4b 15%, #312e81 35%, #4c1d95 55%, #1e1b4b 80%, #0d0a1f 100%)",
+        background: "linear-gradient(155deg, #030a05 0%, #060e08 20%, #0a1a0e 45%, #0d1f11 65%, #060e08 85%, #030a05 100%)",
       }} aria-hidden="true" />
 
-
-
-      {/* Static background glows — no animation */}
+      {/* ── Ambient glow blobs ── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        {/* Primary green glow — top-right */}
         <div style={{
-          position: "absolute", top: "-30%", right: "-20%",
-          width: "80vw", height: "80vw",
-          background: "radial-gradient(ellipse, rgba(99,102,241,0.2) 0%, rgba(79,70,229,0.06) 40%, transparent 65%)",
-          filter: "blur(80px)",
+          position: "absolute", top: "-15%", right: "-10%",
+          width: "70vw", height: "70vw",
+          background: "radial-gradient(ellipse, rgba(45,106,79,0.22) 0%, rgba(45,106,79,0.06) 45%, transparent 70%)",
+          filter: "blur(90px)",
         }} />
+        {/* Amber glow — bottom-left */}
         <div style={{
-          position: "absolute", bottom: "-25%", left: "-10%",
-          width: "65vw", height: "65vw",
-          background: "radial-gradient(ellipse, rgba(251,191,36,0.12) 0%, rgba(245,158,11,0.03) 40%, transparent 65%)",
+          position: "absolute", bottom: "-20%", left: "-5%",
+          width: "55vw", height: "55vw",
+          background: "radial-gradient(ellipse, rgba(244,162,97,0.14) 0%, rgba(244,162,97,0.03) 45%, transparent 70%)",
           filter: "blur(100px)",
+        }} />
+        {/* Subtle center highlight */}
+        <div style={{
+          position: "absolute", top: "30%", left: "45%",
+          width: "30vw", height: "30vw",
+          background: "radial-gradient(ellipse, rgba(45,106,79,0.08) 0%, transparent 65%)",
+          filter: "blur(60px)",
         }} />
       </div>
 
-      {/* Dot grid */}
-      <div className="absolute inset-0" style={{
-        backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.25) 0.5px, transparent 0.5px)",
-        backgroundSize: "36px 36px",
-        opacity: 0.1,
+      {/* ── Dot grid texture ── */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: "radial-gradient(circle, rgba(45,106,79,0.35) 0.5px, transparent 0.5px)",
+        backgroundSize: "32px 32px",
+        opacity: 0.12,
       }} aria-hidden="true" />
 
       {/* ═══════════════════════════════════════════
-          MAIN LAYOUT — split screen on desktop
+          MAIN LAYOUT
       ═══════════════════════════════════════════ */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-28 md:py-0" style={{ minHeight: "100svh", display: "flex", alignItems: "center" }}>
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-5 sm:px-8 lg:px-12 py-28 md:py-0"
+        style={{ minHeight: "100svh", display: "flex", alignItems: "center" }}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center w-full">
 
           {/* ── LEFT: Text content ── */}
           <div className="flex flex-col text-center lg:text-left">
 
-            {/* Live badge */}
-            <div className="animate-[fadeDown_0.5s_ease-out] self-center lg:self-start" style={{
+            {/* Store status pill */}
+            <div className="animate-[fadeDown_0.45s_ease-out_both] self-center lg:self-start" style={{
               display: "inline-flex", alignItems: "center", gap: "0.5rem",
               borderRadius: "9999px",
-              border: `1px solid ${mounted && storeStatus.open ? "rgba(96,165,250,0.3)" : "rgba(239,68,68,0.3)"}`,
-              background: mounted && storeStatus.open ? "rgba(59,130,246,0.08)" : "rgba(239,68,68,0.08)", backdropFilter: "blur(16px)",
-              padding: "0.4rem 1.2rem", marginBottom: "1.5rem",
+              border: `1px solid ${mounted && storeStatus.open ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)"}`,
+              background: mounted && storeStatus.open ? "rgba(34,197,94,0.07)" : "rgba(239,68,68,0.07)",
+              backdropFilter: "blur(16px)",
+              padding: "0.375rem 1.1rem", marginBottom: "1.5rem",
             }}>
               <span style={{ position: "relative", display: "inline-flex", width: 8, height: 8 }}>
                 <span style={{ position: "absolute", inset: 0, borderRadius: "50%", background: mounted && storeStatus.open ? "#22c55e" : "#ef4444", animation: mounted && storeStatus.open ? "liveRing 2.2s ease-out infinite" : "none" }} />
                 <span style={{ position: "relative", width: 8, height: 8, borderRadius: "50%", background: mounted && storeStatus.open ? "#22c55e" : "#ef4444", display: "block" }} />
               </span>
               <span style={{ color: mounted && storeStatus.open ? "#86efac" : "#fca5a5", fontSize: "0.75rem", fontWeight: 700 }}>{mounted ? storeStatus.label : ""}</span>
-              <span style={{ width: 1, height: 12, background: "rgba(255,255,255,0.15)" }} />
-              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem" }}>Pucallpa, Ucayali</span>
+              <span style={{ width: 1, height: 12, background: "rgba(240,244,241,0.15)" }} />
+              <span style={{ color: "rgba(240,244,241,0.45)", fontSize: "0.72rem" }}>Pucallpa, Ucayali</span>
             </div>
 
-            {/* Greeting — client-only to avoid SSR mismatch */}
+            {/* Greeting */}
             {hp.heroGreetingEnabled && greeting && (
               <p className="animate-[fadeDown_0.4s_ease-out_both]" style={{
-                fontSize: "clamp(0.95rem,1.8vw,1.15rem)",
-                color: "rgba(255,255,255,0.6)", fontWeight: 600, marginBottom: "0.5rem",
+                fontSize: "clamp(0.9rem,1.6vw,1.05rem)",
+                color: "rgba(240,244,241,0.55)", fontWeight: 600, marginBottom: "0.5rem",
               }}>
                 {greeting} 👋
               </p>
@@ -130,195 +157,251 @@ export default function Hero() {
 
             {/* Main heading */}
             <h1 className="animate-[fadeDown_0.5s_ease-out_0.1s_both]" style={{
-              fontSize: "clamp(2.6rem,5.5vw,4.2rem)",
-              fontWeight: 900, lineHeight: 1.05, letterSpacing: "-0.035em",
-              color: "#fff", marginBottom: "1.5rem",
+              fontSize: "clamp(2.6rem,5.2vw,4rem)",
+              fontWeight: 900, lineHeight: 1.06, letterSpacing: "-0.035em",
+              color: "#f0f4f1", marginBottom: "1.5rem",
             }}>
               {hp.heroTitle}{" "}
               <span style={{
-                background: "linear-gradient(130deg, #818cf8 0%, #60a5fa 35%, #fbbf24 65%, #818cf8 100%)",
+                background: "linear-gradient(130deg, #4ade80 0%, #2d6a4f 40%, #f4a261 75%, #f97316 100%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                display: "inline-block",
+                backgroundClip: "text", display: "inline-block",
               }}>{hp.heroTitleAccent}</span>
               <br />
-              <span style={{ color: "rgba(255,255,255,0.75)", fontSize: "85%" }}>en menos de 30 min</span>
+              <span style={{ color: "rgba(240,244,241,0.6)", fontSize: "78%" }}>en menos de 30 min</span>
             </h1>
 
             {/* Subtitle */}
             <p className="animate-[fadeDown_0.5s_ease-out_0.2s_both]" style={{
-              fontSize: "clamp(1rem,1.9vw,1.15rem)", color: "rgba(255,255,255,0.52)",
-              marginBottom: "2.2rem", lineHeight: 1.75, maxWidth: "36rem",
+              fontSize: "clamp(0.95rem,1.7vw,1.1rem)", color: "rgba(240,244,241,0.52)",
+              marginBottom: "2.2rem", lineHeight: 1.78, maxWidth: "36rem",
             }}>
               {hp.heroSubtitle}
             </p>
 
             {/* CTA row */}
             <div className="animate-[fadeDown_0.5s_ease-out_0.3s_both]" style={{
-              display: "flex", flexWrap: "wrap", gap: "1rem",
+              display: "flex", flexWrap: "wrap", gap: "0.875rem",
               marginBottom: "2.5rem", justifyContent: "center",
-            }} data-lg-justify="flex-start">
+            }}>
               <Link
                 href={hp.heroCta1Link}
                 onClick={() => trackCTAClick({ source: "hero", destination: hp.heroCta1Link, ctaText: hp.heroCta1Text })}
-                className="group relative overflow-hidden"
+                className="hero-cta-primary group relative overflow-hidden"
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: "0.7rem",
-                  borderRadius: "1rem", padding: "1.1rem 2.5rem",
+                  display: "inline-flex", alignItems: "center", gap: "0.65rem",
+                  borderRadius: "0.9rem", padding: "1rem 2.2rem",
                   fontSize: "1rem", fontWeight: 800, color: "#fff",
-                  background: "linear-gradient(135deg, #818cf8 0%, #6366f1 50%, #4f46e5 100%)",
-                  boxShadow: "0 8px 32px -4px rgba(99,102,241,0.6), 0 0 0 1px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.2)",
-                  transition: "all 0.25s cubic-bezier(0.4,0,0.2,1)", textDecoration: "none",
+                  background: "linear-gradient(135deg, #2d6a4f 0%, #245c43 100%)",
+                  boxShadow: "0 8px 32px -4px rgba(45,106,79,0.55), 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  transition: "all 0.22s cubic-bezier(0.4,0,0.2,1)", textDecoration: "none",
                 }}
               >
-                {/* Shimmer overlay */}
-                <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{ background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%)" }}
+                {/* Shimmer sweep */}
+                <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                  style={{ background: "linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.14) 50%, transparent 65%)", animation: "shimmerSlide 1s ease-in-out" }}
                 />
-                <ShoppingCart style={{ width: 20, height: 20, position: "relative", zIndex: 1 }} />
+                <ShoppingCart style={{ width: 19, height: 19, position: "relative", zIndex: 1 }} />
                 <span style={{ position: "relative", zIndex: 1 }}>{hp.heroCta1Text}</span>
-                <ArrowRight style={{ width: 16, height: 16, position: "relative", zIndex: 1 }} className="transition-transform group-hover:translate-x-1" />
+                <ArrowRight style={{ width: 15, height: 15, position: "relative", zIndex: 1 }} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <a
                 href={hp.heroCta2Link}
                 onClick={() => trackWhatsAppClick("hero")}
                 target="_blank" rel="noopener noreferrer"
+                className="hero-cta-secondary"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: "0.6rem",
-                  borderRadius: "1rem", padding: "1.1rem 2.5rem",
-                  fontSize: "1rem", fontWeight: 700, color: "#fff",
-                  background: "rgba(255,255,255,0.06)", backdropFilter: "blur(16px)",
-                  border: "1px solid rgba(255,255,255,0.15)",
-                  transition: "all 0.25s cubic-bezier(0.4,0,0.2,1)", textDecoration: "none",
+                  borderRadius: "0.9rem", padding: "1rem 2.2rem",
+                  fontSize: "1rem", fontWeight: 700, color: "#f0f4f1",
+                  background: "rgba(240,244,241,0.05)", backdropFilter: "blur(16px)",
+                  border: "1px solid rgba(240,244,241,0.14)",
+                  transition: "all 0.22s cubic-bezier(0.4,0,0.2,1)", textDecoration: "none",
                 }}
               >
-                <MessageCircle style={{ width: 20, height: 20 }} />
+                <MessageCircle style={{ width: 19, height: 19 }} />
                 {hp.heroCta2Text}
               </a>
             </div>
 
-            {/* Social proof stats — animated chips */}
+            {/* Social proof chips */}
             <div className="animate-[fadeDown_0.5s_ease-out_0.4s_both]" style={{
-              display: "flex", flexWrap: "wrap", gap: "0.75rem",
+              display: "flex", flexWrap: "wrap", gap: "0.625rem",
               justifyContent: "center",
             }}>
               {[
-                { icon: Star, value: "4.8/5", label: "Rating", color: "#fbbf24", delay: "0.45s" },
-                { icon: Package, value: "+800", label: "Clientes", color: "#818cf8", delay: "0.55s" },
-                { icon: Truck, value: "~30min", label: "Delivery", color: "#3b82f6", delay: "0.65s" },
-                { icon: Zap, value: "24/7", label: "Atención", color: "#22c55e", delay: "0.75s" },
+                { icon: Star, value: "4.8★", label: "Valoración", color: "#f4a261", delay: "0.45s" },
+                { icon: Package, value: "+800", label: "Clientes", color: "#4ade80", delay: "0.55s" },
+                { icon: Clock, value: "~30min", label: "Delivery", color: "#60a5fa", delay: "0.65s" },
+                { icon: Zap, value: "24/7", label: "Soporte", color: "#a78bfa", delay: "0.75s" },
               ].map(({ icon: Icon, value, label, color, delay }) => (
-                <div
-                  key={label}
-                  className="hero-stat-chip"
-                  style={{
-                    animationDelay: delay,
-                    display: "flex", alignItems: "center", gap: "0.5rem",
-                    padding: "0.55rem 1rem",
-                    borderRadius: "0.75rem",
-                    background: "rgba(255,255,255,0.06)",
-                    backdropFilter: "blur(12px)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                  }}
-                >
+                <div key={label} className="hero-stat-chip" style={{
+                  animationDelay: delay,
+                  display: "flex", alignItems: "center", gap: "0.45rem",
+                  padding: "0.5rem 0.9rem", borderRadius: "0.7rem",
+                  background: "rgba(240,244,241,0.04)",
+                  backdropFilter: "blur(12px)",
+                  border: "1px solid rgba(240,244,241,0.09)",
+                }}>
                   <div style={{
-                    width: 28, height: 28, borderRadius: "50%",
-                    background: color + "20",
+                    width: 26, height: 26, borderRadius: "50%",
+                    background: color + "18",
                     display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0,
                   }}>
-                    <Icon style={{ width: 13, height: 13, color }} />
+                    <Icon style={{ width: 12, height: 12, color }} />
                   </div>
                   <div>
-                    <div style={{ color: "#fff", fontSize: "0.8rem", fontWeight: 800, lineHeight: 1 }}>{value}</div>
-                    <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.65rem", fontWeight: 500 }}>{label}</div>
+                    <div style={{ color: "#f0f4f1", fontSize: "0.78rem", fontWeight: 800, lineHeight: 1.1 }}>{value}</div>
+                    <div style={{ color: "rgba(240,244,241,0.4)", fontSize: "0.62rem", fontWeight: 500 }}>{label}</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* ── RIGHT: Product showcase — CSS only, zero JS ── */}
+          {/* ── MOBILE: Category carousel (visible < lg) ── */}
+          <div className="lg:hidden animate-[fadeDown_0.5s_ease-out_0.5s_both]" style={{ marginTop: "1.5rem" }}>
+            <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-2 -mx-2 px-2" style={{ scrollSnapType: "x mandatory" }}>
+              {([
+                { emoji: "🥩", name: "Carnes", color: "#fca5a5" },
+                { emoji: "🥦", name: "Verduras", color: "#86efac" },
+                { emoji: "🍎", name: "Frutas", color: "#fcd34d" },
+                { emoji: "🥛", name: "Lácteos", color: "#93c5fd" },
+                { emoji: "🍞", name: "Panadería", color: "#fdba74" },
+                { emoji: "🧃", name: "Bebidas", color: "#a5f3fc" },
+                { emoji: "🧹", name: "Limpieza", color: "#c4b5fd" },
+                { emoji: "🍿", name: "Snacks", color: "#fda4af" },
+                { emoji: "🥚", name: "Huevos", color: "#fde68a" },
+              ] as const).map(({ emoji, name, color }) => (
+                <Link key={name} href={`/tienda?category=${name.toLowerCase()}`}
+                  className="cat-card shrink-0"
+                  style={{
+                    scrollSnapAlign: "start",
+                    background: "rgba(45,106,79,0.06)",
+                    backdropFilter: "blur(12px)",
+                    border: "1px solid rgba(45,106,79,0.15)",
+                    borderRadius: "0.9rem",
+                    padding: "0.75rem 1rem",
+                    display: "flex", alignItems: "center", gap: "0.5rem",
+                    textDecoration: "none",
+                    transition: "all 0.2s cubic-bezier(0.4,0,0.2,1)",
+                  }}
+                >
+                  <span style={{ fontSize: "1.3rem", lineHeight: 1 }}>{emoji}</span>
+                  <span style={{ color, fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{name}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* ── RIGHT: Category showcase ── */}
           <div className="hidden lg:flex flex-col items-center justify-center relative" style={{ minHeight: 520 }}>
 
-            {/* Product category grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.875rem", width: 390, zIndex: 2 }}>
+            {/* Glow behind grid */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "radial-gradient(ellipse at 50% 50%, rgba(45,106,79,0.12) 0%, transparent 70%)",
+              filter: "blur(40px)",
+            }} aria-hidden="true" />
+
+            {/* Category grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.8rem", width: 380, position: "relative", zIndex: 2 }}>
               {([
-                { emoji: "🥩", name: "Carnes",    color: "#fca5a5" },
-                { emoji: "🥦", name: "Verduras",  color: "#86efac" },
-                { emoji: "🍎", name: "Frutas",    color: "#fcd34d" },
-                { emoji: "🥛", name: "Lácteos",   color: "#93c5fd" },
-                { emoji: "🍞", name: "Panadería", color: "#fdba74" },
-                { emoji: "🧃", name: "Bebidas",   color: "#a5f3fc" },
-                { emoji: "🧹", name: "Limpieza",  color: "#c4b5fd" },
-                { emoji: "🍿", name: "Snacks",    color: "#fda4af" },
-                { emoji: "🥚", name: "Huevos",    color: "#fde68a" },
-              ] as const).map(({ emoji, name, color }) => (
-                <div key={name} style={{
-                  background: "rgba(255,255,255,0.05)",
+                { emoji: "🥩", name: "Carnes",    color: "#fca5a5", bg: "rgba(252,165,165,0.08)" },
+                { emoji: "🥦", name: "Verduras",  color: "#86efac", bg: "rgba(134,239,172,0.08)" },
+                { emoji: "🍎", name: "Frutas",    color: "#fcd34d", bg: "rgba(252,211,77,0.08)"  },
+                { emoji: "🥛", name: "Lácteos",   color: "#93c5fd", bg: "rgba(147,197,253,0.08)" },
+                { emoji: "🍞", name: "Panadería", color: "#fdba74", bg: "rgba(253,186,116,0.08)" },
+                { emoji: "🧃", name: "Bebidas",   color: "#a5f3fc", bg: "rgba(165,243,252,0.08)" },
+                { emoji: "🧹", name: "Limpieza",  color: "#c4b5fd", bg: "rgba(196,181,253,0.08)" },
+                { emoji: "🍿", name: "Snacks",    color: "#fda4af", bg: "rgba(253,164,175,0.08)" },
+                { emoji: "🥚", name: "Huevos",    color: "#fde68a", bg: "rgba(253,230,138,0.08)" },
+              ] as const).map(({ emoji, name, color, bg }, i) => (
+                <div key={name} className="cat-card" style={{
+                  background: bg,
                   backdropFilter: "blur(12px)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: "1rem",
-                  padding: "1.25rem 0.5rem",
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem",
-                  userSelect: "none",
+                  border: "1px solid rgba(45,106,79,0.15)",
+                  borderRadius: "1.1rem",
+                  padding: "1.2rem 0.5rem",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: "0.45rem",
+                  userSelect: "none", cursor: "default",
+                  transition: "all 0.2s cubic-bezier(0.4,0,0.2,1)",
+                  animationDelay: `${i * 0.05}s`,
                 }}>
-                  <span style={{ fontSize: "2.25rem", lineHeight: 1 }}>{emoji}</span>
-                  <span style={{ color, fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.03em", textTransform: "uppercase" }}>{name}</span>
+                  <span style={{ fontSize: "2rem", lineHeight: 1 }}>{emoji}</span>
+                  <span style={{ color, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>{name}</span>
                 </div>
               ))}
             </div>
 
             {/* Floating delivery badge */}
-            <div
-              className="absolute top-8 right-2"
-              style={{
-                background: "rgba(59,130,246,0.14)",
-                backdropFilter: "blur(16px)",
-                border: "1px solid rgba(59,130,246,0.25)",
-                borderRadius: "1rem",
-                padding: "0.7rem 1.1rem",
-                display: "flex", alignItems: "center", gap: "0.6rem",
-                animation: "floatBadge 4s ease-in-out infinite",
-                zIndex: 3,
-              }}
-            >
-              <Truck style={{ width: 18, height: 18, color: "#60a5fa" }} />
+            <div className="absolute top-6 right-0" style={{
+              background: "rgba(45,106,79,0.12)",
+              backdropFilter: "blur(16px)",
+              border: "1px solid rgba(45,106,79,0.28)",
+              borderRadius: "1rem",
+              padding: "0.65rem 1rem",
+              display: "flex", alignItems: "center", gap: "0.55rem",
+              animation: "floatA 4.5s ease-in-out infinite",
+              zIndex: 3,
+            }}>
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%",
+                background: "rgba(45,106,79,0.2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <Truck style={{ width: 16, height: 16, color: "#4ade80" }} />
+              </div>
               <div>
-                <div style={{ color: "#93c5fd", fontSize: "0.75rem", fontWeight: 800 }}>{hp.heroBadgeText}</div>
-                <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.65rem" }}>{hp.heroBadgeSubtext}</div>
+                <div style={{ color: "#86efac", fontSize: "0.73rem", fontWeight: 800 }}>{hp.heroBadgeText}</div>
+                <div style={{ color: "rgba(240,244,241,0.4)", fontSize: "0.62rem" }}>{hp.heroBadgeSubtext}</div>
               </div>
             </div>
 
-            {/* "Pedido en camino" status chip */}
-            <div
-              className="absolute bottom-12 left-4"
-              style={{
-                background: "rgba(34,197,94,0.12)",
-                backdropFilter: "blur(16px)",
-                border: "1px solid rgba(34,197,94,0.25)",
-                borderRadius: "1rem",
-                padding: "0.7rem 1.1rem",
-                display: "flex", alignItems: "center", gap: "0.6rem",
-                animation: "floatBadge 5s ease-in-out 2s infinite",
-                zIndex: 3,
-              }}
-            >
+            {/* "Pedido en camino" chip */}
+            <div className="absolute bottom-10 left-2" style={{
+              background: "rgba(244,162,97,0.1)",
+              backdropFilter: "blur(16px)",
+              border: "1px solid rgba(244,162,97,0.25)",
+              borderRadius: "1rem",
+              padding: "0.65rem 1rem",
+              display: "flex", alignItems: "center", gap: "0.55rem",
+              animation: "floatB 5s ease-in-out 1.5s infinite",
+              zIndex: 3,
+            }}>
               <div style={{
                 width: 32, height: 32, borderRadius: "50%",
-                background: "rgba(34,197,94,0.2)",
+                background: "rgba(244,162,97,0.15)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: "1rem",
               }}>✅</div>
               <div>
-                <div style={{ color: "#86efac", fontSize: "0.75rem", fontWeight: 800 }}>Pedido en camino</div>
-                <div style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.65rem" }}>Llegando en ~15 min</div>
+                <div style={{ color: "#fcd34d", fontSize: "0.73rem", fontWeight: 800 }}>Pedido en camino</div>
+                <div style={{ color: "rgba(240,244,241,0.4)", fontSize: "0.62rem" }}>Llegando en ~15 min</div>
               </div>
             </div>
+
+            {/* Subtle corner decorations */}
+            <div style={{
+              position: "absolute", bottom: "28%", right: "2%",
+              width: 60, height: 60, borderRadius: "50%",
+              background: "rgba(45,106,79,0.06)",
+              border: "1px solid rgba(45,106,79,0.12)",
+              zIndex: 1,
+            }} aria-hidden="true" />
+            <div style={{
+              position: "absolute", top: "20%", left: "3%",
+              width: 40, height: 40, borderRadius: "50%",
+              background: "rgba(244,162,97,0.05)",
+              border: "1px solid rgba(244,162,97,0.1)",
+              zIndex: 1,
+            }} aria-hidden="true" />
           </div>
         </div>
       </div>
 
-      {/* Wave */}
+      {/* Wave transition */}
       <div className="absolute bottom-0 left-0 right-0" aria-hidden="true">
         <svg viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
           <path d="M0,40 C360,80 1080,0 1440,40 L1440,80 L0,80 Z" fill="var(--color-background)" />

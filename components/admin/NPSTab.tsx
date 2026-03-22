@@ -78,13 +78,13 @@ export default function NPSTab() {
   const avgScore = filtered.length > 0 ? (filtered.reduce((s, sv) => s + sv.score, 0) / filtered.length).toFixed(1) : "0";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Star className="h-6 w-6 text-primary" /> NPS & Satisfacción</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Star className="h-6 w-6 text-primary" /> NPS & Satisfacción</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Net Promoter Score y análisis de satisfacción del cliente</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => setView("detail")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "detail" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Detalle</button>
           <button onClick={() => setView("trend")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "trend" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Tendencia</button>
         </div>
@@ -92,7 +92,7 @@ export default function NPSTab() {
 
       {/* NPS Gauge */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <div className="col-span-2 lg:col-span-1 bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 text-center">
+        <div className="col-span-2 lg:col-span-1 bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 text-center">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">NPS Score</p>
           <p className={cn("text-4xl font-extrabold", nps >= 50 ? "text-emerald-500" : nps >= 0 ? "text-amber-500" : "text-red-500")}>{nps}</p>
           <p className="text-[10px] text-gray-400 mt-1">{nps >= 50 ? "Excelente" : nps >= 0 ? "Bueno" : "Necesita mejorar"}</p>
@@ -105,7 +105,7 @@ export default function NPSTab() {
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
-            <p className={cn("text-2xl font-extrabold", k.color)}>{k.value}<span className="text-xs text-gray-400 ml-1">{k.sub}</span></p>
+            <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}<span className="text-xs text-gray-400 ml-1">{k.sub}</span></p>
           </div>
         ))}
       </div>
@@ -158,7 +158,7 @@ export default function NPSTab() {
                       <span className="text-[10px] bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded text-gray-500 dark:text-muted">{s.channel}</span>
                       <span className="text-[10px] text-gray-400">{fmtDate(s.date)}</span>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-muted flex items-start gap-1"><MessageSquare className="h-3 w-3 shrink-0 mt-0.5" />{s.comment}</p>
+                    <p className="text-xs text-gray-600 dark:text-muted flex flex-wrap items-start gap-1"><MessageSquare className="h-3 w-3 shrink-0 mt-0.5" />{s.comment}</p>
                   </div>
                 </div>
               );
@@ -166,8 +166,8 @@ export default function NPSTab() {
           </div>
         </>
       ) : (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> Evolución NPS mensual</h3>
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> Evolución NPS mensual</h3>
           <div className="space-y-3">
             {loading ? (
               <div className="text-center py-6 text-sm text-gray-400">Cargando tendencia...</div>
@@ -177,7 +177,7 @@ export default function NPSTab() {
               const npsVal = t.promoters - t.detractors;
               const total = t.promoters + t.passives + t.detractors || 1;
               return (
-                <div key={t.month} className="flex items-center gap-3">
+                <div key={t.month} className="flex flex-wrap items-center gap-3">
                   <span className="w-14 text-xs font-bold text-gray-500 dark:text-muted shrink-0">{t.month}</span>
                   <div className="flex-1 flex h-5 rounded-full overflow-hidden bg-gray-100 dark:bg-surface">
                     <div className="bg-emerald-500 transition-all" style={{ width: `${(t.promoters / total) * 100}%` }} />

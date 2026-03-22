@@ -127,11 +127,11 @@ export default function ConversionMetricsTab() {
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
+          <h2 className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
             <BarChart3 className="w-5 h-5 text-blue-400" />
             Métricas de Conversión
           </h2>
@@ -144,7 +144,7 @@ export default function ConversionMetricsTab() {
         <button
           onClick={fetchAll}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300 hover:bg-white/10 transition disabled:opacity-50"
+          className="flex flex-wrap items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-gray-300 hover:bg-white/10 transition disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           Refrescar
@@ -159,12 +159,12 @@ export default function ConversionMetricsTab() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {kpiCards.map((c) => (
               <div key={c.label} className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
                   <div className={`p-1.5 rounded-lg ${c.bg}`}>
                     <c.icon className={`w-4 h-4 ${c.color}`} />
                   </div>
                 </div>
-                <p className="text-xl font-bold text-white">{c.value}</p>
+                <p className="text-base sm:text-xl font-bold text-white">{c.value}</p>
                 <p className="text-xs text-gray-500">{c.label}</p>
               </div>
             ))}
@@ -172,7 +172,7 @@ export default function ConversionMetricsTab() {
 
           {/* ABC Classification */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
               <TrendingUp className="w-4 h-4 text-amber-400" />
               Clasificación ABC (Top 20 productos por ingreso)
             </h3>
@@ -180,7 +180,7 @@ export default function ConversionMetricsTab() {
               <p className="text-gray-500 text-sm">Sin datos de clasificación ABC</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[600px] text-sm">
                   <thead>
                     <tr className="border-b border-white/10 text-gray-400 text-left">
                       <th className="pb-2">Producto</th>
@@ -222,7 +222,7 @@ export default function ConversionMetricsTab() {
 
           {/* Margins */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
               <DollarSign className="w-4 h-4 text-green-400" />
               Márgenes de Ganancia (Top 20)
             </h3>
@@ -230,7 +230,7 @@ export default function ConversionMetricsTab() {
               <p className="text-gray-500 text-sm">Sin datos de márgenes</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[600px] text-sm">
                   <thead>
                     <tr className="border-b border-white/10 text-gray-400 text-left">
                       <th className="pb-2">Producto</th>
@@ -273,7 +273,7 @@ export default function ConversionMetricsTab() {
 
           {/* Customer Segments */}
           <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-white mb-3 flex flex-wrap items-center gap-2">
               <Users className="w-4 h-4 text-purple-400" />
               Segmentos de Clientes
             </h3>
@@ -286,7 +286,7 @@ export default function ConversionMetricsTab() {
                     key={s.segment}
                     className="bg-white/5 border border-white/10 rounded-lg p-3"
                   >
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span
                         className="w-3 h-3 rounded-full"
                         style={{ background: s.color }}

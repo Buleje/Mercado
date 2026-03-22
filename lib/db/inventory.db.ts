@@ -102,6 +102,36 @@ export const InventoryMovementsDB = {
     });
     return mapInventoryMovement(row);
   },
+  /**
+   * Decrement stock using FEFO (First Expired, First Out) batch selection.
+   * Deducts from the earliest-expiring batch first, then moves to the next.
+   * Also decrements Product.stock globally.
+   */
+  async decrementFEFO(productId: number, quantity: number, reference?: string, type: string = "venta_online"): Promise<void> {
+    // 1. Decrement Product.stock globally
+    await this.record({ productId, type, quantity, reference, notes: `FEFO: ${quantity} unidades` });
+
+    // 2. Decrement from batches in FEFO order (earliest expiry first)
+    let remaining = quantity;
+    const batches = await prisma.batch.findMany({
+      where: { productId, quantity: { gt: 0 } },
+      orderBy: { expiryDate: "asc" },
+    });
+
+    for (const batch of batches) {
+      if (remaining <= 0) break;
+      const toDeduct = Math.min(batch.quantity, remaining);
+      await prisma.batch.update({
+        where: { id: batch.id },
+        data: { quantity: batch.quantity - toDeduct },
+      });
+      remaining -= toDeduct;
+    }
+
+    // 3. Update Product.expiresAt to reflect the nearest batch expiry
+    await refreshProductExpiresAt(productId);
+  },
+
   async adjust(productId: number, newStock: number, warehouseId?: string, notes?: string, createdBy?: string): Promise<DbInventoryMovement> {
     const product = await prisma.product.findUnique({ where: { id: productId } });
     const prevStock = product?.stock ?? 0;
@@ -116,6 +146,22 @@ export const InventoryMovementsDB = {
     return mapInventoryMovement(row);
   },
 };
+
+/**
+ * Update Product.expiresAt to the nearest batch expiry date (FEFO).
+ * Called after any batch quantity change (sale, adjustment, purchase).
+ */
+async function refreshProductExpiresAt(productId: number): Promise<void> {
+  const nearestBatch = await prisma.batch.findFirst({
+    where: { productId, quantity: { gt: 0 } },
+    orderBy: { expiryDate: "asc" },
+    select: { expiryDate: true },
+  });
+  await prisma.product.update({
+    where: { id: productId },
+    data: { expiresAt: nearestBatch?.expiryDate ?? null },
+  });
+}
 
 // ── Warehouses DB ─────────────────────────────────────────────────────────────
 

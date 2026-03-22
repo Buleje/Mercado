@@ -83,11 +83,11 @@ export default function ProjectsTab() {
   }, [projects]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Target className="h-6 w-6 text-primary" /> Proyectos & CAPEX
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de inversiones, presupuesto y ROI por proyecto</p>
@@ -129,7 +129,7 @@ export default function ProjectsTab() {
       </div>
 
       {/* Project cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-2 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map(p => {
           const spent = p.expenses.reduce((a, e) => a + e.amount, 0);
           const execPct = p.budget > 0 ? (spent / p.budget) * 100 : 0;
@@ -137,7 +137,7 @@ export default function ProjectsTab() {
           const StIcon = st.icon;
           return (
             <div key={p.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3 hover:shadow-lg transition-shadow">
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex flex-wrap items-start justify-between gap-2">
                 <div>
                   <p className="font-bold text-sm text-gray-900 dark:text-foreground">{p.name}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{TYPE_META[p.type].label} · {p.responsible}</p>
@@ -174,13 +174,13 @@ export default function ProjectsTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-lg space-y-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.name}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
             <p className="text-sm text-gray-500 dark:text-muted">{detail.description}</p>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {[
                 ["Tipo", TYPE_META[detail.type].label],
                 ["Estado", STATUS_META[detail.status].label],

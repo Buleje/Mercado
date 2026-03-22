@@ -241,11 +241,11 @@ export default function CashRegisterTab() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-lg font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+        <h2 className="text-lg font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
           <Calculator className="h-5 w-5 text-primary" /> Caja Registradora
           <ModuleTooltip />
         </h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={fetchData} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors" title="Refrescar">
             <RefreshCw className="h-4 w-4 text-gray-500 dark:text-muted" />
           </button>
@@ -285,7 +285,7 @@ export default function CashRegisterTab() {
               <p className="text-sm text-gray-500 dark:text-muted mb-6">No hay una caja abierta. Abre una para registrar ventas.</p>
               <button
                 onClick={() => setShowOpen(true)}
-                className="px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors inline-flex items-center gap-2 shadow-lg shadow-primary/20"
+                className="px-3 sm:px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors inline-flex items-center gap-2 shadow-lg shadow-primary/20"
               >
                 <Unlock className="h-5 w-5" /> Abrir caja
               </button>
@@ -296,7 +296,7 @@ export default function CashRegisterTab() {
               {/* Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-indigo-50 text-indigo-600">
                       <DollarSign className="h-3.5 w-3.5" />
                     </div>
@@ -306,7 +306,7 @@ export default function CashRegisterTab() {
                 </div>
 
                 <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-emerald-50 text-emerald-600">
                       <Banknote className="h-3.5 w-3.5" />
                     </div>
@@ -316,7 +316,7 @@ export default function CashRegisterTab() {
                 </div>
 
                 <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-purple-50 text-purple-600">
                       <DollarSign className="h-3.5 w-3.5" />
                     </div>
@@ -326,7 +326,7 @@ export default function CashRegisterTab() {
                 </div>
 
                 <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3">
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                     <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-blue-50 text-blue-600">
                       <Calculator className="h-3.5 w-3.5" />
                     </div>
@@ -359,7 +359,7 @@ export default function CashRegisterTab() {
                 <div className="ml-auto">
                   <button
                     onClick={() => setShowClose(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-xs hover:bg-gray-800 transition-colors"
+                    className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gray-900 text-white font-bold text-xs hover:bg-gray-800 transition-colors"
                   >
                     <Lock className="h-3.5 w-3.5" /> Cerrar caja
                   </button>
@@ -377,7 +377,7 @@ export default function CashRegisterTab() {
 
               {/* Movements list */}
               <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
-                <div className="px-4 py-3 border-b flex items-center gap-2">
+                <div className="px-2 sm:px-4 py-2 sm:py-3 border-b flex flex-wrap items-center gap-2">
                   <History className="h-4 w-4 text-primary" />
                   <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground">Movimientos</h3>
                 </div>
@@ -391,7 +391,7 @@ export default function CashRegisterTab() {
                     {currentRegister.movements.map(m => {
                       const isPos = ["venta", "ingreso", "apertura"].includes(m.type);
                       return (
-                        <div key={m.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
+                        <div key={m.id} className="px-2 sm:px-4 py-1.5 sm:py-2.5 flex flex-wrap items-center gap-3 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
                           <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", MOVEMENT_COLORS[m.type] || "bg-gray-100 dark:bg-accent text-gray-500 dark:text-muted")}>
                             {isPos ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
                           </div>
@@ -434,7 +434,7 @@ export default function CashRegisterTab() {
                   className="w-full bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4 text-left hover:shadow-md transition-all"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <div className="h-8 w-8 rounded-lg bg-gray-100 dark:bg-accent flex items-center justify-center">
                         <Lock className="h-4 w-4 text-gray-500 dark:text-muted" />
                       </div>
@@ -450,7 +450,7 @@ export default function CashRegisterTab() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-4 text-[10px] text-gray-400 dark:text-muted">
+                  <div className="flex flex-wrap gap-2 sm:gap-4 text-[10px] text-gray-400 dark:text-muted">
                     <span>Apertura: {fmt(r.openingAmount)}</span>
                     <span>Esperado: {fmt(r.expectedAmount ?? 0)}</span>
                     <span>Cierre: {fmt(r.closingAmount ?? 0)}</span>
@@ -512,11 +512,11 @@ export default function CashRegisterTab() {
             {/* Weekly Cash Flow Chart */}
             <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+                <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
                   <History className="h-4 w-4 text-primary" />
                   Flujo de Caja Semanal
                 </h3>
-                <div className="flex items-center gap-3 text-[10px]">
+                <div className="flex flex-wrap items-center gap-3 text-[10px]">
                   <div className="flex items-center gap-1">
                     <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
                     <span className="text-gray-500 dark:text-muted">Ingresos</span>
@@ -527,14 +527,14 @@ export default function CashRegisterTab() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-7 gap-2 mb-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2 mb-3">
                 {weekData.map((day, idx) => {
                   const incomeH = maxBar > 0 ? (day.income / maxBar) * 80 : 0;
                   const expenseH = maxBar > 0 ? (day.expenses / maxBar) * 80 : 0;
                   const dayName = new Date(day.date + "T12:00:00").toLocaleDateString("es-PE", { weekday: "short" });
                   return (
                     <div key={idx} className="flex flex-col items-center">
-                      <div className="relative w-full h-20 flex items-end justify-center gap-0.5 mb-1">
+                      <div className="relative w-full h-20 flex flex-wrap items-end justify-center gap-0.5 mb-1">
                         <div
                           className="w-2.5 bg-emerald-500 rounded-t transition-all"
                           style={{ height: `${incomeH}px` }}
@@ -563,7 +563,7 @@ export default function CashRegisterTab() {
               </div>
             </div>
             {/* Summary */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 text-center">
                 <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{rows.length}</p>
                 <p className="text-[10px] text-gray-400 dark:text-muted">Días con cierres</p>
@@ -584,15 +584,15 @@ export default function CashRegisterTab() {
                 <p className="text-sm font-semibold">Sin cajas cerradas</p>
               </div>
             ) : (
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-                <table className="w-full text-xs">
+              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-y-hidden overflow-x-auto">
+                <table className="w-full min-w-[600px] text-xs">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                      <th className="px-4 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha</th>
-                      <th className="px-4 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Esperado</th>
-                      <th className="px-4 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Real</th>
-                      <th className="px-4 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Diferencia</th>
-                      <th className="px-4 py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-center">Estado</th>
+                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Fecha</th>
+                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Esperado</th>
+                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Real</th>
+                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Diferencia</th>
+                      <th className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-center">Estado</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -602,16 +602,16 @@ export default function CashRegisterTab() {
                       const isMinor = !isOk && Math.abs(diff) <= 10;
                       return (
                         <tr key={row.date} className={cn("transition-colors", !isOk && "bg-red-50/30")}>
-                          <td className="px-4 py-3">
+                          <td className="px-2 sm:px-4 py-2 sm:py-3">
                             <p className="font-bold text-gray-900 dark:text-foreground">{new Date(row.date + "T12:00:00").toLocaleDateString("es-PE", { weekday: "short", day: "2-digit", month: "short" })}</p>
                             <p className="text-gray-400 dark:text-muted">{row.count} caja{row.count > 1 ? "s" : ""}</p>
                           </td>
-                          <td className="px-4 py-3 text-right text-gray-600 dark:text-muted font-semibold">{fmt(row.totalExpected)}</td>
-                          <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-foreground">{fmt(row.totalClosing)}</td>
-                          <td className={cn("px-4 py-3 text-right font-extrabold", isOk ? "text-emerald-600" : isMinor ? "text-amber-600" : "text-red-600")}>
+                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-600 dark:text-muted font-semibold">{fmt(row.totalExpected)}</td>
+                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-gray-900 dark:text-foreground">{fmt(row.totalClosing)}</td>
+                          <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", isOk ? "text-emerald-600" : isMinor ? "text-amber-600" : "text-red-600")}>
                             {diff > 0 ? "+" : ""}{fmt(diff)}
                           </td>
-                          <td className="px-4 py-3 text-center">
+                          <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                             {isOk ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold"><Check className="h-3 w-3" />OK</span>
                             ) : isMinor ? (
@@ -634,8 +634,8 @@ export default function CashRegisterTab() {
       {/* Open register modal */}
       {showOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowOpen(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
               <Unlock className="h-4 w-4 text-primary" /> Abrir caja
             </h3>
             <div className="space-y-3">
@@ -665,7 +665,7 @@ export default function CashRegisterTab() {
                   className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground outline-none focus:border-primary"
                 />
               </div>
-              <div className="flex gap-2 pt-1">
+              <div className="flex flex-wrap gap-2 pt-1">
                 <button onClick={() => setShowOpen(false)} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
                   Cancelar
                 </button>
@@ -716,8 +716,8 @@ export default function CashRegisterTab() {
         
         return (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowClose(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
               <Lock className="h-4 w-4 text-gray-900 dark:text-foreground" /> Cerrar caja
             </h3>
             
@@ -727,7 +727,7 @@ export default function CashRegisterTab() {
                 <Clock className="h-3.5 w-3.5 text-indigo-600" />
                 Resumen del turno
               </h4>
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div>
                   <p className="text-gray-500 dark:text-muted">Duración</p>
                   <p className="font-bold text-gray-900 dark:text-foreground">{durationStr}</p>
@@ -784,7 +784,7 @@ export default function CashRegisterTab() {
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-4 gap-1.5 mb-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 mb-2">
                   {DENOMS.map(d => (
                     <button
                       key={d}
@@ -842,7 +842,7 @@ export default function CashRegisterTab() {
                   className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground outline-none focus:border-primary"
                 />
               </div>
-              <div className="flex gap-2 pt-1">
+              <div className="flex flex-wrap gap-2 pt-1">
                 <button onClick={() => { setShowClose(false); setDenominations({}); }} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
                   Cancelar
                 </button>
@@ -864,8 +864,8 @@ export default function CashRegisterTab() {
       {/* Add movement modal */}
       {showMovement && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowMovement(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
               {mvType === "ingreso" ? <ArrowUp className="h-4 w-4 text-emerald-600" /> : <ArrowDown className="h-4 w-4 text-red-500" />}
               {mvType === "ingreso" ? "Registrar ingreso" : "Registrar egreso"}
             </h3>
@@ -896,7 +896,7 @@ export default function CashRegisterTab() {
                   className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground outline-none focus:border-primary"
                 />
               </div>
-              <div className="flex gap-2 pt-1">
+              <div className="flex flex-wrap gap-2 pt-1">
                 <button onClick={() => setShowMovement(false)} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
                   Cancelar
                 </button>
@@ -936,8 +936,8 @@ export default function CashRegisterTab() {
         
         return (
           <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowArqueo(false)}>
-            <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
-              <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
+            <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-3 sm:p-6" onClick={e => e.stopPropagation()}>
+              <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
                 <Scan className="h-4 w-4 text-blue-600" /> Arqueo Express
               </h3>
               
@@ -946,7 +946,7 @@ export default function CashRegisterTab() {
                   <Calculator className="h-3.5 w-3.5 text-blue-600" />
                   Verificación rápida de caja
                 </h4>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div>
                     <p className="text-gray-500 dark:text-muted">Esperado en caja</p>
                     <p className="font-bold text-blue-600">{fmt(expectedCash)}</p>
@@ -978,7 +978,7 @@ export default function CashRegisterTab() {
                       </button>
                     )}
                   </div>
-                  <div className="grid grid-cols-3 gap-2 mb-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-2">
                     {ARQUEO_DENOMS.map(d => (
                       <button
                         key={d}
@@ -1027,7 +1027,7 @@ export default function CashRegisterTab() {
                       ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30"
                       : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/30"
                   )}>
-                    <div className="flex items-center justify-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center justify-center gap-2 mb-1">
                       {Math.abs(difference) < 0.5 ? (
                         <Check className="h-5 w-5 text-emerald-600" />
                       ) : (
@@ -1036,7 +1036,7 @@ export default function CashRegisterTab() {
                       <span className="text-xs font-bold text-gray-500 dark:text-muted uppercase">Diferencia</span>
                     </div>
                     <p className={cn(
-                      "text-2xl font-extrabold",
+                      "text-xl sm:text-2xl font-extrabold",
                       Math.abs(difference) < 0.5 ? "text-emerald-600" : "text-red-500"
                     )}>
                       {difference >= 0 ? "+" : ""}{fmt(difference)}
@@ -1061,7 +1061,7 @@ export default function CashRegisterTab() {
                   </p>
                 </div>
                 
-                <div className="flex gap-2 pt-1">
+                <div className="flex flex-wrap gap-2 pt-1">
                   <button onClick={() => { setShowArqueo(false); setArqueoDenoms({}); }} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
                     Cancelar
                   </button>
@@ -1084,7 +1084,7 @@ export default function CashRegisterTab() {
       {detailRegister && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setDetailRegister(null)}>
           <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="px-4 py-3 border-b flex items-center justify-between">
+            <div className="px-2 sm:px-4 py-2 sm:py-3 border-b flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground">Detalle de caja</h3>
                 <p className="text-[10px] text-gray-400 dark:text-muted">{fmtDate(detailRegister.openedAt)} → {detailRegister.closedAt ? fmtDate(detailRegister.closedAt) : "—"}</p>
@@ -1099,7 +1099,7 @@ export default function CashRegisterTab() {
               </div>
             </div>
             {/* Summary */}
-            <div className="px-4 py-3 border-b bg-gray-50 dark:bg-surface grid grid-cols-3 gap-3 text-center">
+            <div className="px-2 sm:px-4 py-2 sm:py-3 border-b bg-gray-50 dark:bg-surface grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-center">
               <div>
                 <p className="text-[10px] text-gray-400 dark:text-muted font-bold">Apertura</p>
                 <p className="text-sm font-extrabold text-gray-900 dark:text-foreground">{fmt(detailRegister.openingAmount)}</p>
@@ -1124,7 +1124,7 @@ export default function CashRegisterTab() {
               if (methods.length === 0) return null;
               const PAY_LABELS: Record<string, string> = { efectivo: "Efectivo", yape: "Yape", plin: "Plin", tarjeta: "Tarjeta" };
               return (
-                <div className="px-4 py-2.5 border-b bg-white dark:bg-card">
+                <div className="px-2 sm:px-4 py-1.5 sm:py-2.5 border-b bg-white dark:bg-card">
                   <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase mb-1.5">Ventas por método</p>
                   <div className="flex flex-wrap gap-3">
                     {methods.map(([m, total]) => (
@@ -1139,7 +1139,7 @@ export default function CashRegisterTab() {
               );
             })()}
             <div className={cn(
-              "px-4 py-2 text-center text-xs font-bold border-b",
+              "px-2 sm:px-4 py-1.5 sm:py-2 text-center text-xs font-bold border-b",
               (detailRegister.difference ?? 0) >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-500"
             )}>
               Diferencia: {(detailRegister.difference ?? 0) > 0 ? "+" : ""}{fmt(detailRegister.difference ?? 0)}
@@ -1149,7 +1149,7 @@ export default function CashRegisterTab() {
               {detailRegister.movements.map(m => {
                 const isPos = ["venta", "ingreso", "apertura"].includes(m.type);
                 return (
-                  <div key={m.id} className="px-4 py-2.5 flex items-center gap-3">
+                  <div key={m.id} className="px-2 sm:px-4 py-1.5 sm:py-2.5 flex flex-wrap items-center gap-3">
                     <div className={cn("h-7 w-7 rounded-lg flex items-center justify-center shrink-0", MOVEMENT_COLORS[m.type] || "bg-gray-100 dark:bg-accent text-gray-500 dark:text-muted")}>
                       {isPos ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />}
                     </div>

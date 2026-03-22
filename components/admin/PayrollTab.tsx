@@ -91,16 +91,16 @@ export default function PayrollTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Banknote className="h-6 w-6 text-primary" /> Nómina
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Planilla mensual, descuentos AFP/ONP y control de pagos</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => exportToCSV(monthPayroll.map(p => ({ empleado: p.employeeName, cargo: p.role, departamento: p.department, mes: MONTH_LABELS[p.month] ?? p.month, salario_base: p.baseSalary, horas_extra: p.overtime, bonificaciones: p.bonuses, bruto: p.grossSalary, afp_snp: p.snpOrAfp, renta_5ta: p.incomeTax, neto: p.netSalary, estado: p.status, fecha_pago: p.paymentDate ?? "" })), `nomina-${selectedMonth}`)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
@@ -115,14 +115,14 @@ export default function PayrollTab() {
       {/* Month selector */}
       <div className="flex items-center gap-2 flex-wrap">
         {MONTHS.map(m => (
-          <button key={m} onClick={() => setSelectedMonth(m)} className={cn("px-4 py-2 text-sm font-semibold rounded-xl transition-colors", selectedMonth === m ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+          <button key={m} onClick={() => setSelectedMonth(m)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors", selectedMonth === m ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
             {MONTH_LABELS[m] ?? m}
           </button>
         ))}
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="rounded-2xl bg-blue-50 dark:bg-blue-950/30 p-4">
           <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">Total bruto</p>
           <p className="text-lg font-extrabold text-blue-600">{fmt(totals.gross)}</p>
@@ -156,16 +156,16 @@ export default function PayrollTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Empleado</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Bruto</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-amber-500 uppercase tracking-wide">AFP/ONP</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-amber-500 uppercase tracking-wide">Renta 5ta</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-emerald-600 uppercase tracking-wide">Neto</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Estado</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Acciones</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Empleado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Bruto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-amber-500 uppercase tracking-wide">AFP/ONP</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-amber-500 uppercase tracking-wide">Renta 5ta</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-emerald-600 uppercase tracking-wide">Neto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Estado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -173,22 +173,22 @@ export default function PayrollTab() {
                 const sm = STATUS_META[p.status];
                 return (
                   <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30">
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <p className="font-semibold text-gray-800 dark:text-foreground">{p.employeeName}</p>
                       <p className="text-xs text-gray-400 dark:text-muted">{p.role} · {p.department}</p>
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-foreground">{fmt(p.grossSalary)}</td>
-                    <td className="px-4 py-3 text-right text-xs text-amber-600">{fmt(p.snpOrAfp)}</td>
-                    <td className="px-4 py-3 text-right text-xs text-amber-600">{fmt(p.incomeTax)}</td>
-                    <td className="px-4 py-3 text-right font-extrabold text-emerald-600">{fmt(p.netSalary)}</td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-gray-700 dark:text-foreground">{fmt(p.grossSalary)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-amber-600">{fmt(p.snpOrAfp)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-amber-600">{fmt(p.incomeTax)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-emerald-600">{fmt(p.netSalary)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full", sm.bg, sm.color)}>
                         {p.status === "pagado" ? <CheckCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                         {sm.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-2">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
+                      <div className="flex flex-wrap items-center justify-center gap-2">
                         <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors" title="Ver detalle">
                           <Eye className="h-3.5 w-3.5" />
                         </button>
@@ -205,11 +205,11 @@ export default function PayrollTab() {
             </tbody>
             <tfoot className="bg-gray-50 dark:bg-surface/50 border-t-2 border-gray-200 dark:border-card-border">
               <tr>
-                <td className="px-4 py-3 text-xs font-bold text-gray-700 dark:text-foreground uppercase">TOTAL {MONTH_LABELS[selectedMonth]}</td>
-                <td className="px-4 py-3 text-right font-extrabold text-gray-800 dark:text-foreground">{fmt(totals.gross)}</td>
-                <td className="px-4 py-3 text-right font-extrabold text-amber-600">{fmt(totals.afp)}</td>
-                <td className="px-4 py-3 text-right font-extrabold text-amber-600">{fmt(totals.tax)}</td>
-                <td className="px-4 py-3 text-right font-extrabold text-emerald-600">{fmt(totals.net)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-700 dark:text-foreground uppercase">TOTAL {MONTH_LABELS[selectedMonth]}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-gray-800 dark:text-foreground">{fmt(totals.gross)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-amber-600">{fmt(totals.afp)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-amber-600">{fmt(totals.tax)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-emerald-600">{fmt(totals.net)}</td>
                 <td colSpan={2} />
               </tr>
             </tfoot>
@@ -220,7 +220,7 @@ export default function PayrollTab() {
       {/* Payslip detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Boleta de pago</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -243,7 +243,7 @@ export default function PayrollTab() {
                 <Row label="SALARIO NETO" value={fmt(detail.netSalary)} bold accent />
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               {detail.status === "pendiente" && (
                 <button onClick={() => markPaid(detail.id)} className="flex-1 py-2.5 text-sm rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600">Marcar como pagado</button>
               )}

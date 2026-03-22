@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { categories } from "@/data/products";
@@ -12,19 +12,44 @@ const realCategories = categories.filter((c) => c.id !== "todos");
 export default function CategoryBubbles() {
   const [ref, inView] = useInView({ threshold: 0.2 });
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollState = useCallback(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+
+    const maxScrollLeft = element.scrollWidth - element.clientWidth;
+    setCanScrollLeft(element.scrollLeft > 8);
+    setCanScrollRight(maxScrollLeft - element.scrollLeft > 8);
+  }, []);
 
   const scroll = (dir: "left" | "right") => {
     if (!scrollRef.current) return;
-    scrollRef.current.scrollBy({ left: dir === "right" ? 160 : -160, behavior: "smooth" });
+    scrollRef.current.scrollBy({ left: dir === "right" ? 220 : -220, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    updateScrollState();
+    const element = scrollRef.current;
+    if (!element) return;
+
+    element.addEventListener("scroll", updateScrollState, { passive: true });
+    window.addEventListener("resize", updateScrollState);
+
+    return () => {
+      element.removeEventListener("scroll", updateScrollState);
+      window.removeEventListener("resize", updateScrollState);
+    };
+  }, [updateScrollState]);
 
   return (
     <section
       ref={ref}
-      className="py-8 sm:py-10 bg-white dark:bg-background"
+      className="pt-2 pb-4 sm:pt-3 sm:pb-5 bg-white dark:bg-background"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h3 className="text-center text-lg sm:text-xl font-bold text-foreground mb-6">
+        <h3 className="text-center text-lg sm:text-xl font-bold text-foreground mb-4">
           Explora por <span className="text-primary">Categoría</span>
         </h3>
 
@@ -32,7 +57,10 @@ export default function CategoryBubbles() {
           {/* Left scroll button */}
           <button
             onClick={() => scroll("left")}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-card shadow-md border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors -translate-x-3"
+            className={cn(
+              "absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-md transition-all dark:border-card-border dark:bg-card/95",
+              canScrollLeft ? "opacity-100" : "pointer-events-none opacity-35"
+            )}
             aria-label="Desplazar a la izquierda"
           >
             <ChevronLeft className="h-4 w-4 text-muted" />
@@ -40,14 +68,14 @@ export default function CategoryBubbles() {
 
           <div
             ref={scrollRef}
-            className="flex gap-4 sm:gap-6 overflow-x-auto pb-2 scrollbar-none justify-start sm:justify-center px-1"
+            className="flex snap-x snap-mandatory gap-4 overflow-x-auto px-10 pb-2 scrollbar-none"
           >
             {realCategories.map((cat, i) => (
               <Link
                 key={cat.id}
                 href={`/tienda/categoria/${cat.id}`}
                 className={cn(
-                  "group flex flex-col items-center gap-2 shrink-0 transition-transform duration-300 hover:-translate-y-1",
+                  "group flex w-[4.9rem] shrink-0 snap-start flex-col items-center gap-2 transition-transform duration-300 hover:-translate-y-1 sm:w-22",
                   inView
                     ? "animate-[fadeUp_0.5s_ease-out_both]"
                     : "opacity-0"
@@ -55,12 +83,12 @@ export default function CategoryBubbles() {
                 style={inView ? { animationDelay: `${i * 80}ms` } : undefined}
                 aria-label={`Ver ${cat.label}`}
               >
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-surface dark:bg-card flex items-center justify-center border border-gray-100 dark:border-card-border group-hover:border-primary/30 group-hover:shadow-lg transition-all duration-300">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-gray-100 bg-surface transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-lg dark:border-card-border dark:bg-card sm:h-20 sm:w-20">
                   <span className="text-3xl sm:text-4xl group-hover:scale-110 transition-transform">
                     {cat.emoji}
                   </span>
                 </div>
-                <span className="text-xs sm:text-sm font-medium text-muted group-hover:text-primary transition-colors text-center leading-tight max-w-20">
+                <span className="max-w-21 text-center text-xs font-medium leading-tight text-muted transition-colors group-hover:text-primary sm:max-w-20 sm:text-sm">
                   {cat.label}
                 </span>
               </Link>
@@ -70,7 +98,10 @@ export default function CategoryBubbles() {
           {/* Right scroll button */}
           <button
             onClick={() => scroll("right")}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 hidden sm:flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-card shadow-md border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors translate-x-3"
+            className={cn(
+              "absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 shadow-md transition-all dark:border-card-border dark:bg-card/95",
+              canScrollRight ? "opacity-100" : "pointer-events-none opacity-35"
+            )}
             aria-label="Desplazar a la derecha"
           >
             <ChevronRight className="h-4 w-4 text-muted" />

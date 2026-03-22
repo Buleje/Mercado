@@ -51,7 +51,7 @@ export default function SurveysTab() {
   const maxCount = stats ? Math.max(...Object.values(stats.distribution), 1) : 1;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div>
         <h2 className="text-lg font-bold text-foreground">Encuestas y NPS</h2>
@@ -60,19 +60,19 @@ export default function SurveysTab() {
 
       {/* Summary cards */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
           <div className="bg-card border border-border rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted text-xs mb-1">
+            <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1">
               <TrendingUp className="h-3.5 w-3.5" /> Total respuestas
             </div>
-            <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+            <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.total}</p>
           </div>
           <div className="bg-card border border-border rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted text-xs mb-1">
+            <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1">
               <Star className="h-3.5 w-3.5" /> Promedio
             </div>
-            <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold text-foreground">{stats.average}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-xl sm:text-2xl font-bold text-foreground">{stats.average}</p>
               <div className="flex">
                 {[1, 2, 3, 4, 5].map(s => (
                   <Star key={s} className={`w-4 h-4 ${s <= Math.round(stats.average) ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
@@ -81,10 +81,10 @@ export default function SurveysTab() {
             </div>
           </div>
           <div className="bg-card border border-border rounded-xl p-4">
-            <div className="flex items-center gap-2 text-muted text-xs mb-1">
+            <div className="flex flex-wrap items-center gap-2 text-muted text-xs mb-1">
               <MessageSquare className="h-3.5 w-3.5" /> Con comentario
             </div>
-            <p className="text-2xl font-bold text-foreground">
+            <p className="text-xl sm:text-2xl font-bold text-foreground">
               {recent.filter(r => r.comment.trim()).length}
             </p>
           </div>
@@ -100,7 +100,7 @@ export default function SurveysTab() {
               const count = stats.distribution[star] || 0;
               const pct = stats.total > 0 ? Math.round((count / stats.total) * 100) : 0;
               return (
-                <div key={star} className="flex items-center gap-3">
+                <div key={star} className="flex flex-wrap items-center gap-3">
                   <div className="flex items-center gap-1 w-12 justify-end">
                     <span className="text-xs font-medium text-foreground">{star}</span>
                     <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
@@ -129,7 +129,7 @@ export default function SurveysTab() {
             {recent.map(r => (
               <div key={r.id} className="py-3 first:pt-0 last:pb-0">
                 <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <div className="flex">
                       {[1, 2, 3, 4, 5].map(s => (
                         <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />

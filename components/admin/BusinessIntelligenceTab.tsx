@@ -76,10 +76,10 @@ export default function BusinessIntelligenceTab() {
   const sortedTrends = useMemo(() => [...CATEGORY_TRENDS].sort((a, b) => b.growthPct - a.growthPct), []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Brain className="h-6 w-6 text-primary" /> Business Intelligence
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Proyecciones, tendencias, anomalías y KPIs clave</p>
@@ -105,16 +105,16 @@ export default function BusinessIntelligenceTab() {
       </div>
 
       {/* Forecast */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2"><Target className="h-4 w-4 text-primary" /> Proyección de ventas</h3>
-          <div className="flex gap-1">
+          <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Target className="h-4 w-4 text-primary" /> Proyección de ventas</h3>
+          <div className="flex flex-wrap gap-1">
             {(["7d", "30d", "90d"] as ForecastPeriod[]).map(p => (
               <button key={p} onClick={() => setForecastPeriod(p)} className={cn("px-3 py-1 rounded-lg text-xs font-bold transition-colors", forecastPeriod === p ? "bg-primary text-white" : "text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent")}>{p === "7d" ? "7 días" : p === "30d" ? "30 días" : "90 días"}</button>
             ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
           <div><p className="text-xs text-gray-400 mb-1">Ingresos proyectados</p><p className="text-xl font-extrabold text-primary">{fmt(forecast.predictedRevenue)}</p></div>
           <div><p className="text-xs text-gray-400 mb-1">Rango confianza</p><p className="text-sm font-bold text-gray-700 dark:text-foreground">{fmt(forecast.confidenceLow)} – {fmt(forecast.confidenceHigh)}</p></div>
           <div><p className="text-xs text-gray-400 mb-1">Pedidos esperados</p><p className="text-xl font-extrabold text-gray-800 dark:text-foreground">{forecast.predictedOrders.toLocaleString()}</p></div>
@@ -129,10 +129,10 @@ export default function BusinessIntelligenceTab() {
       </div>
 
       {/* Category Trends */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
-        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2 mb-4"><BarChart3 className="h-4 w-4 text-primary" /> Tendencias por categoría</h3>
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
+        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-4"><BarChart3 className="h-4 w-4 text-primary" /> Tendencias por categoría</h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="text-left text-xs font-bold text-gray-400"><th className="py-2 pr-4">Categoría</th><th className="py-2 pr-4">Ventas actual</th><th className="py-2 pr-4">Ventas anterior</th><th className="py-2 pr-4">Crecimiento</th><th className="py-2">Top producto</th></tr></thead>
             <tbody>
               {sortedTrends.map(t => (
@@ -155,15 +155,15 @@ export default function BusinessIntelligenceTab() {
       </div>
 
       {/* Anomaly alerts */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
-        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2 mb-4"><AlertTriangle className="h-4 w-4 text-amber-500" /> Alertas de anomalías</h3>
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
+        <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2 mb-4"><AlertTriangle className="h-4 w-4 text-amber-500" /> Alertas de anomalías</h3>
         <div className="space-y-2">
           {ANOMALIES.map(a => {
             const sevMeta = { alta: "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50", media: "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50", baja: "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50" };
             const sevColor = { alta: "text-red-600", media: "text-amber-600", baja: "text-blue-600" };
             return (
               <div key={a.id} className={cn("rounded-xl p-3 border", sevMeta[a.severity])}>
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="text-sm font-bold text-gray-800 dark:text-foreground">{a.description}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{a.metric} · {a.date}</p>

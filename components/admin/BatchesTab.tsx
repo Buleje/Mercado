@@ -246,16 +246,16 @@ export default function BatchesTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Package className="h-6 w-6 text-primary" /> Lotes & Vencimientos <ModuleTooltip />
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Control FIFO de lotes, fechas de caducidad y alertas de vencimiento</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => exportToCSV(processed.map(b => ({ lote: b.lote, producto: b.productName, categoria: b.productCategory, cantidad: b.quantity, unidad: b.unit, proveedor: b.supplierName, ingreso: b.entryDate, vencimiento: b.expiryDate, dias_restantes: b.daysLeft, estado: b.status, costo_unit: b.costUnit })), "lotes-vencimientos")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
@@ -276,14 +276,14 @@ export default function BatchesTab() {
         ].map(({ label, count, color, bg }) => (
           <button key={label} onClick={() => setFilterStatus(filterStatus === label.toLowerCase().replace("críticos (≤7d)", "critico").replace("por vencer", "por-vencer") as BatchStatus | "todos" ? "todos" : "todos")} className={cn("rounded-2xl p-4 text-left", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
-            <p className={cn("text-2xl font-extrabold", color)}>{count}</p>
+            <p className={cn("text-xl sm:text-2xl font-extrabold", color)}>{count}</p>
           </button>
         ))}
       </div>
 
       {/* Alerts banner */}
       {(stats.critico > 0 || stats.vencido > 0) && (
-        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
           <div>
             <p className="font-bold text-red-700 dark:text-red-400 text-sm">Acción requerida</p>
@@ -297,9 +297,9 @@ export default function BatchesTab() {
 
       {/* Form */}
       {showForm && (
-        <div id="batch-form-top" className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
+        <div id="batch-form-top" className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex items-center gap-2">{editingId ? <><Pencil className="h-4 w-4 text-primary" /> Editar lote</> : <><Plus className="h-4 w-4 text-primary" /> Registrar nuevo lote</>}</h3>
+            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2">{editingId ? <><Pencil className="h-4 w-4 text-primary" /> Editar lote</> : <><Plus className="h-4 w-4 text-primary" /> Registrar nuevo lote</>}</h3>
             <button onClick={() => { setEditingId(null); setShowForm(false); setForm({ ...EMPTY_FORM }); }}><X className="h-4 w-4 text-gray-400" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -350,9 +350,9 @@ export default function BatchesTab() {
               <Field label="Observaciones" value={form.notes} onChange={v => setForm(p => ({ ...p, notes: v }))} placeholder="Instrucciones de almacenamiento, condiciones..." />
             </div>
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => { setEditingId(null); setShowForm(false); setForm({ ...EMPTY_FORM }); }} className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">{editingId ? "Guardar cambios" : "Registrar lote"}</button>
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button onClick={() => { setEditingId(null); setShowForm(false); setForm({ ...EMPTY_FORM }); }} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={handleSave} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">{editingId ? "Guardar cambios" : "Registrar lote"}</button>
           </div>
         </div>
       )}
@@ -377,7 +377,7 @@ export default function BatchesTab() {
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden animate-pulse">
           <div className="h-10 bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border" />
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-card-border last:border-0">
+            <div key={i} className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3.5 border-b border-gray-100 dark:border-card-border last:border-0">
               <div className="h-5 w-16 bg-gray-200 dark:bg-surface rounded-full" />
               <div className="h-3.5 w-20 bg-gray-200 dark:bg-surface rounded-full" />
               <div className="h-3.5 flex-1 bg-gray-100 dark:bg-surface/60 rounded-full" />
@@ -392,20 +392,20 @@ export default function BatchesTab() {
       ) : (
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Estado</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Lote</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide cursor-pointer" onClick={() => toggleSort("productName")}>Producto <SortIcon field="productName" sortField={sortField} sortDir={sortDir} /></th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Categoría</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide cursor-pointer" onClick={() => toggleSort("quantity")}>Cantidad <SortIcon field="quantity" sortField={sortField} sortDir={sortDir} /></th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Proveedor</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Ingreso</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide cursor-pointer" onClick={() => toggleSort("expiryDate")}>Vencimiento <SortIcon field="expiryDate" sortField={sortField} sortDir={sortDir} /></th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Días</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Costo u.</th>
-                <th className="px-4 py-3" />
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Estado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Lote</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide cursor-pointer" onClick={() => toggleSort("productName")}>Producto <SortIcon field="productName" sortField={sortField} sortDir={sortDir} /></th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Categoría</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide cursor-pointer" onClick={() => toggleSort("quantity")}>Cantidad <SortIcon field="quantity" sortField={sortField} sortDir={sortDir} /></th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Proveedor</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Ingreso</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide cursor-pointer" onClick={() => toggleSort("expiryDate")}>Vencimiento <SortIcon field="expiryDate" sortField={sortField} sortDir={sortDir} /></th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Días</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Costo u.</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -417,23 +417,23 @@ export default function BatchesTab() {
                 const Icon = meta.icon;
                 return (
                   <tr key={b.id} className={cn("hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors", b.status === "vencido" ? "bg-red-50/30 dark:bg-red-950/10" : b.status === "critico" ? "bg-orange-50/30 dark:bg-orange-950/10" : "")}>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full", meta.bg, meta.color)}>
                         <Icon className="h-3 w-3" /> {meta.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-700 dark:text-foreground">{b.lote}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-800 dark:text-foreground max-w-40 truncate">{b.productName}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted">{b.productCategory}</td>
-                    <td className="px-4 py-3 text-right font-bold text-gray-800 dark:text-foreground">{b.quantity} <span className="text-xs font-normal text-gray-400">{b.unit}</span></td>
-                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted truncate max-w-30">{b.supplierName || "—"}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted">{fmtDate(b.entryDate)}</td>
-                    <td className="px-4 py-3 text-xs font-semibold text-gray-700 dark:text-foreground">{fmtDate(b.expiryDate)}</td>
-                    <td className={cn("px-4 py-3 text-xs font-extrabold", b.daysLeft < 0 ? "text-red-500" : b.daysLeft <= 7 ? "text-orange-500" : b.daysLeft <= 30 ? "text-amber-500" : "text-emerald-600")}>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-semibold text-gray-700 dark:text-foreground">{b.lote}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-800 dark:text-foreground max-w-40 truncate">{b.productName}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{b.productCategory}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-gray-800 dark:text-foreground">{b.quantity} <span className="text-xs font-normal text-gray-400">{b.unit}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted truncate max-w-30">{b.supplierName || "—"}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{fmtDate(b.entryDate)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-semibold text-gray-700 dark:text-foreground">{fmtDate(b.expiryDate)}</td>
+                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-extrabold", b.daysLeft < 0 ? "text-red-500" : b.daysLeft <= 7 ? "text-orange-500" : b.daysLeft <= 30 ? "text-amber-500" : "text-emerald-600")}>
                       {b.daysLeft < 0 ? `${Math.abs(b.daysLeft)}d vencido` : b.daysLeft === 0 ? "Hoy" : `${b.daysLeft}d`}
                     </td>
-                    <td className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-foreground">{b.costUnit > 0 ? fmt(b.costUnit) : "—"}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700 dark:text-foreground">{b.costUnit > 0 ? fmt(b.costUnit) : "—"}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex items-center gap-1">
                         <button onClick={() => handleEdit(b)} className="p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors" title="Editar lote">
                           <Pencil className="h-3.5 w-3.5" />
@@ -449,7 +449,7 @@ export default function BatchesTab() {
             </tbody>
           </table>
         </div>
-        <div className="px-4 py-3 border-t border-gray-100 dark:border-card-border text-xs text-gray-400 dark:text-muted">
+        <div className="px-2 sm:px-4 py-2 sm:py-3 border-t border-gray-100 dark:border-card-border text-xs text-gray-400 dark:text-muted">
           {processed.length} de {batches.length} lotes · FIFO recomendado: consumir primero los lotes con fecha de vencimiento más próxima
         </div>
       </div>

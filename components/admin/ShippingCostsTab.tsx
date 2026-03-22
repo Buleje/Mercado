@@ -40,13 +40,13 @@ export default function ShippingCostsTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><DollarSign className="h-6 w-6 text-primary" /> Costos de Envío</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><DollarSign className="h-6 w-6 text-primary" /> Costos de Envío</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Configura tarifas de delivery por zona y condiciones</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => setView("rules")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "rules" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Tarifas</button>
           <button onClick={() => setView("stats")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "stats" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Estadísticas</button>
           {view === "rules" && <button onClick={openCreate} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90"><Plus className="h-3.5 w-3.5" /> Nueva tarifa</button>}
@@ -70,8 +70,8 @@ export default function ShippingCostsTab() {
       {view === "rules" ? (
         <div className="space-y-3">
           {rules.map(r => (
-            <div key={r.id} className={cn("bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 transition-all", !r.active && "opacity-60")}>
-              <div className="flex items-start justify-between gap-3">
+            <div key={r.id} className={cn("bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 transition-all", !r.active && "opacity-60")}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <MapPin className="h-4 w-4 text-primary" />
@@ -95,53 +95,55 @@ export default function ShippingCostsTab() {
           ))}
         </div>
       ) : (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-y-hidden overflow-x-auto">
+          <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-surface">
             <h3 className="font-bold text-sm text-gray-700 dark:text-foreground">Estadísticas por zona (este mes)</h3>
             <button onClick={() => exportToCSV(STATS.map(s => ({ zona: s.zone, pedidos: s.orders, ingreso: s.revenue, ticket_prom: s.avgTicket, envios_gratis: s.freeDeliveries })), "costos-envio-stats")} className="text-xs text-primary font-semibold flex items-center gap-1"><Download className="h-3 w-3" /> CSV</button>
           </div>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-2 px-2">
+          <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="bg-gray-50/50 dark:bg-surface/50 text-left">
-              <th className="px-4 py-2 font-bold text-gray-500 dark:text-muted">Zona</th>
-              <th className="px-4 py-2 font-bold text-gray-500 dark:text-muted">Pedidos</th>
-              <th className="px-4 py-2 font-bold text-gray-500 dark:text-muted">Ingreso</th>
-              <th className="px-4 py-2 font-bold text-gray-500 dark:text-muted">Ticket prom.</th>
-              <th className="px-4 py-2 font-bold text-gray-500 dark:text-muted">Envíos gratis</th>
+              <th className="px-2 sm:px-4 py-1.5 sm:py-2 font-bold text-gray-500 dark:text-muted">Zona</th>
+              <th className="px-2 sm:px-4 py-1.5 sm:py-2 font-bold text-gray-500 dark:text-muted">Pedidos</th>
+              <th className="px-2 sm:px-4 py-1.5 sm:py-2 font-bold text-gray-500 dark:text-muted">Ingreso</th>
+              <th className="px-2 sm:px-4 py-1.5 sm:py-2 font-bold text-gray-500 dark:text-muted">Ticket prom.</th>
+              <th className="px-2 sm:px-4 py-1.5 sm:py-2 font-bold text-gray-500 dark:text-muted">Envíos gratis</th>
             </tr></thead>
             <tbody>
               {STATS.map(s => (
                 <tr key={s.zone} className="border-t border-gray-100 dark:border-card-border">
-                  <td className="px-4 py-3 font-semibold text-gray-900 dark:text-foreground">{s.zone}</td>
-                  <td className="px-4 py-3 text-gray-700 dark:text-foreground">{s.orders}</td>
-                  <td className="px-4 py-3 font-bold text-emerald-600">{fmt(s.revenue)}</td>
-                  <td className="px-4 py-3 text-gray-700 dark:text-foreground">{fmt(s.avgTicket)}</td>
-                  <td className="px-4 py-3 text-violet-600 font-semibold">{s.freeDeliveries}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900 dark:text-foreground">{s.zone}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-foreground">{s.orders}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-emerald-600">{fmt(s.revenue)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-foreground">{fmt(s.avgTicket)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-violet-600 font-semibold">{s.freeDeliveries}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
       {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-3 sm:p-6 max-w-md w-full mx-4 border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground mb-4">{editRule ? "Editar tarifa" : "Nueva tarifa"}</h3>
             <div className="space-y-3">
               <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Zona</label><input value={form.zone} onChange={e => setForm({ ...form, zone: e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Tarifa (S/)</label><input type="number" step="0.50" value={form.fee} onChange={e => setForm({ ...form, fee: +e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
                 <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Pedido mínimo (S/)</label><input type="number" value={form.minOrder} onChange={e => setForm({ ...form, minOrder: +e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><label className="text-xs font-bold text-gray-500 dark:text-muted">Gratis desde (S/)</label><input type="number" value={form.freeAbove} onChange={e => setForm({ ...form, freeAbove: +e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="0 = no aplica" /></div>
-                <div className="grid grid-cols-2 gap-2"><div><label className="text-xs font-bold text-gray-500 dark:text-muted">Min (min)</label><input type="number" value={form.estimatedMin} onChange={e => setForm({ ...form, estimatedMin: +e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div><div><label className="text-xs font-bold text-gray-500 dark:text-muted">Max (min)</label><input type="number" value={form.estimatedMax} onChange={e => setForm({ ...form, estimatedMax: +e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div></div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2"><div><label className="text-xs font-bold text-gray-500 dark:text-muted">Min (min)</label><input type="number" value={form.estimatedMin} onChange={e => setForm({ ...form, estimatedMin: +e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div><div><label className="text-xs font-bold text-gray-500 dark:text-muted">Max (min)</label><input type="number" value={form.estimatedMax} onChange={e => setForm({ ...form, estimatedMax: +e.target.value })} className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" /></div></div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
-              <button onClick={save} className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
+            <div className="flex flex-wrap justify-end gap-2 mt-5">
+              <button onClick={() => setShowModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={save} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90"><Check className="h-4 w-4 inline mr-1" />Guardar</button>
             </div>
           </div>
         </div>

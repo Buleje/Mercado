@@ -88,10 +88,10 @@ export default function RFQTab() {
   }, [detail, sortBy]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <FileText className="h-6 w-6 text-primary" /> Cotizaciones Comparativas (RFQ)
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Solicita y compara cotizaciones de múltiples proveedores</p>
@@ -134,20 +134,20 @@ export default function RFQTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">Ref</th><th className="px-4 py-3">Producto</th><th className="px-4 py-3">Cant.</th><th className="px-4 py-3">Creado</th><th className="px-4 py-3">Límite</th><th className="px-4 py-3">Cotizaciones</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3">Ganador</th><th className="px-4 py-3"></th></tr></thead>
+          <table className="w-full min-w-[600px] text-sm">
+            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Ref</th><th className="px-2 sm:px-4 py-2 sm:py-3">Producto</th><th className="px-2 sm:px-4 py-2 sm:py-3">Cant.</th><th className="px-2 sm:px-4 py-2 sm:py-3">Creado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Límite</th><th className="px-2 sm:px-4 py-2 sm:py-3">Cotizaciones</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Ganador</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(r => (
                 <tr key={r.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
-                  <td className="px-4 py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{r.ref}</td>
-                  <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{r.product}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-muted">{r.quantity} {r.unit}</td>
-                  <td className="px-4 py-3 text-gray-500">{r.createdAt}</td>
-                  <td className="px-4 py-3 text-gray-500">{r.deadline}</td>
-                  <td className="px-4 py-3 text-center font-bold text-gray-700 dark:text-foreground">{r.quotes.length}</td>
-                  <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[r.status].bg, STATUS_MAP[r.status].color)}>{STATUS_MAP[r.status].label}</span></td>
-                  <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted">{r.winner || "-"}</td>
-                  <td className="px-4 py-3"><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{r.ref}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{r.product}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">{r.quantity} {r.unit}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{r.createdAt}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{r.deadline}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-center font-bold text-gray-700 dark:text-foreground">{r.quotes.length}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", STATUS_MAP[r.status].bg, STATUS_MAP[r.status].color)}>{STATUS_MAP[r.status].label}</span></td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{r.winner || "-"}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(r)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
                 </tr>
               ))}
             </tbody>
@@ -158,7 +158,7 @@ export default function RFQTab() {
       {/* Detail Modal — Comparison Matrix */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-2xl space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-2xl space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.ref} — {detail.product}</h3>
@@ -171,7 +171,7 @@ export default function RFQTab() {
               <p className="text-sm text-gray-400 italic">Sin cotizaciones recibidas</p>
             ) : (
               <>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <span className="text-xs font-bold text-gray-500 dark:text-muted mt-1">Ordenar por:</span>
                   {(["price", "lead", "quality"] as const).map(s => (
                     <button key={s} onClick={() => setSortBy(s)} className={cn("text-xs px-2 py-1 rounded-lg font-bold", sortBy === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
@@ -180,7 +180,7 @@ export default function RFQTab() {
                   ))}
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full min-w-[600px] text-sm">
                     <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-3 py-2">Proveedor</th><th className="px-3 py-2">Precio unit.</th><th className="px-3 py-2">Total</th><th className="px-3 py-2">Plazo</th><th className="px-3 py-2">Calidad</th><th className="px-3 py-2">Pago</th></tr></thead>
                     <tbody>
                       {sortedQuotes.map((q, i) => (

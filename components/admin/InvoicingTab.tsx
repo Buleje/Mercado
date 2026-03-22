@@ -155,17 +155,17 @@ export default function InvoicingTab() {
   const countDraft = invoices.filter(i => i.status === "borrador").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
             Facturación Electrónica
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Facturas, boletas, notas de crédito y débito</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => exportToCSV(filtered.map(i => ({ tipo: TYPE_LABEL[i.type], serie_numero: `${i.serie}-${i.number}`, cliente: i.customerName, ruc_dni: i.customerDoc, fecha: i.issueDate, subtotal: i.subtotal, igv: i.igv, total: i.total, estado: STATUS_LABEL[i.status] })), "comprobantes")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
@@ -176,7 +176,7 @@ export default function InvoicingTab() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
           { label: "Total facturado", value: fmt(totalEmitted), icon: FileText, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
           { label: "IGV generado", value: fmt(totalIGV), icon: AlertTriangle, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
@@ -193,7 +193,7 @@ export default function InvoicingTab() {
 
       {/* New invoice form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-5">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Nuevo comprobante</h3>
             <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -246,7 +246,7 @@ export default function InvoicingTab() {
               <button onClick={() => setFormItems(p => [...p, { ...EMPTY_ITEM }])} className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"><Plus className="h-3.5 w-3.5" /> Agregar línea</button>
             </div>
             {formItems.map((item, idx) => (
-              <div key={idx} className="grid grid-cols-12 gap-2 items-start">
+              <div key={idx} className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2 items-start">
                 <div className="col-span-4">
                   {idx === 0 && <label className="text-xs text-gray-400 dark:text-muted block mb-1">Descripción</label>}
                   <input type="text" value={item.description} onChange={e => handleUpdateItem(idx, "description", e.target.value)} placeholder="Producto/Servicio" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
@@ -279,9 +279,9 @@ export default function InvoicingTab() {
             </div>
           </div>
 
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleCreate} className="px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Crear comprobante</button>
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={handleCreate} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Crear comprobante</button>
           </div>
         </div>
       )}
@@ -302,39 +302,39 @@ export default function InvoicingTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-y-hidden overflow-x-auto">
+        <table className="w-full min-w-[600px] text-sm">
           <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
             <tr>
-              <th className="text-left px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Serie-Núm.</th>
-              <th className="text-left px-4 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Tipo</th>
-              <th className="text-left px-4 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Cliente</th>
-              <th className="text-left px-4 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase hidden sm:table-cell">Fecha</th>
-              <th className="text-right px-4 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Total</th>
-              <th className="text-center px-4 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Estado</th>
-              <th className="text-center px-4 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase hidden sm:table-cell">Acción</th>
+              <th className="text-left px-3 sm:px-6 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Serie-Núm.</th>
+              <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Tipo</th>
+              <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Cliente</th>
+              <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase hidden sm:table-cell">Fecha</th>
+              <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Total</th>
+              <th className="text-center px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Estado</th>
+              <th className="text-center px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase hidden sm:table-cell">Acción</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-card-border">
             {filtered.map(inv => (
               <tr key={inv.id} className="hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors cursor-pointer" onClick={() => setSelected(selected?.id === inv.id ? null : inv)}>
-                <td className="px-6 py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{inv.serie}-{inv.number}</td>
-                <td className="px-4 py-3">
+                <td className="px-3 sm:px-6 py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{inv.serie}-{inv.number}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3">
                   <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", TYPE_COLOR[inv.type])}>{TYPE_LABEL[inv.type]}</span>
                 </td>
-                <td className="px-4 py-3 text-gray-800 dark:text-foreground">
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-foreground">
                   <p className="font-semibold">{inv.customerName}</p>
                   <p className="text-xs text-gray-400 dark:text-muted">{inv.customerDocType.toUpperCase()} {inv.customerDoc}</p>
                 </td>
-                <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted hidden sm:table-cell">{fmtDate(inv.issueDate)}</td>
-                <td className="px-4 py-3 text-right font-bold text-gray-800 dark:text-foreground">
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted hidden sm:table-cell">{fmtDate(inv.issueDate)}</td>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-gray-800 dark:text-foreground">
                   {fmt(inv.total)}
                   <div className="text-xs font-normal text-amber-600">IGV {fmt(inv.igv)}</div>
                 </td>
-                <td className="px-4 py-3 text-center">
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                   <span className={cn("text-xs font-bold px-2.5 py-1 rounded-full", STATUS_COLOR[inv.status])}>{STATUS_LABEL[inv.status]}</span>
                 </td>
-                <td className="px-4 py-3 text-center hidden sm:table-cell" onClick={e => e.stopPropagation()}>
+                <td className="px-2 sm:px-4 py-2 sm:py-3 text-center hidden sm:table-cell" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-center gap-1">
                     {inv.status === "borrador" && (
                       <button onClick={() => handleChangeStatus(inv.id, "emitida")} className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors" title="Emitir"><Send className="h-3.5 w-3.5" /></button>
@@ -358,7 +358,7 @@ export default function InvoicingTab() {
       {/* Detail panel */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSelected(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-extrabold text-gray-900 dark:text-foreground">{TYPE_LABEL[selected.type]} {selected.serie}-{selected.number}</p>
@@ -389,12 +389,12 @@ export default function InvoicingTab() {
               <div className="flex justify-between font-extrabold text-gray-900 dark:text-foreground text-base"><span>Total</span><span>{fmt(selected.total)}</span></div>
             </div>
             {selected.notes && <p className="text-xs text-gray-400 dark:text-muted italic">{selected.notes}</p>}
-            <div className="flex gap-2 pt-2">
-              <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-100 dark:bg-surface text-gray-700 dark:text-foreground text-sm font-semibold hover:bg-gray-200 dark:hover:bg-accent transition-colors">
+            <div className="flex flex-wrap gap-2 pt-2">
+              <button className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-100 dark:bg-surface text-gray-700 dark:text-foreground text-sm font-semibold hover:bg-gray-200 dark:hover:bg-accent transition-colors">
                 <Printer className="h-4 w-4" /> Imprimir
               </button>
               {selected.status === "borrador" && (
-                <button onClick={() => { handleChangeStatus(selected.id, "emitida"); setSelected(null); }} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
+                <button onClick={() => { handleChangeStatus(selected.id, "emitida"); setSelected(null); }} className="flex-1 flex flex-wrap items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors">
                   <Send className="h-4 w-4" /> Emitir
                 </button>
               )}

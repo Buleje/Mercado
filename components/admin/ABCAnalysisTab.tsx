@@ -39,11 +39,11 @@ export default function ABCAnalysisTab() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <BarChart2 className="h-6 w-6 text-primary" /> Análisis ABC
           </h2>
           <p className="text-sm text-gray-500 dark:text-muted">Clasificación de productos por impacto en ingresos (principio de Pareto)</p>
@@ -55,7 +55,7 @@ export default function ABCAnalysisTab() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
         {(["A", "B", "C"] as const).map(cls => (
           <button
             key={cls}
@@ -86,28 +86,28 @@ export default function ABCAnalysisTab() {
       ) : (
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[600px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-card-border text-left">
-                  <th className="px-4 py-3 w-8 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">#</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Producto</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden sm:table-cell">Categoría</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Ingresos</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right hidden md:table-cell">Unidades</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right hidden md:table-cell">Acum. %</th>
-                  <th className="px-4 py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-center">Clase</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 w-8 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">#</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Producto</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide hidden sm:table-cell">Categoría</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right">Ingresos</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right hidden md:table-cell">Unidades</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-right hidden md:table-cell">Acum. %</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide text-center">Clase</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((p, i) => (
                   <tr key={p.productId} className={cn("hover:bg-gray-50 dark:hover:bg-surface transition-colors", CLASS_STYLES[p.class].row)}>
-                    <td className="px-4 py-2.5 text-gray-400 dark:text-muted text-xs">{data.indexOf(p) + 1}</td>
-                    <td className="px-4 py-2.5 font-semibold text-gray-900 dark:text-foreground">{p.name}</td>
-                    <td className="px-4 py-2.5 text-gray-500 dark:text-muted text-xs hidden sm:table-cell">{p.category}</td>
-                    <td className="px-4 py-2.5 text-right font-bold text-gray-900 dark:text-foreground">{fmt(p.revenue)}</td>
-                    <td className="px-4 py-2.5 text-right text-gray-600 dark:text-muted hidden md:table-cell">{p.units}</td>
-                    <td className="px-4 py-2.5 text-right text-gray-500 dark:text-muted hidden md:table-cell">{p.cumulativePct}%</td>
-                    <td className="px-4 py-2.5 text-center">
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-gray-400 dark:text-muted text-xs">{data.indexOf(p) + 1}</td>
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-semibold text-gray-900 dark:text-foreground">{p.name}</td>
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-gray-500 dark:text-muted text-xs hidden sm:table-cell">{p.category}</td>
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right font-bold text-gray-900 dark:text-foreground">{fmt(p.revenue)}</td>
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-gray-600 dark:text-muted hidden md:table-cell">{p.units}</td>
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-right text-gray-500 dark:text-muted hidden md:table-cell">{p.cumulativePct}%</td>
+                    <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-center">
                       <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", CLASS_STYLES[p.class].badge)}>
                         {p.class}
                       </span>

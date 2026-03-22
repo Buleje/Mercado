@@ -1,4 +1,4 @@
-﻿﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -14,7 +14,7 @@ import {
   BarChart3, Upload, ArrowUp, ArrowDown, Eye, EyeOff, Link as LinkIcon,
   Monitor, Boxes, Calculator, Lock, ChevronRight, Activity,
   RotateCcw, TrendingUp, Brain, CalendarDays, MessageSquare, FileBarChart,
-  Heart, RefreshCw, Wallet, Package, Bell, UserCog, Printer, FlaskConical,
+  Heart, Wallet, Package, Bell, UserCog, Printer, FlaskConical,
   DollarSign, Layers, Sun, Moon, Target, Download,
   Cake, Shield, Smartphone, Copy, ChevronDown, ChevronUp,
   CheckCircle, PackageCheck, XCircle, Bike, UserCheck, SlidersHorizontal, Filter, Reply, Sparkles, Save,
@@ -28,12 +28,12 @@ import { MODULE_PERMISSIONS } from "@/lib/module-permissions";
 
 // Lazy-load heavy admin tabs for better initial load performance
 const TabSpinner = () => (
-  <div className="space-y-4 animate-pulse">
+  <div className="space-y-3 sm:space-y-4 animate-pulse">
     <div className="flex items-center gap-3">
       <div className="h-8 w-48 bg-gray-200 dark:bg-surface rounded-lg" />
       <div className="h-8 w-32 bg-gray-200 dark:bg-surface rounded-lg ml-auto" />
     </div>
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[1, 2, 3].map(i => (
           <div key={i} className="space-y-2">
@@ -43,7 +43,7 @@ const TabSpinner = () => (
         ))}
       </div>
     </div>
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 space-y-3">
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6 space-y-3">
       {[1, 2, 3, 4].map(i => (
         <div key={i} className="flex items-center gap-4">
           <div className="h-10 w-10 bg-gray-200 dark:bg-surface rounded-xl shrink-0" />
@@ -88,6 +88,8 @@ const AgendaUtilidadesModule = dynamic(() => import("@/components/admin/unified/
 const SeguridadModule = dynamic(() => import("@/components/admin/unified/SeguridadModule"), { loading: TabSpinner });
 const SistemaModule = dynamic(() => import("@/components/admin/unified/SistemaModule"), { loading: TabSpinner });
 
+import SSEListener from "@/components/admin/SSEListener";
+
 const TeamTab        = dynamic(() => import("@/components/admin/TeamTab"),        { loading: TabSpinner });
 const PlanTab        = dynamic(() => import("@/components/admin/PlanTab"),        { loading: TabSpinner });
 const ChangelogModule = dynamic(() => import("@/components/admin/ChangelogModule"), { loading: TabSpinner });
@@ -100,34 +102,35 @@ const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false
 
 type Tab = "panel-principal" | "pos-caja" | "inventario-almacenes" | "reposicion" | "catalogo-tienda"
   | "precios-promos" | "compras" | "proveedores" | "logistica" | "devoluciones-calidad"
-  | "ventas-marketing" | "crm-clientes" | "fidelizacion" | "encuestas-soporte"
+  | "ventas-marketing" | "crm-clientes" | "clientes" | "fidelizacion" | "encuestas-soporte" | "resenas"
   | "analytics-bi" | "proyecciones" | "finanzas" | "tesoreria" | "facturacion" | "gastos-activos"
   | "rrhh" | "proyectos-tareas" | "comunicaciones" | "alertas-automatizacion"
-  | "reportes-documentos" | "agenda-utilidades" | "seguridad" | "sistema"
-  | "clientes" | "resenas" | "pedidos" | "configuracion" | "equipo" | "plan" | "visitantes" | "changelog";
+  | "reportes-documentos" | "agenda-utilidades" | "seguridad" | "sistema" | "configuracion"
+  | "pedidos" | "visitantes" | "plan" | "changelog";
 
 // Old tab IDs → new unified IDs for localStorage migration
 const TAB_MIGRATION: Record<string, Tab> = {
   dashboard: "panel-principal", "dashboard-ejecutivo": "panel-principal",
   pos: "pos-caja", caja: "pos-caja", "arqueo-caja": "pos-caja", turnos: "pos-caja",
   inventario: "inventario-almacenes", kardex: "inventario-almacenes", lotes: "inventario-almacenes", "inventario-fisico": "inventario-almacenes", mermas: "inventario-almacenes", almacenes: "inventario-almacenes", ubicaciones: "inventario-almacenes", transferencias: "inventario-almacenes",
-  "auto-reorden": "reposicion", "reorden-dinamico": "reposicion", prediccion: "reposicion",
+  "auto-reorden": "inventario-almacenes", "reorden-dinamico": "inventario-almacenes", prediccion: "inventario-almacenes", reposicion: "inventario-almacenes",
   "categorias-editor": "catalogo-tienda", "combos-editor": "catalogo-tienda", combos: "catalogo-tienda", kits: "catalogo-tienda", "pagina-inicio": "catalogo-tienda",
   benchmark: "precios-promos", "historial-precios": "precios-promos", promociones: "precios-promos", cupones: "precios-promos", "ab-tests": "precios-promos",
   compras: "compras", "plan-compras": "compras", "aprobacion-compras": "compras", contratos: "compras", cotizaciones: "compras", recepcion: "compras",
-  proveedores: "proveedores", "portal-proveedor": "proveedores", evaluaciones: "proveedores", "calidad-proveedor": "proveedores", "pagos-proveedor": "proveedores",
+  proveedores: "compras", "portal-proveedor": "compras", evaluaciones: "compras", "calidad-proveedor": "compras", "pagos-proveedor": "compras",
   entregas: "logistica", "rutas-delivery": "logistica", "delivery-horarios": "logistica", "seguimiento-envios": "logistica", "costos-envio": "logistica", flota: "logistica", "logistica-devoluciones": "logistica",
   devoluciones: "devoluciones-calidad", "devoluciones-avanzadas": "devoluciones-calidad", calidad: "devoluciones-calidad", anomalias: "devoluciones-calidad",
   marketing: "ventas-marketing", "forecast-ventas": "ventas-marketing", "metricas-conversion": "ventas-marketing", referidos: "ventas-marketing",
   crm: "crm-clientes", "cliente-360": "crm-clientes", segmentos: "crm-clientes", "segmentos-auto": "crm-clientes", clv: "crm-clientes",
+  clientes: "crm-clientes", visitantes: "crm-clientes",
   fidelizacion: "fidelizacion", "programa-puntos": "fidelizacion", "wish-lists": "fidelizacion",
-  nps: "encuestas-soporte", encuestas: "encuestas-soporte", soporte: "encuestas-soporte",
+  nps: "encuestas-soporte", encuestas: "encuestas-soporte", soporte: "encuestas-soporte", "reseñas": "encuestas-soporte", resenas: "encuestas-soporte",
   bi: "analytics-bi", "mapa-calor": "analytics-bi", "abc-analysis": "analytics-bi", pareto: "analytics-bi", "bcg-matrix": "analytics-bi", "analisis-cesta": "analytics-bi", "kpi-personalizado": "analytics-bi",
   simulador: "proyecciones", estacionalidad: "proyecciones", "comparador-periodos": "proyecciones",
   pl: "finanzas", "balance-general": "finanzas", "flujo-caja": "finanzas", presupuestos: "finanzas", "presupuesto-real": "finanzas", "break-even": "finanzas", rentabilidad: "finanzas", margenes: "finanzas",
-  tesoreria: "tesoreria", "proyeccion-liquidez": "tesoreria", cheques: "tesoreria", conciliacion: "tesoreria", "centro-cobros": "tesoreria", "cuentas-cobrar": "tesoreria",
-  facturacion: "facturacion", "e-facturacion": "facturacion", impuestos: "facturacion", cuentas: "facturacion",
-  gastos: "gastos-activos", "centros-costo": "gastos-activos", seguros: "gastos-activos", activos: "gastos-activos",
+  tesoreria: "finanzas", "proyeccion-liquidez": "finanzas", cheques: "finanzas", conciliacion: "finanzas", "centro-cobros": "finanzas", "cuentas-cobrar": "finanzas",
+  facturacion: "finanzas", "e-facturacion": "finanzas", impuestos: "finanzas", cuentas: "finanzas",
+  gastos: "finanzas", "centros-costo": "finanzas", seguros: "finanzas", activos: "finanzas", "gastos-activos": "finanzas",
   rrhh: "rrhh", nomina: "rrhh", sucursales: "rrhh",
   proyectos: "proyectos-tareas", tareas: "proyectos-tareas", kanban: "proyectos-tareas", metas: "proyectos-tareas", "tablero-metas": "proyectos-tareas",
   "hub-comunicaciones": "comunicaciones", chat: "comunicaciones", "plantillas-mensaje": "comunicaciones", notificaciones: "comunicaciones",
@@ -135,9 +138,10 @@ const TAB_MIGRATION: Record<string, Tab> = {
   reportes: "reportes-documentos", "reportes-auto": "reportes-documentos", "importar-exportar": "reportes-documentos", documentos: "reportes-documentos",
   calendario: "agenda-utilidades", "notas-rapidas": "agenda-utilidades", "filtros-guardados": "agenda-utilidades",
   "usuarios-admin": "seguridad", "permisos-roles": "seguridad", "logs-seguridad": "seguridad", auditoria: "seguridad", actividad: "seguridad", cumplimiento: "seguridad",
-  "salud-sistema": "sistema", "backup-restaurar": "sistema", webhooks: "sistema",
-  clientes: "clientes", "reseñas": "resenas", pedidos: "pedidos", configuracion: "configuracion",
-  visitantes: "visitantes",
+  "salud-sistema": "seguridad", "backup-restaurar": "seguridad", webhooks: "seguridad", sistema: "seguridad", configuracion: "seguridad", equipo: "seguridad",
+  pedidos: "pedidos",
+  changelog: "changelog",
+  plan: "plan",
 };
 
 // Modules that ship with auto-seeded demo data and their API cleanup endpoint
@@ -195,7 +199,7 @@ const TAB_CATEGORIES: TabCategory[] = [
     id: "operaciones",
     label: "Operaciones & POS",
     icon: Monitor,
-    tabs: ["panel-principal", "pos-caja", "inventario-almacenes", "reposicion", "pedidos"]
+    tabs: ["panel-principal", "pos-caja", "inventario-almacenes", "pedidos"]
   },
   {
     id: "producto",
@@ -207,7 +211,7 @@ const TAB_CATEGORIES: TabCategory[] = [
     id: "compras-proveedores",
     label: "Compras & Proveedores",
     icon: Truck,
-    tabs: ["compras", "proveedores"]
+    tabs: ["compras"]
   },
   {
     id: "logistica-calidad",
@@ -219,7 +223,7 @@ const TAB_CATEGORIES: TabCategory[] = [
     id: "clientes-marketing",
     label: "Clientes & Marketing",
     icon: Users,
-    tabs: ["clientes", "crm-clientes", "ventas-marketing", "fidelizacion", "encuestas-soporte", "resenas", "visitantes"]
+    tabs: ["crm-clientes", "ventas-marketing", "fidelizacion", "encuestas-soporte"]
   },
   {
     id: "analytics",
@@ -231,7 +235,7 @@ const TAB_CATEGORIES: TabCategory[] = [
     id: "finanzas",
     label: "Finanzas",
     icon: DollarSign,
-    tabs: ["finanzas", "tesoreria", "facturacion", "gastos-activos"]
+    tabs: ["finanzas"]
   },
   {
     id: "organizacion",
@@ -243,7 +247,7 @@ const TAB_CATEGORIES: TabCategory[] = [
     id: "admin-sistema",
     label: "Administración & Sistema",
     icon: Settings,
-    tabs: ["reportes-documentos", "agenda-utilidades", "seguridad", "sistema", "configuracion", "changelog"]
+    tabs: ["reportes-documentos", "agenda-utilidades", "seguridad", "plan", "changelog"]
   },
 ];
 
@@ -318,7 +322,7 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
 }
 
 function avatarColor(name: string): string {
-  const colors = ["#ef4444","#f97316","#f59e0b","#65a30d","#16a34a","#14b8a6","#0891b2","#0ea5e9","#3b82f6","#6366f1","#8b5cf6","#a855f7","#ec4899","#f43f5e"];
+  const colors = ["#ef4444","#f97316","#f59e0b","#65a30d","#16a34a","#14b8a6","#0891b2","#0ea5e9","#3b82f6","#2d6a4f","#8b5cf6","#a855f7","#ec4899","#f43f5e"];
   let h = 0;
   for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
   return colors[Math.abs(h) % colors.length];
@@ -901,11 +905,11 @@ function CustomersTab() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Clientes</h2>
+          <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-foreground">Clientes</h2>
           <p className="text-sm text-gray-500 dark:text-muted">{customers.length} registrados</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -942,7 +946,7 @@ function CustomersTab() {
             className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent px-3 py-1.5 rounded-lg transition-colors"
             title="Exportar clientes a CSV"
           >
-            <Download className="h-3.5 w-3.5" /> CSV
+            <Download className="h-4 w-4" /> CSV
           </button>
         </div>
       </div>
@@ -1039,14 +1043,14 @@ function CustomersTab() {
             onClick={() => openSegmentBuilder()}
             className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-violet-500 text-white hover:bg-violet-600 transition-colors"
           >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <SlidersHorizontal className="h-4 w-4" />
             Crear segmento
           </button>
           <button
             onClick={() => setShowWhatsAppModal(true)}
             className="ml-auto flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-green-500 text-white hover:bg-green-600 transition-colors"
           >
-            <Smartphone className="h-3.5 w-3.5" />
+            <Smartphone className="h-4 w-4" />
             WhatsApp Masivo
           </button>
         </div>
@@ -1101,7 +1105,7 @@ function CustomersTab() {
                         onClick={e => e.stopPropagation()}
                         className="mt-2 flex items-center justify-center gap-1.5 w-full px-2 py-1.5 text-[11px] font-bold rounded-lg bg-green-500 hover:bg-green-600 text-white transition-colors"
                       >
-                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.75.75 0 00.917.918l4.458-1.495A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.94 9.94 0 01-5.332-1.543.75.75 0 00-.653-.088l-2.845.954.954-2.845a.75.75 0 00-.088-.653A9.94 9.94 0 012.493 12.5C2.493 7.253 6.753 2.993 12 2.993c5.247 0 9.507 4.26 9.507 9.507S17.247 22 12 22z"/></svg>
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.75.75 0 00.917.918l4.458-1.495A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.94 9.94 0 01-5.332-1.543.75.75 0 00-.653-.088l-2.845.954.954-2.845a.75.75 0 00-.088-.653A9.94 9.94 0 012.493 12.5C2.493 7.253 6.753 2.993 12 2.993c5.247 0 9.507 4.26 9.507 9.507S17.247 22 12 22z"/></svg>
                         Felicitar
                       </a>
                     )}
@@ -1195,7 +1199,7 @@ function CustomersTab() {
                       )}
                       title={c.aiNotes ? "Ver análisis guardado" : "Generar análisis IA"}
                     >
-                      <MessageCircle className="h-3.5 w-3.5" />
+                      <MessageCircle className="h-4 w-4" />
                       <span>Análisis IA</span>
                       {c.aiNotes && <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />}
                     </button>
@@ -1254,7 +1258,7 @@ function CustomersTab() {
         <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/50" style={{ zIndex: 100 }} onClick={() => setSelectedCustomer(null)}>
           <div className="bg-white dark:bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col" onClick={e => e.stopPropagation()}>
             {/* Colored header */}
-            <div className="rounded-t-2xl sm:rounded-t-2xl px-5 py-4 shrink-0" style={{ background: 'linear-gradient(to right, #6366f1, #7c3aed)' }}>
+            <div className="rounded-t-2xl sm:rounded-t-2xl px-5 py-4 shrink-0" style={{ background: 'linear-gradient(to right, #2d6a4f, #7c3aed)' }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg shrink-0" style={{background: avatarColor(selectedCustomer.name), boxShadow:'0 0 0 2px rgba(255,255,255,0.35)'}}>
@@ -1343,7 +1347,7 @@ function CustomersTab() {
                 return (
                   <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/10 dark:to-purple-900/10 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4">
                     <h4 className="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wide mb-3 flex items-center gap-2">
-                      <Target className="h-3.5 w-3.5" />
+                      <Target className="h-4 w-4" />
                       Resumen 360°
                     </h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -1432,7 +1436,7 @@ function CustomersTab() {
               <div className="rounded-xl border border-violet-100 bg-violet-50/50 p-3 space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: 'linear-gradient(to bottom right, #8b5cf6, #9333ea)' }}>
-                    <MessageCircle className="h-3.5 w-3.5 text-white" />
+                    <MessageCircle className="h-4 w-4 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-violet-800">Análisis IA</p>
@@ -1449,7 +1453,7 @@ function CustomersTab() {
                       onClick={() => { setAiAnalysis(selectedCustomer.aiNotes!); setAiAnalysisSaved(true); setShowAiModal(true); }}
                       className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-white dark:bg-card border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors"
                     >
-                      <FileText className="h-3.5 w-3.5" />
+                      <FileText className="h-4 w-4" />
                       Ver guardado
                     </button>
                   )}
@@ -1459,7 +1463,7 @@ function CustomersTab() {
                     className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-white hover:brightness-110 transition-all disabled:opacity-60"
                     style={{ background: 'linear-gradient(to right, #8b5cf6, #9333ea)' }}
                   >
-                    {loadingAi ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />}
+                    {loadingAi ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
                     {selectedCustomer.aiNotes ? "Generar nuevo" : "Generar análisis"}
                   </button>
                 </div>
@@ -1470,7 +1474,7 @@ function CustomersTab() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-accent flex items-center justify-center shrink-0">
-                      <FileText className="h-3.5 w-3.5 text-gray-600 dark:text-muted" />
+                      <FileText className="h-4 w-4 text-gray-600 dark:text-muted" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-gray-800 dark:text-foreground">Notas rápidas</p>
@@ -1492,7 +1496,7 @@ function CustomersTab() {
                   disabled={savingNotes || quickNotes === selectedCustomer.privateNotes}
                   className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold bg-gray-900 dark:bg-foreground text-white dark:text-surface hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {savingNotes ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                  {savingNotes ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   {savingNotes ? "Guardando..." : "Guardar notas"}
                 </button>
               </div>
@@ -1552,7 +1556,7 @@ function CustomersTab() {
                       </div>
                       <a href={googleMapsUrl(loc.location)} target="_blank" rel="noopener noreferrer"
                         className="text-xs text-primary hover:underline shrink-0 flex items-center gap-1">
-                        <ExternalLink className="h-3.5 w-3.5" /> Maps
+                        <ExternalLink className="h-4 w-4" /> Maps
                       </a>
                     </div>
                   ))}
@@ -1566,7 +1570,7 @@ function CustomersTab() {
                     onClick={() => loadTimeline(selectedCustomer.phone)}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-semibold bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors"
                   >
-                    <Activity className="h-3.5 w-3.5" /> Ver timeline de interacciones
+                    <Activity className="h-4 w-4" /> Ver timeline de interacciones
                   </button>
                 ) : (
                   <>
@@ -1674,7 +1678,7 @@ function CustomersTab() {
                 <p className="font-bold text-gray-900 dark:text-foreground">{detailOrder.customer.name}</p>
                 {detailOrder.customer.phone && (
                   <p className="text-sm text-gray-500 dark:text-muted flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5 shrink-0" /> {detailOrder.customer.phone}
+                    <Phone className="h-4 w-4 shrink-0" /> {detailOrder.customer.phone}
                   </p>
                 )}
               </div>
@@ -2023,7 +2027,7 @@ function CustomersTab() {
               {/* Filters grid */}
               <div className="border-t border-gray-200 dark:border-card-border pt-3 space-y-3">
                 <p className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wide flex items-center gap-2">
-                  <Filter className="h-3.5 w-3.5" /> Criterios de filtrado
+                  <Filter className="h-4 w-4" /> Criterios de filtrado
                 </p>
 
                 {/* Total spent range */}
@@ -2338,10 +2342,10 @@ function ReviewsTab() {
   const STATUS_LABEL: Record<string, string> = { pending: "Pendiente", approved: "Aprobada", rejected: "Rechazada" };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Reseñas</h2>
+          <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-foreground">Reseñas</h2>
           <p className="text-sm text-gray-500 dark:text-muted">
             {reviews.length} total · {approvedReviews.length} aprobadas · promedio {avg} ★
             {pendingCount > 0 && <span className="ml-2 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-bold">{pendingCount} pendientes</span>}
@@ -2457,14 +2461,14 @@ function ReviewsTab() {
                           className="p-1 rounded text-violet-400 hover:text-violet-600 hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors"
                           title="Editar respuesta"
                         >
-                          <Pencil className="h-3.5 w-3.5" />
+                          <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => deleteReply(r.id)}
                           className="p-1 rounded text-violet-400 hover:text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                           title="Eliminar respuesta"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
@@ -2866,11 +2870,11 @@ function OrdersTab() {
   const total = activeOrders.reduce((s, o) => s + o.total, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Pedidos</h2>
+          <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-foreground">Pedidos</h2>
           <p className="text-sm text-gray-500 dark:text-muted">{activeOrders.length} activos · S/{total.toFixed(2)} total</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -3046,14 +3050,14 @@ function OrdersTab() {
                         className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors border border-emerald-200"
                         title="Confirmar Yape como válido"
                       >
-                        <Check className="h-3.5 w-3.5" /> Confirmar Yape
+                        <Check className="h-4 w-4" /> Confirmar Yape
                       </button>
                       <button
                         onClick={() => rejectYape(o.id)}
                         className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors border border-red-200"
                         title="Rechazar Yape (pago falso)"
                       >
-                        <X className="h-3.5 w-3.5" /> Falso
+                        <X className="h-4 w-4" /> Falso
                       </button>
                     </>
                   )}
@@ -3063,7 +3067,7 @@ function OrdersTab() {
                       className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-200"
                       title="Marcar deuda como cobrada"
                     >
-                      <Check className="h-3.5 w-3.5" /> Cobrado
+                      <Check className="h-4 w-4" /> Cobrado
                     </button>
                   )}
                   <a
@@ -3236,7 +3240,7 @@ function OrdersTab() {
                   <p className="font-bold text-gray-900 dark:text-foreground">{detailOrder.customer.name}</p>
                   {detailOrder.customer.phone && (
                     <p className="text-sm text-gray-500 dark:text-muted flex items-center gap-1.5">
-                      <Phone className="h-3.5 w-3.5 shrink-0" /> {detailOrder.customer.phone}
+                      <Phone className="h-4 w-4 shrink-0" /> {detailOrder.customer.phone}
                     </p>
                   )}
                 </div>
@@ -3285,13 +3289,13 @@ function OrdersTab() {
                           onClick={() => verifyYape(detailOrder.id)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors border border-emerald-200"
                         >
-                          <Check className="h-3.5 w-3.5" /> Confirmar Yape
+                          <Check className="h-4 w-4" /> Confirmar Yape
                         </button>
                         <button
                           onClick={() => rejectYape(detailOrder.id)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 transition-colors border border-red-200"
                         >
-                          <X className="h-3.5 w-3.5" /> Yape falso
+                          <X className="h-4 w-4" /> Yape falso
                         </button>
                       </div>
                     )}
@@ -3300,7 +3304,7 @@ function OrdersTab() {
                         onClick={() => markDeudaPaid(detailOrder.id)}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors border border-blue-200 mt-1"
                       >
-                        <Check className="h-3.5 w-3.5" /> Marcar como cobrado
+                        <Check className="h-4 w-4" /> Marcar como cobrado
                       </button>
                     )}
                   </div>
@@ -3590,13 +3594,13 @@ function OrdersTab() {
                             rel="noopener noreferrer"
                             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors"
                           >
-                            <MapPin className="h-3.5 w-3.5" /> Maps
+                            <MapPin className="h-4 w-4" /> Maps
                           </a>
                           <button
                             onClick={() => setConfirmDeleteId(o.id)}
                             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold text-red-500 bg-red-50 hover:bg-red-100 transition-colors"
                           >
-                            <Trash2 className="h-3.5 w-3.5" /> Eliminar
+                            <Trash2 className="h-4 w-4" /> Eliminar
                           </button>
                         </div>
                       </div>
@@ -4218,7 +4222,7 @@ function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onMode
   if (loading) return (
     <div className="space-y-4 animate-pulse">
       {[1, 2, 3].map(i => (
-        <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6">
+        <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
           <div className="flex items-center gap-4">
             <div className="h-12 w-12 bg-gray-200 dark:bg-surface rounded-xl shrink-0" />
             <div className="flex-1 space-y-2">
@@ -4280,9 +4284,9 @@ function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onMode
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div>
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Configuración</h2>
+        <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-foreground">Configuración</h2>
         <p className="text-sm text-gray-500 dark:text-muted">Personaliza tu tienda, pagos y navegación</p>
       </div>
 
@@ -4307,7 +4311,7 @@ function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onMode
                 onClick={() => setOpenModal(s.id)}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors shrink-0"
               >
-                <Pencil className="h-3.5 w-3.5" /> Editar
+                <Pencil className="h-4 w-4" /> Editar
               </button>
             </div>
           </div>
@@ -4748,16 +4752,16 @@ function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onMode
             <div className="overflow-y-auto px-6 py-5 flex-1 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Store className="h-3.5 w-3.5" /> Nombre del negocio</label>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Store className="h-4 w-4" /> Nombre del negocio</label>
                   <input value={businessName} onChange={e => setBusinessName(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Phone className="h-3.5 w-3.5" /> WhatsApp (con código país)</label>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Phone className="h-4 w-4" /> WhatsApp (con código país)</label>
                   <input value={businessPhone} onChange={e => setBusinessPhone(e.target.value)} placeholder="51916409675" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5">
-                    <MapPin className="h-3.5 w-3.5" /> Dirección / Ciudad
+                    <MapPin className="h-4 w-4" /> Dirección / Ciudad
                     <button type="button" onClick={() => setShowMapPicker(true)} className="ml-auto inline-flex items-center gap-1 text-xs text-blue-600 font-semibold hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg transition-colors" title="Seleccionar en mapa">
                       <MapPin className="h-3 w-3" /> Abrir mapa
                     </button>
@@ -4782,21 +4786,21 @@ function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onMode
                   </button>
                 </div>
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Truck className="h-3.5 w-3.5" /> Zona de delivery</label>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Truck className="h-4 w-4" /> Zona de delivery</label>
                   <input value={deliveryZone} onChange={e => setDeliveryZone(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Clock className="h-3.5 w-3.5" /> Horario de atención</label>
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Clock className="h-4 w-4" /> Horario de atención</label>
                   <input value={hours} onChange={e => setHours(e.target.value)} placeholder="Lun - Sáb: 7am - 9pm" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
               </div>
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><AlignLeft className="h-3.5 w-3.5" /> Descripción del negocio</label>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><AlignLeft className="h-4 w-4" /> Descripción del negocio</label>
                 <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none" />
               </div>
               {/* Logo */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-2"><ImageIcon className="h-3.5 w-3.5" /> Logo del negocio</label>
+                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-2"><ImageIcon className="h-4 w-4" /> Logo del negocio</label>
                 <div className="flex flex-col gap-2">
                   <button type="button" onClick={() => logoImgRef.current?.click()}
                     className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-gray-300 hover:border-primary text-sm font-semibold text-gray-500 dark:text-muted hover:text-primary bg-gray-50 dark:bg-surface hover:bg-primary/5 transition-colors">
@@ -4869,15 +4873,15 @@ function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onMode
                 {yapeEnabled && (
                   <div className="space-y-3">
                     <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><User className="h-3.5 w-3.5" /> Nombre del titular</label>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><User className="h-4 w-4" /> Nombre del titular</label>
                       <input value={yapeName} onChange={e => setYapeName(e.target.value)} placeholder="Juan Pérez" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-500 outline-none text-sm" />
                     </div>
                     <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Phone className="h-3.5 w-3.5" /> Número de Yape</label>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Phone className="h-4 w-4" /> Número de Yape</label>
                       <input value={yapePhone} onChange={e => setYapePhone(e.target.value)} placeholder="987654321" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-500 outline-none text-sm font-mono" />
                     </div>
                     <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-2"><ImageIcon className="h-3.5 w-3.5" /> Imagen / QR de Yape</label>
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-2"><ImageIcon className="h-4 w-4" /> Imagen / QR de Yape</label>
                       <div className="flex flex-col gap-2">
                         <button type="button" onClick={() => yapeImgRef.current?.click()}
                           className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-purple-300 hover:border-purple-500 text-sm font-semibold text-purple-600 hover:text-purple-700 bg-white dark:bg-card hover:bg-purple-50 transition-colors">
@@ -4932,11 +4936,11 @@ function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onMode
                   <div className="flex flex-col gap-0.5">
                     <button type="button" disabled={idx === 0} onClick={() => moveNavLink(idx, -1)}
                       className="p-0.5 rounded text-gray-400 dark:text-muted hover:text-gray-800 dark:hover:text-foreground disabled:opacity-25 transition-colors">
-                      <ArrowUp className="h-3.5 w-3.5" />
+                      <ArrowUp className="h-4 w-4" />
                     </button>
                     <button type="button" disabled={idx === navLinks.length - 1} onClick={() => moveNavLink(idx, 1)}
                       className="p-0.5 rounded text-gray-400 dark:text-muted hover:text-gray-800 dark:hover:text-foreground disabled:opacity-25 transition-colors">
-                      <ArrowDown className="h-3.5 w-3.5" />
+                      <ArrowDown className="h-4 w-4" />
                     </button>
                   </div>
                   <span className="flex-1 font-semibold text-sm text-gray-800 dark:text-foreground">{NAV_LABEL[link.id] || link.id}</span>
@@ -5341,6 +5345,38 @@ function AdminPage() {
     }
   }, [hasAsked, permission, authReady, requestPermission]);
 
+  useEffect(() => {
+    const root = document.querySelector('[data-admin-shell="true"]');
+    if (!root) return;
+
+    const applyMobileTableCards = () => {
+      const tables = root.querySelectorAll("table");
+      tables.forEach((table) => {
+        const headerCells = Array.from(table.querySelectorAll("thead th"));
+        const labels = headerCells.map((cell) => (cell.textContent ?? "").replace(/\s+/g, " ").trim());
+
+        table.querySelectorAll("tbody tr").forEach((row) => {
+          Array.from(row.children).forEach((cell, index) => {
+            if (!(cell instanceof HTMLElement)) return;
+            cell.dataset.label = labels[index] || `Campo ${index + 1}`;
+          });
+        });
+      });
+    };
+
+    const scheduleApply = () => window.requestAnimationFrame(applyMobileTableCards);
+    scheduleApply();
+
+    const observer = new MutationObserver(scheduleApply);
+    observer.observe(root, { childList: true, subtree: true });
+    window.addEventListener("resize", scheduleApply);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", scheduleApply);
+    };
+  }, [authReady, tab]);
+
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     router.push("/admin/login");
@@ -5350,34 +5386,26 @@ function AdminPage() {
     // — Operaciones & POS —
     { id: "panel-principal" as Tab,         label: "Panel Principal",            icon: BarChart3 },
     { id: "pos-caja" as Tab,               label: "POS & Caja",                icon: Monitor },
-    { id: "inventario-almacenes" as Tab,   label: "Inventario & Almacenes",    icon: Boxes },
-    { id: "reposicion" as Tab,             label: "Reposición",                icon: RefreshCw },
+    { id: "inventario-almacenes" as Tab,   label: "Inventario & Reposición",    icon: Boxes },
     { id: "pedidos" as Tab,                label: "Pedidos",                   icon: ShoppingCart },
     // — Producto & Precios —
     { id: "catalogo-tienda" as Tab,        label: "Catálogo & Tienda",         icon: Store },
     { id: "precios-promos" as Tab,         label: "Precios & Promos",          icon: DollarSign },
     // — Compras & Proveedores —
-    { id: "compras" as Tab,                label: "Compras",                   icon: FileText },
-    { id: "proveedores" as Tab,            label: "Proveedores",               icon: Truck },
+    { id: "compras" as Tab,                label: "Compras & Proveedores",     icon: Truck },
     // — Logística & Calidad —
     { id: "logistica" as Tab,              label: "Logística",                 icon: MapPin },
     { id: "devoluciones-calidad" as Tab,   label: "Devoluciones & Calidad",    icon: RotateCcw },
     // — Clientes & Marketing —
-    { id: "clientes" as Tab,               label: "Clientes",                  icon: Users },
-    { id: "crm-clientes" as Tab,           label: "CRM & Clientes",            icon: Users },
+    { id: "crm-clientes" as Tab,           label: "Clientes & Leads",          icon: Users },
     { id: "ventas-marketing" as Tab,       label: "Ventas & Marketing",        icon: Megaphone },
     { id: "fidelizacion" as Tab,           label: "Fidelización",              icon: Heart },
-    { id: "encuestas-soporte" as Tab,      label: "Encuestas & Soporte",       icon: MessageSquare },
-    { id: "resenas" as Tab,                label: "Reseñas",                   icon: Star },
-    { id: "visitantes" as Tab,             label: "Visitantes",                icon: UserCheck },
+    { id: "encuestas-soporte" as Tab,      label: "Customer Success (CX)",     icon: MessageSquare },
     // — Inteligencia & Analytics —
     { id: "analytics-bi" as Tab,           label: "Analytics & BI",            icon: Brain },
     { id: "proyecciones" as Tab,           label: "Proyecciones",              icon: SlidersHorizontal },
     // — Finanzas —
-    { id: "finanzas" as Tab,               label: "Finanzas",                  icon: DollarSign },
-    { id: "tesoreria" as Tab,              label: "Tesorería",                 icon: Wallet },
-    { id: "facturacion" as Tab,            label: "Facturación",               icon: FileText },
-    { id: "gastos-activos" as Tab,         label: "Gastos & Activos",          icon: Wallet },
+    { id: "finanzas" as Tab,               label: "Finanzas & Contabilidad",   icon: Wallet },
     // — Organización —
     { id: "rrhh" as Tab,                   label: "Recursos Humanos",          icon: Users },
     { id: "proyectos-tareas" as Tab,       label: "Proyectos & Tareas",        icon: Target },
@@ -5386,11 +5414,9 @@ function AdminPage() {
     // — Administración & Sistema —
     { id: "reportes-documentos" as Tab,    label: "Reportes & Documentos",     icon: FileBarChart },
     { id: "agenda-utilidades" as Tab,      label: "Agenda & Utilidades",       icon: CalendarDays },
-    { id: "seguridad" as Tab,              label: "Seguridad",                 icon: Lock },
-    { id: "sistema" as Tab,                label: "Sistema",                   icon: Activity },
-    { id: "configuracion" as Tab,          label: "Configuración",             icon: Settings },
-    { id: "equipo" as Tab,                  label: "Equipo",                    icon: Users },
+    { id: "seguridad" as Tab,              label: "Sistema & Accesos",         icon: Settings },
     { id: "plan" as Tab,                    label: "Plan & Límites",            icon: Zap },
+    { id: "changelog" as Tab,               label: "Changelog",                 icon: Target },
   ] as const;
 
   // Role-based tab filtering — populated from lib/module-permissions.ts
@@ -5441,7 +5467,7 @@ function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-background">
+    <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-background" data-admin-shell="true">
       {/* Mobile nav overlay */}
       {mobileNavOpen && (
         <div
@@ -5535,7 +5561,7 @@ function AdminPage() {
         <nav className="flex-1 overflow-y-auto py-3 px-3">
           {/* Sidebar search */}
           <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 dark:text-muted" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
             <input
               type="text"
               placeholder="Filtrar módulos…"
@@ -5609,7 +5635,7 @@ function AdminPage() {
               <Star
                 onClick={e => { e.stopPropagation(); toggleFavorite(id); }}
                 className={cn(
-                  "h-3.5 w-3.5 shrink-0 transition-all cursor-pointer",
+                  "h-4 w-4 shrink-0 transition-all cursor-pointer",
                   favoriteTabs.has(id) ? "fill-amber-400 text-amber-400" : "opacity-0 group-hover:opacity-60 text-gray-400"
                 )}
               />
@@ -5674,7 +5700,7 @@ function AdminPage() {
               title="Borrar todos los datos"
               className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
             >
-              {clearingData ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {clearingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
             </button>
           )}
         </div>
@@ -5725,7 +5751,7 @@ function AdminPage() {
                     onMouseEnter={() => setHoveredCategory(null)}
                     className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
                   >
-                    <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                    <CheckCircle className="h-4 w-4 shrink-0" />
                     <span>Restablecer {hiddenTabs.size} oculto{hiddenTabs.size !== 1 ? "s" : ""}</span>
                   </button>
                 )}
@@ -5748,7 +5774,7 @@ function AdminPage() {
                       >
                         <CategoryIcon className="h-4 w-4 shrink-0" />
                         <span className="truncate flex-1 text-left">{category.label}</span>
-                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                        <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
                       </button>
                       {/* Flyout sub-menu */}
                       {isHovered && (
@@ -5772,7 +5798,7 @@ function AdminPage() {
                                   onClick={() => { if (!isHidden) { navigateTab(tabId as Tab); setCategoryDropdownOpen(false); setHoveredCategory(null); } }}
                                   className="flex items-center gap-2 flex-1 min-w-0"
                                 >
-                                  <TabIcon className="h-3.5 w-3.5 shrink-0" />
+                                  <TabIcon className="h-4 w-4 shrink-0" />
                                   <span className="truncate">{tabInfo.label}</span>
                                   {DEMO_DATA_MODULES[tabId as Tab] && !clearedDemoTabs.has(tabId as Tab) && (
                                     <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" title="Datos de ejemplo" />
@@ -5786,7 +5812,7 @@ function AdminPage() {
                                     isHidden ? "text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 opacity-100" : "text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
                                   )}
                                 >
-                                  {isHidden ? <CheckCircle className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                                  {isHidden ? <CheckCircle className="h-4 w-4" /> : <X className="h-4 w-4" />}
                                 </button>
                               </div>
                             );
@@ -5796,7 +5822,7 @@ function AdminPage() {
                             onClick={() => { setSelectedCategory(category.id); setCategoryDropdownOpen(false); setHoveredCategory(null); }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/5 transition-colors"
                           >
-                            <Layers className="h-3.5 w-3.5 shrink-0" />
+                            <Layers className="h-4 w-4 shrink-0" />
                             <span>Ver toda la categoría</span>
                           </button>
                         </div>
@@ -5812,7 +5838,7 @@ function AdminPage() {
         <nav className="flex-1 overflow-y-auto py-3 px-3">
           {/* Sidebar search */}
           <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 dark:text-muted" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
             <input
               type="text"
               placeholder="Filtrar módulos…"
@@ -5886,7 +5912,7 @@ function AdminPage() {
               <Star
                 onClick={e => { e.stopPropagation(); toggleFavorite(id); }}
                 className={cn(
-                  "h-3.5 w-3.5 shrink-0 transition-all cursor-pointer",
+                  "h-4 w-4 shrink-0 transition-all cursor-pointer",
                   favoriteTabs.has(id) ? "fill-amber-400 text-amber-400" : "opacity-0 group-hover:opacity-60 text-gray-400"
                 )}
               />
@@ -5932,7 +5958,7 @@ function AdminPage() {
           </div>
           <div>
             {/* Mobile: show current tab name */}
-            <h1 className="font-extrabold text-gray-900 dark:text-foreground text-base leading-tight sm:hidden">{currentTab.label}</h1>
+            <h1 className="font-extrabold text-gray-900 dark:text-foreground text-base leading-tight sm:hidden truncate max-w-[40vw]">{currentTab.label}</h1>
             <h1 className="font-extrabold text-gray-900 dark:text-foreground text-base leading-tight hidden sm:block">Panel de administración</h1>
             <p className="text-xs text-gray-400 dark:text-muted hidden sm:block">Bodega San Martín</p>
           </div>
@@ -5943,7 +5969,7 @@ function AdminPage() {
             title="Búsqueda global (Ctrl+K)"
             className="hidden sm:flex items-center gap-1.5 px-3 h-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors text-xs font-semibold border border-gray-200 dark:border-card-border"
           >
-            <Search className="h-3.5 w-3.5" />
+            <Search className="h-4 w-4" />
             <span>Buscar</span>
             <kbd className="ml-1 text-xs bg-gray-100 dark:bg-surface px-1 rounded opacity-70">Ctrl+K</kbd>
           </button>
@@ -5968,6 +5994,14 @@ function AdminPage() {
             disabled={permission === "denied"}
           >
             <Bell className={cn("h-4 w-4", permission === "granted" && "animate-pulse")} />
+          </button>
+          {/* Mobile search icon – only visible on small screens */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            title="Buscar"
+            className="sm:hidden flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
+          >
+            <Search className="h-4 w-4" />
           </button>
           <AlertCenter
             pendingOrders={quickStats?.pendingOrders ?? 0}
@@ -6015,7 +6049,7 @@ function AdminPage() {
                 title="Generar datos de simulación"
                 className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-gray-400 dark:text-muted hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 transition-colors border border-gray-200 dark:border-card-border"
               >
-                {seedingData ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FlaskConical className="h-3.5 w-3.5" />}
+                {seedingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />}
                 <span>Simulación</span>
               </button>
               <button
@@ -6024,7 +6058,7 @@ function AdminPage() {
                 title="Borrar todos los datos"
                 className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-gray-400 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-colors border border-gray-200 dark:border-card-border"
               >
-                {clearingData ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                {clearingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 <span>Borrar datos</span>
               </button>
             </>
@@ -6351,6 +6385,51 @@ function AdminPage() {
         <span className="text-gray-700 dark:text-foreground font-semibold">{currentTab.label}</span>
       </nav>
 
+      {/* Quick stats – mobile strip (scroll horizontal) */}
+      {quickStats && (
+        <div className="sm:hidden flex items-center gap-1 px-2.5 py-1.5 bg-white dark:bg-card border-b border-gray-100 dark:border-card-border overflow-x-auto scrollbar-none text-[11px]">
+          <button
+            onClick={() => navigateTab("pedidos")}
+            className={cn(
+              "flex items-center gap-1 px-2 py-1 rounded-full font-semibold shrink-0 transition-colors",
+              quickStats.pendingOrders > 0 ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"
+            )}
+          >
+            <ShoppingCart className="h-3 w-3" />
+            {quickStats.pendingOrders} pend.
+          </button>
+          <span className="text-gray-300 dark:text-card-border shrink-0">|</span>
+          <span className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold shrink-0">
+            <TrendingUp className="h-3 w-3" />
+            S/{quickStats.todayRevenue.toFixed(2)}
+          </span>
+          {quickStats.lowStockProducts > 0 && (
+            <>
+              <span className="text-gray-300 dark:text-card-border shrink-0">|</span>
+              <button
+                onClick={() => navigateTab("inventario-almacenes")}
+                className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-600 font-semibold shrink-0 transition-colors"
+              >
+                <AlertTriangle className="h-3 w-3" />
+                {quickStats.lowStockProducts} bajo
+              </button>
+            </>
+          )}
+          {(quickStats.overduePayables ?? 0) > 0 && (
+            <>
+              <span className="text-gray-300 dark:text-card-border shrink-0">|</span>
+              <button
+                onClick={() => navigateTab("facturacion")}
+                className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 text-amber-700 font-semibold shrink-0 transition-colors"
+              >
+                <HandCoins className="h-3 w-3" />
+                {quickStats.overduePayables} venc.
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {/* Quick stats bar — updates every 60 s via /api/admin/stats */}
       {quickStats && (
         <div className="hidden sm:flex items-center gap-1 px-6 py-1.5 bg-white dark:bg-card border-b border-gray-100 dark:border-card-border text-xs">
@@ -6363,12 +6442,12 @@ function AdminPage() {
                 : "bg-gray-100 text-gray-500 hover:bg-gray-200"
             )}
           >
-            <ShoppingCart className="h-3.5 w-3.5" />
+            <ShoppingCart className="h-4 w-4" />
             {quickStats.pendingOrders} pendiente{quickStats.pendingOrders !== 1 ? "s" : ""}
           </button>
           <span className="text-gray-200 dark:text-card-border">|</span>
           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-semibold">
-            <TrendingUp className="h-3.5 w-3.5" />
+            <TrendingUp className="h-4 w-4" />
             S/{quickStats.todayRevenue.toFixed(2)} hoy
           </span>
           {quickStats.lowStockProducts > 0 && (
@@ -6378,7 +6457,7 @@ function AdminPage() {
                 onClick={() => navigateTab("inventario-almacenes")}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 text-red-600 font-semibold hover:bg-red-200 transition-colors"
               >
-                <AlertTriangle className="h-3.5 w-3.5" />
+                <AlertTriangle className="h-4 w-4" />
                 {quickStats.lowStockProducts} stock bajo
               </button>
             </>
@@ -6390,7 +6469,7 @@ function AdminPage() {
                 onClick={() => navigateTab("facturacion")}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 font-semibold hover:bg-amber-200 transition-colors"
               >
-                <HandCoins className="h-3.5 w-3.5" />
+                <HandCoins className="h-4 w-4" />
                 {quickStats.overduePayables} cuentas vencidas
               </button>
             </>
@@ -6421,40 +6500,96 @@ function AdminPage() {
         )}
         {tab === "panel-principal" && <PanelPrincipalModule />}
         {tab === "pos-caja" && <POSCajaModule />}
-        {tab === "inventario-almacenes" && <InventarioAlmacenesModule />}
-        {tab === "reposicion" && <ReposicionModule />}
+        {tab === "inventario-almacenes" && (
+          <div className="space-y-8">
+            <InventarioAlmacenesModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Reposición Inteligente</h3>
+              <ReposicionModule />
+            </div>
+          </div>
+        )}
         {tab === "catalogo-tienda" && <CatalogoTiendaModule />}
         {tab === "precios-promos" && <PreciosPromosModule />}
-        {tab === "compras" && <ComprasModule />}
-        {tab === "proveedores" && <ProveedoresModule />}
+        {tab === "compras" && (
+          <div className="space-y-8">
+            <ComprasModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Directorio de Proveedores</h3>
+              <ProveedoresModule />
+            </div>
+          </div>
+        )}
         {tab === "logistica" && <LogisticaModule />}
         {tab === "devoluciones-calidad" && <DevolucionesCalidadModule />}
         {tab === "ventas-marketing" && <VentasMarketingModule />}
-        {tab === "crm-clientes" && <CRMClientesModule />}
+        {tab === "crm-clientes" && (
+          <div className="space-y-8">
+            <CRMClientesModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Base de Datos: Clientes</h3>
+              <CustomersTab />
+            </div>
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Registro de Visitantes (Leads)</h3>
+              <VisitantesTab />
+            </div>
+          </div>
+        )}
         {tab === "fidelizacion" && <FidelizacionModule />}
-        {tab === "encuestas-soporte" && <EncuestasSoporteModule />}
+        {tab === "encuestas-soporte" && (
+          <div className="space-y-8">
+            <EncuestasSoporteModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Reseñas y Feedback Externo</h3>
+              <ReviewsTab />
+            </div>
+          </div>
+        )}
         {tab === "analytics-bi" && <AnalyticsBIModule />}
         {tab === "proyecciones" && <ProyeccionesModule />}
-        {tab === "finanzas" && <FinanzasModule />}
-        {tab === "tesoreria" && <TesoreriaModule />}
-        {tab === "facturacion" && <FacturacionModule />}
-        {tab === "gastos-activos" && <GastosActivosModule />}
+        {tab === "finanzas" && (
+          <div className="space-y-8">
+            <FinanzasModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Tesorería y Liquidez</h3>
+              <TesoreriaModule />
+            </div>
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Módulo de Facturación</h3>
+              <FacturacionModule />
+            </div>
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Gastos y Activos Fijos</h3>
+              <GastosActivosModule />
+            </div>
+          </div>
+        )}
         {tab === "rrhh" && <RRHHModule />}
         {tab === "proyectos-tareas" && <ProyectosTareasModule />}
         {tab === "comunicaciones" && <ComunicacionesModule />}
         {tab === "alertas-automatizacion" && <AlertasAutomModule />}
         {tab === "reportes-documentos" && <ReportesDocModule />}
         {tab === "agenda-utilidades" && <AgendaUtilidadesModule />}
-        {tab === "seguridad" && <SeguridadModule />}
-        {tab === "sistema" && <SistemaModule />}
-        {/* Inline standalone modules */}
-        {tab === "clientes" && <CustomersTab />}
-        {tab === "resenas" && <ReviewsTab />}
+        {tab === "seguridad" && (
+          <div className="space-y-8">
+            <SeguridadModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Salud del Sistema y Webhooks</h3>
+              <SistemaModule />
+            </div>
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Configuración General</h3>
+              <SettingsTab storeMode={storeMode} onModeChange={setStoreModeState} />
+            </div>
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Gestión de Equipo</h3>
+              <TeamTab />
+            </div>
+          </div>
+        )}
         {tab === "pedidos" && <OrdersTab />}
-        {tab === "configuracion" && <SettingsTab storeMode={storeMode} onModeChange={setStoreModeState} />}
-        {tab === "equipo" && <TeamTab />}
         {tab === "plan" && <PlanTab />}
-        {tab === "visitantes" && <VisitantesTab />}
         {tab === "changelog" && <ChangelogModule />}
       </main>
 
@@ -6525,7 +6660,7 @@ function AdminPage() {
                 key={id}
                 onClick={() => navigateTab(id)}
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold transition-colors relative",
+                  "flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold transition-colors relative",
                   tab === id ? "text-primary" : "text-gray-400 dark:text-muted"
                 )}
                 aria-current={tab === id ? "page" : undefined}
@@ -6533,7 +6668,7 @@ function AdminPage() {
                 {alerts[id] ? (
                   <span className="relative inline-flex">
                     <Icon className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-2 min-w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[9px] font-extrabold flex items-center justify-center px-0.5">{alerts[id]}</span>
+                    <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-extrabold flex items-center justify-center px-0.5">{alerts[id]}</span>
                   </span>
                 ) : (
                   <Icon className="h-5 w-5" />
@@ -6542,17 +6677,30 @@ function AdminPage() {
                 {tab === id && <span className="absolute top-0 inset-x-0 h-0.5 bg-primary" />}
               </button>
             ))}
-            <button
-              onClick={() => setMobileNavOpen(true)}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-semibold text-gray-400 dark:text-muted transition-colors"
-              aria-label="Más opciones"
-            >
-              <Menu className="h-5 w-5" />
-              <span className="leading-tight">Más</span>
-            </button>
+            {(() => {
+              const otherAlerts = Object.entries(alerts)
+                .filter(([id]) => !priorityIds.includes(id as Tab))
+                .reduce((sum, [, v]) => sum + v, 0);
+              return (
+                <button
+                  onClick={() => setMobileNavOpen(true)}
+                  className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold text-gray-400 dark:text-muted transition-colors"
+                  aria-label="Más opciones"
+                >
+                  <span className="relative inline-flex">
+                    <Menu className="h-5 w-5" />
+                    {otherAlerts > 0 && (
+                      <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-extrabold flex items-center justify-center px-0.5">{otherAlerts}</span>
+                    )}
+                  </span>
+                  <span className="leading-tight">Más</span>
+                </button>
+              );
+            })()}
           </nav>
         );
       })()}
+      <SSEListener />
       </div>
     </div>
   );

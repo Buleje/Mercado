@@ -86,11 +86,11 @@ export default function BankReconciliationTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Building2 className="h-6 w-6 text-primary" /> Conciliación Bancaria
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Cruce de movimientos bancarios vs registros del sistema</p>
@@ -119,7 +119,7 @@ export default function BankReconciliationTab() {
 
       {/* Alerts */}
       {(stats.pendientes > 0 || stats.discrepancias > 0) && (
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-amber-700 dark:text-amber-400 text-sm">Movimientos sin conciliar</p>
@@ -155,17 +155,17 @@ export default function BankReconciliationTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Descripción</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Cuenta</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase">Tipo</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Monto</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Ref. Sistema</th>
-                <th className="px-4 py-3" />
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Descripción</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Cuenta</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase">Tipo</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Monto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Ref. Sistema</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -175,21 +175,21 @@ export default function BankReconciliationTab() {
                 const Icon = meta.icon;
                 return (
                   <tr key={m.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", meta.bg, meta.color)}><Icon className="h-3 w-3" />{meta.label}</span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{fmtDate(m.date)}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-800 dark:text-foreground">{m.description}</td>
-                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted">{accountName(m.bankAccount)}</td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 whitespace-nowrap">{fmtDate(m.date)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-800 dark:text-foreground">{m.description}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{accountName(m.bankAccount)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", m.type === "ingreso" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
                         {m.type === "ingreso" ? "+ Ingreso" : "- Egreso"}
                       </span>
                     </td>
-                    <td className={cn("px-4 py-3 text-right font-bold", m.type === "ingreso" ? "text-emerald-600" : "text-red-500")}>{m.type === "ingreso" ? "+" : "-"}{fmt(m.amount)}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-gray-400">{m.systemRef || <span className="italic text-amber-500">sin cruce</span>}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1">
+                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", m.type === "ingreso" ? "text-emerald-600" : "text-red-500")}>{m.type === "ingreso" ? "+" : "-"}{fmt(m.amount)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono text-gray-400">{m.systemRef || <span className="italic text-amber-500">sin cruce</span>}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
+                      <div className="flex flex-wrap gap-1">
                         {m.status !== "conciliado" && (
                           <button onClick={() => reconcile(m.id)} title="Marcar conciliado" className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20">
                             <Link2 className="h-3.5 w-3.5" />
@@ -211,7 +211,7 @@ export default function BankReconciliationTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del movimiento</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -224,7 +224,7 @@ export default function BankReconciliationTab() {
                 ["Estado", STATUS_META[detail.status].label], ["Ref. sistema", detail.systemRef || "—"],
                 ["Notas", detail.notes || "—"],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
+                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-gray-500 dark:text-muted">{k}</span>
                   <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
                 </div>

@@ -102,10 +102,10 @@ export default function SupplierPortalTab() {
   }, [search]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Store className="h-6 w-6 text-primary" /> Portal del Proveedor
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Consulta de pedidos, facturas y mensajería con proveedores</p>
@@ -130,7 +130,7 @@ export default function SupplierPortalTab() {
       </div>
 
       {/* View Tabs */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-surface rounded-xl p-1">
+      <div className="flex flex-wrap gap-1 bg-gray-100 dark:bg-surface rounded-xl p-1">
         {([["pedidos", "📦 Pedidos"], ["facturas", "🧾 Facturas"], ["mensajes", "💬 Mensajes"]] as const).map(([v, label]) => (
           <button key={v} onClick={() => setView(v)} className={cn("flex-1 px-3 py-2 rounded-lg text-sm font-bold transition-colors", view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700")}>{label}</button>
         ))}
@@ -144,19 +144,19 @@ export default function SupplierPortalTab() {
       {view === "pedidos" && (
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">Ref</th><th className="px-4 py-3">Proveedor</th><th className="px-4 py-3">Fecha</th><th className="px-4 py-3">Items</th><th className="px-4 py-3">Total</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3">Entrega est.</th><th className="px-4 py-3"></th></tr></thead>
+            <table className="w-full min-w-[600px] text-sm">
+              <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Ref</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Fecha</th><th className="px-2 sm:px-4 py-2 sm:py-3">Items</th><th className="px-2 sm:px-4 py-2 sm:py-3">Total</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3">Entrega est.</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
               <tbody>
                 {filteredOrders.map(o => (
                   <tr key={o.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
-                    <td className="px-4 py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{o.orderRef}</td>
-                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{o.supplier}</td>
-                    <td className="px-4 py-3 text-gray-500">{o.date}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-muted">{o.items}</td>
-                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{fmt(o.total)}</td>
-                    <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", ORDER_STATUS[o.status].bg, ORDER_STATUS[o.status].color)}>{ORDER_STATUS[o.status].label}</span></td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{o.estimatedDelivery}</td>
-                    <td className="px-4 py-3"><button onClick={() => setDetail(o)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{o.orderRef}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{o.supplier}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{o.date}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted">{o.items}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{fmt(o.total)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", ORDER_STATUS[o.status].bg, ORDER_STATUS[o.status].color)}>{ORDER_STATUS[o.status].label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 text-xs">{o.estimatedDelivery}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(o)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 ))}
               </tbody>
@@ -168,17 +168,17 @@ export default function SupplierPortalTab() {
       {view === "facturas" && (
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">Factura</th><th className="px-4 py-3">Proveedor</th><th className="px-4 py-3">Emisión</th><th className="px-4 py-3">Vencimiento</th><th className="px-4 py-3">Total</th><th className="px-4 py-3">Estado</th></tr></thead>
+            <table className="w-full min-w-[600px] text-sm">
+              <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">Factura</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Emisión</th><th className="px-2 sm:px-4 py-2 sm:py-3">Vencimiento</th><th className="px-2 sm:px-4 py-2 sm:py-3">Total</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th></tr></thead>
               <tbody>
                 {filteredInvoices.map(i => (
                   <tr key={i.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
-                    <td className="px-4 py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{i.invoiceRef}</td>
-                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{i.supplier}</td>
-                    <td className="px-4 py-3 text-gray-500">{i.date}</td>
-                    <td className="px-4 py-3 text-gray-500">{i.dueDate}</td>
-                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{fmt(i.total)}</td>
-                    <td className="px-4 py-3"><span className={cn("text-xs font-bold", INV_STATUS[i.status].color)}>{INV_STATUS[i.status].label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{i.invoiceRef}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{i.supplier}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{i.date}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500">{i.dueDate}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{fmt(i.total)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold", INV_STATUS[i.status].color)}>{INV_STATUS[i.status].label}</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -204,12 +204,12 @@ export default function SupplierPortalTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.orderRef}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {[["Proveedor", detail.supplier], ["Fecha", detail.date], ["Items", String(detail.items)], ["Total", fmt(detail.total)], ["Estado", ORDER_STATUS[detail.status].label], ["Entrega estimada", detail.estimatedDelivery]].map(([k, v]) => (
                 <div key={k}><p className="text-xs text-gray-400">{k}</p><p className="font-bold text-gray-800 dark:text-foreground">{v}</p></div>
               ))}

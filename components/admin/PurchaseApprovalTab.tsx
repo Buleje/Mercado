@@ -94,10 +94,10 @@ export default function PurchaseApprovalTab() {
   }, [search, filterStatus]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <CheckCircle className="h-6 w-6 text-primary" /> Aprobación de Compras
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Flujo de aprobación multinivel para órdenes de compra</p>
@@ -137,22 +137,22 @@ export default function PurchaseApprovalTab() {
 
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-4 py-3">OC</th><th className="px-4 py-3">Descripción</th><th className="px-4 py-3">Proveedor</th><th className="px-4 py-3">Total</th><th className="px-4 py-3">Urgencia</th><th className="px-4 py-3">Nivel actual</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3"></th></tr></thead>
+          <table className="w-full min-w-[600px] text-sm">
+            <thead><tr className="text-left text-xs font-bold text-gray-400 bg-gray-50 dark:bg-surface"><th className="px-2 sm:px-4 py-2 sm:py-3">OC</th><th className="px-2 sm:px-4 py-2 sm:py-3">Descripción</th><th className="px-2 sm:px-4 py-2 sm:py-3">Proveedor</th><th className="px-2 sm:px-4 py-2 sm:py-3">Total</th><th className="px-2 sm:px-4 py-2 sm:py-3">Urgencia</th><th className="px-2 sm:px-4 py-2 sm:py-3">Nivel actual</th><th className="px-2 sm:px-4 py-2 sm:py-3">Estado</th><th className="px-2 sm:px-4 py-2 sm:py-3"></th></tr></thead>
             <tbody>
               {filtered.map(a => {
                 const os = overallStatus(a.steps);
                 const StatusIcon = STATUS_MAP[os].icon;
                 return (
                   <tr key={a.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/20">
-                    <td className="px-4 py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{a.ref}</td>
-                    <td className="px-4 py-3 text-gray-800 dark:text-foreground max-w-50 truncate">{a.description}</td>
-                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{a.supplier}</td>
-                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-foreground">{fmt(a.total)}</td>
-                    <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", urgencyStyle[a.urgency])}>{a.urgency}</span></td>
-                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted">{LEVEL_LABELS[a.currentLevel]}</td>
-                    <td className="px-4 py-3"><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[os].color)}><StatusIcon className="h-3.5 w-3.5" />{STATUS_MAP[os].label}</span></td>
-                    <td className="px-4 py-3"><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-mono text-xs font-bold text-gray-700 dark:text-foreground">{a.ref}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-foreground max-w-50 truncate">{a.description}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{a.supplier}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-800 dark:text-foreground">{fmt(a.total)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", urgencyStyle[a.urgency])}>{a.urgency}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{LEVEL_LABELS[a.currentLevel]}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("flex items-center gap-1 text-xs font-bold", STATUS_MAP[os].color)}><StatusIcon className="h-3.5 w-3.5" />{STATUS_MAP[os].label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(a)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5" /></button></td>
                   </tr>
                 );
               })}
@@ -164,7 +164,7 @@ export default function PurchaseApprovalTab() {
       {/* Detail Modal — Approval Pipeline */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.ref}</h3>
@@ -173,7 +173,7 @@ export default function PurchaseApprovalTab() {
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><p className="text-xs text-gray-400">Proveedor</p><p className="font-bold text-gray-800 dark:text-foreground">{detail.supplier}</p></div>
               <div><p className="text-xs text-gray-400">Total</p><p className="font-bold text-gray-800 dark:text-foreground">{fmt(detail.total)}</p></div>
               <div><p className="text-xs text-gray-400">Solicitante</p><p className="font-bold text-gray-800 dark:text-foreground">{detail.requestedBy}</p></div>
@@ -185,7 +185,7 @@ export default function PurchaseApprovalTab() {
               {detail.steps.map((step, i) => {
                 const StepIcon = STATUS_MAP[step.status].icon;
                 return (
-                  <div key={i} className="flex items-start gap-3">
+                  <div key={i} className="flex flex-wrap items-start gap-3">
                     <div className="flex flex-col items-center">
                       <StepIcon className={cn("h-5 w-5", STATUS_MAP[step.status].color)} />
                       {i < detail.steps.length - 1 && <div className="w-0.5 h-6 bg-gray-200 dark:bg-card-border mt-1" />}

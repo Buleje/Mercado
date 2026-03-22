@@ -45,7 +45,7 @@ function SectionEditor({
     <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-5 py-4 text-left group"
+        className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group"
       >
         <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0", section.bgColor)}>
           {section.icon}
@@ -291,11 +291,11 @@ export default function HomepageEditorTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Layout className="h-5 w-5 text-primary" />
             Editor de Página de Inicio
           </h2>
@@ -303,7 +303,7 @@ export default function HomepageEditorTab() {
             Personaliza el contenido de cada sección de la landing page
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <a
             href="/"
             target="_blank"
@@ -323,7 +323,7 @@ export default function HomepageEditorTab() {
             onClick={handleSave}
             disabled={!hasChanges || saving}
             className={cn(
-              "inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all",
+              "inline-flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold text-white shadow-md transition-all",
               saved
                 ? "bg-emerald-500"
                 : "bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed"
@@ -342,7 +342,7 @@ export default function HomepageEditorTab() {
       </div>
 
       {/* Info banner */}
-      <div className="flex items-start gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-700/30 rounded-2xl px-4 py-3">
+      <div className="flex flex-wrap items-start gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-700/30 rounded-2xl px-2 sm:px-4 py-2 sm:py-3">
         <Sparkles className="h-4 w-4 text-blue-500 mt-0.5 shrink-0" />
         <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
           Los cambios se guardan en la configuración del sistema. Haz clic en <strong>Guardar cambios</strong> y luego refresca la página de inicio para ver los cambios aplicados.
@@ -364,7 +364,7 @@ export default function HomepageEditorTab() {
 
         {/* FAQ Editor */}
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
-          <button onClick={() => toggleSection("faq")} className="w-full flex items-center gap-3 px-5 py-4 text-left group">
+          <button onClick={() => toggleSection("faq")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-amber-50 dark:bg-amber-900/20">
               <HelpCircle className="h-6 w-6 text-amber-500" />
             </div>
@@ -392,7 +392,7 @@ export default function HomepageEditorTab() {
 
         {/* Benefits Editor */}
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
-          <button onClick={() => toggleSection("benefits")} className="w-full flex items-center gap-3 px-5 py-4 text-left group">
+          <button onClick={() => toggleSection("benefits")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-green-50 dark:bg-green-900/20">
               <Heart className="h-6 w-6 text-green-500" />
             </div>
@@ -420,7 +420,7 @@ export default function HomepageEditorTab() {
 
         {/* Testimonials Editor */}
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
-          <button onClick={() => toggleSection("testimonials")} className="w-full flex items-center gap-3 px-5 py-4 text-left group">
+          <button onClick={() => toggleSection("testimonials")} className="w-full flex flex-wrap items-center gap-3 px-5 py-4 text-left group">
             <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-cyan-50 dark:bg-cyan-900/20">
               <MessageSquare className="h-6 w-6 text-cyan-500" />
             </div>
@@ -436,12 +436,12 @@ export default function HomepageEditorTab() {
             <div className="px-5 pb-5 border-t border-gray-100 dark:border-card-border space-y-3 pt-4">
               {content.testimonialItems.map((item, i) => (
                 <div key={i} className="border border-gray-100 dark:border-card-border rounded-xl p-3 space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input value={item.name} onChange={(e) => handleListChange("testimonialItems", i, "name", e.target.value)} placeholder="Nombre..." className="rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                     <input value={item.location} onChange={(e) => handleListChange("testimonialItems", i, "location", e.target.value)} placeholder="Ubicación..." className="rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20" />
                   </div>
                   <textarea value={item.text} onChange={(e) => handleListChange("testimonialItems", i, "text", e.target.value)} placeholder="Testimonio..." rows={2} className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <label className="text-xs text-muted">Rating:</label>
                     <select value={item.rating} onChange={(e) => handleListChange("testimonialItems", i, "rating", parseInt(e.target.value))} className="rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-background px-2 py-1 text-sm">
                       {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} ⭐</option>)}

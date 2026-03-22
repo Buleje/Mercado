@@ -180,17 +180,17 @@ export default function PLTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <DollarSign className="h-6 w-6 text-primary" />
             Estado de Resultados (P&amp;L)
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Ingresos, costos y utilidad neta del período</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select
             value={month}
             onChange={e => setMonth(Number(e.target.value))}
@@ -221,7 +221,7 @@ export default function PLTab() {
       ) : summary ? (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
             {[
               { label: "Ingresos Brutos", value: summary.revenue, delta: revDelta, icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
               { label: "Utilidad Bruta", value: summary.grossProfit, sub: `Margen ${summary.grossMargin.toFixed(1)}%`, icon: BarChart2, color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
@@ -246,7 +246,7 @@ export default function PLTab() {
 
           {/* P&L Statement Table */}
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+            <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
               <h2 className="font-bold text-gray-900 dark:text-foreground text-sm">
                 Estado de Resultados — {summary.period}
               </h2>
@@ -264,14 +264,14 @@ export default function PLTab() {
               <div>
                 <button
                   onClick={() => setExpandExpenses(v => !v)}
-                  className="w-full flex items-center justify-between px-6 py-3 text-sm text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                  className="w-full flex items-center justify-between px-3 sm:px-6 py-3 text-sm text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex flex-wrap items-center gap-2">
                     <span className="text-gray-400">−</span>
                     <span className="font-semibold">Gastos Operativos</span>
                     <span className="text-xs text-gray-400 dark:text-muted">({Object.keys(summary.expenses).length} categorías)</span>
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-bold text-amber-600">{fmt(summary.totalExpenses)}</span>
                     {expandExpenses ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                   </div>
@@ -295,12 +295,12 @@ export default function PLTab() {
           </div>
 
           {/* Trend Chart (last 6 months) */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6">
-            <h2 className="font-bold text-gray-900 dark:text-foreground text-sm mb-4 flex items-center gap-2">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
+            <h2 className="font-bold text-gray-900 dark:text-foreground text-sm mb-4 flex flex-wrap items-center gap-2">
               <BarChart2 className="h-4 w-4 text-primary" />
               Tendencia últimos 6 meses
             </h2>
-            <div className="flex items-end gap-3 h-40">
+            <div className="flex flex-wrap items-end gap-3 h-40">
               {months.map((m, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
                   <div className="w-full flex flex-col gap-0.5 justify-end" style={{ height: "120px" }}>
@@ -321,7 +321,7 @@ export default function PLTab() {
                 </div>
               ))}
             </div>
-            <div className="flex items-center gap-4 mt-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3">
               <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-muted"><span className="w-3 h-3 rounded bg-blue-400/60" /> Ingresos</span>
               <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-muted"><span className="w-3 h-3 rounded bg-emerald-500" /> Utilidad neta</span>
             </div>
@@ -357,7 +357,7 @@ function PLRow({
     value < 0 ? "text-red-500 dark:text-red-400" : "text-gray-800 dark:text-foreground";
 
   return (
-    <div className={cn("flex items-center justify-between px-6 py-3.5", bold && "bg-gray-50/70 dark:bg-surface/30")}>
+    <div className={cn("flex items-center justify-between px-3 sm:px-6 py-3.5", bold && "bg-gray-50/70 dark:bg-surface/30")}>
       <div>
         <p className={cn("text-sm text-gray-700 dark:text-foreground", bold && "font-bold", large && "text-base")}>{label}</p>
         {sub && <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{sub}</p>}

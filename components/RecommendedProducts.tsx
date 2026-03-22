@@ -54,7 +54,7 @@ export default function RecommendedProducts() {
   };
 
   return (
-    <section className="py-10 px-4 bg-gradient-to-b from-orange-50/60 to-white dark:from-orange-950/10 dark:to-background">
+    <section className="py-10 px-4 bg-linear-to-b from-orange-50/60 to-white dark:from-orange-950/10 dark:to-background">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-2 mb-6">
           <Sparkles className="h-5 w-5 text-orange-500" />

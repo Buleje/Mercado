@@ -128,15 +128,15 @@ export default function MessageTemplatesTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-foreground">Plantillas de Mensajes</h2>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">Plantillas de Mensajes</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Plantillas listas para WhatsApp, Email y SMS</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setShowNew(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20">
+        <div className="flex flex-wrap items-center gap-3">
+          <button onClick={() => setShowNew(true)} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20">
             <Plus className="h-4 w-4" /> Nueva plantilla
           </button>
 
@@ -144,21 +144,21 @@ export default function MessageTemplatesTab() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {(["whatsapp", "email", "sms"] as TemplateChannel[]).map(ch => {
           const cfg = CHANNEL_CONFIG[ch];
           const count = templates.filter(t => t.channel === ch).length;
           return (
             <div key={ch} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
               <p className={cn("text-xs font-semibold", cfg.color)}>{cfg.label}</p>
-              <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">{count}</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground mt-1">{count}</p>
               <p className="text-xs text-gray-400 dark:text-muted">plantillas</p>
             </div>
           );
         })}
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Usos totales</p>
-          <p className="text-2xl font-extrabold text-emerald-600 mt-1">{templates.reduce((s, t) => s + t.usageCount, 0)}</p>
+          <p className="text-xl sm:text-2xl font-extrabold text-emerald-600 mt-1">{templates.reduce((s, t) => s + t.usageCount, 0)}</p>
           <p className="text-xs text-gray-400 dark:text-muted">copias realizadas</p>
         </div>
       </div>
@@ -185,7 +185,7 @@ export default function MessageTemplatesTab() {
         <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 animate-pulse">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-surface shrink-0" />
                 <div className="flex-1 space-y-2">
                   <div className="h-3.5 bg-gray-200 dark:bg-surface rounded-full w-2/3" />
@@ -205,7 +205,7 @@ export default function MessageTemplatesTab() {
             return (
               <div key={t.id} onClick={() => setSelectedId(t.id)} className={cn("bg-white dark:bg-card rounded-2xl border p-4 cursor-pointer transition-all hover:shadow-md", selectedId === t.id ? "border-primary shadow-md" : "border-gray-200 dark:border-card-border")}>
                 <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button onClick={e => { e.stopPropagation(); handleStar(t.id); }} className="shrink-0">
                       {t.starred ? <Star className="h-4 w-4 text-amber-500 fill-amber-500" /> : <StarOff className="h-4 w-4 text-gray-300" />}
                     </button>
@@ -218,7 +218,7 @@ export default function MessageTemplatesTab() {
                 </div>
                 <p className="text-xs text-gray-500 dark:text-muted line-clamp-2 mb-3 whitespace-pre-line">{t.body.replace(/\{\{(\w+)\}\}/g, "[$1]")}</p>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-muted">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 dark:text-muted">
                     <span>{t.variables.length} variables</span>
                     <span>·</span>
                     <span>{t.usageCount} usos</span>
@@ -241,9 +241,9 @@ export default function MessageTemplatesTab() {
         {/* Preview */}
         <div className="lg:col-span-1">
           {selected ? (
-            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 shadow-sm sticky top-6">
+            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 shadow-sm sticky top-6">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm mb-1">{selected.name}</h3>
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex flex-wrap items-center gap-2 mb-4">
                 <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", CHANNEL_CONFIG[selected.channel].bg, CHANNEL_CONFIG[selected.channel].color)}>{CHANNEL_CONFIG[selected.channel].label}</span>
                 <span className="text-xs text-gray-400 dark:text-muted">{selected.createdAt}</span>
               </div>
@@ -263,7 +263,7 @@ export default function MessageTemplatesTab() {
                   </div>
                 </div>
               )}
-              <button onClick={() => handleCopy(selected)} className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+              <button onClick={() => handleCopy(selected)} className="w-full mt-4 flex flex-wrap items-center justify-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
                 {copiedId === selected.id ? <><Check className="h-4 w-4" /> Copiado</> : <><Copy className="h-4 w-4" /> Copiar mensaje</>}
               </button>
             </div>
@@ -281,16 +281,16 @@ export default function MessageTemplatesTab() {
       {showNew && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowNew(false)}>
           <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
+            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground">Nueva plantilla</h3>
               <button onClick={() => setShowNew(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
             </div>
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-3 sm:px-6 py-5 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Nombre</label>
-                <input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ej: Confirmación de pedido" className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary" autoFocus />
+                <input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ej: Confirmación de pedido" className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary" autoFocus />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Canal</label>
                   <select value={newChannel} onChange={e => setNewChannel(e.target.value as TemplateChannel)} className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary">
@@ -307,16 +307,16 @@ export default function MessageTemplatesTab() {
               {newChannel === "email" && (
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Asunto</label>
-                  <input type="text" value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Asunto del email..." className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary" />
+                  <input type="text" value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Asunto del email..." className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm outline-none focus:border-primary" />
                 </div>
               )}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Mensaje</label>
-                <textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder={"Usa {{variable}} para campos dinámicos...\nEj: Hola {{cliente}}, tu pedido..."} rows={6} className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary resize-none font-mono" />
+                <textarea value={newBody} onChange={e => setNewBody(e.target.value)} placeholder={"Usa {{variable}} para campos dinámicos...\nEj: Hola {{cliente}}, tu pedido..."} rows={6} className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary resize-none font-mono" />
                 <p className="text-xs text-gray-400 dark:text-muted mt-1">Variables detectadas: {[...newBody.matchAll(/\{\{(\w+)\}\}/g)].map(m => m[1]).join(", ") || "ninguna"}</p>
               </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button onClick={() => setShowNew(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <div className="flex flex-wrap justify-end gap-3 pt-2">
+                <button onClick={() => setShowNew(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
                 <button onClick={handleAdd} disabled={!newName.trim() || !newBody.trim()} className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 disabled:opacity-50">Crear plantilla</button>
               </div>
             </div>

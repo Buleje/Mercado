@@ -164,12 +164,12 @@ export default function TeamTab() {
   };
 
   return (
-    <div className="space-y-6 p-1">
+    <div className="space-y-3 sm:space-y-6 p-1">
       {/* Toast */}
       {toast && (
         <div
           className={cn(
-            "fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium",
+            "fixed top-4 right-4 z-50 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl shadow-lg text-sm font-medium",
             toast.ok
               ? "bg-emerald-600 text-white"
               : "bg-red-600 text-white"
@@ -182,7 +182,7 @@ export default function TeamTab() {
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Users className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-bold">Equipo de la tienda</h2>
           <span className="text-xs text-muted bg-(--color-surface) px-2 py-0.5 rounded-full">
@@ -230,7 +230,7 @@ export default function TeamTab() {
               )}
             >
               {/* Avatar + info */}
-              <div className="flex items-center gap-3 min-w-0">
+              <div className="flex flex-wrap items-center gap-3 min-w-0">
                 <div className="w-9 h-9 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center shrink-0">
                   {u.name.charAt(0).toUpperCase()}
                 </div>
@@ -275,7 +275,7 @@ export default function TeamTab() {
       {/* Create / Edit form modal */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-(--color-card) rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+          <div className="bg-(--color-card) rounded-2xl shadow-2xl w-full max-w-md p-3 sm:p-6 space-y-4">
             {/* Modal header */}
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-base">
@@ -351,7 +351,7 @@ export default function TeamTab() {
 
             {/* Active toggle (only on edit) */}
             {editingId && (
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex flex-wrap items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={form.active}
@@ -363,7 +363,7 @@ export default function TeamTab() {
             )}
 
             {/* Action buttons */}
-            <div className="flex gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-1">
               <button
                 onClick={() => setShowForm(false)}
                 className="flex-1 py-2 rounded-xl border border-(--color-card-border) text-sm font-medium hover:bg-(--color-surface)"

@@ -240,11 +240,11 @@ function TenantDetailModal({ tenant, onClose }: { tenant: TenantRow; onClose: ()
             <PlanBadge plan={t.plan} />
             {t.active ? (
               <span className="inline-flex items-center gap-1 text-green-400 text-xs font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Activa
+                <CheckCircle2 className="w-4 h-4" /> Activa
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-red-400 text-xs font-medium">
-                <XCircle className="w-3.5 h-3.5" /> Suspendida
+                <XCircle className="w-4 h-4" /> Suspendida
               </span>
             )}
             <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 ml-2">
@@ -332,7 +332,7 @@ function TenantDetailModal({ tenant, onClose }: { tenant: TenantRow; onClose: ()
           </div>
           {t.cancelAtPeriodEnd && (
             <div className="flex items-center gap-2 text-orange-400 text-xs bg-orange-950/30 rounded-lg px-3 py-2">
-              <AlertTriangle className="w-3.5 h-3.5" />
+              <AlertTriangle className="w-4 h-4" />
               Esta tienda cancelará su suscripción al final del periodo actual.
             </div>
           )}
@@ -343,7 +343,7 @@ function TenantDetailModal({ tenant, onClose }: { tenant: TenantRow; onClose: ()
           <div className="bg-gray-800/50 rounded-lg px-3 py-2 text-xs">
             <span className="text-gray-500">Dominio personalizado</span>
             <p className="text-emerald-400 font-semibold flex items-center gap-1.5 mt-0.5">
-              <Globe className="w-3.5 h-3.5" /> {t.customDomain}
+              <Globe className="w-4 h-4" /> {t.customDomain}
             </p>
           </div>
         )}
@@ -685,7 +685,7 @@ export default function SuperAdminPage() {
                   <option value="suspend">Suspend</option>
                   <option value="activate">Activate</option>
                 </select>
-                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" />
+                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
               </div>
               <span className="text-gray-500 text-xs self-center">{activityTotal} registros</span>
             </div>
@@ -850,7 +850,7 @@ export default function SuperAdminPage() {
               <option value="business">Business</option>
               <option value="enterprise">Enterprise</option>
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
           <div className="relative">
             <select
@@ -862,7 +862,7 @@ export default function SuperAdminPage() {
               <option value="active">Activas</option>
               <option value="inactive">Suspendidas</option>
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
         </div>
 
@@ -938,11 +938,11 @@ export default function SuperAdminPage() {
                       <td className="px-4 py-4">
                         {t.active ? (
                           <span className="inline-flex items-center gap-1 text-green-400 text-xs font-medium">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Activa
+                            <CheckCircle2 className="w-4 h-4" /> Activa
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 text-red-400 text-xs font-medium">
-                            <XCircle className="w-3.5 h-3.5" /> Suspendida
+                            <XCircle className="w-4 h-4" /> Suspendida
                           </span>
                         )}
                       </td>
@@ -960,7 +960,7 @@ export default function SuperAdminPage() {
                       {/* User count */}
                       <td className="px-4 py-4 hidden lg:table-cell">
                         <span className="inline-flex items-center gap-1 text-gray-400 text-xs">
-                          <Users className="w-3.5 h-3.5" /> {t._count.AdminUser}
+                          <Users className="w-4 h-4" /> {t._count.AdminUser}
                         </span>
                       </td>
 
@@ -1017,11 +1017,11 @@ export default function SuperAdminPage() {
                             }`}
                           >
                             {actionLoading === `${t.slug}-active` ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <Loader2 className="w-4 h-4 animate-spin" />
                             ) : t.active ? (
-                              <XCircle className="w-3.5 h-3.5" />
+                              <XCircle className="w-4 h-4" />
                             ) : (
-                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <CheckCircle2 className="w-4 h-4" />
                             )}
                           </button>
 
@@ -1031,7 +1031,7 @@ export default function SuperAdminPage() {
                             title="Invitar usuario"
                             className="p-1.5 rounded-lg border border-indigo-800 text-indigo-400 hover:bg-indigo-950 transition-colors"
                           >
-                            <Mail className="w-3.5 h-3.5" />
+                            <Mail className="w-4 h-4" />
                           </button>
                         </div>
                       </td>

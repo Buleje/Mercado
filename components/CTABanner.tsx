@@ -10,10 +10,10 @@ import { useMagnetic } from "@/hooks/use-magnetic";
 import { useRipple } from "@/hooks/use-ripple";
 
 const PERKS = [
-  { icon: Truck, label: "Delivery gratis +S/50", color: "#3b82f6" },
+  { icon: Truck, label: "Delivery gratis +S/50", color: "#4ade80" },
   { icon: Clock, label: "Entrega en ~30 min", color: "#60a5fa" },
-  { icon: CreditCard, label: "Paga con Yape o efectivo", color: "#f59e0b" },
-  { icon: ShieldCheck, label: "Calidad garantizada", color: "#8b5cf6" },
+  { icon: CreditCard, label: "Paga con Yape o efectivo", color: "#f4a261" },
+  { icon: ShieldCheck, label: "Calidad garantizada", color: "#86efac" },
 ];
 
 function getDailyOrderCount() {
@@ -35,26 +35,26 @@ export default function CTABanner() {
       ref={ref}
       className="relative py-20 sm:py-28 overflow-hidden"
       style={{
-        background: "linear-gradient(160deg, #1e1b4b 0%, #312e81 30%, #4f46e5 60%, #312e81 100%)",
+        background: "linear-gradient(155deg, #030a05 0%, #071410 25%, #0d2218 50%, #071410 80%, #030a05 100%)",
       }}
     >
       {/* Morphing blobs — organic movement */}
       <MorphingBlob
-        color1="rgba(99,102,241,0.4)"
-        color2="rgba(245,158,11,0.15)"
+        color1="rgba(45,106,79,0.35)"
+        color2="rgba(244,162,97,0.12)"
         size="55vw"
         speed={14}
         className="top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
       />
       <MorphingBlob
-        color1="rgba(251,191,36,0.2)"
-        color2="rgba(99,102,241,0.05)"
+        color1="rgba(244,162,97,0.18)"
+        color2="rgba(45,106,79,0.04)"
         size="35vw"
         speed={18}
         className="top-0 right-0"
       />
       <MorphingBlob
-        color1="rgba(139,92,246,0.2)"
+        color1="rgba(45,106,79,0.15)"
         color2="transparent"
         size="28vw"
         speed={22}
@@ -79,7 +79,11 @@ export default function CTABanner() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-[3.5rem] font-black text-white leading-[1.1] mb-5">
             No te quedes{" "}
             <br className="hidden sm:block" />
-            <span className="bg-linear-to-r from-blue-300 via-indigo-300 to-amber-300 bg-clip-text text-transparent text-gradient-animated">
+            <span style={{
+              background: "linear-gradient(130deg, #4ade80 0%, #2d6a4f 40%, #f4a261 75%, #f97316 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+              display: "inline-block",
+            }}>
               sin tus productos favoritos
             </span>
           </h2>
@@ -105,8 +109,8 @@ export default function CTABanner() {
               onMouseLeave={onMagnetLeave}
               className="group relative inline-flex items-center gap-3 rounded-2xl px-8 py-4 text-base font-extrabold text-white overflow-hidden transition-all duration-300 hover:-translate-y-0.5"
               style={{
-                background: "linear-gradient(135deg, #93c5fd 0%, #3b82f6 50%, #2563eb 100%)",
-                boxShadow: "0 8px 32px -4px rgba(59,130,246,0.55), inset 0 1px 0 rgba(255,255,255,0.25)",
+                background: "linear-gradient(135deg, #2d6a4f 0%, #245c43 100%)",
+                boxShadow: "0 8px 32px -4px rgba(45,106,79,0.6), inset 0 1px 0 rgba(255,255,255,0.18)",
               }}
             >
               <span className="relative z-10 flex items-center gap-3">

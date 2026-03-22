@@ -112,16 +112,16 @@ export default function PurchaseContractsTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <FileSignature className="h-6 w-6 text-primary" /> Contratos con Proveedores
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de contratos de compra, plazos, descuentos y renovaciones</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => exportToCSV(processed.map(c => ({ codigo: c.code, proveedor: c.supplierName, ruc: c.supplierRuc, categoria: c.category, inicio: c.startDate, fin: c.endDate, credito_dias: c.creditDays, pedido_min: c.minOrderAmount, descuento_pct: c.agreedDiscount, estado: c.computedStatus, renovacion_auto: c.autoRenew, ocs_vinculadas: c.linkedPOs, gasto_total: c.totalSpend })), "contratos-proveedores")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
@@ -149,7 +149,7 @@ export default function PurchaseContractsTab() {
 
       {/* Alerts */}
       {(stats.porVencer > 0 || stats.vencido > 0) && (
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-amber-700 dark:text-amber-400 text-sm">Contratos que necesitan atención</p>
@@ -163,9 +163,9 @@ export default function PurchaseContractsTab() {
 
       {/* New contract form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nuevo contrato</h3>
+            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nuevo contrato</h3>
             <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -193,7 +193,7 @@ export default function PurchaseContractsTab() {
               <input type="number" value={form.agreedDiscount} onChange={e => setForm(p => ({ ...p, agreedDiscount: parseFloat(e.target.value) || 0 }))} min="0" max="100" step="0.5" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
             <div className="flex items-end pb-2">
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label className="flex flex-wrap items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.autoRenew} onChange={e => setForm(p => ({ ...p, autoRenew: e.target.checked }))} className="w-4 h-4 rounded accent-primary" />
                 <span className="text-sm font-semibold text-gray-700 dark:text-foreground">Renovación automática</span>
               </label>
@@ -202,9 +202,9 @@ export default function PurchaseContractsTab() {
             <CF label="Teléfono contacto" value={form.contactPhone} onChange={v => setForm(p => ({ ...p, contactPhone: v }))} placeholder="Teléfono" />
             <CF label="Notas" value={form.notes} onChange={v => setForm(p => ({ ...p, notes: v }))} placeholder="Condiciones especiales..." span={2} />
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleAdd} className="px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar contrato</button>
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={handleAdd} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar contrato</button>
           </div>
         </div>
       )}
@@ -233,10 +233,10 @@ export default function PurchaseContractsTab() {
           const Icon = meta.icon;
           const dLeft = daysUntil(c.endDate);
           return (
-            <div key={c.id} className={cn("bg-white dark:bg-card border rounded-2xl p-5", c.computedStatus === "vencido" ? "border-red-200 dark:border-red-800" : c.computedStatus === "por-vencer" ? "border-amber-200 dark:border-amber-800" : "border-gray-200 dark:border-card-border")}>
-              <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+            <div key={c.id} className={cn("bg-white dark:bg-card border rounded-2xl p-3 sm:p-5", c.computedStatus === "vencido" ? "border-red-200 dark:border-red-800" : c.computedStatus === "por-vencer" ? "border-amber-200 dark:border-amber-800" : "border-gray-200 dark:border-card-border")}>
+              <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start gap-3 mb-2">
+                  <div className="flex flex-wrap items-start gap-3 mb-2">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap mb-0.5">
                         <span className="text-xs font-mono font-bold text-gray-400">{c.code}</span>
@@ -270,7 +270,7 @@ export default function PurchaseContractsTab() {
                   <div className={cn("text-center px-3 py-2 rounded-xl text-xs font-extrabold", dLeft < 0 ? "bg-red-100 text-red-600 dark:bg-red-950/20 dark:text-red-400" : dLeft <= 30 ? "bg-amber-100 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400" : "bg-gray-100 text-gray-600 dark:bg-surface dark:text-muted")}>
                     {dLeft < 0 ? `${Math.abs(dLeft)}d vencido` : dLeft === 0 ? "Vence hoy" : `${dLeft}d restantes`}
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button onClick={() => setDetail(c)} className="p-2 rounded-xl border border-gray-200 dark:border-card-border text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-colors">
                       <Eye className="h-3.5 w-3.5" />
                     </button>
@@ -290,7 +290,7 @@ export default function PurchaseContractsTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del contrato</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -305,7 +305,7 @@ export default function PurchaseContractsTab() {
                 ["Gasto acumulado", fmt(detail.totalSpend)], ["Contacto", detail.contactName],
                 ["Teléfono", detail.contactPhone], ["Notas", detail.notes || "—"],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
+                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-gray-500 dark:text-muted shrink-0">{k}</span>
                   <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
                 </div>

@@ -3,15 +3,13 @@
 import { useState, useMemo, useEffect, startTransition } from "react";
 import { Gauge, TrendingUp, TrendingDown, DollarSign, Users, ShoppingCart, AlertTriangle, CheckCircle, ArrowUp, ArrowDown, BarChart3, Eye, Download, Star, RefreshCw } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
+import type { Product, Sale, Customer } from "@/types/erp";
 
 type Period = "hoy" | "semana" | "mes" | "trimestre";
 
 // ── API data types ─────────────────────────────────────────────────────────────
-type Product    = { id: string; name: string; category: string; price: number; costPrice?: number; stock?: number; stockMin?: number; active: boolean };
 type OrderItem  = { id: string; name: string; quantity: number; price: number };
 type Order      = { id: string; customer?: { phone?: string }; items: OrderItem[]; total: number; status: string; createdAt: string };
-type Sale       = { id: string; items: OrderItem[]; total: number; customerPhone?: string; createdAt: string };
-type Customer   = { phone: string; name: string; createdAt: string };
 type Payable    = { id: string; amount: number; paidAmount: number; status: string; dueDate: string };
 type Review     = { id: string; rating: number; createdAt: string };
 type DashData   = {
@@ -194,27 +192,27 @@ export default function ExecutiveDashboardTab() {
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) return (
-    <div className="flex flex-col items-center justify-center py-24 gap-4">
+    <div className="flex flex-col items-center justify-center py-24 gap-2 sm:gap-4">
       <RefreshCw className="h-8 w-8 text-primary animate-spin" />
       <p className="text-sm text-muted font-medium">Cargando datos ejecutivos...</p>
     </div>
   );
   if (error) return (
-    <div className="flex flex-col items-center justify-center py-24 gap-4">
+    <div className="flex flex-col items-center justify-center py-24 gap-2 sm:gap-4">
       <AlertTriangle className="h-8 w-8 text-red-500" />
       <p className="text-sm text-red-600 dark:text-red-400 font-medium">Error cargando datos</p>
-      <button onClick={load} className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
+      <button onClick={load} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
         Reintentar
       </button>
     </div>
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Gauge className="h-6 w-6 text-primary" /> Dashboard Ejecutivo
           </h2>
           <p className="text-xs text-gray-500 dark:text-muted mt-0.5">
@@ -245,7 +243,7 @@ export default function ExecutiveDashboardTab() {
         </div>
       )}
       {criticalCount === 0 && warningCount === 0 && (
-        <div className="rounded-xl p-3 flex items-center gap-3 text-sm font-semibold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30">
+        <div className="rounded-xl p-3 flex flex-wrap items-center gap-3 text-sm font-semibold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/30">
           <CheckCircle className="h-5 w-5 shrink-0" />
           Sistema operando normalmente — todos los módulos en verde
         </div>
@@ -261,13 +259,13 @@ export default function ExecutiveDashboardTab() {
             { label: "Utilidad",      value: fmtShort(kpis.utilidad), delta: kpis.utilDelta, icon: TrendingUp,  color: "text-amber-500",  bgColor: "bg-amber-50 dark:bg-amber-900/20",      spark: kpis.utilSpark,   sparkColor: "#f59e0b" },
           ].map(kpi => (
             <div key={kpi.label} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
                 <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center shrink-0", kpi.bgColor)}>
                   <kpi.icon className={cn("h-4.5 w-4.5", kpi.color)} />
                 </div>
                 <span className="text-xs font-semibold text-gray-500 dark:text-muted leading-tight">{kpi.label}</span>
               </div>
-              <p className="text-2xl font-extrabold text-gray-900 dark:text-foreground leading-none">{kpi.value}</p>
+              <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground leading-none">{kpi.value}</p>
               <div className="flex items-center justify-between mt-2">
                 <div className={cn("flex items-center gap-1 text-xs font-bold", kpi.delta >= 0 ? "text-emerald-500" : "text-red-500")}>
                   {kpi.delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
@@ -281,9 +279,9 @@ export default function ExecutiveDashboardTab() {
       )}
 
       {/* ── Revenue bar chart ── */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h3 className="font-bold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <BarChart3 className="h-4 w-4 text-primary" /> Ingresos — {PERIOD_LABELS[period]}
           </h3>
           <button
@@ -296,7 +294,7 @@ export default function ExecutiveDashboardTab() {
         {revenueChart.every(r => r.value === 0) ? (
           <p className="text-center text-sm text-gray-400 dark:text-muted py-8">Sin datos de ingresos para este período</p>
         ) : (
-          <div className="flex items-end gap-0.5 h-28 overflow-hidden">
+          <div className="flex flex-wrap items-end gap-0.5 h-28 overflow-hidden">
             {revenueChart.map((r, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group min-w-0" title={`${r.label}: ${fmt(r.value)}`}>
                 <div className="w-full flex flex-col justify-end rounded-t overflow-hidden" style={{ height: 96 }}>
@@ -318,7 +316,7 @@ export default function ExecutiveDashboardTab() {
 
       {/* ── Module health grid ── */}
       <div>
-        <h3 className="font-bold text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
+        <h3 className="font-bold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
           <Eye className="h-4 w-4 text-primary" /> Salud por módulo
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 items-start">
@@ -374,13 +372,13 @@ export default function ExecutiveDashboardTab() {
       </div>
 
       {/* ── Recommendations ── */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-        <h3 className="font-bold text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <h3 className="font-bold text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500" /> Acciones recomendadas
         </h3>
         <div className="space-y-2">
           {recommendations.map((action, i) => (
-            <div key={i} className={cn("flex items-center gap-3 px-4 py-3 rounded-xl text-sm", action.severity === "high" ? "bg-red-50 dark:bg-red-950/10 text-red-700 dark:text-red-400" : action.severity === "medium" ? "bg-amber-50 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400" : "bg-emerald-50 dark:bg-emerald-950/10 text-emerald-700 dark:text-emerald-400")}>
+            <div key={i} className={cn("flex items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 rounded-xl text-sm", action.severity === "high" ? "bg-red-50 dark:bg-red-950/10 text-red-700 dark:text-red-400" : action.severity === "medium" ? "bg-amber-50 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400" : "bg-emerald-50 dark:bg-emerald-950/10 text-emerald-700 dark:text-emerald-400")}>
               {action.severity === "high" ? <AlertTriangle className="h-4 w-4 shrink-0" /> : action.severity === "medium" ? <AlertTriangle className="h-4 w-4 shrink-0 opacity-70" /> : <CheckCircle className="h-4 w-4 shrink-0" />}
               <span className="font-semibold">{action.text}</span>
             </div>

@@ -61,12 +61,12 @@ export default function BetaFeedbackWidget() {
   const labels = ["", "Muy mala", "Mala", "Regular", "Buena", "Excelente"];
 
   return (
-    <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 flex flex-col items-end gap-2">
+    <div className="fixed bottom-28 right-4 z-40 flex flex-col items-end gap-2 sm:bottom-6 sm:right-6 md:bottom-6 lg:bottom-6">
       {/* Panel */}
       {open && (
         <div
           ref={panelRef}
-          className="w-72 rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border shadow-2xl overflow-hidden animate-[fadeDown_0.2s_ease-out]"
+          className="w-[min(18rem,calc(100vw-1rem))] rounded-2xl bg-white dark:bg-card border border-gray-200 dark:border-card-border shadow-2xl overflow-hidden animate-[fadeDown_0.2s_ease-out] sm:w-72"
           role="dialog"
           aria-modal="true"
           aria-label="Widget de feedback beta"

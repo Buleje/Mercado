@@ -14,14 +14,10 @@ import {
 import { cn, exportToCSV } from "@/lib/utils";
 import { OrderStats } from "@/components/OrderStats";
 import { useTheme } from "@/contexts/theme-context";
+import type { Product, Sale, Purchase, Supplier, Customer } from "@/types/erp";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface Product {
-  id: number; name: string; category: string; price: number;
-  costPrice?: number; stock?: number; stockMin?: number; stockMax?: number;
-  unit: string; active: boolean; badge?: string; image: string;
-}
 interface OrderItem { id: number; name: string; price: number; quantity: number; unit: string; image: string; }
 interface Order {
   id: string; customer: { name: string; phone?: string; location: string; reference: string };
@@ -31,20 +27,7 @@ interface Order {
   adminNote?: string;
   statusHistory?: { status: string; at: string }[];
 }
-interface SaleItem { productId: number; name: string; price: number; quantity: number; unit: string; }
-interface Sale {
-  id: string; items: SaleItem[]; total: number;
-  payment: "efectivo" | "yape" | "plin" | "tarjeta";
-  amountPaid: number; change: number; customerPhone?: string; createdAt: string;
-}
-interface Customer { phone: string; name: string; location: string; createdAt: string; }
-interface Purchase {
-  id: string; supplierId: string; supplierName: string;
-  items: { productId: number; name: string; quantity: number; unitCost: number; unit: string }[];
-  total: number; status: string; createdAt: string;
-}
 interface Payable { id: string; supplierId: string; supplierName: string; amount: number; paidAmount: number; status: string; dueDate: string; }
-interface Supplier { id: string; name: string; createdAt: string; }
 interface Review { id: string; name: string; rating: number; text: string; date: string; }
 
 type Period = "hoy" | "semana" | "mes" | "todo";
@@ -470,7 +453,7 @@ export default function DashboardTab() {
 
     const allPeriodOrders = orders.filter(o => inPeriod(o.createdAt, period));
     const funnelData = [
-      { label: "Recibidos",   count: allPeriodOrders.length, color: "#6366f1" },
+      { label: "Recibidos",   count: allPeriodOrders.length, color: "#2d6a4f" },
       { label: "Confirmados", count: allPeriodOrders.filter(o => ["confirmado","en_camino","entregado"].includes(o.status)).length, color: "#3b82f6" },
       { label: "En camino",  count: allPeriodOrders.filter(o => ["en_camino","entregado"].includes(o.status)).length, color: "#06b6d4" },
       { label: "Entregados", count: allPeriodOrders.filter(o => o.status === "entregado").length, color: "#10b981" },
@@ -1299,7 +1282,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
             <div className="h-5 w-32 bg-gray-200 dark:bg-surface rounded-lg" />
             <div className="h-3 w-44 bg-gray-200 dark:bg-surface rounded" />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <div className="h-8 w-48 bg-gray-200 dark:bg-surface rounded-lg" />
             <div className="h-8 w-24 bg-gray-200 dark:bg-surface rounded-lg" />
           </div>
@@ -1315,10 +1298,10 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           ))}
         </div>
         {/* Orders list skeleton */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-3">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3">
           <div className="h-4 w-28 bg-gray-200 dark:bg-surface rounded" />
           {[1, 2, 3, 4, 5].map(i => (
-            <div key={i} className="flex items-center gap-4">
+            <div key={i} className="flex flex-wrap items-center gap-2 sm:gap-4">
               <div className="h-10 w-10 bg-gray-200 dark:bg-surface rounded-xl shrink-0" />
               <div className="flex-1 space-y-2">
                 <div className="h-3.5 bg-gray-200 dark:bg-surface rounded w-1/2" />
@@ -1330,9 +1313,9 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           ))}
         </div>
         {/* Chart skeleton */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
           <div className="h-4 w-36 bg-gray-200 dark:bg-surface rounded mb-4" />
-          <div className="flex items-end gap-2 h-32">
+          <div className="flex flex-wrap items-end gap-2 h-32">
             {[40, 70, 55, 85, 60, 90, 75].map((h, i) => (
               <div key={i} className="flex-1 bg-gray-200 dark:bg-surface rounded-t" style={{ height: `${h}%` }} />
             ))}
@@ -1350,7 +1333,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
     )}>
       {/* ── Fetch Error Banner ── */}
       {fetchError && (
-        <div className="flex items-center gap-3 p-3 mb-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30">
+        <div className="flex flex-wrap items-center gap-3 p-3 mb-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30">
           <AlertCircle className="h-5 w-5 text-red-500 shrink-0" />
           <p className="text-sm text-red-700 dark:text-red-300 flex-1">{fetchError}</p>
           <button onClick={() => { setFetchError(null); void load(); }} className="px-3 py-1 text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 transition-colors">
@@ -1364,7 +1347,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
 
       {/* ── Operation Error Toast ── */}
       {opError && (
-        <div className="flex items-center gap-2 p-2.5 mb-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 animate-[fadeUp_0.2s_ease-out]">
+        <div className="flex flex-wrap items-center gap-2 p-2.5 mb-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 animate-[fadeUp_0.2s_ease-out]">
           <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
           <p className="text-xs text-amber-700 dark:text-amber-300 flex-1">{opError}</p>
           <button onClick={() => setOpError(null)} className="p-0.5 text-amber-400 hover:text-amber-600">
@@ -1379,7 +1362,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           <h2 className={cn("font-bold text-gray-900 dark:text-foreground", fullscreen ? "text-lg" : "text-sm")}>Dashboard</h2>
           <p className={cn("text-gray-400 dark:text-muted", fullscreen ? "text-sm" : "text-xs")}>Bodega San Martín</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className={cn("flex items-center bg-gray-100 dark:bg-accent rounded-lg p-0.5")}>
             {(["hoy","semana","mes","todo"] as Period[]).map(p => (
               <button key={p} onClick={()=>setPeriod(p)}
@@ -1562,16 +1545,16 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     <svg viewBox={`0 0 ${Math.max(st.daily.length, 1) * 36} 80`} className="w-full h-full" preserveAspectRatio="none">
                       <defs>
                         <linearGradient id="fsAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
-                          <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+                          <stop offset="0%" stopColor="#2d6a4f" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#2d6a4f" stopOpacity="0.02" />
                         </linearGradient>
                       </defs>
                       <path d={st.daily.map(([,v],i) => { const x=i*36+18; const y=70-((v/st.maxDaily)*60); return i===0?`M${x},${y}`:`L${x},${y}`; }).join(' ') + ` L${(st.daily.length-1)*36+18},70 L18,70 Z`} fill="url(#fsAreaGrad)" />
-                      <polyline points={st.daily.map(([,v],i) => `${i*36+18},${70-((v/st.maxDaily)*60)}`).join(' ')} fill="none" stroke="#6366f1" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                      <polyline points={st.daily.map(([,v],i) => `${i*36+18},${70-((v/st.maxDaily)*60)}`).join(' ')} fill="none" stroke="#2d6a4f" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                     </svg>
                   </div>
                 )}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {[
                     { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-emerald-600 dark:text-emerald-400" },
                     { label: "Ticket Prom.", value: fmt(st.ticketProm), accent: "text-blue-600 dark:text-blue-400" },
@@ -1590,7 +1573,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   <Banknote className="h-3.5 w-3.5 text-indigo-500" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Caja</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                   {[
                     { label: "Ingresos", value: fmt(st.ventas), accent: "text-emerald-600 dark:text-emerald-400" },
                     { label: "Egresos", value: fmt(st.totalPurch), accent: "text-red-500 dark:text-red-400" },
@@ -1606,7 +1589,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 {st.payments.length > 0 && (
                   <div className="space-y-1.5">
                     {st.payments.slice(0, 5).map(p => (
-                      <div key={p.method} className="flex items-center gap-2">
+                      <div key={p.method} className="flex flex-wrap items-center gap-2">
                         <div className="w-2 h-2 rounded-full shrink-0" style={{background: p.color}} />
                         <span className="text-[11px] text-gray-500 dark:text-muted flex-1 truncate">{p.label}</span>
                         <span className="text-xs font-semibold text-gray-800 dark:text-foreground">{fmt(p.total)}</span>
@@ -1630,7 +1613,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   return (
                     <div className="space-y-2">
                       {st.topRev.slice(0, 6).map((p, i) => (
-                        <div key={p.id} className="flex items-center gap-2">
+                        <div key={p.id} className="flex flex-wrap items-center gap-2">
                           <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0", i < 3 ? "bg-gray-900 dark:bg-foreground text-white dark:text-background" : "bg-gray-100 dark:bg-accent text-gray-400")}>{i+1}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between mb-0.5">
@@ -1647,7 +1630,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   );
                 })()}
                 {st.catSales.length > 0 && (
-                  <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-card-border grid grid-cols-2 gap-1.5">
+                  <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-card-border grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {st.catSales.slice(0, 4).map(c => (
                       <div key={c.cat} className="flex items-center gap-1.5 min-w-0">
                         <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{background: c.color}} />
@@ -1663,7 +1646,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   <Package className="h-3.5 w-3.5 text-amber-500" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Inventario</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mb-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[10px] text-gray-400 dark:text-muted">Valor stock</div>
                     <div className="text-sm font-bold text-amber-600 dark:text-amber-400 tabular-nums truncate">{fmt(st.stockVal)}</div>
@@ -1703,7 +1686,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   <Users className="h-3.5 w-3.5 text-violet-500" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Clientes</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mb-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[10px] text-gray-400 dark:text-muted">Atendidos</div>
                     <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">{st.clientesAtendidos}</div>
@@ -1726,7 +1709,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   return (
                     <div className="space-y-1.5">
                       {top.map((c,i) => (
-                        <div key={c.name+i} className="flex items-center gap-2">
+                        <div key={c.name+i} className="flex flex-wrap items-center gap-2">
                           <span className={cn("w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0", i < 3 ? "bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300" : "bg-gray-100 dark:bg-accent text-gray-400")}>{i+1}</span>
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between mb-0.5">
@@ -1748,7 +1731,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   <Truck className="h-3.5 w-3.5 text-blue-500" />
                   <span className="text-xs font-bold text-gray-700 dark:text-foreground uppercase tracking-wide">Compras</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mb-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
                   <div className="bg-gray-50 dark:bg-surface rounded-lg px-2.5 py-2">
                     <div className="text-[10px] text-gray-400 dark:text-muted">Total compras</div>
                     <div className="text-sm font-bold text-blue-600 dark:text-blue-400 tabular-nums truncate">{fmt(st.totalPurch)}</div>
@@ -1763,7 +1746,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     {st.supPurchases.slice(0, 4).map(s => {
                       const mx = st.supPurchases[0]?.total ?? 1;
                       return (
-                        <div key={s.name} className="flex items-center gap-2">
+                        <div key={s.name} className="flex flex-wrap items-center gap-2">
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between mb-0.5">
                               <span className="text-xs text-gray-600 dark:text-gray-300 truncate">{s.name}</span>
@@ -1799,8 +1782,8 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
       {!fullscreen && (<>
       {/* ── Expand All banner ── */}
       {expandAll && (
-        <div className="flex items-center justify-between mb-5 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between mb-5 px-2 sm:px-4 py-2 sm:py-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
+          <div className="flex flex-wrap items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
               <LayoutDashboard className="h-3.5 w-3.5 text-white" />
             </div>
@@ -1842,7 +1825,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
         {SECTIONS.map(s => (
           <button key={s.id} onClick={()=>setSection(s.id)}
             className={cn(
-              "flex items-center gap-1.5 px-4 py-2.5 font-semibold whitespace-nowrap border-b-2 -mb-px transition-all shrink-0",
+              "flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2.5 font-semibold whitespace-nowrap border-b-2 -mb-px transition-all shrink-0",
               fullscreen ? "text-sm" : "text-xs",
               section===s.id
                 ? "border-gray-900 dark:border-foreground text-gray-900 dark:text-foreground"
@@ -1871,7 +1854,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
         return (
           <div className="mb-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/40 bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/25 dark:to-teal-950/25 px-5 py-4">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Sun className="h-4.5 w-4.5 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-sm font-extrabold text-emerald-700 dark:text-emerald-400">Resumen de hoy</span>
                 <span className="text-[10px] text-emerald-500/70 dark:text-emerald-500/60">{new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "short" })}</span>
@@ -1882,7 +1865,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <div className="text-center">
                 <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">S/{todayRev.toFixed(0)}</p>
                 <p className="text-[10px] text-gray-400 dark:text-muted">Ingresos</p>
@@ -1915,8 +1898,8 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
         })();
         if (yOrders.length === 0) return null;
         return (
-          <div className="mb-4 rounded-xl border border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-900/15 px-4 py-3 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+          <div className="mb-4 rounded-xl border border-blue-200 dark:border-blue-800/50 bg-blue-50 dark:bg-blue-900/15 px-2 sm:px-4 py-2 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+            <div className="flex flex-wrap items-center gap-3">
               <CalendarDays className="h-5 w-5 text-blue-500 shrink-0" />
               <div>
                 <p className="text-sm font-bold text-blue-700 dark:text-blue-400">Resumen de ayer</p>
@@ -1992,7 +1975,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
       {/* RESUMEN                                                            */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {expandAll && (
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
             <BarChart3 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
           </div>
@@ -2003,9 +1986,9 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
         <div className={cn("space-y-4", expandAll && "col-span-full")}>
           {/* ── Monthly Goals Card ── */}
           {period === "mes" && (
-            <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 p-5">
+            <div className="bg-linear-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 p-3 sm:p-5">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2.5">
+                <div className="flex flex-wrap items-center gap-2.5">
                   <div className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                     <Target className="h-5 w-5 text-white" />
                   </div>
@@ -2014,7 +1997,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     <p className="text-xs text-gray-500 dark:text-muted">{new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" })}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {Object.values(monthlyGoals).some(v => v > 0) && (
                     <button
                       onClick={() => setShowGoalHistory(true)}
@@ -2036,7 +2019,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               </div>
               
               {Object.values(monthlyGoals).some(v => v > 0) ? (
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 gap-2 sm:gap-4">
                   {[
                     { key: "revenue" as const, label: "Ingresos", value: st.ventas, goal: monthlyGoals.revenue, format: (v: number) => fmt(v), icon: DollarSign, color: "emerald" },
                     { key: "orders" as const, label: "Pedidos", value: st.tickets, goal: monthlyGoals.orders, format: (v: number) => String(v), icon: ShoppingCart, color: "blue" },
@@ -2048,7 +2031,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     return (
                       <div key={metric.key} className="bg-white/70 dark:bg-gray-900/30 rounded-xl p-4 border border-white/50 dark:border-gray-800">
                         <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <div className={cn(
                               "w-8 h-8 rounded-lg flex items-center justify-center",
                               metric.color === "emerald" && "bg-emerald-100 dark:bg-emerald-900/30",
@@ -2133,8 +2116,8 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           {editingMonthlyGoals && (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditingMonthlyGoals(false)}>
               <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
-                  <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                       <Target className="h-4 w-4 text-white" />
                     </div>
@@ -2142,9 +2125,9 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   </div>
                   <button onClick={() => setEditingMonthlyGoals(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
                 </div>
-                <div className="px-6 py-5 space-y-4">
+                <div className="px-3 sm:px-6 py-5 space-y-4">
                   <p className="text-sm text-gray-500 dark:text-muted">Define tus objetivos para {new Date().toLocaleDateString("es-PE", { month: "long", year: "numeric" })}</p>
-                  <div className="grid gap-4">
+                  <div className="grid gap-2 sm:gap-4">
                     <div>
                       <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5">
                         <DollarSign className="h-3.5 w-3.5" /> Ingresos mensuales (S/)
@@ -2206,9 +2189,9 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     <p className="text-xs text-blue-700 dark:text-blue-400"><strong>💡 Consejo:</strong> Establece metas realistas basadas en tu histórico y +10-15% de crecimiento.</p>
                   </div>
                 </div>
-                <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-card-border">
-                  <button onClick={() => setEditingMonthlyGoals(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
-                  <button onClick={saveMonthlyGoals} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-colors shadow-sm">Guardar metas</button>
+                <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
+                  <button onClick={() => setEditingMonthlyGoals(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
+                  <button onClick={saveMonthlyGoals} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-bold text-white bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transition-colors shadow-sm">Guardar metas</button>
                 </div>
               </div>
             </div>
@@ -2218,8 +2201,8 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           {showGoalHistory && (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowGoalHistory(false)}>
               <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
-                  <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
                       <BarChart3 className="h-4 w-4 text-white" />
                     </div>
@@ -2227,7 +2210,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   </div>
                   <button onClick={() => setShowGoalHistory(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
                 </div>
-                <div className="overflow-y-auto flex-1 px-6 py-5">
+                <div className="overflow-y-auto flex-1 px-3 sm:px-6 py-5">
                   {(() => {
                     const history = JSON.parse(localStorage.getItem("bsm-goals-history") || "{}");
                     const entries = Object.entries(history).sort((a, b) => b[0].localeCompare(a[0]));
@@ -2246,7 +2229,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                               <div className="grid sm:grid-cols-2 gap-3 text-xs">
                                 <div>
                                   <span className="text-gray-500 dark:text-muted block mb-1">Ingresos</span>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <span className="font-semibold text-gray-900 dark:text-foreground">{fmt(entry.actual?.revenue || 0)}</span>
                                     <span className="text-gray-400 dark:text-muted">/</span>
                                     <span className="text-gray-600 dark:text-muted">{fmt(entry.goals?.revenue || 0)}</span>
@@ -2262,7 +2245,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                                 </div>
                                 <div>
                                   <span className="text-gray-500 dark:text-muted block mb-1">Pedidos</span>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <span className="font-semibold text-gray-900 dark:text-foreground">{entry.actual?.orders || 0}</span>
                                     <span className="text-gray-400 dark:text-muted">/</span>
                                     <span className="text-gray-600 dark:text-muted">{entry.goals?.orders || 0}</span>
@@ -2290,8 +2273,8 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           
           {/* Period comparison badge */}
           {period !== "todo" && (
-            <div className="flex items-center justify-between px-4 py-2 bg-linear-to-r from-blue-50 to-violet-50 dark:from-blue-950/30 dark:to-violet-950/30 rounded-xl border border-blue-100 dark:border-blue-900/30">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between px-2 sm:px-4 py-1.5 sm:py-2 bg-linear-to-r from-blue-50 to-violet-50 dark:from-blue-950/30 dark:to-violet-950/30 rounded-xl border border-blue-100 dark:border-blue-900/30">
+              <div className="flex flex-wrap items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-sm font-semibold text-gray-700 dark:text-foreground">
                   Comparado con{" "}
@@ -2311,7 +2294,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           {/* Sprint 3: Morning Briefing Card */}
           <div className="bg-linear-to-br from-gray-900 to-gray-800 dark:from-gray-800 dark:to-gray-900 rounded-xl p-4 text-white">
             <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
                   <Lightbulb className="h-4 w-4 text-amber-400" />
                 </div>
@@ -2329,10 +2312,10 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
             </div>
 
             {/* Yesterday summary */}
-            <div className="flex items-center gap-3 mb-3 px-3 py-2 rounded-lg bg-white/5">
+            <div className="flex flex-wrap items-center gap-3 mb-3 px-3 py-2 rounded-lg bg-white/5">
               <div className="flex-1">
                 <span className="text-[10px] text-gray-400 uppercase tracking-wider">Ayer</span>
-                <div className="flex items-center gap-3 mt-0.5">
+                <div className="flex flex-wrap items-center gap-3 mt-0.5">
                   <span className="text-sm font-bold">{fmt(st.yesterdayRevenue)}</span>
                   <span className="text-xs text-gray-400">{st.yesterdayTickets} ticket{st.yesterdayTickets !== 1 ? "s" : ""}</span>
                 </div>
@@ -2399,7 +2382,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
             return (
               <div className="rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/15 p-4">
                 <div className="flex items-center justify-between mb-2.5">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     <span className="text-sm font-bold text-amber-800 dark:text-amber-300">Alertas activas ({alertItems.length})</span>
                   </div>
@@ -2435,11 +2418,11 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
             if (allTx.length === 0) return null;
             return (
               <div className="rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-4">
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex flex-wrap items-center gap-2 mb-3">
                   <Clock className="h-4 w-4 text-indigo-500" />
                   <p className="text-xs font-semibold text-gray-700 dark:text-foreground">Ventas por hora — Mapa de calor</p>
                 </div>
-                <div className="grid grid-cols-12 gap-1">
+                <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1">
                   {hourData.map((val, h) => {
                     const intensity = val / maxVal;
                     return (
@@ -2448,7 +2431,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                           className="w-full aspect-square rounded-md transition-all cursor-default"
                           style={{
                             background: val > 0
-                              ? `rgba(99,102,241,${0.1 + intensity * 0.85})`
+                              ? `rgba(45,106,79,${0.1 + intensity * 0.85})`
                               : "rgba(156,163,175,0.08)",
                           }}
                         />
@@ -2464,9 +2447,9 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-[9px] text-gray-400">Menos ventas</span>
-                  <div className="flex gap-0.5">
+                  <div className="flex flex-wrap gap-0.5">
                     {[0.1, 0.3, 0.5, 0.7, 0.9].map(o => (
-                      <div key={o} className="w-3 h-2 rounded-sm" style={{ background: `rgba(99,102,241,${o})` }} />
+                      <div key={o} className="w-3 h-2 rounded-sm" style={{ background: `rgba(45,106,79,${o})` }} />
                     ))}
                   </div>
                   <span className="text-[9px] text-gray-400">Más ventas</span>
@@ -2475,7 +2458,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
             );
           })()}
             {editingGoal ? (
-              <form onSubmit={(e) => { e.preventDefault(); const v = dailyGoal; localStorage.setItem("daily-sales-goal", String(v)); setEditingGoal(false); }} className="flex items-center gap-2">
+              <form onSubmit={(e) => { e.preventDefault(); const v = dailyGoal; localStorage.setItem("daily-sales-goal", String(v)); setEditingGoal(false); }} className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-gray-500">S/</span>
                 <input type="number" min={0} step={10} value={dailyGoal || ""} onChange={(e) => setDailyGoal(Number(e.target.value))} className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-700 text-sm text-gray-800 dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary" autoFocus />
                 <button type="submit" className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-bold">Guardar</button>
@@ -2536,8 +2519,8 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   <svg viewBox={`0 0 ${st.daily.length * 50} 120`} className="w-full h-full" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="areaGradSmall" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
+                        <stop offset="0%" stopColor="#2d6a4f" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#2d6a4f" stopOpacity="0" />
                       </linearGradient>
                     </defs>
                     <path d={
@@ -2548,10 +2531,10 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     } fill="url(#areaGradSmall)" />
                     <polyline
                       points={st.daily.map(([,v],i) => `${i*50+25},${100-((v/(st.maxDaily||1))*85)}`).join(' ')}
-                      fill="none" stroke="#6366f1" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"
+                      fill="none" stroke="#2d6a4f" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"
                     />
                     {st.daily.map(([,v],i) => (
-                      <circle key={i} cx={i*50+25} cy={100-((v/(st.maxDaily||1))*85)} r="2.5" fill="#6366f1" stroke="white" strokeWidth="1.5" />
+                      <circle key={i} cx={i*50+25} cy={100-((v/(st.maxDaily||1))*85)} r="2.5" fill="#2d6a4f" stroke="white" strokeWidth="1.5" />
                     ))}
                   </svg>
                   <div className="flex justify-between px-0.5">
@@ -2566,7 +2549,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
             <div className="lg:col-span-2 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4">
               <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-3">Métodos de pago</p>
               {st.payments.length === 0 ? <Empty /> : (
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                   <Donut data={st.payments} total={st.payTotal} />
                   <div className="flex-1 space-y-1.5">
                     {st.payments.map(p => (
@@ -2598,12 +2581,12 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               });
               const maxH = Math.max(...hourCounts, 1);
               return (
-                <div className="flex items-end gap-0.75 h-16">
+                <div className="flex flex-wrap items-end gap-0.75 h-16">
                   {hourCounts.map((c, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group relative">
                       <div
                         className="w-full rounded-sm transition-all min-h-0.5"
-                        style={{ height: `${Math.max((c / maxH) * 100, 3)}%`, background: c > 0 ? `rgba(99,102,241,${0.25 + (c / maxH) * 0.75})` : "rgba(156,163,175,0.15)" }}
+                        style={{ height: `${Math.max((c / maxH) * 100, 3)}%`, background: c > 0 ? `rgba(45,106,79,${0.25 + (c / maxH) * 0.75})` : "rgba(156,163,175,0.15)" }}
                       />
                       {i % 3 === 0 && <span className="text-[8px] text-gray-300 dark:text-muted">{i}h</span>}
                       {c > 0 && <span className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[9px] font-bold px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">{c} ventas</span>}
@@ -2654,7 +2637,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                           {test.status === "running" ? "▶ En curso" : test.status === "completed" ? "✓ Completo" : "⏸ Pausado"}
                         </DBadge>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                         {test.variants.map(v => {
                           const convRate = v.visitors > 0 ? (v.conversions / v.visitors) * 100 : 0;
                           const isWinner = winner === v.id;
@@ -2702,8 +2685,8 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           {showABTestModal && (
             <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowABTestModal(false)}>
               <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
-                  <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-500 to-purple-500 flex items-center justify-center">
                       <Beaker className="h-4 w-4 text-white" />
                     </div>
@@ -2711,7 +2694,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   </div>
                   <button onClick={() => setShowABTestModal(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
                 </div>
-                <div className="px-6 py-5 space-y-4">
+                <div className="px-3 sm:px-6 py-5 space-y-4">
                   <div>
                     <label className="text-xs font-semibold text-gray-500 dark:text-muted mb-1.5 block">Nombre del test</label>
                     <input type="text" value={abTestForm.name} onChange={e => setAbTestForm(prev => ({ ...prev, name: e.target.value }))}
@@ -2725,7 +2708,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                       rows={2}
                       className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-violet-500 outline-none text-sm resize-none" />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted mb-1.5 block">Variante A (Control)</label>
                       <input type="text" value={abTestForm.variantA} onChange={e => setAbTestForm(prev => ({ ...prev, variantA: e.target.value }))}
@@ -2747,7 +2730,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                       <option value="retention">Retención</option>
                     </select>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-semibold text-gray-500 dark:text-muted mb-1.5 block">Fecha inicio</label>
                       <input type="date" value={abTestForm.startDate} onChange={e => setAbTestForm(prev => ({ ...prev, startDate: e.target.value }))}
@@ -2763,8 +2746,8 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     <p className="text-xs text-blue-700 dark:text-blue-400"><strong>💡 Recomendación:</strong> Ejecuta pruebas por al menos 7-14 días y 100+ visitantes por variante para resultados confiables.</p>
                   </div>
                 </div>
-                <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-card-border">
-                  <button onClick={() => setShowABTestModal(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
+                <div className="flex flex-wrap justify-end gap-3 px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border">
+                  <button onClick={() => setShowABTestModal(false)} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
                   <button onClick={() => {
                     const newTest: ABTest = {
                       id: Date.now().toString(),
@@ -2784,7 +2767,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     localStorage.setItem("bsm-ab-tests", JSON.stringify(updated));
                     setShowABTestModal(false);
                     setAbTestForm({ name: "", hypothesis: "", variantA: "Control", variantB: "Variant B", metric: "conversion", startDate: "", endDate: "" });
-                  }} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 transition-colors shadow-sm">Crear test</button>
+                  }} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl text-sm font-bold text-white bg-linear-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 transition-colors shadow-sm">Crear test</button>
                 </div>
               </div>
             </div>
@@ -2796,14 +2779,14 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
       {(expandAll || section === "ventas") && (
         <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
                 <DollarSign className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-sm font-bold text-gray-800 dark:text-foreground">Ventas</h3>
             </div>
           )}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 flex-1">
               <Kpi label="Ventas Netas" value={fmt(st.ventas)} icon={DollarSign} accent="text-emerald-500" delta={st.dVentas} sparklineData={st.sparklineRevenue} />
               <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-blue-500" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
@@ -2824,7 +2807,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               <div>
                 <div className="flex items-center gap-3 mb-2 justify-end flex-wrap">
                   <span className="flex items-center gap-1.5 text-[11px] text-gray-400">
-                    <svg width="12" height="4"><line x1="0" y1="2" x2="12" y2="2" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round"/></svg>
+                    <svg width="12" height="4"><line x1="0" y1="2" x2="12" y2="2" stroke="#2d6a4f" strokeWidth="2.5" strokeLinecap="round"/></svg>
                     Ventas
                   </span>
                   <span className="flex items-center gap-1.5 text-[11px] text-gray-400">
@@ -2849,8 +2832,8 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   <svg viewBox={`0 0 ${st.daily.length * 50} 160`} className="w-full h-full" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+                        <stop offset="0%" stopColor="#2d6a4f" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#2d6a4f" stopOpacity="0.02" />
                       </linearGradient>
                     </defs>
                     {/* Grid lines */}
@@ -2867,7 +2850,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     {/* Revenue line */}
                     <polyline
                       points={st.daily.map(([,v],i) => `${i*50+25},${140-((v/st.maxDaily)*130)}`).join(' ')}
-                      fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
+                      fill="none" stroke="#2d6a4f" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
                     />
                     {/* Profit line (dashed, emerald) */}
                     {st.dailyProfit.some(v => v > 0) && (
@@ -2878,7 +2861,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     )}
                     {/* Revenue dots */}
                     {st.daily.map(([,v],i) => (
-                      <circle key={i} cx={i*50+25} cy={140-((v/st.maxDaily)*130)} r="3.5" fill="#6366f1" stroke="white" strokeWidth="2" />
+                      <circle key={i} cx={i*50+25} cy={140-((v/st.maxDaily)*130)} r="3.5" fill="#2d6a4f" stroke="white" strokeWidth="2" />
                     ))}
                     {/* 7-day moving average line (amber) */}
                     {st.movingAvg7.length >= 2 && (
@@ -2912,7 +2895,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           {st.forecast7.length > 0 && (
             <Card title="Pronóstico próximos 7 días" icon={Target}>
               <div className="space-y-3">
-                <div className="grid grid-cols-7 gap-1.5">
+                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
                   {st.forecast7.map((f, i) => {
                     const maxF = Math.max(...st.forecast7.map(x => x.value), 1);
                     return (
@@ -2944,7 +2927,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               <div className="overflow-x-auto">
                 <div className="inline-flex flex-col gap-1 min-w-max">
                   {/* Hour labels */}
-                  <div className="flex gap-1 pl-12">
+                  <div className="flex flex-wrap gap-1 pl-12">
                     {[...Array(24)].map((_, h) => (
                       <div key={h} className="w-6 text-center text-[9px] text-gray-400 dark:text-muted">
                         {h}
@@ -2957,7 +2940,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                       <div className="w-10 text-xs font-medium text-gray-600 dark:text-gray-400 text-right pr-2">
                         {day}
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex flex-wrap gap-1">
                         {[...Array(24)].map((_, hour) => {
                           const key = `${dayIndex}-${hour}`;
                           const count = st.hourMap.get(key) ?? 0;
@@ -2989,7 +2972,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 </div>
               </div>
               {/* Legend */}
-              <div className="flex items-center gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+              <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
                 <div className="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-muted">
                   Intensidad:
                 </div>
@@ -3043,7 +3026,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           {/* Conversion Funnel */}
           <Card title="Funnel de Conversión" icon={TrendingDown}>
             {st.conversionFunnelData[4].count === 0 ? <Empty text="Sin pedidos en el periodo" /> : (
-              <div className="space-y-6">
+              <div className="space-y-3 sm:space-y-6">
                 {/* Visual Funnel Chart */}
                 <div className="space-y-0">
                   {st.conversionFunnelData.map((stage, idx) => {
@@ -3060,7 +3043,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     
                     return (
                       <div key={stage.label} className="relative">
-                        <div className="flex items-center gap-3 mb-1.5">
+                        <div className="flex flex-wrap items-center gap-3 mb-1.5">
                           <StageIcon className={cn("h-4 w-4", idx === 4 ? "text-emerald-500" : "text-gray-400")} />
                           <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{stage.label}</span>
                           {idx > 0 && dropoffRate > 0 && (
@@ -3079,7 +3062,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                             }}
                           >
                             <div className="absolute inset-0 bg-linear-to-br from-white/20 to-transparent" />
-                            <div className="relative h-full flex items-center justify-center gap-2 text-white">
+                            <div className="relative h-full flex flex-wrap items-center justify-center gap-2 text-white">
                               <span className="font-bold text-lg">{stage.count.toLocaleString()}</span>
                               {prevStage && (
                                 <span className="text-xs opacity-90">
@@ -3095,13 +3078,13 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 </div>
 
                 {/* Metrics Cards */}
-                <div className="grid grid-cols-3 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
                   <div className="bg-linear-to-br from-blue-50 to-blue-50/50 dark:from-blue-950/30 dark:to-blue-950/10 rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <Target className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                       <span className="text-[10px] font-semibold text-blue-700 dark:text-blue-400 uppercase tracking-wide">Conversión Total</span>
                     </div>
-                    <div className="text-2xl font-extrabold text-blue-700 dark:text-blue-300">
+                    <div className="text-xl sm:text-2xl font-extrabold text-blue-700 dark:text-blue-300">
                       {st.overallConversionRate.toFixed(1)}%
                     </div>
                     <div className="text-[10px] text-blue-600/70 dark:text-blue-400/70 mt-0.5">
@@ -3110,11 +3093,11 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   </div>
 
                   <div className="bg-linear-to-br from-amber-50 to-amber-50/50 dark:from-amber-950/30 dark:to-amber-950/10 rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <ShoppingCart className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                       <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide">Abandono Carrito</span>
                     </div>
-                    <div className="text-2xl font-extrabold text-amber-700 dark:text-amber-300">
+                    <div className="text-xl sm:text-2xl font-extrabold text-amber-700 dark:text-amber-300">
                       {st.basketAbandonmentRate.toFixed(1)}%
                     </div>
                     <div className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">
@@ -3123,11 +3106,11 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   </div>
 
                   <div className="bg-linear-to-br from-emerald-50 to-emerald-50/50 dark:from-emerald-950/30 dark:to-emerald-950/10 rounded-xl p-3">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                       <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide">Checkout</span>
                     </div>
-                    <div className="text-2xl font-extrabold text-emerald-700 dark:text-emerald-300">
+                    <div className="text-xl sm:text-2xl font-extrabold text-emerald-700 dark:text-emerald-300">
                       {st.checkoutCompletionRate.toFixed(1)}%
                     </div>
                     <div className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70 mt-0.5">
@@ -3188,11 +3171,11 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
 
             <Card title="Métodos de pago" icon={CreditCard}>
               {st.payments.length===0?<Empty />:(
-                <div className="flex items-center gap-6 justify-center">
+                <div className="flex flex-wrap items-center gap-6 justify-center">
                   <Donut data={st.payments} total={st.payTotal} size={120} />
                   <div className="space-y-2">
                     {st.payments.map(p => (
-                      <div key={p.method} className="flex items-center gap-2 text-xs">
+                      <div key={p.method} className="flex flex-wrap items-center gap-2 text-xs">
                         <div className="w-2.5 h-2.5 rounded-full" style={{background:p.color}} />
                         <span className="text-gray-500 w-20">{p.label}</span>
                         <span className="font-semibold text-gray-800 dark:text-foreground">{fmt(p.total)}</span>
@@ -3207,21 +3190,21 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           <Card title="Horas pico" icon={Clock}>
             <div className="overflow-x-auto">
               <div className="min-w-80">
-                <div className="flex gap-0.5 mb-0.5">
+                <div className="flex flex-wrap gap-0.5 mb-0.5">
                   <div className="w-8 shrink-0" />
                   {Array.from({length:14},(_,i)=>i+7).map(h => (
                     <div key={h} className="flex-1 text-center text-xs text-gray-300 font-mono">{h}</div>
                   ))}
                 </div>
                 {[1,2,3,4,5,6,0].map(day => (
-                  <div key={day} className="flex gap-0.5 mb-0.5">
+                  <div key={day} className="flex flex-wrap gap-0.5 mb-0.5">
                     <div className="w-8 shrink-0 text-xs text-gray-400 flex items-center">{DAYS[day]}</div>
                     {Array.from({length:14},(_,i)=>i+7).map(hour => {
                       const count = st.hourMap.get(`${day}-${hour}`)??0;
                       const int = st.maxHeat>0?count/st.maxHeat:0;
                       return (
                         <div key={hour} className="flex-1 aspect-square rounded-sm"
-                          style={{background:int===0?"#f9fafb":`rgba(99,102,241,${0.12+int*0.88})`}}
+                          style={{background:int===0?"#f9fafb":`rgba(45,106,79,${0.12+int*0.88})`}}
                           title={`${DAYS[day]} ${hour}:00 — ${count}`} />
                       );
                     })}
@@ -3230,7 +3213,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 <div className="flex items-center justify-end gap-1.5 mt-2">
                   <span className="text-xs text-gray-300">Menos</span>
                   {[0,0.25,0.5,0.75,1].map((v,i) => (
-                    <div key={i} className="w-3 h-3 rounded-sm" style={{background:v===0?"#f9fafb":`rgba(99,102,241,${0.12+v*0.88})`}} />
+                    <div key={i} className="w-3 h-3 rounded-sm" style={{background:v===0?"#f9fafb":`rgba(45,106,79,${0.12+v*0.88})`}} />
                   ))}
                   <span className="text-xs text-gray-300">Más</span>
                 </div>
@@ -3247,7 +3230,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     <div key={step.label}>
                       <div className="flex items-center justify-between text-xs mb-1">
                         <span className="text-gray-600 dark:text-gray-400 font-medium">{step.label}</span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="text-gray-400">{pct.toFixed(0)}%</span>
                           <span className="font-semibold text-gray-800 dark:text-foreground w-6 text-right">{step.count}</span>
                         </div>
@@ -3264,7 +3247,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
 
           <Card title="Ventas recientes" icon={Receipt}>
             {/* G2 — Filter pills */}
-            <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+            <div className="flex items-center gap-1.5 mb-3">
               {(["all","pendiente","en_camino","entregado"] as const).map(f => (
                 <button key={f} onClick={() => { setRecentFilter(f); setRecentPage(1); }}
                   className={cn("px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border",
@@ -3311,9 +3294,9 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               <div>
               {/* U3: Bulk action bar */}
               {selectedOrders.size > 0 && (
-                <div className="flex items-center gap-2 mb-3 p-2.5 rounded-xl bg-primary/5 border border-primary/20">
+                <div className="flex flex-wrap items-center gap-2 mb-3 p-2.5 rounded-xl bg-primary/5 border border-primary/20">
                   <span className="text-xs font-bold text-primary">{selectedOrders.size} seleccionado{selectedOrders.size > 1 ? "s" : ""}</span>
-                  <div className="flex gap-1 ml-auto">
+                  <div className="flex flex-wrap gap-1 ml-auto">
                     {(["confirmado","en_camino","entregado","cancelado"] as const).map(s => (
                       <button key={s} onClick={() => handleBulkStatus(s)} disabled={bulkUpdating}
                         className="text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border hover:border-primary hover:text-primary text-gray-500 transition-colors disabled:opacity-50">
@@ -3325,7 +3308,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 </div>
               )}
               <div className="overflow-x-auto -mx-4">
-                <table className="w-full text-xs">
+                <table className="w-full min-w-[600px] text-xs">
                   <thead>
                     <tr className="text-gray-400 dark:text-muted font-medium border-b border-gray-50 dark:border-card-border">
                       <th className="w-8 px-2 py-2">
@@ -3338,12 +3321,12 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                           className="rounded border-gray-300 accent-primary"
                         />
                       </th>
-                      <th className="text-left px-4 py-2">Fecha</th>
-                      <th className="text-left px-4 py-2">Cliente</th>
-                      <th className="text-left px-4 py-2 hidden sm:table-cell">Detalle</th>
-                      <th className="text-left px-4 py-2">Pago</th>
-                      <th className="text-left px-4 py-2">Estado</th>
-                      <th className="text-right px-4 py-2">Total</th>
+                      <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2">Fecha</th>
+                      <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2">Cliente</th>
+                      <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2 hidden sm:table-cell">Detalle</th>
+                      <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2">Pago</th>
+                      <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2">Estado</th>
+                      <th className="text-right px-2 sm:px-4 py-1.5 sm:py-2">Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3354,7 +3337,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                         <td className="w-8 px-2 py-2">
                           <input type="checkbox" checked={selectedOrders.has(o.id)} onChange={() => toggleOrderSelection(o.id)} className="rounded border-gray-300 accent-primary" />
                         </td>
-                        <td className="px-4 py-2 text-gray-500 dark:text-muted whitespace-nowrap">
+                        <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-gray-500 dark:text-muted whitespace-nowrap">
                           <div>{fmtDate(o.createdAt)}</div>
                           <div className="text-gray-300">{fmtTime(o.createdAt)}</div>
                           {/* V1: Elapsed timer for active orders */}
@@ -3368,7 +3351,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                             </button>
                           )}
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-2 sm:px-4 py-1.5 sm:py-2">
                           <div className="flex items-center gap-1">
                             <span className="font-medium text-gray-700 dark:text-foreground">{o.customer.name}</span>
                             {/* J3 — New client badge */}
@@ -3388,15 +3371,15 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                             >📲 WA</a>
                           )}
                         </td>
-                        <td className="px-4 py-2 text-gray-400 hidden sm:table-cell max-w-40 truncate">
+                        <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-gray-400 hidden sm:table-cell max-w-40 truncate">
                           {o.items.map(i=>`${i.quantity}× ${i.name}`).join(", ")}
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-2 sm:px-4 py-1.5 sm:py-2">
                           <DBadge color={o.paymentMethod==="yape"?"purple":"green"}>
                             {o.paymentMethod==="yape"?"Yape":"Efectivo"}
                           </DBadge>
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-2 sm:px-4 py-1.5 sm:py-2">
                           {(() => {
                             const effStatus = (quickStatusMap[o.id] ?? o.status) as Order["status"];
                             const NEXT: Partial<Record<Order["status"], { s: Order["status"]; label: string }>> = {
@@ -3425,7 +3408,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                             );
                           })()}
                         </td>
-                        <td className="px-4 py-2 text-right font-semibold text-gray-800 dark:text-foreground">
+                        <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-right font-semibold text-gray-800 dark:text-foreground">
                           <span>{fmt(o.total)}</span>
                           <button onClick={() => printTicket(o)} className="ml-1.5 text-gray-300 hover:text-primary transition-colors" title="Imprimir comanda">🖨️</button>
                         </td>
@@ -3445,7 +3428,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                       {/* Y3: Status history timeline */}
                       {expandedHistory.has(o.id) && o.statusHistory && o.statusHistory.length > 0 && (
                         <tr className="border-b border-gray-50 dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
-                          <td colSpan={7} className="px-6 py-2">
+                          <td colSpan={7} className="px-3 sm:px-6 py-2">
                             <div className="flex items-center gap-3 flex-wrap">
                               {o.statusHistory.map((h, hi) => (
                                 <div key={hi} className="flex items-center gap-1.5">
@@ -3469,7 +3452,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   <span className="text-xs text-gray-400 dark:text-muted">
                     {filteredRecent.length} pedidos &middot; pág. {safePage} de {totalRecentPages}
                   </span>
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap gap-1">
                     <button
                       onClick={() => setRecentPage(p => Math.max(1, p - 1))}
                       disabled={safePage === 1}
@@ -3496,7 +3479,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
       {(expandAll || section === "productos") && (
         <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center">
                 <TrendingUp className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
               </div>
@@ -3525,7 +3508,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 {topList.map((p,i) => {
                   const val = topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue;
                   return (
-                    <div key={p.id} className="flex items-center gap-2.5">
+                    <div key={p.id} className="flex flex-wrap items-center gap-2.5">
                       <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
                         i<3?"bg-gray-900 dark:bg-foreground text-white dark:text-background":"bg-gray-100 dark:bg-accent text-gray-400 dark:text-muted"
                       )}>{i+1}</span>
@@ -3551,7 +3534,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           <Card title="Análisis Pareto (80/20)" icon={Target}>
             <div className="space-y-4">
               {/* ABC Summary Cards */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3">
                   <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-1">Clase A</div>
                   <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{st.classA.length}</div>
@@ -3573,7 +3556,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               {st.paretoChartData.length > 0 && (
                 <div>
                   <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">Curva de Pareto (Top 20 productos)</div>
-                  <div className="relative h-48 flex items-end gap-1 pb-6">
+                  <div className="relative h-48 flex flex-wrap items-end gap-1 pb-6">
                     {/* Cumulative line overlay */}
                     <svg className="absolute inset-0 pointer-events-none" style={{ width: "100%", height: "100%" }}>
                       <polyline
@@ -3608,7 +3591,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     ))}
                   </div>
                   {/* Legend */}
-                  <div className="flex items-center gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
+                  <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-gray-100 dark:border-gray-700">
                     <div className="flex items-center gap-1.5 text-xs">
                       <div className="w-3 h-3 bg-emerald-500 rounded"></div>
                       <span className="text-gray-600 dark:text-gray-400">A (críticos)</span>
@@ -3668,7 +3651,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               <div className="space-y-2">
                 {st.productAffinities.map((pair, i) => (
                   <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-accent/40 border border-gray-100 dark:border-card-border">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                       <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
                         i < 3 ? "bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300" : "bg-gray-100 dark:bg-accent text-gray-400"
                       )}>{i+1}</span>
@@ -3704,7 +3687,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
       {(expandAll || section === "inventario") && (
         <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
                 <Package className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
               </div>
@@ -3738,7 +3721,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                       <span className="text-xs font-medium text-gray-700 dark:text-foreground">{p.name}</span>
                       <span className="text-xs text-gray-400 ml-2">{CAT_LABELS[p.category]??p.category}</span>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
                       {/* E2 — Margin badge */}
                       {p.costPrice != null && p.price > 0 && (
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
@@ -3809,7 +3792,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                             onClick={() => setSelectedProductForCrossSell(isExpanded ? null : productId)}
                             className="w-full flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-accent/50 transition-colors text-left"
                           >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-3 flex-1 min-w-0">
                               <div className="w-2 h-2 rounded-full bg-violet-500 shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <div className="font-semibold text-sm text-gray-900 dark:text-foreground truncate">{product.name}</div>
@@ -3826,11 +3809,11 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                                 if (!relatedProduct) return null;
                                 return (
                                   <div key={rec.productId} className="flex items-center justify-between py-2 px-3 bg-white dark:bg-card rounded-lg">
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                                       <Gift className="h-3.5 w-3.5 text-violet-500 shrink-0" />
                                       <span className="text-xs text-gray-700 dark:text-foreground truncate">{relatedProduct.name}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 shrink-0">
+                                    <div className="flex flex-wrap items-center gap-2 shrink-0">
                                       <div className="flex items-center gap-1">
                                         <div className="h-1.5 w-16 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                           <div className="h-full bg-linear-to-r from-violet-500 to-purple-500 rounded-full" style={{ width: `${rec.confidence}%` }} />
@@ -3854,7 +3837,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     })}
                   </div>
                   <div className="bg-linear-to-r from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 rounded-xl p-3 border border-violet-200 dark:border-violet-800">
-                    <div className="flex items-start gap-2">
+                    <div className="flex flex-wrap items-start gap-2">
                       <Zap className="h-4 w-4 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
                       <div>
                         <div className="font-semibold text-violet-700 dark:text-violet-400 text-xs mb-1">Análisis de asociación de productos</div>
@@ -3883,7 +3866,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 {/* Critical products (< 7 days) */}
                 {st.criticalStock.length > 0 && (
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
                       <AlertTriangle className="w-4 h-4 text-red-500" />
                       <span className="text-xs font-semibold text-red-600 dark:text-red-400">Crítico (&lt;7 días)</span>
                     </div>
@@ -3892,7 +3875,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                         <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-gray-700 dark:text-foreground truncate">{p.name}</div>
-                            <div className="flex items-center gap-2 mt-0.5">
+                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
                               <span className="text-[10px] text-gray-500">
                                 {p.daysRemaining < 1 ? 'Se agota HOY' : `${Math.floor(p.daysRemaining)} días restantes`}
                               </span>
@@ -3901,7 +3884,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
                             <div className="text-right">
                               <div className="text-xs font-semibold text-red-600">{p.stock} uds</div>
                               <div className="text-[9px] text-gray-500">Pedir: {p.suggestedOrderQty}</div>
@@ -3925,7 +3908,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 {/* Warning products (7-14 days) */}
                 {st.needsReorderSoon.length > 0 && (
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
                       <Clock className="w-4 h-4 text-amber-500" />
                       <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Reordenar pronto (7-14 días)</span>
                     </div>
@@ -3934,7 +3917,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                         <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-gray-700 dark:text-foreground truncate">{p.name}</div>
-                            <div className="flex items-center gap-2 mt-0.5">
+                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
                               <span className="text-[10px] text-gray-500">
                                 ~{Math.floor(p.daysRemaining)} días restantes
                               </span>
@@ -3943,7 +3926,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
                             <div className="text-right">
                               <div className="text-xs font-semibold text-amber-600">{p.stock} uds</div>
                               <div className="text-[9px] text-gray-500">Pedir: {p.suggestedOrderQty}</div>
@@ -4002,7 +3985,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                         msg += `────────────────\nTotal: ${allReorder.length} productos, ${totalItems} unidades\n\nPor favor confirmar disponibilidad y costo. 🙏`;
                         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
                       }}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-sm transition-all shadow-sm hover:shadow-md"
+                      className="w-full flex flex-wrap items-center justify-center gap-2 py-3 rounded-xl bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-bold text-sm transition-all shadow-sm hover:shadow-md"
                     >
                       <Truck className="h-4 w-4" />
                       Generar Orden Masiva ({st.criticalStock.length + st.needsReorderSoon.length} productos)
@@ -4024,7 +4007,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
       {(expandAll || section === "clientes") && (
         <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
                 <Users className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
               </div>
@@ -4093,7 +4076,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                       {/* E3 — Clickable client row */}
                       <button
                         onClick={() => setSelectedClientPhone(c.phone === selectedClientPhone ? null : c.phone)}
-                        className="flex items-center gap-2.5 w-full text-left hover:bg-gray-50 dark:hover:bg-accent/60 rounded-lg px-1 -mx-1 py-0.5 transition-colors"
+                        className="flex flex-wrap items-center gap-2.5 w-full text-left hover:bg-gray-50 dark:hover:bg-accent/60 rounded-lg px-1 -mx-1 py-0.5 transition-colors"
                       >
                         <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
                           i<3?"bg-violet-100 dark:bg-violet-900/50 text-violet-700 dark:text-violet-300":"bg-gray-100 dark:bg-accent text-gray-400 dark:text-muted"
@@ -4142,23 +4125,23 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 {st.clientesAtendidos === 0 ? "Sin clientes en el periodo" : "Selecciona un periodo para ver retención"}
               </p>
             ) : (
-              <div className="flex items-center gap-6 justify-center py-2">
+              <div className="flex flex-wrap items-center gap-6 justify-center py-2">
                 <Donut
                   data={[
-                    { total: st.newCust, color: "#6366f1" },
+                    { total: st.newCust, color: "#2d6a4f" },
                     { total: st.returningCust, color: "#10b981" },
                   ].filter(x => x.total > 0)}
                   total={st.clientesAtendidos}
                   size={100}
                 />
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
                     <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
                     <span className="text-gray-500 w-24">Nuevos</span>
                     <span className="font-bold text-gray-800 dark:text-foreground">{st.newCust}</span>
                     <span className="text-gray-400">({st.clientesAtendidos > 0 ? ((st.newCust/st.clientesAtendidos)*100).toFixed(0) : 0}%)</span>
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
                     <span className="text-gray-500 w-24">Recurrentes</span>
                     <span className="font-bold text-gray-800 dark:text-foreground">{st.returningCust}</span>
@@ -4181,7 +4164,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               st.cohortData.length === 0 ? <Empty text="No hay datos suficientes para análisis de cohortes" /> : (
                 <div className="space-y-4">
                   {/* Retention metrics summary */}
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                     <div className="bg-linear-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20 rounded-lg p-3 text-center">
                       <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Día 1</div>
                       <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{st.retentionMetrics.day1}%</div>
@@ -4198,7 +4181,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
 
                   {/* Cohort heatmap table */}
                   <div className="overflow-x-auto -mx-2">
-                    <table className="w-full text-xs">
+                    <table className="w-full min-w-[600px] text-xs">
                       <thead>
                         <tr className="border-b border-gray-200 dark:border-card-border">
                           <th className="text-left px-2 py-2 text-gray-500 dark:text-muted font-semibold">Cohorte</th>
@@ -4262,12 +4245,12 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                         <div key={c.phone} className="flex items-center justify-between py-2 px-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-gray-700 dark:text-foreground truncate">{c.name}</div>
-                            <div className="flex items-center gap-2 mt-0.5">
+                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
                               <span className="text-[10px] text-gray-500">Gastó {fmt(c.totalSpent)}</span>
                               <span className="text-[10px] text-gray-400">• {c.orderCount} pedidos</span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex flex-wrap items-center gap-2 shrink-0">
                             <div className="text-right">
                               <div className="text-xs font-semibold text-red-600">{c.daysSinceLastOrder} días</div>
                               <div className="text-[9px] text-gray-400">sin comprar</div>
@@ -4344,7 +4327,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               return (
                 <div className="space-y-2.5 max-h-80 overflow-y-auto">
                   {filtered.map(r => (
-                    <div key={r.id} className="flex items-start gap-3 py-2.5 px-3 rounded-xl bg-gray-50 dark:bg-accent/40 border border-gray-100 dark:border-card-border">
+                    <div key={r.id} className="flex flex-wrap items-start gap-3 py-2.5 px-3 rounded-xl bg-gray-50 dark:bg-accent/40 border border-gray-100 dark:border-card-border">
                       <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-bold text-amber-600 shrink-0">
                         {r.name.charAt(0).toUpperCase()}
                       </div>
@@ -4375,7 +4358,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
       {(expandAll || section === "compras") && (
         <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center">
                 <Truck className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
               </div>
@@ -4401,7 +4384,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                         <span className="font-semibold text-gray-800 dark:text-foreground ml-2">{fmt(s.total)}</span>
                       </div>
                       <div className="h-1.5 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{width:`${(s.total/mx)*100}%`,background:"#6366f1"}} />
+                        <div className="h-full rounded-full" style={{width:`${(s.total/mx)*100}%`,background:"#2d6a4f"}} />
                       </div>
                     </div>
                   );
@@ -4413,15 +4396,15 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           {st.pending.length > 0 && (
             <Card title="Cuentas por pagar" icon={Banknote}>
               <div className="overflow-x-auto -mx-4">
-                <table className="w-full text-xs">
+                <table className="w-full min-w-[600px] text-xs">
                   <thead>
                     <tr className="text-gray-400 dark:text-muted font-medium border-b border-gray-50 dark:border-card-border">
-                      <th className="text-left px-4 py-2">Proveedor</th>
-                      <th className="text-right px-4 py-2">Monto</th>
-                      <th className="text-right px-4 py-2">Pagado</th>
-                      <th className="text-right px-4 py-2">Pend.</th>
-                      <th className="text-left px-4 py-2">Vence</th>
-                      <th className="text-left px-4 py-2">Estado</th>
+                      <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2">Proveedor</th>
+                      <th className="text-right px-2 sm:px-4 py-1.5 sm:py-2">Monto</th>
+                      <th className="text-right px-2 sm:px-4 py-1.5 sm:py-2">Pagado</th>
+                      <th className="text-right px-2 sm:px-4 py-1.5 sm:py-2">Pend.</th>
+                      <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2">Vence</th>
+                      <th className="text-left px-2 sm:px-4 py-1.5 sm:py-2">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -4430,12 +4413,12 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                       const over = new Date(p.dueDate)<new Date();
                       return (
                         <tr key={p.id} className={cn("border-b border-gray-50 dark:border-card-border last:border-0",over?"bg-red-50 dark:bg-red-950/30":"")} >
-                          <td className="px-4 py-2 font-medium text-gray-700 dark:text-foreground">{p.supplierName}</td>
-                          <td className="px-4 py-2 text-right text-gray-500">{fmt(p.amount)}</td>
-                          <td className="px-4 py-2 text-right text-emerald-600 font-medium">{fmt(p.paidAmount)}</td>
-                          <td className="px-4 py-2 text-right text-red-600 font-medium">{fmt(rem)}</td>
-                          <td className="px-4 py-2 text-gray-500">{fmtDateFull(p.dueDate)}</td>
-                          <td className="px-4 py-2">
+                          <td className="px-2 sm:px-4 py-1.5 sm:py-2 font-medium text-gray-700 dark:text-foreground">{p.supplierName}</td>
+                          <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-right text-gray-500">{fmt(p.amount)}</td>
+                          <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-right text-emerald-600 font-medium">{fmt(p.paidAmount)}</td>
+                          <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-right text-red-600 font-medium">{fmt(rem)}</td>
+                          <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-gray-500">{fmtDateFull(p.dueDate)}</td>
+                          <td className="px-2 sm:px-4 py-1.5 sm:py-2">
                             <DBadge color={over?"red":p.status==="parcial"?"amber":"gray"}>
                               {over?"Vencido":p.status==="parcial"?"Parcial":"Pendiente"}
                             </DBadge>
@@ -4457,7 +4440,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
       {(expandAll || section === "caja") && (
         <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
+            <div className="flex flex-wrap items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-card-border">
               <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
                 <Banknote className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
               </div>
@@ -4478,7 +4461,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 <div className="space-y-3">
                   {st.payments.map(p => (
                     <div key={p.method} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <div className="w-3 h-3 rounded-full" style={{background:p.color}} />
                         <span className="text-xs text-gray-600">{p.label}</span>
                       </div>
@@ -4511,7 +4494,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           <Card title="Proyección de Flujo de Caja (7 días)" icon={TrendingUp}>
             <div className="space-y-4">
               {/* Summary row */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                 <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 text-center">
                   <div className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mb-0.5">Ingresos Est.</div>
                   <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">{fmt(st.forecastTotalRev)}</div>
@@ -4539,7 +4522,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                             {f.net >= 0 ? "+" : ""}{fmt(f.net)}
                           </span>
                         </div>
-                        <div className="flex gap-1 h-3">
+                        <div className="flex flex-wrap gap-1 h-3">
                           <div className="flex-1 bg-gray-50 dark:bg-accent rounded-full overflow-hidden relative">
                             <div className="absolute inset-y-0 left-0 bg-emerald-400 dark:bg-emerald-500 rounded-full" style={{width: `${(f.estRevenue / maxVal) * 100}%`}} />
                           </div>
@@ -4550,7 +4533,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                       </div>
                     ))}
                     {/* Legend */}
-                    <div className="flex items-center justify-center gap-4 pt-2 border-t border-gray-100 dark:border-card-border">
+                    <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 pt-2 border-t border-gray-100 dark:border-card-border">
                       <div className="flex items-center gap-1.5 text-xs">
                         <div className="w-3 h-3 bg-emerald-400 rounded-sm" />
                         <span className="text-gray-500">Ingresos</span>
@@ -4620,12 +4603,12 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
     "emerald-500": "#10b981",
     "blue-500": "#3b82f6",
     "violet-500": "#8b5cf6",
-    "indigo-500": "#6366f1",
+    "indigo-500": "#2d6a4f",
     "cyan-500": "#06b6d4",
     "amber-500": "#f59e0b",
     "red-500": "#ef4444",
   };
-  const strokeColor = colorMap[color] || "#6366f1";
+  const strokeColor = colorMap[color] || "#2d6a4f";
   
   return (
     <svg width="80" height="24" className="opacity-60">
@@ -4679,15 +4662,15 @@ function useCountUp(target: string, duration = 600) {
 function Kpi({ label, value, icon: Icon, accent, delta, sparklineData }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number | null; sparklineData?: number[] }) {
   const animatedValue = useCountUp(value);
   return (
-    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border px-4 py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
+    <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
       {/* Visual gradient indicator on top edge for significant changes */}
       {delta != null && Math.abs(delta) >= 10 && (
         <div className={cn("absolute top-0 left-0 right-0 h-1", delta >= 0 ? "bg-linear-to-r from-emerald-400 to-green-500" : "bg-linear-to-r from-red-400 to-red-500")} />
       )}
       <p className="text-xs font-medium text-gray-400 dark:text-muted mb-2.5 truncate">{label}</p>
-      <div className="flex items-end justify-between gap-2">
+      <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="flex flex-col gap-1.5">
-          <p className="text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none">{animatedValue}</p>
+          <p className="text-base sm:text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none">{animatedValue}</p>
           {delta != null && (
             <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", delta >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400" : "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400")}>
               {delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}

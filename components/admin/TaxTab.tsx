@@ -146,17 +146,17 @@ export default function TaxTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Receipt className="h-6 w-6 text-primary" />
             Impuestos &amp; IGV
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Registro de ventas y compras, libro tributario, IGV a pagar</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
             {MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}
           </select>
@@ -180,8 +180,8 @@ export default function TaxTab() {
       ) : (
         <>
           {/* IGV Balance card */}
-          <div className={cn("rounded-2xl p-6 border", summary.igvBalance > 0 ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40" : "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40")}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className={cn("rounded-2xl p-3 sm:p-6 border", summary.igvBalance > 0 ? "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900/40" : "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40")}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
               <div>
                 <p className="text-sm font-semibold text-gray-500 dark:text-muted mb-1">IGV del período — {MONTHS[month]} {year}</p>
                 <p className={cn("text-4xl font-extrabold", summary.igvBalance > 0 ? "text-amber-700 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-400")}>
@@ -191,7 +191,7 @@ export default function TaxTab() {
                   {summary.igvBalance > 0 ? "IGV a pagar a SUNAT" : "Crédito fiscal a favor"}
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-sm">
                 <div className="bg-white/60 dark:bg-card/40 rounded-xl p-3 text-center">
                   <p className="text-xs text-gray-500 dark:text-muted mb-1">IGV Ventas</p>
                   <p className="font-extrabold text-blue-600">{fmt(summary.salesIGV)}</p>
@@ -207,17 +207,17 @@ export default function TaxTab() {
           </div>
 
           {/* Tabs */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {(["resumen", "ventas", "compras"] as const).map(v => (
-              <button key={v} onClick={() => setView(v)} className={cn("px-4 py-2 text-sm font-semibold rounded-xl transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
+              <button key={v} onClick={() => setView(v)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-semibold rounded-xl transition-colors capitalize", view === v ? "bg-primary text-white" : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-accent")}>
                 {v === "resumen" ? "Todos" : v === "ventas" ? "Libro de ventas" : "Libro de compras"}
               </button>
             ))}
           </div>
 
           {/* Table */}
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-y-hidden overflow-x-auto">
+            <table className="w-full min-w-[600px] text-sm">
               <thead className="bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
                 <tr>
                   <th className="text-left px-5 py-3 font-bold text-gray-500 dark:text-muted text-xs uppercase">Fecha</th>
@@ -268,7 +268,7 @@ export default function TaxTab() {
 
           {/* Pending alert */}
           {lines.filter(l => l.status === "pendiente").length > 0 && (
-            <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl px-4 py-3">
+            <div className="flex flex-wrap items-start gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
               <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-bold text-amber-700 dark:text-amber-400">Registros pendientes de declaración</p>

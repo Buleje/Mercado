@@ -101,16 +101,16 @@ export default function DocumentManagerTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <FolderOpen className="h-6 w-6 text-primary" /> Gestión Documental
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Repositorio central de documentos de la empresa</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Agregar
           </button>
@@ -137,7 +137,7 @@ export default function DocumentManagerTab() {
 
       {/* Alerts */}
       {(stats.porVencer > 0 || stats.vencidos > 0) && (
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
           <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-amber-700 dark:text-amber-400 text-sm">Documentos que necesitan atención</p>
@@ -151,7 +151,7 @@ export default function DocumentManagerTab() {
 
       {/* Add form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-3">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground">Nuevo documento</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <input value={form.name} onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Nombre del documento *" className="col-span-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
@@ -162,9 +162,9 @@ export default function DocumentManagerTab() {
             <input value={form.relatedTo} onChange={e => setForm(prev => ({ ...prev, relatedTo: e.target.value }))} placeholder="Entidad relacionada" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             <input value={form.notes} onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Notas" className="px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
           </div>
-          <div className="flex gap-2 justify-end">
+          <div className="flex flex-wrap gap-2 justify-end">
             <button onClick={() => setShowForm(false)} className="px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-surface">Cancelar</button>
-            <button onClick={addDoc} className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90">Guardar</button>
+            <button onClick={addDoc} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90">Guardar</button>
           </div>
         </div>
       )}
@@ -188,16 +188,16 @@ export default function DocumentManagerTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Documento</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoría</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Subido</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Vencimiento</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Relacionado</th>
-                <th className="px-4 py-3" />
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Documento</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoría</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Subido</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Vencimiento</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Relacionado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -209,8 +209,8 @@ export default function DocumentManagerTab() {
                 const daysTilExpiry = daysUntil(d.expiryDate);
                 return (
                   <tr key={d.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
+                      <div className="flex flex-wrap items-center gap-2">
                         <FileText className="h-4 w-4 text-gray-400 shrink-0" />
                         <div>
                           <p className="font-semibold text-gray-800 dark:text-foreground text-sm">{d.name}</p>
@@ -218,19 +218,19 @@ export default function DocumentManagerTab() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", cat.color)}>{cat.label}</span></td>
-                    <td className="px-4 py-3"><span className={cn("flex items-center gap-1 text-xs font-semibold", st.color)}><StIcon className="h-3 w-3" />{st.label}</span></td>
-                    <td className="px-4 py-3 text-xs text-gray-500">{fmtDate(d.uploadDate)}</td>
-                    <td className="px-4 py-3 text-xs">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", cat.color)}>{cat.label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("flex items-center gap-1 text-xs font-semibold", st.color)}><StIcon className="h-3 w-3" />{st.label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500">{fmtDate(d.uploadDate)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs">
                       {d.expiryDate ? (
                         <span className={cn("font-semibold", daysTilExpiry < 0 ? "text-red-500" : daysTilExpiry < 30 ? "text-amber-600" : "text-gray-500")}>
                           {fmtDate(d.expiryDate)} {daysTilExpiry < 0 ? "(vencido)" : daysTilExpiry < 30 ? `(${daysTilExpiry}d)` : ""}
                         </span>
                       ) : <span className="text-gray-400">—</span>}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted">{d.relatedTo}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{d.relatedTo}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
+                      <div className="flex flex-wrap gap-1">
                         <button onClick={() => setDetail(d)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button>
                         <button onClick={() => removeDoc(d.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
@@ -246,7 +246,7 @@ export default function DocumentManagerTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del documento</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -258,7 +258,7 @@ export default function DocumentManagerTab() {
                 ["Vencimiento", detail.expiryDate ? fmtDate(detail.expiryDate) : "—"], ["Tamaño", detail.size],
                 ["Relacionado", detail.relatedTo || "—"], ["Notas", detail.notes || "—"],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
+                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-gray-500 dark:text-muted">{k}</span>
                   <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
                 </div>

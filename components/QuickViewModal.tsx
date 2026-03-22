@@ -287,14 +287,14 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                         <svg viewBox={`0 0 ${W || 1} 55`} className="w-full h-full" preserveAspectRatio="none">
                           <defs>
                             <linearGradient id="phGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.25" />
-                              <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+                              <stop offset="0%" stopColor="#2d6a4f" stopOpacity="0.25" />
+                              <stop offset="100%" stopColor="#2d6a4f" stopOpacity="0.02" />
                             </linearGradient>
                           </defs>
                           <path d={`${points.split(" ").map((p, i) => i === 0 ? `M${p}` : `L${p}`).join(" ")} L${W},55 L0,55 Z`} fill="url(#phGrad)" />
-                          <polyline points={points} fill="none" stroke="#6366f1" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                          <polyline points={points} fill="none" stroke="#2d6a4f" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                           {prices.map((p, i) => (
-                            <circle key={i} cx={i * 40} cy={50 - ((p - min) / range) * 42} r="3" fill={i === prices.length - 1 ? "#6366f1" : "#a5b4fc"} stroke="white" strokeWidth="1.5" />
+                            <circle key={i} cx={i * 40} cy={50 - ((p - min) / range) * 42} r="3" fill={i === prices.length - 1 ? "#2d6a4f" : "#52b788"} stroke="white" strokeWidth="1.5" />
                           ))}
                         </svg>
                       </div>

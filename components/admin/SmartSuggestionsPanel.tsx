@@ -55,10 +55,10 @@ export default function SmartSuggestionsPanel({ context = "general", compact = f
   return (
     <div className={cn("rounded-2xl border overflow-hidden", compact ? "border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/10" : "border-gray-200 dark:border-card-border bg-white dark:bg-card")}>
       <button
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-black/[0.02] transition-colors"
+        className="w-full flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 hover:bg-black/[0.02] transition-colors"
         onClick={() => setExpanded(e => !e)}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Lightbulb className="h-4 w-4 text-amber-500" />
           <span className="text-sm font-bold text-gray-900 dark:text-foreground">
             Sugerencias inteligentes
@@ -73,7 +73,7 @@ export default function SmartSuggestionsPanel({ context = "general", compact = f
       {expanded && (
         <div className="px-4 pb-4 space-y-2.5 border-t border-gray-100 dark:border-card-border pt-3">
           {loading ? (
-            <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-muted py-2">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-gray-400 dark:text-muted py-2">
               <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Analizando datos del negocio…
             </div>
           ) : (

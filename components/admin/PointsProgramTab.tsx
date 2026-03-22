@@ -24,13 +24,13 @@ export default function PointsProgramTab() {
   const pointsUsed = HISTORY.filter(h => h.action === "redeem").reduce((s, h) => s + h.points, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Heart className="h-6 w-6 text-primary" /> Programa de Puntos</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Heart className="h-6 w-6 text-primary" /> Programa de Puntos</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Fidelización con puntos, niveles y recompensas</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {(["overview", "rewards", "history"] as const).map(v => (
             <button key={v} onClick={() => setView(v)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>{v === "overview" ? "Niveles" : v === "rewards" ? "Premios" : "Historial"}</button>
           ))}
@@ -46,17 +46,17 @@ export default function PointsProgramTab() {
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
-            <p className={cn("text-2xl font-extrabold", k.color)}>{k.value}</p>
+            <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}</p>
           </div>
         ))}
       </div>
 
       {view === "overview" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           {TIERS.map(t => (
-            <div key={t.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 relative overflow-hidden">
+            <div key={t.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 relative overflow-hidden">
               <div className={cn("absolute top-0 right-0 h-24 w-24 rounded-bl-full opacity-10", t.color)} />
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex flex-wrap items-center gap-3 mb-3">
                 <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center text-white", t.color)}>
                   <Trophy className="h-5 w-5" />
                 </div>
@@ -82,7 +82,7 @@ export default function PointsProgramTab() {
       {view === "rewards" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {REWARDS.map(r => (
-            <div key={r.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+            <div key={r.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-bold bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted px-2 py-0.5 rounded-full">{r.category}</span>
                 <span className="text-sm font-extrabold text-primary">{r.pointsCost} pts</span>
@@ -102,13 +102,13 @@ export default function PointsProgramTab() {
 
       {view === "history" && (
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-surface">
+          <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-surface">
             <h3 className="font-bold text-sm text-gray-700 dark:text-foreground">Movimientos recientes</h3>
             <button onClick={() => exportToCSV(HISTORY.map(h => ({ cliente: h.customer, nivel: h.tier, tipo: h.action, puntos: h.points, descripcion: h.description, fecha: fmtDate(h.date) })), "puntos-historial")} className="text-xs text-primary font-semibold flex items-center gap-1"><Download className="h-3 w-3" /> CSV</button>
           </div>
           <div className="divide-y divide-gray-100 dark:divide-card-border">
             {HISTORY.map(h => (
-              <div key={h.id} className="flex items-center gap-3 px-4 py-3">
+              <div key={h.id} className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3">
                 <div className={cn("h-8 w-8 rounded-full flex items-center justify-center", h.action === "earn" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400")}>
                   {h.action === "earn" ? <ArrowUp className="h-4 w-4" /> : <Gift className="h-4 w-4" />}
                 </div>

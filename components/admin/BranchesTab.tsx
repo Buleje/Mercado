@@ -76,11 +76,11 @@ export default function BranchesTab() {
   }, [activeBranches, branches, transfers]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Store className="h-6 w-6 text-primary" /> Multi-Sucursal
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de sucursales, inventario y transferencias inter-sede</p>
@@ -106,9 +106,9 @@ export default function BranchesTab() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {([["branches", "Sucursales"], ["transfers", "Transferencias"]] as const).map(([k, label]) => (
-          <button key={k} onClick={() => setView(k)} className={cn("px-4 py-2 rounded-xl text-sm font-bold transition-colors", view === k ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>
+          <button key={k} onClick={() => setView(k)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold transition-colors", view === k ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>
             {label}
           </button>
         ))}
@@ -121,10 +121,10 @@ export default function BranchesTab() {
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar sucursal..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredBranches.map(b => (
               <div key={b.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 space-y-3 hover:shadow-lg transition-shadow">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <p className="font-bold text-sm text-gray-900 dark:text-foreground">{b.name}</p>
                     <p className="text-xs text-gray-400 mt-0.5">{b.code}</p>
@@ -158,14 +158,14 @@ export default function BranchesTab() {
       {view === "transfers" && (
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[600px] text-sm">
               <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Origen → Destino</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Cantidad</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Origen → Destino</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Cantidad</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -173,11 +173,11 @@ export default function BranchesTab() {
                   const st = TRANSFER_STATUS[t.status];
                   return (
                     <tr key={t.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                      <td className="px-4 py-3 text-xs text-gray-500">{t.date}</td>
-                      <td className="px-4 py-3 text-xs font-semibold text-gray-700 dark:text-foreground flex items-center gap-1">{t.from} <ArrowRightLeft className="h-3 w-3 text-gray-400" /> {t.to}</td>
-                      <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted">{t.product}</td>
-                      <td className="px-4 py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{t.qty} {t.unit}</td>
-                      <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500">{t.date}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-semibold text-gray-700 dark:text-foreground flex items-center gap-1">{t.from} <ArrowRightLeft className="h-3 w-3 text-gray-400" /> {t.to}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{t.product}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{t.qty} {t.unit}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
                     </tr>
                   );
                 })}
@@ -189,8 +189,8 @@ export default function BranchesTab() {
 
       {/* Revenue comparison */}
       {view === "branches" && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-3">
-          <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Comparativa de ventas mensuales</h3>
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3">
+          <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><BarChart3 className="h-4 w-4 text-primary" /> Comparativa de ventas mensuales</h3>
           <div className="space-y-2">
             {activeBranches.sort((a, b) => b.monthlyRevenue - a.monthlyRevenue).map(b => {
               const maxRev = Math.max(...activeBranches.map(x => x.monthlyRevenue));
@@ -214,7 +214,7 @@ export default function BranchesTab() {
       {/* Branch inventory modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">{detail.name}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

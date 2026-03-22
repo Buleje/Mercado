@@ -72,6 +72,8 @@ model Product {
   @@index([tenantId, active])
 }
 
+// ─── Batches: see "Inventory Batches (Lotes)" section below (line ~969)
+
 // ─── Customers ──────────────────────────────────────────
 model Customer {
   phone            String          @id
@@ -320,6 +322,7 @@ model Sale {
   @@index([customerPhone])
   @@index([cashierId])
   @@index([tenantId])
+  @@index([tenantId, createdAt])
 }
 
 model SaleItem {
@@ -453,6 +456,7 @@ model InventoryMovement {
   @@index([createdAt])
   @@index([tenantId])
   @@index([warehouseId])
+  @@index([tenantId, createdAt])
 }
 
 // ─── Coupons ────────────────────────────────────────────
@@ -632,6 +636,8 @@ model ActivityLog {
   entityId  String?
   detail    String   @default("")
   user      String   @default("admin")
+  ipAddress String?
+  userAgent String?
   tenantId  String   @default("main")
   createdAt DateTime @default(now())
 

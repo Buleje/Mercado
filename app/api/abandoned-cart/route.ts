@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
               <tfoot>
                 <tr>
                   <td style="padding:10px 8px;font-weight:bold;font-size:15px;">Total:</td>
-                  <td style="padding:10px 8px;font-weight:bold;font-size:15px;text-align:right;color:#6366f1;">S/${total.toFixed(2)}</td>
+                  <td style="padding:10px 8px;font-weight:bold;font-size:15px;text-align:right;color:#2d6a4f;">S/${total.toFixed(2)}</td>
                 </tr>
               </tfoot>
             </table>

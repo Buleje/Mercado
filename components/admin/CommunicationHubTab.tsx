@@ -47,10 +47,10 @@ export default function CommunicationHubTab() {
   const outbound = messages.filter(m => m.direction === "out").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><MessageSquare className="h-6 w-6 text-primary" /> Hub de Comunicaciones</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><MessageSquare className="h-6 w-6 text-primary" /> Hub de Comunicaciones</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Bandeja unificada: WhatsApp, SMS, email y llamadas</p>
         </div>
         <button onClick={() => exportToCSV(filtered.map(m => ({ cliente: m.customer, canal: m.channel, dir: m.direction, mensaje: m.content, estado: m.status, fecha: fmtFull(m.timestamp) })), "comunicaciones")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10"><Download className="h-3.5 w-3.5" /> CSV</button>
@@ -75,7 +75,7 @@ export default function CommunicationHubTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar por cliente o contenido…" />
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5">
           {["all", "whatsapp", "sms", "email", "llamada"].map(c => (
             <button key={c} onClick={() => setFilterChannel(c)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", filterChannel === c ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>{c === "all" ? "Todos" : CHANNEL_CONFIG[c].label}</button>
           ))}
@@ -95,7 +95,7 @@ export default function CommunicationHubTab() {
           const Icon = Ch.icon;
           return (
             <div key={m.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", m.status === "pendiente" ? "border-amber-200 dark:border-amber-900/30 bg-amber-50/30 dark:bg-amber-950/5" : "border-gray-200 dark:border-card-border")}>
-              <div className="flex items-start gap-3">
+              <div className="flex flex-wrap items-start gap-3">
                 <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", Ch.color)}>
                   <Icon className="h-4 w-4" />
                 </div>
@@ -111,7 +111,7 @@ export default function CommunicationHubTab() {
                   {m.agent && <p className="text-[10px] text-gray-400 mt-1">👤 {m.agent}</p>}
 
                   {replyTo === m.id && (
-                    <div className="mt-2 flex gap-2">
+                    <div className="mt-2 flex flex-wrap gap-2">
                       <input value={replyText} onChange={e => setReplyText(e.target.value)} className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs" placeholder="Escribe tu respuesta…" />
                       <button onClick={() => { setReplyTo(null); setReplyText(""); }} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90"><Send className="h-3 w-3" /></button>
                     </div>

@@ -141,7 +141,7 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
   const allDone = doneCount === totalSteps && totalSteps > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div>
         <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground">Flujos de Trabajo</h2>
         <p className="text-sm text-gray-500 dark:text-muted">Procesos paso a paso para las tareas más comunes de la tienda</p>
@@ -150,8 +150,8 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
       {/* Active flow */}
       {running && (
         <div className="bg-white dark:bg-card border-2 border-primary/30 rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center shrink-0", running.template.bg)}>
                 <running.template.icon className={cn("h-5 w-5", running.template.color)} />
               </div>
@@ -160,7 +160,7 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
                 <p className="text-xs text-gray-400 dark:text-muted">{doneCount} de {totalSteps} pasos completados</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="h-2 w-24 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                 <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${totalSteps > 0 ? (doneCount / totalSteps) * 100 : 0}%` }} />
               </div>
@@ -184,7 +184,7 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
                   {step.done && <CheckCircle2 className="h-4 w-4 text-white" />}
                 </button>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-[10px] font-bold text-gray-400 dark:text-muted">Paso {i + 1}</span>
                     {step.done && <span className="text-[10px] font-bold text-emerald-600">✓ Listo</span>}
                   </div>
@@ -214,10 +214,10 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
       )}
 
       {/* Templates grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
         {TEMPLATES.map(t => (
-          <div key={t.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-3 hover:shadow-md transition-shadow flex flex-col">
-            <div className="flex items-start gap-3">
+          <div key={t.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-3 hover:shadow-md transition-shadow flex flex-col">
+            <div className="flex flex-wrap items-start gap-3">
               <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", t.bg)}>
                 <t.icon className={cn("h-5 w-5", t.color)} />
               </div>
@@ -227,7 +227,7 @@ export default function WorkflowTemplatesTab({ onNavigate }: Props) {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-muted">
+            <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 dark:text-muted">
               <span className="flex items-center gap-1"><Circle className="h-3 w-3" />{t.steps.length} pasos</span>
               <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.estimatedTime}</span>
             </div>

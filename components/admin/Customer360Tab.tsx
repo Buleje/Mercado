@@ -30,10 +30,10 @@ export default function Customer360Tab() {
   const profile = PROFILES.find(p => p.id === selectedId)!;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><User className="h-6 w-6 text-primary" /> Cliente 360°</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><User className="h-6 w-6 text-primary" /> Cliente 360°</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Perfil completo del cliente en una sola vista</p>
         </div>
       </div>
@@ -41,14 +41,14 @@ export default function Customer360Tab() {
       {/* Customer selector */}
       <div className="flex gap-2 flex-wrap">
         {PROFILES.map(p => (
-          <button key={p.id} onClick={() => setSelectedId(p.id)} className={cn("px-4 py-2 rounded-xl text-sm font-bold transition-colors border", selectedId === p.id ? "bg-primary text-white border-primary" : "bg-white dark:bg-card text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary")}>{p.name}</button>
+          <button key={p.id} onClick={() => setSelectedId(p.id)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold transition-colors border", selectedId === p.id ? "bg-primary text-white border-primary" : "bg-white dark:bg-card text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary")}>{p.name}</button>
         ))}
       </div>
 
       {/* Profile Header */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl font-extrabold text-primary">{profile.name.split(" ").map(n => n[0]).join("")}</div>
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center text-xl sm:text-2xl font-extrabold text-primary">{profile.name.split(" ").map(n => n[0]).join("")}</div>
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">{profile.name}</h3>
@@ -57,16 +57,16 @@ export default function Customer360Tab() {
                 <span key={t} className="text-[10px] bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted px-1.5 py-0.5 rounded">{t}</span>
               ))}
             </div>
-            <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-muted flex-wrap">
+            <div className="flex items-center gap-2 sm:gap-4 text-xs text-gray-500 dark:text-muted flex-wrap">
               <span className="flex items-center gap-1"><Phone className="h-3 w-3" /> {profile.phone}</span>
               <span className="flex items-center gap-1"><Mail className="h-3 w-3" /> {profile.email}</span>
               <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {profile.zone}</span>
             </div>
           </div>
           {profile.npsScore !== null && (
-            <div className={cn("text-center px-4 py-2 rounded-xl", profile.npsScore >= 9 ? "bg-emerald-50 dark:bg-emerald-950/10" : profile.npsScore >= 7 ? "bg-amber-50 dark:bg-amber-950/10" : "bg-red-50 dark:bg-red-950/10")}>
+            <div className={cn("text-center px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl", profile.npsScore >= 9 ? "bg-emerald-50 dark:bg-emerald-950/10" : profile.npsScore >= 7 ? "bg-amber-50 dark:bg-amber-950/10" : "bg-red-50 dark:bg-red-950/10")}>
               <p className="text-[10px] text-gray-500 dark:text-muted">NPS</p>
-              <p className={cn("text-2xl font-extrabold", profile.npsScore >= 9 ? "text-emerald-500" : profile.npsScore >= 7 ? "text-amber-500" : "text-red-500")}>{profile.npsScore}</p>
+              <p className={cn("text-xl sm:text-2xl font-extrabold", profile.npsScore >= 9 ? "text-emerald-500" : profile.npsScore >= 7 ? "text-amber-500" : "text-red-500")}>{profile.npsScore}</p>
             </div>
           )}
         </div>
@@ -91,10 +91,10 @@ export default function Customer360Tab() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-4">
         {/* Favorite Products */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2"><Heart className="h-4 w-4 text-pink-500" /> Productos favoritos</h3>
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2"><Heart className="h-4 w-4 text-pink-500" /> Productos favoritos</h3>
           <div className="flex flex-wrap gap-2">
             {profile.favoriteProducts.map(p => (
               <span key={p} className="text-xs bg-pink-50 dark:bg-pink-950/10 text-pink-700 dark:text-pink-400 px-3 py-1.5 rounded-xl font-semibold">{p}</span>
@@ -103,11 +103,11 @@ export default function Customer360Tab() {
         </div>
 
         {/* Communication Log */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /> Historial de comunicación</h3>
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2"><MessageSquare className="h-4 w-4 text-primary" /> Historial de comunicación</h3>
           <div className="space-y-2">
             {profile.communicationLog.map((c, i) => (
-              <div key={i} className="flex items-start gap-2 text-xs">
+              <div key={i} className="flex flex-wrap items-start gap-2 text-xs">
                 <span className="text-gray-400 shrink-0 w-16">{fmtDate(c.date)}</span>
                 <span className="font-bold text-gray-600 dark:text-muted w-16 shrink-0">{c.channel}</span>
                 <span className="text-gray-700 dark:text-foreground">{c.summary}</span>
@@ -118,10 +118,10 @@ export default function Customer360Tab() {
       </div>
 
       {/* Recent Orders */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-        <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2"><Package className="h-4 w-4 text-primary" /> Pedidos recientes</h3>
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2"><Package className="h-4 w-4 text-primary" /> Pedidos recientes</h3>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead><tr className="text-left text-xs text-gray-500 dark:text-muted">
               <th className="pb-2 font-bold">Pedido</th>
               <th className="pb-2 font-bold">Fecha</th>

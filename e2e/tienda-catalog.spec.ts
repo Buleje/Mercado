@@ -75,7 +75,6 @@ test.describe("Catálogo de la tienda", () => {
     const listBtn = page.locator('button[aria-label*="lista"], button[title*="lista"]').first();
     if (!(await listBtn.isVisible())) {
       // Toggle button may have different aria label — find the list icon button
-      const toggleBtns = page.locator('button').filter({ hasText: "" });
       await page.locator('[aria-label*="Lista"]').click().catch(() => {});
     } else {
       await listBtn.click();
@@ -149,17 +148,22 @@ test.describe("Catálogo de la tienda", () => {
     }
   });
 
-  test("expandir categoría con 'Ver más' muestra más productos", async ({ page }) => {
+  test("todos los productos de cada categoría se muestran directamente sin necesidad de 'Ver más'", async ({ page }) => {
+    // MAX_CAT_VISIBLE = 9999 — no hidden products, no "Ver más" button expected
     await page.locator("#productos").scrollIntoViewIfNeeded();
 
-    const showMore = page.locator('button', { hasText: /Ver .* más/i }).first();
-    await showMore.waitFor({ state: "visible", timeout: 10000 });
+    // Wait for at least one category section to render
+    const catSection = page.locator('[id^="cat-"]').first();
+    await catSection.waitFor({ state: "visible", timeout: 15000 });
 
-    const before = await page.locator('button[aria-label^="Agregar"]').count();
-    await showMore.click();
-    await page.waitForTimeout(300);
-    const after = await page.locator('button[aria-label^="Agregar"]').count();
+    // The "Ver más" button should NOT exist when all products are already visible
+    const showMoreBtn = page.locator('button', { hasText: /Ver .* más producto/i });
+    const count = await showMoreBtn.count();
+    expect(count).toBe(0);
 
-    expect(after).toBeGreaterThan(before);
+    // Confirm product cards are visible (at least 8 total)
+    const cards = page.locator('button[aria-label^="Agregar"]');
+    const cardCount = await cards.count();
+    expect(cardCount).toBeGreaterThanOrEqual(8);
   });
 });

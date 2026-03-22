@@ -114,17 +114,17 @@ export default function RolePermissionsTab() {
   if (loading) return <div className="text-center py-20 text-gray-500">Cargando...</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+        <h2 className="text-base sm:text-xl font-bold text-white flex flex-wrap items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-purple-400" />
           Permisos por Rol
         </h2>
         <button
           onClick={save}
           disabled={saving}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+          className={`flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition ${
             saved
               ? "bg-green-600 text-white"
               : "bg-blue-600 hover:bg-blue-700 text-white"
@@ -145,7 +145,7 @@ export default function RolePermissionsTab() {
         return (
           <div key={role} className="bg-white/5 border border-white/10 rounded-xl p-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-white capitalize flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-white capitalize flex flex-wrap items-center gap-2">
                 <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-xs">
                   {role}
                 </span>
@@ -153,7 +153,7 @@ export default function RolePermissionsTab() {
                   {tabs.length} / {ALL_TAB_IDS.length} pestañas
                 </span>
               </h3>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => selectAll(role)}
                   className="text-xs px-2 py-1 bg-blue-500/10 text-blue-300 rounded hover:bg-blue-500/20 transition"

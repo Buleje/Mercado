@@ -115,12 +115,12 @@ export default function ActivityLogTab() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Activity className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-extrabold text-foreground">Log de Actividad</h2>
           <span className="text-xs text-muted">({filtered.length})</span>
         </div>
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex flex-wrap items-center gap-2 ml-auto">
           <span className="text-[10px] text-muted whitespace-nowrap">Act. {lastUpdated.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</span>
           <button
             onClick={() => setAutoRefresh(p => !p)}
@@ -178,7 +178,7 @@ export default function ActivityLogTab() {
           paginatedLog.map(entry => {
             const Icon = ENTITY_ICONS[entry.entity] ?? Activity;
             return (
-              <div key={entry.id} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
+              <div key={entry.id} className="flex flex-wrap items-start gap-3 px-2 sm:px-4 py-2 sm:py-3 hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
                 <div className="mt-0.5 h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                   <Icon className="h-4 w-4 text-primary" />
                 </div>
@@ -204,7 +204,7 @@ export default function ActivityLogTab() {
 
       {/* Log pagination */}
       {!loading && filtered.length > LOG_PER_PAGE && (
-        <div className="flex items-center justify-center gap-2 pt-1">
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
           <button disabled={safeLogPage <= 1} onClick={() => setLogPage(p => Math.max(1, p - 1))}
             className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-surface transition-colors">
             ← Anterior

@@ -67,7 +67,7 @@ export default function SystemHealthTab() {
   if (loading) return <HealthSkeleton />;
 
   if (error) return (
-    <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 p-6 text-center">
+    <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/40 p-3 sm:p-6 text-center">
       <XCircle className="h-8 w-8 text-red-500 mx-auto mb-2" />
       <p className="font-bold text-red-700 dark:text-red-400">Error al cargar health check</p>
       <p className="text-xs text-red-500 mt-1">{error}</p>
@@ -91,11 +91,11 @@ export default function SystemHealthTab() {
   const operativeCount = services.filter(s => s.status === "operativo").length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Activity className="h-6 w-6 text-primary" /> Salud del Sistema
           </h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">
@@ -113,7 +113,7 @@ export default function SystemHealthTab() {
       </div>
 
       {/* Overall status banner */}
-      <div className={cn("rounded-2xl p-5 flex items-center gap-4", STATUS_CONFIG[overallStatus].bg)}>
+      <div className={cn("rounded-2xl p-3 sm:p-5 flex items-center gap-2 sm:gap-4", STATUS_CONFIG[overallStatus].bg)}>
         <OverallIcon className={cn("h-10 w-10 shrink-0", STATUS_CONFIG[overallStatus].color)} />
         <div>
           <h3 className={cn("text-lg font-extrabold", STATUS_CONFIG[overallStatus].color)}>
@@ -143,7 +143,7 @@ export default function SystemHealthTab() {
           return (
             <div key={s.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <ServiceIcon className="h-4 w-4 text-gray-400" />
                   <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{s.name}</h4>
                 </div>
@@ -152,7 +152,7 @@ export default function SystemHealthTab() {
                 </span>
               </div>
               <p className="text-xs text-gray-500 dark:text-muted mb-3">{s.description}</p>
-              <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-center">
                 <div>
                   <p className="text-xs font-extrabold text-gray-900 dark:text-foreground">{s.uptime}</p>
                   <p className="text-[9px] text-gray-400">Uptime</p>
@@ -176,8 +176,8 @@ export default function SystemHealthTab() {
 
       {/* Metrics */}
       {metrics.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
             <Cpu className="h-4 w-4 text-primary" /> Métricas clave
           </h3>
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
@@ -204,19 +204,19 @@ export default function SystemHealthTab() {
       )}
 
       {/* Incidents */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
-        <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
+        <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex flex-wrap items-center gap-2">
           <AlertTriangle className="h-4 w-4 text-amber-500" /> Incidentes
         </h3>
         {incidents.length === 0 ? (
-          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm">
+          <div className="flex flex-wrap items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm">
             <CheckCircle className="h-4 w-4" />
             <span className="font-semibold">Sin incidentes activos</span>
           </div>
         ) : (
           <div className="space-y-2">
             {incidents.map(inc => (
-              <div key={inc.id} className="flex items-center gap-3 py-2 border-b border-gray-100 dark:border-card-border last:border-0">
+              <div key={inc.id} className="flex flex-wrap items-center gap-3 py-2 border-b border-gray-100 dark:border-card-border last:border-0">
                 <div className={cn(
                   "h-2.5 w-2.5 rounded-full shrink-0",
                   inc.severity === "critical" ? "bg-red-500" : inc.severity === "warning" ? "bg-amber-500" : "bg-blue-500"

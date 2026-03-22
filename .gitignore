@@ -58,4 +58,8 @@ next-env.d.ts
 # Debug/test scripts
 test-prisma.mjs
 
+# Build & dev output logs (large, not useful in repo)
+dev-output.txt
+build-output.txt
+
 .vercel

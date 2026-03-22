@@ -9,23 +9,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { categories } from "@/data/products";
+import type { Product } from "@/types/erp";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type Product = {
-  id: number;
-  name: string;
-  category: string;
-  price: number;
-  costPrice?: number;
-  unit: string;
-  image?: string;
-  badge?: string;
-  description?: string;
-  stock?: number;
-  stockMin?: number;
-  active?: boolean;
-};
 
 const DEFAULT_FORM: Omit<Product, "id"> = {
   name: "",
@@ -50,7 +37,7 @@ const BADGE_OPTS = ["", "Popular", "Oferta", "Nuevo", "Premium", "Fresco", "Temp
 function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
   return (
     <div className={cn(
-      "fixed bottom-6 right-6 z-9999 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-semibold animate-[scaleIn_0.2s_ease-out]",
+      "fixed bottom-6 right-6 z-9999 flex items-center gap-2 px-2 sm:px-4 py-2 sm:py-3 rounded-xl shadow-lg text-sm font-semibold animate-[scaleIn_0.2s_ease-out]",
       type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
     )}>
       {type === "success" ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
@@ -97,7 +84,7 @@ function ProductFormModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-card z-10 flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
+        <div className="sticky top-0 bg-white dark:bg-card z-10 flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
           <h2 className="text-lg font-extrabold text-foreground">
             {form.id ? "Editar producto" : "Nuevo producto"}
           </h2>
@@ -141,7 +128,7 @@ function ProductFormModal({
           </div>
 
           {/* Category + Unit */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Categoría *</label>
               <select
@@ -265,7 +252,7 @@ function ProductFormModal({
           </div>
 
           {/* Active toggle */}
-          <div className="flex items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl px-4 py-3">
+          <div className="flex flex-wrap items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl px-2 sm:px-4 py-2 sm:py-3">
             <span className="text-sm font-semibold text-foreground flex-1">Visible en tienda</span>
             <button
               type="button"
@@ -284,17 +271,17 @@ function ProductFormModal({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-white dark:bg-card px-6 py-4 border-t border-gray-100 dark:border-card-border flex items-center justify-end gap-2">
+        <div className="sticky bottom-0 bg-white dark:bg-card px-3 sm:px-6 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap items-center justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+            className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={() => valid && onSave(form)}
             disabled={!valid || saving}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary-dark active:scale-95 transition-all disabled:opacity-50"
+            className="flex flex-wrap items-center gap-2 px-5 py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary-dark active:scale-95 transition-all disabled:opacity-50"
           >
             {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {saving ? "Guardando…" : form.id ? "Guardar cambios" : "Crear producto"}
@@ -310,8 +297,8 @@ function ProductFormModal({
 function ConfirmDelete({ name, onConfirm, onCancel }: { name: string; onConfirm: () => void; onCancel: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onCancel}>
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-200 dark:border-card-border" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-3 mb-4">
+      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-3 sm:p-6 max-w-sm w-full border border-gray-200 dark:border-card-border" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-wrap items-center gap-3 mb-4">
           <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
             <AlertTriangle className="h-5 w-5 text-red-500" />
           </div>
@@ -320,11 +307,11 @@ function ConfirmDelete({ name, onConfirm, onCancel }: { name: string; onConfirm:
             <p className="text-xs text-muted">Esta acción no se puede deshacer</p>
           </div>
         </div>
-        <p className="text-sm text-muted bg-gray-50 dark:bg-surface rounded-xl px-4 py-3 mb-5">
+        <p className="text-sm text-muted bg-gray-50 dark:bg-surface rounded-xl px-2 sm:px-4 py-2 sm:py-3 mb-5">
           <strong className="text-foreground">&ldquo;{name}&rdquo;</strong> será eliminado del catálogo.
         </p>
-        <div className="flex gap-2 justify-end">
-          <button onClick={onCancel} className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors">Cancelar</button>
+        <div className="flex flex-wrap gap-2 justify-end">
+          <button onClick={onCancel} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors">Cancelar</button>
           <button onClick={onConfirm} className="px-5 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 active:scale-95 transition-all">Eliminar</button>
         </div>
       </div>
@@ -494,7 +481,7 @@ export default function ProductsAdminTab() {
           <h3 className="text-lg font-extrabold text-foreground">Catálogo de Productos</h3>
           <p className="text-xs text-muted mt-0.5">{filtered.length} de {products.length} productos</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={fetchProducts}
             className="h-9 w-9 rounded-xl border border-gray-200 dark:border-card-border flex items-center justify-center text-gray-400 hover:text-primary hover:border-primary/50 transition-colors"
@@ -537,7 +524,7 @@ export default function ProductsAdminTab() {
           </button>
           <button
             onClick={() => setModal("create")}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary-dark active:scale-95 transition-all"
+            className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-primary text-white text-sm font-bold shadow-sm hover:bg-primary-dark active:scale-95 transition-all"
           >
             <Plus className="h-4 w-4" /> Nuevo
           </button>
@@ -560,7 +547,7 @@ export default function ProductsAdminTab() {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Filter className="h-4 w-4 text-gray-400 shrink-0" />
           <select
             value={catFilter}
@@ -586,7 +573,7 @@ export default function ProductsAdminTab() {
       {viewMode === "list" && filtered.length > 0 && (
         <div className="rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
           {/* Table header */}
-          <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 items-center bg-gray-50 dark:bg-surface px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-muted">
+          <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 items-center bg-gray-50 dark:bg-surface px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs font-bold uppercase tracking-wider text-muted">
             <span className="w-10">Img</span>
             <button onClick={() => toggleSort("name")} className="flex items-center gap-1 hover:text-foreground">Producto <SortIcon col="name" /></button>
             <span className="w-24 text-center">Categoría</span>
@@ -604,7 +591,7 @@ export default function ProductsAdminTab() {
                 <div
                   key={p.id}
                   className={cn(
-                    "grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 items-center px-4 py-3 hover:bg-gray-50/50 dark:hover:bg-surface/50 transition-colors",
+                    "grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 items-center px-2 sm:px-4 py-2 sm:py-3 hover:bg-gray-50/50 dark:hover:bg-surface/50 transition-colors",
                     p.active === false && "opacity-50"
                   )}
                 >
@@ -619,7 +606,7 @@ export default function ProductsAdminTab() {
                   {/* Name + badges */}
                   <div className="min-w-0">
                     <p className={cn("text-sm font-semibold text-foreground truncate", p.active === false && "line-through")}>{p.name}</p>
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5">
                       <span className="text-[10px] text-muted">{p.unit}</span>
                       {p.badge && (
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{p.badge}</span>

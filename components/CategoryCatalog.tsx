@@ -149,7 +149,7 @@ function ListProductRow({
               addItem(product);
               showToast(product.name, product.image);
             }}
-            className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all shadow-sm"
+            className="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all shadow-sm"
             aria-label={`Agregar ${product.name}`}
           >
             <Plus className="h-4 w-4" />
@@ -313,9 +313,10 @@ function QuickViewModal({
               <button
                 onClick={handleAdd}
                 disabled={isOutOfStock}
-                className="flex items-center gap-2 bg-primary text-white rounded-xl px-5 py-2.5 font-bold shadow-md hover:bg-primary-dark active:scale-95 transition-all disabled:opacity-50"
+                className="flex items-center justify-center h-9 w-9 rounded-full bg-primary text-white shadow-lg hover:bg-primary-dark active:scale-95 disabled:opacity-50 shrink-0"
+                aria-label="Agregar al carrito"
               >
-                <ShoppingCart className="h-4 w-4" /> Agregar
+                <ShoppingCart className="h-5 w-5" />
               </button>
             ) : (
               <div className="flex items-center gap-3">

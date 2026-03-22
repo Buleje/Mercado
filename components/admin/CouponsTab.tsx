@@ -148,11 +148,11 @@ export default function CouponsTab() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* ── Reglas Automáticas ────────────────────────────────────────────── */}
-      <div className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-900/50 rounded-2xl p-6">
+      <div className="bg-linear-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-900/50 rounded-2xl p-3 sm:p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-linear-to-br from-purple-500 to-pink-600 flex items-center justify-center">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
@@ -163,7 +163,7 @@ export default function CouponsTab() {
           </div>
           <button
             onClick={() => setShowTemplateBuilder(true)}
-            className="flex items-center gap-2 bg-white dark:bg-card border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 px-4 py-2 rounded-xl text-sm font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition"
+            className="flex flex-wrap items-center gap-2 bg-white dark:bg-card border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition"
           >
             <Calendar className="h-4 w-4" /> Plantilla
           </button>
@@ -175,12 +175,12 @@ export default function CouponsTab() {
             const Icon = config.icon;
             return (
               <div key={rule.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <div className={cn("w-10 h-10 rounded-lg bg-linear-to-br flex items-center justify-center shrink-0", config.color)}>
                     <Icon className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
                       <span className="font-bold text-gray-900 dark:text-foreground">{config.label}</span>
                       {rule.enabled && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">
@@ -197,7 +197,7 @@ export default function CouponsTab() {
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <button
                       onClick={() => openRuleConfig(rule)}
                       className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
@@ -219,8 +219,8 @@ export default function CouponsTab() {
 
       {/* ── Cupones Generados Automáticamente ─────────────────────────────── */}
       {generatedLogs.length > 0 && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6">
-          <h3 className="font-extrabold text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
+          <h3 className="font-extrabold text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
             Historial de cupones auto-generados
           </h3>
@@ -247,15 +247,15 @@ export default function CouponsTab() {
 
       {/* ── Cupones Manuales ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Ticket className="h-6 w-6 text-primary" />Cupones</h2>
-        <button onClick={() => setShowForm(v => !v)} className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition">
+        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Ticket className="h-6 w-6 text-primary" />Cupones</h2>
+        <button onClick={() => setShowForm(v => !v)} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition">
           <Plus className="h-4 w-4" />Nuevo Cupón
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted">Código *</label>
               <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="DESCUENTO10" className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
@@ -289,9 +289,9 @@ export default function CouponsTab() {
               <input type="date" value={form.expiresAt ? form.expiresAt.slice(0, 10) : ""} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value ? new Date(e.target.value).toISOString() : "" }))} className="w-full mt-1 px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
             </div>
           </div>
-          <div className="flex gap-2 pt-2">
-            <button onClick={handleCreate} className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition"><Check className="h-4 w-4" />Crear</button>
-            <button onClick={() => setShowForm(false)} className="flex items-center gap-2 bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted px-4 py-2 rounded-xl text-sm font-bold hover:bg-gray-200 transition"><X className="h-4 w-4" />Cancelar</button>
+          <div className="flex flex-wrap gap-2 pt-2">
+            <button onClick={handleCreate} className="flex flex-wrap items-center gap-2 bg-primary text-white px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-primary/90 transition"><Check className="h-4 w-4" />Crear</button>
+            <button onClick={() => setShowForm(false)} className="flex flex-wrap items-center gap-2 bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold hover:bg-gray-200 transition"><X className="h-4 w-4" />Cancelar</button>
           </div>
         </div>
       )}
@@ -301,7 +301,7 @@ export default function CouponsTab() {
         {coupons.map(c => (
           <div key={c.id} className={cn("bg-white dark:bg-card border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center gap-3", c.active ? "border-gray-200 dark:border-card-border" : "border-red-200 dark:border-red-900/30 opacity-60")}>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono font-extrabold text-primary text-lg">{c.code}</span>
                 <button onClick={() => navigator.clipboard.writeText(c.code)} className="text-gray-400 hover:text-primary"><Copy className="h-3.5 w-3.5" /></button>
                 {!c.active && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">Inactivo</span>}
@@ -314,7 +314,7 @@ export default function CouponsTab() {
                 {c.expiresAt && <span>Exp: {new Date(c.expiresAt).toLocaleDateString()}</span>}
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button onClick={() => toggleActive(c)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition", c.active ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200")}>
                 {c.active ? "Desactivar" : "Activar"}
               </button>
@@ -372,7 +372,7 @@ export default function CouponsTab() {
                     className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" />
                 </div>
               )}
-              <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
+              <div className="flex flex-wrap items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl">
                 <input type="checkbox" id="ruleAutoSend" checked={editingRule.config.autoSend} onChange={e => setEditingRule({ ...editingRule, config: { ...editingRule.config, autoSend: e.target.checked } })}
                   className="rounded border-gray-300 text-primary focus:ring-primary" />
                 <label htmlFor="ruleAutoSend" className="text-sm font-medium text-gray-700 dark:text-foreground cursor-pointer flex-1">
@@ -380,7 +380,7 @@ export default function CouponsTab() {
                 </label>
               </div>
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex gap-3">
+            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3">
               <button onClick={() => setShowRuleConfig(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
               <button onClick={saveRuleConfig} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Guardar</button>
             </div>

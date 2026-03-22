@@ -134,17 +134,7 @@ export default function LastOrderBanner() {
               </div>
             </div>
 
-            {/* Reorder button */}
-            <button
-              onClick={handleReorder}
-              className={cn(
-                "shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-sm",
-                "bg-primary text-white hover:bg-primary-dark active:scale-95",
-              )}
-            >
-              <RotateCcw className="h-4 w-4" />
-              Reordenar
-            </button>
+
           </div>
         </div>
       </div>

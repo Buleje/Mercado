@@ -6,11 +6,11 @@ import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { products } from "@/data/products";
 import Image from "next/image";
-import { Heart, ShoppingCart, Plus, Package, Trash2, ClipboardList, MessageCircle } from "lucide-react";
+import { Heart, ShoppingCart, Plus, Minus, Package, Trash2, ClipboardList, MessageCircle } from "lucide-react";
 
 export default function FavoritesSection() {
   const { favorites, toggle } = useFavorites();
-  const { addItem } = useCart();
+  const { addItem, items: cartItems, updateQty } = useCart();
   const { showToast } = useToast();
 
   const sectionRef = useRef<HTMLElement>(null);
@@ -110,13 +110,25 @@ export default function FavoritesSection() {
                 <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 flex-1">{product.name}</h3>
                 <div className="flex items-end justify-between gap-2">
                   <span className="text-base font-extrabold text-primary">S/{product.price.toFixed(2)}</span>
-                  <button
-                    onClick={() => { addItem(product); showToast(product.name, product.image); }}
-                    className="flex items-center justify-center h-9 w-9 rounded-xl bg-primary text-white shadow-md hover:bg-primary-dark active:scale-95 transition-all"
-                    aria-label={`Agregar ${product.name}`}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
+                  {(() => { const qty = cartItems.find(i => i.id === product.id)?.quantity ?? 0; return qty > 0 ? (
+                    <div className="flex items-center gap-0.5 bg-primary rounded-full px-1 py-1 shrink-0">
+                      <button onClick={() => updateQty(product.id, qty - 1)} className="h-7 w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Disminuir">
+                        <Minus className="h-3.5 w-3.5" />
+                      </button>
+                      <span className="text-white font-extrabold text-sm min-w-5 text-center">{qty}</span>
+                      <button onClick={() => updateQty(product.id, qty + 1)} className="h-7 w-7 flex items-center justify-center rounded-full text-white hover:bg-white/20 transition-colors" aria-label="Aumentar">
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => { addItem(product); showToast(product.name, product.image); }}
+                      className="flex items-center justify-center h-9 w-9 rounded-full bg-primary text-white shadow-md hover:bg-primary-dark active:scale-95 transition-all"
+                      aria-label={`Agregar ${product.name}`}
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                    </button>
+                  ); })()}
                 </div>
               </div>
             </div>

@@ -23,7 +23,8 @@
     "cap:sync": "npx cap sync",
     "cap:open:android": "npx cap open android",
     "cap:open:ios": "npx cap open ios",
-    "app:build": "next build && npx cap sync"
+    "app:build": "next build && npx cap sync",
+    "prepare": "husky"
   },
   "dependencies": {
     "@craftjs/core": "^0.2.12",
@@ -90,12 +91,19 @@
     "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "husky": "^9.1.7",
     "jsdom": "^28.1.0",
+    "lint-staged": "^16.4.0",
     "playwright": "^1.59.0-alpha-1771104257000",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^4.0.18"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --max-warnings 0"
+    ]
   },
   "browserslist": [
     "> 0.5%",

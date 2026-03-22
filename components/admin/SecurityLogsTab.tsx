@@ -48,10 +48,10 @@ export default function SecurityLogsTab() {
   const todayCount = logs.filter(l => l.timestamp.startsWith("2025-07-13")).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><Lock className="h-6 w-6 text-primary" /> Logs de Seguridad</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Lock className="h-6 w-6 text-primary" /> Logs de Seguridad</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Auditoría de accesos, cambios y eventos de seguridad</p>
         </div>
         <button onClick={() => exportToCSV(filtered.map(l => ({ fecha: fmtDate(l.timestamp), actor: l.actor, accion: l.action, categoria: l.category, severidad: l.severity, ip: l.ip, exito: l.success ? "Sí" : "No", detalles: l.details })), "logs-seguridad")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10"><Download className="h-3.5 w-3.5" /> CSV</button>
@@ -66,7 +66,7 @@ export default function SecurityLogsTab() {
         ].map(k => (
           <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
             <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
-            <p className={cn("text-2xl font-extrabold", k.color)}>{k.value}</p>
+            <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}</p>
           </div>
         ))}
       </div>
@@ -99,7 +99,7 @@ export default function SecurityLogsTab() {
           const CatIcon = Cat.icon;
           return (
             <div key={l.id} className={cn("bg-white dark:bg-card rounded-xl border p-4", l.severity === "critical" ? "border-red-200 dark:border-red-900/30" : "border-gray-200 dark:border-card-border")}>
-              <div className="flex items-start gap-3">
+              <div className="flex flex-wrap items-start gap-3">
                 <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center shrink-0", Cat.color)}><CatIcon className="h-4 w-4" /></div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">

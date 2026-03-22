@@ -136,22 +136,22 @@ export default function ShrinkageTab() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-3 sm:space-y-6">
+      <div className="flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="flex items-center gap-2 text-xl font-extrabold text-gray-900 dark:text-foreground">
+          <h2 className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-gray-900 dark:text-foreground">
             <Package className="h-6 w-6 text-red-500" /> Mermas <ModuleTooltip />
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-muted">Registro real de perdidas de stock y costo</p>
         </div>
-        <button onClick={() => exportToCSV(records.map((record) => ({ Fecha: record.date, Producto: record.product, Categoria: record.category, Cantidad: record.quantity, CostoUnitario: record.unitCost, Perdida: record.totalLoss, Motivo: record.cause, Estado: record.status })), "mermas")} className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-card dark:hover:bg-accent">
+        <button onClick={() => exportToCSV(records.map((record) => ({ Fecha: record.date, Producto: record.product, Categoria: record.category, Cantidad: record.quantity, CostoUnitario: record.unitCost, Perdida: record.totalLoss, Motivo: record.cause, Estado: record.status })), "mermas")} className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-card dark:hover:bg-accent">
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-card-border dark:bg-card">
-          <div className="mb-4 flex items-center gap-2 text-sm font-extrabold text-gray-900 dark:text-foreground"><Plus className="h-4 w-4 text-primary" /> Registrar merma</div>
+      <div className="grid gap-2 sm:gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-sm font-extrabold text-gray-900 dark:text-foreground"><Plus className="h-4 w-4 text-primary" /> Registrar merma</div>
           <div className="grid gap-3 sm:grid-cols-2">
             <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">
               <option value="">Selecciona producto</option>
@@ -168,15 +168,15 @@ export default function ShrinkageTab() {
             <input value={form.reportedBy} onChange={(event) => setForm((prev) => ({ ...prev, reportedBy: event.target.value }))} placeholder="Reportado por" className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface" />
             <textarea value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} placeholder="Notas" rows={3} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm sm:col-span-2 dark:border-card-border dark:bg-surface" />
           </div>
-          <button onClick={handleAdd} disabled={saving || !form.productId || !form.quantity} className="mt-4 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50">
+          <button onClick={handleAdd} disabled={saving || !form.productId || !form.quantity} className="mt-4 rounded-xl bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50">
             {saving ? "Guardando..." : "Registrar merma"}
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           <MetricCard title="Perdida total" value={fmt(stats.totalLoss)} icon={DollarSign} tone="text-red-600" bg="bg-red-50 dark:bg-red-950/20" />
           <MetricCard title="Registros" value={String(stats.count)} icon={TrendingDown} tone="text-amber-600" bg="bg-amber-50 dark:bg-amber-950/20" />
-          <div className="col-span-2 rounded-2xl border border-gray-200 bg-white p-5 dark:border-card-border dark:bg-card">
+          <div className="col-span-2 rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
             <p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Motivo principal</p>
             <p className="mt-2 text-lg font-extrabold text-gray-900 dark:text-foreground">{stats.topCause ? CAUSE_META[stats.topCause[0] as ShrinkageCause]?.label : "Sin datos"}</p>
             <p className="mt-1 text-sm text-gray-500 dark:text-muted">{stats.topCause ? `${fmt(stats.topCause[1])} acumulados` : "Aun no hay mermas registradas."}</p>
@@ -201,7 +201,7 @@ export default function ShrinkageTab() {
 
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-card-border dark:bg-card">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface">
               <tr>
                 <th className="px-5 py-3 text-left font-bold text-gray-500 dark:text-muted">Fecha</th>
@@ -247,7 +247,7 @@ export default function ShrinkageTab() {
 
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 dark:border-card-border dark:bg-card">
+          <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-3 sm:p-6 dark:border-card-border dark:bg-card">
             <div className="mb-4 flex items-start justify-between">
               <div>
                 <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">Detalle de merma</h3>
@@ -270,7 +270,7 @@ export default function ShrinkageTab() {
       )}
 
       {records.length > 0 && stats.totalLoss > 0 && (
-        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-950/20">
+        <div className="flex flex-wrap items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 sm:p-5 dark:border-amber-800 dark:bg-amber-950/20">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
           <div>
             <h3 className="text-sm font-extrabold text-amber-800 dark:text-amber-300">Impacto acumulado</h3>
@@ -284,7 +284,7 @@ export default function ShrinkageTab() {
 
 function MetricCard({ title, value, icon: Icon, tone, bg }: { title: string; value: string; icon: typeof DollarSign; tone: string; bg: string }) {
   return (
-    <div className={cn("rounded-2xl p-5", bg)}>
+    <div className={cn("rounded-2xl p-3 sm:p-5", bg)}>
       <Icon className={cn("mb-2 h-5 w-5", tone)} />
       <p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">{title}</p>
       <p className={cn("mt-2 text-xl font-extrabold", tone)}>{value}</p>

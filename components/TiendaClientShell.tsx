@@ -8,15 +8,14 @@ import { SectionSkeleton } from "@/components/LoadingSkeleton";
 const RecentlyViewed    = dynamic(() => import("@/components/RecentlyViewed"),    { ssr: false });
 const FavoritesSection  = dynamic(() => import("@/components/FavoritesSection"),  { ssr: false });
 const RecipeSuggestions = dynamic(() => import("@/components/RecipeSuggestions"), { ssr: false });
-const ReferralBanner    = dynamic(() => import("@/components/ReferralBanner"),    { ssr: false });
-const DeliveryZoneMap   = dynamic(() => import("@/components/DeliveryZoneMap"),   { ssr: false });
+
 
 // Modals/overlays — deferred until after main-thread idle
 const CartSidebar       = dynamic(() => import("@/components/CartSidebar"),       { ssr: false });
 const CustomerModal     = dynamic(() => import("@/components/CustomerModal"),     { ssr: false });
 const ReviewModal       = dynamic(() => import("@/components/ReviewModal"),       { ssr: false });
 const CookieConsent     = dynamic(() => import("@/components/CookieConsent"),     { ssr: false });
-const SocialProofToast  = dynamic(() => import("@/components/SocialProofToast"),  { ssr: false });
+// SocialProofToast removed — fake notifications disabled
 const SpinWheel         = dynamic(() => import("@/components/SpinWheel"),         { ssr: false });
 const MobileBottomNav   = dynamic(() => import("@/components/MobileBottomNav"),   { ssr: false });
 const UserAccountModal  = dynamic(() => import("@/components/UserAccountModal"),  { ssr: false });
@@ -77,24 +76,7 @@ export default function TiendaClientShell() {
           <RecipeSuggestions />
         </Suspense>
       </LazyLoad>
-      {/* V2: Delivery coverage map */}
-      <LazyLoad fallback={<div className="h-64 bg-gray-100 dark:bg-surface rounded-2xl animate-pulse" />}>
-        <section className="py-14 sm:py-20 bg-white dark:bg-card">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="text-center mb-8">
-              <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">🗺️ Cobertura</span>
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground">¿Llegamos a tu zona?</h2>
-              <p className="text-muted mt-2 text-sm sm:text-base max-w-lg mx-auto">Revisa nuestra zona de delivery en Pucallpa</p>
-            </div>
-            <Suspense fallback={<div className="h-64 bg-gray-100 dark:bg-surface rounded-2xl animate-pulse" />}>
-              <DeliveryZoneMap />
-            </Suspense>
-          </div>
-        </section>
-      </LazyLoad>
-      <LazyLoad fallback={<SectionLoadingSkeleton />}>
-        <ReferralBanner />
-      </LazyLoad>
+
 
       {/* Modals & overlays — deferred until idle to reduce initial TBT */}
       {modalsReady && (
@@ -103,7 +85,6 @@ export default function TiendaClientShell() {
           <CustomerModal />
           <ReviewModal />
           <CookieConsent />
-          <SocialProofToast />
           <VolumeDiscount />
           <BackInStock />
           <SpinWheel />

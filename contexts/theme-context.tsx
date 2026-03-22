@@ -45,8 +45,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   // Resolve and apply
   useEffect(() => {
+    const isMobile = window.innerWidth < 640;
+
     const apply = () => {
-      const r = theme === "system" ? getSystemTheme() : theme;
+      // Force light mode on mobile/small screens
+      const r = isMobile ? "light" : theme === "system" ? getSystemTheme() : theme;
       setResolved(r);
       document.documentElement.classList.toggle("dark", r === "dark");
     };
@@ -59,7 +62,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       if (theme === "system") apply();
     };
     mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+
+    // Listen for resize — if user rotates phone or resizes browser
+    const resizeHandler = () => {
+      const nowMobile = window.innerWidth < 640;
+      if (nowMobile) {
+        setResolved("light");
+        document.documentElement.classList.remove("dark");
+      } else {
+        apply();
+      }
+    };
+    window.addEventListener("resize", resizeHandler);
+
+    return () => {
+      mq.removeEventListener("change", handler);
+      window.removeEventListener("resize", resizeHandler);
+    };
   }, [theme]);
 
   const setTheme = useCallback((t: Theme) => {

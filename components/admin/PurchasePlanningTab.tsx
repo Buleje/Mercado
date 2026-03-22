@@ -85,11 +85,11 @@ export default function PurchasePlanningTab() {
   }, [items]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <ListChecks className="h-6 w-6 text-primary" /> Planificación de Compras
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Sugerencia inteligente basada en rotación, demanda y stock de seguridad</p>
@@ -136,18 +136,18 @@ export default function PurchasePlanningTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Urgencia</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Stock</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Dem. diaria</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Pto. Reorden</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Sugerido</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Costo est.</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase">Tendencia</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Días stock</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Urgencia</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Producto</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Stock</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Dem. diaria</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Pto. Reorden</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Sugerido</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Costo est.</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase">Tendencia</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Días stock</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -158,22 +158,22 @@ export default function PurchasePlanningTab() {
                 const TrIcon = tr.icon;
                 return (
                   <tr key={i.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", urg.bg, urg.color)}>{urg.label}</span></td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", urg.bg, urg.color)}>{urg.label}</span></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <p className="font-semibold text-gray-800 dark:text-foreground text-xs">{i.product}</p>
                       <p className="text-[10px] text-gray-400">{i.category} · {i.unit}</p>
                     </td>
-                    <td className="px-4 py-3 text-right font-bold text-xs text-gray-700 dark:text-foreground">{num(i.stock)}</td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-500">{i.avgDailyDemand}</td>
-                    <td className="px-4 py-3 text-right text-xs text-gray-500">{i.reorderPoint}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-xs text-gray-700 dark:text-foreground">{num(i.stock)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-gray-500">{i.avgDailyDemand}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-gray-500">{i.reorderPoint}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right">
                       <span className={cn("font-bold text-xs", i.suggestedQty > 0 ? "text-emerald-600" : "text-gray-400")}>
                         {i.suggestedQty > 0 ? `+${num(i.suggestedQty)}` : "—"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right text-xs font-semibold text-gray-700 dark:text-foreground">{i.estimatedCost > 0 ? fmt(i.estimatedCost) : "—"}</td>
-                    <td className="px-4 py-3 text-center"><TrIcon className={cn("h-4 w-4 mx-auto", tr.color)} /></td>
-                    <td className="px-4 py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{i.daysToStockout}d</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700 dark:text-foreground">{i.estimatedCost > 0 ? fmt(i.estimatedCost) : "—"}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center"><TrIcon className={cn("h-4 w-4 mx-auto", tr.color)} /></td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{i.daysToStockout}d</td>
                   </tr>
                 );
               })}

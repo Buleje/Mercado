@@ -61,8 +61,8 @@ export default function AboutPage() {
 
         {/* Hero */}
         <section className="relative overflow-hidden py-16 sm:py-24"
-          style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4f46e5 100%)" }}>
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #818cf8 0%, transparent 50%), radial-gradient(circle at 80% 20%, #c084fc 0%, transparent 40%)" }} />
+          style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #245c43 100%)" }}>
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #40916c 0%, transparent 50%), radial-gradient(circle at 80% 20%, #c084fc 0%, transparent 40%)" }} />
           <div className="relative mx-auto max-w-4xl px-4 sm:px-6 text-center">
             <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold mb-6 bg-amber-400/20 text-amber-200 border border-amber-400/30">
               <FlaskConical className="h-4 w-4" />

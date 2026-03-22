@@ -105,8 +105,8 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-9000 bg-black/80 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-card rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
-        <div className="px-4 py-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
+          <div className="flex flex-wrap items-center gap-2">
             <Camera className="h-5 w-5 text-primary" />
             <h3 className="font-bold text-gray-900 dark:text-foreground">Escanear código de barras</h3>
           </div>
@@ -142,7 +142,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
           </div>
         </div>
 
-        <div className="px-4 py-3 text-center">
+        <div className="px-2 sm:px-4 py-2 sm:py-3 text-center">
           <p className="text-sm text-gray-500 dark:text-muted">
             Apunta la cámara al código de barras del producto
           </p>

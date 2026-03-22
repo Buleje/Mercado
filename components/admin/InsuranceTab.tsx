@@ -92,11 +92,11 @@ export default function InsuranceTab() {
   }, [policies, claims]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Shield className="h-6 w-6 text-primary" /> Pólizas & Seguros
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Registro de pólizas, alertas de vencimiento y siniestros</p>
@@ -137,9 +137,9 @@ export default function InsuranceTab() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {([["policies", "Pólizas"], ["claims", "Siniestros"]] as const).map(([k, label]) => (
-          <button key={k} onClick={() => setView(k)} className={cn("px-4 py-2 rounded-xl text-sm font-bold transition-colors", view === k ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>
+          <button key={k} onClick={() => setView(k)} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold transition-colors", view === k ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent")}>
             {label}
           </button>
         ))}
@@ -154,16 +154,16 @@ export default function InsuranceTab() {
 
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[600px] text-sm">
                 <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Tipo</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Aseguradora</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">N° Póliza</th>
-                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Prima/mes</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Vencimiento</th>
-                    <th className="px-4 py-3" />
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Tipo</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Aseguradora</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">N° Póliza</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Prima/mes</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Vencimiento</th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -172,13 +172,13 @@ export default function InsuranceTab() {
                     const StIcon = st.icon;
                     return (
                       <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                        <td className="px-4 py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}><StIcon className="h-3 w-3" />{st.label}</span></td>
-                        <td className="px-4 py-3 text-xs font-semibold text-gray-700 dark:text-foreground">{TYPE_LABELS[p.type]}</td>
-                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted">{p.insurer}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500 font-mono">{p.policyNumber}</td>
-                        <td className="px-4 py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{fmt(p.monthlyPremium)}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{p.endDate}</td>
-                        <td className="px-4 py-3"><button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}><StIcon className="h-3 w-3" />{st.label}</span></td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-semibold text-gray-700 dark:text-foreground">{TYPE_LABELS[p.type]}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{p.insurer}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 font-mono">{p.policyNumber}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{fmt(p.monthlyPremium)}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500">{p.endDate}</td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
                       </tr>
                     );
                   })}
@@ -192,15 +192,15 @@ export default function InsuranceTab() {
       {view === "claims" && (
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[600px] text-sm">
               <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Póliza</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Tipo siniestro</th>
-                  <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Monto</th>
-                  <th className="px-4 py-3" />
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Póliza</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Tipo siniestro</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Monto</th>
+                  <th className="px-2 sm:px-4 py-2 sm:py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -209,12 +209,12 @@ export default function InsuranceTab() {
                   const pol = policies.find(p => p.id === c.policyId);
                   return (
                     <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                      <td className="px-4 py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{c.date}</td>
-                      <td className="px-4 py-3 text-xs font-mono text-gray-500">{pol?.policyNumber ?? "—"}</td>
-                      <td className="px-4 py-3 text-xs text-gray-700 dark:text-foreground">{c.type}</td>
-                      <td className="px-4 py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{fmt(c.amount)}</td>
-                      <td className="px-4 py-3"><button onClick={() => setClaimDetail(c)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", st.bg, st.color)}>{st.label}</span></td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500">{c.date}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-mono text-gray-500">{pol?.policyNumber ?? "—"}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-700 dark:text-foreground">{c.type}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-700 dark:text-foreground">{fmt(c.amount)}</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setClaimDetail(c)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button></td>
                     </tr>
                   );
                 })}
@@ -227,7 +227,7 @@ export default function InsuranceTab() {
       {/* Policy detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">{TYPE_LABELS[detail.type]}</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -240,7 +240,7 @@ export default function InsuranceTab() {
                 ["Estado", STATUS_META[detail.status].label],
                 ["Días restantes", detail.daysToExpiry > 0 ? `${detail.daysToExpiry} días` : "VENCIDA"],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
+                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-gray-500 dark:text-muted shrink-0">{k}</span>
                   <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
                 </div>
@@ -253,7 +253,7 @@ export default function InsuranceTab() {
       {/* Claim detail modal */}
       {claimDetail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setClaimDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del siniestro</h3>
               <button onClick={() => setClaimDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -264,7 +264,7 @@ export default function InsuranceTab() {
                 ["Monto", fmt(claimDetail.amount)], ["Estado", CLAIM_STATUS[claimDetail.status].label],
                 ["Resolución", claimDetail.resolution],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
+                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-gray-500 dark:text-muted shrink-0">{k}</span>
                   <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
                 </div>

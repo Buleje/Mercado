@@ -110,16 +110,16 @@ export default function BudgetTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <Wallet className="h-6 w-6 text-primary" /> Presupuestos
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Control presupuestario por departamento, categoría y período</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => exportToCSV(processed.map(l => ({ departamento: l.department, categoria: l.category, periodo: l.period, planificado: l.planned, ejecutado: l.executed, comprometido: l.committed, disponible: l.available, pct_ejecucion: l.executionPct.toFixed(1), estado: l.computedStatus })), "presupuestos")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
@@ -147,7 +147,7 @@ export default function BudgetTab() {
 
       {/* Alerts */}
       {(stats.excedido > 0 || stats.enRiesgo > 0) && (
-        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-start gap-3">
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-amber-700 dark:text-amber-400 text-sm">Partidas presupuestarias con alerta</p>
@@ -161,9 +161,9 @@ export default function BudgetTab() {
 
       {/* Form */}
       {showForm && (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 space-y-4">
+        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nueva partida presupuestaria</h3>
+            <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Nueva partida presupuestaria</h3>
             <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -188,9 +188,9 @@ export default function BudgetTab() {
               <input type="text" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Observaciones opcionales..." className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
             </div>
           </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
-            <button onClick={handleAdd} className="px-4 py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar partida</button>
+          <div className="flex flex-wrap gap-2 justify-end">
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={handleAdd} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar partida</button>
           </div>
         </div>
       )}
@@ -218,19 +218,19 @@ export default function BudgetTab() {
       {/* Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Departamento</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoría</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase">Período</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Planificado</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Ejecutado</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Comprometido</th>
-                <th className="px-4 py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Disponible</th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase">% Ejec.</th>
-                <th className="px-4 py-3" />
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Departamento</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoría</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase">Período</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Planificado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Ejecutado</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Comprometido</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-bold text-gray-500 dark:text-muted uppercase">Disponible</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-bold text-gray-500 dark:text-muted uppercase">% Ejec.</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3" />
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -240,17 +240,17 @@ export default function BudgetTab() {
                 const Icon = meta.icon;
                 return (
                   <tr key={l.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full", meta.bg, meta.color)}><Icon className="h-3 w-3" />{meta.label}</span>
                     </td>
-                    <td className="px-4 py-3 font-semibold text-gray-800 dark:text-foreground">{l.department}</td>
-                    <td className="px-4 py-3 text-xs text-gray-600 dark:text-muted">{l.category}</td>
-                    <td className="px-4 py-3 text-center text-xs font-mono text-gray-500">{monthLabel(l.period)} {l.period.slice(0, 4)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-700 dark:text-foreground">{fmt(l.planned)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-blue-600">{fmt(l.executed)}</td>
-                    <td className="px-4 py-3 text-right text-xs text-amber-600">{l.committed > 0 ? fmt(l.committed) : "—"}</td>
-                    <td className={cn("px-4 py-3 text-right font-bold", l.available >= 0 ? "text-emerald-600" : "text-red-500")}>{fmt(l.available)}</td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-800 dark:text-foreground">{l.department}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{l.category}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-mono text-gray-500">{monthLabel(l.period)} {l.period.slice(0, 4)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-gray-700 dark:text-foreground">{fmt(l.planned)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-semibold text-blue-600">{fmt(l.executed)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs text-amber-600">{l.committed > 0 ? fmt(l.committed) : "—"}</td>
+                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", l.available >= 0 ? "text-emerald-600" : "text-red-500")}>{fmt(l.available)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
                       <div className="flex items-center gap-1.5 justify-center">
                         <div className="w-16 h-2 bg-gray-200 dark:bg-surface rounded-full overflow-hidden">
                           <div className={cn("h-full rounded-full transition-all", l.executionPct > 100 ? "bg-red-500" : l.executionPct > 85 ? "bg-amber-500" : "bg-emerald-500")} style={{ width: `${Math.min(l.executionPct, 100)}%` }} />
@@ -258,7 +258,7 @@ export default function BudgetTab() {
                         <span className="text-xs font-bold text-gray-500">{fmtPct(l.executionPct)}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <button onClick={() => setDetail(l)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20">
                         <Eye className="h-3.5 w-3.5" />
                       </button>
@@ -270,12 +270,12 @@ export default function BudgetTab() {
             {processed.length > 0 && (
               <tfoot className="bg-gray-50 dark:bg-surface/50 border-t border-gray-200 dark:border-card-border">
                 <tr>
-                  <td colSpan={4} className="px-4 py-3 text-xs font-extrabold text-gray-600 dark:text-muted uppercase">Totales</td>
-                  <td className="px-4 py-3 text-right font-extrabold text-gray-800 dark:text-foreground">{fmt(stats.totalPlanned)}</td>
-                  <td className="px-4 py-3 text-right font-extrabold text-blue-600">{fmt(stats.totalExecuted)}</td>
-                  <td className="px-4 py-3 text-right font-extrabold text-amber-600">{fmt(stats.totalCommitted)}</td>
-                  <td className={cn("px-4 py-3 text-right font-extrabold", stats.available >= 0 ? "text-emerald-600" : "text-red-500")}>{fmt(stats.available)}</td>
-                  <td className="px-4 py-3 text-center text-xs font-extrabold text-gray-600">{fmtPct(stats.executionPct)}</td>
+                  <td colSpan={4} className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-extrabold text-gray-600 dark:text-muted uppercase">Totales</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-gray-800 dark:text-foreground">{fmt(stats.totalPlanned)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-blue-600">{fmt(stats.totalExecuted)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold text-amber-600">{fmt(stats.totalCommitted)}</td>
+                  <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-extrabold", stats.available >= 0 ? "text-emerald-600" : "text-red-500")}>{fmt(stats.available)}</td>
+                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-center text-xs font-extrabold text-gray-600">{fmtPct(stats.executionPct)}</td>
                   <td />
                 </tr>
               </tfoot>
@@ -285,7 +285,7 @@ export default function BudgetTab() {
       </div>
 
       {/* Department summary by bar chart */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5">
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
         <h3 className="font-bold text-gray-900 dark:text-foreground text-sm mb-4">Ejecución por departamento</h3>
         <div className="space-y-3">
           {DEPARTMENTS.map(dept => {
@@ -295,7 +295,7 @@ export default function BudgetTab() {
             const executed = deptLines.reduce((s, l) => s + l.executed, 0);
             const pct = planned > 0 ? (executed / planned) * 100 : 0;
             return (
-              <div key={dept} className="flex items-center gap-3">
+              <div key={dept} className="flex flex-wrap items-center gap-3">
                 <span className="text-xs font-semibold text-gray-600 dark:text-muted w-28 shrink-0">{dept}</span>
                 <div className="flex-1 h-5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden relative">
                   <div className={cn("h-full rounded-full transition-all", pct > 100 ? "bg-red-400" : pct > 85 ? "bg-amber-400" : "bg-emerald-400")} style={{ width: `${Math.min(pct, 100)}%` }} />
@@ -311,7 +311,7 @@ export default function BudgetTab() {
       {/* Detail modal */}
       {detail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle de partida</h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
@@ -325,7 +325,7 @@ export default function BudgetTab() {
                 ["Disponible", fmt(detail.planned - detail.executed - detail.committed)],
                 ["Notas", detail.notes || "—"],
               ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
+                <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-gray-500 dark:text-muted">{k}</span>
                   <span className="font-semibold text-gray-800 dark:text-foreground text-right">{v}</span>
                 </div>

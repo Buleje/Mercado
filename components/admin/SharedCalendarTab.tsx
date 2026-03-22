@@ -59,24 +59,24 @@ export default function SharedCalendarTab() {
   const deleteEvent = (id: number) => setEvents(prev => prev.filter(e => e.id !== id));
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-3 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <CalendarDays className="h-6 w-6 text-indigo-500" /> Calendario Compartido
           </h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-1">Eventos, entregas, pagos y tareas del equipo</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
-            <button onClick={() => setView("semana")} className={cn("px-4 py-2 text-sm font-bold", view === "semana" ? "bg-indigo-500 text-white" : "bg-white dark:bg-card text-gray-600 dark:text-muted")}>Semana</button>
-            <button onClick={() => setView("lista")} className={cn("px-4 py-2 text-sm font-bold", view === "lista" ? "bg-indigo-500 text-white" : "bg-white dark:bg-card text-gray-600 dark:text-muted")}>Lista</button>
+            <button onClick={() => setView("semana")} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-bold", view === "semana" ? "bg-indigo-500 text-white" : "bg-white dark:bg-card text-gray-600 dark:text-muted")}>Semana</button>
+            <button onClick={() => setView("lista")} className={cn("px-2 sm:px-4 py-1.5 sm:py-2 text-sm font-bold", view === "lista" ? "bg-indigo-500 text-white" : "bg-white dark:bg-card text-gray-600 dark:text-muted")}>Lista</button>
           </div>
-          <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90">
+          <button onClick={() => setShowForm(!showForm)} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90">
             <Plus className="h-4 w-4" /> Nuevo Evento
           </button>
           {events.length > 0 && (
-            <button onClick={() => setEvents([])} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-bold hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+            <button onClick={() => setEvents([])} className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm font-bold hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
               <Trash2 className="h-4 w-4" /> Borrar todo
             </button>
           )}
@@ -95,21 +95,21 @@ export default function SharedCalendarTab() {
 
       {/* New event form */}
       {showForm && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 space-y-4">
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 space-y-4">
           <h3 className="font-bold text-gray-900 dark:text-foreground">Nuevo Evento</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título" className="px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary md:col-span-2" />
-            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as EventType })} className="px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold outline-none focus:border-primary">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4">
+            <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="Título" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary md:col-span-2" />
+            <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value as EventType })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold outline-none focus:border-primary">
               {Object.entries(TYPE_CONFIG).map(([k, v]) => <option key={k} value={k}>{v.emoji} {v.label}</option>)}
             </select>
-            <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
-            <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} className="px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
-            <input value={form.assignee} onChange={e => setForm({ ...form, assignee: e.target.value })} placeholder="Responsable" className="px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
-            <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notas" className="px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary md:col-span-3" />
+            <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
+            <input type="time" value={form.time} onChange={e => setForm({ ...form, time: e.target.value })} className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
+            <input value={form.assignee} onChange={e => setForm({ ...form, assignee: e.target.value })} placeholder="Responsable" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary" />
+            <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notas" className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm outline-none focus:border-primary md:col-span-3" />
           </div>
-          <div className="flex justify-end gap-2">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
-            <button onClick={addEvent} className="px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90">Crear Evento</button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+            <button onClick={addEvent} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90">Crear Evento</button>
           </div>
         </div>
       )}
@@ -117,7 +117,7 @@ export default function SharedCalendarTab() {
       {/* Week View */}
       {view === "semana" && (
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-gray-100 dark:border-card-border">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 border-b border-gray-100 dark:border-card-border">
             {weekDays.map((d, i) => {
               const isToday = toISO(d) === toISO(TODAY);
               return (
@@ -128,7 +128,7 @@ export default function SharedCalendarTab() {
               );
             })}
           </div>
-          <div className="grid grid-cols-7 min-h-[240px]">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 min-h-[240px]">
             {weekDays.map((d, i) => {
               const dayEvents = filteredEvents.filter(e => e.date === toISO(d)).sort((a, b) => a.time.localeCompare(b.time));
               const isToday = toISO(d) === toISO(TODAY);
@@ -157,7 +157,7 @@ export default function SharedCalendarTab() {
             const tc = TYPE_CONFIG[e.type];
             const d = new Date(e.date + "T00:00:00");
             return (
-              <div key={e.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 flex items-center gap-4 hover:shadow-sm transition-shadow">
+              <div key={e.id} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 flex flex-wrap items-center gap-2 sm:gap-4 hover:shadow-sm transition-shadow">
                 <div className="text-center shrink-0 w-12">
                   <p className="text-xs font-bold text-gray-400">{DAYS_ES[d.getDay()]}</p>
                   <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{d.getDate()}</p>
@@ -165,12 +165,12 @@ export default function SharedCalendarTab() {
                 </div>
                 <div className={cn("w-1 h-10 rounded-full shrink-0", tc.color.split(" ")[0])} />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-lg">{tc.emoji}</span>
                     <h4 className="font-bold text-gray-900 dark:text-foreground truncate">{e.title}</h4>
                     <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0", tc.color)}>{tc.label}</span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-muted mt-0.5">
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400 dark:text-muted mt-0.5">
                     {e.time !== "00:00" && <span className="flex items-center gap-0.5"><Clock className="h-3 w-3" />{e.time}</span>}
                     <span className="flex items-center gap-0.5"><User className="h-3 w-3" />{e.assignee}</span>
                     {e.notes && <span className="truncate max-w-[200px]">{e.notes}</span>}

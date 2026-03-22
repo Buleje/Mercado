@@ -45,9 +45,9 @@ export default function CustomerSegmentationTab() {
   const totalCustomers = data.customers.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+        <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
           <Users className="h-6 w-6 text-primary" />Segmentación de Clientes
         </h2>
         <div className="relative">
@@ -60,7 +60,7 @@ export default function CustomerSegmentationTab() {
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={() => setActiveSegment("all")}
-          className={cn("px-4 py-2 rounded-full text-sm font-bold border transition", activeSegment === "all" ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface")}
+          className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm font-bold border transition", activeSegment === "all" ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface")}
         >
           Todos · {totalCustomers}
         </button>
@@ -73,7 +73,7 @@ export default function CustomerSegmentationTab() {
             <button
               key={seg}
               onClick={() => setActiveSegment(seg)}
-              className={cn("px-4 py-2 rounded-full text-sm font-bold border transition flex items-center gap-1.5", active ? `bg-primary text-white border-primary` : `${cfg.bg} ${cfg.color} ${cfg.border} hover:opacity-80`)}
+              className={cn("px-2 sm:px-4 py-1.5 sm:py-2 rounded-full text-sm font-bold border transition flex items-center gap-1.5", active ? `bg-primary text-white border-primary` : `${cfg.bg} ${cfg.color} ${cfg.border} hover:opacity-80`)}
             >
               <Icon className="h-3.5 w-3.5" />{cfg.label} · {count}
             </button>
@@ -90,7 +90,7 @@ export default function CustomerSegmentationTab() {
           const pct = totalCustomers > 0 ? ((count / totalCustomers) * 100).toFixed(0) : "0";
           return (
             <div key={seg} className={cn("rounded-2xl border p-4 space-y-2", cfg.bg, cfg.border)}>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Icon className={cn("h-5 w-5", cfg.color)} />
                 <span className={cn("text-sm font-bold", cfg.color)}>{cfg.label}</span>
               </div>
@@ -104,15 +104,15 @@ export default function CustomerSegmentationTab() {
       {/* Customer Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
               <tr>
-                <th className="text-left px-4 py-3 font-bold text-gray-500 dark:text-muted">Cliente</th>
-                <th className="text-left px-4 py-3 font-bold text-gray-500 dark:text-muted">Segmento</th>
-                <th className="text-left px-4 py-3 font-bold text-gray-500 dark:text-muted">Nivel</th>
-                <th className="text-right px-4 py-3 font-bold text-gray-500 dark:text-muted">Pedidos</th>
-                <th className="text-right px-4 py-3 font-bold text-gray-500 dark:text-muted">Total Gastado</th>
-                <th className="text-right px-4 py-3 font-bold text-gray-500 dark:text-muted">Última compra</th>
+                <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Cliente</th>
+                <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Segmento</th>
+                <th className="text-left px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Nivel</th>
+                <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Pedidos</th>
+                <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Total Gastado</th>
+                <th className="text-right px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Última compra</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
@@ -124,21 +124,21 @@ export default function CustomerSegmentationTab() {
                 const Icon = cfg.icon;
                 return (
                   <tr key={c.phone} className="hover:bg-gray-50 dark:hover:bg-surface transition">
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <p className="font-bold text-gray-900 dark:text-foreground">{c.name}</p>
                       <p className="text-xs text-gray-400">{c.phone}</p>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <span className={cn("inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold border", cfg.bg, cfg.color, cfg.border)}>
                         <Icon className="h-3 w-3" />{cfg.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-gray-600")}>{c.loyaltyTier}</span>
                     </td>
-                    <td className="px-4 py-3 text-right font-bold text-gray-700 dark:text-foreground">{c.orderCount}</td>
-                    <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-foreground">S/{c.totalSpent.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-right text-gray-500 dark:text-muted text-xs">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-gray-700 dark:text-foreground">{c.orderCount}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-bold text-gray-900 dark:text-foreground">S/{c.totalSpent.toFixed(2)}</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-gray-500 dark:text-muted text-xs">
                       {c.daysSinceLast === null ? "—" : (
                         <span className={cn(c.daysSinceLast > 60 ? "text-red-500" : c.daysSinceLast > 30 ? "text-amber-500" : "text-gray-500 dark:text-muted")}>
                           hace {c.daysSinceLast}d

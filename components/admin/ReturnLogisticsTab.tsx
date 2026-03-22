@@ -47,10 +47,10 @@ export default function ReturnLogisticsTab() {
   const rejectedPct = returns.length > 0 ? ((returns.filter(r => r.status === "rechazada").length / returns.length) * 100).toFixed(0) : "0";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2"><RotateCcw className="h-6 w-6 text-primary" /> Logística Inversa</h2>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><RotateCcw className="h-6 w-6 text-primary" /> Logística Inversa</h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Gestión de devoluciones, recojos y reembolsos</p>
         </div>
         <button onClick={() => exportToCSV(filtered.map(r => ({ pedido: r.orderId, cliente: r.customer, razon: r.reason, estado: STATUS_CONFIG[r.status].label, monto: r.refundAmount })), "devoluciones")} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-primary hover:bg-primary/10"><Download className="h-3.5 w-3.5" /> CSV</button>
@@ -75,7 +75,7 @@ export default function ReturnLogisticsTab() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" placeholder="Buscar por pedido o cliente…" />
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5">
           <Filter className="h-4 w-4 text-gray-400" />
           {["all", "solicitada", "aprobada", "recogida", "inspeccion", "completada", "rechazada"].map(s => (
             <button key={s} onClick={() => setFilterStatus(s)} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>{s === "all" ? "Todas" : STATUS_CONFIG[s].label}</button>
@@ -85,7 +85,7 @@ export default function ReturnLogisticsTab() {
 
       <div className="space-y-3">
         {filtered.map(r => (
-          <div key={r.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <div key={r.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -109,7 +109,7 @@ export default function ReturnLogisticsTab() {
               </div>
             </div>
             {r.notes && (
-              <div className="mt-3 flex items-start gap-2 text-xs bg-blue-50 dark:bg-blue-950/10 text-blue-700 dark:text-blue-400 px-3 py-2 rounded-xl">
+              <div className="mt-3 flex flex-wrap items-start gap-2 text-xs bg-blue-50 dark:bg-blue-950/10 text-blue-700 dark:text-blue-400 px-3 py-2 rounded-xl">
                 <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
                 {r.notes}
               </div>

@@ -43,6 +43,8 @@ const HowItWorks         = dynamic(() => import("@/components/HowItWorks"),     
 const Testimonials       = dynamic(() => import("@/components/Testimonials"),       { ssr: true });
 const BrandStory         = dynamic(() => import("@/components/BrandStory"),         { ssr: true });
 const FAQ                = dynamic(() => import("@/components/FAQ"),                { ssr: true });
+const ReferralBanner    = dynamic(() => import("@/components/ReferralBanner"));
+const DeliveryZoneMap   = dynamic(() => import("@/components/DeliveryZoneMap"));
 const Contact            = dynamic(() => import("@/components/Contact"),            { ssr: true });
 const Footer             = dynamic(() => import("@/components/Footer"),             { ssr: true });
 
@@ -99,6 +101,25 @@ export default function Home() {
         </Suspense>
         <Suspense fallback={<LoadingSection />}>
           <Contact />
+        </Suspense>
+
+        {/* Zona de delivery — movido desde /tienda */}
+        <Suspense fallback={<LoadingSection />}>
+          <section className="py-14 sm:py-20 bg-white dark:bg-card">
+            <div className="max-w-7xl mx-auto px-4">
+              <div className="text-center mb-8">
+                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">🗺️ Cobertura</span>
+                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground">¿Llegamos a tu zona?</h2>
+                <p className="text-muted mt-2 text-sm sm:text-base max-w-lg mx-auto">Revisa nuestra zona de delivery en Pucallpa</p>
+              </div>
+              <DeliveryZoneMap />
+            </div>
+          </section>
+        </Suspense>
+
+        {/* Invitar amigos — movido desde /tienda */}
+        <Suspense fallback={<LoadingSection />}>
+          <ReferralBanner />
         </Suspense>
       </main>
       <Footer />

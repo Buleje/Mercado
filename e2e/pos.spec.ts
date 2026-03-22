@@ -90,8 +90,8 @@ test.describe("POS — Punto de Venta", () => {
 
     await page.goto("/admin");
     const posLink = page
-      .getByRole("button", { name: /pos|caja|punto de venta/i })
-      .or(page.getByRole("link", { name: /pos|caja|punto de venta/i }))
+      .locator('nav[aria-label="Navegación rápida"]')
+      .getByRole("button", { name: /pos|caja/i })
       .first();
     await posLink.click();
 
@@ -122,8 +122,8 @@ test.describe("POS — Punto de Venta", () => {
 
     await page.goto("/admin");
     const posLink = page
-      .getByRole("button", { name: /pos|caja|punto de venta/i })
-      .or(page.getByRole("link", { name: /pos|caja|punto de venta/i }))
+      .locator('nav[aria-label="Navegación rápida"] button')
+      .filter({ hasText: /pos|caja/i })
       .first();
     await posLink.click();
 
@@ -166,6 +166,31 @@ test.describe("POS — Punto de Venta", () => {
         await expect(page.getByText(/vuelto|cambio/i).first()).toBeVisible();
       }
     }
+  });
+
+  test("mobile admin layout hides feedback and keeps POS actions readable", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/admin/login");
+
+    const bypassButton = page.getByRole("button", { name: /entrar sin login/i });
+    if (await bypassButton.isVisible({ timeout: 3_000 }).catch(() => false)) {
+      await bypassButton.click();
+    } else {
+      test.skip(true, "Bypass login no disponible en este entorno");
+    }
+
+    await page.waitForURL(/\/admin/);
+    await expect(page.getByText(/feedback beta/i)).toHaveCount(0);
+
+    const posLink = page
+      .locator('nav[aria-label="Navegación rápida"] button')
+      .filter({ hasText: /pos|caja/i })
+      .first();
+    await posLink.click();
+
+    await expect(page.getByText(/punto de venta/i).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("button", { name: /escanear/i }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /historial/i }).first()).toBeVisible();
   });
 
   // ── 7. Role-based access: cajero sees POS tab ─────────────────────────────

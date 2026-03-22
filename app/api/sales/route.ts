@@ -4,6 +4,7 @@ import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logAudit } from "@/lib/audit-logger";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -96,5 +97,17 @@ export async function POST(req: NextRequest) {
     LoyaltyDB.accruePoints(data.customerPhone, total).catch(() => {});
   }
 
+  // AUDIT LOG
+  logAudit({
+    req,
+    action: "CREATE",
+    entity: "Sale",
+    entityId: sale.id,
+    detail: `Venta POS creada por ${fmtCurrent(total)} con método ${data.payment ?? "efectivo"}.`,
+    user: cashierId || "system",
+  });
+
   return NextResponse.json(sale, { status: 201 });
 }
+
+function fmtCurrent(n: number) { return `S/${n.toFixed(2)}`; }

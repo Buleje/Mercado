@@ -1,0 +1,2 @@
+cd bodega-san-martin 2>/dev/null || true
+npx lint-staged
