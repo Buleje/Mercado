@@ -320,6 +320,7 @@ describe("POST /api/orders", () => {
       expect(body.id).toBeDefined();
       expect(body.status).toBe("pendiente");
       expect(body.customer.name).toBe("Juan Pérez");
+      expect(mockRequireAdmin).not.toHaveBeenCalled();
     });
 
     it("returns 201 with correct total from items (ignoring client-provided total)", async () => {
@@ -329,6 +330,9 @@ describe("POST /api/orders", () => {
       expect(res.status).toBe(201);
       const body = await res.json();
       expect(body.total).toBe(11.0);
+      // Verify the handler passed the server-recomputed total to OrdersDB.add, not the client's 999
+      const callArg = mockOrdersAdd.mock.calls[0][0]; // first arg = order object
+      expect(callArg.total).toBeCloseTo(11.0);
     });
 
     it("creates order with paymentMethod yape", async () => {
@@ -354,6 +358,7 @@ describe("POST /api/orders", () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.id).toBe(SAVED_ORDER.id);
+      expect(mockOrdersAdd).not.toHaveBeenCalled();
     });
 
     it("calls OrdersDB.add once with correct tenant", async () => {
