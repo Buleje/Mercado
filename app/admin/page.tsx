@@ -5105,6 +5105,8 @@ function AdminPage() {
   });
   const [recentCollapsed, setRecentCollapsed] = useState(true);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearConfirmStep, setClearConfirmStep] = useState<1 | 2 | 3>(1);
+  const [clearConfirmText, setClearConfirmText] = useState("");
   const [clearingData, setClearingData] = useState(false);
   const [seedingData, setSeedingData] = useState(false);
   const [clearCategories, setClearCategories] = useState<Set<string>>(() => new Set([
@@ -5658,7 +5660,7 @@ function AdminPage() {
           )}
           {userRole === "admin" && (
             <button
-              onClick={() => { setShowClearConfirm(true); setMobileNavOpen(false); }}
+              onClick={() => { setClearConfirmStep(1); setClearConfirmText(""); setShowClearConfirm(true); setMobileNavOpen(false); }}
               disabled={clearingData}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-all"
             >
@@ -5697,7 +5699,7 @@ function AdminPage() {
           </button>
           {userRole === "admin" && (
             <button
-              onClick={() => setShowClearConfirm(true)}
+              onClick={() => { setClearConfirmStep(1); setClearConfirmText(""); setShowClearConfirm(true); }}
               disabled={clearingData}
               title="Borrar todos los datos"
               className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
@@ -6055,7 +6057,7 @@ function AdminPage() {
                 <span>Simulación</span>
               </button>
               <button
-                onClick={() => setShowClearConfirm(true)}
+                onClick={() => { setClearConfirmStep(1); setClearConfirmText(""); setShowClearConfirm(true); }}
                 disabled={clearingData}
                 title="Borrar todos los datos"
                 className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-gray-400 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-colors border border-gray-200 dark:border-card-border"
@@ -6104,114 +6106,232 @@ function AdminPage() {
           if (allSelected) setClearCategories(new Set());
           else setClearCategories(new Set(ALL_CLEAR_CATS.map(c => c.key)));
         };
+        const handleCancel = () => {
+          setShowClearConfirm(false);
+          setClearConfirmStep(1);
+          setClearConfirmText("");
+        };
+        const handleExecute = () => {
+          if (clearConfirmText !== "BORRAR_TODO") return;
+          setClearingData(true);
+          setShowClearConfirm(false);
+          setClearConfirmStep(1);
+          setClearConfirmText("");
+
+          // Nuclear localStorage clear: wipe everything EXCEPT UI preferences
+          const KEEP_KEYS = new Set([
+            "admin_compact", "admin_fav_tabs", "admin_hidden_tabs",
+            "admin_recent_tabs", "bsm-admin-theme-set", "theme",
+          ]);
+          try {
+            const allKeys: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k && !KEEP_KEYS.has(k)) allKeys.push(k);
+            }
+            allKeys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
+          } catch { /* ignore */ }
+
+          const cats = [...clearCategories];
+          fetch("/api/admin/clear-data", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ confirm: "BORRAR_TODO", categories: allSelected ? undefined : cats }),
+          })
+            .then(r => r.json())
+            .then(d => {
+              if (d.success) {
+                try { localStorage.setItem("admin_demo_cleared", JSON.stringify(Object.keys(DEMO_DATA_MODULES))); } catch {}
+                window.location.reload();
+              } else {
+                alert(d.error || "Error al borrar datos");
+              }
+            })
+            .catch((err) => alert(`Error de conexión: ${err?.message ?? "verifica tu red"}`))
+            .finally(() => setClearingData(false));
+        };
         return (
-          <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowClearConfirm(false)}>
+          <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={handleCancel}>
             <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6 space-y-4 max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-950/40 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Borrar datos</h3>
-                  <p className="text-sm text-gray-500 dark:text-muted">Selecciona qué datos eliminar</p>
-                </div>
+
+              {/* ── Indicador de paso ── */}
+              <div className="flex items-center gap-2">
+                {([1, 2, 3] as const).map(n => (
+                  <div key={n} className="flex items-center gap-2">
+                    <div className={cn(
+                      "h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
+                      clearConfirmStep >= n
+                        ? "bg-red-600 text-white"
+                        : "bg-gray-200 dark:bg-surface text-gray-400"
+                    )}>{n}</div>
+                    {n < 3 && <div className={cn("h-0.5 w-6 rounded transition-colors", clearConfirmStep > n ? "bg-red-600" : "bg-gray-200 dark:bg-surface")} />}
+                  </div>
+                ))}
+                <span className="ml-2 text-xs text-gray-400 dark:text-muted">
+                  {clearConfirmStep === 1 && "Seleccionar categorías"}
+                  {clearConfirmStep === 2 && "Leer advertencia"}
+                  {clearConfirmStep === 3 && "Confirmar borrado"}
+                </span>
               </div>
 
-              <div className="flex items-center justify-between px-1">
-                <button onClick={toggleAll} className="text-xs font-semibold text-primary hover:underline">
-                  {allSelected ? "Deseleccionar todo" : "Seleccionar todo"}
-                </button>
-                <span className="text-xs text-gray-400 dark:text-muted">{clearCategories.size} de {ALL_CLEAR_CATS.length} seleccionados</span>
-              </div>
+              {/* ── PASO 1: Selección de categorías ── */}
+              {clearConfirmStep === 1 && (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-950/40 flex items-center justify-center shrink-0">
+                      <Trash2 className="h-6 w-6 text-red-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Borrar datos</h3>
+                      <p className="text-sm text-gray-500 dark:text-muted">Selecciona qué datos eliminar</p>
+                    </div>
+                  </div>
 
-              <div className="overflow-y-auto flex-1 space-y-1 -mx-1 px-1">
-                {ALL_CLEAR_CATS.map(cat => {
-                  const CatIcon = cat.icon;
-                  const checked = clearCategories.has(cat.key);
-                  return (
-                    <label key={cat.key} className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all border",
-                      checked ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40" : "bg-gray-50 dark:bg-surface border-transparent hover:bg-gray-100 dark:hover:bg-accent"
-                    )}>
-                      <input type="checkbox" checked={checked} onChange={() => toggleCat(cat.key)}
-                        className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500 accent-red-600 shrink-0" />
-                      <CatIcon className={cn("h-4 w-4 shrink-0", checked ? "text-red-500" : "text-gray-400 dark:text-muted")} />
-                      <div className="flex-1 min-w-0">
-                        <p className={cn("text-sm font-semibold", checked ? "text-red-700 dark:text-red-400" : "text-gray-700 dark:text-foreground")}>{cat.label}</p>
-                        <p className="text-[11px] text-gray-400 dark:text-muted truncate">{cat.desc}</p>
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
+                  <div className="flex items-center justify-between px-1">
+                    <button onClick={toggleAll} className="text-xs font-semibold text-primary hover:underline">
+                      {allSelected ? "Deseleccionar todo" : "Seleccionar todo"}
+                    </button>
+                    <span className="text-xs text-gray-400 dark:text-muted">{clearCategories.size} de {ALL_CLEAR_CATS.length} seleccionados</span>
+                  </div>
 
-              <div className="border-t border-gray-200 dark:border-card-border pt-4 space-y-3">
-                <p className="text-sm font-semibold text-gray-700 dark:text-foreground">Escribe <code className="bg-red-50 dark:bg-red-950/30 text-red-600 px-1.5 py-0.5 rounded text-xs font-bold">BORRAR</code> para confirmar:</p>
-                <input
-                  id="clear-confirm-input"
-                  type="text"
-                  autoComplete="off"
-                  className="w-full px-4 py-2.5 border-2 border-gray-200 dark:border-card-border rounded-xl text-sm font-mono focus:border-red-400 focus:outline-none dark:bg-surface dark:text-foreground"
-                  placeholder="Escribe BORRAR aquí..."
-                />
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowClearConfirm(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    disabled={clearCategories.size === 0}
-                    onClick={() => {
-                      const input = document.getElementById("clear-confirm-input") as HTMLInputElement;
-                      if (input?.value !== "BORRAR") { input?.focus(); return; }
-                      setClearingData(true);
-                      setShowClearConfirm(false);
+                  <div className="overflow-y-auto flex-1 space-y-1 -mx-1 px-1">
+                    {ALL_CLEAR_CATS.map(cat => {
+                      const CatIcon = cat.icon;
+                      const checked = clearCategories.has(cat.key);
+                      return (
+                        <label key={cat.key} className={cn(
+                          "flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all border",
+                          checked ? "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40" : "bg-gray-50 dark:bg-surface border-transparent hover:bg-gray-100 dark:hover:bg-accent"
+                        )}>
+                          <input type="checkbox" checked={checked} onChange={() => toggleCat(cat.key)}
+                            className="h-4 w-4 rounded border-gray-300 text-red-600 focus:ring-red-500 accent-red-600 shrink-0" />
+                          <CatIcon className={cn("h-4 w-4 shrink-0", checked ? "text-red-500" : "text-gray-400 dark:text-muted")} />
+                          <div className="flex-1 min-w-0">
+                            <p className={cn("text-sm font-semibold", checked ? "text-red-700 dark:text-red-400" : "text-gray-700 dark:text-foreground")}>{cat.label}</p>
+                            <p className="text-[11px] text-gray-400 dark:text-muted truncate">{cat.desc}</p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
 
-                      // Nuclear localStorage clear: wipe everything EXCEPT UI preferences
-                      const KEEP_KEYS = new Set([
-                        "admin_compact", "admin_fav_tabs", "admin_hidden_tabs",
-                        "admin_recent_tabs", "bsm-admin-theme-set", "theme",
-                      ]);
-                      try {
-                        const allKeys: string[] = [];
-                        for (let i = 0; i < localStorage.length; i++) {
-                          const k = localStorage.key(i);
-                          if (k && !KEEP_KEYS.has(k)) allKeys.push(k);
-                        }
-                        allKeys.forEach(k => { try { localStorage.removeItem(k); } catch {} });
-                      } catch { /* ignore */ }
+                  <div className="border-t border-gray-200 dark:border-card-border pt-4 flex gap-3">
+                    <button
+                      onClick={handleCancel}
+                      className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      disabled={clearCategories.size === 0}
+                      onClick={() => setClearConfirmStep(2)}
+                      className={cn(
+                        "flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors",
+                        clearCategories.size > 0
+                          ? "bg-red-600 hover:bg-red-700 text-white"
+                          : "bg-gray-300 text-gray-400 cursor-not-allowed"
+                      )}
+                    >
+                      Continuar →
+                    </button>
+                  </div>
+                </>
+              )}
 
-                      const cats = [...clearCategories];
-                      fetch("/api/admin/clear-data", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ confirm: "BORRAR_TODO", categories: allSelected ? undefined : cats }),
-                      })
-                        .then(r => r.json())
-                        .then(d => {
-                          if (d.success) {
-                            try { localStorage.setItem("admin_demo_cleared", JSON.stringify(Object.keys(DEMO_DATA_MODULES))); } catch {}
-                            window.location.reload();
-                          } else {
-                            alert(d.error || "Error al borrar datos");
-                          }
-                        })
-                        .catch((err) => alert(`Error de conexión: ${err?.message ?? "verifica tu red"}`))
-                        .finally(() => setClearingData(false));
-                    }}
-                    className={cn(
-                      "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-colors",
-                      clearCategories.size > 0 ? "bg-red-600 hover:bg-red-700" : "bg-gray-300 cursor-not-allowed"
-                    )}
-                  >
-                    {clearingData
-                      ? <><Loader2 className="h-4 w-4 animate-spin" /> Eliminando todo…</>
-                      : allSelected ? "🗑️ Borrar TODO" : `🗑️ Borrar ${clearCategories.size} categoría${clearCategories.size !== 1 ? "s" : ""}`}
-                  </button>
-                </div>
-              </div>
+              {/* ── PASO 2: Advertencia severa ── */}
+              {clearConfirmStep === 2 && (
+                <>
+                  <div className="rounded-xl bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800 p-5 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="h-8 w-8 text-red-600 shrink-0" />
+                      <h3 className="text-lg font-extrabold text-red-700 dark:text-red-400">¡Acción irreversible!</h3>
+                    </div>
+                    <p className="text-sm font-semibold text-red-700 dark:text-red-300 leading-relaxed">
+                      Esto borra <span className="underline underline-offset-2">TODOS</span> los pedidos, productos y clientes de las categorías seleccionadas.
+                      <br /><br />
+                      <strong>No se puede deshacer.</strong> Los datos eliminados no podrán recuperarse.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {[...clearCategories].map(k => {
+                        const cat = ALL_CLEAR_CATS.find(c => c.key === k);
+                        return cat ? (
+                          <span key={k} className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-200 dark:bg-red-900/50 text-red-700 dark:text-red-300">
+                            {cat.label}
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={handleCancel}
+                      className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={() => setClearConfirmStep(3)}
+                      className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-red-600 hover:bg-red-700 text-white transition-colors"
+                    >
+                      Entiendo, continuar →
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* ── PASO 3: Confirmación escrita ── */}
+              {clearConfirmStep === 3 && (
+                <>
+                  <div className="rounded-xl bg-red-100 dark:bg-red-950/50 border-2 border-red-500 dark:border-red-700 p-5 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="h-7 w-7 text-red-700 dark:text-red-400 shrink-0" />
+                      <h3 className="text-base font-extrabold text-red-800 dark:text-red-300">Confirmación final</h3>
+                    </div>
+                    <p className="text-sm text-red-700 dark:text-red-300">
+                      Escribe exactamente <code className="bg-red-200 dark:bg-red-900/60 text-red-800 dark:text-red-200 px-1.5 py-0.5 rounded font-bold font-mono">BORRAR_TODO</code> para habilitar el botón:
+                    </p>
+                    <input
+                      type="text"
+                      autoComplete="off"
+                      autoFocus
+                      value={clearConfirmText}
+                      onChange={e => setClearConfirmText(e.target.value)}
+                      className={cn(
+                        "w-full px-4 py-2.5 border-2 rounded-xl text-sm font-mono focus:outline-none dark:bg-surface dark:text-foreground transition-colors",
+                        clearConfirmText === "BORRAR_TODO"
+                          ? "border-red-500 bg-red-50 dark:bg-red-950/30"
+                          : "border-gray-300 dark:border-card-border focus:border-red-400"
+                      )}
+                      placeholder="Escribe BORRAR_TODO aquí..."
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleCancel}
+                      className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-accent transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      disabled={clearConfirmText !== "BORRAR_TODO"}
+                      onClick={handleExecute}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition-colors",
+                        clearConfirmText === "BORRAR_TODO"
+                          ? "bg-red-700 hover:bg-red-800"
+                          : "bg-gray-300 dark:bg-surface text-gray-400 cursor-not-allowed"
+                      )}
+                    >
+                      {clearingData
+                        ? <><Loader2 className="h-4 w-4 animate-spin" /> Eliminando…</>
+                        : <><Trash2 className="h-4 w-4" /> {allSelected ? "Borrar TODO" : `Borrar ${clearCategories.size} categoría${clearCategories.size !== 1 ? "s" : ""}`}</>}
+                    </button>
+                  </div>
+                </>
+              )}
+
             </div>
           </div>
         );
