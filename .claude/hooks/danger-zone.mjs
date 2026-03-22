@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-// danger-zone.mjs — PreToolUse hook for Claude Code
-// Blocks Edit/Write/MultiEdit on critical files without reading the relevant skill first.
-// Exit 0 = allow, Exit 1 = block (message shown to Claude via stderr)
+// danger-zone.mjs — PreToolUse hook for Claude Code (Official Spec)
+// Blocks Edit/Write/MultiEdit on critical files.
+// Exit 0 = allow | Exit 2 = block (stderr shown to user) | Other = non-blocking error
 
 import { readFileSync } from 'node:fs';
 
@@ -20,7 +20,6 @@ try {
   const input = readFileSync(process.stdin.fd, 'utf8');
   const { tool_name, tool_input } = JSON.parse(input);
 
-  // Only check file-editing tools
   if (!['Edit', 'Write', 'MultiEdit'].includes(tool_name)) {
     process.exit(0);
   }
@@ -29,17 +28,26 @@ try {
 
   for (const zone of DANGER_ZONES) {
     if (zone.pattern.test(filePath)) {
-      process.stderr.write(
-        `⚠️ ZONA DE PELIGRO: ${zone.label}\n` +
-        `Lee el skill "${zone.skill}" antes de modificar este archivo.\n` +
-        `Skill path: .github/skills/${zone.skill}.instructions.md\n`
-      );
-      process.exit(1);
+      // Structured JSON response per official spec
+      const response = JSON.stringify({
+        decision: 'block',
+        reason: `ZONA DE PELIGRO: ${zone.label}. Lee el skill "${zone.skill}" primero.`,
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          permissionDecision: 'deny',
+          permissionDecisionReason:
+            `⚠️ ZONA DE PELIGRO: ${zone.label}\n` +
+            `Lee el skill "${zone.skill}" antes de modificar este archivo.\n` +
+            `Skill path: .github/skills/${zone.skill}.instructions.md`
+        }
+      });
+      process.stdout.write(response);
+      process.stderr.write(`⚠️ ZONA DE PELIGRO: ${zone.label} — Lee skill "${zone.skill}" primero.\n`);
+      process.exit(2); // Exit 2 = blocking error per official spec
     }
   }
 
   process.exit(0);
 } catch {
-  // If anything fails, don't block the operation
   process.exit(0);
 }
