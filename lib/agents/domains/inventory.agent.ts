@@ -13,7 +13,7 @@ import {
   InventoryMovementsDB,
   AutoReorderDB,
 } from "@/lib/db";
-import { prisma } from "@/lib/prisma";
+import { BatchesDB } from "@/lib/db/batches.db";
 
 // ── Action handlers ──────────────────────────────────────────────────────────
 
@@ -80,16 +80,7 @@ async function fefoAudit(
     `inventory:fefo-batches:${daysAhead}`,
     180,
     async () => {
-      // Query batches sorted by expiryDate (FEFO order)
-      // TODO: migrate to BatchesDB class when available
-      const rows = await prisma.batch.findMany({
-        where: {
-          quantity: { gt: 0 },
-          expiryDate: { lte: cutoff },
-        },
-        orderBy: { expiryDate: "asc" },
-        include: { product: { select: { id: true, name: true, category: true } } },
-      });
+      const rows = await BatchesDB.getExpiringBatches(task.tenantId, daysAhead);
       return rows.map((b) => ({
         batchId: b.id,
         productId: b.product.id,

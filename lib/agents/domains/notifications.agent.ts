@@ -15,7 +15,7 @@ import {
   AutoReorderDB,
   PromotionsDB,
 } from "@/lib/db";
-import { prisma } from "@/lib/prisma";
+import { BatchesDB } from "@/lib/db/batches.db";
 
 // ── Action handlers ──────────────────────────────────────────────────────────
 
@@ -163,17 +163,7 @@ async function sendExpiryWarning(
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() + daysAhead);
 
-  // TODO: migrate to BatchesDB class when available
-  const expiringBatches = await prisma.batch.findMany({
-    where: {
-      quantity: { gt: 0 },
-      expiryDate: { lte: cutoff },
-    },
-    orderBy: { expiryDate: "asc" },
-    include: {
-      product: { select: { id: true, name: true, category: true } },
-    },
-  });
+  const expiringBatches = await BatchesDB.getExpiringBatches(task.tenantId, daysAhead);
 
   if (expiringBatches.length === 0) {
     return {

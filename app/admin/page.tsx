@@ -87,6 +87,7 @@ const ReportesDocModule = dynamic(() => import("@/components/admin/unified/Repor
 const AgendaUtilidadesModule = dynamic(() => import("@/components/admin/unified/AgendaUtilidadesModule"), { loading: TabSpinner });
 const SeguridadModule = dynamic(() => import("@/components/admin/unified/SeguridadModule"), { loading: TabSpinner });
 const SistemaModule = dynamic(() => import("@/components/admin/unified/SistemaModule"), { loading: TabSpinner });
+const AgentsDashboardTab = dynamic(() => import("@/components/admin/AgentsDashboardTab"), { loading: TabSpinner });
 
 import SSEListener from "@/components/admin/SSEListener";
 
@@ -106,7 +107,7 @@ type Tab = "panel-principal" | "pos-caja" | "inventario-almacenes" | "reposicion
   | "analytics-bi" | "proyecciones" | "finanzas" | "tesoreria" | "facturacion" | "gastos-activos"
   | "rrhh" | "proyectos-tareas" | "comunicaciones" | "alertas-automatizacion"
   | "reportes-documentos" | "agenda-utilidades" | "seguridad" | "sistema" | "configuracion"
-  | "pedidos" | "visitantes" | "plan" | "changelog";
+  | "pedidos" | "visitantes" | "plan" | "changelog" | "agentes";
 
 // Old tab IDs → new unified IDs for localStorage migration
 const TAB_MIGRATION: Record<string, Tab> = {
@@ -182,6 +183,7 @@ const MODULE_INFO: Partial<Record<Tab, { emoji: string; priority: "core" | "high
   "agenda-utilidades":      { emoji: "📅", priority: "low",    desc: "Calendario compartido, notas rápidas y filtros guardados.",              tip: "Herramientas de productividad diaria para el equipo." },
   "seguridad":              { emoji: "🔐", priority: "high",   desc: "Usuarios, roles, logs de seguridad, auditoría y cumplimiento.",          tip: "Protege el acceso y audita todas las acciones del sistema." },
   "sistema":                { emoji: "💚", priority: "high",   desc: "Salud del sistema, backups y webhooks para integraciones.",              tip: "Monitorea y mantén la estabilidad de la plataforma." },
+  "agentes":                { emoji: "🤖", priority: "high",   desc: "Orquestador multiagente, tareas automáticas, monitoreo y ejecución.",   tip: "Controla y monitorea todos los agentes del sistema desde un solo panel." },
   "resenas":                { emoji: "⭐", priority: "medium", desc: "Gestiona opiniones de clientes sobre productos y servicio.",             tip: "Responde reseñas y usa las positivas para generar confianza." },
   "visitantes":             { emoji: "👋", priority: "medium", desc: "Registro de visitantes nuevos: nombre y dispositivo preferido.",          tip: "Conoce desde dónde te visitan por primera vez." },
   "changelog":              { emoji: "⚗️", priority: "low",    desc: "Historial de versiones, releases y cambios del proyecto.",              tip: "Consulta qué hay de nuevo en cada versión del proyecto." },
@@ -247,7 +249,7 @@ const TAB_CATEGORIES: TabCategory[] = [
     id: "admin-sistema",
     label: "Administración & Sistema",
     icon: Settings,
-    tabs: ["reportes-documentos", "agenda-utilidades", "seguridad", "plan", "changelog"]
+    tabs: ["reportes-documentos", "agenda-utilidades", "seguridad", "plan", "changelog", "agentes"]
   },
 ];
 
@@ -5075,7 +5077,7 @@ function AdminPage() {
         const migrated = TAB_MIGRATION[saved];
         if (migrated) return migrated;
         // Check if already a valid new tab
-        const VALID_TABS: Tab[] = ["panel-principal","pos-caja","inventario-almacenes","reposicion","catalogo-tienda","precios-promos","compras","proveedores","logistica","devoluciones-calidad","ventas-marketing","crm-clientes","fidelizacion","encuestas-soporte","analytics-bi","proyecciones","finanzas","tesoreria","facturacion","gastos-activos","rrhh","proyectos-tareas","comunicaciones","alertas-automatizacion","reportes-documentos","agenda-utilidades","seguridad","sistema","clientes","resenas","pedidos","configuracion"];
+        const VALID_TABS: Tab[] = ["panel-principal","pos-caja","inventario-almacenes","reposicion","catalogo-tienda","precios-promos","compras","proveedores","logistica","devoluciones-calidad","ventas-marketing","crm-clientes","fidelizacion","encuestas-soporte","analytics-bi","proyecciones","finanzas","tesoreria","facturacion","gastos-activos","rrhh","proyectos-tareas","comunicaciones","alertas-automatizacion","reportes-documentos","agenda-utilidades","seguridad","sistema","clientes","resenas","pedidos","configuracion","agentes"];
         if (VALID_TABS.includes(saved as Tab)) return saved as Tab;
       }
     } catch {}
@@ -6591,6 +6593,7 @@ function AdminPage() {
         {tab === "pedidos" && <OrdersTab />}
         {tab === "plan" && <PlanTab />}
         {tab === "changelog" && <ChangelogModule />}
+        {tab === "agentes" && <AgentsDashboardTab />}
       </main>
 
       {/* Focus mode floating sidebar toggle */}
