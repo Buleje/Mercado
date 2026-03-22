@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { newTraceId, toErrorPayload, ApiError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { requireAdmin } from "@/lib/require-admin";
 import {
   orchestrator,
   agentBus,
@@ -56,6 +57,9 @@ const executeSchema = z.object({
 export async function POST(req: NextRequest) {
   const traceId = newTraceId();
   try {
+    const admin = await requireAdmin(req, ["owner", "admin", "manager"]);
+    if (admin instanceof NextResponse) return admin;
+
     const body: unknown = await req.json();
     const parsed = executeSchema.safeParse(body);
 

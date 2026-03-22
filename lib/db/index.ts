@@ -9,3 +9,4 @@ export * from "./finance.db";
 export * from "./promotions.db";
 export * from "./settings.db";
 export * from "./notifications.db";
+export * from "./batches.db";

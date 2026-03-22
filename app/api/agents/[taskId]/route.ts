@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { newTraceId, toErrorPayload, NotFoundError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { requireAdmin } from "@/lib/require-admin";
 import {
   orchestrator,
   ensureAgentsRegistered,
@@ -53,6 +54,9 @@ export async function PATCH(
 ) {
   const traceId = newTraceId();
   try {
+    const admin = await requireAdmin(req, ["owner", "admin"]);
+    if (admin instanceof NextResponse) return admin;
+
     const { taskId } = await context.params;
 
     logger.info("[agents] PATCH /api/agents/:taskId — cancel", {

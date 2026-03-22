@@ -6,7 +6,7 @@ export type AuditAction = "CREATE" | "UPDATE" | "DELETE" | "VIEW" | "LOGIN" | "F
 interface AuditConfig {
   req: NextRequest;
   action: AuditAction;
-  entity: "Order" | "Sale" | "Customer" | "Product" | "Inventory" | "CashRegister" | "Settings" | "Auth" | "Supplier" | "Purchase";
+  entity: "Order" | "Sale" | "Customer" | "Product" | "Inventory" | "CashRegister" | "Settings" | "Auth" | "Supplier" | "Purchase" | "Agent";
   entityId?: string;
   detail: string;
   user?: string; // If known, otherwise fallbacks to "system" or extracted from session

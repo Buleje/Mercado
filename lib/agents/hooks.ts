@@ -14,6 +14,7 @@
 
 import { agentBus } from "./bus";
 import { logger } from "@/lib/logger";
+import { initAgentPersistence, teardownAgentPersistence } from "./persistence";
 
 /** Track whether hooks have already been initialized (idempotent). */
 let _initialized = false;
@@ -54,15 +55,6 @@ export function initAgentHooks(): void {
       success: data.success,
       tenantId: data.tenantId,
     });
-
-    // ── SSE integration point ─────────────────────────────────────────────
-    // When the SSE system is connected, emit the completion event here:
-    //
-    // sseEmitter.broadcast('agent:task-completed', {
-    //   taskId: data.taskId,
-    //   domain: data.domain,
-    //   success: data.success,
-    // });
   });
 
   agentBus.on("task:failed", (data) => {
@@ -72,13 +64,6 @@ export function initAgentHooks(): void {
       error: data.error,
       tenantId: data.tenantId,
     });
-
-    // ── SSE integration point ─────────────────────────────────────────────
-    // sseEmitter.broadcast('agent:task-failed', {
-    //   taskId: data.taskId,
-    //   domain: data.domain,
-    //   error: data.error,
-    // });
   });
 
   // ── Agent alerts ────────────────────────────────────────────────────────
@@ -97,18 +82,48 @@ export function initAgentHooks(): void {
       message: data.message,
       data: data.data,
     });
-
-    // ── Notification integration point ────────────────────────────────────
-    // For critical alerts, trigger admin notification:
-    //
-    // if (data.level === 'critical') {
-    //   sendNotification({
-    //     type: 'agent-critical-alert',
-    //     domain: data.domain,
-    //     message: data.message,
-    //   }).catch(() => {});
-    // }
   });
+
+  // ── SSE broadcast — push agent events to admin dashboard ──────────────
+
+  import("@/lib/sse-emitter")
+    .then(({ emitAdminSSE }) => {
+      agentBus.on("task:completed", (data) => {
+        emitAdminSSE("agent:task-completed", {
+          taskId: data.taskId,
+          domain: data.domain,
+          success: data.success,
+          tenantId: data.tenantId,
+        });
+      });
+
+      agentBus.on("task:failed", (data) => {
+        emitAdminSSE("agent:task-failed", {
+          taskId: data.taskId,
+          domain: data.domain,
+          error: data.error,
+          tenantId: data.tenantId,
+        });
+      });
+
+      agentBus.on("agent:alert", (data) => {
+        emitAdminSSE("agent:alert", {
+          domain: data.domain,
+          level: data.level,
+          message: data.message,
+          data: data.data,
+        });
+      });
+
+      logger.info("[agent-hooks] SSE broadcast connected");
+    })
+    .catch(() => {
+      // SSE not available — skip
+    });
+
+  // ── DB persistence — write completed/failed tasks to ActivityLog ────────
+
+  initAgentPersistence();
 
   logger.info("[agent-hooks] Agent hooks initialized");
 }
@@ -118,6 +133,7 @@ export function initAgentHooks(): void {
  */
 export function teardownAgentHooks(): void {
   if (!_initialized) return;
+  teardownAgentPersistence();
   agentBus.clear();
   _initialized = false;
   logger.info("[agent-hooks] Agent hooks torn down");
