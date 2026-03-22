@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, startTransition, useCallback } from "react
 import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
-import { X, Plus, Minus, Trash2, ShoppingCart, MessageCircle, Clipboard, Share2, CheckCircle2, Download, MessageCircleOff, Package, Tag, Truck, Gift, Clock } from "lucide-react";
+import { X, Plus, Minus, Trash2, ShoppingCart, Clipboard, Share2, CheckCircle2, Download, MessageCircleOff, Package, Tag, Truck, Gift, Clock } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
 import { useSettings } from "@/contexts/settings-context";
@@ -48,12 +48,12 @@ export default function CartSidebar() {
   /* Y4: WhatsApp message preview */
   const [showPreview, setShowPreview] = useState(false);
 
-  /* Z3: Coupon field in cart */
-  const [couponOpen, setCouponOpen] = useState(false);
-  const [couponCode, setCouponCode] = useState("");
+  /* Z3: Coupon field in cart (prepared for future use) */
+  const [_couponOpen, _setCouponOpen] = useState(false);
+  const [couponCode, _setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
-  const [couponMsg, setCouponMsg] = useState("");
-  const [validatingCoupon, setValidatingCoupon] = useState(false);
+  const [_couponMsg, _setCouponMsg] = useState("");
+  const [_validatingCoupon, _setValidatingCoupon] = useState(false);
 
   /* Smart cross-sell: real co-purchase data */
   type CoPurchased = { id: number; name: string; image: string; price: number; unit: string };
@@ -79,26 +79,26 @@ export default function CartSidebar() {
       fetchCoPurchased(ids);
     }
   }, [isOpen, items, fetchCoPurchased]);
-  const validateCoupon = async () => {
+  const _validateCoupon = async () => {
     if (!couponCode.trim()) return;
-    setValidatingCoupon(true);
-    setCouponMsg("");
+    _setValidatingCoupon(true);
+    _setCouponMsg("");
     try {
       const res = await fetch("/api/coupons/validate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: couponCode.trim(), cartTotal: total }) });
       const data = await res.json();
       if (res.ok && data.valid) {
         setCouponDiscount(data.discount ?? 0);
-        setCouponMsg(`✅ -S/${(data.discount ?? 0).toFixed(2)}`);
+        _setCouponMsg(`-S/${(data.discount ?? 0).toFixed(2)}`);
       } else {
         setCouponDiscount(0);
-        setCouponMsg(data.message ?? "Cupón inválido");
+        _setCouponMsg(data.message ?? "Cupón inválido");
       }
-    } catch { setCouponMsg("Error al validar"); setCouponDiscount(0); }
-    setValidatingCoupon(false);
+    } catch { _setCouponMsg("Error al validar"); setCouponDiscount(0); }
+    _setValidatingCoupon(false);
   };
 
   /* Z4: Print cart as shopping list */
-  const printCart = () => {
+  const _printCart = () => {
     const now = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
     const rows = items.map((i, idx) => `<tr><td style="padding:4px 8px;border-bottom:1px solid #eee">${idx + 1}</td><td style="padding:4px 8px;border-bottom:1px solid #eee">${i.name}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:center">${i.quantity}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right">S/${(i.price * i.quantity).toFixed(2)}</td></tr>`).join("");
     const html = `<html><head><title>Lista de compras</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#1a1a1a}table{width:100%;border-collapse:collapse}th{text-align:left;padding:6px 8px;border-bottom:2px solid #333;font-size:13px}td{font-size:12px}.total{margin-top:12px;text-align:right;font-size:16px;font-weight:bold}h2{margin:0 0 4px}p{margin:0 0 12px;color:#666;font-size:12px}@media print{body{padding:12px}}</style></head><body><h2>🛒 Bodega San Martín</h2><p>Lista de compras — ${now}</p><table><thead><tr><th>#</th><th>Producto</th><th style="text-align:center">Cant.</th><th style="text-align:right">Subtotal</th></tr></thead><tbody>${rows}</tbody></table>${discount > 0 ? `<p class="total" style="font-size:13px;color:#888">Desc. promo: -S/${discount.toFixed(2)}</p>` : ""}${couponDiscount > 0 ? `<p class="total" style="font-size:13px;color:#888">Cupón: -S/${couponDiscount.toFixed(2)}</p>` : ""}<p class="total">Total: S/${finalTotal.toFixed(2)}</p></body></html>`;

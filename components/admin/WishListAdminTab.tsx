@@ -33,7 +33,7 @@ export default function WishListAdminTab() {
   const totalItems = lists.reduce((s, l) => s + l.items.length, 0);
   const outOfStock = lists.reduce((s, l) => s + l.items.filter(i => !i.inStock).length, 0);
   const potentialRevenue = lists.reduce((s, l) => s + l.items.reduce((all, i) => all + i.price, 0), 0);
-  const conversionRate = totalItems > 0 ? ((lists.reduce((s, l) => s + l.convertedItems, 0) / totalItems) * 100).toFixed(0) : "0";
+  const _conversionRate = totalItems > 0 ? ((lists.reduce((s, l) => s + l.convertedItems, 0) / totalItems) * 100).toFixed(0) : "0";
 
   // Most wished products
   const productCounts = (() => {

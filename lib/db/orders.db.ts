@@ -9,8 +9,6 @@ import type {
 } from "@/lib/generated/prisma/client";
 import {
   type DbOrder,
-  type DbOrderItem,
-  type DbOrderCustomer,
   type OrderStatus,
   normalizePhone,
 } from "./misc.db";

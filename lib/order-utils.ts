@@ -4,7 +4,7 @@ import type { CartItem } from "@/contexts/cart-context";
 /** Minimal item shape required by order utilities — superset of CartItem without requiring category */
 type OrderItem = { id: number; name: string; price: number; quantity: number; unit: string; image: string };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 type _CartItemCompat = CartItem extends OrderItem ? true : false; // compile-time check
 
 // Theme colors

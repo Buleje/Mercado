@@ -2,7 +2,7 @@
 
 import { useState, useEffect, startTransition, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { RotateCcw, ChevronRight, Package } from "lucide-react";
+import { ChevronRight, Package } from "lucide-react";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -78,7 +78,7 @@ export default function LastOrderBanner() {
 
   if (!order || !customer?.phone) return null;
 
-  const handleReorder = () => {
+  const _handleReorder = () => {
     setShowReorderModal(true);
   };
 

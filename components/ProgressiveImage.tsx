@@ -147,6 +147,7 @@ export function ProgressiveImage({
     >
       {/* Placeholder (blurred LQIP) */}
       {!isLoaded && (
+        /* eslint-disable-next-line @next/next/no-img-element -- Intentional raw img for LQIP blur placeholder */
         <img
           src={placeholder}
           alt=""
@@ -166,6 +167,7 @@ export function ProgressiveImage({
       )}
       
       {/* High-quality image */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- Intentional raw img for progressive loading with custom srcset */}
       <img
         src={currentSrc}
         alt={alt}

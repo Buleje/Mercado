@@ -25,7 +25,7 @@ const ToastContext = createContext<ToastCtx | null>(null);
 let nextId = 1;
 
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [_toasts, setToasts] = useState<Toast[]>([]);
   const timerMap = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
   const dismissToast = useCallback((id: number) => {

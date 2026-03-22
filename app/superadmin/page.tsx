@@ -6,8 +6,8 @@ import {
   ShieldCheck, LogOut, RefreshCw, Users, Building2,
   CheckCircle2, XCircle, Crown, Zap, ShoppingBag, Loader2,
   TrendingUp, AlertTriangle, Search, ChevronDown, Mail, Copy, X,
-  BarChart3, Activity, DollarSign, Clock, Eye, ArrowUpRight, ArrowDownRight,
-  Calendar, Globe, Package,
+  BarChart3, Activity, DollarSign, Clock,
+  Globe, Package,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 

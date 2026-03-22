@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   function rid() {
     return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
   }
-  function pick(arr: any[]) {
+  function pick<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
   }
   function rand(min: number, max: number) {
@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
     );
 
     // ── Orders (last 30 days) ───────────────────────────
-    const statuses: ("pendiente" | "confirmado" | "en_camino" | "entregado" | "cancelado")[] = ["pendiente", "confirmado", "en_camino", "entregado", "cancelado"];
+    const _statuses = ["pendiente", "confirmado", "en_camino", "entregado", "cancelado"] as const;
     const payMethods = ["efectivo", "yape", "plin"];
 
     const orders = [];
@@ -335,7 +335,7 @@ export async function POST(req: NextRequest) {
     });
 
     // ── Cash Register ───────────────────────────────────
-    const register = await prisma.cashRegister.create({
+    await prisma.cashRegister.create({
       data: {
         openedAt: daysAgo(0),
         openingAmount: 200,

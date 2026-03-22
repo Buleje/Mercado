@@ -93,7 +93,7 @@ function testPostOrder() {
     tags: { name: "POST /api/orders" },
   });
 
-  const ok = check(res, {
+  check(res, {
     // 200 (success) or 429 (rate limited) or 409 (duplicate key) are all
     // expected during high-concurrency tests — 5xx is the real error.
     "orders: not 5xx": (r) => r.status < 500,
@@ -107,6 +107,7 @@ function testPostOrder() {
 
 // ── Main scenario ──────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line import/no-anonymous-default-export -- k6 requires anonymous default export
 export default function () {
   // 80% of traffic is read (catalog browsing), 20% is write (order creation)
   const rand = Math.random();

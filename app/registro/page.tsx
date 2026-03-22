@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import {
   Store, ArrowRight, ArrowLeft, CheckCircle2, Loader2,
   Eye, EyeOff, Zap, ShoppingBag, Users, ShoppingCart,
-  Globe, BarChart2, Crown, AlertTriangle, ExternalLink, Star,
+  Globe, BarChart2, Crown, AlertTriangle, ExternalLink,
 } from "lucide-react";
 import { PLANS, type PlanId, type PlanDef } from "@/lib/plans";
 

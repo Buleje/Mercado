@@ -116,7 +116,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
     recordPurchaseActivity(product.id);
     setSellingFast(isSellingFast(product.id));
 
-  }, [isOutOfStock, addItem, product, showToast, qty]);
+  }, [isOutOfStock, addItem, product, showToast]);
 
   const handleToggleFavorite = useCallback(
     (e: React.MouseEvent) => {

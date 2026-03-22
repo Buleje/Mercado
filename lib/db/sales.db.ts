@@ -8,7 +8,6 @@ import type {
 } from "@/lib/generated/prisma/client";
 import {
   type DbSale,
-  type DbSaleItem,
 } from "./misc.db";
 
 // ── Local Types ───────────────────────────────────────────────────────────────

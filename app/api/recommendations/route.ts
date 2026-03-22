@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
 
         const coPhones = new Set<string>();
         for (const i of coOrders) if (i.order.customerPhone) coPhones.add(i.order.customerPhone);
-        for (const i of coSales) if (i.sale.customerPhone) coSales && i.sale.customerPhone && coPhones.add(i.sale.customerPhone);
+        for (const i of coSales) if (i.sale.customerPhone) coPhones.add(i.sale.customerPhone);
 
         if (coPhones.size > 0) {
           // 3. Get products those co-customers bought (that current customer hasn't)

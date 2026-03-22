@@ -19,7 +19,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   rechazada: { label: "Rechazada", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
 
-const REASONS = ["Producto dañado", "Producto equivocado", "No satisface expectativas", "Fecha vencida", "Duplicado", "Otro"];
+const _REASONS = ["Producto dañado", "Producto equivocado", "No satisface expectativas", "Fecha vencida", "Duplicado", "Otro"];
 
 const SEED: Return[] = [];
 
@@ -30,7 +30,7 @@ export default function ReturnLogisticsTab() {
   const [returns] = useState(SEED);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
-  const [selectedReturn, setSelectedReturn] = useState<Return | null>(null);
+  const [_selectedReturn, _setSelectedReturn] = useState<Return | null>(null);
 
   const filtered = useMemo(() => {
     let list = returns;

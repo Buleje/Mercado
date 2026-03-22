@@ -124,8 +124,8 @@ export async function createBlock(pageId: string, data: BlockInput) {
   });
 
   return await prisma.pageBlock.create({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ...(data as any),
       pageId,
       order: data.order ?? (maxOrder._max.order ?? 0) + 1,
@@ -175,7 +175,6 @@ export async function duplicateBlock(id: string) {
   });
 
   // Create copy
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return await prisma.pageBlock.create({
     data: {
       pageId: block.pageId,
@@ -216,6 +215,7 @@ export async function restorePageVersion(versionId: string) {
   });
 
   // Restore blocks from version
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma JSON field type
   const blocks = version.blocks as any[];
   await prisma.pageBlock.createMany({
     data: blocks.map((block, index) => ({

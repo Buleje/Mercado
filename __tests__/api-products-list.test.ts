@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Test file uses any for Prisma mocking */
 /**
  * API /api/products – GET handler unit tests
  * Covers: no filters (200), category filter, search filter, active filter,

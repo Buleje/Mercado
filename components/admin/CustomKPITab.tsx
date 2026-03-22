@@ -25,7 +25,7 @@ export default function CustomKPITab() {
   const [formUnit, setFormUnit] = useState("S/");
   const [formCategory, setFormCategory] = useState("Ventas");
 
-  const categories = Array.from(new Set(kpis.map(k => k.category)));
+  const _categories = Array.from(new Set(kpis.map(k => k.category)));
 
   const openCreate = () => { setEditKpi(null); setFormName(""); setFormDesc(""); setFormFormula(""); setFormTarget(""); setFormUnit("S/"); setFormCategory("Ventas"); setShowModal(true); };
   const openEdit = (k: KPI) => { setEditKpi(k); setFormName(k.name); setFormDesc(k.description); setFormFormula(k.formula); setFormTarget(String(k.target)); setFormUnit(k.unit); setFormCategory(k.category); setShowModal(true); };

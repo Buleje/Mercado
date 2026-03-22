@@ -35,7 +35,7 @@ export default function ShipmentTrackingTab() {
   const [shipments] = useState(SEED);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [search, setSearch] = useState("");
-  const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
+  const [_selectedShipment, _setSelectedShipment] = useState<Shipment | null>(null);
 
   const filtered = useMemo(() => {
     let list = shipments;

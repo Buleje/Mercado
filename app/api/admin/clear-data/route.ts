@@ -10,18 +10,6 @@ import { prisma } from "@/lib/prisma";
  * Body: { confirm: "BORRAR_TODO", categories?: string[] }
  */
 
-// --------------------------------------------------------------------------
-// Safe per-model delete (each wrapped so one failure doesn't kill the batch)
-// --------------------------------------------------------------------------
-async function safeDeleteMany(model: keyof typeof prisma, label: string) {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (prisma[model] as any).deleteMany();
-  } catch (e) {
-    console.warn(`[CLEAR-DATA] skip ${label}:`, (e as Error).message);
-  }
-}
-
 // Delete order: children first, parents last (FK-safe)
 const FULL_DELETE_ORDER: Array<[keyof typeof prisma, string]> = [
   // junction / leaf tables first

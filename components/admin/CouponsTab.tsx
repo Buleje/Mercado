@@ -57,7 +57,7 @@ export default function CouponsTab() {
   });
   const [editingRule, setEditingRule] = useState<AutoRule | null>(null);
   const [showRuleConfig, setShowRuleConfig] = useState(false);
-  const [generatedLogs, setGeneratedLogs] = useState<GeneratedCouponLog[]>(() => {
+  const [generatedLogs, _setGeneratedLogs] = useState<GeneratedCouponLog[]>(() => {
     try {
       const stored = localStorage.getItem("coupon-generated-logs");
       if (stored) return JSON.parse(stored);

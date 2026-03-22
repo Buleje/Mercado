@@ -13,7 +13,7 @@ const TOP_COMBOS: TopCombo[] = [];
 
 export default function BasketAnalysisTab() {
   const [sortBy, setSortBy] = useState<"support" | "confidence" | "lift" | "count">("count");
-  const [minSupport, setMinSupport] = useState(0);
+  const [minSupport, _setMinSupport] = useState(0);
 
   const sorted = useMemo(() => {
     return ASSOCIATIONS.filter(a => a.support >= minSupport).sort((a, b) => b[sortBy] - a[sortBy]);

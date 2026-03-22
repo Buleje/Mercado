@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
-  Sun, Moon, Search, Trophy, Gift, History, PackageCheck, User, ClipboardList, Mic, Bell, Flame,
+  Search, Trophy, Gift, History, PackageCheck, User, ClipboardList, Mic, Flame,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -64,11 +64,11 @@ const inicioMenuItems = [
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileCatOpen, setMobileCatOpen] = useState(false);
+  const [_mobileCatOpen, setMobileCatOpen] = useState(false);
   const [mobileInicioOpen, setMobileInicioOpen] = useState(false);
   // Single active dropdown — prevents two menus visible simultaneously
   const [activeDropdown, setActiveDropdown] = useState<"inicio" | "categorias" | null>(null);
-  const megaOpen = activeDropdown === "categorias";
+  const _megaOpen = activeDropdown === "categorias";
   const inicioOpen = activeDropdown === "inicio";
   const dropdownTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openDropdown = (which: "inicio" | "categorias") => {
@@ -171,7 +171,7 @@ export default function Header() {
   const { count, toggle, addItem } = useCart();
   const { customer, openModal: openCustomerModal, openAccountModal, openOrderStatusModal, clear } = useCustomer();
   const { navLinks: storedNavLinks } = useSettings();
-  const { resolved: theme, toggle: toggleTheme } = useTheme();
+  const { resolved: _theme, toggle: _toggleTheme } = useTheme();
   const megaRef = useRef<HTMLDivElement>(null);
   const navLinks = storedNavLinks?.length ? storedNavLinks : DEFAULT_NAV_LINKS;
 
@@ -181,8 +181,8 @@ export default function Header() {
   // Notification inbox
   type NotifItem = { id: string; type: string; title: string; body: string; link?: string; read: boolean; createdAt: string };
   const [notifOpen, setNotifOpen] = useState(false);
-  const [notifs, setNotifs] = useState<NotifItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [_notifs, setNotifs] = useState<NotifItem[]>([]);
+  const [_unreadCount, setUnreadCount] = useState(0);
   const notifRef = useRef<HTMLDivElement>(null);
 
   // Fetch notifications when customer exists
@@ -215,7 +215,7 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handler);
   }, [notifOpen]);
 
-  const markAllRead = async () => {
+  const _markAllRead = async () => {
     if (!customer?.phone) return;
     await fetch(`/api/customer-notifications?phone=${encodeURIComponent(customer.phone!)}&all=1`, { method: "PATCH" });
     setNotifs(prev => prev.map(n => ({ ...n, read: true })));

@@ -67,7 +67,7 @@ export default function CMSDashboard() {
             href="/admin/cms/media"
             className="p-6 bg-linear-to-br from-purple-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-shadow"
           >
-            <Image className="w-8 h-8 mb-2" />
+            <Image className="w-8 h-8 mb-2" alt="Medios" />
             <h3 className="font-bold">Medios</h3>
             <p className="text-sm opacity-90">Biblioteca de imágenes</p>
           </Link>

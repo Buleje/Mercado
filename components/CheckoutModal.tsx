@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import { m, AnimatePresence } from "framer-motion";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
@@ -17,10 +17,10 @@ import { cn } from "@/lib/utils";
 import { trackPurchase } from "@/lib/analytics";
 import type { DbOrderItem } from "@/lib/jsondb";
 import type { SavedLocation, Customer } from "@/contexts/customer-context";
-import { StepBar, STEPS, YapePaymentPanel, CashChangeCalculator, type Step } from "@/components/checkout";
+import { StepBar, YapePaymentPanel, CashChangeCalculator, type Step } from "@/components/checkout";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
-const Confetti = dynamic(() => import("./Confetti"), { ssr: false });
+// const Confetti = dynamic(() => import("./Confetti"), { ssr: false });
 
 type PaymentMethod = "yape" | "efectivo";
 type DniLookupStatus = "idle" | "loading" | "success" | "error";
@@ -120,7 +120,7 @@ export default function CheckoutModal() {
   const [tip, setTip] = useState(0);
 
   /* W1: Pending orders alert */
-  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
+  const [_pendingOrdersCount, setPendingOrdersCount] = useState(0);
   useEffect(() => {
     if (step !== "pago" || !phone) return;
     let cancelled = false;
@@ -137,7 +137,7 @@ export default function CheckoutModal() {
   }, [step, phone]);
 
   /* Stock validation when checkout opens */
-  const [stockWarnings, setStockWarnings] = useState<string[]>([]);
+  const [_stockWarnings, setStockWarnings] = useState<string[]>([]);
   useEffect(() => {
     if (!checkoutOpen || items.length === 0) return;
     let cancelled = false;
@@ -201,7 +201,7 @@ export default function CheckoutModal() {
   const [useCustomDateTime, setUseCustomDateTime] = useState(false);
 
   // Delivery distance from store (computed when location has GPS)
-  const [deliveryDistance, setDeliveryDistance] = useState<number | undefined>(undefined);
+  const [_deliveryDistance, setDeliveryDistance] = useState<number | undefined>(undefined);
 
   // Google Maps suggestions
   const [refSuggestions, setRefSuggestions] = useState<string[]>([]);

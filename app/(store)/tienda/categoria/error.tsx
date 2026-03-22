@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 
 export default function CategoriaError({
   error,
@@ -31,9 +32,9 @@ export default function CategoriaError({
           <button onClick={reset} className="px-6 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:opacity-90 transition-opacity">
             Reintentar
           </button>
-          <a href="/tienda" className="px-6 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+          <Link href="/tienda" className="px-6 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
             Ir a la tienda
-          </a>
+          </Link>
         </div>
       </div>
     </div>

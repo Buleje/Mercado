@@ -58,7 +58,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const catProducts = products.filter((p) => p.category === cat.id);
   const productCount = catProducts.length;
   const minPrice = catProducts.length ? Math.min(...catProducts.map((p) => p.price)) : 0;
-  const maxPrice = catProducts.length ? Math.max(...catProducts.map((p) => p.price)) : 0;
 
   const baseDec =
     categoryDescriptions[cat.id] ??

@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { PurchasesDB, InventoryMovementsDB } from "@/lib/jsondb";
+import { PurchasesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";

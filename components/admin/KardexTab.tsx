@@ -219,7 +219,7 @@ export default function KardexTab() {
       list = list.filter((line) => line.reference.toLowerCase().includes(query) || line.description.toLowerCase().includes(query));
     }
     return list;
-  }, [allLines, filterType, dateFrom, dateTo, search]);
+  }, [allLines, filterType, filterWarehouse, dateFrom, dateTo, search]);
 
   const stats = useMemo(() => {
     const inTotal = allLines.reduce((sum, line) => sum + line.qtyIn, 0);

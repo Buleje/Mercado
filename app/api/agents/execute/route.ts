@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { newTraceId, toErrorPayload, ApiError } from "@/lib/api-error";
+import { newTraceId, toErrorPayload } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 import { requireAdmin } from "@/lib/require-admin";
 import {

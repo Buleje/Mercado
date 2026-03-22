@@ -9,7 +9,6 @@ import type {
 import {
   type DbSupplier,
   type DbPurchaseOrder,
-  type DbPurchaseItem,
   type PurchaseStatus,
 } from "./misc.db";
 
@@ -85,7 +84,7 @@ export const SuppliersDB = {
   async update(id: string, patch: Partial<DbSupplier>): Promise<DbSupplier | null> {
     const existing = await prisma.supplier.findUnique({ where: { id } });
     if (!existing) return null;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const { id: _id, createdAt: _c, ...data } = patch;
     const row = await prisma.supplier.update({ where: { id }, data });
     return mapSupplier(row);

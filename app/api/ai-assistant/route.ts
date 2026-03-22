@@ -29,22 +29,22 @@ async function getBusinessSnapshot() {
 
   const validOrders = orders.filter(o => o.status !== "cancelado");
   const todayOrders = validOrders.filter(o => o.createdAt?.slice(0, 10) === today);
-  const weekOrders = validOrders.filter(o => o.createdAt?.slice(0, 10)! >= weekAgo);
-  const monthOrders = validOrders.filter(o => o.createdAt?.slice(0, 10)! >= monthAgo);
+  const weekOrders = validOrders.filter(o => (o.createdAt?.slice(0, 10) ?? "") >= weekAgo);
+  const monthOrders = validOrders.filter(o => (o.createdAt?.slice(0, 10) ?? "") >= monthAgo);
 
   const todaySales = sales.filter(s => s.createdAt?.slice(0, 10) === today);
-  const weekSales = sales.filter(s => s.createdAt?.slice(0, 10)! >= weekAgo);
+  const weekSales = sales.filter(s => (s.createdAt?.slice(0, 10) ?? "") >= weekAgo);
 
   const todayRevenue = todayOrders.reduce((s, o) => s + o.total, 0) + todaySales.reduce((s, sl) => s + sl.total, 0);
   const weekRevenue = weekOrders.reduce((s, o) => s + o.total, 0) + weekSales.reduce((s, sl) => s + sl.total, 0);
-  const monthRevenue = monthOrders.reduce((s, o) => s + o.total, 0) + sales.filter(s => s.createdAt?.slice(0, 10)! >= monthAgo).reduce((s, sl) => s + sl.total, 0);
+  const monthRevenue = monthOrders.reduce((s, o) => s + o.total, 0) + sales.filter(s => (s.createdAt?.slice(0, 10) ?? "") >= monthAgo).reduce((s, sl) => s + sl.total, 0);
 
   const pendingOrders = orders.filter(o => o.status === "pendiente").length;
-  const cancelledMonth = orders.filter(o => o.status === "cancelado" && o.createdAt?.slice(0, 10)! >= monthAgo).length;
+  const cancelledMonth = orders.filter(o => o.status === "cancelado" && (o.createdAt?.slice(0, 10) ?? "") >= monthAgo).length;
 
   const costMap: Record<string, number> = {};
   products.forEach(p => { if (p.costPrice) costMap[p.id] = p.costPrice; });
-  const monthCost = [...monthOrders.flatMap(o => o.items), ...sales.filter(s => s.createdAt?.slice(0, 10)! >= monthAgo).flatMap(s => s.items)]
+  const monthCost = [...monthOrders.flatMap(o => o.items), ...sales.filter(s => (s.createdAt?.slice(0, 10) ?? "") >= monthAgo).flatMap(s => s.items)]
     .reduce((s, i) => s + (costMap["id" in i ? i.id : i.productId] ?? 0) * i.quantity, 0);
   const monthProfit = monthRevenue - monthCost;
   const margin = monthRevenue > 0 ? ((monthProfit / monthRevenue) * 100).toFixed(1) : "0";

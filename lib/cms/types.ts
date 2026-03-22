@@ -42,6 +42,7 @@ export interface BlockDefinition {
   icon: string;
   previewImage?: string;
   defaultProps: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod schema generic requires any
   propsSchema: z.ZodObject<any>;
 }
 

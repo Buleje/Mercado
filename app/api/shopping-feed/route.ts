@@ -14,7 +14,7 @@ function esc(str: string): string {
     .replace(/'/g, "&#39;");
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const db = prisma as unknown as PrismaClient;
 
   const products = await db.product.findMany({

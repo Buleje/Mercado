@@ -21,7 +21,7 @@ export default function AutoSegmentsTab() {
   const [segments, setSegments] = useState(SEED);
   const [showModal, setShowModal] = useState(false);
   const [editSegment, setEditSegment] = useState<Segment | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [_expandedId, _setExpandedId] = useState<string | null>(null);
 
   const [formName, setFormName] = useState("");
   const [formDesc, setFormDesc] = useState("");

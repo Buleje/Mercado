@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const settings = await SettingsDB.get();
     // Never expose credentials or security toggles to public callers
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const { adminPassword: _pw, adminBypassLogin: _bypass, ...publicSettings } = settings as DbSettings & { adminPassword?: string; adminBypassLogin?: boolean };
     return NextResponse.json(publicSettings, {
       headers: {

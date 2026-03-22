@@ -31,6 +31,7 @@ export interface Product {
   currentStock?: number;
   status?: string;
   // Fallback genérico para componentes muy agnósticos
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic ERP index signature for extensible data
   [key: string]: any;
 }
 
@@ -41,6 +42,7 @@ export interface SaleItem {
   quantity: number;
   unit?: string;
   image?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic ERP index signature for extensible data
   [key: string]: any;
 }
 
@@ -54,6 +56,7 @@ export interface Sale {
   customerPhone?: string;
   createdAt: string;
   status?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic ERP index signature for extensible data
   [key: string]: any;
 }
 
@@ -64,6 +67,7 @@ export interface PurchaseItem {
   unitCost?: number;
   price?: number;
   unit?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic ERP index signature for extensible data
   [key: string]: any;
 }
 
@@ -77,6 +81,7 @@ export interface Purchase {
   createdAt?: string;
   expectedDate?: string;
   notes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic ERP index signature for extensible data
   [key: string]: any;
 }
 
@@ -89,6 +94,7 @@ export interface Supplier {
   address?: string;
   rating?: number;
   active?: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic ERP index signature for extensible data
   [key: string]: any;
 }
 
@@ -100,5 +106,6 @@ export interface Customer {
   email?: string;
   points?: number;
   createdAt?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic ERP index signature for extensible data
   [key: string]: any;
 }

@@ -22,7 +22,7 @@ type ReorderProduct = {
 };
 
 /* ── seed data ──────────────────────────────────────────────── */
-const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const _fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 const PRODUCTS: ReorderProduct[] = [];
 

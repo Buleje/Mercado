@@ -1,9 +1,12 @@
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { BatchesDB } from "@/lib/db";
+
+// ── Schemas ───────────────────────────────────────────────────────────────────
 
 const CreateSchema = z.object({
   lote: z.string().min(1).max(100),
@@ -23,136 +26,89 @@ const CreateSchema = z.object({
 
 const UpdateSchema = CreateSchema.partial();
 
-/** Update Product.expiresAt to the earliest batch expiry date (fire-and-forget) */
-async function propagateExpiresAt(productId: number | null | undefined) {
-  if (!productId) return;
-  const batches = await prisma.batch.findMany({
-    where: { productId, quantity: { gt: 0 } },
-    select: { expiryDate: true },
-  });
-  const earliest = batches.length > 0
-    ? new Date(Math.min(...batches.map(b => b.expiryDate.getTime())))
-    : null;
-  await prisma.product.update({
-    where: { id: productId },
-    data: { expiresAt: earliest },
-  });
-}
+const GetSchema = z.object({
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+  search: z.string().optional(),
+  productId: z.coerce.number().int().positive().optional(),
+  warehouseId: z.string().optional(),
+  status: z.enum(["active", "expired", "expiring", "empty"]).optional(),
+  expiringDays: z.coerce.number().int().min(1).max(365).optional(),
+});
 
-function mapBatch(b: {
-  id: string; tenantId: string; lote: string; productName: string; productId: number | null;
-  productCategory: string; quantity: number; unit: string; supplierId: string | null;
-  supplierName: string; warehouseId: string | null;
-  entryDate: Date; expiryDate: Date; costUnit: number; notes: string;
-  createdAt: Date; updatedAt: Date;
-}) {
-  return {
-    id: b.id,
-    lote: b.lote,
-    productName: b.productName,
-    productId: b.productId ?? undefined,
-    productCategory: b.productCategory,
-    quantity: b.quantity,
-    unit: b.unit,
-    supplierId: b.supplierId ?? undefined,
-    supplierName: b.supplierName,
-    warehouseId: b.warehouseId ?? undefined,
-    entryDate: b.entryDate.toISOString().slice(0, 10),
-    expiryDate: b.expiryDate.toISOString().slice(0, 10),
-    costUnit: b.costUnit,
-    notes: b.notes,
-  };
-}
+// ── GET /api/batches ──────────────────────────────────────────────────────────
 
-// GET /api/batches
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const rows = await prisma.batch.findMany({
-    where: { tenantId: auth.tenantId },
-    orderBy: { expiryDate: "asc" },
-  });
+  const parsed = GetSchema.safeParse(Object.fromEntries(req.nextUrl.searchParams));
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Parámetros inválidos", issues: parsed.error.issues }, { status: 400 });
+  }
 
-  return NextResponse.json(rows.map(mapBatch));
+  const result = await BatchesDB.getAll(auth.tenantId, parsed.data);
+  return NextResponse.json(result);
 }
 
-// POST /api/batches
+// ── POST /api/batches ─────────────────────────────────────────────────────────
+
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+
   const rl = applyRateLimit(req, "MODERATE", "batches");
   if (rl) return rl;
 
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
+
   const parsed = CreateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
 
-  const row = await prisma.batch.create({
-    data: {
-      ...parsed.data,
-      entryDate: new Date(parsed.data.entryDate),
-      expiryDate: new Date(parsed.data.expiryDate),
-      tenantId: auth.tenantId,
-    },
-  });
-
-  propagateExpiresAt(parsed.data.productId).catch(() => {});
-
-  return NextResponse.json(mapBatch(row), { status: 201 });
+  const batch = await BatchesDB.create(auth.tenantId, parsed.data);
+  return NextResponse.json(batch, { status: 201 });
 }
 
-// PATCH /api/batches?id=xxx
+// ── PATCH /api/batches?id=xxx ─────────────────────────────────────────────────
+
 export async function PATCH(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
   const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  if (!id) return NextResponse.json({ error: "Parámetro id requerido" }, { status: 400 });
 
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
+
   const parsed = UpdateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
   }
 
-  const existing = await prisma.batch.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  const batch = await BatchesDB.update(auth.tenantId, id, parsed.data);
+  if (!batch) return NextResponse.json({ error: "Lote no encontrado" }, { status: 404 });
 
-  const { entryDate, expiryDate, ...rest } = parsed.data;
-  const row = await prisma.batch.update({
-    where: { id },
-    data: {
-      ...rest,
-      ...(entryDate && { entryDate: new Date(entryDate) }),
-      ...(expiryDate && { expiryDate: new Date(expiryDate) }),
-    },
-  });
-
-  propagateExpiresAt(existing.productId).catch(() => {});
-
-  return NextResponse.json(mapBatch(row));
+  return NextResponse.json(batch);
 }
 
-// DELETE /api/batches?id=xxx
+// ── DELETE /api/batches?id=xxx ────────────────────────────────────────────────
+
 export async function DELETE(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
+
   const rl = applyRateLimit(req, "MODERATE", "batches");
   if (rl) return rl;
 
   const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  if (!id) return NextResponse.json({ error: "Parámetro id requerido" }, { status: 400 });
 
-  const existing = await prisma.batch.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-  const productId = existing.productId;
-  await prisma.batch.delete({ where: { id } });
-
-  propagateExpiresAt(productId).catch(() => {});
+  const deleted = await BatchesDB.delete(auth.tenantId, id);
+  if (!deleted) return NextResponse.json({ error: "Lote no encontrado" }, { status: 404 });
 
   return NextResponse.json({ ok: true });
 }

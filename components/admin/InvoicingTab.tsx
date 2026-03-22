@@ -78,7 +78,7 @@ export default function InvoicingTab() {
   const [invoices, setInvoices] = useState<Invoice[]>(SEED);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<InvoiceType | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">("all");
+  const [statusFilter, _setStatusFilter] = useState<InvoiceStatus | "all">("all");
   const [selected, setSelected] = useState<Invoice | null>(null);
   const [showForm, setShowForm] = useState(false);
 

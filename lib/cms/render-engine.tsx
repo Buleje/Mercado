@@ -13,8 +13,11 @@ export interface RenderBlock {
   type: string;
   order: number;
   visible: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CMS block props are dynamic JSON
   props: Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CMS block styles are dynamic JSON
   styles?: Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CMS block mobile props are dynamic JSON
   mobileProps?: Record<string, any>;
 }
 

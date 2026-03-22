@@ -73,6 +73,7 @@ export default function RecommendedProducts() {
               className="snap-start shrink-0 w-44 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="aspect-square relative bg-gray-50 dark:bg-card">
+                {/* eslint-disable-next-line @next/next/no-img-element -- External product images with dynamic URLs */}
                 <img
                   src={p.image}
                   alt={p.name}

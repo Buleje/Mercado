@@ -22,7 +22,7 @@ const TYPE_CONFIG: Record<EventType, { label: string; color: string; emoji: stri
 /* ── Seed ── */
 const TODAY = new Date();
 const toISO = (d: Date) => d.toISOString().split("T")[0];
-const addDays = (d: Date, n: number) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+const _addDays = (d: Date, n: number) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
 let nextId = 13;
 
 const INITIAL_EVENTS: CalEvent[] = [];

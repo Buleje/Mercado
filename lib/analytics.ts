@@ -67,6 +67,7 @@ export interface EventParams {
   // Custom params
   source?: string;
   destination?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic event params
   [key: string]: any;
 }
 
@@ -74,6 +75,7 @@ export interface EventParams {
 
 function isAnalyticsLoaded(): boolean {
   if (typeof window === "undefined") return false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Browser global check
   return typeof window.gtag === "function" || typeof (window as any).dataLayer !== "undefined";
 }
 
@@ -98,7 +100,9 @@ export function trackEvent(
     }
 
     // Microsoft Clarity custom tags
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Clarity global is untyped
     if (typeof (window as any).clarity === "function") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Clarity global is untyped
       (window as any).clarity("set", eventName, JSON.stringify(params || {}));
     }
 
@@ -138,6 +142,7 @@ export function trackConversion(
     value?: number;
     currency?: string;
     transactionId?: string | number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Conversion data is dynamic
     [key: string]: any;
   }
 ): void {
@@ -357,8 +362,10 @@ declare global {
     gtag?: (
       command: "config" | "event" | "set",
       targetId: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GA4 params are untyped
       params?: Record<string, any>
     ) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GA4 dataLayer is untyped
     dataLayer?: any[];
   }
 }
