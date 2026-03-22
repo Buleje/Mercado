@@ -4,7 +4,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { NextResponse } from "next/server";
 
 // server-only is aliased in vitest.config.ts → __mocks__/server-only.ts (no-op)
 
@@ -47,6 +46,15 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     adminUser: { findMany: mockFindMany },
     tenant:    { findFirst: mockTenantFindFirst },
+  },
+}));
+
+// ── Mock: session — make createSessionToken return a predictable fake token ───
+vi.mock("@/lib/session", () => ({
+  createSessionToken: vi.fn(async () => "fake-session-token"),
+  SESSION: {
+    COOKIE_NAME: "bsm-admin-sess",
+    MAX_AGE: 60 * 60 * 8,
   },
 }));
 
@@ -124,6 +132,8 @@ describe("POST /api/auth/login", () => {
     it("returns 400 when password is empty string", async () => {
       const res = await POST(makeReq({ username: "admin", password: "" }));
       expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toMatch(/password/i);
     });
   });
 
