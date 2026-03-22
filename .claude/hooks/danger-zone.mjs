@@ -17,7 +17,7 @@ const DANGER_ZONES = [
 ];
 
 try {
-  const input = readFileSync('/dev/stdin', 'utf8');
+  const input = readFileSync(process.stdin.fd, 'utf8');
   const { tool_name, tool_input } = JSON.parse(input);
 
   // Only check file-editing tools
