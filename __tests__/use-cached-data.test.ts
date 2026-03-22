@@ -5,13 +5,11 @@ import { useCachedData, clearCache, getCacheInfo, prefetchData } from "../hooks/
 describe("useCachedData", () => {
   beforeEach(() => {
     clearCache();
-    vi.useFakeTimers();
   });
 
   afterEach(() => {
     clearCache();
     vi.restoreAllMocks();
-    vi.useRealTimers();
   });
 
   it("should fetch and cache data successfully", async () => {
@@ -122,29 +120,28 @@ describe("useCachedData", () => {
     const mockFetcher = vi.fn(async () => ({ id: 1, name: "Product" }));
 
     const { result: result1 } = renderHook(() =>
-      useCachedData("stale-key", mockFetcher, { staleTime: 1000 })
+      useCachedData("stale-key", mockFetcher, { staleTime: 100 })
     );
 
     await waitFor(() => {
       expect(result1.current.isLoading).toBe(false);
     });
 
-    // Advance time but less than staleTime
-    vi.advanceTimersByTime(500);
+    expect(mockFetcher).toHaveBeenCalledTimes(1);
 
+    // Immediately render again -- data is fresh, so no refetch
     const { result: result2 } = renderHook(() =>
-      useCachedData("stale-key", mockFetcher, { staleTime: 1000 })
+      useCachedData("stale-key", mockFetcher, { staleTime: 100 })
     );
 
-    // Should use cache, no new fetch
     expect(result2.current.isLoading).toBe(false);
     expect(mockFetcher).toHaveBeenCalledTimes(1);
 
-    // Advance time beyond staleTime
-    vi.advanceTimersByTime(600);
+    // Wait for staleTime to pass
+    await new Promise(resolve => setTimeout(resolve, 150));
 
     renderHook(() =>
-      useCachedData("stale-key", mockFetcher, { staleTime: 1000 })
+      useCachedData("stale-key", mockFetcher, { staleTime: 100 })
     );
 
     // Should trigger background revalidation

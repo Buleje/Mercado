@@ -390,11 +390,15 @@ describe("Session Token Security", () => {
 
   it("should reject tampered token payload", async () => {
     const token = await createSessionToken("cajero", "TestUser");
-    const [payload, sig] = token.split(".");
-    
-    // Tamper with payload (try to escalate to admin)
-    const tamperedPayload = payload.replace("cajero", "admin");
-    const tamperedToken = `${tamperedPayload}.${sig}`;
+    const dotIdx = token.lastIndexOf(".");
+    const encodedPayload = token.slice(0, dotIdx);
+    const sig = token.slice(dotIdx + 1);
+
+    // Decode, tamper with role, and re-encode
+    const decoded = JSON.parse(decodeURIComponent(escape(atob(encodedPayload))));
+    decoded.role = "admin";
+    const tamperedEncoded = btoa(unescape(encodeURIComponent(JSON.stringify(decoded))));
+    const tamperedToken = `${tamperedEncoded}.${sig}`;
 
     const isValid = await verifySessionToken(tamperedToken);
     expect(isValid).toBe(false);

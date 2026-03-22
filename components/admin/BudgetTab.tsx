@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import {
   Wallet, Plus, X, Download, Search,
-  CheckCircle, AlertTriangle, TrendingUp, TrendingDown, Eye,
+  CheckCircle, AlertTriangle, Eye,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 

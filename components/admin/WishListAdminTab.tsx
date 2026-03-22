@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo } from "react";
-import { Heart, Search, Eye, ShoppingCart, Trash2, Bell, Download, Filter, TrendingUp, Package } from "lucide-react";
+import { Heart, Search, Eye, Download, TrendingUp } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type WishItem = { productId: string; productName: string; price: number; inStock: boolean; image: string };
@@ -36,14 +36,14 @@ export default function WishListAdminTab() {
   const conversionRate = totalItems > 0 ? ((lists.reduce((s, l) => s + l.convertedItems, 0) / totalItems) * 100).toFixed(0) : "0";
 
   // Most wished products
-  const productCounts = useMemo(() => {
-    const map: Record<string, { name: string; count: number; price: number; inStock: boolean }> = {};
-    lists.forEach(l => l.items.forEach(i => {
-      if (!map[i.productId]) map[i.productId] = { name: i.productName, count: 0, price: i.price, inStock: i.inStock };
-      map[i.productId].count++;
-    }));
-    return Object.values(map).sort((a, b) => b.count - a.count);
-  }, [lists]);
+  const productCounts = (() => {
+    const allItems = lists.flatMap(l => l.items);
+    const grouped = allItems.reduce<Record<string, { name: string; count: number; price: number; inStock: boolean }>>((acc, i) => {
+      const existing = acc[i.productId];
+      return { ...acc, [i.productId]: existing ? { ...existing, count: existing.count + 1 } : { name: i.productName, count: 1, price: i.price, inStock: i.inStock } };
+    }, {});
+    return Object.values(grouped).sort((a, b) => b.count - a.count);
+  })();
 
   return (
     <div className="space-y-3 sm:space-y-6">

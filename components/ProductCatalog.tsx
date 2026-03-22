@@ -25,7 +25,7 @@ import { levenshteinDistance } from "@/hooks/use-advanced-search";
 // QuickViewModal loaded on-demand only when user clicks "Vista rápida"
 const QuickViewModal = dynamic(() => import("@/components/QuickViewModal"), { ssr: false });
 
-type LiveProduct = Product & { stock?: number; stockMin?: number };
+type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number };
 
 // Only real categories (not "todos")
 const realCategories = categories.filter((c) => c.id !== "todos");
@@ -284,18 +284,41 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
     }
   );
 
+  // Fetch aggregated product ratings from the database
+  const { data: ratingsMap } = useCachedData<Record<number, { rating: number; reviewCount: number }>>(
+    "product-ratings",
+    async () => {
+      const response = await fetch("/api/products/ratings");
+      if (!response.ok) return {};
+      return response.json();
+    },
+    {
+      staleTime: 5 * 60 * 1000, // 5 minutes — matches server-side TTL
+    }
+  );
+
   // Compute productList from API data.
   // Images are always taken from static data (authoritative source) so stale DB photo IDs
   // never cause 404s even when the DB was seeded before a static-data image fix.
   const productList = useMemo(() => {
+    let list: LiveProduct[];
     if (apiProducts && Array.isArray(apiProducts) && apiProducts.length > 0) {
       const staticImageMap = new Map(initialProducts.map(p => [p.id, p.image]));
-      return apiProducts
+      list = apiProducts
         .filter((p) => p.active !== false)
         .map(p => ({ ...p, image: staticImageMap.get(p.id) ?? p.image }));
+    } else {
+      list = initialProducts; // Fallback to static data
     }
-    return initialProducts; // Fallback to static data
-  }, [apiProducts, initialProducts]);
+    // Merge database ratings into products
+    if (ratingsMap && Object.keys(ratingsMap).length > 0) {
+      list = list.map(p => {
+        const r = ratingsMap[p.id];
+        return r ? { ...p, rating: r.rating, reviewCount: r.reviewCount } : p;
+      });
+    }
+    return list;
+  }, [apiProducts, initialProducts, ratingsMap]);
 
   // Compute maxPrice from productList
   const maxPrice = useMemo(() => {

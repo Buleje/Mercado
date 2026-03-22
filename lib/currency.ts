@@ -81,13 +81,18 @@ export function formatCurrencyCompact(
     return `${CURRENCY_CONFIG.symbol} 0`;
   }
 
-  const formatted = new Intl.NumberFormat(CURRENCY_CONFIG.locale, {
-    notation: "compact",
-    compactDisplay: "short",
-    maximumFractionDigits: 1,
-  }).format(numericAmount);
+  if (numericAmount >= 1_000_000) {
+    const val = numericAmount / 1_000_000;
+    const formatted = val % 1 === 0 ? `${val}M` : `${parseFloat(val.toFixed(1))}M`;
+    return `${CURRENCY_CONFIG.symbol} ${formatted}`;
+  }
+  if (numericAmount >= 1_000) {
+    const val = numericAmount / 1_000;
+    const formatted = val % 1 === 0 ? `${val}K` : `${parseFloat(val.toFixed(1))}K`;
+    return `${CURRENCY_CONFIG.symbol} ${formatted}`;
+  }
 
-  return `${CURRENCY_CONFIG.symbol} ${formatted}`;
+  return `${CURRENCY_CONFIG.symbol} ${Math.round(numericAmount)}`;
 }
 
 /**
@@ -234,8 +239,8 @@ export function roundPrice(
   
   switch (strategy) {
     case "half":
-      // Round to nearest 0.50
-      return whole + (price - whole >= 0.5 ? 0.5 : 0);
+      // Snap to nearest 0.50 price point (psychological pricing)
+      return whole + (price - whole >= 0.25 ? 0.5 : 0);
     case "ninety":
       return whole + 0.9;
     case "ninetynine":

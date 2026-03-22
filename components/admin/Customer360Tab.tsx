@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { User, ShoppingCart, Package, Heart, Star, MapPin, Phone, Mail, Calendar, TrendingUp, Clock, Download, MessageSquare, CreditCard } from "lucide-react";
-import { cn, exportToCSV } from "@/lib/utils";
+import { User, ShoppingCart, Package, Heart, MapPin, Phone, Mail, Calendar, TrendingUp, Clock, MessageSquare, CreditCard } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type CustomerProfile = {
   id: string; name: string; email: string; phone: string; address: string; zone: string;

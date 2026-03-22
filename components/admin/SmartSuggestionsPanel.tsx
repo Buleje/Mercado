@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Lightbulb, TrendingDown, AlertTriangle, TrendingUp, Package, Users, ShoppingCart, RefreshCw, ChevronRight } from "lucide-react";
+import { Lightbulb, AlertTriangle, TrendingUp, ShoppingCart, RefreshCw, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type SuggestionType = "alerta" | "oportunidad" | "optimizacion" | "accion";

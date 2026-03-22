@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
-import { Link, Plus, Check, X, Pencil, Trash2, Send, Clock, CheckCircle, AlertTriangle, Eye, Code, Copy } from "lucide-react";
+import { Link, Plus, Check, Pencil, Trash2, Send, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Webhook = {

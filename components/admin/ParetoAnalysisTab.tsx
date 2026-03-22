@@ -20,10 +20,13 @@ export default function ParetoAnalysisTab() {
     const val = (p: ParetoProduct) => metric === "revenue" ? p.revenue : metric === "units" ? p.units : (p.revenue * p.margin) / 100;
     const s = [...PRODUCTS].sort((a, b) => val(b) - val(a));
     const total = s.reduce((sum, p) => sum + val(p), 0);
-    let cumulative = 0;
-    return s.map(p => {
-      cumulative += val(p);
-      return { ...p, value: val(p), pct: (val(p) / total) * 100, cumPct: (cumulative / total) * 100, isTop: (cumulative / total) * 100 <= 80 || cumulative - val(p) < total * 0.8 };
+    // Pre-compute cumulative sums without mutation inside map
+    const cumulatives: number[] = [];
+    s.reduce((acc, p) => { const next = acc + val(p); cumulatives.push(next); return next; }, 0);
+    return s.map((p, i) => {
+      const cum = cumulatives[i];
+      const prevCum = i > 0 ? cumulatives[i - 1] : 0;
+      return { ...p, value: val(p), pct: (val(p) / total) * 100, cumPct: (cum / total) * 100, isTop: (cum / total) * 100 <= 80 || prevCum < total * 0.8 };
     });
   }, [metric]);
 

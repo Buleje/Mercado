@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   TrendingUp, TrendingDown, DollarSign, Loader2, RefreshCw,
-  ChevronDown, ChevronUp, Download, Calendar, BarChart2,
+  ChevronDown, ChevronUp, Download, BarChart2,
   ArrowUpRight, ArrowDownRight, Minus,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";

@@ -217,18 +217,11 @@ export function useAdvancedSearch<T extends Record<string, unknown>>(
  */
 export function highlightMatches(text: string, query: string, caseSensitive: boolean = false): string {
   if (!query) return text;
-  
-  const q = caseSensitive ? query : query.toLowerCase();
-  const t = caseSensitive ? text : text.toLowerCase();
-  
-  const index = t.indexOf(q);
-  if (index === -1) return text;
-  
-  return (
-    text.substring(0, index) +
-    '<mark>' +
-    text.substring(index, index + query.length) +
-    '</mark>' +
-    text.substring(index + query.length)
-  );
+
+  // Escape special regex characters
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const flags = caseSensitive ? 'g' : 'gi';
+  const regex = new RegExp(escaped, flags);
+
+  return text.replace(regex, (match) => `<mark>${match}</mark>`);
 }

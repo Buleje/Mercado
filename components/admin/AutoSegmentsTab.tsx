@@ -1,8 +1,8 @@
 ﻿"use client";
 
-import { useState, useMemo } from "react";
-import { Users, Plus, Pencil, Trash2, Check, X, Target, UserCheck, TrendingUp, Filter, Eye, Download } from "lucide-react";
-import { cn, exportToCSV } from "@/lib/utils";
+import { useState } from "react";
+import { Users, Plus, Pencil, Trash2, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Segment = {
   id: string; name: string; description: string; rules: SegmentRule[]; customerCount: number;

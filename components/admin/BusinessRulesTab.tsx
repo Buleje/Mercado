@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
-import { Zap, Plus, Pencil, Trash2, Check, X, Play, Pause, ArrowRight, AlertTriangle } from "lucide-react";
+import { Zap, Plus, Pencil, Trash2, Check, Play, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Rule = {

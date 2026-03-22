@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ListChecks, Plus, GripVertical, Clock, User, AlertTriangle, CheckCircle, Trash2, Pencil } from "lucide-react";
+import { ListChecks, Plus, GripVertical, Clock, User, CheckCircle, Trash2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /* ── Types ── */

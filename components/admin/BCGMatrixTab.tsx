@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import { Star, TrendingUp, HelpCircle, AlertTriangle, Download, Eye } from "lucide-react";
+import { Star, Download, Eye } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { Product as BaseProduct } from "@/types/erp";
 
@@ -20,6 +20,14 @@ const Q_CONFIG: Record<Quadrant, { label: string; emoji: string; color: string; 
 const PRODUCTS: Product[] = [];
 
 const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
+
+// Pre-computed dot positions (module-level to avoid impure calls during render)
+const DOT_POSITIONS = new Map<number, { x: number; y: number }>();
+PRODUCTS.forEach(p => {
+  const x = p.quadrant === "estrella" || p.quadrant === "vaca" ? 10 + Math.random() * 35 : 55 + Math.random() * 35;
+  const y = p.quadrant === "estrella" || p.quadrant === "interrogante" ? 10 + Math.random() * 35 : 55 + Math.random() * 35;
+  DOT_POSITIONS.set(p.id, { x, y });
+});
 
 export default function BCGMatrixTab() {
   const [selectedQ, setSelectedQ] = useState<Quadrant | "todas">("todas");
@@ -84,8 +92,9 @@ export default function BCGMatrixTab() {
           <div className="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-bold text-gray-400 whitespace-nowrap">← Tasa Crecimiento → Alta</div>
           {/* Product dots */}
           {PRODUCTS.map(p => {
-            const x = p.quadrant === "estrella" || p.quadrant === "vaca" ? 10 + Math.random() * 35 : 55 + Math.random() * 35;
-            const y = p.quadrant === "estrella" || p.quadrant === "interrogante" ? 10 + Math.random() * 35 : 55 + Math.random() * 35;
+            const pos = DOT_POSITIONS.get(p.id) ?? { x: 50, y: 50 };
+            const x = pos.x;
+            const y = pos.y;
             const size = Math.max(16, Math.min(40, (p.revenue / totalRevenue) * 300));
             return (
               <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[8px] font-bold shadow-md hover:scale-110 transition-transform", p.quadrant === "estrella" ? "bg-amber-400 text-amber-900" : p.quadrant === "vaca" ? "bg-emerald-400 text-emerald-900" : p.quadrant === "interrogante" ? "bg-blue-400 text-blue-900" : "bg-gray-400 text-gray-900")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>

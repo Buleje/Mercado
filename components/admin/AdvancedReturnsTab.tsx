@@ -2,9 +2,8 @@
 
 import { useState, useMemo } from "react";
 import {
-  RotateCcw, Download, Search, Eye, X, Package,
-  AlertTriangle, CheckCircle2, DollarSign, Clock,
-  XCircle, RefreshCw,
+  RotateCcw, Download, Search, Eye, X,
+  AlertTriangle,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 

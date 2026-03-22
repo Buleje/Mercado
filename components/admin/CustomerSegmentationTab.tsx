@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Users, Loader2, Search, Crown, Star, AlertTriangle, UserPlus, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { SegmentedCustomer, SegmentLabel, SegmentsResponse } from "@/app/api/analytics/segments/route";
+import type { SegmentLabel, SegmentsResponse } from "@/app/api/analytics/segments/route";
 
 const SEGMENT_CONFIG: Record<SegmentLabel, { label: string; icon: React.ElementType; color: string; bg: string; border: string }> = {
   vip:       { label: "VIP",        icon: Crown,         color: "text-yellow-700",  bg: "bg-yellow-50 dark:bg-yellow-950/30",  border: "border-yellow-300 dark:border-yellow-700" },

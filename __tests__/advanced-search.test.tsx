@@ -106,6 +106,11 @@ describe('Advanced Search Utilities', () => {
 describe('useAdvancedSearch', () => {
   beforeEach(() => {
     localStorage.clear();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('should initialize with empty query and no recent searches', () => {
@@ -138,6 +143,8 @@ describe('useAdvancedSearch', () => {
     act(() => {
       result.current.setQuery('manzana');
     });
+    // Advance past debounce timer
+    act(() => { vi.advanceTimersByTime(300); });
 
     expect(result.current.results.length).toBeGreaterThan(0);
     expect(result.current.results.length).toBeLessThan(testProducts.length);
@@ -182,6 +189,7 @@ describe('useAdvancedSearch', () => {
     act(() => {
       result.current.setQuery('frutas');
     });
+    act(() => { vi.advanceTimersByTime(300); });
 
     expect(result.current.results.length).toBeGreaterThan(0);
     expect(result.current.results.every((r) => r.item.category === 'Frutas')).toBe(true);
@@ -256,8 +264,9 @@ describe('useAdvancedSearch', () => {
     act(() => {
       result.current.setQuery('manzana');
     });
+    act(() => { vi.advanceTimersByTime(300); });
 
-    // Should not match 'Manzana' (capital M)
+    // Should not match 'Manzana' (capital M) in case-sensitive mode
     expect(result.current.results.length).toBe(0);
   });
 });
@@ -448,7 +457,7 @@ describe('AdvancedSearchPanel Component', () => {
     await user.type(input, 'manzana');
 
     await waitFor(() => {
-      expect(screen.getByText(/Custom: Manzana/)).toBeInTheDocument();
+      expect(screen.getAllByText(/Custom: Manzana/).length).toBeGreaterThan(0);
     });
   });
 

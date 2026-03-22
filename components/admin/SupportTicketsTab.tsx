@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import {
-  MessageSquare, Download, Search, Eye, X, Clock,
-  CheckCircle2, AlertTriangle, User, Star, XCircle,
+  MessageSquare, Download, Search, Eye, X,
+  AlertTriangle,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 

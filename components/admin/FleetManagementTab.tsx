@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo } from "react";
-import { Truck, Wrench, Fuel, CheckCircle, AlertTriangle, Calendar, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { Truck, Wrench, Fuel, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Vehicle = {
@@ -25,6 +25,9 @@ const TYPE_ICONS: Record<string, string> = { moto: "🏍️", mototaxi: "🛺", 
 
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
 function fmt(n: number) { return `S/ ${n.toFixed(2)}`; }
+
+// Pre-computed threshold date for maintenance warnings (module-level to avoid impure calls during render)
+const MAINTENANCE_THRESHOLD = new Date(Date.now() + 7 * 86400000);
 
 export default function FleetManagementTab() {
   const [vehicles] = useState(SEED);
@@ -107,7 +110,7 @@ export default function FleetManagementTab() {
                       </div>
                     </div>
                     {/* Maintenance warning */}
-                    {new Date(v.nextMaintenance) <= new Date(Date.now() + 7 * 86400000) && (
+                    {new Date(v.nextMaintenance) <= MAINTENANCE_THRESHOLD && (
                       <div className="flex flex-wrap items-center gap-2 text-xs bg-amber-50 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400 px-3 py-2 rounded-xl">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                         Mantenimiento próximo: {fmtDate(v.nextMaintenance)}

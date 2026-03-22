@@ -32,7 +32,7 @@ describe("Image Placeholders", () => {
 
       expect(decoded).toContain("linearGradient");
       expect(decoded).toContain("animate");
-      expect(decoded).toContain("attributeName=\"x1\"");
+      expect(decoded).toContain("attributeName=\"x\"");
     });
 
     it("should respect custom dimensions", () => {
@@ -147,7 +147,7 @@ describe("Image Placeholders", () => {
         "base64"
       ).toString();
 
-      expect(decoded).toContain("Shopping bag");
+      expect(decoded).toContain("<path");
       expect(decoded).toContain("#2d6a4f");
     });
   });

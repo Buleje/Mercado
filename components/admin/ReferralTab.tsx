@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import {
-  Heart, Download, Search, Eye, X, Gift, Star,
-  TrendingUp, Users, Copy, CheckCircle2,
+  Heart, Download, Search, Eye, X, Star,
+  Copy, CheckCircle2,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 

@@ -161,7 +161,7 @@ export async function proxy(request: NextRequest) {
     const token = request.cookies.get(SESSION.COOKIE_NAME)?.value;
     if (!token || !(await verifySessionToken(token))) {
       const loginUrl = new URL("/admin/login", request.url);
-      loginUrl.searchParams.set("from", encodeURIComponent(pathname));
+      loginUrl.searchParams.set("from", pathname);
       return NextResponse.redirect(loginUrl);
     }
   }

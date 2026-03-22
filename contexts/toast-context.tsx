@@ -8,9 +8,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { CheckCircle2, X } from "lucide-react";
-import Image from "next/image";
-import { cn } from "@/lib/utils";
 
 type Toast = {
   id: number;

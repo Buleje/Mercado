@@ -15,7 +15,7 @@ import dynamic from "next/dynamic";
 import { ChangeCalculator } from "@/components/ChangeCalculator";
 import { enqueue, syncPendingSales, pendingCount } from "@/lib/pos-offline-queue";
 import { isThermalPrintSupported, printThermal } from "@/lib/thermal-printer";
-import type { Product as BaseProduct, Sale, Customer } from "@/types/erp";
+import type { Product as BaseProduct } from "@/types/erp";
 type Product = Omit<BaseProduct, "id"> & { id: number; stock?: number; stockMin?: number };
 
 const BarcodeScanner = dynamic(() => import("@/components/admin/BarcodeScanner"), { ssr: false });

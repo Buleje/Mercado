@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import { TrendingUp, TrendingDown, Calendar, Download, Sun, Snowflake, Leaf, Flower2, BarChart3 } from "lucide-react";
+import { Calendar, Download, Sun, Snowflake, Leaf, Flower2 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── types ──────────────────────────────────────────────────── */

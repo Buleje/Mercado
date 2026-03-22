@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
-import { FileBarChart, Plus, Check, X, Clock, Send, Download, Calendar, Mail, Trash2, Pencil, Play, Pause } from "lucide-react";
+import { FileBarChart, Plus, Check, Clock, Send, Calendar, Mail, Trash2, Pencil, Play, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Report = {

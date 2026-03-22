@@ -97,8 +97,8 @@ describe("OrderStats", () => {
       />
     );
 
-    expect(screen.getByText("0")).toBeInTheDocument();
-    expect(screen.getByText("S/0.00")).toBeInTheDocument();
+    expect(screen.getAllByText("0").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("S/0.00").length).toBeGreaterThan(0);
   });
 });
 

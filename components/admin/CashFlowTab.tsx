@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Droplets, Loader2, RefreshCw, Download, TrendingUp, TrendingDown,
   ArrowUpRight, ArrowDownRight, AlertTriangle, CheckCircle, Calendar,
@@ -83,6 +83,7 @@ export default function CashFlowTab() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ date: now.toISOString().slice(0, 10), type: "ingreso", category: "otros", description: "", amount: "" });
   const [saving, setSaving] = useState(false);
+  const manualIdRef = useRef(0);
 
   useEffect(() => {
     let active = true;
@@ -133,10 +134,12 @@ export default function CashFlowTab() {
       map.set(e.date, cur);
     }
     const days = Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-    let balance = openingBalance;
-    return days.map(([date, { inflow, outflow }]) => {
+    // Pre-compute running balances immutably
+    const balances: number[] = [];
+    days.reduce((bal, [, { inflow, outflow }]) => { const next = bal + inflow - outflow; balances.push(next); return next; }, openingBalance);
+    return days.map(([date, { inflow, outflow }], i) => {
       const net = inflow - outflow;
-      balance += net;
+      const balance = balances[i];
       return { date, label: dateLabel(date), inflow, outflow, net, balance, hasWarning: balance < 1000 };
     });
   }, [entries, openingBalance]);
@@ -163,7 +166,7 @@ export default function CashFlowTab() {
     setSaving(true);
     // Optimistic update
     const newEntry: CashEntry = {
-      id: `manual-${Date.now()}`,
+      id: `manual-${++manualIdRef.current}`,
       date: form.date,
       type: form.type as "ingreso" | "egreso",
       category: form.category,

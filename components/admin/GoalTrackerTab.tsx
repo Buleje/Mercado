@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
-import { Trophy, Plus, Pencil, Trash2, Check, X, TrendingUp, Target, Star, Flame, Download } from "lucide-react";
+import { Trophy, Target, Star, Flame, Download } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type Goal = {

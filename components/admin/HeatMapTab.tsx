@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Activity, BarChart3, TrendingUp, Download, Filter } from "lucide-react";
-import { cn, exportToCSV } from "@/lib/utils";
+import { useState } from "react";
+import { Activity } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type HeatCell = { hour: number; day: string; value: number };
 

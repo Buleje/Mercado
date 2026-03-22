@@ -6,6 +6,8 @@ import {
   Shield, Trash2, Pencil, Plus, Settings, UserCog, Loader2,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
+import ResponsiveTable from "@/components/ui/ResponsiveTable";
+import type { ReactNode } from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -96,6 +98,61 @@ function mapModule(entity: string): string {
   }
   return entity.charAt(0).toUpperCase() + entity.slice(1);
 }
+
+// ── Columns for ResponsiveTable ───────────────────────────────────────────────
+
+const auditColumns: import("@/components/ui/ResponsiveTable").Column<AuditEntry>[] = [
+  {
+    key: "severity",
+    header: "Severidad",
+    render: (e) => {
+      const sev = SEVERITY_META[e.severity];
+      return <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", sev.bg, sev.color)}>{sev.label}</span>;
+    },
+  },
+  {
+    key: "timestamp",
+    header: "Fecha/Hora",
+    hideOnMobile: true,
+    render: (e) => <span className="text-xs text-gray-500 whitespace-nowrap">{fmtDate(e.timestamp)}</span>,
+  },
+  {
+    key: "user",
+    header: "Usuario",
+    render: (e) => (
+      <div>
+        <p className="font-semibold text-gray-800 dark:text-foreground text-xs">{e.user}</p>
+        <p className="text-[10px] text-gray-400">{e.role}</p>
+      </div>
+    ),
+  },
+  {
+    key: "action",
+    header: "Acción",
+    render: (e) => {
+      const act = ACTION_META[e.action];
+      const ActIcon = act.icon;
+      return <span className={cn("inline-flex items-center gap-1 text-xs font-semibold", act.color)}><ActIcon className="h-3 w-3" />{act.label}</span>;
+    },
+  },
+  {
+    key: "module",
+    header: "Módulo",
+    hideOnMobile: true,
+    render: (e) => <span className="text-xs text-gray-500 dark:text-muted">{e.module}</span>,
+  },
+  {
+    key: "description",
+    header: "Descripción",
+    render: (e) => <span className="text-xs text-gray-700 dark:text-foreground max-w-60 truncate block">{e.description}</span>,
+  },
+  {
+    key: "detail",
+    header: "",
+    hideOnMobile: true,
+    render: () => <Eye className="h-3.5 w-3.5 text-gray-400" />,
+  },
+];
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -262,49 +319,17 @@ export default function AuditLogTab() {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
-              <tr>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Severidad</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Fecha/Hora</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Usuario</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Acción</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Módulo</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Descripción</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-card-border">
-              {filtered.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400 text-sm">Sin eventos.</td></tr>}
-              {filtered.map(e => {
-                const sev = SEVERITY_META[e.severity];
-                const act = ACTION_META[e.action];
-                const ActIcon = act.icon;
-                return (
-                  <tr key={e.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", sev.bg, sev.color)}>{sev.label}</span></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 whitespace-nowrap">{fmtDate(e.timestamp)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <div>
-                        <p className="font-semibold text-gray-800 dark:text-foreground text-xs">{e.user}</p>
-                        <p className="text-[10px] text-gray-400">{e.role}</p>
-                      </div>
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("inline-flex items-center gap-1 text-xs font-semibold", act.color)}><ActIcon className="h-3 w-3" />{act.label}</span></td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{e.module}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-700 dark:text-foreground max-w-60 truncate">{e.description}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3">
-                      <button onClick={() => setDetail(e)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <ResponsiveTable<AuditEntry>
+        columns={auditColumns}
+        data={filtered}
+        keyExtractor={(e) => e.id}
+        onRowClick={(e) => setDetail(e)}
+        loading={loading}
+        loadingRows={6}
+        emptyIcon={ScrollText}
+        emptyMessage="Sin eventos"
+        emptySubMessage="No se encontraron registros de auditoría con los filtros actuales."
+      />
 
       {/* Load more */}
       {nextCursor && (

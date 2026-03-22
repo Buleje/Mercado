@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   CreditCard, Loader2, Plus, X, RefreshCw, Download, AlertTriangle,
-  CheckCircle, Clock, Search, ChevronDown,
+  CheckCircle, Clock, Search,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 

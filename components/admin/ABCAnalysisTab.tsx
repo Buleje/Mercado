@@ -99,7 +99,7 @@ export default function ABCAnalysisTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((p, i) => (
+                {filtered.map((p) => (
                   <tr key={p.productId} className={cn("hover:bg-gray-50 dark:hover:bg-surface transition-colors", CLASS_STYLES[p.class].row)}>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 text-gray-400 dark:text-muted text-xs">{data.indexOf(p) + 1}</td>
                     <td className="px-2 sm:px-4 py-1.5 sm:py-2.5 font-semibold text-gray-900 dark:text-foreground">{p.name}</td>

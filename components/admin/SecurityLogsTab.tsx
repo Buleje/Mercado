@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo } from "react";
-import { Lock, Search, Filter, Download, AlertTriangle, User, LogIn, Settings, Shield, Eye } from "lucide-react";
+import { Lock, Search, Download, User, LogIn, Settings, Shield, Eye } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type LogEntry = {

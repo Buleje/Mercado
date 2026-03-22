@@ -5,6 +5,9 @@
 import React from 'react';
 import { getBlockComponent } from './block-registry';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const BLOCK_COMPONENTS = new Map<string, React.ComponentType<any>>();
+
 export interface RenderBlock {
   id: string;
   type: string;
@@ -60,21 +63,16 @@ export function RenderPage({ blocks, isMobile = false }: RenderPageProps) {
  * Render a single block
  */
 export function RenderBlock({ block, isMobile = false }: { block: RenderBlock; isMobile?: boolean }) {
-  const Component = getBlockComponent(block.type);
+  const Resolved = BLOCK_COMPONENTS.get(block.type) ?? getBlockComponent(block.type);
 
-  if (!Component) {
+  if (!Resolved) {
     console.warn(`[RenderEngine] Block type "${block.type}" not registered`);
     return null;
   }
 
-  const props = isMobile && block.mobileProps 
+  const props = isMobile && block.mobileProps
     ? { ...block.props, ...block.mobileProps }
     : block.props;
 
-  return (
-    <Component
-      {...props}
-      style={block.styles}
-    />
-  );
+  return React.createElement(Resolved, { ...props, style: block.styles });
 }

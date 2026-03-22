@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import { Target, DollarSign, TrendingUp, Calculator, Download } from "lucide-react";
+import { Target, Download } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 import type { Product } from "@/types/erp";
 

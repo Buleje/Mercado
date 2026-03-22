@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import { Boxes, Plus, Pencil, Trash2, Download, DollarSign, Package, Eye } from "lucide-react";
+import { Boxes, Plus, Trash2, Download, Package, Eye } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── Types ── */
@@ -12,7 +12,7 @@ type Kit = {
 
 /* ── Seed Data ── */
 const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
-let nextId = 7;
+const nextId = 7;
 const INITIAL_KITS: Kit[] = [];
 
 export default function KitManagerTab() {

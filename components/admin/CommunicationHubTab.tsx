@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo } from "react";
-import { MessageSquare, Phone, Mail, Search, Filter, Send, Clock, CheckCircle, AlertTriangle, Download } from "lucide-react";
+import { MessageSquare, Phone, Mail, Search, Filter, Send, Clock, AlertTriangle, Download } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type Message = {

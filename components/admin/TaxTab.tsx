@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import {
-  Receipt, Loader2, RefreshCw, Download, Calendar, AlertTriangle,
-  CheckCircle, BookOpen, BarChart2, TrendingUp,
+  Receipt, Loader2, RefreshCw, AlertTriangle,
+  CheckCircle, BookOpen,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 

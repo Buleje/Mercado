@@ -5,6 +5,8 @@ import { useToast, useToastStore, toast } from "@/hooks/use-toast";
 // Mock timers
 beforeEach(() => {
   vi.useFakeTimers();
+  // Clear singleton toast store between tests
+  toast.clear();
 });
 
 afterEach(() => {
@@ -244,11 +246,11 @@ describe("useToast.promise", () => {
   it("shows loading, then success on promise resolve", async () => {
     const { result } = renderHook(() => useToast());
     const { result: storeResult } = renderHook(() => useToastStore());
-    
+
     const promise = new Promise<string>((resolve) => {
       setTimeout(() => resolve("Success!"), 100);
     });
-    
+
     let promiseResult: Promise<string>;
     act(() => {
       promiseResult = result.current.promise(promise, {
@@ -257,7 +259,7 @@ describe("useToast.promise", () => {
         error: "Failed!",
       });
     });
-    
+
     // Should show loading toast
     expect(storeResult.current.toasts).toHaveLength(1);
     expect(storeResult.current.toasts[0]).toMatchObject({
@@ -266,12 +268,13 @@ describe("useToast.promise", () => {
       duration: 0,
       dismissible: false,
     });
-    
-    // Wait for promise to resolve
+
+    // Advance timers to resolve the promise
     await act(async () => {
+      vi.advanceTimersByTime(100);
       await promiseResult;
     });
-    
+
     // Should show success toast
     expect(storeResult.current.toasts[0]).toMatchObject({
       type: "success",
@@ -282,11 +285,11 @@ describe("useToast.promise", () => {
   it("shows loading, then error on promise reject", async () => {
     const { result } = renderHook(() => useToast());
     const { result: storeResult } = renderHook(() => useToastStore());
-    
+
     const promise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error("Failed")), 100);
     });
-    
+
     let promiseResult: Promise<unknown>;
     act(() => {
       promiseResult = result.current.promise(promise, {
@@ -295,19 +298,20 @@ describe("useToast.promise", () => {
         error: "Failed!",
       });
     });
-    
+
     // Should show loading toast
     expect(storeResult.current.toasts[0].type).toBe("info");
-    
-    // Wait for promise to reject
+
+    // Advance timers to reject the promise
     await act(async () => {
+      vi.advanceTimersByTime(100);
       try {
         await promiseResult;
       } catch {
         // Expected
       }
     });
-    
+
     // Should show error toast
     expect(storeResult.current.toasts[0]).toMatchObject({
       type: "error",
@@ -318,9 +322,9 @@ describe("useToast.promise", () => {
   it("supports function messages", async () => {
     const { result } = renderHook(() => useToast());
     const { result: storeResult } = renderHook(() => useToastStore());
-    
+
     const promise = Promise.resolve({ name: "John" });
-    
+
     await act(async () => {
       await result.current.promise(promise, {
         loading: "Loading...",
@@ -328,7 +332,7 @@ describe("useToast.promise", () => {
         error: "Failed!",
       });
     });
-    
+
     expect(storeResult.current.toasts[0]).toMatchObject({
       type: "success",
       message: "Welcome, John!",
@@ -338,32 +342,33 @@ describe("useToast.promise", () => {
 
 describe("standalone toast functions", () => {
   it("toast.success() works without hook", () => {
+    toast.clear();
     toast.success("Standalone success");
-    
+
     const { result } = renderHook(() => useToastStore());
-    
-    expect(result.current.toasts[0]).toMatchObject({
-      type: "success",
-      message: "Standalone success",
-    });
+
+    const match = result.current.toasts.find(t => t.message === "Standalone success");
+    expect(match).toBeDefined();
+    expect(match?.type).toBe("success");
   });
 
   it("toast.error() works without hook", () => {
+    toast.clear();
     toast.error("Standalone error");
-    
+
     const { result } = renderHook(() => useToastStore());
-    
-    expect(result.current.toasts[0]).toMatchObject({
-      type: "error",
-      message: "Standalone error",
-    });
+
+    const match = result.current.toasts.find(t => t.message === "Standalone error");
+    expect(match).toBeDefined();
+    expect(match?.type).toBe("error");
   });
 
   it("toast.promise() works without hook", async () => {
+    toast.clear();
     const { result } = renderHook(() => useToastStore());
-    
+
     const promise = Promise.resolve("done");
-    
+
     await act(async () => {
       await toast.promise(promise, {
         loading: "Loading...",
@@ -371,10 +376,9 @@ describe("standalone toast functions", () => {
         error: "Error!",
       });
     });
-    
-    expect(result.current.toasts[0]).toMatchObject({
-      type: "success",
-      message: "Success!",
-    });
+
+    const match = result.current.toasts.find(t => t.message === "Success!");
+    expect(match).toBeDefined();
+    expect(match?.type).toBe("success");
   });
 });

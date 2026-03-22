@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { RotateCcw, Plus, Loader2, Check, X, Package, Camera, CreditCard, Image } from "lucide-react";
-import type { Sale, Customer } from "@/types/erp";
+import type { Sale } from "@/types/erp";
 
 type ReturnItem = { id?: string; productId: number; productName: string; quantity: number; price: number; unit: string };
 type Return = { id: string; saleId?: string; orderId?: string; reason: string; total: number; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: ReturnItem[]; createdAt: string };

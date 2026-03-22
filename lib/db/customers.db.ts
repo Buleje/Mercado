@@ -245,6 +245,26 @@ export const ReviewsDB = {
   async delete(id: string): Promise<void> {
     await prisma.review.delete({ where: { id } }).catch(() => {});
   },
+
+  /** Aggregate ratings per product (approved reviews only) */
+  async getAggregatedRatings(tenantId = "main"): Promise<Record<number, { rating: number; reviewCount: number }>> {
+    const rows = await prisma.review.groupBy({
+      by: ["productId"],
+      where: { status: "approved", productId: { not: null }, tenantId, deletedAt: null },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+    const result: Record<number, { rating: number; reviewCount: number }> = {};
+    for (const row of rows) {
+      if (row.productId != null) {
+        result[row.productId] = {
+          rating: Math.round((row._avg.rating ?? 0) * 10) / 10,
+          reviewCount: row._count.rating,
+        };
+      }
+    }
+    return result;
+  },
 };
 
 // ── ShoppingListsDB ───────────────────────────────────────────────────────────

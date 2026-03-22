@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo } from "react";
-import { ShoppingCart, ArrowRight, TrendingUp, BarChart3, Download, Link2, Package } from "lucide-react";
+import { ShoppingCart, ArrowRight, Download, Link2, Package } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type Association = { productA: string; productB: string; support: number; confidence: number; lift: number; count: number };

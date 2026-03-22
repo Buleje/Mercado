@@ -1,7 +1,7 @@
 ﻿"use client";
 
-import { useState, useMemo } from "react";
-import { DollarSign, Plus, Pencil, Trash2, Check, X, MapPin, ArrowUpDown, Download } from "lucide-react";
+import { useState } from "react";
+import { DollarSign, Plus, Pencil, Trash2, Check, MapPin, ArrowUpDown, Download } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type ShippingRule = {

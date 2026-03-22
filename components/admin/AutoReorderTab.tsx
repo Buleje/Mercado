@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { RefreshCw, Loader2, CheckCircle2, ShoppingCart, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Product, Supplier } from "@/types/erp";
+import type { Supplier } from "@/types/erp";
 
 type LowStockProduct = {
   id: string; name: string; stock: number; stockMin: number; stockMax: number;

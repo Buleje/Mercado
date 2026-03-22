@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo } from "react";
-import { RotateCcw, Package, Clock, CheckCircle, XCircle, AlertTriangle, Search, Filter, Download, ArrowRight, Eye } from "lucide-react";
+import { RotateCcw, Package, AlertTriangle, Search, Filter, Download } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type Return = {

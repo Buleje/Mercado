@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Heart, Gift, Star, Trophy, ArrowUp, ArrowDown, Users, Search, Download, Filter, ShoppingCart } from "lucide-react";
+import { useState } from "react";
+import { Heart, Gift, Star, Trophy, ArrowUp, Users, Download } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type Tier = { id: string; name: string; minPoints: number; multiplier: number; color: string; perks: string[]; members: number };

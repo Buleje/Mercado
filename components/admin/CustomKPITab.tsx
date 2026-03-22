@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState } from "react";
-import { Target, Plus, Pencil, Trash2, Check, X, TrendingUp, Calculator, Eye, Download } from "lucide-react";
+import { Target, Plus, Pencil, Trash2, Check, Download } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type KPI = {

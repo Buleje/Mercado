@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Download, Filter, DollarSign, X } from "lucide-react";
+import { TrendingDown, AlertTriangle, CheckCircle, Download, X } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── types ──────────────────────────────────────────────────── */

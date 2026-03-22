@@ -78,7 +78,8 @@ describe("Modal", () => {
       </Modal>
     );
 
-    const backdrop = screen.getByRole("dialog").parentElement;
+    // The backdrop is a child div of the dialog with aria-hidden="true"
+    const backdrop = screen.getByRole("dialog").querySelector('[aria-hidden="true"]');
     if (backdrop) {
       fireEvent.click(backdrop);
     }
@@ -118,8 +119,9 @@ describe("Modal", () => {
       </Modal>
     );
 
-    let dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveClass("max-w-sm");
+    // The size class is on the inner modal panel, not the outer dialog wrapper
+    let panel = screen.getByRole("dialog").querySelector(".max-w-sm");
+    expect(panel).toBeInTheDocument();
 
     rerender(
       <Modal isOpen={true} onClose={onCloseMock} size="lg">
@@ -127,8 +129,8 @@ describe("Modal", () => {
       </Modal>
     );
 
-    dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveClass("max-w-lg");
+    panel = screen.getByRole("dialog").querySelector(".max-w-lg");
+    expect(panel).toBeInTheDocument();
   });
 
   it("renders with custom className", () => {
@@ -138,8 +140,9 @@ describe("Modal", () => {
       </Modal>
     );
 
-    const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveClass("custom-class");
+    // The custom className is on the inner modal panel
+    const panel = screen.getByRole("dialog").querySelector(".custom-class");
+    expect(panel).toBeInTheDocument();
   });
 
   it("renders ModalHeader, ModalBody, and ModalFooter", () => {
@@ -200,8 +203,9 @@ describe("Modal", () => {
       </Modal>
     );
 
-    let dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveClass("animate-[fadeIn_0.2s_ease-out]");
+    // Animation classes are on the inner modal panel
+    let dialogEl = screen.getByRole("dialog");
+    expect(dialogEl.querySelector('[class*="animate-[fadeIn"]')).toBeInTheDocument();
 
     rerender(
       <Modal isOpen={true} onClose={onCloseMock} animation="slide-up">
@@ -209,7 +213,7 @@ describe("Modal", () => {
       </Modal>
     );
 
-    dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveClass("animate-[slideUp_0.3s_ease-out]");
+    dialogEl = screen.getByRole("dialog");
+    expect(dialogEl.querySelector('[class*="animate-[slideUp"]')).toBeInTheDocument();
   });
 });

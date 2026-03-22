@@ -1,6 +1,6 @@
 ﻿"use client";
 import { useState, useMemo } from "react";
-import { RefreshCw, AlertTriangle, TrendingUp, TrendingDown, Download, CheckCircle, Package, ShoppingCart, X } from "lucide-react";
+import { AlertTriangle, TrendingUp, TrendingDown, Download, X } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── types ──────────────────────────────────────────────────── */
@@ -43,7 +43,7 @@ export default function DynamicReorderTab() {
   const [sortBy, setSortBy] = useState<"stockout" | "name" | "stock">("stockout");
 
   const filtered = useMemo(() => {
-    let items = PRODUCTS.filter(p => {
+    const items = PRODUCTS.filter(p => {
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
       if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
       if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.sku.toLowerCase().includes(search.toLowerCase())) return false;

@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useMemo } from "react";
-import { Scale, FileText, AlertTriangle, CheckCircle, Clock, Calendar, Download, Filter, Search, Building2 } from "lucide-react";
+import { Scale, FileText, AlertTriangle, CheckCircle, Clock, Calendar, Download, Search, Building2 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type Obligation = {

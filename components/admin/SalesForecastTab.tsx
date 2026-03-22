@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
-import { TrendingUp, Calendar, ArrowUp, ArrowDown, Download, AlertTriangle, BarChart3 } from "lucide-react";
+import { TrendingUp, ArrowUp, ArrowDown, Download, AlertTriangle, BarChart3 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── Types ── */
