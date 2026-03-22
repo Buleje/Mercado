@@ -13,12 +13,14 @@ const { mockRequireAdmin } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 
-const { mockFindMany, mockCreate, mockFindFirst, mockUpdate, mockDelete } = vi.hoisted(() => ({
+const { mockFindMany, mockCreate, mockFindFirst, mockUpdate, mockDelete, mockCount, mockTransaction } = vi.hoisted(() => ({
   mockFindMany: vi.fn(),
   mockCreate: vi.fn(),
   mockFindFirst: vi.fn(),
   mockUpdate: vi.fn(),
   mockDelete: vi.fn(),
+  mockCount: vi.fn(),
+  mockTransaction: vi.fn(),
 }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -28,7 +30,9 @@ vi.mock("@/lib/prisma", () => ({
       findFirst: mockFindFirst,
       update: mockUpdate,
       delete: mockDelete,
+      count: mockCount,
     },
+    $transaction: mockTransaction,
   },
 }));
 
@@ -74,21 +78,23 @@ describe("GET /api/batches", () => {
 
   it("returns empty array", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockFindMany.mockResolvedValue([]);
+    mockTransaction.mockResolvedValue([[], 0]);
     const res = await GET(makeReq("GET", "https://host/api/batches"));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual([]);
+    const body = await res.json();
+    expect(body.data).toEqual([]);
+    expect(body.total).toBe(0);
   });
 
   it("returns mapped batches with formatted dates", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockFindMany.mockResolvedValue([BASE_BATCH]);
+    mockTransaction.mockResolvedValue([[BASE_BATCH], 1]);
     const res = await GET(makeReq("GET", "https://host/api/batches"));
     const body = await res.json();
-    expect(body).toHaveLength(1);
-    expect(body[0].lote).toBe("LOT-001");
-    expect(body[0].entryDate).toBe("2026-01-01");
-    expect(body[0].expiryDate).toBe("2027-01-01");
+    expect(body.data).toHaveLength(1);
+    expect(body.data[0].lote).toBe("LOT-001");
+    expect(body.data[0].entryDate).toBe("2026-01-01");
+    expect(body.data[0].expiryDate).toBe("2027-01-01");
   });
 });
 
