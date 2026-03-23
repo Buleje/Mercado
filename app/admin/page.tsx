@@ -18,7 +18,7 @@ import {
   DollarSign, Layers, Sun, Moon, Target, Download,
   Cake, Shield, Smartphone, Copy, ChevronDown, ChevronUp,
   CheckCircle, PackageCheck, XCircle, Bike, UserCheck, SlidersHorizontal, Filter, Reply, Sparkles, Save,
-  Maximize2, Zap,
+  Maximize2, Zap, LayoutDashboard, Tag, ListTodo,
 } from "lucide-react";
 import type { DbCustomer, DbReview, DbOrder, OrderStatus, StoreMode } from "@/lib/jsondb";
 import { googleMapsUrl } from "@/lib/order-utils";
@@ -101,47 +101,110 @@ const AlertCenter = dynamic(() => import("@/components/admin/AlertCenter"), { ss
 const AIAssistant = dynamic(() => import("@/components/admin/AIAssistant"), { ssr: false });
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
 
-type Tab = "panel-principal" | "pos-caja" | "inventario-almacenes" | "reposicion" | "catalogo-tienda"
-  | "precios-promos" | "compras" | "proveedores" | "logistica" | "devoluciones-calidad"
-  | "ventas-marketing" | "crm-clientes" | "clientes" | "fidelizacion" | "encuestas-soporte" | "resenas"
-  | "analytics-bi" | "proyecciones" | "finanzas" | "tesoreria" | "facturacion" | "gastos-activos"
-  | "rrhh" | "proyectos-tareas" | "comunicaciones" | "alertas-automatizacion"
-  | "reportes-documentos" | "agenda-utilidades" | "seguridad" | "sistema" | "configuracion"
-  | "pedidos" | "visitantes" | "plan" | "changelog" | "agentes";
+// ── 14 módulos consolidados + pedidos + plan (legacy IDs kept for TAB_MIGRATION compatibility) ──
+type Tab =
+  // 14 módulos principales
+  | "panel-principal"      // Panel + Agentes + Changelog
+  | "pos-caja"
+  | "inventario-almacenes" // Inventario + Reposición
+  | "catalogo-tienda"      // Catálogo + Precios & Promos
+  | "compras"              // Compras + Proveedores
+  | "logistica"            // Logística + Devoluciones & Calidad
+  | "crm-clientes"         // CRM + Fidelización + Encuestas & Soporte
+  | "ventas-marketing"     // Ventas & Marketing + Comunicaciones
+  | "analytics-bi"         // Analytics & BI + Proyecciones
+  | "finanzas"             // Finanzas + Tesorería + Facturación + Gastos
+  | "rrhh"
+  | "proyectos-tareas"     // Proyectos & Tareas + Alertas & Automatización
+  | "reportes-documentos"  // Reportes & Documentos + Agenda & Utilidades
+  | "seguridad"            // Seguridad + Sistema + Config + Equipo
+  // Tabs especiales mantenidos
+  | "pedidos"
+  | "plan"
+  // Legacy IDs (solo para TAB_MIGRATION — no aparecen en ALL_TABS)
+  | "reposicion" | "precios-promos" | "proveedores" | "devoluciones-calidad"
+  | "fidelizacion" | "encuestas-soporte" | "proyecciones" | "comunicaciones"
+  | "alertas-automatizacion" | "agenda-utilidades" | "sistema" | "configuracion"
+  | "clientes" | "visitantes" | "resenas" | "agentes" | "changelog"
+  | "tesoreria" | "facturacion" | "gastos-activos";
 
-// Old tab IDs → new unified IDs for localStorage migration
+// Old tab IDs → consolidated module IDs for localStorage migration
+// Phase 1 legacy (pre-unified): old flat tab names
+// Phase 2 legacy (unified 28→14): intermediate module IDs now merged
 const TAB_MIGRATION: Record<string, Tab> = {
+  // → Panel Principal (absorbe agentes y changelog)
   dashboard: "panel-principal", "dashboard-ejecutivo": "panel-principal",
+  agentes: "panel-principal", changelog: "panel-principal",
+  // → POS & Caja
   pos: "pos-caja", caja: "pos-caja", "arqueo-caja": "pos-caja", turnos: "pos-caja",
-  inventario: "inventario-almacenes", kardex: "inventario-almacenes", lotes: "inventario-almacenes", "inventario-fisico": "inventario-almacenes", mermas: "inventario-almacenes", almacenes: "inventario-almacenes", ubicaciones: "inventario-almacenes", transferencias: "inventario-almacenes",
-  "auto-reorden": "inventario-almacenes", "reorden-dinamico": "inventario-almacenes", prediccion: "inventario-almacenes", reposicion: "inventario-almacenes",
-  "categorias-editor": "catalogo-tienda", "combos-editor": "catalogo-tienda", combos: "catalogo-tienda", kits: "catalogo-tienda", "pagina-inicio": "catalogo-tienda",
-  benchmark: "precios-promos", "historial-precios": "precios-promos", promociones: "precios-promos", cupones: "precios-promos", "ab-tests": "precios-promos",
-  compras: "compras", "plan-compras": "compras", "aprobacion-compras": "compras", contratos: "compras", cotizaciones: "compras", recepcion: "compras",
-  proveedores: "compras", "portal-proveedor": "compras", evaluaciones: "compras", "calidad-proveedor": "compras", "pagos-proveedor": "compras",
-  entregas: "logistica", "rutas-delivery": "logistica", "delivery-horarios": "logistica", "seguimiento-envios": "logistica", "costos-envio": "logistica", flota: "logistica", "logistica-devoluciones": "logistica",
-  devoluciones: "devoluciones-calidad", "devoluciones-avanzadas": "devoluciones-calidad", calidad: "devoluciones-calidad", anomalias: "devoluciones-calidad",
-  marketing: "ventas-marketing", "forecast-ventas": "ventas-marketing", "metricas-conversion": "ventas-marketing", referidos: "ventas-marketing",
-  crm: "crm-clientes", "cliente-360": "crm-clientes", segmentos: "crm-clientes", "segmentos-auto": "crm-clientes", clv: "crm-clientes",
-  clientes: "crm-clientes", visitantes: "crm-clientes",
-  fidelizacion: "fidelizacion", "programa-puntos": "fidelizacion", "wish-lists": "fidelizacion",
-  nps: "encuestas-soporte", encuestas: "encuestas-soporte", soporte: "encuestas-soporte", "reseñas": "encuestas-soporte", resenas: "encuestas-soporte",
-  bi: "analytics-bi", "mapa-calor": "analytics-bi", "abc-analysis": "analytics-bi", pareto: "analytics-bi", "bcg-matrix": "analytics-bi", "analisis-cesta": "analytics-bi", "kpi-personalizado": "analytics-bi",
-  simulador: "proyecciones", estacionalidad: "proyecciones", "comparador-periodos": "proyecciones",
-  pl: "finanzas", "balance-general": "finanzas", "flujo-caja": "finanzas", presupuestos: "finanzas", "presupuesto-real": "finanzas", "break-even": "finanzas", rentabilidad: "finanzas", margenes: "finanzas",
-  tesoreria: "finanzas", "proyeccion-liquidez": "finanzas", cheques: "finanzas", conciliacion: "finanzas", "centro-cobros": "finanzas", "cuentas-cobrar": "finanzas",
+  // → Inventario & Reposición
+  inventario: "inventario-almacenes", kardex: "inventario-almacenes", lotes: "inventario-almacenes",
+  "inventario-fisico": "inventario-almacenes", mermas: "inventario-almacenes", almacenes: "inventario-almacenes",
+  ubicaciones: "inventario-almacenes", transferencias: "inventario-almacenes",
+  "auto-reorden": "inventario-almacenes", "reorden-dinamico": "inventario-almacenes",
+  prediccion: "inventario-almacenes", reposicion: "inventario-almacenes",
+  // → Catálogo & Precios
+  "categorias-editor": "catalogo-tienda", "combos-editor": "catalogo-tienda", combos: "catalogo-tienda",
+  kits: "catalogo-tienda", "pagina-inicio": "catalogo-tienda",
+  "precios-promos": "catalogo-tienda", benchmark: "catalogo-tienda", "historial-precios": "catalogo-tienda",
+  promociones: "catalogo-tienda", cupones: "catalogo-tienda", "ab-tests": "catalogo-tienda",
+  // → Compras & Proveedores
+  compras: "compras", "plan-compras": "compras", "aprobacion-compras": "compras",
+  contratos: "compras", cotizaciones: "compras", recepcion: "compras",
+  proveedores: "compras", "portal-proveedor": "compras", evaluaciones: "compras",
+  "calidad-proveedor": "compras", "pagos-proveedor": "compras",
+  // → Logística & Entregas (absorbe devoluciones-calidad)
+  entregas: "logistica", "rutas-delivery": "logistica", "delivery-horarios": "logistica",
+  "seguimiento-envios": "logistica", "costos-envio": "logistica", flota: "logistica",
+  "logistica-devoluciones": "logistica",
+  "devoluciones-calidad": "logistica", devoluciones: "logistica",
+  "devoluciones-avanzadas": "logistica", calidad: "logistica", anomalias: "logistica",
+  // → Clientes & CRM (absorbe fidelizacion y encuestas-soporte)
+  crm: "crm-clientes", "cliente-360": "crm-clientes", segmentos: "crm-clientes",
+  "segmentos-auto": "crm-clientes", clv: "crm-clientes", clientes: "crm-clientes",
+  visitantes: "crm-clientes",
+  fidelizacion: "crm-clientes", "programa-puntos": "crm-clientes", "wish-lists": "crm-clientes",
+  "encuestas-soporte": "crm-clientes", nps: "crm-clientes", encuestas: "crm-clientes",
+  soporte: "crm-clientes", "reseñas": "crm-clientes", resenas: "crm-clientes",
+  // → Marketing & Ventas (absorbe comunicaciones)
+  marketing: "ventas-marketing", "forecast-ventas": "ventas-marketing",
+  "metricas-conversion": "ventas-marketing", referidos: "ventas-marketing",
+  comunicaciones: "ventas-marketing", "hub-comunicaciones": "ventas-marketing",
+  chat: "ventas-marketing", "plantillas-mensaje": "ventas-marketing", notificaciones: "ventas-marketing",
+  // → Analytics & BI (absorbe proyecciones)
+  bi: "analytics-bi", "mapa-calor": "analytics-bi", "abc-analysis": "analytics-bi",
+  pareto: "analytics-bi", "bcg-matrix": "analytics-bi", "analisis-cesta": "analytics-bi",
+  "kpi-personalizado": "analytics-bi",
+  proyecciones: "analytics-bi", simulador: "analytics-bi",
+  estacionalidad: "analytics-bi", "comparador-periodos": "analytics-bi",
+  // → Finanzas (sin cambios — ya absorbe tesorería, facturación, gastos)
+  pl: "finanzas", "balance-general": "finanzas", "flujo-caja": "finanzas",
+  presupuestos: "finanzas", "presupuesto-real": "finanzas", "break-even": "finanzas",
+  rentabilidad: "finanzas", margenes: "finanzas",
+  tesoreria: "finanzas", "proyeccion-liquidez": "finanzas", cheques: "finanzas",
+  conciliacion: "finanzas", "centro-cobros": "finanzas", "cuentas-cobrar": "finanzas",
   facturacion: "finanzas", "e-facturacion": "finanzas", impuestos: "finanzas", cuentas: "finanzas",
-  gastos: "finanzas", "centros-costo": "finanzas", seguros: "finanzas", activos: "finanzas", "gastos-activos": "finanzas",
+  gastos: "finanzas", "centros-costo": "finanzas", seguros: "finanzas",
+  activos: "finanzas", "gastos-activos": "finanzas",
+  // → RRHH
   rrhh: "rrhh", nomina: "rrhh", sucursales: "rrhh",
-  proyectos: "proyectos-tareas", tareas: "proyectos-tareas", kanban: "proyectos-tareas", metas: "proyectos-tareas", "tablero-metas": "proyectos-tareas",
-  "hub-comunicaciones": "comunicaciones", chat: "comunicaciones", "plantillas-mensaje": "comunicaciones", notificaciones: "comunicaciones",
-  "alertas-automaticas": "alertas-automatizacion", recordatorios: "alertas-automatizacion", flujos: "alertas-automatizacion", "reglas-negocio": "alertas-automatizacion",
-  reportes: "reportes-documentos", "reportes-auto": "reportes-documentos", "importar-exportar": "reportes-documentos", documentos: "reportes-documentos",
-  calendario: "agenda-utilidades", "notas-rapidas": "agenda-utilidades", "filtros-guardados": "agenda-utilidades",
-  "usuarios-admin": "seguridad", "permisos-roles": "seguridad", "logs-seguridad": "seguridad", auditoria: "seguridad", actividad: "seguridad", cumplimiento: "seguridad",
-  "salud-sistema": "seguridad", "backup-restaurar": "seguridad", webhooks: "seguridad", sistema: "seguridad", configuracion: "seguridad", equipo: "seguridad",
+  // → Tareas & Automatización (absorbe alertas-automatizacion)
+  proyectos: "proyectos-tareas", tareas: "proyectos-tareas", kanban: "proyectos-tareas",
+  metas: "proyectos-tareas", "tablero-metas": "proyectos-tareas",
+  "alertas-automatizacion": "proyectos-tareas", "alertas-automaticas": "proyectos-tareas",
+  recordatorios: "proyectos-tareas", flujos: "proyectos-tareas", "reglas-negocio": "proyectos-tareas",
+  // → Reportes & Herramientas (absorbe agenda-utilidades)
+  reportes: "reportes-documentos", "reportes-auto": "reportes-documentos",
+  "importar-exportar": "reportes-documentos", documentos: "reportes-documentos",
+  "agenda-utilidades": "reportes-documentos", calendario: "reportes-documentos",
+  "notas-rapidas": "reportes-documentos", "filtros-guardados": "reportes-documentos",
+  // → Sistema & Seguridad (sin cambios — ya absorbe sistema y config)
+  "usuarios-admin": "seguridad", "permisos-roles": "seguridad", "logs-seguridad": "seguridad",
+  auditoria: "seguridad", actividad: "seguridad", cumplimiento: "seguridad",
+  "salud-sistema": "seguridad", "backup-restaurar": "seguridad", webhooks: "seguridad",
+  sistema: "seguridad", configuracion: "seguridad", equipo: "seguridad",
+  // Especiales
   pedidos: "pedidos",
-  changelog: "changelog",
   plan: "plan",
 };
 
@@ -196,60 +259,37 @@ type TabCategory = {
   tabs: Tab[];  
 };
 
+// ── Categorías para el filtro del sidebar (agrupan los 14 módulos) ──────────
 const TAB_CATEGORIES: TabCategory[] = [
   {
     id: "operaciones",
-    label: "Operaciones & POS",
+    label: "Operaciones",
     icon: Monitor,
-    tabs: ["panel-principal", "pos-caja", "inventario-almacenes", "pedidos"]
+    tabs: ["panel-principal", "pos-caja", "inventario-almacenes", "pedidos"],
   },
   {
-    id: "producto",
-    label: "Producto & Precios",
-    icon: Package,
-    tabs: ["catalogo-tienda", "precios-promos"]
+    id: "comercial",
+    label: "Comercial",
+    icon: Tag,
+    tabs: ["catalogo-tienda", "compras", "logistica"],
   },
   {
-    id: "compras-proveedores",
-    label: "Compras & Proveedores",
-    icon: Truck,
-    tabs: ["compras"]
-  },
-  {
-    id: "logistica-calidad",
-    label: "Logística & Calidad",
-    icon: MapPin,
-    tabs: ["logistica", "devoluciones-calidad"]
-  },
-  {
-    id: "clientes-marketing",
-    label: "Clientes & Marketing",
+    id: "clientes",
+    label: "Clientes & Crecimiento",
     icon: Users,
-    tabs: ["crm-clientes", "ventas-marketing", "fidelizacion", "encuestas-soporte"]
+    tabs: ["crm-clientes", "ventas-marketing", "analytics-bi"],
   },
   {
-    id: "analytics",
-    label: "Inteligencia & Analytics",
-    icon: Brain,
-    tabs: ["analytics-bi", "proyecciones"]
-  },
-  {
-    id: "finanzas",
-    label: "Finanzas",
+    id: "finanzas-org",
+    label: "Finanzas & Organización",
     icon: DollarSign,
-    tabs: ["finanzas"]
-  },
-  {
-    id: "organizacion",
-    label: "Organización",
-    icon: Target,
-    tabs: ["rrhh", "proyectos-tareas", "comunicaciones", "alertas-automatizacion"]
+    tabs: ["finanzas", "rrhh", "proyectos-tareas"],
   },
   {
     id: "admin-sistema",
-    label: "Administración & Sistema",
-    icon: Settings,
-    tabs: ["reportes-documentos", "agenda-utilidades", "seguridad", "plan", "changelog", "agentes"]
+    label: "Administración",
+    icon: Shield,
+    tabs: ["reportes-documentos", "seguridad", "plan"],
   },
 ];
 
@@ -5206,8 +5246,8 @@ function AdminPage() {
   // Keyboard shortcuts: Alt+1..9,0 for tabs, Alt+? for help
   const SHORTCUT_MAP: Record<string, Tab> = {
     "1": "panel-principal", "2": "pos-caja", "3": "inventario-almacenes", "4": "pedidos",
-    "5": "proveedores", "6": "compras", "7": "finanzas", "8": "clientes",
-    "9": "crm-clientes", "0": "configuracion",
+    "5": "catalogo-tienda", "6": "compras", "7": "finanzas", "8": "ventas-marketing",
+    "9": "crm-clientes", "0": "seguridad",
   };
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -5386,41 +5426,28 @@ function AdminPage() {
     router.push("/admin/login");
   };
 
+  // ── 14 módulos consolidados ──────────────────────────────────────────────────
   const ALL_TABS = [
-    // — Operaciones & POS —
-    { id: "panel-principal" as Tab,         label: "Panel Principal",            icon: BarChart3 },
-    { id: "pos-caja" as Tab,               label: "POS & Caja",                icon: Monitor },
-    { id: "inventario-almacenes" as Tab,   label: "Inventario & Reposición",    icon: Boxes },
-    { id: "pedidos" as Tab,                label: "Pedidos",                   icon: ShoppingCart },
-    // — Producto & Precios —
-    { id: "catalogo-tienda" as Tab,        label: "Catálogo & Tienda",         icon: Store },
-    { id: "precios-promos" as Tab,         label: "Precios & Promos",          icon: DollarSign },
-    // — Compras & Proveedores —
-    { id: "compras" as Tab,                label: "Compras & Proveedores",     icon: Truck },
-    // — Logística & Calidad —
-    { id: "logistica" as Tab,              label: "Logística",                 icon: MapPin },
-    { id: "devoluciones-calidad" as Tab,   label: "Devoluciones & Calidad",    icon: RotateCcw },
-    // — Clientes & Marketing —
-    { id: "crm-clientes" as Tab,           label: "Clientes & Leads",          icon: Users },
-    { id: "ventas-marketing" as Tab,       label: "Ventas & Marketing",        icon: Megaphone },
-    { id: "fidelizacion" as Tab,           label: "Fidelización",              icon: Heart },
-    { id: "encuestas-soporte" as Tab,      label: "Customer Success (CX)",     icon: MessageSquare },
-    // — Inteligencia & Analytics —
-    { id: "analytics-bi" as Tab,           label: "Analytics & BI",            icon: Brain },
-    { id: "proyecciones" as Tab,           label: "Proyecciones",              icon: SlidersHorizontal },
-    // — Finanzas —
-    { id: "finanzas" as Tab,               label: "Finanzas & Contabilidad",   icon: Wallet },
-    // — Organización —
-    { id: "rrhh" as Tab,                   label: "Recursos Humanos",          icon: Users },
-    { id: "proyectos-tareas" as Tab,       label: "Proyectos & Tareas",        icon: Target },
-    { id: "comunicaciones" as Tab,         label: "Comunicaciones",            icon: MessageSquare },
-    { id: "alertas-automatizacion" as Tab, label: "Alertas & Automatización",  icon: Bell },
-    // — Administración & Sistema —
-    { id: "reportes-documentos" as Tab,    label: "Reportes & Documentos",     icon: FileBarChart },
-    { id: "agenda-utilidades" as Tab,      label: "Agenda & Utilidades",       icon: CalendarDays },
-    { id: "seguridad" as Tab,              label: "Sistema & Accesos",         icon: Settings },
-    { id: "plan" as Tab,                    label: "Plan & Límites",            icon: Zap },
-    { id: "changelog" as Tab,               label: "Changelog",                 icon: Target },
+    // — Core operativo —
+    { id: "panel-principal" as Tab,        label: "Panel Principal",            icon: LayoutDashboard },
+    { id: "pos-caja" as Tab,               label: "POS & Caja",                 icon: ShoppingCart },
+    { id: "inventario-almacenes" as Tab,   label: "Inventario",                 icon: Package },
+    { id: "catalogo-tienda" as Tab,        label: "Catálogo & Precios",         icon: Tag },
+    { id: "compras" as Tab,                label: "Compras & Proveedores",      icon: Truck },
+    { id: "logistica" as Tab,              label: "Logística & Entregas",       icon: MapPin },
+    // — Clientes & crecimiento —
+    { id: "crm-clientes" as Tab,           label: "Clientes & CRM",             icon: Users },
+    { id: "ventas-marketing" as Tab,       label: "Marketing & Ventas",         icon: Megaphone },
+    { id: "analytics-bi" as Tab,           label: "Analytics & BI",             icon: BarChart3 },
+    // — Finanzas & organización —
+    { id: "finanzas" as Tab,               label: "Finanzas",                   icon: DollarSign },
+    { id: "rrhh" as Tab,                   label: "RRHH",                       icon: UserCog },
+    { id: "proyectos-tareas" as Tab,       label: "Tareas & Automatización",    icon: ListTodo },
+    { id: "reportes-documentos" as Tab,    label: "Reportes & Herramientas",    icon: FileText },
+    { id: "seguridad" as Tab,              label: "Sistema & Seguridad",        icon: Shield },
+    // — Especiales —
+    { id: "pedidos" as Tab,                label: "Pedidos",                    icon: ShoppingBasket },
+    { id: "plan" as Tab,                   label: "Plan & Límites",             icon: Zap },
   ] as const;
 
   // Role-based tab filtering — populated from lib/module-permissions.ts
@@ -6620,8 +6647,23 @@ function AdminPage() {
             <span className="font-semibold text-gray-700 dark:text-foreground shrink-0">{ALL_TABS.find(t => t.id === tab)?.label ?? tab}</span>
           </nav>
         )}
-        {tab === "panel-principal" && <PanelPrincipalModule />}
+        {/* ── 1. Panel Principal — Dashboard + Agentes + Changelog ── */}
+        {tab === "panel-principal" && (
+          <div className="space-y-8">
+            <PanelPrincipalModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Agentes IA</h3>
+              <AgentsDashboardTab />
+            </div>
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Changelog</h3>
+              <ChangelogModule />
+            </div>
+          </div>
+        )}
+        {/* ── 2. POS & Caja ── */}
         {tab === "pos-caja" && <POSCajaModule />}
+        {/* ── 3. Inventario — Stock + Reposición ── */}
         {tab === "inventario-almacenes" && (
           <div className="space-y-8">
             <InventarioAlmacenesModule />
@@ -6631,8 +6673,17 @@ function AdminPage() {
             </div>
           </div>
         )}
-        {tab === "catalogo-tienda" && <CatalogoTiendaModule />}
-        {tab === "precios-promos" && <PreciosPromosModule />}
+        {/* ── 4. Catálogo & Precios — Catálogo + Precios & Promos ── */}
+        {tab === "catalogo-tienda" && (
+          <div className="space-y-8">
+            <CatalogoTiendaModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Precios & Promociones</h3>
+              <PreciosPromosModule />
+            </div>
+          </div>
+        )}
+        {/* ── 5. Compras & Proveedores ── */}
         {tab === "compras" && (
           <div className="space-y-8">
             <ComprasModule />
@@ -6642,9 +6693,17 @@ function AdminPage() {
             </div>
           </div>
         )}
-        {tab === "logistica" && <LogisticaModule />}
-        {tab === "devoluciones-calidad" && <DevolucionesCalidadModule />}
-        {tab === "ventas-marketing" && <VentasMarketingModule />}
+        {/* ── 6. Logística & Entregas — Logística + Devoluciones & Calidad ── */}
+        {tab === "logistica" && (
+          <div className="space-y-8">
+            <LogisticaModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Devoluciones & Control de Calidad</h3>
+              <DevolucionesCalidadModule />
+            </div>
+          </div>
+        )}
+        {/* ── 7. Clientes & CRM — CRM + Fidelización + Encuestas & Soporte ── */}
         {tab === "crm-clientes" && (
           <div className="space-y-8">
             <CRMClientesModule />
@@ -6656,20 +6715,40 @@ function AdminPage() {
               <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Registro de Visitantes (Leads)</h3>
               <VisitantesTab />
             </div>
-          </div>
-        )}
-        {tab === "fidelizacion" && <FidelizacionModule />}
-        {tab === "encuestas-soporte" && (
-          <div className="space-y-8">
-            <EncuestasSoporteModule />
             <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Reseñas y Feedback Externo</h3>
-              <ReviewsTab />
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Fidelización y Programa de Puntos</h3>
+              <FidelizacionModule />
+            </div>
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Encuestas, Soporte y Reseñas</h3>
+              <EncuestasSoporteModule />
+              <div className="mt-6">
+                <ReviewsTab />
+              </div>
             </div>
           </div>
         )}
-        {tab === "analytics-bi" && <AnalyticsBIModule />}
-        {tab === "proyecciones" && <ProyeccionesModule />}
+        {/* ── 8. Marketing & Ventas — Ventas + Comunicaciones ── */}
+        {tab === "ventas-marketing" && (
+          <div className="space-y-8">
+            <VentasMarketingModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Hub de Comunicaciones</h3>
+              <ComunicacionesModule />
+            </div>
+          </div>
+        )}
+        {/* ── 9. Analytics & BI — Analytics + Proyecciones ── */}
+        {tab === "analytics-bi" && (
+          <div className="space-y-8">
+            <AnalyticsBIModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Proyecciones y Simulador</h3>
+              <ProyeccionesModule />
+            </div>
+          </div>
+        )}
+        {/* ── 10. Finanzas — P&G + Tesorería + Facturación + Gastos ── */}
         {tab === "finanzas" && (
           <div className="space-y-8">
             <FinanzasModule />
@@ -6687,12 +6766,29 @@ function AdminPage() {
             </div>
           </div>
         )}
+        {/* ── 11. RRHH ── */}
         {tab === "rrhh" && <RRHHModule />}
-        {tab === "proyectos-tareas" && <ProyectosTareasModule />}
-        {tab === "comunicaciones" && <ComunicacionesModule />}
-        {tab === "alertas-automatizacion" && <AlertasAutomModule />}
-        {tab === "reportes-documentos" && <ReportesDocModule />}
-        {tab === "agenda-utilidades" && <AgendaUtilidadesModule />}
+        {/* ── 12. Tareas & Automatización — Proyectos + Alertas ── */}
+        {tab === "proyectos-tareas" && (
+          <div className="space-y-8">
+            <ProyectosTareasModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Alertas y Automatización</h3>
+              <AlertasAutomModule />
+            </div>
+          </div>
+        )}
+        {/* ── 13. Reportes & Herramientas — Reportes + Agenda & Utilidades ── */}
+        {tab === "reportes-documentos" && (
+          <div className="space-y-8">
+            <ReportesDocModule />
+            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Agenda y Utilidades</h3>
+              <AgendaUtilidadesModule />
+            </div>
+          </div>
+        )}
+        {/* ── 14. Sistema & Seguridad — Seguridad + Sistema + Config + Equipo ── */}
         {tab === "seguridad" && (
           <div className="space-y-8">
             <SeguridadModule />
@@ -6710,10 +6806,9 @@ function AdminPage() {
             </div>
           </div>
         )}
+        {/* ── Especiales ── */}
         {tab === "pedidos" && <OrdersTab />}
         {tab === "plan" && <PlanTab />}
-        {tab === "changelog" && <ChangelogModule />}
-        {tab === "agentes" && <AgentsDashboardTab />}
       </main>
 
       {/* Focus mode floating sidebar toggle */}
@@ -6738,12 +6833,12 @@ function AdminPage() {
                 ["Alt + 2", "POS & Caja"],
                 ["Alt + 3", "Inventario"],
                 ["Alt + 4", "Pedidos"],
-                ["Alt + 5", "Proveedores"],
-                ["Alt + 6", "Compras"],
+                ["Alt + 5", "Catálogo & Precios"],
+                ["Alt + 6", "Compras & Proveedores"],
                 ["Alt + 7", "Finanzas"],
-                ["Alt + 8", "Clientes"],
-                ["Alt + 9", "CRM"],
-                ["Alt + 0", "Configuración"],
+                ["Alt + 8", "Marketing & Ventas"],
+                ["Alt + 9", "Clientes & CRM"],
+                ["Alt + 0", "Sistema & Seguridad"],
                 ["Alt + ?", "Mostrar atajos"],
                 ["Alt + T", "Cambiar tema"],
                 ["Alt + S", "Buscar"],
