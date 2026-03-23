@@ -187,7 +187,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
                 className="flex-1 flex flex-col items-center"
                 title={`${pt.label}: ${fmt(pt.actual)}${pt.isForecast ? " (proyeccion)" : ""}`}
               >
-                <div className="w-full flex flex-col justify-end" style={{ height: "100px" }}>
+                <div className="w-full flex flex-col justify-end" style={{ height: "220px" }}>
                   <div
                     className={cn(
                       "w-full rounded-t-sm transition-all duration-300",
@@ -210,7 +210,7 @@ export default function TrendForecaster({ sales }: TrendForecasterProps) {
           {points.map((pt) => {
             const dotBottom = maxVal > 0 ? (pt.ma7 / maxVal) * 100 : 0;
             return (
-              <div key={`ma-${pt.date}`} className="flex-1 relative" style={{ height: "100px" }}>
+              <div key={`ma-${pt.date}`} className="flex-1 relative" style={{ height: "220px" }}>
                 <div
                   className="absolute w-1 h-1 rounded-full bg-[#2d6a4f] left-1/2 -translate-x-1/2"
                   style={{ bottom: `${dotBottom}%` }}

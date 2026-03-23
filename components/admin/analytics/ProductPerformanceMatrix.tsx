@@ -229,7 +229,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
         </div>
 
         {/* Bubbles */}
-        <div className="relative h-40">
+        <div className="relative h-72">
           {bcgProducts.map((p) => (
             <BubblePoint key={p.id} product={p} />
           ))}
@@ -247,7 +247,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
           <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
             {QUADRANT_META[activeQuadrant].label} — {QUADRANT_META[activeQuadrant].recommendation}
           </p>
-          <div className="flex flex-col gap-1 max-h-40 overflow-auto">
+          <div className="flex flex-col gap-1 max-h-64 overflow-auto">
             {byQuadrant[activeQuadrant].map((p) => (
               <div
                 key={p.id}

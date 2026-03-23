@@ -64,7 +64,7 @@ function HorizontalBar({
   return (
     <div className="flex items-center gap-2 mb-2">
       <span className="w-28 text-xs text-gray-600 dark:text-gray-300 truncate shrink-0">{label}</span>
-      <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-4 overflow-hidden">
+      <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-6 overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${p}%`, backgroundColor: color }}
@@ -240,9 +240,9 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
             <>
               {/* Donut wrapper: uses an outer div as the "ring" */}
               <div className="flex justify-center mb-3">
-                <div className="relative w-32 h-32">
+                <div className="relative w-52 h-52">
                   <div
-                    className="w-32 h-32 rounded-full"
+                    className="w-52 h-52 rounded-full"
                     style={{
                       background: `conic-gradient(${paymentSlices.map((s) => {
                         const start = paymentSlices.slice(0, paymentSlices.indexOf(s)).reduce((a, b) => a + b.pct, 0);
@@ -251,7 +251,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
                     }}
                   />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-16 h-16 rounded-full bg-white dark:bg-card" />
+                    <div className="w-28 h-28 rounded-full bg-white dark:bg-card" />
                   </div>
                 </div>
               </div>
@@ -282,7 +282,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
       {/* Hour view */}
       {view === "hora" && (
         <div>
-          <div className="flex items-end gap-1 h-32">
+          <div className="flex items-end gap-1.5 h-56">
             {byHour.map((val, i) => (
               <div
                 key={i}

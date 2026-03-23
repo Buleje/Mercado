@@ -127,7 +127,7 @@ function WidgetCard({
           </button>
         )}
       </div>
-      <div className="flex-1 p-4">{children}</div>
+      <div className="flex-1 p-5 min-h-[320px]">{children}</div>
     </div>
   );
 }
@@ -325,29 +325,33 @@ export default function AnalyticsProDashboard() {
 
       {/* Widget grid */}
       {data && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <WidgetCard title="Desglose de Ingresos" onRefresh={fetchData}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Row 1: Revenue (full width) */}
+          <WidgetCard title="Desglose de Ingresos" onRefresh={fetchData} className="lg:col-span-2">
             <RevenueBreakdownChart sales={filteredSales} products={data.products} />
           </WidgetCard>
 
-          <WidgetCard title="Segmentacion RFM" onRefresh={fetchData}>
-            <RFMSegmentationPanel customers={data.customers} sales={data.sales} />
+          {/* Row 2: Trend + Margins (half each) */}
+          <WidgetCard title="Pronostico de Tendencia" onRefresh={fetchData}>
+            <TrendForecaster sales={data.sales} />
           </WidgetCard>
 
           <WidgetCard title="Analisis de Margenes" onRefresh={fetchData}>
             <ProfitMarginAnalyzer products={data.products} sales={filteredSales} />
           </WidgetCard>
 
+          {/* Row 3: BCG Matrix + Anomalies (half each) */}
+          <WidgetCard title="Matriz de Productos (BCG)" onRefresh={fetchData}>
+            <ProductPerformanceMatrix products={data.products} sales={filteredSales} />
+          </WidgetCard>
+
           <WidgetCard title="Detector de Anomalias" onRefresh={fetchData}>
             <AnomalyDetector sales={filteredSales} orders={filteredOrders} />
           </WidgetCard>
 
-          <WidgetCard title="Pronostico de Tendencia" onRefresh={fetchData}>
-            <TrendForecaster sales={data.sales} />
-          </WidgetCard>
-
-          <WidgetCard title="Matriz de Productos (BCG)" onRefresh={fetchData}>
-            <ProductPerformanceMatrix products={data.products} sales={filteredSales} />
+          {/* Row 4: RFM (full width) */}
+          <WidgetCard title="Segmentacion RFM de Clientes" onRefresh={fetchData} className="lg:col-span-2">
+            <RFMSegmentationPanel customers={data.customers} sales={data.sales} />
           </WidgetCard>
         </div>
       )}

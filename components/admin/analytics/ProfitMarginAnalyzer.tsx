@@ -188,7 +188,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
           <div className="flex-1" />
         </div>
         {/* Points */}
-        <div className="relative h-40 mx-4 my-2">
+        <div className="relative h-72 mx-4 my-2">
           {items.map((p) => (
             <ScatterPoint
               key={p.id}
