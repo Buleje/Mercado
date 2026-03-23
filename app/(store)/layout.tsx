@@ -2,6 +2,12 @@ import MotionProvider from "@/components/MotionProvider";
 import MaintenancePage from "@/components/MaintenancePage";
 import StoreClientShell from "@/components/StoreClientShell";
 import StoreProviders from "@/components/StoreProviders";
+import LocalBusinessJsonLd from "@/components/store/LocalBusinessJsonLd";
+import dynamic from "next/dynamic";
+
+const WhatsAppFloat = dynamic(() => import("@/components/store/WhatsAppFloat"), { ssr: false });
+const RecentPurchases = dynamic(() => import("@/components/store/RecentPurchases"), { ssr: false });
+const StoreChatbot = dynamic(() => import("@/components/store/StoreChatbot"), { ssr: false });
 import { SettingsDB } from "@/lib/jsondb";
 import {
   GoogleAnalytics,
@@ -46,8 +52,12 @@ export default async function StoreLayout({
         <MotionProvider>
           {children}
           <StoreClientShell />
+          <WhatsAppFloat />
+          <RecentPurchases />
+          <StoreChatbot />
         </MotionProvider>
       </StoreProviders>
+      <LocalBusinessJsonLd />
     </>
   );
 }
