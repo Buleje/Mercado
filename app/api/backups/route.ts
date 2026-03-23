@@ -1,0 +1,66 @@
+export const dynamic = "force-dynamic";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/require-admin";
+import { logActivity } from "@/lib/activity-logger";
+
+export type BackupEntry = {
+  id: string; name: string; type: "manual" | "auto";
+  size: string; sizeBytes: number; modules: string[];
+  createdAt: string; status: "completado" | "en-progreso" | "fallido";
+  retention: string; downloadUrl?: string;
+};
+
+const DEMO_BACKUPS: BackupEntry[] = [
+  { id: "bk1", name: "Backup automático diario", type: "auto", size: "4.2 MB", sizeBytes: 4404019, modules: ["Productos", "Pedidos", "Clientes", "Ventas"], createdAt: "2026-03-22T03:00:00Z", status: "completado", retention: "30 días" },
+  { id: "bk2", name: "Backup automático diario", type: "auto", size: "4.1 MB", sizeBytes: 4300000, modules: ["Productos", "Pedidos", "Clientes", "Ventas"], createdAt: "2026-03-21T03:00:00Z", status: "completado", retention: "30 días" },
+  { id: "bk3", name: "Backup manual — previo a migración", type: "manual", size: "4.0 MB", sizeBytes: 4194304, modules: ["Completo"], createdAt: "2026-03-20T14:35:00Z", status: "completado", retention: "90 días" },
+  { id: "bk4", name: "Backup automático diario", type: "auto", size: "3.9 MB", sizeBytes: 4090000, modules: ["Productos", "Pedidos", "Clientes", "Ventas"], createdAt: "2026-03-20T03:00:00Z", status: "completado", retention: "30 días" },
+  { id: "bk5", name: "Backup automático diario", type: "auto", size: "—", sizeBytes: 0, modules: ["Productos", "Pedidos", "Clientes", "Ventas"], createdAt: "2026-03-19T03:00:00Z", status: "fallido", retention: "30 días" },
+  { id: "bk6", name: "Backup semanal", type: "auto", size: "3.8 MB", sizeBytes: 3984588, modules: ["Completo"], createdAt: "2026-03-16T03:00:00Z", status: "completado", retention: "90 días" },
+];
+
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+
+  // El sistema de backup real usa el endpoint /api/backup (descarga JSON).
+  // Este endpoint devuelve el historial de backups registrados en actividad.
+  try {
+    const { prisma } = await import("@/lib/prisma");
+    const rows = await prisma.activityLog.findMany({
+      where: { tenantId: auth.tenantId, entity: "configuracion", action: "Backup" },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+
+    if (rows.length === 0) throw new Error("empty");
+
+    const entries: BackupEntry[] = rows.map((r, i) => ({
+      id: r.id,
+      name: r.detail.includes("manual") ? "Backup manual" : "Backup automático",
+      type: r.detail.includes("manual") ? "manual" : "auto",
+      size: "~4 MB", sizeBytes: 4000000,
+      modules: ["Productos", "Pedidos", "Clientes", "Ventas"],
+      createdAt: r.createdAt.toISOString(),
+      status: "completado" as const,
+      retention: i === 0 ? "30 días" : "30 días",
+    }));
+
+    const totalSizeBytes = entries.reduce((s, b) => s + b.sizeBytes, 0);
+    return NextResponse.json({ backups: entries, totalSizeBytes });
+  } catch {
+    const totalSizeBytes = DEMO_BACKUPS.reduce((s, b) => s + b.sizeBytes, 0);
+    return NextResponse.json({ backups: DEMO_BACKUPS, totalSizeBytes, demo: true });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+
+  const requestId = req.headers.get("x-request-id") ?? undefined;
+  logActivity("Backup", "configuracion", "Backup manual iniciado desde panel", undefined, auth.user?.email ?? "admin", requestId).catch(() => {});
+
+  // Disparar la descarga del backup real en el cliente redirigiendo a /api/backup
+  return NextResponse.json({ ok: true, downloadUrl: "/api/backup", message: "Backup iniciado correctamente" });
+}

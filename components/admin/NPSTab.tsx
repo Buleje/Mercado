@@ -1,13 +1,12 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo, useEffect, startTransition } from "react";
-import { Star, ThumbsUp, ThumbsDown, Minus, TrendingUp, Download, Filter, MessageSquare } from "lucide-react";
+import { Star, ThumbsUp, ThumbsDown, Minus, TrendingUp, Download, Filter, MessageSquare, Loader2, AlertTriangle } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type Survey = { id: string; customer: string; score: number; comment: string; date: string; channel: "tienda" | "delivery" | "whatsapp" };
-type NPSTrend = { month: string; promoters: number; passives: number; detractors: number };
+type NPSTrend = { month: string; promoters: number; passives: number; detractors: number; nps: number };
 
-/** Map 1–5 star rating to a 0–10 NPS-compatible score */
 function ratingToScore(rating: number): number {
   if (rating === 5) return 10;
   if (rating === 4) return 8;
@@ -16,7 +15,6 @@ function ratingToScore(rating: number): number {
   return 1;
 }
 
-/** Infer channel from review location field */
 function locationToChannel(location: string): Survey["channel"] {
   const l = (location ?? "").toLowerCase();
   if (l.includes("delivery") || l.includes("domicilio") || l.includes("envío") || l.includes("envio")) return "delivery";
@@ -26,12 +24,49 @@ function locationToChannel(location: string): Survey["channel"] {
 
 function classify(score: number) { return score >= 9 ? "promoter" : score >= 7 ? "passive" : "detractor"; }
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
+function fmtMonth(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { month: "short", year: "2-digit" }); }
+
+/** Gauge SVG semicircular para el NPS score */
+function NPSGauge({ nps }: { nps: number }) {
+  // nps va de -100 a +100
+  const normalized = (nps + 100) / 200; // 0 a 1
+  const startAngle = Math.PI;
+  const endAngle = 2 * Math.PI;
+  const angle = startAngle + normalized * (endAngle - startAngle);
+
+  const cx = 100, cy = 90, r = 70;
+  const needleX = cx + r * Math.cos(angle);
+  const needleY = cy + r * Math.sin(angle);
+
+  const color = nps >= 50 ? "#10b981" : nps >= 0 ? "#f59e0b" : "#ef4444";
+  const label = nps >= 50 ? "Excelente" : nps >= 20 ? "Bueno" : nps >= 0 ? "Aceptable" : "Necesita mejora";
+
+  return (
+    <div className="flex flex-col items-center">
+      <svg viewBox="0 0 200 110" className="w-48 h-28">
+        {/* Arco rojo */}
+        <path d="M 30 90 A 70 70 0 0 1 76 27" fill="none" stroke="#fecaca" strokeWidth="14" strokeLinecap="round" />
+        {/* Arco amarillo */}
+        <path d="M 76 27 A 70 70 0 0 1 124 27" fill="none" stroke="#fde68a" strokeWidth="14" strokeLinecap="round" />
+        {/* Arco verde */}
+        <path d="M 124 27 A 70 70 0 0 1 170 90" fill="none" stroke="#a7f3d0" strokeWidth="14" strokeLinecap="round" />
+        {/* Aguja */}
+        <line x1={cx} y1={cy} x2={needleX} y2={needleY} stroke={color} strokeWidth="3" strokeLinecap="round" />
+        <circle cx={cx} cy={cy} r="5" fill={color} />
+        {/* Score */}
+        <text x={cx} y={cy - 10} textAnchor="middle" className="font-extrabold" fontSize="22" fontWeight="800" fill={color}>{nps > 0 ? `+${nps}` : nps}</text>
+      </svg>
+      <p className="text-xs font-semibold mt-0 text-gray-500 dark:text-muted">{label}</p>
+    </div>
+  );
+}
 
 export default function NPSTab() {
+  const [mountTime] = useState(() => Date.now());
   const [surveys, setSurveys] = useState<Survey[]>([]);
-  const [trends, setTrends] = useState<NPSTrend[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterChannel, setFilterChannel] = useState<string>("all");
+  const [filterPeriod, setFilterPeriod] = useState<"7d" | "30d" | "90d" | "all">("all");
   const [view, setView] = useState<"detail" | "trend">("detail");
 
   useEffect(() => {
@@ -40,7 +75,6 @@ export default function NPSTab() {
       .then(data => {
         if (!data?.reviews) return;
         const reviews = data.reviews as Array<{ id: string; name: string; location: string; text: string; rating: number; date: string }>;
-
         const mapped: Survey[] = reviews.map(r => ({
           id: r.id,
           customer: r.name || "Cliente anónimo",
@@ -49,36 +83,49 @@ export default function NPSTab() {
           date: r.date,
           channel: locationToChannel(r.location),
         }));
-
-        // Build monthly trend (last 6 months)
-        const byMonth: Record<string, { promoters: number; passives: number; detractors: number }> = {};
-        mapped.forEach(s => {
-          const month = new Date(s.date).toLocaleDateString("es-PE", { month: "short", year: "2-digit" });
-          if (!byMonth[month]) byMonth[month] = { promoters: 0, passives: 0, detractors: 0 };
-          const type = classify(s.score);
-          byMonth[month][type === "promoter" ? "promoters" : type === "passive" ? "passives" : "detractors"]++;
-        });
-        const trendData: NPSTrend[] = Object.entries(byMonth).map(([month, v]) => ({ month, ...v })).slice(-6);
-
-        startTransition(() => {
-          setSurveys(mapped);
-          setTrends(trendData);
-          setLoading(false);
-        });
+        startTransition(() => { setSurveys(mapped); setLoading(false); });
       })
       .catch(() => startTransition(() => setLoading(false)));
   }, []);
 
-  const filtered = useMemo(() => filterChannel === "all" ? surveys : surveys.filter(s => s.channel === filterChannel), [surveys, filterChannel]);
+  // Filtro por período
+  const periodFiltered = useMemo(() => {
+    if (filterPeriod === "all") return surveys;
+    const days = filterPeriod === "7d" ? 7 : filterPeriod === "30d" ? 30 : 90;
+    const cutoff = mountTime - days * 86400000;
+    return surveys.filter(s => new Date(s.date).getTime() >= cutoff);
+  }, [surveys, filterPeriod]);
 
-  const promoters = filtered.filter(s => classify(s.score) === "promoter").length;
-  const passives = filtered.filter(s => classify(s.score) === "passive").length;
-  const detractors = filtered.filter(s => classify(s.score) === "detractor").length;
+  const filtered = useMemo(() => filterChannel === "all" ? periodFiltered : periodFiltered.filter(s => s.channel === filterChannel), [periodFiltered, filterChannel]);
+
+  const promoters   = filtered.filter(s => classify(s.score) === "promoter").length;
+  const passives    = filtered.filter(s => classify(s.score) === "passive").length;
+  const detractors  = filtered.filter(s => classify(s.score) === "detractor").length;
   const nps = filtered.length > 0 ? Math.round(((promoters - detractors) / filtered.length) * 100) : 0;
   const avgScore = filtered.length > 0 ? (filtered.reduce((s, sv) => s + sv.score, 0) / filtered.length).toFixed(1) : "0";
 
+  // Tendencia mensual
+  const trends: NPSTrend[] = useMemo(() => {
+    const byMonth: Record<string, { promoters: number; passives: number; detractors: number }> = {};
+    surveys.forEach(s => {
+      const month = fmtMonth(s.date);
+      if (!byMonth[month]) byMonth[month] = { promoters: 0, passives: 0, detractors: 0 };
+      const type = classify(s.score);
+      byMonth[month][type === "promoter" ? "promoters" : type === "passive" ? "passives" : "detractors"]++;
+    });
+    return Object.entries(byMonth)
+      .map(([month, v]) => {
+        const total = v.promoters + v.passives + v.detractors || 1;
+        return { month, ...v, nps: Math.round(((v.promoters - v.detractors) / total) * 100) };
+      })
+      .slice(-6);
+  }, [surveys]);
+
+  const maxTrendNPS = Math.max(...trends.map(t => Math.abs(t.nps)), 1);
+
   return (
     <div className="space-y-3 sm:space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Star className="h-6 w-6 text-primary" /> NPS & Satisfacción</h2>
@@ -90,105 +137,173 @@ export default function NPSTab() {
         </div>
       </div>
 
-      {/* NPS Gauge */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <div className="col-span-2 lg:col-span-1 bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5 text-center">
-          <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">NPS Score</p>
-          <p className={cn("text-4xl font-extrabold", nps >= 50 ? "text-emerald-500" : nps >= 0 ? "text-amber-500" : "text-red-500")}>{nps}</p>
-          <p className="text-[10px] text-gray-400 mt-1">{nps >= 50 ? "Excelente" : nps >= 0 ? "Bueno" : "Necesita mejorar"}</p>
-        </div>
-        {[
-          { label: "Promedio", value: avgScore, sub: "/10", color: "text-blue-500" },
-          { label: "Promotores", value: promoters, sub: `(${filtered.length > 0 ? ((promoters / filtered.length) * 100).toFixed(0) : 0}%)`, color: "text-emerald-500", icon: ThumbsUp },
-          { label: "Pasivos", value: passives, sub: `(${filtered.length > 0 ? ((passives / filtered.length) * 100).toFixed(0) : 0}%)`, color: "text-amber-500", icon: Minus },
-          { label: "Detractores", value: detractors, sub: `(${filtered.length > 0 ? ((detractors / filtered.length) * 100).toFixed(0) : 0}%)`, color: "text-red-500", icon: ThumbsDown },
-        ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-            <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
-            <p className={cn("text-xl sm:text-2xl font-extrabold", k.color)}>{k.value}<span className="text-xs text-gray-400 ml-1">{k.sub}</span></p>
+      {/* Gauge + KPIs principales */}
+      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row items-center gap-6">
+          {/* Gauge grande */}
+          <div className="flex flex-col items-center shrink-0">
+            <p className="text-xs font-bold text-gray-500 dark:text-muted mb-1">NPS Score</p>
+            <NPSGauge nps={nps} />
+            <p className="text-xs text-gray-400 mt-1">{filtered.length} respuestas</p>
           </div>
-        ))}
-      </div>
 
-      {/* NPS bar */}
-      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-        <div className="flex h-4 rounded-full overflow-hidden">
-          {filtered.length > 0 && (
-            <>
-              <div className="bg-emerald-500 transition-all" style={{ width: `${(promoters / filtered.length) * 100}%` }} />
-              <div className="bg-amber-400 transition-all" style={{ width: `${(passives / filtered.length) * 100}%` }} />
-              <div className="bg-red-500 transition-all" style={{ width: `${(detractors / filtered.length) * 100}%` }} />
-            </>
-          )}
-        </div>
-        <div className="flex justify-between text-[10px] font-semibold mt-2">
-          <span className="text-emerald-600">Promotores (9-10)</span>
-          <span className="text-amber-600">Pasivos (7-8)</span>
-          <span className="text-red-600">Detractores (0-6)</span>
-        </div>
-      </div>
-
-      {view === "detail" ? (
-        <>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Filter className="h-4 w-4 text-gray-400" />
-            {["all", "tienda", "delivery", "whatsapp"].map(c => (
-              <button key={c} onClick={() => setFilterChannel(c)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterChannel === c ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>{c === "all" ? "Todos" : c.charAt(0).toUpperCase() + c.slice(1)}</button>
-            ))}
-            <button onClick={() => exportToCSV(filtered.map(s => ({ cliente: s.customer, puntaje: s.score, tipo: classify(s.score), canal: s.channel, comentario: s.comment, fecha: fmtDate(s.date) })), "nps-encuestas")} className="ml-auto text-xs text-primary font-semibold flex items-center gap-1"><Download className="h-3 w-3" /> CSV</button>
-          </div>
-          <div className="space-y-2">
-            {loading ? (
-              <div className="text-center py-8 text-sm text-gray-400">Cargando reseñas...</div>
-            ) : filtered.length === 0 ? (
-              <div className="text-center py-8">
-                <Star className="h-10 w-10 text-gray-200 dark:text-surface mx-auto mb-2" />
-                <p className="text-sm font-semibold text-gray-400">Sin reseñas disponibles</p>
-              </div>
-            ) : filtered.map(s => {
-              const type = classify(s.score);
-              return (
-                <div key={s.id} className={cn("bg-white dark:bg-card rounded-xl border p-4 flex items-start gap-3", type === "promoter" ? "border-emerald-200 dark:border-emerald-900/30" : type === "passive" ? "border-amber-200 dark:border-amber-900/30" : "border-red-200 dark:border-red-900/30")}>
-                  <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-lg font-extrabold shrink-0", type === "promoter" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : type === "passive" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
-                    {s.score}
+          {/* Distribución visual */}
+          <div className="flex-1 w-full min-w-0">
+            <p className="text-xs font-bold text-gray-500 dark:text-muted mb-2">Distribución</p>
+            {filtered.length > 0 ? (
+              <>
+                <div className="flex h-5 rounded-full overflow-hidden mb-2">
+                  <div className="bg-emerald-500 transition-all flex items-center justify-center" style={{ width: `${(promoters / filtered.length) * 100}%` }}>
+                    {(promoters / filtered.length) > 0.1 && <span className="text-white text-[9px] font-extrabold">{((promoters / filtered.length) * 100).toFixed(0)}%</span>}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                      <span className="font-bold text-sm text-gray-900 dark:text-foreground">{s.customer}</span>
-                      <span className="text-[10px] bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded text-gray-500 dark:text-muted">{s.channel}</span>
-                      <span className="text-[10px] text-gray-400">{fmtDate(s.date)}</span>
+                  <div className="bg-amber-400 transition-all flex items-center justify-center" style={{ width: `${(passives / filtered.length) * 100}%` }}>
+                    {(passives / filtered.length) > 0.1 && <span className="text-white text-[9px] font-extrabold">{((passives / filtered.length) * 100).toFixed(0)}%</span>}
+                  </div>
+                  <div className="bg-red-500 transition-all flex items-center justify-center" style={{ width: `${(detractors / filtered.length) * 100}%` }}>
+                    {(detractors / filtered.length) > 0.1 && <span className="text-white text-[9px] font-extrabold">{((detractors / filtered.length) * 100).toFixed(0)}%</span>}
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "Promotores", value: promoters, pct: filtered.length > 0 ? ((promoters / filtered.length) * 100).toFixed(0) : "0", color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/20", icon: ThumbsUp, desc: "(9-10)" },
+                    { label: "Pasivos",    value: passives,  pct: filtered.length > 0 ? ((passives / filtered.length) * 100).toFixed(0) : "0",  color: "text-amber-600",  bg: "bg-amber-50 dark:bg-amber-950/20",  icon: Minus,    desc: "(7-8)" },
+                    { label: "Detract.",   value: detractors,pct: filtered.length > 0 ? ((detractors / filtered.length) * 100).toFixed(0) : "0",color: "text-red-600",   bg: "bg-red-50 dark:bg-red-950/20",     icon: ThumbsDown,desc: "(0-6)" },
+                  ].map(k => (
+                    <div key={k.label} className={cn("rounded-xl p-2 text-center", k.bg)}>
+                      <k.icon className={cn("h-4 w-4 mx-auto mb-1", k.color)} />
+                      <p className={cn("text-lg font-extrabold", k.color)}>{k.value}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-muted">{k.label} {k.desc}</p>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-muted flex flex-wrap items-start gap-1"><MessageSquare className="h-3 w-3 shrink-0 mt-0.5" />{s.comment}</p>
-                  </div>
+                  ))}
                 </div>
-              );
-            })}
+              </>
+            ) : (
+              <p className="text-sm text-gray-400 text-center py-4">Sin datos para este período</p>
+            )}
           </div>
-        </>
-      ) : (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex flex-wrap items-center gap-2"><TrendingUp className="h-4 w-4 text-primary" /> Evolución NPS mensual</h3>
-          <div className="space-y-3">
-            {loading ? (
-              <div className="text-center py-6 text-sm text-gray-400">Cargando tendencia...</div>
-            ) : trends.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-6">Sin datos históricos suficientes</p>
-            ) : trends.map(t => {
-              const npsVal = t.promoters - t.detractors;
-              const total = t.promoters + t.passives + t.detractors || 1;
-              return (
-                <div key={t.month} className="flex flex-wrap items-center gap-3">
-                  <span className="w-14 text-xs font-bold text-gray-500 dark:text-muted shrink-0">{t.month}</span>
-                  <div className="flex-1 flex h-5 rounded-full overflow-hidden bg-gray-100 dark:bg-surface">
-                    <div className="bg-emerald-500 transition-all" style={{ width: `${(t.promoters / total) * 100}%` }} />
-                    <div className="bg-amber-400 transition-all" style={{ width: `${(t.passives / total) * 100}%` }} />
-                    <div className="bg-red-500 transition-all" style={{ width: `${(t.detractors / total) * 100}%` }} />
-                  </div>
-                  <span className={cn("w-10 text-xs font-extrabold text-right", npsVal >= 50 ? "text-emerald-500" : npsVal >= 0 ? "text-amber-500" : "text-red-500")}>{npsVal > 0 ? "+" : ""}{npsVal}</span>
+
+          {/* Score promedio */}
+          <div className="flex flex-col items-center shrink-0 bg-gray-50 dark:bg-surface rounded-2xl p-4 min-w-[80px]">
+            <p className="text-xs font-bold text-gray-500 dark:text-muted">Promedio</p>
+            <p className="text-3xl font-extrabold text-blue-500">{avgScore}</p>
+            <p className="text-[10px] text-gray-400">/10</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filtros período + canal */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Filter className="h-4 w-4 text-gray-400 shrink-0" />
+        <span className="text-xs font-bold text-gray-500 dark:text-muted">Período:</span>
+        {(["7d", "30d", "90d", "all"] as const).map(p => (
+          <button key={p} onClick={() => setFilterPeriod(p)} className={cn("px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors", filterPeriod === p ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
+            {p === "all" ? "Todo" : p}
+          </button>
+        ))}
+        <span className="text-xs font-bold text-gray-500 dark:text-muted ml-2">Canal:</span>
+        {["all", "tienda", "delivery", "whatsapp"].map(c => (
+          <button key={c} onClick={() => setFilterChannel(c)} className={cn("px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors", filterChannel === c ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
+            {c === "all" ? "Todos" : c.charAt(0).toUpperCase() + c.slice(1)}
+          </button>
+        ))}
+        <button onClick={() => exportToCSV(filtered.map(s => ({ cliente: s.customer, puntaje: s.score, tipo: classify(s.score), canal: s.channel, comentario: s.comment, fecha: fmtDate(s.date) })), "nps-encuestas")} className="ml-auto text-xs text-primary font-semibold flex items-center gap-1">
+          <Download className="h-3 w-3" /> CSV
+        </button>
+      </div>
+
+      {/* Vista detalle: comentarios */}
+      {view === "detail" && (
+        <div className="space-y-2">
+          {loading ? (
+            <div className="flex items-center justify-center py-8 gap-2 text-gray-400">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-sm">Cargando reseñas...</span>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-10 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
+              <Star className="h-10 w-10 text-gray-200 dark:text-surface mx-auto mb-2" />
+              <p className="text-sm font-semibold text-gray-400">Sin reseñas para este filtro</p>
+            </div>
+          ) : filtered.map(s => {
+            const type = classify(s.score);
+            return (
+              <div key={s.id} className={cn("bg-white dark:bg-card rounded-xl border p-4 flex items-start gap-3", type === "promoter" ? "border-emerald-200 dark:border-emerald-900/30" : type === "passive" ? "border-amber-200 dark:border-amber-900/30" : "border-red-200 dark:border-red-900/30")}>
+                <div className={cn("h-10 w-10 rounded-full flex items-center justify-center text-base font-extrabold shrink-0", type === "promoter" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : type === "passive" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
+                  {s.score}
                 </div>
-              );
-            })}
-          </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                    <span className="font-bold text-sm text-gray-900 dark:text-foreground">{s.customer}</span>
+                    <span className="text-[10px] bg-gray-100 dark:bg-surface px-1.5 py-0.5 rounded text-gray-500 dark:text-muted">{s.channel}</span>
+                    <span className="text-[10px] text-gray-400">{fmtDate(s.date)}</span>
+                  </div>
+                  {s.comment && (
+                    <p className="text-xs text-gray-600 dark:text-muted flex items-start gap-1">
+                      <MessageSquare className="h-3 w-3 shrink-0 mt-0.5 text-gray-400" />
+                      {s.comment}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Vista tendencia */}
+      {view === "trend" && (
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-5">
+          <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" /> Evolución NPS mensual
+          </h3>
+          {loading ? (
+            <div className="flex items-center justify-center py-6 gap-2 text-gray-400">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-sm">Cargando tendencia...</span>
+            </div>
+          ) : trends.length === 0 ? (
+            <div className="flex flex-col items-center py-8 gap-2 text-gray-400">
+              <AlertTriangle className="h-8 w-8 opacity-40" />
+              <p className="text-sm">Sin datos históricos suficientes</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Mini barras de NPS por mes */}
+              <div className="flex items-end gap-2 h-24">
+                {trends.map(t => {
+                  const heightPct = Math.max(5, (Math.abs(t.nps) / maxTrendNPS) * 100);
+                  const isPositive = t.nps >= 0;
+                  return (
+                    <div key={t.month} className="flex flex-col items-center gap-1 flex-1 min-w-0" title={`${t.month}: NPS ${t.nps}`}>
+                      <span className={cn("text-[9px] font-extrabold", isPositive ? "text-emerald-600" : "text-red-500")}>{t.nps > 0 ? `+${t.nps}` : t.nps}</span>
+                      <div className={cn("w-full rounded-t-lg transition-all", isPositive ? "bg-emerald-400" : "bg-red-400")} style={{ height: `${heightPct}%` }} />
+                      <span className="text-[9px] text-gray-400 truncate w-full text-center">{t.month}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Tabla tendencia */}
+              <div className="space-y-2">
+                {trends.map(t => {
+                  const total = t.promoters + t.passives + t.detractors || 1;
+                  return (
+                    <div key={t.month} className="flex items-center gap-3">
+                      <span className="w-14 text-xs font-bold text-gray-500 dark:text-muted shrink-0">{t.month}</span>
+                      <div className="flex-1 flex h-4 rounded-full overflow-hidden bg-gray-100 dark:bg-surface">
+                        <div className="bg-emerald-500 transition-all" style={{ width: `${(t.promoters / total) * 100}%` }} />
+                        <div className="bg-amber-400 transition-all" style={{ width: `${(t.passives / total) * 100}%` }} />
+                        <div className="bg-red-500 transition-all" style={{ width: `${(t.detractors / total) * 100}%` }} />
+                      </div>
+                      <span className={cn("w-10 text-xs font-extrabold text-right shrink-0", t.nps >= 50 ? "text-emerald-500" : t.nps >= 0 ? "text-amber-500" : "text-red-500")}>
+                        {t.nps > 0 ? "+" : ""}{t.nps}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

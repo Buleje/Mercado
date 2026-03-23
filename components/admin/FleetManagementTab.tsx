@@ -1,149 +1,399 @@
-﻿"use client";
+"use client";
 
-import { useState, useMemo } from "react";
-import { Truck, Wrench, Fuel, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import {
+  Truck, Wrench, Fuel, AlertTriangle, ChevronDown, ChevronUp,
+  Plus, Pencil, X, Check, User, BarChart3, Route,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
+type VehicleStatus = "activo" | "en-ruta" | "mantenimiento" | "inactivo";
+
 type Vehicle = {
-  id: string; name: string; type: "moto" | "mototaxi" | "camioneta"; plate: string; driver: string;
-  status: "activo" | "mantenimiento" | "inactivo"; kmTotal: number; lastMaintenance: string;
-  nextMaintenance: string; fuelLevel: number; deliveriesToday: number;
+  id: string;
+  name: string;
+  type: "moto" | "mototaxi" | "camioneta";
+  plate: string;
+  driver: string;
+  status: VehicleStatus;
+  kmTotal: number;
+  kmMonth: number;
+  lastMaintenance: string;
+  nextMaintenance: string;
+  fuelLevel: number;
+  deliveriesToday: number;
+  deliveriesMonth: number;
 };
 
-const SEED: Vehicle[] = [];
+type MaintenanceLog = {
+  id: string;
+  vehicleId: string;
+  vehicleName: string;
+  type: string;
+  date: string;
+  cost: number;
+  notes: string;
+};
 
-type MaintenanceLog = { id: string; vehicle: string; type: string; date: string; cost: number; notes: string };
-const MAINT_LOG: MaintenanceLog[] = [];
-
-const STATUS_CONFIG = {
-  activo: { label: "Activo", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
-  mantenimiento: { label: "En taller", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-  inactivo: { label: "Inactivo", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
+const STATUS_CONFIG: Record<VehicleStatus, { label: string; color: string; dot: string }> = {
+  activo:        { label: "Disponible",  color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", dot: "bg-emerald-500" },
+  "en-ruta":     { label: "En ruta",     color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",             dot: "bg-blue-500" },
+  mantenimiento: { label: "En taller",   color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",         dot: "bg-amber-500" },
+  inactivo:      { label: "Inactivo",    color: "bg-gray-100 text-gray-600 dark:bg-surface dark:text-muted",                    dot: "bg-gray-400" },
 };
 
 const TYPE_ICONS: Record<string, string> = { moto: "🏍️", mototaxi: "🛺", camioneta: "🚐" };
 
-function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); }
+const MAINTENANCE_THRESHOLD = new Date(Date.now() + 7 * 86_400_000);
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" });
+}
 function fmt(n: number) { return `S/ ${n.toFixed(2)}`; }
 
-// Pre-computed threshold date for maintenance warnings (module-level to avoid impure calls during render)
-const MAINTENANCE_THRESHOLD = new Date(Date.now() + 7 * 86400000);
+const EMPTY_MAINT: Omit<MaintenanceLog, "id"> = {
+  vehicleId: "", vehicleName: "", type: "", date: new Date().toISOString().slice(0, 10), cost: 0, notes: "",
+};
 
 export default function FleetManagementTab() {
-  const [vehicles] = useState(SEED);
-  const [view, setView] = useState<"fleet" | "maintenance">("fleet");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [vehicles, setVehicles]       = useState<Vehicle[]>([]);
+  const [maintLog, setMaintLog]       = useState<MaintenanceLog[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [view, setView]               = useState<"fleet" | "maintenance">("fleet");
+  const [expandedId, setExpandedId]   = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [showMaintModal, setShowMaintModal] = useState(false);
+  const [maintForm, setMaintForm]     = useState(EMPTY_MAINT);
+  const [showStatusModal, setShowStatusModal] = useState<Vehicle | null>(null);
 
-  const filtered = useMemo(() => filterStatus === "all" ? vehicles : vehicles.filter(v => v.status === filterStatus), [vehicles, filterStatus]);
-  const activeCount = vehicles.filter(v => v.status === "activo").length;
-  const totalDeliveries = vehicles.reduce((s, v) => s + v.deliveriesToday, 0);
-  const avgFuel = Math.round(vehicles.filter(v => v.status === "activo").reduce((s, v) => s + v.fuelLevel, 0) / activeCount);
-  const maintCost = MAINT_LOG.reduce((s, m) => s + m.cost, 0);
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      fetch("/api/fleet").then(r => r.ok ? r.json() : []),
+      fetch("/api/fleet/maintenance").then(r => r.ok ? r.json() : []),
+    ]).then(([vData, mData]) => {
+      if (!active) return;
+      setVehicles(vData);
+      setMaintLog(mData);
+      setLoading(false);
+    }).catch(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  const filtered = useMemo(
+    () => filterStatus === "all" ? vehicles : vehicles.filter(v => v.status === filterStatus),
+    [vehicles, filterStatus]
+  );
+
+  const kpis = useMemo(() => {
+    const active   = vehicles.filter(v => v.status === "activo" || v.status === "en-ruta").length;
+    const enRuta   = vehicles.filter(v => v.status === "en-ruta").length;
+    const totalDel = vehicles.reduce((s, v) => s + v.deliveriesToday, 0);
+    const maintCost = maintLog.reduce((s, m) => s + m.cost, 0);
+    return { active, enRuta, totalDel, maintCost };
+  }, [vehicles, maintLog]);
+
+  const changeStatus = async (vehicleId: string, status: VehicleStatus) => {
+    await fetch(`/api/fleet/${vehicleId}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    setVehicles(prev => prev.map(v => v.id === vehicleId ? { ...v, status } : v));
+    setShowStatusModal(null);
+  };
+
+  const saveMaintenance = async () => {
+    if (!maintForm.vehicleId || !maintForm.type) return;
+    const res = await fetch("/api/fleet/maintenance", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(maintForm),
+    });
+    if (res.ok) {
+      const created: MaintenanceLog = await res.json();
+      setMaintLog(prev => [created, ...prev]);
+    }
+    setShowMaintModal(false);
+    setMaintForm(EMPTY_MAINT);
+  };
 
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Truck className="h-6 w-6 text-primary" /> Gestión de Flota</h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Control de vehículos, combustible y mantenimiento</p>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
+            <Truck className="h-6 w-6 text-primary" />
+            Gestión de Flota
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Vehículos, combustible y mantenimiento</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => setView("fleet")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "fleet" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Flota</button>
-          <button onClick={() => setView("maintenance")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "maintenance" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Mantenimiento</button>
+          {(["fleet", "maintenance"] as const).map(v => (
+            <button key={v} onClick={() => setView(v)}
+              className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
+                view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted"
+              )}>
+              {v === "fleet" ? "Flota" : "Mantenimiento"}
+            </button>
+          ))}
+          {view === "maintenance" && (
+            <button onClick={() => setShowMaintModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-white hover:bg-primary/90">
+              <Plus className="h-3.5 w-3.5" /> Registrar
+            </button>
+          )}
         </div>
       </div>
 
+      {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Vehículos activos", value: `${activeCount}/${vehicles.length}`, color: "text-emerald-500" },
-          { label: "Entregas hoy", value: totalDeliveries, color: "text-blue-500" },
-          { label: "Combustible prom.", value: `${avgFuel}%`, color: "text-amber-500" },
-          { label: "Gasto mantenimiento", value: fmt(maintCost), color: "text-red-500" },
-        ].map(k => (
-          <div key={k.label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
-            <p className="text-xs font-semibold text-gray-500 dark:text-muted">{k.label}</p>
-            <p className={cn("text-xl font-extrabold", k.color)}>{k.value}</p>
+          { label: "Disponibles",       value: `${kpis.active}/${vehicles.length}`, color: "text-emerald-600", icon: Truck },
+          { label: "En ruta ahora",     value: kpis.enRuta,                          color: "text-blue-500",    icon: Route },
+          { label: "Entregas hoy",      value: kpis.totalDel,                        color: "text-primary",     icon: BarChart3 },
+          { label: "Gasto mantenimiento", value: fmt(kpis.maintCost),                color: "text-amber-500",   icon: Wrench },
+        ].map(({ label, value, color, icon: Icon }) => (
+          <div key={label} className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 flex items-start gap-3">
+            <div className={cn("p-2 rounded-lg bg-gray-50 dark:bg-surface", color)}>
+              <Icon className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-muted leading-tight">{label}</p>
+              <p className={cn("text-xl font-extrabold mt-0.5", color)}>{value}</p>
+            </div>
           </div>
         ))}
       </div>
 
-      {view === "fleet" ? (
+      {/* Fleet view */}
+      {view === "fleet" && (
         <>
           <div className="flex items-center gap-2 flex-wrap">
-            {["all", "activo", "mantenimiento", "inactivo"].map(s => (
-              <button key={s} onClick={() => setFilterStatus(s)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>{s === "all" ? "Todos" : STATUS_CONFIG[s as keyof typeof STATUS_CONFIG].label}</button>
+            {(["all", "activo", "en-ruta", "mantenimiento", "inactivo"] as const).map(s => (
+              <button key={s} onClick={() => setFilterStatus(s)}
+                className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
+                  filterStatus === s ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted"
+                )}>
+                {s === "all" ? "Todos" : STATUS_CONFIG[s].label}
+              </button>
             ))}
           </div>
+
+          {!loading && filtered.length === 0 && (
+            <div className="text-center py-12 bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border rounded-2xl">
+              <Truck className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500 dark:text-muted">Sin vehículos en esta categoría</p>
+            </div>
+          )}
+
           <div className="space-y-3">
             {filtered.map(v => (
               <div key={v.id} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
-                <button onClick={() => setExpandedId(expandedId === v.id ? null : v.id)} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-xl sm:text-2xl">{TYPE_ICONS[v.type]}</span>
+                <button
+                  onClick={() => setExpandedId(expandedId === v.id ? null : v.id)}
+                  className="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl shrink-0">{TYPE_ICONS[v.type]}</span>
                     <div className="text-left">
                       <h4 className="font-bold text-sm text-gray-900 dark:text-foreground">{v.name}</h4>
-                      <p className="text-xs text-gray-500 dark:text-muted">{v.plate} · {v.driver}</p>
+                      <p className="text-xs text-gray-500 dark:text-muted">{v.plate} · <span className="flex-inline items-center gap-0.5"><User className="h-3 w-3 inline" /> {v.driver}</span></p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full", STATUS_CONFIG[v.status].color)}>{STATUS_CONFIG[v.status].label}</span>
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    <div className="flex items-center gap-1.5">
+                      <span className={cn("w-2 h-2 rounded-full", STATUS_CONFIG[v.status].dot)} />
+                      <span className={cn("text-[10px] font-bold px-2.5 py-1 rounded-full", STATUS_CONFIG[v.status].color)}>
+                        {STATUS_CONFIG[v.status].label}
+                      </span>
+                    </div>
+                    <span className="text-xs text-primary font-bold">{v.deliveriesToday} entregas hoy</span>
                     {expandedId === v.id ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
                   </div>
                 </button>
+
                 {expandedId === v.id && (
-                  <div className="px-5 pb-5 border-t border-gray-100 dark:border-card-border pt-4 space-y-3">
+                  <div className="px-4 pb-4 border-t border-gray-100 dark:border-card-border pt-4 space-y-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                      <div><p className="text-[10px] text-gray-400 dark:text-muted">Km totales</p><p className="text-sm font-bold text-gray-900 dark:text-foreground">{v.kmTotal.toLocaleString()}</p></div>
-                      <div><p className="text-[10px] text-gray-400 dark:text-muted">Entregas hoy</p><p className="text-sm font-bold text-gray-900 dark:text-foreground">{v.deliveriesToday}</p></div>
-                      <div><p className="text-[10px] text-gray-400 dark:text-muted">Últ. mantenimiento</p><p className="text-sm font-bold text-gray-900 dark:text-foreground">{fmtDate(v.lastMaintenance)}</p></div>
-                      <div><p className="text-[10px] text-gray-400 dark:text-muted">Próx. mantenimiento</p><p className="text-sm font-bold text-gray-900 dark:text-foreground">{fmtDate(v.nextMaintenance)}</p></div>
+                      <div>
+                        <p className="text-[10px] text-gray-400 dark:text-muted">Km totales</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-foreground">{v.kmTotal.toLocaleString()} km</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-400 dark:text-muted">Km este mes</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-foreground">{v.kmMonth.toLocaleString()} km</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-400 dark:text-muted">Entregas mes</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-foreground">{v.deliveriesMonth}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-400 dark:text-muted">Próx. mantenimiento</p>
+                        <p className="text-sm font-bold text-gray-900 dark:text-foreground">{fmtDate(v.nextMaintenance)}</p>
+                      </div>
                     </div>
+
                     {/* Fuel bar */}
                     <div>
                       <div className="flex items-center justify-between text-xs mb-1">
-                        <span className="text-gray-500 dark:text-muted flex items-center gap-1"><Fuel className="h-3 w-3" /> Combustible</span>
-                        <span className={cn("font-bold", v.fuelLevel > 50 ? "text-emerald-600" : v.fuelLevel > 20 ? "text-amber-600" : "text-red-600")}>{v.fuelLevel}%</span>
+                        <span className="text-gray-500 dark:text-muted flex items-center gap-1">
+                          <Fuel className="h-3 w-3" /> Combustible
+                        </span>
+                        <span className={cn("font-bold",
+                          v.fuelLevel > 50 ? "text-emerald-600" : v.fuelLevel > 20 ? "text-amber-600" : "text-red-600"
+                        )}>
+                          {v.fuelLevel}%
+                        </span>
                       </div>
                       <div className="w-full h-2.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                        <div className={cn("h-full rounded-full transition-all", v.fuelLevel > 50 ? "bg-emerald-500" : v.fuelLevel > 20 ? "bg-amber-500" : "bg-red-500")} style={{ width: `${v.fuelLevel}%` }} />
+                        <div
+                          className={cn("h-full rounded-full transition-all",
+                            v.fuelLevel > 50 ? "bg-emerald-500" : v.fuelLevel > 20 ? "bg-amber-500" : "bg-red-500"
+                          )}
+                          style={{ width: `${v.fuelLevel}%` }}
+                        />
                       </div>
                     </div>
+
                     {/* Maintenance warning */}
                     {new Date(v.nextMaintenance) <= MAINTENANCE_THRESHOLD && (
-                      <div className="flex flex-wrap items-center gap-2 text-xs bg-amber-50 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400 px-3 py-2 rounded-xl">
+                      <div className="flex items-center gap-2 text-xs bg-amber-50 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400 px-3 py-2 rounded-xl">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                         Mantenimiento próximo: {fmtDate(v.nextMaintenance)}
                       </div>
                     )}
+
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button
+                        onClick={() => setShowStatusModal(v)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition"
+                      >
+                        <Pencil className="h-3 w-3" /> Cambiar estado
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
             ))}
           </div>
         </>
-      ) : (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-y-hidden overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead><tr className="bg-gray-50 dark:bg-surface text-left">
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Vehículo</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Tipo</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Fecha</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Costo</th>
-              <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Notas</th>
-            </tr></thead>
-            <tbody>
-              {MAINT_LOG.map(m => (
-                <tr key={m.id} className="border-t border-gray-100 dark:border-card-border">
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900 dark:text-foreground">{m.vehicle}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-600 dark:text-muted flex items-center gap-1"><Wrench className="h-3 w-3" /> {m.type}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted">{fmtDate(m.date)}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-900 dark:text-foreground">{fmt(m.cost)}</td>
-                  <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted max-w-48 truncate">{m.notes}</td>
+      )}
+
+      {/* Maintenance view */}
+      {view === "maintenance" && (
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px] text-sm">
+              <thead>
+                <tr className="bg-gray-50 dark:bg-surface text-left text-xs font-bold text-gray-400">
+                  <th className="px-4 py-3">Vehículo</th>
+                  <th className="px-4 py-3">Tipo de trabajo</th>
+                  <th className="px-4 py-3">Fecha</th>
+                  <th className="px-4 py-3 text-right">Costo</th>
+                  <th className="px-4 py-3">Notas</th>
                 </tr>
+              </thead>
+              <tbody>
+                {maintLog.map(m => (
+                  <tr key={m.id} className="border-t border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-accent/10">
+                    <td className="px-4 py-3 font-semibold text-gray-800 dark:text-foreground">{m.vehicleName}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-muted flex items-center gap-1">
+                      <Wrench className="h-3.5 w-3.5 text-amber-500 shrink-0" /> {m.type}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-muted">{fmtDate(m.date)}</td>
+                    <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-foreground">{fmt(m.cost)}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500 dark:text-muted max-w-48 truncate">{m.notes || "—"}</td>
+                  </tr>
+                ))}
+                {maintLog.length === 0 && (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-400">Sin registros de mantenimiento</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Change status modal */}
+      {showStatusModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowStatusModal(null)}>
+          <div className="bg-white dark:bg-card rounded-2xl p-4 sm:p-6 w-full max-w-sm border border-gray-200 dark:border-card-border shadow-2xl space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Estado — {showStatusModal.name}</h3>
+              <button onClick={() => setShowStatusModal(null)}><X className="h-4 w-4 text-gray-400" /></button>
+            </div>
+            <div className="space-y-2">
+              {(Object.keys(STATUS_CONFIG) as VehicleStatus[]).map(s => (
+                <button
+                  key={s}
+                  onClick={() => changeStatus(showStatusModal.id, s)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold border transition",
+                    showStatusModal.status === s
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-gray-200 dark:border-card-border hover:border-primary/30 hover:bg-gray-50 dark:hover:bg-surface"
+                  )}
+                >
+                  <span className={cn("w-2.5 h-2.5 rounded-full", STATUS_CONFIG[s].dot)} />
+                  {STATUS_CONFIG[s].label}
+                  {showStatusModal.status === s && <Check className="h-4 w-4 ml-auto text-primary" />}
+                </button>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Register maintenance modal */}
+      {showMaintModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setShowMaintModal(false)}>
+          <div className="bg-white dark:bg-card rounded-2xl p-4 sm:p-6 w-full max-w-md border border-gray-200 dark:border-card-border shadow-2xl space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Registrar mantenimiento</h3>
+              <button onClick={() => setShowMaintModal(false)}><X className="h-4 w-4 text-gray-400" /></button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Vehículo</label>
+                <select
+                  value={maintForm.vehicleId}
+                  onChange={e => {
+                    const v = vehicles.find(x => x.id === e.target.value);
+                    setMaintForm(f => ({ ...f, vehicleId: e.target.value, vehicleName: v?.name ?? "" }));
+                  }}
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm"
+                >
+                  <option value="">Seleccionar vehículo...</option>
+                  {vehicles.map(v => <option key={v.id} value={v.id}>{v.name} ({v.plate})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Tipo de trabajo</label>
+                <input value={maintForm.type} onChange={e => setMaintForm(f => ({ ...f, type: e.target.value }))}
+                  placeholder="Ej: Cambio de aceite, frenos..." className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted">Fecha</label>
+                  <input type="date" value={maintForm.date} onChange={e => setMaintForm(f => ({ ...f, date: e.target.value }))}
+                    className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-gray-500 dark:text-muted">Costo (S/)</label>
+                  <input type="number" min="0" step="0.5" value={maintForm.cost} onChange={e => setMaintForm(f => ({ ...f, cost: +e.target.value }))}
+                    className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted">Notas</label>
+                <textarea value={maintForm.notes} onChange={e => setMaintForm(f => ({ ...f, notes: e.target.value }))} rows={2}
+                  className="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm resize-none" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowMaintModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-accent">Cancelar</button>
+              <button onClick={saveMaintenance} className="px-4 py-2 rounded-xl text-sm font-bold bg-primary text-white hover:bg-primary/90 flex items-center gap-1.5">
+                <Check className="h-4 w-4" /> Guardar
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
