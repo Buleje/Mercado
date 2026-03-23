@@ -3,12 +3,40 @@
 import React from "react";
 import { ChevronRight, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  BASIC_SIDEBAR_MODULES,
+  CONFIG_SIDEBAR_MODULE,
+  PRO_SIDEBAR_MODULES,
+} from "./AdminSidebar";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const ALL_MODULES = [
+  ...BASIC_SIDEBAR_MODULES,
+  CONFIG_SIDEBAR_MODULE,
+  ...PRO_SIDEBAR_MODULES,
+];
+
+/** Dado un moduleId, devuelve el label del modulo. Si no encuentra, devuelve el id. */
+function getModuleLabel(moduleId: string): string {
+  const found = ALL_MODULES.find((m) => m.id === moduleId);
+  return found?.label ?? moduleId;
+}
+
+/** Dado un tabId, devuelve el label del tab. Si no encuentra, devuelve el id. */
+function getTabLabel(tabId: string): string {
+  for (const mod of ALL_MODULES) {
+    const tab = mod.tabs.find((t) => t.id === tabId);
+    if (tab) return tab.label;
+  }
+  return tabId;
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface BreadcrumbsProps {
-  moduleName: string;
-  tabName: string;
+  moduleId: string;
+  tabId: string;
   onNavigateModule: () => void;
   onNavigateHome: () => void;
 }
@@ -16,12 +44,15 @@ export interface BreadcrumbsProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Breadcrumbs({
-  moduleName,
-  tabName,
+  moduleId,
+  tabId,
   onNavigateModule,
   onNavigateHome,
 }: BreadcrumbsProps) {
-  // Determinar si el tab es diferente al modulo (para mostrar el tercer nivel)
+  const moduleName = getModuleLabel(moduleId);
+  const tabName = getTabLabel(tabId);
+
+  // Mostrar tab solo si es diferente al nombre del modulo
   const showTab = tabName && tabName !== moduleName;
 
   return (
@@ -39,7 +70,6 @@ export default function Breadcrumbs({
         )}
         aria-label="Volver al panel principal"
       >
-        {/* En desktop: icono + texto. En mobile: solo icono */}
         <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
         <span className="hidden sm:inline text-xs">Admin</span>
       </button>
@@ -69,7 +99,7 @@ export default function Breadcrumbs({
         </span>
       )}
 
-      {/* Nivel 3: Tab actual (solo si es diferente al modulo) */}
+      {/* Nivel 3: Tab actual */}
       {showTab && (
         <>
           <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-300 dark:text-gray-600" />

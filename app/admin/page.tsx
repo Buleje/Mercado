@@ -256,41 +256,101 @@ type TabCategory = {
   id: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  tabs: Tab[];  
+  tabs: Tab[];
+  proOnly?: boolean;
 };
 
-// ── Categorías para el filtro del sidebar (agrupan los 14 módulos) ──────────
-const TAB_CATEGORIES: TabCategory[] = [
+// ── 7 módulos básicos (Plan Free/Basic) ──────────────────────────────────────
+const BASIC_MODULES: TabCategory[] = [
   {
-    id: "operaciones",
-    label: "Operaciones",
-    icon: Monitor,
-    tabs: ["panel-principal", "pos-caja", "inventario-almacenes", "pedidos"],
+    id: "inicio",
+    label: "Inicio",
+    icon: LayoutDashboard,
+    tabs: ["panel-principal"],
   },
   {
-    id: "comercial",
-    label: "Comercial",
+    id: "ventas-caja",
+    label: "Ventas & Caja",
+    icon: ShoppingCart,
+    tabs: ["pos-caja", "pedidos"],
+  },
+  {
+    id: "inventario",
+    label: "Inventario",
+    icon: Package,
+    tabs: ["inventario-almacenes"],
+  },
+  {
+    id: "productos",
+    label: "Productos",
     icon: Tag,
-    tabs: ["catalogo-tienda", "compras", "logistica"],
+    tabs: ["catalogo-tienda"],
   },
   {
-    id: "clientes",
-    label: "Clientes & Crecimiento",
-    icon: Users,
-    tabs: ["crm-clientes", "ventas-marketing", "analytics-bi"],
+    id: "compras-mod",
+    label: "Compras",
+    icon: Truck,
+    tabs: ["compras"],
   },
   {
-    id: "finanzas-org",
-    label: "Finanzas & Organización",
+    id: "plata",
+    label: "Mi Plata",
     icon: DollarSign,
-    tabs: ["finanzas", "rrhh", "proyectos-tareas"],
+    tabs: ["finanzas", "reportes-documentos"],
   },
   {
-    id: "admin-sistema",
-    label: "Administración",
-    icon: Shield,
-    tabs: ["reportes-documentos", "seguridad", "plan"],
+    id: "mi-tienda",
+    label: "Mi Tienda",
+    icon: Store,
+    tabs: ["crm-clientes", "logistica"],
   },
+];
+
+// ── Módulo Config (siempre visible) ──────────────────────────────────────────
+const CONFIG_MODULE: TabCategory = {
+  id: "config",
+  label: "Configuracion",
+  icon: Settings,
+  tabs: ["seguridad", "plan"],
+};
+
+// ── Módulos PRO (Plan Pro/Business/Enterprise) ────────────────────────────────
+const PRO_MODULES: TabCategory[] = [
+  {
+    id: "analytics-mod",
+    label: "Analytics & BI",
+    icon: BarChart3,
+    tabs: ["analytics-bi"],
+    proOnly: true,
+  },
+  {
+    id: "ventas-marketing-mod",
+    label: "Marketing",
+    icon: Megaphone,
+    tabs: ["ventas-marketing"],
+    proOnly: true,
+  },
+  {
+    id: "rrhh-mod",
+    label: "RRHH",
+    icon: UserCog,
+    tabs: ["rrhh"],
+    proOnly: true,
+  },
+  {
+    id: "tareas-mod",
+    label: "Tareas & Automatizacion",
+    icon: ListTodo,
+    tabs: ["proyectos-tareas"],
+    proOnly: true,
+  },
+];
+
+// ── TAB_CATEGORIES: combina módulos básicos + PRO + config (se filtra por plan en runtime) ──
+const TAB_CATEGORIES: TabCategory[] = [
+  ...BASIC_MODULES,
+  ...PRO_MODULES,
+  CONFIG_MODULE,
 ];
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -5194,6 +5254,8 @@ function AdminPage() {
   const [userName, setUserName] = useState("Admin");
   const [authReady, setAuthReady] = useState(false);
   const [savedRolePerms, setSavedRolePerms] = useState<Record<string, string[]> | null>(null);
+  // Plan del tenant — se carga al montar; por defecto "free" para no mostrar Pro hasta confirmar
+  const [tenantPlan, setTenantPlan] = useState<string>("free");
   useScrollLock(mobileNavOpen);
   const { resolved: theme, toggle: toggleTheme } = useTheme();
   const { permission, requestPermission, sendNotification, hasAsked } = useNotifications();
@@ -5205,6 +5267,10 @@ function AdminPage() {
         if (d?.mode) setStoreModeState(d.mode);
         if (d?.rolePermissions) setSavedRolePerms(d.rolePermissions);
       })
+      .catch(() => {});
+    fetch("/api/plan")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.plan) setTenantPlan(d.plan); })
       .catch(() => {});
     fetch("/api/auth/me")
       .then(r => { if (!r.ok) throw new Error("unauth"); return r.json(); })
@@ -5450,6 +5516,19 @@ function AdminPage() {
     { id: "plan" as Tab,                   label: "Plan & Límites",             icon: Zap },
   ] as const;
 
+  // Plan gating — tabs que pertenecen exclusivamente a módulos Pro
+  const isPaidPlan = tenantPlan === "pro" || tenantPlan === "business" || tenantPlan === "enterprise";
+  const PRO_ONLY_TABS = new Set<Tab>(
+    PRO_MODULES.flatMap(m => m.tabs as Tab[])
+  );
+  // Tab activo está bloqueado por plan?
+  const isProGated = PRO_ONLY_TABS.has(tab) && !isPaidPlan;
+
+  // Categorías visibles según plan: básicos + config siempre; Pro solo si plan pago
+  const visibleCategories: TabCategory[] = isPaidPlan
+    ? TAB_CATEGORIES
+    : [...BASIC_MODULES, CONFIG_MODULE];
+
   // Role-based tab filtering — populated from lib/module-permissions.ts
   const DEFAULT_ROLE_TABS: Record<string, Tab[]> = {
     admin: ALL_TABS.map(t => t.id),
@@ -5466,9 +5545,9 @@ function AdminPage() {
   const allowedTabs = ROLE_TABS[userRole] ?? ROLE_TABS.admin;
   let filteredTabs = ALL_TABS.filter(t => allowedTabs.includes(t.id) && !hiddenTabs.has(t.id));
   
-  // Category filtering
+  // Category filtering — usa visibleCategories para respetar plan gating
   if (selectedCategory) {
-    const categoryTabs = TAB_CATEGORIES.find(c => c.id === selectedCategory)?.tabs ?? [];
+    const categoryTabs = visibleCategories.find(c => c.id === selectedCategory)?.tabs ?? [];
     filteredTabs = filteredTabs.filter(t => categoryTabs.includes(t.id));
   }
 
@@ -5535,10 +5614,10 @@ function AdminPage() {
             <div className="flex items-center gap-2">
               {selectedCategory ? (
                 <>
-                  {TAB_CATEGORIES.find(c => c.id === selectedCategory)?.icon && (
-                    React.createElement(TAB_CATEGORIES.find(c => c.id === selectedCategory)!.icon, { className: "h-4 w-4 shrink-0" })
+                  {visibleCategories.find(c => c.id === selectedCategory)?.icon && (
+                    React.createElement(visibleCategories.find(c => c.id === selectedCategory)!.icon, { className: "h-4 w-4 shrink-0" })
                   )}
-                  <span className="truncate">{TAB_CATEGORIES.find(c => c.id === selectedCategory)?.label}</span>
+                  <span className="truncate">{visibleCategories.find(c => c.id === selectedCategory)?.label}</span>
                 </>
               ) : (
                 <>
@@ -5565,7 +5644,7 @@ function AdminPage() {
                   <span>Todas ({allowedTabs.length})</span>
                 </button>
                 <div className="h-px bg-gray-100 dark:bg-card-border my-1" />
-                {TAB_CATEGORIES.map(category => {
+                {visibleCategories.map(category => {
                   const count = category.tabs.filter(t => allowedTabs.includes(t)).length;
                   if (count === 0) return null;
                   const CategoryIcon = category.icon;
@@ -5745,10 +5824,10 @@ function AdminPage() {
             <div className="flex items-center gap-2">
               {selectedCategory ? (
                 <>
-                  {TAB_CATEGORIES.find(c => c.id === selectedCategory)?.icon && (
-                    React.createElement(TAB_CATEGORIES.find(c => c.id === selectedCategory)!.icon, { className: "h-4 w-4 shrink-0" })
+                  {visibleCategories.find(c => c.id === selectedCategory)?.icon && (
+                    React.createElement(visibleCategories.find(c => c.id === selectedCategory)!.icon, { className: "h-4 w-4 shrink-0" })
                   )}
-                  <span className="truncate">{TAB_CATEGORIES.find(c => c.id === selectedCategory)?.label}</span>
+                  <span className="truncate">{visibleCategories.find(c => c.id === selectedCategory)?.label}</span>
                 </>
               ) : (
                 <>
@@ -5787,7 +5866,7 @@ function AdminPage() {
                   </button>
                 )}
                 <div className="h-px bg-gray-100 dark:bg-card-border my-1" />
-                {TAB_CATEGORIES.map(category => {
+                {visibleCategories.map(category => {
                   const catTabs = category.tabs.filter(t => allowedTabs.includes(t));
                   if (catTabs.length === 0) return null;
                   const CategoryIcon = category.icon;
@@ -6418,7 +6497,7 @@ function AdminPage() {
               </div>
               {/* Tab list */}
               <div className="overflow-y-auto flex-1 py-2">
-                {TAB_CATEGORIES.map(category => {
+                {visibleCategories.map(category => {
                   const catTabs = category.tabs.filter(t => allowedTabs.includes(t));
                   if (catTabs.length === 0) return null;
                   const CatIcon = category.icon;
@@ -6634,7 +6713,7 @@ function AdminPage() {
           <nav className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-muted mb-3 overflow-x-auto" aria-label="Breadcrumb">
             <button onClick={() => navigateTab("panel-principal")} className="hover:text-primary transition-colors shrink-0">Panel Principal</button>
             {(() => {
-              const cat = TAB_CATEGORIES.find(c => c.tabs.includes(tab));
+              const cat = TAB_CATEGORIES.find(c => (c.tabs as readonly string[]).includes(tab));
               if (cat) return (
                 <>
                   <ChevronRight className="h-3 w-3 shrink-0" />
@@ -6647,8 +6726,39 @@ function AdminPage() {
             <span className="font-semibold text-gray-700 dark:text-foreground shrink-0">{ALL_TABS.find(t => t.id === tab)?.label ?? tab}</span>
           </nav>
         )}
+        {/* ── Banner de upgrade Pro — se muestra cuando el tab activo requiere plan Pro ── */}
+        {isProGated && (
+          <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-900/20 dark:to-indigo-900/20 border border-violet-200 dark:border-violet-800 p-8 text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center mx-auto">
+              <Lock className="h-8 w-8 text-violet-600 dark:text-violet-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground mb-1">
+                Modulo disponible en Plan Pro
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-muted max-w-md mx-auto">
+                Este modulo esta disponible en el Plan Pro. Mejora tu plan para desbloquear Analytics, CRM avanzado, Marketing, RRHH y mas.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Link
+                href="/pricing"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 transition-colors shadow-sm"
+              >
+                <Zap className="h-4 w-4" />
+                Ver planes
+              </Link>
+              <button
+                onClick={() => navigateTab("panel-principal")}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-white dark:hover:bg-card transition-colors border border-gray-200 dark:border-card-border"
+              >
+                Volver al inicio
+              </button>
+            </div>
+          </div>
+        )}
         {/* ── 1. Panel Principal — Dashboard + Agentes + Changelog ── */}
-        {tab === "panel-principal" && (
+        {!isProGated && tab === "panel-principal" && (
           <div className="space-y-8">
             <PanelPrincipalModule />
             <div className="pt-8 border-t border-gray-200 dark:border-card-border">
@@ -6729,7 +6839,7 @@ function AdminPage() {
           </div>
         )}
         {/* ── 8. Marketing & Ventas — Ventas + Comunicaciones ── */}
-        {tab === "ventas-marketing" && (
+        {!isProGated && tab === "ventas-marketing" && (
           <div className="space-y-8">
             <VentasMarketingModule />
             <div className="pt-8 border-t border-gray-200 dark:border-card-border">
@@ -6739,7 +6849,7 @@ function AdminPage() {
           </div>
         )}
         {/* ── 9. Analytics & BI — Analytics + Proyecciones ── */}
-        {tab === "analytics-bi" && (
+        {!isProGated && tab === "analytics-bi" && (
           <div className="space-y-8">
             <AnalyticsBIModule />
             <div className="pt-8 border-t border-gray-200 dark:border-card-border">
@@ -6767,9 +6877,9 @@ function AdminPage() {
           </div>
         )}
         {/* ── 11. RRHH ── */}
-        {tab === "rrhh" && <RRHHModule />}
+        {!isProGated && tab === "rrhh" && <RRHHModule />}
         {/* ── 12. Tareas & Automatización — Proyectos + Alertas ── */}
-        {tab === "proyectos-tareas" && (
+        {!isProGated && tab === "proyectos-tareas" && (
           <div className="space-y-8">
             <ProyectosTareasModule />
             <div className="pt-8 border-t border-gray-200 dark:border-card-border">
