@@ -59,6 +59,10 @@
     {
       "path": "/api/cron/agent-tasks",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/batch-expiry-alerts",
+      "schedule": "0 8 * * *"
     }
   ]
 }

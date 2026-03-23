@@ -18,6 +18,7 @@ import type { Product, Sale, Purchase, Supplier, Customer } from "@/types/erp";
 import BatchStatsWidget from "@/components/admin/dashboard/BatchStatsWidget";
 import ExpiringBatchesAlert from "@/components/admin/dashboard/ExpiringBatchesAlert";
 import ExpiredBatchesWidget from "@/components/admin/dashboard/ExpiredBatchesWidget";
+import PushNotificationBanner from "@/components/admin/dashboard/PushNotificationBanner";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -3698,6 +3699,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
             </div>
           )}
           {/* ── Widgets de lotes (BatchStats + Expiring) ── */}
+          <PushNotificationBanner />
           <BatchStatsWidget />
           <ExpiringBatchesAlert />
           <ExpiredBatchesWidget />
