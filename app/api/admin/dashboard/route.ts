@@ -6,10 +6,14 @@ import {
 } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { getOrSet } from "@/lib/cache";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const DASHBOARD_TTL_SEC = 15; // Cached for 15 s — keeps polling cheap
 
 export async function GET(req: NextRequest) {
+  const rateLimited = applyRateLimit(req, "MODERATE", "admin-dashboard");
+  if (rateLimited) return rateLimited;
+
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
   try {

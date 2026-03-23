@@ -3,104 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sin conexión - Bodega San Martín</title>
+  <title>Sin conexion — Bodega San Martin</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #312e81 0%, #4f46e5 50%, #1e1b4b 100%);
-      color: white;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      text-align: center;
-    }
-    .container {
-      max-width: 500px;
-    }
-    .icon {
-      font-size: 64px;
-      margin-bottom: 20px;
-      opacity: 0.9;
-    }
-    h1 {
-      font-size: 28px;
-      margin-bottom: 12px;
-      font-weight: 700;
-    }
-    p {
-      font-size: 16px;
-      line-height: 1.6;
-      opacity: 0.85;
-      margin-bottom: 30px;
-    }
-    .btn {
-      display: inline-block;
-      background: #6366f1;
-      color: white;
-      padding: 14px 32px;
-      border-radius: 12px;
-      text-decoration: none;
-      font-weight: 600;
-      transition: all 0.2s;
-      border: 2px solid rgba(255, 255, 255, 0.1);
-    }
-    .btn:hover {
-      background: #1f4f3a;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(45, 106, 79, 0.3);
-    }
-    .status {
-      margin-top: 40px;
-      padding: 16px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
-      font-size: 14px;
-      opacity: 0.7;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f9fafb; color: #1f2937; }
+    .container { text-align: center; padding: 2rem; max-width: 400px; }
+    .icon { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem; color: #2d6a4f; }
+    p { font-size: 0.875rem; color: #6b7280; margin-bottom: 1.5rem; line-height: 1.6; }
+    button { background: #2d6a4f; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.75rem; font-size: 0.875rem; font-weight: 700; cursor: pointer; }
+    button:hover { background: #245a42; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="icon">📡</div>
-    <h1>Sin conexión a Internet</h1>
-    <p>
-      Parece que no tienes conexión en este momento. Verifica tu red WiFi o datos móviles
-      e intenta nuevamente.
-    </p>
-    <a href="/" class="btn" onclick="window.location.reload(); return false;">
-      Reintentar conexión
-    </a>
-    <div class="status" id="status">
-      Comprobando conexión...
-    </div>
+    <h1>Sin conexion</h1>
+    <p>No tienes conexion a internet. Verifica tu WiFi o datos moviles e intenta de nuevo.</p>
+    <button onclick="window.location.reload()">Reintentar</button>
   </div>
-
-  <script>
-    // Auto-retry when connection is restored
-    window.addEventListener('online', () => {
-      document.getElementById('status').textContent = '✅ Conexión restaurada. Recargando...';
-      setTimeout(() => {
-        window.location.href = '/';
-      }, 1000);
-    });
-
-    window.addEventListener('offline', () => {
-      document.getElementById('status').textContent = '❌ Sin conexión a Internet';
-    });
-
-    // Initial status
-    if (navigator.onLine) {
-      document.getElementById('status').textContent = '✅ Conexión disponible. Intenta recargar la página.';
-    } else {
-      document.getElementById('status').textContent = '❌ Sin conexión a Internet';
-    }
-  </script>
 </body>
 </html>

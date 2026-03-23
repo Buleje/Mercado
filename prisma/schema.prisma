@@ -70,6 +70,7 @@ model Product {
 
   @@index([tenantId])
   @@index([tenantId, active])
+  @@index([barcode])
 }
 
 // ─── Batches: see "Inventory Batches (Lotes)" section below (line ~969)
@@ -106,6 +107,7 @@ model Customer {
 
   @@index([tenantId])
   @@index([tenantId, createdAt])
+  @@index([createdAt])
 }
 
 // ─── Saved Carts (persistent across devices) ────────────
@@ -172,6 +174,7 @@ model Order {
 
   @@index([customerPhone])
   @@index([status])
+  @@index([createdAt])
   @@index([tenantId])
   @@index([tenantId, status, createdAt])
   @@index([tenantId, createdAt])
@@ -379,6 +382,7 @@ model Payable {
 
   @@index([supplierId])
   @@index([tenantId])
+  @@index([dueDate])
 }
 
 model Payment {

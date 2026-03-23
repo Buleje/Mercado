@@ -9,12 +9,15 @@
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 2000,
-      "backgroundColor": "#6366f1",
+      "backgroundColor": "#2d6a4f",
       "showSpinner": true,
-      "spinnerColor": "#ffffff"
+      "spinnerColor": "#ffffff",
+      "launchAutoHide": true,
+      "androidSplashResourceName": "splash",
+      "splashImmersive": true
     },
     "StatusBar": {
-      "backgroundColor": "#6366f1",
+      "backgroundColor": "#2d6a4f",
       "style": "LIGHT"
     },
     "PushNotifications": {
@@ -27,10 +30,14 @@
   },
   "android": {
     "backgroundColor": "#ffffff",
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "appendUserAgent": "BodegaSanMartin/Android",
+    "webContentsDebuggingEnabled": false
   },
   "ios": {
     "backgroundColor": "#ffffff",
-    "contentInset": "automatic"
+    "contentInset": "automatic",
+    "appendUserAgent": "BodegaSanMartin/iOS",
+    "preferredContentMode": "mobile"
   }
 }
