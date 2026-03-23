@@ -2,22 +2,26 @@
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 
+
 const S = () => (
   <div className="flex items-center justify-center py-12">
     <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
 );
 
-const POSView = dynamic(() => import("@/components/admin/POSView"), { loading: S });
-const CashRegisterTab = dynamic(() => import("@/components/admin/CashRegisterTab"), { loading: S });
-const CashAuditTab = dynamic(() => import("@/components/admin/CashAuditTab"), { loading: S });
-const ShiftControlTab = dynamic(() => import("@/components/admin/ShiftControlTab"), { loading: S });
+const POSView                = dynamic(() => import("@/components/admin/POSView"),                { loading: S });
+const CashRegisterTab        = dynamic(() => import("@/components/admin/CashRegisterTab"),        { loading: S });
+const CashAuditTab           = dynamic(() => import("@/components/admin/CashAuditTab"),           { loading: S });
+const SalesOrdersTab         = dynamic(() => import("@/components/admin/SalesOrdersTab"),         { loading: S });
+const AccountsReceivableTab  = dynamic(() => import("@/components/admin/AccountsReceivableTab"),  { loading: S });
+const OfflineIndicator       = dynamic(() => import("@/components/admin/OfflineIndicator"),       { ssr: false });
 
 const TABS = [
-  { id: "pos" as const, label: "Punto de Venta", shortLabel: "Venta", hint: "Cobrar y buscar" },
-  { id: "caja" as const, label: "Caja Registradora", shortLabel: "Caja", hint: "Apertura y cierre" },
-  { id: "arqueo" as const, label: "Arqueo de Caja", shortLabel: "Arqueo", hint: "Cuadre rápido" },
-  { id: "turnos" as const, label: "Control de Turnos", shortLabel: "Turnos", hint: "Cambio de caja" },
+  { id: "pos"               as const, label: "Vender",           shortLabel: "Vender",  hint: "Cobrar y buscar" },
+  { id: "caja-registradora" as const, label: "Caja Registradora", shortLabel: "Caja",   hint: "Apertura y cierre" },
+  { id: "arqueo"            as const, label: "Cuadrar la Caja",  shortLabel: "Cuadre",  hint: "Cuadre rápido" },
+  { id: "pedidos"           as const, label: "Pedidos",          shortLabel: "Pedidos", hint: "Pedidos activos" },
+  { id: "cuentas-cobrar"    as const, label: "Me deben (fiado)", shortLabel: "Fiado",   hint: "Cuentas por cobrar" },
 ];
 
 // ── Shift Close Modal Types ─────────────────────────────────────────────────
@@ -134,10 +138,10 @@ function ShiftCloseModal({
                 <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Desglose por metodo de pago</p>
                 {[
                   { label: "Efectivo", value: summary.efectivo, color: "bg-emerald-500" },
-                  { label: "Yape", value: summary.yape, color: "bg-purple-500" },
-                  { label: "Plin", value: summary.plin, color: "bg-cyan-500" },
-                  { label: "Tarjeta", value: summary.tarjeta, color: "bg-blue-500" },
-                  { label: "Fiado", value: summary.fiado, color: "bg-amber-500" },
+                  { label: "Yape",     value: summary.yape,     color: "bg-purple-500" },
+                  { label: "Plin",     value: summary.plin,     color: "bg-cyan-500" },
+                  { label: "Tarjeta",  value: summary.tarjeta,  color: "bg-blue-500" },
+                  { label: "Fiado",    value: summary.fiado,    color: "bg-amber-500" },
                 ].map(item => (
                   <div key={item.label} className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -178,24 +182,47 @@ function ShiftCloseModal({
 export default function POSCajaModule() {
   const [sub, setSub] = useState(TABS[0].id);
   const [showShiftClose, setShowShiftClose] = useState(false);
+  const [bannerVisible, setBannerVisible] = useState(true);
+  useEffect(() => {
+    const stored = localStorage.getItem("banner-pos");
+    if (stored === "hidden") setBannerVisible(false);
+  }, []);
+  const toggleBanner = () => {
+    const next = !bannerVisible;
+    setBannerVisible(next);
+    localStorage.setItem("banner-pos", next ? "visible" : "hidden");
+  };
 
   return (
     <div className="space-y-3 sm:space-y-6">
-      {/* Mobile tabs */}
-      <div className="grid grid-cols-2 gap-2 sm:hidden">
+      <OfflineIndicator />
+      {bannerVisible && (
+        <button onClick={toggleBanner} className="w-full text-left bg-[#2d6a4f]/5 dark:bg-[#2d6a4f]/10 border border-[#2d6a4f]/20 rounded-xl p-3 mb-1 transition-colors hover:bg-[#2d6a4f]/10">
+          <p className="text-sm text-[#2d6a4f] dark:text-emerald-400">
+            <span className="font-semibold">Vender y Caja</span> — Aquí cobras a tus clientes, controlas los turnos de caja y cuadras el dinero al final del día.
+          </p>
+        </button>
+      )}
+      {!bannerVisible && (
+        <button onClick={toggleBanner} className="text-xs text-gray-400 hover:text-[#2d6a4f] transition-colors">
+          Mostrar descripción
+        </button>
+      )}
+      {/* Mobile tabs — pills (5 tabs, grid ajustado) */}
+      <div className="grid grid-cols-3 gap-2 sm:hidden">
         {TABS.map(t => (
           <button
             key={t.id}
             onClick={() => setSub(t.id)}
-            className={`relative rounded-2xl border px-3 py-3 text-left transition-all ${
+            className={`relative rounded-2xl border px-2 py-2.5 text-left transition-all ${
               sub === t.id
                 ? "border-primary bg-primary text-white shadow-lg shadow-primary/20"
                 : "border-gray-200 bg-white text-gray-600 dark:border-card-border dark:bg-card dark:text-muted"
             }`}
             aria-current={sub === t.id ? "page" : undefined}
           >
-            <span className="block text-sm font-extrabold leading-tight">{t.shortLabel}</span>
-            <span className={`mt-1 block text-[11px] leading-tight ${sub === t.id ? "text-white/80" : "text-gray-400 dark:text-muted"}`}>
+            <span className="block text-xs font-extrabold leading-tight">{t.shortLabel}</span>
+            <span className={`mt-1 block text-[10px] leading-tight ${sub === t.id ? "text-white/80" : "text-gray-400 dark:text-muted"}`}>
               {t.hint}
             </span>
             {sub === t.id && <span className="absolute inset-x-3 bottom-0 h-1 rounded-full bg-white/70" />}
@@ -203,7 +230,7 @@ export default function POSCajaModule() {
         ))}
       </div>
 
-      {/* Desktop tabs + Cerrar Turno button */}
+      {/* Desktop tabs (underline — estándar) + Cerrar Turno button */}
       <div className="hidden sm:flex items-center gap-1 border-b border-gray-200 dark:border-card-border -mx-1 px-1">
         <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none flex-1">
           {TABS.map(t => (
@@ -228,20 +255,22 @@ export default function POSCajaModule() {
         </button>
       </div>
 
-      {/* Mobile Cerrar Turno button */}
-      <div className="sm:hidden flex justify-end">
+      {/* Mobile Cerrar Turno button — fixed at bottom */}
+      <div className="sm:hidden fixed bottom-16 right-4 z-40">
         <button
           onClick={() => setShowShiftClose(true)}
-          className="px-4 py-2 rounded-xl text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-800/30 transition-colors"
+          className="px-4 py-2.5 rounded-2xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 shadow-lg shadow-red-600/30 transition-colors flex items-center gap-1.5"
         >
+          <span className="h-2 w-2 rounded-full bg-white/70 animate-pulse" />
           Cerrar Turno
         </button>
       </div>
 
-      {sub === "pos" && <POSView />}
-      {sub === "caja" && <CashRegisterTab />}
-      {sub === "arqueo" && <CashAuditTab onNavigateToTurnos={() => setSub("turnos")} />}
-      {sub === "turnos" && <ShiftControlTab onNavigateToArqueo={() => setSub("arqueo")} />}
+      {sub === "pos"               && <POSView />}
+      {sub === "caja-registradora" && <CashRegisterTab />}
+      {sub === "arqueo"            && <CashAuditTab onNavigateToTurnos={() => setSub("caja-registradora")} />}
+      {sub === "pedidos"           && <SalesOrdersTab />}
+      {sub === "cuentas-cobrar"    && <AccountsReceivableTab />}
 
       {/* Shift close modal */}
       {showShiftClose && (

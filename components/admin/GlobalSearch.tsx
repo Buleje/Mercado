@@ -418,6 +418,7 @@ function searchActions(q: string, onNavigate: (tab: string) => void, onClose: ()
 interface Props {
   open: boolean;
   onClose: () => void;
+  onOpen?: () => void;
   onNavigate: (tab: string) => void;
 }
 
@@ -446,7 +447,7 @@ const QUICK_ACCESS = [
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
-export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
+export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Props) {
   const [query, setQuery]       = useState("");
   const [grouped, setGrouped]   = useState<GroupedResults>({ modulos: [], productos: [], clientes: [], pedidos: [], acciones: [] });
   const [loading, setLoading]   = useState(false);
@@ -454,6 +455,22 @@ export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
 
   const inputRef    = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Atajo global Ctrl+K / Cmd+K
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        if (open) {
+          onClose();
+        } else {
+          onOpen?.();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKey);
+    return () => window.removeEventListener("keydown", handleGlobalKey);
+  }, [open, onClose, onOpen]);
 
   // Focus al abrir
   useEffect(() => {
@@ -713,8 +730,11 @@ export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
               cerrar
             </span>
           </div>
-          <span className="text-[10px] text-gray-300 dark:text-muted">
-            Ctrl+K para abrir
+          <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-muted">
+            <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">Ctrl</kbd>
+            <span>+</span>
+            <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">K</kbd>
+            <span className="ml-0.5">abrir/cerrar</span>
           </span>
         </div>
       </div>

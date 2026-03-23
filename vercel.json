@@ -63,6 +63,34 @@
     {
       "path": "/api/cron/batch-expiry-alerts",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/auto-close-register",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/daily-summary",
+      "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/cron/stock-alerts-notify",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/auto-reorder-check",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/expiry-discounts",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/auto-backup",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/fiados-reminder",
+      "schedule": "0 9 * * *"
     }
   ]
 }

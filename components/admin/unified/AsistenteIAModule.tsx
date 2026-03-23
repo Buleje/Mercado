@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Brain, MessageSquare, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,8 +10,8 @@ const S = () => (
   </div>
 );
 
-const DashboardIATab = dynamic(
-  () => import("@/components/admin/DashboardIATab"),
+const SmartDashboardTab = dynamic(
+  () => import("@/components/admin/SmartDashboardTab"),
   { loading: S },
 );
 const AIAssistant = dynamic(
@@ -37,9 +37,31 @@ interface Props {
 
 export default function AsistenteIAModule({ tenantId }: Props) {
   const [tab, setTab] = useState<TabId>("dashboard-ia");
+  const [bannerVisible, setBannerVisible] = useState(true);
+  useEffect(() => {
+    const stored = localStorage.getItem("banner-asistente");
+    if (stored === "hidden") setBannerVisible(false);
+  }, []);
+  const toggleBanner = () => {
+    const next = !bannerVisible;
+    setBannerVisible(next);
+    localStorage.setItem("banner-asistente", next ? "visible" : "hidden");
+  };
 
   return (
     <div className="space-y-3 sm:space-y-6">
+      {bannerVisible && (
+        <button onClick={toggleBanner} className="w-full text-left bg-[#2d6a4f]/5 dark:bg-[#2d6a4f]/10 border border-[#2d6a4f]/20 rounded-xl p-3 mb-1 transition-colors hover:bg-[#2d6a4f]/10">
+          <p className="text-sm text-[#2d6a4f] dark:text-emerald-400">
+            <span className="font-semibold">Asistente</span> — Aquí ves el resumen de tu negocio del día, puedes chatear con la IA y revisar alertas importantes.
+          </p>
+        </button>
+      )}
+      {!bannerVisible && (
+        <button onClick={toggleBanner} className="text-xs text-gray-400 hover:text-[#2d6a4f] transition-colors">
+          Mostrar descripción
+        </button>
+      )}
       {/* Tab bar — pill style, scrollable on mobile */}
       <div className="flex gap-1 bg-gray-100 dark:bg-surface rounded-xl p-1 overflow-x-auto scrollbar-none">
         {TABS.map((t) => {
@@ -64,7 +86,7 @@ export default function AsistenteIAModule({ tenantId }: Props) {
       </div>
 
       {/* Active tab content */}
-      {tab === "dashboard-ia" && <DashboardIATab tenantId={tenantId} />}
+      {tab === "dashboard-ia" && <SmartDashboardTab />}
       {tab === "chat-ia" && (
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border min-h-[600px]">
           <AIAssistant />

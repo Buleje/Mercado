@@ -38,13 +38,96 @@ export async function POST(req: NextRequest) {
             
             logger.info(`[webhook/whatsapp] Mensaje recibido de ${sender}: ${text}`);
 
-            // Mock: Auto-respuesta o actualización de Orden si responde "CONFIRMO"
-            if (text && text.toUpperCase().includes("CONFIRMO")) {
-              await prisma.order.updateMany({
-                where: { customerPhone: sender, status: "pendiente" },
-                data: { status: "confirmado" }
-              });
-              logger.info(`[webhook/whatsapp] Auto-confirmada orden para ${sender}`);
+            if (text) {
+              const upper = text.toUpperCase().trim();
+
+              // CONFIRMO → confirmar pedido pendiente
+              if (upper.includes("CONFIRMO")) {
+                await prisma.order.updateMany({
+                  where: { customerPhone: sender, status: "pendiente" },
+                  data: { status: "confirmado" },
+                });
+                logger.info(`[webhook/whatsapp] Auto-confirmada orden para ${sender}`);
+              }
+
+              // PEDIDO / QUIERO → crear pedido desde texto
+              else if (upper.startsWith("PEDIDO") || upper.startsWith("QUIERO")) {
+                // Parse: "Quiero 2 arroz, 1 azucar, 3 aceite"
+                const itemsText = text.replace(/^(pedido|quiero)\s*/i, "").trim();
+                const itemRegex = /(\d+)\s+([^,]+)/g;
+                const items: { name: string; quantity: number }[] = [];
+                let match;
+                while ((match = itemRegex.exec(itemsText)) !== null) {
+                  items.push({ name: match[2].trim(), quantity: parseInt(match[1]) });
+                }
+
+                if (items.length > 0) {
+                  // Try to find matching products
+                  const orderItems = [];
+                  for (const item of items) {
+                    const product = await prisma.product.findFirst({
+                      where: {
+                        name: { contains: item.name, mode: "insensitive" },
+                        active: true,
+                      },
+                      select: { id: true, name: true, price: true },
+                    });
+                    if (product) {
+                      orderItems.push({
+                        productId: product.id,
+                        name: product.name,
+                        price: product.price ?? 0,
+                        quantity: item.quantity,
+                      });
+                    }
+                  }
+
+                  if (orderItems.length > 0) {
+                    const total = orderItems.reduce((s, i) => s + (i.price * i.quantity), 0);
+
+                    // Find or identify customer
+                    const customer = await prisma.customer.findFirst({
+                      where: { phone: sender },
+                      select: { name: true },
+                    });
+
+                    await prisma.order.create({
+                      data: {
+                        customerName: customer?.name ?? sender,
+                        customerPhone: sender,
+                        total,
+                        status: "pendiente",
+                        paymentMethod: "efectivo",
+                        notes: `Pedido via WhatsApp: ${text}`,
+                        items: orderItems,
+                        source: "whatsapp",
+                      },
+                    });
+
+                    logger.info(`[webhook/whatsapp] Pedido creado para ${sender}: ${orderItems.length} productos, S/${total.toFixed(2)}`);
+                  }
+                }
+              }
+
+              // ESTADO → consultar estado de pedidos activos
+              else if (upper.includes("ESTADO") || upper.includes("MI PEDIDO")) {
+                const activeOrders = await prisma.order.findMany({
+                  where: {
+                    customerPhone: sender,
+                    status: { notIn: ["entregado", "cancelado", "delivered", "cancelled"] },
+                  },
+                  select: { id: true, status: true, total: true },
+                  take: 5,
+                  orderBy: { createdAt: "desc" },
+                });
+                logger.info(`[webhook/whatsapp] Consulta estado de ${sender}: ${activeOrders.length} pedidos activos`);
+              }
+
+              // CATALOGO → enviar link al catálogo
+              else if (upper.includes("CATALOGO") || upper.includes("PRODUCTOS") || upper.includes("MENU")) {
+                logger.info(`[webhook/whatsapp] Solicitud de catalogo de ${sender}`);
+                // The response would be sent via the WhatsApp API send message endpoint
+              }
             }
           }
         }

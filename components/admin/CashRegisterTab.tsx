@@ -25,6 +25,7 @@ interface CashRegister {
 }
 
 type View = "current" | "history" | "reconcile";
+type MethodFilter = "all" | "efectivo" | "yape" | "plin" | "tarjeta";
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
 
@@ -97,6 +98,10 @@ export default function CashRegisterTab() {
   const [addingMv, setAddingMv] = useState(false);
   // View register detail
   const [detailRegister, setDetailRegister] = useState<CashRegister | null>(null);
+  // Movements filter
+  const [mvFilter, setMvFilter] = useState<MethodFilter>("all");
+  // History search
+  const [historySearch, setHistorySearch] = useState("");
   // Arqueo Express
   const [showArqueo, setShowArqueo] = useState(false);
   const [arqueoAmount, setArqueoAmount] = useState("");
@@ -114,6 +119,12 @@ export default function CashRegisterTab() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void fetchData(); }, [fetchData]);
 
+  // Auto-refresh every 30s
+  useEffect(() => {
+    const id = setInterval(fetchData, 30000);
+    return () => clearInterval(id);
+  }, [fetchData]);
+
   const currentRegister = useMemo(() => registers.find(r => r.status === "abierta") || null, [registers]);
   const closedRegisters = useMemo(() => registers.filter(r => r.status === "cerrada"), [registers]);
 
@@ -128,8 +139,36 @@ export default function CashRegisterTab() {
     const totalOut = mvs.filter(m => m.type === "egreso").reduce((s, m) => s + m.amount, 0);
     const salesCount = mvs.filter(m => m.type === "venta").length;
     const expectedCash = currentRegister.openingAmount + salesEfectivo + totalIn - totalOut;
-    return { salesEfectivo, salesDigital, totalIn, totalOut, salesCount, expectedCash };
+    // Hourly sales chart data
+    const hourlyData: number[] = new Array(24).fill(0);
+    for (const m of mvs.filter(mv => mv.type === "venta")) {
+      try {
+        const h = new Date(m.createdAt).getHours();
+        hourlyData[h] += m.amount;
+      } catch { /* ignore */ }
+    }
+
+    return { salesEfectivo, salesDigital, totalIn, totalOut, salesCount, expectedCash, hourlyData };
   }, [currentRegister]);
+
+  // Filtered movements for current register
+  const filteredMovements = useMemo(() => {
+    if (!currentRegister) return [];
+    const mvs = currentRegister.movements;
+    if (mvFilter === "all") return mvs;
+    return mvs.filter(m => m.method === mvFilter);
+  }, [currentRegister, mvFilter]);
+
+  // Filtered closed registers for history search
+  const filteredHistory = useMemo(() => {
+    if (!historySearch.trim()) return closedRegisters;
+    const q = historySearch.toLowerCase();
+    return closedRegisters.filter(r => {
+      const dateStr = fmtDate(r.openedAt).toLowerCase();
+      const closeDateStr = r.closedAt ? fmtDate(r.closedAt).toLowerCase() : "";
+      return dateStr.includes(q) || closeDateStr.includes(q) || (r.notes ?? "").toLowerCase().includes(q);
+    });
+  }, [closedRegisters, historySearch]);
 
   // ── Open register ──────────────────────────────────────────────────────────
 
@@ -174,6 +213,8 @@ export default function CashRegisterTab() {
 
   const handleAddMovement = async () => {
     if (!currentRegister || addingMv || !mvAmount) return;
+    // Egreso requires a description (motivo)
+    if (mvType === "egreso" && !mvDescription.trim()) return;
     setAddingMv(true);
     try {
       await fetch(`/api/cash-registers/${currentRegister.id}`, {
@@ -375,20 +416,66 @@ export default function CashRegisterTab() {
                 <span className="font-bold text-gray-600 dark:text-muted">{stats?.salesCount ?? 0} ventas</span>
               </div>
 
+              {/* Hourly sales chart */}
+              {stats && stats.salesCount > 0 && (() => {
+                const hours = stats.hourlyData;
+                const maxH = Math.max(...hours, 1);
+                // Only show hours with data or around them
+                const activeHours = hours.map((v, i) => ({ hour: i, value: v })).filter((_, i) => hours[i] > 0 || (i > 0 && hours[i - 1] > 0) || (i < 23 && hours[i + 1] > 0));
+                if (activeHours.length === 0) return null;
+                const startH = Math.max(0, activeHours[0].hour - 1);
+                const endH = Math.min(23, activeHours[activeHours.length - 1].hour + 1);
+                const displayHours = hours.slice(startH, endH + 1).map((v, i) => ({ hour: startH + i, value: v }));
+                return (
+                  <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3">
+                    <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-2">Ventas por hora</p>
+                    <div className="flex items-end gap-1 h-16">
+                      {displayHours.map(h => (
+                        <div key={h.hour} className="flex-1 flex flex-col items-center gap-0.5">
+                          <div
+                            className="w-full bg-primary/80 rounded-t transition-all min-h-[2px]"
+                            style={{ height: `${maxH > 0 ? (h.value / maxH) * 48 : 0}px` }}
+                            title={`${h.hour}:00 — ${fmt(h.value)}`}
+                          />
+                          <span className="text-[8px] text-gray-400">{h.hour}h</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Movements list */}
               <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
                 <div className="px-2 sm:px-4 py-2 sm:py-3 border-b flex flex-wrap items-center gap-2">
                   <History className="h-4 w-4 text-primary" />
-                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground">Movimientos</h3>
+                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground flex-1">Movimientos</h3>
+                  {/* Method filter pills */}
+                  <div className="flex gap-1 overflow-x-auto scrollbar-none">
+                    {(["all", "efectivo", "yape", "plin", "tarjeta"] as const).map(m => (
+                      <button
+                        key={m}
+                        onClick={() => setMvFilter(m)}
+                        className={cn(
+                          "shrink-0 px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors",
+                          mvFilter === m
+                            ? "bg-primary text-white"
+                            : "bg-gray-100 dark:bg-accent text-gray-500 dark:text-muted hover:bg-gray-200"
+                        )}
+                      >
+                        {m === "all" ? "Todos" : m.charAt(0).toUpperCase() + m.slice(1)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                {currentRegister.movements.length === 0 ? (
+                {filteredMovements.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-24 text-gray-400 dark:text-muted">
                     <History className="h-5 w-5 mb-1" />
                     <p className="text-xs font-semibold">Sin movimientos</p>
                   </div>
                 ) : (
                   <div className="divide-y max-h-80 overflow-y-auto">
-                    {currentRegister.movements.map(m => {
+                    {filteredMovements.map(m => {
                       const isPos = ["venta", "ingreso", "apertura"].includes(m.type);
                       return (
                         <div key={m.id} className="px-2 sm:px-4 py-1.5 sm:py-2.5 flex flex-wrap items-center gap-3 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors">
@@ -419,13 +506,26 @@ export default function CashRegisterTab() {
       {/* History view */}
       {view === "history" && (
         <div className="space-y-3">
-          {closedRegisters.length === 0 ? (
+          {/* Search in history */}
+          {closedRegisters.length > 0 && (
+            <div className="relative">
+              <Info className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={historySearch}
+                onChange={e => setHistorySearch(e.target.value)}
+                placeholder="Buscar por fecha o notas..."
+                className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 dark:text-foreground"
+              />
+            </div>
+          )}
+          {filteredHistory.length === 0 ? (
             <div className="bg-white dark:bg-card rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border p-8 text-center text-gray-400 dark:text-muted">
               <History className="h-8 w-8 mx-auto mb-2" />
               <p className="text-sm font-semibold">Sin historial de cajas</p>
             </div>
           ) : (
-            closedRegisters.map(r => {
+            filteredHistory.map(r => {
               const diff = r.difference ?? 0;
               return (
                 <button
@@ -887,14 +987,24 @@ export default function CashRegisterTab() {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-bold text-gray-600 dark:text-muted">Descripción</label>
+                <label className="text-xs font-bold text-gray-600 dark:text-muted">
+                  Descripción {mvType === "egreso" && <span className="text-red-500">*</span>}
+                </label>
                 <input
                   type="text"
                   value={mvDescription}
                   onChange={e => setMvDescription(e.target.value)}
-                  placeholder={mvType === "ingreso" ? "Ej: Cobro pendiente" : "Ej: Pago a proveedor"}
-                  className="w-full mt-1 px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground outline-none focus:border-primary"
+                  placeholder={mvType === "ingreso" ? "Ej: Cobro pendiente" : "Ej: Compra de bolsas, pago a proveedor..."}
+                  className={cn(
+                    "w-full mt-1 px-3 py-2.5 rounded-xl border-2 text-gray-900 dark:text-foreground outline-none focus:border-primary",
+                    mvType === "egreso" && !mvDescription.trim()
+                      ? "border-red-300 dark:border-red-800"
+                      : "border-gray-200 dark:border-card-border"
+                  )}
                 />
+                {mvType === "egreso" && !mvDescription.trim() && (
+                  <p className="text-[10px] text-red-500 mt-1">Motivo obligatorio para egresos</p>
+                )}
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
                 <button onClick={() => setShowMovement(false)} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface">
@@ -902,7 +1012,7 @@ export default function CashRegisterTab() {
                 </button>
                 <button
                   onClick={handleAddMovement}
-                  disabled={addingMv || !mvAmount}
+                  disabled={addingMv || !mvAmount || (mvType === "egreso" && !mvDescription.trim())}
                   className={cn(
                     "flex-1 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-50 flex items-center justify-center gap-1",
                     mvType === "ingreso" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-red-500 hover:bg-red-600"
