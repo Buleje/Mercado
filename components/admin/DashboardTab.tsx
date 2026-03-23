@@ -17,6 +17,7 @@ import { useTheme } from "@/contexts/theme-context";
 import type { Product, Sale, Purchase, Supplier, Customer } from "@/types/erp";
 import BatchStatsWidget from "@/components/admin/dashboard/BatchStatsWidget";
 import ExpiringBatchesAlert from "@/components/admin/dashboard/ExpiringBatchesAlert";
+import ExpiredBatchesWidget from "@/components/admin/dashboard/ExpiredBatchesWidget";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -3699,6 +3700,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
           {/* ── Widgets de lotes (BatchStats + Expiring) ── */}
           <BatchStatsWidget />
           <ExpiringBatchesAlert />
+          <ExpiredBatchesWidget />
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <Kpi label="Stock Valor." value={fmt(st.stockVal)} icon={DollarSign} accent="text-amber-500" />
