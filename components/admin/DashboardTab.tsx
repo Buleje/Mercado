@@ -295,6 +295,7 @@ export default function DashboardTab() {
     orders.filter(o => inPrevPeriod(o.createdAt, period)).forEach(o => { if(o.customer.phone) prevPhones.add(o.customer.phone); });
     sales.filter(s => inPrevPeriod(s.createdAt, period)).forEach(s => { if(s.customerPhone) prevPhones.add(s.customerPhone); });
     const prevClientes = prevPhones.size;
+    const prevCancelled = orders.filter(o => o.status === "cancelado" && inPrevPeriod(o.createdAt, period)).length;
     const pctDelta = (curr: number, prev: number): number | null => {
       if (period === "todo" || prev === 0) return null;
       return ((curr - prev) / prev) * 100;
@@ -835,6 +836,7 @@ export default function DashboardTab() {
       dVentas:pctDelta(ventas,prevVentas),dUtilidad:pctDelta(utilidad,prevUtilidad),
       dTickets:pctDelta(tickets,prevTickets),dTicketProm:pctDelta(ticketProm,prevTicketProm),
       dMargen:pctDelta(margen,prevMargen),dUds:pctDelta(uds,prevUds),dClientes:pctDelta(uniqueClients.size,prevClientes),
+      dCancelados:pctDelta(cancelled.length,prevCancelled),
       pendingOrdersCount,completedOrdersCount,conversionRate,
       dailyProfit,funnelData,newCust,returningCust,
       trendSlope,trendIntercept,forecast7,wowGrowth,movingAvg7,
@@ -1518,7 +1520,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
             {([
               { label: "Ventas Netas", value: fmt(st.ventas), accent: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", delta: st.dVentas },
               { label: "Utilidad", value: fmt(st.utilidad), accent: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/30", delta: st.dUtilidad },
-              { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400", bg: "bg-gray-50 dark:bg-surface" },
+              { label: "Margen", value: `${st.margen.toFixed(1)}%`, accent: st.margen >= 25 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400", bg: "bg-gray-50 dark:bg-surface", delta: st.dMargen },
               { label: "Tickets", value: String(st.tickets), accent: "text-violet-600 dark:text-violet-400", bg: "bg-violet-50 dark:bg-violet-950/30", delta: st.dTickets },
               { label: "Clientes", value: String(st.clientesAtendidos), accent: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-950/30", delta: st.dClientes },
               { label: "Stock Alerta", value: String(st.stockCritico.length + st.agotados.length), accent: (st.stockCritico.length + st.agotados.length) > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400", bg: "bg-gray-50 dark:bg-surface" },
@@ -1527,11 +1529,13 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               <div key={k.label} className={cn("rounded-xl px-3 py-2.5", k.bg)}>
                 <div className="text-[10px] text-gray-500 dark:text-muted font-medium truncate">{k.label}</div>
                 <div className={cn("text-sm font-extrabold tabular-nums leading-tight mt-0.5 truncate", k.accent)}>{k.value}</div>
-                {k.delta != null && (
-                  <div className={cn("text-[10px] font-bold mt-0.5", k.delta >= 0 ? "text-emerald-500" : "text-red-500")}>
+                {k.delta != null && k.delta !== undefined ? (
+                  <div className={cn("text-[10px] font-bold mt-0.5", k.delta >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500 dark:text-red-400")}>
                     {k.delta >= 0 ? "↑" : "↓"} {Math.abs(k.delta).toFixed(1)}%
                   </div>
-                )}
+                ) : k.delta === null ? (
+                  <div className="text-[10px] text-gray-400 dark:text-muted mt-0.5">— Sin datos</div>
+                ) : null}
               </div>
             ))}
           </div>
@@ -2795,7 +2799,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               <Kpi label="Ventas Netas" value={fmt(st.ventas)} icon={DollarSign} accent="text-emerald-500" delta={st.dVentas} sparklineData={st.sparklineRevenue} />
               <Kpi label="Utilidad" value={fmt(st.utilidad)} icon={TrendingUp} accent="text-blue-500" delta={st.dUtilidad} sparklineData={st.sparklineProfit} />
               <Kpi label="Tickets" value={String(st.tickets)} icon={Receipt} accent="text-violet-500" delta={st.dTickets} sparklineData={st.sparklineOrders} />
-              <Kpi label="Cancelados" value={String(st.cancelados)} icon={AlertTriangle} accent="text-red-500" />
+              <Kpi label="Cancelados" value={String(st.cancelados)} icon={AlertTriangle} accent="text-red-500" delta={st.dCancelados} invertTrend />
             </div>
             <button
               onClick={exportVentas}
@@ -4669,24 +4673,30 @@ function useCountUp(target: string, duration = 600) {
   return display;
 }
 
-function Kpi({ label, value, icon: Icon, accent, delta, sparklineData }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number | null; sparklineData?: number[] }) {
+function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTrend }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number | null; sparklineData?: number[]; invertTrend?: boolean }) {
   const animatedValue = useCountUp(value);
+  // invertTrend: when true, a negative delta is "good" (green) and positive is "bad" (red)
+  // e.g., for Cancelados — fewer is better
+  const isPositive = delta != null ? (invertTrend ? delta <= 0 : delta >= 0) : false;
+  const arrowUp = delta != null ? delta >= 0 : false;
   return (
     <div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border px-2 sm:px-4 py-2 sm:py-3.5 hover:border-gray-200 dark:hover:border-gray-600 transition-all relative overflow-hidden">
       {/* Visual gradient indicator on top edge for significant changes */}
       {delta != null && Math.abs(delta) >= 10 && (
-        <div className={cn("absolute top-0 left-0 right-0 h-1", delta >= 0 ? "bg-linear-to-r from-emerald-400 to-green-500" : "bg-linear-to-r from-red-400 to-red-500")} />
+        <div className={cn("absolute top-0 left-0 right-0 h-1", isPositive ? "bg-linear-to-r from-emerald-400 to-green-500" : "bg-linear-to-r from-red-400 to-red-500")} />
       )}
       <p className="text-xs font-medium text-gray-400 dark:text-muted mb-2.5 truncate">{label}</p>
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div className="flex flex-col gap-1.5">
           <p className="text-base sm:text-xl font-bold text-gray-900 dark:text-foreground tabular-nums leading-none">{animatedValue}</p>
-          {delta != null && (
-            <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", delta >= 0 ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400" : "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400")}>
-              {delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+          {delta != null && delta !== undefined ? (
+            <div className={cn("inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold", isPositive ? "bg-emerald-50 dark:bg-emerald-950/30 text-green-600 dark:text-green-400" : "bg-red-50 dark:bg-red-950/30 text-red-500 dark:text-red-400")}>
+              {arrowUp ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
               {Math.abs(delta).toFixed(1)}%
             </div>
-          )}
+          ) : delta === null ? (
+            <span className="text-xs text-gray-400 dark:text-muted">— Sin datos anteriores</span>
+          ) : null}
           {/* Sparkline */}
           {sparklineData && sparklineData.length > 0 && (
             <div className="mt-1">

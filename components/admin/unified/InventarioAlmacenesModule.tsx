@@ -11,23 +11,15 @@ const S = () => (
 const InventoryTab = dynamic(() => import("@/components/admin/InventoryTab"), { loading: S });
 const KardexTab = dynamic(() => import("@/components/admin/KardexTab"), { loading: S });
 const BatchesTab = dynamic(() => import("@/components/admin/BatchesTab"), { loading: S });
-const PhysicalInventoryTab = dynamic(() => import("@/components/admin/PhysicalInventoryTab"), { loading: S });
 const ShrinkageTab = dynamic(() => import("@/components/admin/ShrinkageTab"), { loading: S });
-const WarehouseTab = dynamic(() => import("@/components/admin/WarehouseTab"), { loading: S });
-const WarehouseLocationTab = dynamic(() => import("@/components/admin/WarehouseLocationTab"), { loading: S });
-const WarehouseTransferTab = dynamic(() => import("@/components/admin/WarehouseTransferTab"), { loading: S });
-const InventoryMetricsTab = dynamic(() => import("@/components/admin/InventoryMetricsTab"), { loading: S });
+const AutoReorderTab = dynamic(() => import("@/components/admin/AutoReorderTab"), { loading: S });
 
 const TABS = [
-  { id: "metricas" as const, label: "📊 Métricas" },
   { id: "stock" as const, label: "Stock" },
   { id: "kardex" as const, label: "Kardex" },
-  { id: "lotes" as const, label: "Lotes y Vcto" },
-  { id: "fisico" as const, label: "Inv. Físico" },
-  { id: "mermas" as const, label: "Mermas" },
-  { id: "almacenes" as const, label: "Almacenes" },
-  { id: "ubicaciones" as const, label: "Ubicaciones" },
-  { id: "transferencias" as const, label: "Transferencias" },
+  { id: "lotes" as const, label: "Vencimientos" },
+  { id: "mermas" as const, label: "Pérdidas" },
+  { id: "alertas-stock" as const, label: "Alertas stock" },
 ];
 
 export default function InventarioAlmacenesModule() {
@@ -49,15 +41,11 @@ export default function InventarioAlmacenesModule() {
           </button>
         ))}
       </div>
-      {sub === "metricas" && <InventoryMetricsTab />}
       {sub === "stock" && <InventoryTab />}
       {sub === "kardex" && <KardexTab />}
       {sub === "lotes" && <BatchesTab />}
-      {sub === "fisico" && <PhysicalInventoryTab />}
       {sub === "mermas" && <ShrinkageTab />}
-      {sub === "almacenes" && <WarehouseTab />}
-      {sub === "ubicaciones" && <WarehouseLocationTab />}
-      {sub === "transferencias" && <WarehouseTransferTab />}
+      {sub === "alertas-stock" && <AutoReorderTab />}
     </div>
   );
 }

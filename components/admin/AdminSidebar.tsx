@@ -3,27 +3,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard,
+  Brain,
   ShoppingCart,
   Package,
   Tag,
   Truck,
   DollarSign,
-  Store,
   Settings,
   ChevronRight,
   Menu,
   X,
   LogOut,
   User,
-  Lock,
-  BarChart3,
-  Calculator,
-  MapPin,
   Users,
-  Megaphone,
-  UserCog,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -36,7 +28,6 @@ export interface SidebarModule {
   label: string;
   icon: LucideIcon;
   tabs: Array<{ id: string; label: string }>;
-  isPro?: boolean;
 }
 
 export interface AdminSidebarProps {
@@ -53,12 +44,13 @@ export interface AdminSidebarProps {
 
 export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
   {
-    id: "inicio",
-    label: "Inicio",
-    icon: LayoutDashboard,
+    id: "asistente-ia",
+    label: "Asistente IA",
+    icon: Brain,
     tabs: [
-      { id: "dashboard", label: "Panel principal" },
-      { id: "configuracion", label: "Ajustes" },
+      { id: "dashboard-ia", label: "Mi negocio hoy" },
+      { id: "chat-ia", label: "Chat" },
+      { id: "alertas", label: "Alertas" },
     ],
   },
   {
@@ -79,20 +71,22 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
     icon: Package,
     tabs: [
       { id: "stock", label: "Mi stock" },
+      { id: "kardex", label: "Kardex" },
       { id: "lotes", label: "Vencimientos" },
-      { id: "mermas", label: "Perdidas" },
-      { id: "alertas-stock", label: "Alertas" },
+      { id: "mermas", label: "Pérdidas" },
+      { id: "alertas-stock", label: "Alertas stock" },
     ],
   },
   {
     id: "productos",
-    label: "Productos",
+    label: "Productos & Precios",
     icon: Tag,
     tabs: [
-      { id: "productos", label: "Catalogo" },
-      { id: "categorias", label: "Categorias" },
+      { id: "productos", label: "Catálogo" },
+      { id: "categorias", label: "Categorías" },
       { id: "promociones", label: "Ofertas" },
       { id: "cupones", label: "Cupones" },
+      { id: "historial-precios", label: "Historial precios" },
     ],
   },
   {
@@ -102,7 +96,7 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
     tabs: [
       { id: "ordenes-compra", label: "Pedidos a proveedor" },
       { id: "proveedores", label: "Mis proveedores" },
-      { id: "recepcion", label: "Recepcion" },
+      { id: "recepcion", label: "Recepción" },
       { id: "cuentas-pagar", label: "Les debo" },
     ],
   },
@@ -111,24 +105,22 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
     label: "Mi Plata",
     icon: DollarSign,
     tabs: [
-      { id: "flujo-caja", label: "Plata que entra y sale" },
+      { id: "pl", label: "Ingresos y egresos" },
       { id: "gastos", label: "Gastos" },
-      { id: "margenes", label: "Ganancias por producto" },
+      { id: "rentabilidad", label: "Ganancias por producto" },
       { id: "reportes", label: "Reportes" },
       { id: "exportar", label: "Exportar a Excel" },
     ],
   },
   {
-    id: "mi-tienda",
-    label: "Mi Tienda",
-    icon: Store,
+    id: "clientes",
+    label: "Mis Clientes",
+    icon: Users,
     tabs: [
+      { id: "crm", label: "Mis clientes" },
       { id: "delivery", label: "Delivery" },
-      { id: "clientes", label: "Mis clientes" },
       { id: "resenas", label: "Opiniones" },
       { id: "fidelizacion", label: "Clientes frecuentes" },
-      { id: "horarios", label: "Horarios" },
-      { id: "pagina-inicio", label: "Mi pagina web" },
     ],
   },
 ];
@@ -137,107 +129,16 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
 
 export const CONFIG_SIDEBAR_MODULE: SidebarModule = {
   id: "config",
-  label: "Configuracion",
+  label: "Configuración",
   icon: Settings,
   tabs: [
-    { id: "usuarios", label: "Usuarios" },
+    { id: "usuarios", label: "Usuarios & Equipo" },
     { id: "roles", label: "Permisos" },
-    { id: "equipo", label: "Mi equipo" },
     { id: "plan", label: "Mi plan" },
+    { id: "pagina-inicio", label: "Mi página web" },
   ],
 };
 
-// ─── Modulos PRO (con candado visual) ─────────────────────────────────────────
-
-export const PRO_SIDEBAR_MODULES: SidebarModule[] = [
-  {
-    id: "analytics",
-    label: "Reportes avanzados",
-    icon: BarChart3,
-    tabs: [
-      { id: "analytics-bi", label: "Business Intelligence" },
-      { id: "proyecciones", label: "Proyecciones" },
-    ],
-    isPro: true,
-  },
-  {
-    id: "finanzas-pro",
-    label: "Contabilidad",
-    icon: Calculator,
-    tabs: [
-      { id: "balance", label: "Balance" },
-      { id: "facturacion", label: "Facturacion" },
-    ],
-    isPro: true,
-  },
-  {
-    id: "logistica-pro",
-    label: "Logistica",
-    icon: MapPin,
-    tabs: [
-      { id: "rutas", label: "Rutas de reparto" },
-      { id: "devoluciones", label: "Devoluciones" },
-    ],
-    isPro: true,
-  },
-  {
-    id: "crm-pro",
-    label: "CRM Clientes",
-    icon: Users,
-    tabs: [
-      { id: "crm", label: "Vista 360" },
-      { id: "encuestas", label: "Encuestas" },
-    ],
-    isPro: true,
-  },
-  {
-    id: "marketing",
-    label: "Marketing",
-    icon: Megaphone,
-    tabs: [{ id: "campanas", label: "Campanas" }],
-    isPro: true,
-  },
-  {
-    id: "rrhh",
-    label: "Personal",
-    icon: UserCog,
-    tabs: [{ id: "empleados", label: "Mis empleados" }],
-    isPro: true,
-  },
-  {
-    id: "automatizacion",
-    label: "Automatizacion",
-    icon: Zap,
-    tabs: [{ id: "flujos", label: "Flujos automaticos" }],
-    isPro: true,
-  },
-];
-
-// ─── Sub-component: Pro Tooltip ───────────────────────────────────────────────
-
-function ProTooltip({ visible }: { visible: boolean }) {
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0, x: -6 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -6 }}
-          transition={{ duration: 0.15 }}
-          className={cn(
-            "absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50",
-            "bg-gray-900 dark:bg-gray-800 text-white text-xs font-medium",
-            "px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none"
-          )}
-        >
-          Disponible en Plan Pro
-          {/* Arrow */}
-          <span className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-800" />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
 
 // ─── Sub-component: Module Item ───────────────────────────────────────────────
 
@@ -260,14 +161,8 @@ function ModuleItem({
 }: ModuleItemProps) {
   const Icon = module.icon;
   const hasMultipleTabs = module.tabs.length > 1;
-  const isPro = module.isPro === true;
-  const [showProTooltip, setShowProTooltip] = useState(false);
 
   function handleClick() {
-    if (isPro) {
-      // No navega — solo muestra tooltip si esta colapsado
-      return;
-    }
     onModuleChange(module.id);
     onTabChange(module.tabs[0].id);
   }
@@ -277,21 +172,16 @@ function ModuleItem({
       {/* Module row */}
       <button
         onClick={handleClick}
-        onMouseEnter={() => isPro && setShowProTooltip(true)}
-        onMouseLeave={() => setShowProTooltip(false)}
-        title={collapsed && !isPro ? module.label : undefined}
-        aria-disabled={isPro}
+        title={collapsed ? module.label : undefined}
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
-          isPro
-            ? "opacity-50 cursor-default text-gray-500 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-white/5"
-            : isActive
+          isActive
             ? "bg-[#2d6a4f]/10 dark:bg-[#2d6a4f]/20 text-[#2d6a4f] dark:text-emerald-400"
             : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
         )}
       >
         {/* Active indicator bar */}
-        {isActive && !isPro && (
+        {isActive && (
           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#2d6a4f] rounded-r-full" />
         )}
 
@@ -299,9 +189,7 @@ function ModuleItem({
           className={cn(
             "shrink-0 transition-colors",
             collapsed ? "h-5 w-5" : "h-[18px] w-[18px]",
-            isPro
-              ? "text-gray-400 dark:text-gray-600"
-              : isActive
+            isActive
               ? "text-[#2d6a4f] dark:text-emerald-400"
               : "text-gray-500 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
           )}
@@ -309,51 +197,26 @@ function ModuleItem({
 
         {!collapsed && (
           <>
-            <span className="flex-1 text-left text-sm font-medium leading-tight truncate">
+            <span
+              className="flex-1 text-left text-sm font-medium leading-tight truncate"
+              title={module.label}
+            >
               {module.label}
             </span>
-            {isPro ? (
-              <Lock className="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-600" />
-            ) : (
-              hasMultipleTabs && (
-                <motion.div
-                  animate={{ rotate: isActive ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                </motion.div>
-              )
+            {hasMultipleTabs && (
+              <motion.div
+                animate={{ rotate: isActive ? 90 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+              </motion.div>
             )}
           </>
         )}
-
-        {/* Tooltip para modulos pro cuando esta colapsado */}
-        {collapsed && <ProTooltip visible={showProTooltip} />}
       </button>
 
-      {/* Tooltip cuando NO esta colapsado */}
-      {!collapsed && (
-        <AnimatePresence>
-          {showProTooltip && isPro && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.15 }}
-              className={cn(
-                "absolute left-3 -top-8 z-50",
-                "bg-gray-900 dark:bg-gray-800 text-white text-xs font-medium",
-                "px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap pointer-events-none"
-              )}
-            >
-              Disponible en Plan Pro
-            </motion.div>
-          )}
-        </AnimatePresence>
-      )}
-
-      {/* Sub-tabs (solo cuando esta expandido, modulo activo, y no es Pro) */}
-      {!collapsed && hasMultipleTabs && !isPro && (
+      {/* Sub-tabs (solo cuando esta expandido y modulo activo) */}
+      {!collapsed && hasMultipleTabs && (
         <AnimatePresence initial={false}>
           {isActive && (
             <motion.div
@@ -386,7 +249,7 @@ function ModuleItem({
                             : "bg-gray-300 dark:bg-gray-600"
                         )}
                       />
-                      <span className="truncate">{tab.label}</span>
+                      <span className="truncate" title={tab.label}>{tab.label}</span>
                     </button>
                   );
                 })}
@@ -395,26 +258,6 @@ function ModuleItem({
           )}
         </AnimatePresence>
       )}
-    </div>
-  );
-}
-
-// ─── Sub-component: Pro Section Divider ──────────────────────────────────────
-
-function ProSectionDivider({ collapsed }: { collapsed: boolean }) {
-  if (collapsed) {
-    return (
-      <div className="my-2 mx-2 border-t border-dashed border-gray-200 dark:border-white/10" />
-    );
-  }
-  return (
-    <div className="my-2 mx-2 flex items-center gap-2">
-      <div className="flex-1 border-t border-dashed border-gray-200 dark:border-white/10" />
-      <span className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 dark:text-gray-600 uppercase tracking-wider whitespace-nowrap">
-        <Lock className="h-2.5 w-2.5" />
-        Plan Pro
-      </span>
-      <div className="flex-1 border-t border-dashed border-gray-200 dark:border-white/10" />
     </div>
   );
 }
@@ -533,7 +376,6 @@ export default function AdminSidebar({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10">
-          {/* Modulos basicos */}
           {basicModules.map((module) => (
             <ModuleItem
               key={module.id}
@@ -543,21 +385,6 @@ export default function AdminSidebar({
               collapsed={isCollapsed}
               onModuleChange={handleModuleChange}
               onTabChange={isMobile ? handleTabChange : onTabChange}
-            />
-          ))}
-
-          {/* Separador + modulos Pro */}
-          <ProSectionDivider collapsed={isCollapsed} />
-
-          {PRO_SIDEBAR_MODULES.map((module) => (
-            <ModuleItem
-              key={module.id}
-              module={module}
-              isActive={false}
-              activeTab=""
-              collapsed={isCollapsed}
-              onModuleChange={() => {}}
-              onTabChange={() => {}}
             />
           ))}
         </nav>

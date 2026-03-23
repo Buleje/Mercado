@@ -57,152 +57,107 @@ const TabSpinner = () => (
     </div>
   </div>
 );
-// ── Unified Module Imports (28 consolidated modules) ──
-const PanelPrincipalModule = dynamic(() => import("@/components/admin/unified/PanelPrincipalModule"), { loading: TabSpinner });
+// ── Unified Module Imports (8 consolidated modules) ──
+const AsistenteIAModule = dynamic(() => import("@/components/admin/unified/AsistenteIAModule"), { loading: TabSpinner });
 const POSCajaModule = dynamic(() => import("@/components/admin/unified/POSCajaModule"), { loading: TabSpinner });
 const InventarioAlmacenesModule = dynamic(() => import("@/components/admin/unified/InventarioAlmacenesModule"), { loading: TabSpinner });
-const ReposicionModule = dynamic(() => import("@/components/admin/unified/ReposicionModule"), { loading: TabSpinner });
 const CatalogoTiendaModule = dynamic(() => import("@/components/admin/unified/CatalogoTiendaModule"), { loading: TabSpinner });
-const PreciosPromosModule = dynamic(() => import("@/components/admin/unified/PreciosPromosModule"), { loading: TabSpinner });
 const ComprasModule = dynamic(() => import("@/components/admin/unified/ComprasModule"), { loading: TabSpinner });
-const ProveedoresModule = dynamic(() => import("@/components/admin/unified/ProveedoresModule"), { loading: TabSpinner });
-const LogisticaModule = dynamic(() => import("@/components/admin/unified/LogisticaModule"), { loading: TabSpinner });
-const DevolucionesCalidadModule = dynamic(() => import("@/components/admin/unified/DevolucionesCalidadModule"), { loading: TabSpinner });
-const VentasMarketingModule = dynamic(() => import("@/components/admin/unified/VentasMarketingModule"), { loading: TabSpinner });
-const CRMClientesModule = dynamic(() => import("@/components/admin/unified/CRMClientesModule"), { loading: TabSpinner });
-const FidelizacionModule = dynamic(() => import("@/components/admin/unified/FidelizacionModule"), { loading: TabSpinner });
-const EncuestasSoporteModule = dynamic(() => import("@/components/admin/unified/EncuestasSoporteModule"), { loading: TabSpinner });
-const VisitantesTab = dynamic(() => import("@/components/admin/VisitantesTab"), { loading: TabSpinner });
-const AnalyticsBIModule = dynamic(() => import("@/components/admin/unified/AnalyticsBIModule"), { loading: TabSpinner });
-const ProyeccionesModule = dynamic(() => import("@/components/admin/unified/ProyeccionesModule"), { loading: TabSpinner });
 const FinanzasModule = dynamic(() => import("@/components/admin/unified/FinanzasModule"), { loading: TabSpinner });
-const TesoreriaModule = dynamic(() => import("@/components/admin/unified/TesoreriaModule"), { loading: TabSpinner });
-const FacturacionModule = dynamic(() => import("@/components/admin/unified/FacturacionModule"), { loading: TabSpinner });
-const GastosActivosModule = dynamic(() => import("@/components/admin/unified/GastosActivosModule"), { loading: TabSpinner });
-const RRHHModule = dynamic(() => import("@/components/admin/unified/RRHHModule"), { loading: TabSpinner });
-const ProyectosTareasModule = dynamic(() => import("@/components/admin/unified/ProyectosTareasModule"), { loading: TabSpinner });
-const ComunicacionesModule = dynamic(() => import("@/components/admin/unified/ComunicacionesModule"), { loading: TabSpinner });
-const AlertasAutomModule = dynamic(() => import("@/components/admin/unified/AlertasAutomModule"), { loading: TabSpinner });
-const ReportesDocModule = dynamic(() => import("@/components/admin/unified/ReportesDocModule"), { loading: TabSpinner });
-const AgendaUtilidadesModule = dynamic(() => import("@/components/admin/unified/AgendaUtilidadesModule"), { loading: TabSpinner });
-const SeguridadModule = dynamic(() => import("@/components/admin/unified/SeguridadModule"), { loading: TabSpinner });
-const SistemaModule = dynamic(() => import("@/components/admin/unified/SistemaModule"), { loading: TabSpinner });
-const AgentsDashboardTab = dynamic(() => import("@/components/admin/AgentsDashboardTab"), { loading: TabSpinner });
+const CRMClientesModule = dynamic(() => import("@/components/admin/unified/CRMClientesModule"), { loading: TabSpinner });
 
 import SSEListener from "@/components/admin/SSEListener";
 
 const TeamTab        = dynamic(() => import("@/components/admin/TeamTab"),        { loading: TabSpinner });
 const PlanTab        = dynamic(() => import("@/components/admin/PlanTab"),        { loading: TabSpinner });
-const ChangelogModule = dynamic(() => import("@/components/admin/ChangelogModule"), { loading: TabSpinner });
 
 // Utility components (not tab modules)
 const GlobalSearch = dynamic(() => import("@/components/admin/GlobalSearch"), { ssr: false });
 const AlertCenter = dynamic(() => import("@/components/admin/AlertCenter"), { ssr: false });
-const AIAssistant = dynamic(() => import("@/components/admin/AIAssistant"), { ssr: false });
+const AIFloatingButton = dynamic(() => import("@/components/admin/AIFloatingButton"), { ssr: false });
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
 
-// ── 14 módulos consolidados + pedidos + plan (legacy IDs kept for TAB_MIGRATION compatibility) ──
+// ── 8 módulos consolidados + pedidos + plan ──
 type Tab =
-  // 14 módulos principales
-  | "panel-principal"      // Panel + Agentes + Changelog
-  | "pos-caja"
-  | "inventario-almacenes" // Inventario + Reposición
-  | "catalogo-tienda"      // Catálogo + Precios & Promos
-  | "compras"              // Compras + Proveedores
-  | "logistica"            // Logística + Devoluciones & Calidad
-  | "crm-clientes"         // CRM + Fidelización + Encuestas & Soporte
-  | "ventas-marketing"     // Ventas & Marketing + Comunicaciones
-  | "analytics-bi"         // Analytics & BI + Proyecciones
-  | "finanzas"             // Finanzas + Tesorería + Facturación + Gastos
-  | "rrhh"
-  | "proyectos-tareas"     // Proyectos & Tareas + Alertas & Automatización
-  | "reportes-documentos"  // Reportes & Documentos + Agenda & Utilidades
-  | "seguridad"            // Seguridad + Sistema + Config + Equipo
+  | "asistente-ia"        // Asistente IA (dashboard + chat + alertas)
+  | "ventas-caja"         // Ventas & Caja
+  | "inventario"          // Inventario
+  | "productos"           // Productos & Precios
+  | "compras"             // Compras
+  | "plata"               // Mi Plata (finanzas)
+  | "clientes"            // Mis Clientes
+  | "config"              // Configuración
   // Tabs especiales mantenidos
   | "pedidos"
-  | "plan"
-  // Legacy IDs (solo para TAB_MIGRATION — no aparecen en ALL_TABS)
-  | "reposicion" | "precios-promos" | "proveedores" | "devoluciones-calidad"
-  | "fidelizacion" | "encuestas-soporte" | "proyecciones" | "comunicaciones"
-  | "alertas-automatizacion" | "agenda-utilidades" | "sistema" | "configuracion"
-  | "clientes" | "visitantes" | "resenas" | "agentes" | "changelog"
-  | "tesoreria" | "facturacion" | "gastos-activos";
+  | "plan";
 
 // Old tab IDs → consolidated module IDs for localStorage migration
-// Phase 1 legacy (pre-unified): old flat tab names
-// Phase 2 legacy (unified 28→14): intermediate module IDs now merged
+// Maps all legacy tab IDs from previous 14-module and 28-module layouts to new 8-module layout
 const TAB_MIGRATION: Record<string, Tab> = {
-  // → Panel Principal (absorbe agentes y changelog)
-  dashboard: "panel-principal", "dashboard-ejecutivo": "panel-principal",
-  agentes: "panel-principal", changelog: "panel-principal",
-  // → POS & Caja
-  pos: "pos-caja", caja: "pos-caja", "arqueo-caja": "pos-caja", turnos: "pos-caja",
-  // → Inventario & Reposición
-  inventario: "inventario-almacenes", kardex: "inventario-almacenes", lotes: "inventario-almacenes",
-  "inventario-fisico": "inventario-almacenes", mermas: "inventario-almacenes", almacenes: "inventario-almacenes",
-  ubicaciones: "inventario-almacenes", transferencias: "inventario-almacenes",
-  "auto-reorden": "inventario-almacenes", "reorden-dinamico": "inventario-almacenes",
-  prediccion: "inventario-almacenes", reposicion: "inventario-almacenes",
-  // → Catálogo & Precios
-  "categorias-editor": "catalogo-tienda", "combos-editor": "catalogo-tienda", combos: "catalogo-tienda",
-  kits: "catalogo-tienda", "pagina-inicio": "catalogo-tienda",
-  "precios-promos": "catalogo-tienda", benchmark: "catalogo-tienda", "historial-precios": "catalogo-tienda",
-  promociones: "catalogo-tienda", cupones: "catalogo-tienda", "ab-tests": "catalogo-tienda",
-  // → Compras & Proveedores
+  // → Asistente IA (absorbe dashboard, agentes, changelog)
+  dashboard: "asistente-ia", "dashboard-ejecutivo": "asistente-ia", "panel-principal": "asistente-ia",
+  agentes: "asistente-ia", changelog: "asistente-ia",
+  // → Ventas & Caja
+  pos: "ventas-caja", caja: "ventas-caja", "pos-caja": "ventas-caja", "arqueo-caja": "ventas-caja", turnos: "ventas-caja",
+  "ventas-marketing": "ventas-caja", marketing: "ventas-caja", "forecast-ventas": "ventas-caja",
+  "metricas-conversion": "ventas-caja", referidos: "ventas-caja",
+  // → Inventario
+  inventario: "inventario", kardex: "inventario", lotes: "inventario",
+  "inventario-fisico": "inventario", mermas: "inventario", almacenes: "inventario",
+  "inventario-almacenes": "inventario", ubicaciones: "inventario", transferencias: "inventario",
+  "auto-reorden": "inventario", "reorden-dinamico": "inventario",
+  prediccion: "inventario", reposicion: "inventario",
+  // → Productos & Precios
+  "categorias-editor": "productos", "combos-editor": "productos", combos: "productos",
+  kits: "productos", "catalogo-tienda": "productos",
+  "precios-promos": "productos", benchmark: "productos", "historial-precios": "productos",
+  promociones: "productos", cupones: "productos", "ab-tests": "productos",
+  // → Compras
   compras: "compras", "plan-compras": "compras", "aprobacion-compras": "compras",
   contratos: "compras", cotizaciones: "compras", recepcion: "compras",
   proveedores: "compras", "portal-proveedor": "compras", evaluaciones: "compras",
   "calidad-proveedor": "compras", "pagos-proveedor": "compras",
-  // → Logística & Entregas (absorbe devoluciones-calidad)
-  entregas: "logistica", "rutas-delivery": "logistica", "delivery-horarios": "logistica",
-  "seguimiento-envios": "logistica", "costos-envio": "logistica", flota: "logistica",
-  "logistica-devoluciones": "logistica",
-  "devoluciones-calidad": "logistica", devoluciones: "logistica",
-  "devoluciones-avanzadas": "logistica", calidad: "logistica", anomalias: "logistica",
-  // → Clientes & CRM (absorbe fidelizacion y encuestas-soporte)
-  crm: "crm-clientes", "cliente-360": "crm-clientes", segmentos: "crm-clientes",
-  "segmentos-auto": "crm-clientes", clv: "crm-clientes", clientes: "crm-clientes",
-  visitantes: "crm-clientes",
-  fidelizacion: "crm-clientes", "programa-puntos": "crm-clientes", "wish-lists": "crm-clientes",
-  "encuestas-soporte": "crm-clientes", nps: "crm-clientes", encuestas: "crm-clientes",
-  soporte: "crm-clientes", "reseñas": "crm-clientes", resenas: "crm-clientes",
-  // → Marketing & Ventas (absorbe comunicaciones)
-  marketing: "ventas-marketing", "forecast-ventas": "ventas-marketing",
-  "metricas-conversion": "ventas-marketing", referidos: "ventas-marketing",
-  comunicaciones: "ventas-marketing", "hub-comunicaciones": "ventas-marketing",
-  chat: "ventas-marketing", "plantillas-mensaje": "ventas-marketing", notificaciones: "ventas-marketing",
-  // → Analytics & BI (absorbe proyecciones)
-  bi: "analytics-bi", "mapa-calor": "analytics-bi", "abc-analysis": "analytics-bi",
-  pareto: "analytics-bi", "bcg-matrix": "analytics-bi", "analisis-cesta": "analytics-bi",
-  "kpi-personalizado": "analytics-bi",
-  proyecciones: "analytics-bi", simulador: "analytics-bi",
-  estacionalidad: "analytics-bi", "comparador-periodos": "analytics-bi",
-  // → Finanzas (sin cambios — ya absorbe tesorería, facturación, gastos)
-  pl: "finanzas", "balance-general": "finanzas", "flujo-caja": "finanzas",
-  presupuestos: "finanzas", "presupuesto-real": "finanzas", "break-even": "finanzas",
-  rentabilidad: "finanzas", margenes: "finanzas",
-  tesoreria: "finanzas", "proyeccion-liquidez": "finanzas", cheques: "finanzas",
-  conciliacion: "finanzas", "centro-cobros": "finanzas", "cuentas-cobrar": "finanzas",
-  facturacion: "finanzas", "e-facturacion": "finanzas", impuestos: "finanzas", cuentas: "finanzas",
-  gastos: "finanzas", "centros-costo": "finanzas", seguros: "finanzas",
-  activos: "finanzas", "gastos-activos": "finanzas",
-  // → RRHH
-  rrhh: "rrhh", nomina: "rrhh", sucursales: "rrhh",
-  // → Tareas & Automatización (absorbe alertas-automatizacion)
-  proyectos: "proyectos-tareas", tareas: "proyectos-tareas", kanban: "proyectos-tareas",
-  metas: "proyectos-tareas", "tablero-metas": "proyectos-tareas",
-  "alertas-automatizacion": "proyectos-tareas", "alertas-automaticas": "proyectos-tareas",
-  recordatorios: "proyectos-tareas", flujos: "proyectos-tareas", "reglas-negocio": "proyectos-tareas",
-  // → Reportes & Herramientas (absorbe agenda-utilidades)
-  reportes: "reportes-documentos", "reportes-auto": "reportes-documentos",
-  "importar-exportar": "reportes-documentos", documentos: "reportes-documentos",
-  "agenda-utilidades": "reportes-documentos", calendario: "reportes-documentos",
-  "notas-rapidas": "reportes-documentos", "filtros-guardados": "reportes-documentos",
-  // → Sistema & Seguridad (sin cambios — ya absorbe sistema y config)
-  "usuarios-admin": "seguridad", "permisos-roles": "seguridad", "logs-seguridad": "seguridad",
-  auditoria: "seguridad", actividad: "seguridad", cumplimiento: "seguridad",
-  "salud-sistema": "seguridad", "backup-restaurar": "seguridad", webhooks: "seguridad",
-  sistema: "seguridad", configuracion: "seguridad", equipo: "seguridad",
+  // → Mi Plata (finanzas, analytics, reportes)
+  pl: "plata", "balance-general": "plata", "flujo-caja": "plata",
+  presupuestos: "plata", "presupuesto-real": "plata", "break-even": "plata",
+  rentabilidad: "plata", margenes: "plata", finanzas: "plata",
+  tesoreria: "plata", "proyeccion-liquidez": "plata", cheques: "plata",
+  conciliacion: "plata", "centro-cobros": "plata", "cuentas-cobrar": "plata",
+  facturacion: "plata", "e-facturacion": "plata", impuestos: "plata", cuentas: "plata",
+  gastos: "plata", "centros-costo": "plata", seguros: "plata",
+  activos: "plata", "gastos-activos": "plata",
+  reportes: "plata", "reportes-auto": "plata", "importar-exportar": "plata", documentos: "plata",
+  "reportes-documentos": "plata",
+  "analytics-bi": "plata", bi: "plata", "mapa-calor": "plata", "abc-analysis": "plata",
+  pareto: "plata", "bcg-matrix": "plata", "analisis-cesta": "plata", "kpi-personalizado": "plata",
+  proyecciones: "plata", simulador: "plata", estacionalidad: "plata", "comparador-periodos": "plata",
+  // → Mis Clientes (CRM, delivery, fidelizacion, logistica)
+  crm: "clientes", "cliente-360": "clientes", segmentos: "clientes",
+  "segmentos-auto": "clientes", clv: "clientes", clientes: "clientes",
+  "crm-clientes": "clientes", visitantes: "clientes",
+  fidelizacion: "clientes", "programa-puntos": "clientes", "wish-lists": "clientes",
+  "encuestas-soporte": "clientes", nps: "clientes", encuestas: "clientes",
+  soporte: "clientes", resenas: "clientes",
+  delivery: "clientes", logistica: "clientes",
+  entregas: "clientes", "rutas-delivery": "clientes", "delivery-horarios": "clientes",
+  "seguimiento-envios": "clientes", "costos-envio": "clientes", flota: "clientes",
+  "logistica-devoluciones": "clientes", "devoluciones-calidad": "clientes",
+  devoluciones: "clientes", "devoluciones-avanzadas": "clientes", calidad: "clientes", anomalias: "clientes",
+  // → Configuración (seguridad, sistema, RRHH, comunicaciones, tareas, agenda)
+  usuarios: "config", "usuarios-admin": "config", "permisos-roles": "config", "logs-seguridad": "config",
+  auditoria: "config", actividad: "config", cumplimiento: "config",
+  "salud-sistema": "config", "backup-restaurar": "config", webhooks: "config",
+  sistema: "config", configuracion: "config", equipo: "config", seguridad: "config",
+  rrhh: "config", nomina: "config", sucursales: "config",
+  comunicaciones: "config", "hub-comunicaciones": "config",
+  chat: "config", "plantillas-mensaje": "config", notificaciones: "config",
+  proyectos: "config", tareas: "config", kanban: "config",
+  metas: "config", "tablero-metas": "config", "proyectos-tareas": "config",
+  "alertas-automatizacion": "config", "alertas-automaticas": "config",
+  recordatorios: "config", flujos: "config", "reglas-negocio": "config",
+  "agenda-utilidades": "config", calendario: "config",
+  "notas-rapidas": "config", "filtros-guardados": "config",
+  "pagina-inicio": "config",
   // Especiales
   pedidos: "pedidos",
   plan: "plan",
@@ -210,46 +165,21 @@ const TAB_MIGRATION: Record<string, Tab> = {
 
 // Modules that ship with auto-seeded demo data and their API cleanup endpoint
 const DEMO_DATA_MODULES: Partial<Record<Tab, { label: string; api?: string }>> = {
-  "inventario-almacenes": { label: "24 productos de ejemplo cargados al inicio", api: "/api/admin/demo-products" },
+  "inventario": { label: "24 productos de ejemplo cargados al inicio", api: "/api/admin/demo-products" },
 };
 
 // Rich metadata for every module: emoji, priority, description and a helpful tip
 const MODULE_INFO: Partial<Record<Tab, { emoji: string; priority: "core" | "high" | "medium" | "low"; desc: string; tip: string }>> = {
-  "panel-principal":        { emoji: "📊", priority: "core",   desc: "Dashboard general y ejecutivo: ventas, stock, pedidos y KPIs del día.", tip: "Empieza aquí cada mañana para tener el pulso del negocio." },
-  "pos-caja":               { emoji: "🖥️", priority: "core",   desc: "Punto de venta, caja registradora, arqueo y control de turnos.",        tip: "Todo lo que necesitas para operar el mostrador en un solo lugar." },
-  "inventario-almacenes":   { emoji: "📦", priority: "core",   desc: "Stock, Kardex, lotes, mermas, almacenes, ubicaciones y transferencias.", tip: "Control completo del inventario desde una sola vista con sub-tabs." },
-  "pedidos":                { emoji: "🛒", priority: "core",   desc: "Gestiona pedidos recibidos, su estado, asignación y entrega.",           tip: "Centraliza pedidos de WhatsApp, tienda online y mostrador." },
-  "clientes":               { emoji: "👥", priority: "core",   desc: "Base de datos de clientes con historial de compras y contacto.",         tip: "Conoce a tus mejores clientes y personaliza atención." },
-  "configuracion":          { emoji: "⚙️", priority: "core",   desc: "Ajustes generales: nombre, logo, métodos de pago y zona de entrega.",   tip: "Configura esto primero para que todo funcione correctamente." },
-  "reposicion":             { emoji: "🔄", priority: "high",   desc: "Auto-reorden, reorden dinámico y predicción de demanda con IA.",         tip: "Evita quiebres de stock con reposición inteligente." },
-  "catalogo-tienda":        { emoji: "🏪", priority: "high",   desc: "Categorías, combos, kits, bundles y editor de página de inicio.",        tip: "Gestiona todo tu catálogo y la experiencia de la tienda." },
-  "precios-promos":         { emoji: "💰", priority: "high",   desc: "Benchmark, historial de precios, promociones, cupones y A/B tests.",     tip: "Optimiza precios y campañas con datos y experimentación." },
-  "compras":                { emoji: "📋", priority: "high",   desc: "Órdenes de compra, planificación, aprobaciones, RFQ y recepción.",       tip: "Flujo completo de compras desde la cotización hasta la recepción." },
-  "proveedores":            { emoji: "🚚", priority: "high",   desc: "Directorio, portal, evaluaciones, calidad y pagos a proveedores.",       tip: "Gestiona toda la relación con proveedores en un módulo." },
-  "logistica":              { emoji: "🗺️", priority: "high",   desc: "Calendario, rutas, horarios, tracking, costos de envío y flota.",        tip: "Controla toda la operación de entregas y logística." },
-  "devoluciones-calidad":   { emoji: "↩️", priority: "high",   desc: "Devoluciones básicas y avanzadas, control de calidad y anomalías.",      tip: "Gestiona calidad y devoluciones con flujos estandarizados." },
-  "ventas-marketing":       { emoji: "📣", priority: "high",   desc: "Marketing automation, forecast de ventas, métricas y referidos.",         tip: "Impulsa ventas con automatización y proyecciones inteligentes." },
-  "crm-clientes":           { emoji: "🤝", priority: "high",   desc: "CRM, vista 360°, segmentación manual y automática, CLV.",                tip: "Conoce al detalle cada cliente y segmenta para mejores campañas." },
-  "fidelizacion":           { emoji: "❤️", priority: "medium", desc: "Programa de fidelización, puntos canjeables y wish lists.",              tip: "Aumenta retención premiando la lealtad del cliente." },
-  "encuestas-soporte":      { emoji: "🎫", priority: "medium", desc: "NPS, encuestas de satisfacción y sistema de tickets de soporte.",        tip: "Mide satisfacción y resuelve problemas de forma organizada." },
-  "analytics-bi":           { emoji: "🧠", priority: "high",   desc: "BI, mapa de calor, ABC, Pareto, BCG, análisis de cesta y KPIs.",        tip: "Inteligencia de negocio completa para decisiones basadas en datos." },
-  "proyecciones":           { emoji: "🎛️", priority: "medium", desc: "Simulador de escenarios, estacionalidad y comparador de períodos.",     tip: "Proyecta resultados y compara rendimiento entre períodos." },
-  "finanzas":               { emoji: "💵", priority: "high",   desc: "P&G, balance, flujo de caja, presupuestos, rentabilidad y márgenes.",    tip: "Visión financiera completa del negocio en un solo módulo." },
-  "tesoreria":              { emoji: "🏦", priority: "high",   desc: "Tesorería, liquidez, cheques, conciliación, cobros y cuentas x cobrar.", tip: "Control total del efectivo y las cuentas por cobrar." },
-  "facturacion":            { emoji: "🧾", priority: "high",   desc: "Facturación, factura electrónica, impuestos y cuentas por pagar.",       tip: "Todo lo tributario y de facturación centralizado." },
-  "gastos-activos":         { emoji: "💸", priority: "medium", desc: "Gastos operativos, centros de costo, seguros y activos fijos.",          tip: "Controla egresos y patrimonio del negocio." },
-  "rrhh":                   { emoji: "👨‍💼", priority: "medium", desc: "Recursos humanos, nómina y gestión multi-sucursal.",                     tip: "Gestiona personal y sucursales desde un módulo unificado." },
-  "proyectos-tareas":       { emoji: "🎯", priority: "medium", desc: "Proyectos, tareas, Kanban, metas y tablero de seguimiento.",             tip: "Organiza el trabajo del equipo con visibilidad completa." },
-  "comunicaciones":         { emoji: "📬", priority: "medium", desc: "Hub de comunicaciones, chat interno, plantillas y notificaciones.",      tip: "Todos los canales de comunicación en un solo lugar." },
-  "alertas-automatizacion": { emoji: "⚡", priority: "medium", desc: "Alertas automáticas, recordatorios, flujos de trabajo y reglas.",        tip: "Automatiza procesos repetitivos y nunca olvides una tarea." },
-  "reportes-documentos":    { emoji: "📈", priority: "high",   desc: "Reportes manuales y automáticos, importar/exportar y documentos.",       tip: "Genera y distribuye reportes con facilidad." },
-  "agenda-utilidades":      { emoji: "📅", priority: "low",    desc: "Calendario compartido, notas rápidas y filtros guardados.",              tip: "Herramientas de productividad diaria para el equipo." },
-  "seguridad":              { emoji: "🔐", priority: "high",   desc: "Usuarios, roles, logs de seguridad, auditoría y cumplimiento.",          tip: "Protege el acceso y audita todas las acciones del sistema." },
-  "sistema":                { emoji: "💚", priority: "high",   desc: "Salud del sistema, backups y webhooks para integraciones.",              tip: "Monitorea y mantén la estabilidad de la plataforma." },
-  "agentes":                { emoji: "🤖", priority: "high",   desc: "Orquestador multiagente, tareas automáticas, monitoreo y ejecución.",   tip: "Controla y monitorea todos los agentes del sistema desde un solo panel." },
-  "resenas":                { emoji: "⭐", priority: "medium", desc: "Gestiona opiniones de clientes sobre productos y servicio.",             tip: "Responde reseñas y usa las positivas para generar confianza." },
-  "visitantes":             { emoji: "👋", priority: "medium", desc: "Registro de visitantes nuevos: nombre y dispositivo preferido.",          tip: "Conoce desde dónde te visitan por primera vez." },
-  "changelog":              { emoji: "⚗️", priority: "low",    desc: "Historial de versiones, releases y cambios del proyecto.",              tip: "Consulta qué hay de nuevo en cada versión del proyecto." },
+  "asistente-ia":  { emoji: "🧠", priority: "core",   desc: "Dashboard IA, chat con asistente y centro de alertas del negocio.",     tip: "Empieza aquí cada mañana para tener el pulso del negocio." },
+  "ventas-caja":   { emoji: "🖥️", priority: "core",   desc: "Punto de venta, caja registradora, arqueo, pedidos y cuentas por cobrar.", tip: "Todo lo que necesitas para operar el mostrador en un solo lugar." },
+  "inventario":    { emoji: "📦", priority: "core",   desc: "Stock, Kardex, vencimientos, mermas y alertas de inventario.",           tip: "Control completo del inventario desde una sola vista." },
+  "productos":     { emoji: "🏪", priority: "high",   desc: "Catálogo, categorías, ofertas, cupones e historial de precios.",         tip: "Gestiona tu catálogo y optimiza precios." },
+  "compras":       { emoji: "📋", priority: "high",   desc: "Pedidos a proveedor, directorio de proveedores y recepción.",            tip: "Flujo completo de compras desde la cotización hasta la recepción." },
+  "plata":         { emoji: "💵", priority: "high",   desc: "Ingresos, egresos, gastos, ganancias, reportes y exportación.",          tip: "Visión financiera completa del negocio en un solo módulo." },
+  "clientes":      { emoji: "👥", priority: "high",   desc: "CRM, delivery, opiniones y programa de fidelización.",                   tip: "Conoce a tus clientes y personaliza la atención." },
+  "config":        { emoji: "⚙️", priority: "core",   desc: "Usuarios, permisos, plan y configuración de la página web.",             tip: "Configura esto primero para que todo funcione correctamente." },
+  "pedidos":       { emoji: "🛒", priority: "core",   desc: "Gestiona pedidos recibidos, su estado, asignación y entrega.",           tip: "Centraliza pedidos de WhatsApp, tienda online y mostrador." },
+  "plan":          { emoji: "⚡", priority: "medium", desc: "Tu plan actual, límites y opciones de mejora.",                          tip: "Revisa tu plan para aprovechar al máximo la plataforma." },
 };
 
 type TabCategory = {
@@ -257,34 +187,33 @@ type TabCategory = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   tabs: Tab[];
-  proOnly?: boolean;
 };
 
-// ── 7 módulos básicos (Plan Free/Basic) ──────────────────────────────────────
+// ── 7 módulos básicos + config ──────────────────────────────────────────────
 const BASIC_MODULES: TabCategory[] = [
   {
-    id: "inicio",
-    label: "Inicio",
-    icon: LayoutDashboard,
-    tabs: ["panel-principal"],
+    id: "asistente-ia",
+    label: "Asistente IA",
+    icon: Brain,
+    tabs: ["asistente-ia"],
   },
   {
     id: "ventas-caja",
     label: "Ventas & Caja",
     icon: ShoppingCart,
-    tabs: ["pos-caja", "pedidos"],
+    tabs: ["ventas-caja", "pedidos"],
   },
   {
     id: "inventario",
     label: "Inventario",
     icon: Package,
-    tabs: ["inventario-almacenes"],
+    tabs: ["inventario"],
   },
   {
     id: "productos",
-    label: "Productos",
+    label: "Productos & Precios",
     icon: Tag,
-    tabs: ["catalogo-tienda"],
+    tabs: ["productos"],
   },
   {
     id: "compras-mod",
@@ -296,60 +225,29 @@ const BASIC_MODULES: TabCategory[] = [
     id: "plata",
     label: "Mi Plata",
     icon: DollarSign,
-    tabs: ["finanzas", "reportes-documentos"],
+    tabs: ["plata"],
   },
   {
-    id: "mi-tienda",
-    label: "Mi Tienda",
-    icon: Store,
-    tabs: ["crm-clientes", "logistica"],
+    id: "clientes",
+    label: "Mis Clientes",
+    icon: Users,
+    tabs: ["clientes"],
   },
 ];
 
 // ── Módulo Config (siempre visible) ──────────────────────────────────────────
 const CONFIG_MODULE: TabCategory = {
   id: "config",
-  label: "Configuracion",
+  label: "Configuración",
   icon: Settings,
-  tabs: ["seguridad", "plan"],
+  tabs: ["config", "plan"],
 };
 
-// ── Módulos PRO (Plan Pro/Business/Enterprise) ────────────────────────────────
-const PRO_MODULES: TabCategory[] = [
-  {
-    id: "analytics-mod",
-    label: "Analytics & BI",
-    icon: BarChart3,
-    tabs: ["analytics-bi"],
-    proOnly: true,
-  },
-  {
-    id: "ventas-marketing-mod",
-    label: "Marketing",
-    icon: Megaphone,
-    tabs: ["ventas-marketing"],
-    proOnly: true,
-  },
-  {
-    id: "rrhh-mod",
-    label: "RRHH",
-    icon: UserCog,
-    tabs: ["rrhh"],
-    proOnly: true,
-  },
-  {
-    id: "tareas-mod",
-    label: "Tareas & Automatizacion",
-    icon: ListTodo,
-    tabs: ["proyectos-tareas"],
-    proOnly: true,
-  },
-];
+// No PRO modules — all modules available to all plans
 
-// ── TAB_CATEGORIES: combina módulos básicos + PRO + config (se filtra por plan en runtime) ──
+// ── TAB_CATEGORIES: todos los módulos ──
 const TAB_CATEGORIES: TabCategory[] = [
   ...BASIC_MODULES,
-  ...PRO_MODULES,
   CONFIG_MODULE,
 ];
 
@@ -2970,6 +2868,8 @@ function OrdersTab() {
   });
 
   const total = activeOrders.reduce((s, o) => s + o.total, 0);
+  // eslint-disable-next-line react-hooks/purity -- Date.now() is intentionally used for urgency calculation on each render
+  const nowMs = Date.now();
 
   return (
     <div className="space-y-3 sm:space-y-6">
@@ -3087,8 +2987,20 @@ function OrdersTab() {
         </div>
       ) : (
         <div className="space-y-3">
-          {paginatedOrders.map((o) => (
-            <div key={o.id} className={cn("bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden", selectedOrderIds.has(o.id) && "ring-2 ring-primary")}>
+          {paginatedOrders.map((o) => {
+            // ── Urgency indicator based on order age ──
+            const orderAgeMs = nowMs - new Date(o.createdAt).getTime();
+            const orderAgeHours = orderAgeMs / (1000 * 60 * 60);
+            const isUrgent2h = orderAgeHours >= 2;
+            const isUrgent1h = !isUrgent2h && orderAgeHours >= 1;
+            const urgencyBorder = isUrgent2h
+              ? "border-l-4 border-l-red-500"
+              : isUrgent1h
+                ? "border-l-4 border-l-orange-400"
+                : "";
+
+            return (
+            <div key={o.id} className={cn("bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden", urgencyBorder, selectedOrderIds.has(o.id) && "ring-2 ring-primary")}>
               <div
                 className="p-4 flex flex-col sm:flex-row sm:items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                 onClick={() => setDetailOrder(o)}
@@ -3105,6 +3017,16 @@ function OrdersTab() {
                     <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[o.status])}>
                       {STATUS_LABELS[o.status]}
                     </span>
+                    {isUrgent2h && (
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400 animate-pulse">
+                        {"\u26A0"} +2h
+                      </span>
+                    )}
+                    {isUrgent1h && (
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400">
+                        {"\u23F0"} +1h
+                      </span>
+                    )}
                     {o.paymentMethod && (
                       <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold",
                         o.paymentMethod === "yape" ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
@@ -3200,7 +3122,8 @@ function OrdersTab() {
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -5169,7 +5092,7 @@ function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onMode
 function AdminPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(() => {
-    if (typeof window === "undefined") return "panel-principal";
+    if (typeof window === "undefined") return "asistente-ia";
     try {
       const saved = localStorage.getItem("admin_active_tab");
       if (saved) {
@@ -5177,11 +5100,11 @@ function AdminPage() {
         const migrated = TAB_MIGRATION[saved];
         if (migrated) return migrated;
         // Check if already a valid new tab
-        const VALID_TABS: Tab[] = ["panel-principal","pos-caja","inventario-almacenes","reposicion","catalogo-tienda","precios-promos","compras","proveedores","logistica","devoluciones-calidad","ventas-marketing","crm-clientes","fidelizacion","encuestas-soporte","analytics-bi","proyecciones","finanzas","tesoreria","facturacion","gastos-activos","rrhh","proyectos-tareas","comunicaciones","alertas-automatizacion","reportes-documentos","agenda-utilidades","seguridad","sistema","clientes","resenas","pedidos","configuracion","agentes"];
+        const VALID_TABS: Tab[] = ["asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan"];
         if (VALID_TABS.includes(saved as Tab)) return saved as Tab;
       }
     } catch {}
-    return "panel-principal";
+    return "asistente-ia";
   });
   const [storeMode, setStoreModeState] = useState<StoreMode>("whatsapp");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -5311,9 +5234,9 @@ function AdminPage() {
 
   // Keyboard shortcuts: Alt+1..9,0 for tabs, Alt+? for help
   const SHORTCUT_MAP: Record<string, Tab> = {
-    "1": "panel-principal", "2": "pos-caja", "3": "inventario-almacenes", "4": "pedidos",
-    "5": "catalogo-tienda", "6": "compras", "7": "finanzas", "8": "ventas-marketing",
-    "9": "crm-clientes", "0": "seguridad",
+    "1": "asistente-ia", "2": "ventas-caja", "3": "inventario", "4": "pedidos",
+    "5": "productos", "6": "compras", "7": "plata", "8": "clientes",
+    "9": "config", "0": "plan",
   };
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -5399,7 +5322,7 @@ function AdminPage() {
       .then(d => {
         if (!d) return;
         const a: Record<string, number> = {};
-        if (d.lowStockProducts > 0) a["inventario-almacenes"] = d.lowStockProducts;
+        if (d.lowStockProducts > 0) a["inventario"] = d.lowStockProducts;
         if (d.pendingOrders > 0) a.pedidos = d.pendingOrders;
         setAlerts(a);
         setQuickStats({ pendingOrders: d.pendingOrders, todayRevenue: d.todayRevenue, lowStockProducts: d.lowStockProducts, overduePayables: d.overduePayables, oldPendingOrders: d.oldPendingOrders });
@@ -5492,42 +5415,23 @@ function AdminPage() {
     router.push("/admin/login");
   };
 
-  // ── 14 módulos consolidados ──────────────────────────────────────────────────
+  // ── 8 módulos consolidados + especiales ──────────────────────────────────────
   const ALL_TABS = [
-    // — Core operativo —
-    { id: "panel-principal" as Tab,        label: "Panel Principal",            icon: LayoutDashboard },
-    { id: "pos-caja" as Tab,               label: "POS & Caja",                 icon: ShoppingCart },
-    { id: "inventario-almacenes" as Tab,   label: "Inventario",                 icon: Package },
-    { id: "catalogo-tienda" as Tab,        label: "Catálogo & Precios",         icon: Tag },
-    { id: "compras" as Tab,                label: "Compras & Proveedores",      icon: Truck },
-    { id: "logistica" as Tab,              label: "Logística & Entregas",       icon: MapPin },
-    // — Clientes & crecimiento —
-    { id: "crm-clientes" as Tab,           label: "Clientes & CRM",             icon: Users },
-    { id: "ventas-marketing" as Tab,       label: "Marketing & Ventas",         icon: Megaphone },
-    { id: "analytics-bi" as Tab,           label: "Analytics & BI",             icon: BarChart3 },
-    // — Finanzas & organización —
-    { id: "finanzas" as Tab,               label: "Finanzas",                   icon: DollarSign },
-    { id: "rrhh" as Tab,                   label: "RRHH",                       icon: UserCog },
-    { id: "proyectos-tareas" as Tab,       label: "Tareas & Automatización",    icon: ListTodo },
-    { id: "reportes-documentos" as Tab,    label: "Reportes & Herramientas",    icon: FileText },
-    { id: "seguridad" as Tab,              label: "Sistema & Seguridad",        icon: Shield },
+    { id: "asistente-ia" as Tab,   label: "Asistente IA",           icon: Brain },
+    { id: "ventas-caja" as Tab,    label: "Ventas & Caja",          icon: ShoppingCart },
+    { id: "inventario" as Tab,     label: "Inventario",             icon: Package },
+    { id: "productos" as Tab,      label: "Productos & Precios",    icon: Tag },
+    { id: "compras" as Tab,        label: "Compras",                icon: Truck },
+    { id: "plata" as Tab,          label: "Mi Plata",               icon: DollarSign },
+    { id: "clientes" as Tab,       label: "Mis Clientes",           icon: Users },
+    { id: "config" as Tab,         label: "Configuración",          icon: Settings },
     // — Especiales —
-    { id: "pedidos" as Tab,                label: "Pedidos",                    icon: ShoppingBasket },
-    { id: "plan" as Tab,                   label: "Plan & Límites",             icon: Zap },
+    { id: "pedidos" as Tab,        label: "Pedidos",                icon: ShoppingBasket },
+    { id: "plan" as Tab,           label: "Plan & Límites",         icon: Zap },
   ] as const;
 
-  // Plan gating — tabs que pertenecen exclusivamente a módulos Pro
-  const isPaidPlan = tenantPlan === "pro" || tenantPlan === "business" || tenantPlan === "enterprise";
-  const PRO_ONLY_TABS = new Set<Tab>(
-    PRO_MODULES.flatMap(m => m.tabs as Tab[])
-  );
-  // Tab activo está bloqueado por plan?
-  const isProGated = PRO_ONLY_TABS.has(tab) && !isPaidPlan;
-
-  // Categorías visibles según plan: básicos + config siempre; Pro solo si plan pago
-  const visibleCategories: TabCategory[] = isPaidPlan
-    ? TAB_CATEGORIES
-    : [...BASIC_MODULES, CONFIG_MODULE];
+  // All modules available — no plan gating
+  const visibleCategories: TabCategory[] = TAB_CATEGORIES;
 
   // Role-based tab filtering — populated from lib/module-permissions.ts
   const DEFAULT_ROLE_TABS: Record<string, Tab[]> = {
@@ -6449,7 +6353,7 @@ function AdminPage() {
         onNavigate={(t) => navigateTab(t as Tab)}
       />
 
-      <AIAssistant onNavigate={(t) => navigateTab(t as Tab)} />
+      {tab !== "asistente-ia" && <AIFloatingButton moduleContext={tab} />}
 
       {/* ── Module Manager Modal ── */}
       {showModuleManager && (
@@ -6635,7 +6539,7 @@ function AdminPage() {
             <>
               <span className="text-gray-300 dark:text-card-border shrink-0">|</span>
               <button
-                onClick={() => navigateTab("inventario-almacenes")}
+                onClick={() => navigateTab("inventario")}
                 className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-600 font-semibold shrink-0 transition-colors"
               >
                 <AlertTriangle className="h-3 w-3" />
@@ -6682,7 +6586,7 @@ function AdminPage() {
             <>
               <span className="text-gray-200 dark:text-card-border">|</span>
               <button
-                onClick={() => navigateTab("inventario-almacenes")}
+                onClick={() => navigateTab("inventario")}
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-100 text-red-600 font-semibold hover:bg-red-200 transition-colors"
               >
                 <AlertTriangle className="h-4 w-4" />
@@ -6709,9 +6613,9 @@ function AdminPage() {
       {/* Body */}
       <main className={cn("flex-1 mx-auto max-w-7xl w-full pb-24 sm:pb-8", compactMode ? "px-2 sm:px-3 py-2 sm:py-4" : "px-3 sm:px-6 py-4 sm:py-8")}>
         {/* Breadcrumb navigation */}
-        {tab !== "panel-principal" && (
+        {tab !== "asistente-ia" && (
           <nav className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-muted mb-3 overflow-x-auto" aria-label="Breadcrumb">
-            <button onClick={() => navigateTab("panel-principal")} className="hover:text-primary transition-colors shrink-0">Panel Principal</button>
+            <button onClick={() => navigateTab("asistente-ia")} className="hover:text-primary transition-colors shrink-0">Inicio</button>
             {(() => {
               const cat = TAB_CATEGORIES.find(c => (c.tabs as readonly string[]).includes(tab));
               if (cat) return (
@@ -6726,190 +6630,24 @@ function AdminPage() {
             <span className="font-semibold text-gray-700 dark:text-foreground shrink-0">{ALL_TABS.find(t => t.id === tab)?.label ?? tab}</span>
           </nav>
         )}
-        {/* ── Banner de upgrade Pro — se muestra cuando el tab activo requiere plan Pro ── */}
-        {isProGated && (
-          <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-900/20 dark:to-indigo-900/20 border border-violet-200 dark:border-violet-800 p-8 text-center space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center mx-auto">
-              <Lock className="h-8 w-8 text-violet-600 dark:text-violet-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground mb-1">
-                Modulo disponible en Plan Pro
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-muted max-w-md mx-auto">
-                Este modulo esta disponible en el Plan Pro. Mejora tu plan para desbloquear Analytics, CRM avanzado, Marketing, RRHH y mas.
-              </p>
-            </div>
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <Link
-                href="/pricing"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 transition-colors shadow-sm"
-              >
-                <Zap className="h-4 w-4" />
-                Ver planes
-              </Link>
-              <button
-                onClick={() => navigateTab("panel-principal")}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-white dark:hover:bg-card transition-colors border border-gray-200 dark:border-card-border"
-              >
-                Volver al inicio
-              </button>
-            </div>
-          </div>
-        )}
-        {/* ── 1. Panel Principal — Dashboard + Agentes + Changelog ── */}
-        {!isProGated && tab === "panel-principal" && (
+        {/* ── 1. Asistente IA ── */}
+        {tab === "asistente-ia" && <AsistenteIAModule />}
+        {/* ── 2. Ventas & Caja ── */}
+        {tab === "ventas-caja" && <POSCajaModule />}
+        {/* ── 3. Inventario ── */}
+        {tab === "inventario" && <InventarioAlmacenesModule />}
+        {/* ── 4. Productos & Precios ── */}
+        {tab === "productos" && <CatalogoTiendaModule />}
+        {/* ── 5. Compras ── */}
+        {tab === "compras" && <ComprasModule />}
+        {/* ── 6. Mi Plata ── */}
+        {tab === "plata" && <FinanzasModule />}
+        {/* ── 7. Mis Clientes ── */}
+        {tab === "clientes" && <CRMClientesModule />}
+        {/* ── 8. Configuración ── */}
+        {tab === "config" && (
           <div className="space-y-8">
-            <PanelPrincipalModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Agentes IA</h3>
-              <AgentsDashboardTab />
-            </div>
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Changelog</h3>
-              <ChangelogModule />
-            </div>
-          </div>
-        )}
-        {/* ── 2. POS & Caja ── */}
-        {tab === "pos-caja" && <POSCajaModule />}
-        {/* ── 3. Inventario — Stock + Reposición ── */}
-        {tab === "inventario-almacenes" && (
-          <div className="space-y-8">
-            <InventarioAlmacenesModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Reposición Inteligente</h3>
-              <ReposicionModule />
-            </div>
-          </div>
-        )}
-        {/* ── 4. Catálogo & Precios — Catálogo + Precios & Promos ── */}
-        {tab === "catalogo-tienda" && (
-          <div className="space-y-8">
-            <CatalogoTiendaModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Precios & Promociones</h3>
-              <PreciosPromosModule />
-            </div>
-          </div>
-        )}
-        {/* ── 5. Compras & Proveedores ── */}
-        {tab === "compras" && (
-          <div className="space-y-8">
-            <ComprasModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Directorio de Proveedores</h3>
-              <ProveedoresModule />
-            </div>
-          </div>
-        )}
-        {/* ── 6. Logística & Entregas — Logística + Devoluciones & Calidad ── */}
-        {tab === "logistica" && (
-          <div className="space-y-8">
-            <LogisticaModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Devoluciones & Control de Calidad</h3>
-              <DevolucionesCalidadModule />
-            </div>
-          </div>
-        )}
-        {/* ── 7. Clientes & CRM — CRM + Fidelización + Encuestas & Soporte ── */}
-        {tab === "crm-clientes" && (
-          <div className="space-y-8">
-            <CRMClientesModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Base de Datos: Clientes</h3>
-              <CustomersTab />
-            </div>
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Registro de Visitantes (Leads)</h3>
-              <VisitantesTab />
-            </div>
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Fidelización y Programa de Puntos</h3>
-              <FidelizacionModule />
-            </div>
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Encuestas, Soporte y Reseñas</h3>
-              <EncuestasSoporteModule />
-              <div className="mt-6">
-                <ReviewsTab />
-              </div>
-            </div>
-          </div>
-        )}
-        {/* ── 8. Marketing & Ventas — Ventas + Comunicaciones ── */}
-        {!isProGated && tab === "ventas-marketing" && (
-          <div className="space-y-8">
-            <VentasMarketingModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Hub de Comunicaciones</h3>
-              <ComunicacionesModule />
-            </div>
-          </div>
-        )}
-        {/* ── 9. Analytics & BI — Analytics + Proyecciones ── */}
-        {!isProGated && tab === "analytics-bi" && (
-          <div className="space-y-8">
-            <AnalyticsBIModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Proyecciones y Simulador</h3>
-              <ProyeccionesModule />
-            </div>
-          </div>
-        )}
-        {/* ── 10. Finanzas — P&G + Tesorería + Facturación + Gastos ── */}
-        {tab === "finanzas" && (
-          <div className="space-y-8">
-            <FinanzasModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Tesorería y Liquidez</h3>
-              <TesoreriaModule />
-            </div>
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Módulo de Facturación</h3>
-              <FacturacionModule />
-            </div>
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Gastos y Activos Fijos</h3>
-              <GastosActivosModule />
-            </div>
-          </div>
-        )}
-        {/* ── 11. RRHH ── */}
-        {!isProGated && tab === "rrhh" && <RRHHModule />}
-        {/* ── 12. Tareas & Automatización — Proyectos + Alertas ── */}
-        {!isProGated && tab === "proyectos-tareas" && (
-          <div className="space-y-8">
-            <ProyectosTareasModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Alertas y Automatización</h3>
-              <AlertasAutomModule />
-            </div>
-          </div>
-        )}
-        {/* ── 13. Reportes & Herramientas — Reportes + Agenda & Utilidades ── */}
-        {tab === "reportes-documentos" && (
-          <div className="space-y-8">
-            <ReportesDocModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Agenda y Utilidades</h3>
-              <AgendaUtilidadesModule />
-            </div>
-          </div>
-        )}
-        {/* ── 14. Sistema & Seguridad — Seguridad + Sistema + Config + Equipo ── */}
-        {tab === "seguridad" && (
-          <div className="space-y-8">
-            <SeguridadModule />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Salud del Sistema y Webhooks</h3>
-              <SistemaModule />
-            </div>
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Configuración General</h3>
-              <SettingsTab storeMode={storeMode} onModeChange={setStoreModeState} />
-            </div>
+            <SettingsTab storeMode={storeMode} onModeChange={setStoreModeState} />
             <div className="pt-8 border-t border-gray-200 dark:border-card-border">
               <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Gestión de Equipo</h3>
               <TeamTab />
@@ -6939,16 +6677,16 @@ function AdminPage() {
             <h3 className="text-lg font-extrabold text-foreground mb-4">⌨ Atajos de teclado</h3>
             <div className="space-y-2 text-sm">
               {[
-                ["Alt + 1", "Panel Principal"],
-                ["Alt + 2", "POS & Caja"],
+                ["Alt + 1", "Asistente IA"],
+                ["Alt + 2", "Ventas & Caja"],
                 ["Alt + 3", "Inventario"],
                 ["Alt + 4", "Pedidos"],
-                ["Alt + 5", "Catálogo & Precios"],
-                ["Alt + 6", "Compras & Proveedores"],
-                ["Alt + 7", "Finanzas"],
-                ["Alt + 8", "Marketing & Ventas"],
-                ["Alt + 9", "Clientes & CRM"],
-                ["Alt + 0", "Sistema & Seguridad"],
+                ["Alt + 5", "Productos & Precios"],
+                ["Alt + 6", "Compras"],
+                ["Alt + 7", "Mi Plata"],
+                ["Alt + 8", "Mis Clientes"],
+                ["Alt + 9", "Configuración"],
+                ["Alt + 0", "Mi Plan"],
                 ["Alt + ?", "Mostrar atajos"],
                 ["Alt + T", "Cambiar tema"],
                 ["Alt + S", "Buscar"],
@@ -6969,9 +6707,9 @@ function AdminPage() {
       {/* ── Mobile quick-tab bottom bar ─────────────────────────────────────── */}
       {(() => {
         const MOBILE_PRIORITY: Record<string, Tab[]> = {
-          admin:      ["panel-principal", "pos-caja", "pedidos", "inventario-almacenes"],
-          cajero:     ["panel-principal", "pos-caja", "pedidos", "clientes"],
-          almacenero: ["panel-principal", "inventario-almacenes", "proveedores", "compras"],
+          admin:      ["asistente-ia", "ventas-caja", "pedidos", "inventario"],
+          cajero:     ["asistente-ia", "ventas-caja", "pedidos", "clientes"],
+          almacenero: ["asistente-ia", "inventario", "compras", "plata"],
         };
         const priorityIds = MOBILE_PRIORITY[userRole] ?? MOBILE_PRIORITY.admin;
         const quickTabs = priorityIds

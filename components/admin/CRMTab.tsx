@@ -20,11 +20,14 @@ type Customer = {
   loyaltyTier?: string;
   totalSpent?: number;
   loyaltyPoints?: number;
+  creditBalance?: number;
   // Populated client-side from /orders
   _orderCount?: number;
   _lastOrder?: string | null;
   _segment?: Segment;
 };
+
+type QuickFilter = "todos" | "activos" | "inactivos" | "con-deuda";
 
 type Segment = "frecuente" | "ocasional" | "nuevo" | "perdido";
 
@@ -74,6 +77,7 @@ export default function CRMTab() {
 
   const [search, setSearch]           = useState("");
   const [filterSegment, setFilterSegment] = useState<Segment | "todos">("todos");
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>("todos");
   const [page, setPage]               = useState(1);
 
   const [detail, setDetail] = useState<string | null>(null); // phone
@@ -117,21 +121,49 @@ export default function CRMTab() {
     return counts;
   }, [customers]);
 
+  const quickFilterCounts = useMemo(() => {
+    const now = Date.now();
+    const thirtyDaysAgo = now - 30 * 86400000;
+    return {
+      todos: customers.length,
+      activos: customers.filter(c => c._lastOrder && new Date(c._lastOrder).getTime() > thirtyDaysAgo).length,
+      inactivos: customers.filter(c => !c._lastOrder || new Date(c._lastOrder).getTime() <= thirtyDaysAgo).length,
+      "con-deuda": customers.filter(c => (c.creditBalance ?? 0) > 0).length,
+    };
+  }, [customers]);
+
   const filtered = useMemo(() => {
     let list = [...customers];
+
+    // Quick filter (activity / debt)
+    if (quickFilter !== "todos") {
+      const now = Date.now();
+      const thirtyDaysAgo = now - 30 * 86400000;
+      if (quickFilter === "activos") {
+        list = list.filter(c => c._lastOrder && new Date(c._lastOrder).getTime() > thirtyDaysAgo);
+      } else if (quickFilter === "inactivos") {
+        list = list.filter(c => !c._lastOrder || new Date(c._lastOrder).getTime() <= thirtyDaysAgo);
+      } else if (quickFilter === "con-deuda") {
+        list = list.filter(c => (c.creditBalance ?? 0) > 0);
+      }
+    }
+
+    // Segment filter
     if (filterSegment !== "todos") list = list.filter(c => c._segment === filterSegment);
+
+    // Text search
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q));
     }
     return list;
-  }, [customers, filterSegment, search]);
+  }, [customers, quickFilter, filterSegment, search]);
 
   const totalPages  = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated   = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Reset page when filters change
-  useEffect(() => { setPage(1); }, [search, filterSegment]);
+  useEffect(() => { setPage(1); }, [search, filterSegment, quickFilter]);
 
   // ── Loading / Error ───────────────────────────────────────────────────────
 
@@ -218,6 +250,30 @@ export default function CRMTab() {
         ))}
       </div>
 
+      {/* Quick filters */}
+      <div className="flex gap-2 flex-wrap">
+        {([
+          { key: "todos" as QuickFilter,     label: "Todos" },
+          { key: "activos" as QuickFilter,   label: "Activos" },
+          { key: "inactivos" as QuickFilter, label: "Inactivos 30d" },
+          { key: "con-deuda" as QuickFilter, label: "Con deuda" },
+        ]).map(f => (
+          <button
+            key={f.key}
+            onClick={() => setQuickFilter(f.key)}
+            className={cn(
+              "px-3.5 py-1.5 rounded-full text-sm font-bold border transition-colors",
+              quickFilter === f.key
+                ? "text-white border-transparent"
+                : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+            )}
+            style={quickFilter === f.key ? { backgroundColor: "#2d6a4f" } : undefined}
+          >
+            {f.label} · {quickFilterCounts[f.key]}
+          </button>
+        ))}
+      </div>
+
       {/* Segment pills */}
       <div className="flex gap-2 flex-wrap">
         <button
@@ -292,8 +348,8 @@ export default function CRMTab() {
                     <div className="flex flex-col items-center gap-2 text-gray-400 dark:text-muted">
                       <Users className="h-8 w-8 opacity-30" />
                       <p className="text-sm">No se encontraron clientes</p>
-                      {(search || filterSegment !== "todos") && (
-                        <button onClick={() => { setSearch(""); setFilterSegment("todos"); }} className="text-xs text-primary hover:underline">
+                      {(search || filterSegment !== "todos" || quickFilter !== "todos") && (
+                        <button onClick={() => { setSearch(""); setFilterSegment("todos"); setQuickFilter("todos"); }} className="text-xs text-primary hover:underline">
                           Limpiar filtros
                         </button>
                       )}

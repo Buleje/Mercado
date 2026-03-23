@@ -52,8 +52,11 @@ export default function Breadcrumbs({
   const moduleName = getModuleLabel(moduleId);
   const tabName = getTabLabel(tabId);
 
-  // Mostrar tab solo si es diferente al nombre del modulo
-  const showTab = tabName && tabName !== moduleName;
+  // Mostrar tab solo si es diferente al nombre del modulo (case-insensitive)
+  const showTab =
+    tabName &&
+    tabName.toLowerCase() !== moduleName.toLowerCase() &&
+    tabId !== moduleId;
 
   return (
     <nav

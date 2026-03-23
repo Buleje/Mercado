@@ -9,17 +9,15 @@ const S = () => (
 );
 
 const CRMTab = dynamic(() => import("@/components/admin/CRMTab"), { loading: S });
-const Customer360Tab = dynamic(() => import("@/components/admin/Customer360Tab"), { loading: S });
-const CustomerSegmentationTab = dynamic(() => import("@/components/admin/CustomerSegmentationTab"), { loading: S });
-const AutoSegmentsTab = dynamic(() => import("@/components/admin/AutoSegmentsTab"), { loading: S });
-const CLVAnalyticsTab = dynamic(() => import("@/components/admin/CLVAnalyticsTab"), { loading: S });
+const DeliveryRoutesTab = dynamic(() => import("@/components/admin/DeliveryRoutesTab"), { loading: S });
+const NPSTab = dynamic(() => import("@/components/admin/NPSTab"), { loading: S });
+const LoyaltyTab = dynamic(() => import("@/components/admin/LoyaltyTab"), { loading: S });
 
 const TABS = [
-  { id: "crm" as const, label: "CRM" },
-  { id: "vista-360" as const, label: "Vista 360°" },
-  { id: "segmentacion" as const, label: "Segmentación" },
-  { id: "segmentos-auto" as const, label: "Segmentos Auto" },
-  { id: "clv" as const, label: "CLV / Cohortes" },
+  { id: "crm" as const, label: "Mis clientes" },
+  { id: "delivery" as const, label: "Delivery" },
+  { id: "opiniones" as const, label: "Opiniones" },
+  { id: "fidelizacion" as const, label: "Clientes frecuentes" },
 ];
 
 export default function CRMClientesModule() {
@@ -42,10 +40,9 @@ export default function CRMClientesModule() {
         ))}
       </div>
       {sub === "crm" && <CRMTab />}
-      {sub === "vista-360" && <Customer360Tab />}
-      {sub === "segmentacion" && <CustomerSegmentationTab />}
-      {sub === "segmentos-auto" && <AutoSegmentsTab />}
-      {sub === "clv" && <CLVAnalyticsTab />}
+      {sub === "delivery" && <DeliveryRoutesTab />}
+      {sub === "opiniones" && <NPSTab />}
+      {sub === "fidelizacion" && <LoyaltyTab />}
     </div>
   );
 }

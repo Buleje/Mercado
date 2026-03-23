@@ -9,19 +9,15 @@ const S = () => (
 );
 
 const PurchaseOrdersTab = dynamic(() => import("@/components/admin/PurchaseOrdersTab"), { loading: S });
-const PurchasePlanningTab = dynamic(() => import("@/components/admin/PurchasePlanningTab"), { loading: S });
-const PurchaseApprovalTab = dynamic(() => import("@/components/admin/PurchaseApprovalTab"), { loading: S });
-const PurchaseContractsTab = dynamic(() => import("@/components/admin/PurchaseContractsTab"), { loading: S });
-const RFQTab = dynamic(() => import("@/components/admin/RFQTab"), { loading: S });
+const SuppliersTab = dynamic(() => import("@/components/admin/SuppliersTab"), { loading: S });
 const ReceivingTab = dynamic(() => import("@/components/admin/ReceivingTab"), { loading: S });
+const PayablesTab = dynamic(() => import("@/components/admin/PayablesTab"), { loading: S });
 
 const TABS = [
-  { id: "ordenes" as const, label: "Órdenes" },
-  { id: "planificacion" as const, label: "Planificación" },
-  { id: "aprobaciones" as const, label: "Aprobaciones" },
-  { id: "contratos" as const, label: "Contratos" },
-  { id: "cotizaciones" as const, label: "Cotizaciones (RFQ)" },
+  { id: "ordenes-compra" as const, label: "Órdenes" },
+  { id: "proveedores" as const, label: "Proveedores" },
   { id: "recepcion" as const, label: "Recepción" },
+  { id: "cuentas-pagar" as const, label: "Les debo" },
 ];
 
 export default function ComprasModule() {
@@ -43,12 +39,10 @@ export default function ComprasModule() {
           </button>
         ))}
       </div>
-      {sub === "ordenes" && <PurchaseOrdersTab />}
-      {sub === "planificacion" && <PurchasePlanningTab />}
-      {sub === "aprobaciones" && <PurchaseApprovalTab />}
-      {sub === "contratos" && <PurchaseContractsTab />}
-      {sub === "cotizaciones" && <RFQTab />}
+      {sub === "ordenes-compra" && <PurchaseOrdersTab />}
+      {sub === "proveedores" && <SuppliersTab />}
       {sub === "recepcion" && <ReceivingTab />}
+      {sub === "cuentas-pagar" && <PayablesTab />}
     </div>
   );
 }

@@ -9,23 +9,17 @@ const S = () => (
 );
 
 const PLTab = dynamic(() => import("@/components/admin/PLTab"), { loading: S });
-const BalanceSheetTab = dynamic(() => import("@/components/admin/BalanceSheetTab"), { loading: S });
-const CashFlowTab = dynamic(() => import("@/components/admin/CashFlowTab"), { loading: S });
-const BudgetTab = dynamic(() => import("@/components/admin/BudgetTab"), { loading: S });
-const BudgetVsRealTab = dynamic(() => import("@/components/admin/BudgetVsRealTab"), { loading: S });
-const BreakEvenTab = dynamic(() => import("@/components/admin/BreakEvenTab"), { loading: S });
+const ExpensesTab = dynamic(() => import("@/components/admin/ExpensesTab"), { loading: S });
 const ProfitabilityTab = dynamic(() => import("@/components/admin/ProfitabilityTab"), { loading: S });
-const MarginDashboardTab = dynamic(() => import("@/components/admin/MarginDashboardTab"), { loading: S });
+const ReportsTab = dynamic(() => import("@/components/admin/ReportsTab"), { loading: S });
+const ImportExportTab = dynamic(() => import("@/components/admin/ImportExportTab"), { loading: S });
 
 const TABS = [
-  { id: "pl" as const, label: "P&G" },
-  { id: "balance" as const, label: "Balance General" },
-  { id: "flujo-caja" as const, label: "Flujo de Caja" },
-  { id: "presupuestos" as const, label: "Presupuestos" },
-  { id: "ppto-real" as const, label: "Ppto vs Real" },
-  { id: "break-even" as const, label: "Punto Equilibrio" },
-  { id: "rentabilidad" as const, label: "Rentabilidad" },
-  { id: "margenes" as const, label: "Márgenes" },
+  { id: "pl" as const, label: "Ingresos y egresos" },
+  { id: "gastos" as const, label: "Gastos" },
+  { id: "rentabilidad" as const, label: "Ganancias por producto" },
+  { id: "reportes" as const, label: "Reportes" },
+  { id: "exportar" as const, label: "Exportar a Excel" },
 ];
 
 export default function FinanzasModule() {
@@ -48,13 +42,10 @@ export default function FinanzasModule() {
         ))}
       </div>
       {sub === "pl" && <PLTab />}
-      {sub === "balance" && <BalanceSheetTab />}
-      {sub === "flujo-caja" && <CashFlowTab />}
-      {sub === "presupuestos" && <BudgetTab />}
-      {sub === "ppto-real" && <BudgetVsRealTab />}
-      {sub === "break-even" && <BreakEvenTab />}
+      {sub === "gastos" && <ExpensesTab />}
       {sub === "rentabilidad" && <ProfitabilityTab />}
-      {sub === "margenes" && <MarginDashboardTab />}
+      {sub === "reportes" && <ReportsTab />}
+      {sub === "exportar" && <ImportExportTab />}
     </div>
   );
 }

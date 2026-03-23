@@ -175,8 +175,27 @@ function getSessions(): SessionSummary[] {
   }
 }
 
-export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string) => void }) {
-  const [open, setOpen] = useState(false);
+// ── Module-contextual suggestions ────────────────────────────────────────────
+
+const MODULE_SUGGESTIONS: Record<string, string[]> = {
+  inventario: ["¿Stock bajo?", "¿Productos por vencer?", "¿Qué debo reponer?"],
+  "ventas-caja": ["¿Ventas de hoy?", "¿Pedidos pendientes?", "¿Cuánto vendí ayer?"],
+  compras: ["¿Qué debo pedir?", "¿A quién le debo?", "¿Compras del mes?"],
+  plata: ["¿Cuánto gané hoy?", "¿Gastos del mes?", "¿Balance general?"],
+  clientes: ["¿Clientes inactivos?", "¿Quién me debe?", "¿Clientes frecuentes?"],
+  productos: ["¿Qué se vende más?", "¿Actualizar precios?", "¿Productos sin stock?"],
+};
+
+interface AIAssistantProps {
+  onNavigate?: (tab: string) => void;
+  /** When true, renders inline (no floating button, no fixed positioning) */
+  embedded?: boolean;
+  /** Current admin module context — prepended to system prompt + shows contextual suggestions */
+  moduleContext?: string;
+}
+
+export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIAssistantProps) {
+  const [open, setOpen] = useState(!!embedded);
   const [expanded, setExpanded] = useState(false);
   const [messages, setMessages] = useState<Message[]>(() => {
     if (typeof window === "undefined") return [GREETING];
@@ -377,7 +396,12 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
       const res = await fetch("/api/ai-assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg, history, stream: true }),
+        body: JSON.stringify({
+          message: msg,
+          history,
+          stream: true,
+          ...(moduleContext ? { moduleContext: `El usuario está en el módulo: ${moduleContext}` } : {}),
+        }),
       });
 
       if (!res.ok) {
@@ -611,6 +635,180 @@ export default function AIAssistant({ onNavigate }: { onNavigate?: (tab: string)
       </div>
     );
   };
+
+  // ── Contextual suggestions based on moduleContext ─────────────────────────
+  const contextSuggestions = moduleContext ? MODULE_SUGGESTIONS[moduleContext] ?? [] : [];
+
+  // ── Embedded mode: inline render (no floating button, no fixed positioning) ─
+  if (embedded) {
+    return (
+      <div className="flex flex-col h-full w-full bg-white dark:bg-card">
+        {/* Compact header */}
+        <div className="flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-violet-600 to-indigo-600 text-white shrink-0">
+          <div className="h-8 w-8 rounded-lg bg-white/20 flex items-center justify-center">
+            <Bot className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-sm leading-tight">Asistente IA</h3>
+            <p className="text-[10px] text-white/70">
+              {isOffline ? "⚡ Modo offline" : moduleContext ? `Módulo: ${moduleContext}` : "IA · Análisis en tiempo real"}
+            </p>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setTtsEnabled(!ttsEnabled)}
+              className={cn("p-1.5 rounded-lg transition-colors", ttsEnabled ? "bg-white/30" : "hover:bg-white/20")}
+              title={ttsEnabled ? "Silenciar voz" : "Activar voz"}
+            >
+              {ttsEnabled ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+            </button>
+            <button onClick={clearHistory} className="p-1.5 rounded-lg hover:bg-white/20 transition-colors" title="Limpiar historial">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Quick actions at the top (always visible when few messages) */}
+        {messages.length <= 2 && !loading && (
+          <div className="px-4 py-2.5 border-b border-gray-100 dark:border-card-border shrink-0">
+            <div className="grid grid-cols-2 gap-1.5">
+              {QUICK_ACTIONS.slice(0, 4).map(action => (
+                <button
+                  key={action.label}
+                  onClick={() => sendMessage(action.prompt)}
+                  className={cn(
+                    "flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-[10px] font-semibold border transition-all hover:scale-[1.02] hover:shadow-sm text-left",
+                    action.color
+                  )}
+                >
+                  <action.icon className="h-3 w-3 shrink-0" />
+                  <span className="leading-tight truncate">{action.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-3 scroll-smooth">
+          {isOffline && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800/40 text-[10px] text-amber-700 dark:text-amber-400">
+              <WifiOff className="h-3.5 w-3.5 shrink-0" />
+              <span>Sin conexión — respuestas pre-calculadas</span>
+            </div>
+          )}
+
+          {messages.map(msg => (
+            <div
+              key={msg.id}
+              className={cn("flex gap-2", msg.role === "user" ? "justify-end" : "justify-start")}
+            >
+              {msg.role === "assistant" && (
+                <div className="w-6 h-6 rounded-lg bg-linear-to-br from-violet-500 to-indigo-500 flex items-center justify-center shrink-0 mt-0.5">
+                  <Bot className="h-3 w-3 text-white" />
+                </div>
+              )}
+              <div className="max-w-[85%]">
+                <div
+                  className={cn(
+                    "rounded-2xl px-3 py-2 text-xs leading-relaxed",
+                    msg.role === "user"
+                      ? "bg-primary text-white rounded-br-md"
+                      : "bg-gray-50 dark:bg-accent/50 text-gray-700 dark:text-gray-300 rounded-bl-md border border-gray-100 dark:border-card-border"
+                  )}
+                >
+                  {msg.role === "assistant" ? renderContent(msg.content) : msg.content}
+                </div>
+                {msg.role === "assistant" && renderActions(msg)}
+              </div>
+            </div>
+          ))}
+
+          {loading && (
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-linear-to-br from-violet-500 to-indigo-500 flex items-center justify-center shrink-0">
+                <Bot className="h-3 w-3 text-white" />
+              </div>
+              <div className="bg-gray-50 dark:bg-accent/50 rounded-2xl rounded-bl-md px-3 py-2 border border-gray-100 dark:border-card-border">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Analizando…
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Contextual suggestions */}
+        {contextSuggestions.length > 0 && !loading && (
+          <div className="px-3 py-1.5 border-t border-gray-100 dark:border-card-border shrink-0 flex flex-wrap gap-1.5">
+            {contextSuggestions.map(suggestion => (
+              <button
+                key={suggestion}
+                onClick={() => sendMessage(suggestion)}
+                className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800/40 hover:bg-violet-100 dark:hover:bg-violet-950/50 transition-colors"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Input area */}
+        <div className="px-3 py-2 border-t border-gray-100 dark:border-card-border shrink-0">
+          <div className="flex items-end gap-2">
+            <div className="flex-1 relative">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                placeholder={isListening ? "🎙️ Escuchando…" : isOffline ? "Modo offline…" : "Pregunta algo…"}
+                rows={1}
+                className={cn(
+                  "w-full resize-none rounded-xl border px-3 py-2 text-xs bg-gray-50 dark:bg-surface text-gray-800 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors",
+                  isListening ? "border-red-300 dark:border-red-800 bg-red-50/30 dark:bg-red-950/10" : "border-gray-200 dark:border-card-border"
+                )}
+                style={{ maxHeight: 80 }}
+                disabled={loading}
+              />
+            </div>
+            <button
+              onClick={toggleVoice}
+              className={cn(
+                "h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
+                isListening
+                  ? "bg-red-500 text-white hover:bg-red-600 animate-pulse"
+                  : "bg-gray-100 dark:bg-surface text-gray-500 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+              )}
+              title={isListening ? "Detener" : "Hablar"}
+            >
+              {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+            </button>
+            <button
+              onClick={() => sendMessage()}
+              disabled={!input.trim() || loading}
+              className={cn(
+                "h-9 w-9 rounded-xl flex items-center justify-center transition-all shrink-0",
+                input.trim() && !loading
+                  ? "bg-linear-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700 shadow-sm"
+                  : "bg-gray-100 dark:bg-surface text-gray-300 dark:text-muted cursor-not-allowed"
+              )}
+            >
+              <Send className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
   Search,
@@ -12,6 +12,9 @@ import {
   TrendingDown,
   Info,
   Loader2,
+  ChevronDown,
+  Check,
+  Package,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
@@ -138,6 +141,33 @@ export default function KardexTab() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [search, setSearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const productInputRef = useRef<HTMLInputElement>(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredProducts = useMemo(() => {
+    if (!productSearch.trim()) return products;
+    const query = productSearch.toLowerCase();
+    return products.filter((item) => item.name.toLowerCase().includes(query));
+  }, [products, productSearch]);
+
+  const handleSelectProduct = useCallback((id: number) => {
+    setSelectedProduct(id);
+    setProductSearch("");
+    setDropdownOpen(false);
+  }, []);
 
   useEffect(() => {
     fetch("/api/admin/warehouses")
@@ -265,22 +295,82 @@ export default function KardexTab() {
 
       <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-card-border dark:bg-card">
         <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-muted">Seleccionar producto</label>
-        <div className="flex flex-wrap gap-2">
-          {products.map((item) => (
+
+        {/* Selected product display */}
+        {product && !dropdownOpen && (
+          <div className="mb-3 flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 dark:border-primary/30 dark:bg-primary/10">
+            <Package className="h-5 w-5 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-gray-900 dark:text-foreground">{product.name}</p>
+              <p className="text-xs text-gray-500 dark:text-muted">Stock: {product.stock} {product.unit} {product.costPrice != null ? `· Costo: S/ ${product.costPrice.toFixed(2)}` : ""}</p>
+            </div>
             <button
-              key={item.id}
-              onClick={() => setSelectedProduct(item.id)}
-              className={cn(
-                "rounded-xl px-3 py-2 text-sm font-semibold transition-colors",
-                selectedProduct === item.id
-                  ? "bg-primary text-white"
-                  : "border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
-              )}
+              type="button"
+              onClick={() => {
+                setDropdownOpen(true);
+                setTimeout(() => productInputRef.current?.focus(), 0);
+              }}
+              className="shrink-0 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
             >
-              {item.name}
+              Cambiar
             </button>
-          ))}
+          </div>
+        )}
+
+        {/* Searchable dropdown */}
+        <div ref={dropdownRef} className="relative">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              ref={productInputRef}
+              type="text"
+              value={productSearch}
+              onChange={(event) => {
+                setProductSearch(event.target.value);
+                setDropdownOpen(true);
+              }}
+              onFocus={() => setDropdownOpen(true)}
+              placeholder="Buscar producto..."
+              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-9 pr-10 text-sm text-gray-700 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-card-border dark:bg-surface dark:text-foreground dark:focus:border-primary"
+            />
+            <ChevronDown className={cn("absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 transition-transform", dropdownOpen && "rotate-180")} />
+          </div>
+
+          {dropdownOpen && (
+            <div className="absolute z-40 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg dark:border-card-border dark:bg-card">
+              {filteredProducts.length === 0 ? (
+                <div className="px-4 py-6 text-center text-sm text-gray-400 dark:text-muted">
+                  No se encontraron productos
+                </div>
+              ) : (
+                filteredProducts.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleSelectProduct(item.id)}
+                    className={cn(
+                      "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-surface/50",
+                      selectedProduct === item.id && "bg-primary/5 dark:bg-primary/10"
+                    )}
+                  >
+                    {selectedProduct === item.id ? (
+                      <Check className="h-4 w-4 shrink-0 text-primary" />
+                    ) : (
+                      <div className="h-4 w-4 shrink-0" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className={cn("truncate font-semibold", selectedProduct === item.id ? "text-primary" : "text-gray-700 dark:text-foreground")}>
+                        {item.name}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-muted">Stock: {item.stock} {item.unit}</p>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
         </div>
+        <p className="mt-2 text-xs text-gray-400 dark:text-muted">{products.length} productos disponibles</p>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:gap-4 sm:grid-cols-4">

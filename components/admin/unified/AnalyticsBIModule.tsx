@@ -16,6 +16,16 @@ const BCGMatrixTab = dynamic(() => import("@/components/admin/BCGMatrixTab"), { 
 const BasketAnalysisTab = dynamic(() => import("@/components/admin/BasketAnalysisTab"), { loading: S });
 const CustomKPITab = dynamic(() => import("@/components/admin/CustomKPITab"), { loading: S });
 
+export type AnalyticsPeriod = "1d" | "7d" | "30d" | "90d" | "1y";
+
+const PERIODS: { key: AnalyticsPeriod; label: string }[] = [
+  { key: "1d",  label: "Hoy" },
+  { key: "7d",  label: "7 días" },
+  { key: "30d", label: "30 días" },
+  { key: "90d", label: "90 días" },
+  { key: "1y",  label: "1 año" },
+];
+
 const TABS = [
   { id: "bi" as const, label: "Business Intelligence" },
   { id: "mapa-calor" as const, label: "Mapa de Calor" },
@@ -28,8 +38,30 @@ const TABS = [
 
 export default function AnalyticsBIModule() {
   const [sub, setSub] = useState(TABS[0].id);
+  const [period, setPeriod] = useState<AnalyticsPeriod>("30d");
+
   return (
     <div className="space-y-3 sm:space-y-6">
+      {/* Period selector */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs font-semibold text-gray-500 dark:text-muted mr-1">Periodo:</span>
+        {PERIODS.map(p => (
+          <button
+            key={p.key}
+            onClick={() => setPeriod(p.key)}
+            className={`px-3 py-1.5 rounded-full text-xs sm:text-sm font-bold border transition-colors ${
+              period === p.key
+                ? "text-white border-transparent"
+                : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+            }`}
+            style={period === p.key ? { backgroundColor: "#2d6a4f" } : undefined}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Sub-tabs */}
       <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none border-b border-gray-200 dark:border-card-border -mx-1 px-1">
         {TABS.map(t => (
           <button
@@ -45,13 +77,15 @@ export default function AnalyticsBIModule() {
           </button>
         ))}
       </div>
-      {sub === "bi" && <BusinessIntelligenceTab />}
-      {sub === "mapa-calor" && <HeatMapTab />}
-      {sub === "abc" && <ABCAnalysisTab />}
-      {sub === "pareto" && <ParetoAnalysisTab />}
-      {sub === "bcg" && <BCGMatrixTab />}
-      {sub === "cesta" && <BasketAnalysisTab />}
-      {sub === "kpi" && <CustomKPITab />}
+
+      {/* Tab content — period passed as prop for future consumption */}
+      {sub === "bi" && <BusinessIntelligenceTab period={period} />}
+      {sub === "mapa-calor" && <HeatMapTab period={period} />}
+      {sub === "abc" && <ABCAnalysisTab period={period} />}
+      {sub === "pareto" && <ParetoAnalysisTab period={period} />}
+      {sub === "bcg" && <BCGMatrixTab period={period} />}
+      {sub === "cesta" && <BasketAnalysisTab period={period} />}
+      {sub === "kpi" && <CustomKPITab period={period} />}
     </div>
   );
 }

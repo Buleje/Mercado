@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:clean": "taskkill /F /IM node.exe 2>nul; next dev",
+    "dev:clean": "taskkill //F //IM node.exe 2>nul & del /f /q .next\\dev\\lock 2>nul & next dev",
     "build": "next build",
     "analyze": "cross-env ANALYZE=true next build",
     "postinstall": "prisma generate",

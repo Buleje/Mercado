@@ -101,7 +101,23 @@ COMPRAS:
 - Total compras registradas: ${purchases.length}
 `.trim();
 
-  const metrics = { todayRevenue, weekRevenue, pendingOrders, outOfStock: outOfStock.length, lowStock: lowStock.length, overdueCount, totalDebt };
+  const metrics: Record<string, unknown> = {
+    todayRevenue: +todayRevenue.toFixed(2),
+    weekRevenue: +weekRevenue.toFixed(2),
+    monthRevenue: +monthRevenue.toFixed(2),
+    monthProfit: +monthProfit.toFixed(2),
+    margin,
+    pendingOrders,
+    outOfStockCount: outOfStock.length,
+    lowStockCount: lowStock.length,
+    activeProducts: activeProducts.length,
+    totalCustomers: customers.length,
+    avgRating,
+    pendingPayables: pendingPayables.length,
+    totalDebt: +totalDebt.toFixed(2),
+    overdueCount,
+    topProductName: top10[0]?.name ?? "N/A",
+  };
   cachedSnapshot = { text, metrics, ts: now };
   return cachedSnapshot;
 }
@@ -174,6 +190,36 @@ Tipos de acción disponibles:
 Solo sugiere acciones cuando el usuario pida explícitamente hacer algo (crear, cambiar, activar, etc).
 Máximo 3 acciones por mensaje.`;
 
+// ── Rule-based fallback (no AI needed) ──────────────────────────────────────
+
+function generateRuleBasedResponse(query: string, metrics: Record<string, unknown>): string {
+  const q = query.toLowerCase();
+
+  if (q.includes("venta") && (q.includes("hoy") || q.includes("dia")))
+    return `Ventas de hoy: S/ ${metrics.todayRevenue ?? 0}. Tienes ${metrics.pendingOrders ?? 0} pedidos pendientes.`;
+
+  if (q.includes("stock") || q.includes("inventario"))
+    return `Tienes ${metrics.outOfStockCount ?? 0} productos agotados y ${metrics.lowStockCount ?? 0} con stock bajo. Productos activos: ${metrics.activeProducts ?? 0}.`;
+
+  if (q.includes("debe") || q.includes("deuda") || q.includes("fiao"))
+    return `Deuda total: S/ ${metrics.totalDebt ?? 0}. Tienes ${metrics.pendingPayables ?? 0} pagos pendientes a proveedores y ${metrics.overdueCount ?? 0} facturas vencidas.`;
+
+  if (q.includes("pedido"))
+    return `Hay ${metrics.pendingOrders ?? 0} pedidos pendientes. Ventas de hoy: S/ ${metrics.todayRevenue ?? 0}.`;
+
+  if (q.includes("cliente"))
+    return `Tienes ${metrics.totalCustomers ?? 0} clientes registrados. Rating promedio: ${metrics.avgRating ?? "N/A"}.`;
+
+  if (q.includes("producto") && q.includes("vend"))
+    return `Top producto: ${metrics.topProductName ?? "N/A"}. Productos activos: ${metrics.activeProducts ?? 0}.`;
+
+  if (q.includes("ganancia") || q.includes("utilidad") || q.includes("margen"))
+    return `Utilidad del mes: S/ ${metrics.monthProfit ?? 0}. Margen: ${metrics.margin ?? 0}%. Ingresos del mes: S/ ${metrics.monthRevenue ?? 0}.`;
+
+  // Default: business summary
+  return `Resumen: Ventas hoy S/ ${metrics.todayRevenue ?? 0}, ${metrics.pendingOrders ?? 0} pedidos pendientes, ${metrics.outOfStockCount ?? 0} sin stock, ${metrics.lowStockCount ?? 0} stock bajo. Deuda: S/ ${metrics.totalDebt ?? 0}.`;
+}
+
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
@@ -181,14 +227,6 @@ export async function POST(req: NextRequest) {
   // ── Rate limiting: 15 requests / 5 min per IP ──────────────────────────────
   const rateLimited = applyRateLimit(req, "MODERATE", "ai-assistant");
   if (rateLimited) return rateLimited;
-
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "GROQ_API_KEY no configurada. Obtén una clave GRATUITA en console.groq.com y agrégala en tu .env" },
-      { status: 503 }
-    );
-  }
 
   const body = await req.json().catch(() => ({ message: "", history: [] }));
   const userMessage = (body.message ?? "").trim();
@@ -201,6 +239,23 @@ export async function POST(req: NextRequest) {
 
   // ── Build snapshot (cached 5 min) ───────────────────────────────────────────
   const snapshot = await getBusinessSnapshot();
+
+  // ── Helper: return rule-based fallback (always 200) ────────────────────────
+  const returnRuleBased = () => {
+    const response = generateRuleBasedResponse(userMessage, snapshot.metrics);
+    return NextResponse.json({
+      response,
+      mode: "rule-based" as const,
+      snapshot: snapshot.metrics,
+    });
+  };
+
+  // ── If no API key, use rule-based immediately ─────────────────────────────
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    console.warn("[ai-assistant] GROQ_API_KEY not configured — using rule-based fallback");
+    return returnRuleBased();
+  }
 
   const messages = [
     { role: "system" as const, content: SYSTEM_PROMPT_TEMPLATE(snapshot.text) },
@@ -229,8 +284,9 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const errText = await res.text();
-      console.error("Groq AI assistant error:", errText);
-      return NextResponse.json({ error: `Error IA: ${res.status}` }, { status: 502 });
+      console.error("[ai-assistant] Groq API error:", res.status, errText);
+      // Fallback to rule-based instead of returning 502
+      return returnRuleBased();
     }
 
     // ── Streaming response ────────────────────────────────────────────────────
@@ -285,12 +341,18 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Non-streaming fallback ────────────────────────────────────────────────
+    // ── Non-streaming JSON response ─────────────────────────────────────────
     const data = await res.json();
     const reply = data.choices?.[0]?.message?.content ?? "No pude generar una respuesta.";
 
-    return NextResponse.json({ reply, snapshot: snapshot.metrics });
-  } catch {
-    return NextResponse.json({ error: "Error al conectar con la IA" }, { status: 502 });
+    return NextResponse.json({
+      response: reply,
+      mode: "ai" as const,
+      snapshot: snapshot.metrics,
+    });
+  } catch (err) {
+    console.error("[ai-assistant] Fetch error:", err instanceof Error ? err.message : String(err));
+    // Fallback to rule-based instead of returning 502
+    return returnRuleBased();
   }
 }
