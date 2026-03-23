@@ -1,0 +1,500 @@
+"use client";
+/* eslint-disable react-hooks/set-state-in-effect */
+
+import { useState, useEffect, useCallback } from "react";
+import { Gift, Plus, Check, Copy, Search, Tag, Clock, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type GiftCardStatus = "activo" | "usado" | "vencido";
+
+interface GiftCard {
+  id: string;
+  code: string;
+  amount: number;
+  recipientName: string;
+  message: string;
+  createdAt: string;
+  expiresAt: string;
+  usedAt?: string;
+  status: GiftCardStatus;
+  balance: number;
+}
+
+type ActiveTab = "lista" | "crear" | "canjear";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = "bodega_gift_cards";
+
+function generateCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+function fmt(n: number) {
+  return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function fmtDate(iso: string) {
+  try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
+  catch { return iso; }
+}
+
+function loadCards(): GiftCard[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    const cards: GiftCard[] = JSON.parse(raw);
+    // Update expired status
+    const now = new Date();
+    return cards.map((c) => ({
+      ...c,
+      status: c.status === "usado" ? "usado" : new Date(c.expiresAt) < now ? "vencido" : "activo",
+    }));
+  } catch { return []; }
+}
+
+function saveCards(cards: GiftCard[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+}
+
+// ── Simple QR-like visual (ASCII pattern representation) ─────────────────────
+
+function QRVisual({ code }: { code: string }) {
+  // Deterministic grid based on code characters
+  const grid: boolean[][] = [];
+  for (let r = 0; r < 10; r++) {
+    grid[r] = [];
+    for (let c = 0; c < 10; c++) {
+      const charCode = code.charCodeAt((r * 10 + c) % code.length);
+      grid[r][c] = ((charCode + r * 3 + c * 7) % 3) !== 0;
+    }
+  }
+  // Finder patterns (corners forced)
+  [[0,0],[0,1],[1,0],[0,8],[0,9],[1,9],[8,0],[9,0],[9,1],[8,9],[9,8],[9,9]].forEach(([r,c]) => {
+    if (grid[r]) grid[r][c] = true;
+  });
+
+  return (
+    <div className="inline-block p-2 bg-white rounded-xl border border-gray-200">
+      <div className="grid" style={{ gridTemplateColumns: "repeat(10, 1fr)", gap: "1px" }}>
+        {grid.map((row, r) =>
+          row.map((cell, c) => (
+            <div
+              key={`${r}-${c}`}
+              className={cn("w-4 h-4 rounded-sm", cell ? "bg-gray-900" : "bg-white")}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── GiftCard visual card ───────────────────────────────────────────────────────
+
+function GiftCardDisplay({ card }: { card: GiftCard }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(card.code).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden p-5 text-white"
+      style={{ background: "linear-gradient(135deg, #1a3a2a 0%, #2d6a4f 50%, #1a3a2a 100%)" }}>
+      {/* Gold border accent */}
+      <div className="absolute inset-0 rounded-2xl pointer-events-none"
+        style={{ border: "2px solid rgba(244,162,97,0.5)" }} />
+
+      {/* Decorative circles */}
+      <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-10"
+        style={{ background: "#f4a261" }} />
+      <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full opacity-10"
+        style={{ background: "#f4a261" }} />
+
+      <div className="relative flex items-start justify-between mb-3">
+        <div>
+          <div className="flex items-center gap-1.5 mb-1">
+            <Gift className="h-4 w-4 text-secondary" />
+            <span className="text-xs font-semibold text-secondary uppercase tracking-widest">Vale de Compra</span>
+          </div>
+          <p className="text-2xl font-black">{fmt(card.balance)}</p>
+          <p className="text-xs text-white/60 mt-0.5">de {fmt(card.amount)} original</p>
+        </div>
+        <QRVisual code={card.code} />
+      </div>
+
+      <div className="border-t border-white/10 pt-3 space-y-1">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-white/60">Para</span>
+          <span className="text-sm font-semibold">{card.recipientName}</span>
+        </div>
+        {card.message && (
+          <p className="text-xs text-white/70 italic truncate">&ldquo;{card.message}&rdquo;</p>
+        )}
+        <div className="flex items-center justify-between mt-2">
+          <button type="button" onClick={copy}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-mono font-bold tracking-widest transition-colors">
+            {card.code}
+            {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3 opacity-60" />}
+          </button>
+          <span className="text-xs text-white/50">Vence: {fmtDate(card.expiresAt)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
+
+export default function GiftCardManager() {
+  const [cards, setCards] = useState<GiftCard[]>([]);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("lista");
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<GiftCardStatus | "todos">("todos");
+
+  // Create form
+  const [createAmount, setCreateAmount] = useState("");
+  const [createRecipient, setCreateRecipient] = useState("");
+  const [createMessage, setCreateMessage] = useState("");
+  const [createMonths, setCreateMonths] = useState("6");
+  const [justCreated, setJustCreated] = useState<GiftCard | null>(null);
+
+  // Redeem
+  const [redeemCode, setRedeemCode] = useState("");
+  const [redeemAmount, setRedeemAmount] = useState("");
+  const [redeemResult, setRedeemResult] = useState<{ success: boolean; msg: string } | null>(null);
+
+  useEffect(() => {
+    setCards(loadCards());
+  }, []);
+
+  const persist = useCallback((updated: GiftCard[]) => {
+    setCards(updated);
+    saveCards(updated);
+  }, []);
+
+  // Create
+  const handleCreate = () => {
+    const amount = parseFloat(createAmount);
+    if (isNaN(amount) || amount <= 0) return;
+    if (!createRecipient.trim()) return;
+
+    const months = parseInt(createMonths, 10) || 6;
+    const expiresAt = new Date();
+    expiresAt.setMonth(expiresAt.getMonth() + months);
+
+    const card: GiftCard = {
+      id: Date.now().toString(),
+      code: generateCode(),
+      amount,
+      balance: amount,
+      recipientName: createRecipient.trim(),
+      message: createMessage.trim(),
+      createdAt: new Date().toISOString(),
+      expiresAt: expiresAt.toISOString(),
+      status: "activo",
+    };
+
+    const updated = [card, ...cards];
+    persist(updated);
+    setJustCreated(card);
+    setCreateAmount("");
+    setCreateRecipient("");
+    setCreateMessage("");
+  };
+
+  // Redeem
+  const handleRedeem = () => {
+    const amount = parseFloat(redeemAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setRedeemResult({ success: false, msg: "Ingresa un monto valido" });
+      return;
+    }
+
+    const idx = cards.findIndex((c) => c.code === redeemCode.trim().toUpperCase());
+    if (idx === -1) {
+      setRedeemResult({ success: false, msg: "Codigo no encontrado" });
+      return;
+    }
+
+    const card = cards[idx];
+    if (card.status === "vencido") {
+      setRedeemResult({ success: false, msg: "Este vale esta vencido" });
+      return;
+    }
+    if (card.status === "usado") {
+      setRedeemResult({ success: false, msg: "Este vale ya fue usado" });
+      return;
+    }
+    if (card.balance < amount) {
+      setRedeemResult({ success: false, msg: `Saldo insuficiente. Disponible: ${fmt(card.balance)}` });
+      return;
+    }
+
+    const newBalance = card.balance - amount;
+    const updated = [...cards];
+    updated[idx] = {
+      ...card,
+      balance: newBalance,
+      status: newBalance === 0 ? "usado" : "activo",
+      usedAt: newBalance === 0 ? new Date().toISOString() : card.usedAt,
+    };
+    persist(updated);
+    setRedeemResult({ success: true, msg: `Descontado ${fmt(amount)}. Saldo restante: ${fmt(newBalance)}` });
+    setRedeemCode("");
+    setRedeemAmount("");
+  };
+
+  // Filter
+  const filteredCards = cards.filter((c) => {
+    const matchSearch = !search || c.code.includes(search.toUpperCase()) || c.recipientName.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = filterStatus === "todos" || c.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  const statusLabel: Record<GiftCardStatus, string> = { activo: "Activo", usado: "Usado", vencido: "Vencido" };
+  const statusColor: Record<GiftCardStatus, string> = {
+    activo: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+    usado: "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+    vencido: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
+  };
+
+  const TABS: { key: ActiveTab; label: string }[] = [
+    { key: "lista", label: "Vales" },
+    { key: "crear", label: "Crear vale" },
+    { key: "canjear", label: "Canjear" },
+  ];
+
+  return (
+    <div className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-card-border bg-gray-50 dark:bg-gray-900/50">
+        <Gift className="h-4 w-4 text-secondary" />
+        <span className="text-sm font-semibold text-gray-900 dark:text-foreground">Gift Cards y Vales</span>
+        <span className="ml-auto text-xs font-medium text-gray-400">{cards.filter(c => c.status === "activo").length} activos</span>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-gray-100 dark:border-card-border">
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => { setActiveTab(tab.key); setJustCreated(null); setRedeemResult(null); }}
+            className={cn(
+              "flex-1 py-2.5 text-xs font-semibold transition-colors",
+              activeTab === tab.key
+                ? "text-primary border-b-2 border-primary"
+                : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="p-4">
+        {/* ── Lista ── */}
+        {activeTab === "lista" && (
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <input value={search} onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por codigo o nombre..."
+                  className="w-full pl-8 pr-3 py-2 text-xs rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary" />
+              </div>
+              <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as GiftCardStatus | "todos")}
+                className="px-2 py-2 text-xs rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-foreground focus:outline-none focus:border-primary">
+                <option value="todos">Todos</option>
+                <option value="activo">Activos</option>
+                <option value="usado">Usados</option>
+                <option value="vencido">Vencidos</option>
+              </select>
+            </div>
+
+            {filteredCards.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-8 text-gray-300 dark:text-gray-600">
+                <Gift className="h-8 w-8" />
+                <p className="text-sm">Sin vales todavia</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredCards.map((card) => (
+                  <div key={card.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-gray-100 dark:border-card-border hover:border-gray-200 dark:hover:border-gray-600 transition-colors">
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: card.status === "activo" ? "rgba(244,162,97,0.15)" : "rgba(156,163,175,0.1)" }}>
+                      <Gift className={cn("h-4 w-4", card.status === "activo" ? "text-secondary" : "text-gray-400")} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-gray-800 dark:text-foreground">{card.code}</span>
+                        <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-medium", statusColor[card.status])}>
+                          {statusLabel[card.status]}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-muted truncate">{card.recipientName}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-bold text-primary">{fmt(card.balance)}</p>
+                      <div className="flex items-center gap-1 text-xs text-gray-400">
+                        <Clock className="h-3 w-3" />
+                        {fmtDate(card.expiresAt)}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Crear ── */}
+        {activeTab === "crear" && (
+          <div className="space-y-4">
+            {justCreated ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800">
+                  <Check className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">Vale creado exitosamente</p>
+                </div>
+                <GiftCardDisplay card={justCreated} />
+                <button type="button" onClick={() => setJustCreated(null)}
+                  className="w-full py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm text-gray-600 dark:text-muted hover:border-gray-300 transition-colors">
+                  Crear otro vale
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 dark:text-muted mb-1 block">Monto del vale</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-500">S/</span>
+                      <input type="number" min="1" step="0.50" value={createAmount} onChange={(e) => setCreateAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full pl-8 pr-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 dark:text-muted mb-1 block">Para quien</label>
+                    <input type="text" value={createRecipient} onChange={(e) => setCreateRecipient(e.target.value)}
+                      placeholder="Nombre del destinatario"
+                      className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary" />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 dark:text-muted mb-1 block">Mensaje (opcional)</label>
+                    <input type="text" value={createMessage} onChange={(e) => setCreateMessage(e.target.value)}
+                      placeholder="Feliz cumpleanos, con carino..."
+                      className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary" />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 dark:text-muted mb-1 block">Valido por</label>
+                    <select value={createMonths} onChange={(e) => setCreateMonths(e.target.value)}
+                      className="w-full px-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-foreground focus:outline-none focus:border-primary">
+                      <option value="1">1 mes</option>
+                      <option value="3">3 meses</option>
+                      <option value="6">6 meses</option>
+                      <option value="12">1 ano</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleCreate}
+                  disabled={!createAmount || !createRecipient.trim()}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-40 transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Generar vale
+                </button>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── Canjear ── */}
+        {activeTab === "canjear" && (
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-gray-600 dark:text-muted mb-1 block">Codigo del vale</label>
+              <input type="text" value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                placeholder="XXXXXXXX"
+                maxLength={8}
+                className="w-full px-3 py-2.5 text-sm font-mono rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary tracking-widest uppercase" />
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-gray-600 dark:text-muted mb-1 block">Monto a descontar</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-gray-500">S/</span>
+                <input type="number" min="0.01" step="0.01" value={redeemAmount} onChange={(e) => setRedeemAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full pl-8 pr-3 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-foreground focus:outline-none focus:border-primary" />
+              </div>
+            </div>
+
+            {/* Preview card */}
+            {redeemCode.length === 8 && (() => {
+              const found = cards.find((c) => c.code === redeemCode);
+              if (!found) return null;
+              return (
+                <div className="px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-card-border space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500 dark:text-muted">Para</span>
+                    <span className="text-xs font-semibold text-gray-800 dark:text-foreground">{found.recipientName}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500 dark:text-muted">Saldo disponible</span>
+                    <span className="text-sm font-bold text-primary">{fmt(found.balance)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-500 dark:text-muted">Estado</span>
+                    <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-medium", statusColor[found.status])}>
+                      {statusLabel[found.status]}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {redeemResult && (
+              <div className={cn("flex items-start gap-2 px-3 py-2.5 rounded-xl border", redeemResult.success ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800" : "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800")}>
+                {redeemResult.success
+                  ? <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                  : <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />}
+                <p className={cn("text-sm", redeemResult.success ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+                  {redeemResult.msg}
+                </p>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleRedeem}
+              disabled={redeemCode.length !== 8 || !redeemAmount}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 disabled:opacity-40 transition-colors"
+            >
+              <Tag className="h-4 w-4" />
+              Canjear vale
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
