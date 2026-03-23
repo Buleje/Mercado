@@ -15,6 +15,8 @@ import { cn, exportToCSV } from "@/lib/utils";
 import { OrderStats } from "@/components/OrderStats";
 import { useTheme } from "@/contexts/theme-context";
 import type { Product, Sale, Purchase, Supplier, Customer } from "@/types/erp";
+import BatchStatsWidget from "@/components/admin/dashboard/BatchStatsWidget";
+import ExpiringBatchesAlert from "@/components/admin/dashboard/ExpiringBatchesAlert";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -3694,6 +3696,10 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
               <h3 className="text-sm font-bold text-gray-800 dark:text-foreground">Inventario</h3>
             </div>
           )}
+          {/* ── Widgets de lotes (BatchStats + Expiring) ── */}
+          <BatchStatsWidget />
+          <ExpiringBatchesAlert />
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <Kpi label="Stock Valor." value={fmt(st.stockVal)} icon={DollarSign} accent="text-amber-500" />
             <Kpi label="Stock Crítico" value={String(st.stockCritico.length)} icon={AlertTriangle} accent={st.stockCritico.length>0?"text-red-500":"text-emerald-500"} />
