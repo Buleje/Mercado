@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   DollarSign,
   ShoppingCart,
-  Package,
+  Receipt,
+  Percent,
+  Users,
+  Landmark,
   AlertTriangle,
   TrendingUp,
   TrendingDown,
+  Minus,
   ArrowRight,
   Send,
   Loader2,
@@ -15,18 +19,72 @@ import {
   Moon,
   Sunset,
   Clock,
+  Package,
   CreditCard,
-  CheckCircle2,
+  RefreshCw,
+  CalendarDays,
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+interface OrderItem {
+  id: number;
+  name: string;
+  price: number;
+  costPrice?: number;
+  quantity: number;
+}
+
+interface Order {
+  id: string;
+  status: string;
+  total: number;
+  totalCogs?: number;
+  items: OrderItem[];
+  paymentMethod?: string;
+  createdAt: string;
+}
+
+interface Sale {
+  id: string;
+  total: number;
+  totalCogs?: number;
+  items: { productId: number; name: string; price: number; costPrice?: number; quantity: number }[];
+  payment: string;
+  createdAt: string;
+}
+
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  costPrice?: number;
+  stock?: number;
+  stockMin?: number;
+  active: boolean;
+}
+
+interface Customer {
+  phone: string;
+  name: string;
+  createdAt: string;
+}
+
+interface Payable {
+  id: string;
+  amount: number;
+  paidAmount: number;
+  status: string;
+  dueDate: string;
+}
+
 interface DashboardData {
-  products: { id: string; stock?: number; stockMin?: number; price?: number }[];
-  orders: { id: string; status: string; total?: number; createdAt: string }[];
-  sales: { id: string; total: number; createdAt: string }[];
-  payables: { id: string; amount: number; paidAmount: number; status: string; dueDate: string }[];
+  products: Product[];
+  orders: Order[];
+  sales: Sale[];
+  customers: Customer[];
+  payables: Payable[];
   alerts: {
     lowStock: number;
     pendingOrders: number;
@@ -41,120 +99,142 @@ interface ExpiringBatch {
   quantity?: number;
 }
 
-interface ActionCard {
-  id: string;
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  action: string;
-  href: string;
-  color: "red" | "orange" | "yellow" | "blue";
-}
-
 interface Props {
   tenantId?: string;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Pure helpers ─────────────────────────────────────────────────────────────
 
-function getGreeting(): { text: string; icon: React.ElementType } {
+function getGreeting(): { text: string; Icon: React.ElementType } {
   const h = new Date().getHours();
-  if (h >= 5 && h < 12) return { text: "Buenos dias", icon: Sun };
-  if (h >= 12 && h < 18) return { text: "Buenas tardes", icon: Sunset };
-  return { text: "Buenas noches", icon: Moon };
+  if (h >= 5 && h < 12) return { text: "Buenos dias, jefe", Icon: Sun };
+  if (h >= 12 && h < 18) return { text: "Buenas tardes, jefe", Icon: Sunset };
+  return { text: "Buenas noches, jefe", Icon: Moon };
 }
 
-function getTodayRevenue(sales: DashboardData["sales"]): number {
-  const today = new Date().toDateString();
-  return sales
-    .filter((s) => new Date(s.createdAt).toDateString() === today)
-    .reduce((sum, s) => sum + (s.total ?? 0), 0);
+function todayStr(): string {
+  return new Date().toDateString();
 }
 
-function getYesterdayRevenue(sales: DashboardData["sales"]): number {
-  const y = new Date();
-  y.setDate(y.getDate() - 1);
-  const yesterday = y.toDateString();
-  return sales
-    .filter((s) => new Date(s.createdAt).toDateString() === yesterday)
-    .reduce((sum, s) => sum + (s.total ?? 0), 0);
+function yesterdayStr(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toDateString();
 }
 
-function getDebtTotal(
-  payables: DashboardData["payables"],
-): number {
-  return payables
-    .filter((p) => p.status !== "pagado")
-    .reduce((sum, p) => sum + (p.amount - p.paidAmount), 0);
+function trend(current: number, previous: number): { pct: number; direction: "up" | "down" | "flat" } {
+  if (previous === 0 && current === 0) return { pct: 0, direction: "flat" };
+  if (previous === 0) return { pct: 100, direction: "up" };
+  const pct = ((current - previous) / previous) * 100;
+  return {
+    pct: Math.round(Math.abs(pct) * 10) / 10,
+    direction: pct > 0.5 ? "up" : pct < -0.5 ? "down" : "flat",
+  };
 }
 
-const COLOR_MAP = {
-  red: {
-    border: "border-l-red-500",
-    bg: "bg-red-50 dark:bg-red-950/20",
-    icon: "text-red-600 dark:text-red-400",
-    badge: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-    button: "bg-red-600 hover:bg-red-700 text-white",
-  },
-  orange: {
-    border: "border-l-orange-500",
-    bg: "bg-orange-50 dark:bg-orange-950/20",
-    icon: "text-orange-600 dark:text-orange-400",
-    badge: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
-    button: "bg-orange-600 hover:bg-orange-700 text-white",
-  },
-  yellow: {
-    border: "border-l-yellow-500",
-    bg: "bg-yellow-50 dark:bg-yellow-950/20",
-    icon: "text-yellow-600 dark:text-yellow-500",
-    badge: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300",
-    button: "bg-yellow-600 hover:bg-yellow-700 text-white",
-  },
-  blue: {
-    border: "border-l-blue-500",
-    bg: "bg-blue-50 dark:bg-blue-950/20",
-    icon: "text-blue-600 dark:text-blue-400",
-    badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
-    button: "bg-blue-600 hover:bg-blue-700 text-white",
-  },
-};
+function groupByDay(orders: Order[], sales: Sale[], days = 7): { label: string; value: number }[] {
+  const dayLabels = ["D", "L", "M", "M", "J", "V", "S"];
+  const result: { label: string; value: number }[] = [];
+  const now = new Date();
 
-// ── Skeleton ─────────────────────────────────────────────────────────────────
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const ds = d.toDateString();
+    const orderRev = orders
+      .filter((o) => o.status !== "cancelado" && new Date(o.createdAt).toDateString() === ds)
+      .reduce((s, o) => s + (o.total ?? 0), 0);
+    const saleRev = sales
+      .filter((s) => new Date(s.createdAt).toDateString() === ds)
+      .reduce((s, sl) => s + (sl.total ?? 0), 0);
+    result.push({ label: dayLabels[d.getDay()], value: orderRev + saleRev });
+  }
+  return result;
+}
+
+function topProducts(orders: Order[], sales: Sale[], limit = 5): { name: string; revenue: number }[] {
+  const map = new Map<string, number>();
+
+  for (const o of orders) {
+    if (o.status === "cancelado") continue;
+    for (const item of o.items ?? []) {
+      const key = item.name ?? `Producto ${item.id}`;
+      map.set(key, (map.get(key) ?? 0) + item.price * item.quantity);
+    }
+  }
+  for (const s of sales) {
+    for (const item of s.items ?? []) {
+      const key = item.name ?? `Producto ${item.productId}`;
+      map.set(key, (map.get(key) ?? 0) + item.price * item.quantity);
+    }
+  }
+
+  return Array.from(map.entries())
+    .map(([name, revenue]) => ({ name, revenue }))
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, limit);
+}
+
+function paymentBreakdown(orders: Order[], sales: Sale[]): { method: string; total: number; pct: number; color: string }[] {
+  const map = new Map<string, number>();
+  const colorMap: Record<string, string> = {
+    efectivo: "bg-gray-400 dark:bg-gray-500",
+    yape: "bg-purple-500",
+    plin: "bg-emerald-500",
+    tarjeta: "bg-blue-500",
+  };
+
+  for (const o of orders) {
+    if (o.status === "cancelado") continue;
+    const m = (o.paymentMethod ?? "efectivo").toLowerCase();
+    map.set(m, (map.get(m) ?? 0) + (o.total ?? 0));
+  }
+  for (const s of sales) {
+    const m = (s.payment ?? "efectivo").toLowerCase();
+    map.set(m, (map.get(m) ?? 0) + (s.total ?? 0));
+  }
+
+  const total = Array.from(map.values()).reduce((a, b) => a + b, 0);
+  return Array.from(map.entries())
+    .map(([method, amt]) => ({
+      method: method.charAt(0).toUpperCase() + method.slice(1),
+      total: amt,
+      pct: total > 0 ? Math.round((amt / total) * 100) : 0,
+      color: colorMap[method] ?? "bg-gray-300",
+    }))
+    .sort((a, b) => b.total - a.total);
+}
+
+function formatCompact(n: number): string {
+  if (n >= 1000) return `S/${(n / 1000).toFixed(1)}k`;
+  return `S/${n.toFixed(0)}`;
+}
+
+// ── Skeletons ────────────────────────────────────────────────────────────────
 
 function KPISkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div
-          key={i}
-          className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-5 animate-pulse"
-        >
-          <div className="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
-          <div className="h-7 w-28 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
-          <div className="h-3 w-16 bg-gray-100 dark:bg-gray-800 rounded" />
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 animate-pulse">
+          <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
+          <div className="h-7 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
+          <div className="h-3 w-12 bg-gray-100 dark:bg-gray-800 rounded" />
         </div>
       ))}
     </div>
   );
 }
 
-function ActionSkeleton() {
+function ChartSkeleton() {
   return (
-    <div className="space-y-3">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div
-          key={i}
-          className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 animate-pulse"
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-            <div className="flex-1">
-              <div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-2" />
-              <div className="h-3 w-56 bg-gray-100 dark:bg-gray-800 rounded" />
-            </div>
-          </div>
-        </div>
-      ))}
+    <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5 animate-pulse">
+      <div className="h-4 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-4" />
+      <div className="flex items-end gap-2 h-32">
+        {[65, 45, 80, 55, 90, 40, 70].map((h, i) => (
+          <div key={i} className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-t-md" style={{ height: `${h}%` }} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -166,26 +246,25 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
   const [expiring, setExpiring] = useState<ExpiringBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Quick chat state
+  // Chat state
   const [question, setQuestion] = useState("");
   const [chatAnswer, setChatAnswer] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchData = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
     setError(null);
     try {
       const [dashRes, batchRes] = await Promise.all([
         fetch("/api/admin/dashboard"),
         fetch("/api/batches/expiring?days=7"),
       ]);
-
-      if (!dashRes.ok) throw new Error("Error al cargar datos del dashboard");
-
+      if (!dashRes.ok) throw new Error("Error al cargar datos");
       const dashData = await dashRes.json();
       setData(dashData);
-
       if (batchRes.ok) {
         const batchData = await batchRes.json();
         setExpiring(Array.isArray(batchData.data) ? batchData.data : []);
@@ -194,15 +273,91 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       setError(e instanceof Error ? e.message : "Error desconocido");
     }
     setLoading(false);
+    setRefreshing(false);
   }, []);
 
   useEffect(() => {
     void fetchData();
+    const interval = setInterval(() => void fetchData(true), 60_000);
+    return () => clearInterval(interval);
   }, [fetchData]);
 
-  // ── Quick chat handler ──────────────────────────────────────────────────
+  // ── Computed values ─────────────────────────────────────────────────────
 
-  const handleAsk = async () => {
+  const kpis = useMemo(() => {
+    if (!data) return null;
+    const today = todayStr();
+    const yesterday = yesterdayStr();
+
+    // Revenue helpers (orders + sales)
+    const todayOrders = data.orders.filter((o) => o.status !== "cancelado" && new Date(o.createdAt).toDateString() === today);
+    const todaySales = data.sales.filter((s) => new Date(s.createdAt).toDateString() === today);
+    const yesterdayOrders = data.orders.filter((o) => o.status !== "cancelado" && new Date(o.createdAt).toDateString() === yesterday);
+    const yesterdaySales = data.sales.filter((s) => new Date(s.createdAt).toDateString() === yesterday);
+
+    const todayRev = todayOrders.reduce((s, o) => s + (o.total ?? 0), 0) + todaySales.reduce((s, sl) => s + (sl.total ?? 0), 0);
+    const yesterdayRev = yesterdayOrders.reduce((s, o) => s + (o.total ?? 0), 0) + yesterdaySales.reduce((s, sl) => s + (sl.total ?? 0), 0);
+
+    const todayCount = todayOrders.length + todaySales.length;
+    const yesterdayCount = yesterdayOrders.length + yesterdaySales.length;
+
+    const ticketToday = todayCount > 0 ? todayRev / todayCount : 0;
+    const ticketYesterday = yesterdayCount > 0 ? yesterdayRev / yesterdayCount : 0;
+
+    // Margin: use totalCogs if available, otherwise estimate from costPrice
+    const todayCost =
+      todayOrders.reduce((s, o) => s + (o.totalCogs ?? o.items.reduce((a, i) => a + (i.costPrice ?? i.price * 0.7) * i.quantity, 0)), 0) +
+      todaySales.reduce((s, sl) => s + (sl.totalCogs ?? sl.items.reduce((a, i) => a + (i.costPrice ?? i.price * 0.7) * i.quantity, 0)), 0);
+    const margin = todayRev > 0 ? ((todayRev - todayCost) / todayRev) * 100 : 0;
+
+    // Yesterday margin for trend
+    const yesterdayCost =
+      yesterdayOrders.reduce((s, o) => s + (o.totalCogs ?? o.items.reduce((a, i) => a + (i.costPrice ?? i.price * 0.7) * i.quantity, 0)), 0) +
+      yesterdaySales.reduce((s, sl) => s + (sl.totalCogs ?? sl.items.reduce((a, i) => a + (i.costPrice ?? i.price * 0.7) * i.quantity, 0)), 0);
+    const marginYesterday = yesterdayRev > 0 ? ((yesterdayRev - yesterdayCost) / yesterdayRev) * 100 : 0;
+
+    // New customers this week
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const newCustomers = data.customers.filter((c) => new Date(c.createdAt) >= weekAgo).length;
+    const prevWeekStart = new Date(weekAgo);
+    prevWeekStart.setDate(prevWeekStart.getDate() - 7);
+    const prevCustomers = data.customers.filter((c) => {
+      const d = new Date(c.createdAt);
+      return d >= prevWeekStart && d < weekAgo;
+    }).length;
+
+    // Supplier debt
+    const debt = (data.payables ?? [])
+      .filter((p) => p.status !== "pagado")
+      .reduce((s, p) => s + (p.amount - p.paidAmount), 0);
+
+    return {
+      todayRev,
+      revTrend: trend(todayRev, yesterdayRev),
+      pendingOrders: data.alerts.pendingOrders,
+      ticketToday,
+      ticketTrend: trend(ticketToday, ticketYesterday),
+      margin: Math.round(margin),
+      marginTrend: trend(margin, marginYesterday),
+      newCustomers,
+      customerTrend: trend(newCustomers, prevCustomers),
+      debt,
+    };
+  }, [data]);
+
+  const chartData = useMemo(() => {
+    if (!data) return null;
+    return {
+      weekly: groupByDay(data.orders, data.sales, 7),
+      topProds: topProducts(data.orders, data.sales, 5),
+      payments: paymentBreakdown(data.orders, data.sales),
+    };
+  }, [data]);
+
+  // ── Chat handler ────────────────────────────────────────────────────────
+
+  const handleAsk = useCallback(async () => {
     const trimmed = question.trim();
     if (!trimmed || chatLoading) return;
     setChatLoading(true);
@@ -221,367 +376,280 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
       setChatAnswer("No pude responder en este momento. Intenta de nuevo.");
     }
     setChatLoading(false);
-  };
+  }, [question, chatLoading]);
 
-  // ── Build action cards ──────────────────────────────────────────────────
+  // ── Navigate helper ─────────────────────────────────────────────────────
 
-  function buildActionCards(): ActionCard[] {
-    if (!data) return [];
-    const cards: ActionCard[] = [];
-
-    if (data.alerts.pendingOrders > 0) {
-      cards.push({
-        id: "pending-orders",
-        icon: ShoppingCart,
-        title: `Tienes ${data.alerts.pendingOrders} pedido${data.alerts.pendingOrders > 1 ? "s" : ""} sin atender`,
-        description: "Revisa y confirma los pedidos pendientes para no perder ventas.",
-        action: "Ver pedidos",
-        href: "pedidos",
-        color: "red",
-      });
-    }
-
-    if (expiring.length > 0) {
-      cards.push({
-        id: "expiring-batches",
-        icon: Clock,
-        title: `${expiring.length} producto${expiring.length > 1 ? "s" : ""} vence${expiring.length > 1 ? "n" : ""} esta semana`,
-        description: "Ponlos en oferta o usalos primero para evitar perdidas.",
-        action: "Revisar",
-        href: "inventario-almacenes",
-        color: "orange",
-      });
-    }
-
-    if (data.alerts.lowStock > 0) {
-      cards.push({
-        id: "low-stock",
-        icon: Package,
-        title: `${data.alerts.lowStock} producto${data.alerts.lowStock > 1 ? "s" : ""} con stock bajo`,
-        description: "Reabastecer para no quedarte sin productos importantes.",
-        action: "Ver inventario",
-        href: "inventario-almacenes",
-        color: "yellow",
-      });
-    }
-
-    const debt = getDebtTotal(data.payables ?? []);
-    if (debt > 0) {
-      cards.push({
-        id: "debt",
-        icon: CreditCard,
-        title: `Debes ${formatCurrency(debt)} a proveedores`,
-        description: "Revisa las facturas pendientes y programa los pagos.",
-        action: "Ver deudas",
-        href: "tesoreria",
-        color: "blue",
-      });
-    }
-
-    return cards;
-  }
+  const navigateTo = useCallback((tab: string) => {
+    window.dispatchEvent(new CustomEvent("admin:navigate", { detail: { tab } }));
+  }, []);
 
   // ── Render ──────────────────────────────────────────────────────────────
 
-  const greeting = getGreeting();
-  const GreetingIcon = greeting.icon;
+  const { text: greetingText, Icon: GreetingIcon } = getGreeting();
+  const todayFormatted = new Date().toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" });
 
   if (error) {
     return (
       <div className="bg-red-50 dark:bg-red-950/20 rounded-2xl border border-red-200 dark:border-red-800/30 p-6 text-center">
         <AlertTriangle className="w-8 h-8 text-red-500 mx-auto mb-2" />
-        <p className="text-sm font-semibold text-red-700 dark:text-red-300 mb-3">
-          {error}
-        </p>
-        <button
-          onClick={fetchData}
-          className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors"
-        >
+        <p className="text-sm font-semibold text-red-700 dark:text-red-300 mb-3">{error}</p>
+        <button onClick={() => void fetchData()} className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors">
           Reintentar
         </button>
       </div>
     );
   }
 
-  if (loading) {
+  if (loading || !kpis || !chartData) {
     return (
-      <div className="space-y-6">
-        {/* Greeting skeleton */}
-        <div className="animate-pulse">
-          <div className="h-6 w-48 bg-gray-200 dark:bg-gray-700 rounded mb-1" />
-          <div className="h-4 w-72 bg-gray-100 dark:bg-gray-800 rounded" />
-        </div>
+      <div className="space-y-5">
+        <div className="animate-pulse"><div className="h-6 w-56 bg-gray-200 dark:bg-gray-700 rounded" /></div>
         <KPISkeleton />
-        <ActionSkeleton />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4"><ChartSkeleton /><ChartSkeleton /></div>
       </div>
     );
   }
 
-  const todayRev = data ? getTodayRevenue(data.sales) : 0;
-  const yesterdayRev = data ? getYesterdayRevenue(data.sales) : 0;
-  const revTrend =
-    yesterdayRev > 0
-      ? ((todayRev - yesterdayRev) / yesterdayRev) * 100
-      : null;
-  const actionCards = buildActionCards();
+  const weeklyMax = Math.max(...chartData.weekly.map((d) => d.value), 1);
+  const topMax = chartData.topProds[0]?.revenue ?? 1;
+
+  // ── Build urgent actions ──────────────────────────────────────────────
+
+  const urgentActions: { id: string; icon: React.ElementType; label: string; detail: string; color: "red" | "orange" | "blue"; href: string }[] = [];
+
+  if (kpis.pendingOrders > 0) {
+    urgentActions.push({
+      id: "pending",
+      icon: ShoppingCart,
+      label: `${kpis.pendingOrders} pedido${kpis.pendingOrders > 1 ? "s" : ""} sin atender`,
+      detail: "Confirmar para no perder ventas",
+      color: "red",
+      href: "pedidos",
+    });
+  }
+  if (expiring.length > 0) {
+    urgentActions.push({
+      id: "expiring",
+      icon: Clock,
+      label: `${expiring.length} producto${expiring.length > 1 ? "s" : ""} por vencer`,
+      detail: "Ponlos en oferta esta semana",
+      color: "orange",
+      href: "inventario-almacenes",
+    });
+  }
+  if (data && data.alerts.lowStock > 0) {
+    urgentActions.push({
+      id: "lowstock",
+      icon: Package,
+      label: `${data.alerts.lowStock} con stock bajo`,
+      detail: "Reabastecer antes de quedarte sin",
+      color: "orange",
+      href: "inventario-almacenes",
+    });
+  }
+  if (kpis.debt > 0) {
+    urgentActions.push({
+      id: "debt",
+      icon: CreditCard,
+      label: `${formatCompact(kpis.debt)} deuda proveedores`,
+      detail: "Revisa vencimientos y programa pagos",
+      color: "blue",
+      href: "tesoreria",
+    });
+  }
+
+  const actionBorderColor = { red: "border-l-red-500", orange: "border-l-orange-500", blue: "border-l-blue-500" };
+  const actionDotColor = { red: "bg-red-500", orange: "bg-orange-500", blue: "bg-blue-500" };
 
   return (
-    <div className="space-y-5 sm:space-y-6">
-      {/* ── Greeting ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#2d6a4f]/10 dark:bg-[#2d6a4f]/20">
-          <GreetingIcon className="w-5 h-5 text-[#2d6a4f] dark:text-emerald-400" />
+    <div className="space-y-5">
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#2d6a4f]/10 dark:bg-[#2d6a4f]/20">
+            <GreetingIcon className="w-5 h-5 text-[#2d6a4f] dark:text-emerald-400" />
+          </div>
+          <div>
+            <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-foreground">{greetingText}</h2>
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-muted">
+              <CalendarDays className="w-3.5 h-3.5" />
+              <span>Hoy: {todayFormatted}</span>
+            </div>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-foreground">
-            {greeting.text}
-          </h2>
-          <p className="text-sm text-gray-500 dark:text-muted">
-            {actionCards.length > 0
-              ? `Tienes ${actionCards.length} cosa${actionCards.length > 1 ? "s" : ""} que revisar hoy`
-              : "Todo esta en orden. Buen trabajo."}
-          </p>
+        <button
+          onClick={() => void fetchData(true)}
+          disabled={refreshing}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-600 dark:text-muted bg-gray-100 dark:bg-surface hover:bg-gray-200 dark:hover:bg-card transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+          Actualizar
+        </button>
+      </div>
+
+      {/* ── KPI Strip ──────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+        <KPICard icon={DollarSign} label="Ventas hoy" value={formatCurrency(kpis.todayRev)} trend={kpis.revTrend} />
+        <KPICard
+          icon={ShoppingCart}
+          label="Pedidos pend."
+          value={String(kpis.pendingOrders)}
+          alert={kpis.pendingOrders > 0 ? "red" : undefined}
+        />
+        <KPICard icon={Receipt} label="Ticket prom." value={formatCurrency(kpis.ticketToday)} trend={kpis.ticketTrend} />
+        <KPICard icon={Percent} label="Margen" value={`${kpis.margin}%`} trend={kpis.marginTrend} />
+        <KPICard icon={Users} label="Clientes nuevos" value={String(kpis.newCustomers)} sub="esta semana" trend={kpis.customerTrend} />
+        <KPICard
+          icon={Landmark}
+          label="Deuda proveed."
+          value={formatCompact(kpis.debt)}
+          alert={kpis.debt > 0 ? "yellow" : undefined}
+        />
+      </div>
+
+      {/* ── Charts row ─────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Weekly sales bar chart */}
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-4">
+            Ventas ultimos 7 dias
+          </h3>
+          <div className="flex items-end gap-2 h-36">
+            {chartData.weekly.map((day, i) => {
+              const pct = weeklyMax > 0 ? (day.value / weeklyMax) * 100 : 0;
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-[10px] font-semibold text-gray-500 dark:text-muted">
+                    {day.value > 0 ? formatCompact(day.value) : ""}
+                  </span>
+                  <div className="w-full relative group" style={{ height: "100px" }}>
+                    <div
+                      className="absolute bottom-0 left-1 right-1 rounded-t-md bg-[#2d6a4f] dark:bg-emerald-600 transition-all duration-500"
+                      style={{ height: `${Math.max(pct, 2)}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-400 dark:text-muted">{day.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Top 5 products */}
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-4">
+            Top 5 productos
+          </h3>
+          {chartData.topProds.length === 0 ? (
+            <p className="text-sm text-gray-400 dark:text-muted">Sin datos de productos aun.</p>
+          ) : (
+            <div className="space-y-3">
+              {chartData.topProds.map((p, i) => {
+                const barPct = topMax > 0 ? (p.revenue / topMax) * 100 : 0;
+                return (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-gray-400 dark:text-muted w-4 text-right">{i + 1}.</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-semibold text-gray-800 dark:text-foreground truncate">{p.name}</span>
+                        <span className="text-xs font-bold text-gray-600 dark:text-muted ml-2 shrink-0">{formatCurrency(p.revenue)}</span>
+                      </div>
+                      <div className="h-2 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-[#f4a261] rounded-full transition-all duration-500"
+                          style={{ width: `${barPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ── KPI Cards ────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Ventas hoy */}
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
-              Ventas hoy
-            </span>
-            <DollarSign className="w-4 h-4 text-[#2d6a4f]" />
-          </div>
-          <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">
-            {formatCurrency(todayRev)}
-          </p>
-          {revTrend !== null && (
-            <div
-              className={cn(
-                "flex items-center gap-1 mt-1 text-xs font-semibold",
-                revTrend >= 0
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-red-600 dark:text-red-400",
-              )}
-            >
-              {revTrend >= 0 ? (
-                <TrendingUp className="w-3 h-3" />
-              ) : (
-                <TrendingDown className="w-3 h-3" />
-              )}
-              {revTrend >= 0 ? "+" : ""}
-              {revTrend.toFixed(1)}% vs ayer
+      {/* ── Payment + Actions row ──────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Payment breakdown */}
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-4">
+            Pagos por metodo
+          </h3>
+          {chartData.payments.length === 0 ? (
+            <p className="text-sm text-gray-400 dark:text-muted">Sin ventas registradas.</p>
+          ) : (
+            <div className="space-y-3">
+              {chartData.payments.map((pm) => (
+                <div key={pm.method}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-foreground">{pm.method}</span>
+                    <span className="text-xs font-bold text-gray-500 dark:text-muted">{pm.pct}%</span>
+                  </div>
+                  <div className="h-2.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                    <div className={cn("h-full rounded-full transition-all duration-500", pm.color)} style={{ width: `${pm.pct}%` }} />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Pedidos pendientes */}
-        <div
-          className={cn(
-            "bg-white dark:bg-card rounded-2xl border p-4 sm:p-5",
-            data && data.alerts.pendingOrders > 0
-              ? "border-red-300 dark:border-red-800/40"
-              : "border-gray-200 dark:border-card-border",
+        {/* Urgent actions */}
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-5">
+          <h3 className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-4">
+            Acciones urgentes
+          </h3>
+          {urgentActions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-6 text-center">
+              <div className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/30 flex items-center justify-center mb-2">
+                <TrendingUp className="w-5 h-5 text-emerald-500" />
+              </div>
+              <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Todo en orden</p>
+              <p className="text-xs text-gray-400 dark:text-muted mt-0.5">Sin alertas pendientes</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {urgentActions.map((a) => {
+                const Icon = a.icon;
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => navigateTo(a.href)}
+                    className={cn(
+                      "w-full flex items-center gap-3 p-3 rounded-xl border-l-4 bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-card transition-colors text-left",
+                      actionBorderColor[a.color],
+                    )}
+                  >
+                    <div className={cn("w-2 h-2 rounded-full shrink-0", actionDotColor[a.color])} />
+                    <Icon className="w-4 h-4 text-gray-500 dark:text-muted shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-800 dark:text-foreground truncate">{a.label}</p>
+                      <p className="text-xs text-gray-400 dark:text-muted">{a.detail}</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-gray-300 dark:text-muted shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
           )}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
-              Pedidos pendientes
-            </span>
-            <ShoppingCart
-              className={cn(
-                "w-4 h-4",
-                data && data.alerts.pendingOrders > 0
-                  ? "text-red-500"
-                  : "text-gray-400",
-              )}
-            />
-          </div>
-          <p
-            className={cn(
-              "text-xl sm:text-2xl font-extrabold",
-              data && data.alerts.pendingOrders > 0
-                ? "text-red-600 dark:text-red-400"
-                : "text-gray-900 dark:text-foreground",
-            )}
-          >
-            {data?.alerts.pendingOrders ?? 0}
-          </p>
-          <p className="text-xs text-gray-400 dark:text-muted mt-1">
-            {data && data.alerts.pendingOrders > 0
-              ? "Requieren atencion"
-              : "Todo al dia"}
-          </p>
-        </div>
-
-        {/* Productos por vencer */}
-        <div
-          className={cn(
-            "bg-white dark:bg-card rounded-2xl border p-4 sm:p-5",
-            expiring.length > 0
-              ? "border-orange-300 dark:border-orange-800/40"
-              : "border-gray-200 dark:border-card-border",
-          )}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
-              Por vencer (7d)
-            </span>
-            <Clock
-              className={cn(
-                "w-4 h-4",
-                expiring.length > 0 ? "text-orange-500" : "text-gray-400",
-              )}
-            />
-          </div>
-          <p
-            className={cn(
-              "text-xl sm:text-2xl font-extrabold",
-              expiring.length > 0
-                ? "text-orange-600 dark:text-orange-400"
-                : "text-gray-900 dark:text-foreground",
-            )}
-          >
-            {expiring.length}
-          </p>
-          <p className="text-xs text-gray-400 dark:text-muted mt-1">
-            {expiring.length > 0 ? "Revisar pronto" : "Sin urgencia"}
-          </p>
-        </div>
-
-        {/* Stock bajo */}
-        <div
-          className={cn(
-            "bg-white dark:bg-card rounded-2xl border p-4 sm:p-5",
-            data && data.alerts.lowStock > 0
-              ? "border-yellow-300 dark:border-yellow-800/40"
-              : "border-gray-200 dark:border-card-border",
-          )}
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">
-              Stock bajo
-            </span>
-            <Package
-              className={cn(
-                "w-4 h-4",
-                data && data.alerts.lowStock > 0
-                  ? "text-yellow-500"
-                  : "text-gray-400",
-              )}
-            />
-          </div>
-          <p
-            className={cn(
-              "text-xl sm:text-2xl font-extrabold",
-              data && data.alerts.lowStock > 0
-                ? "text-yellow-600 dark:text-yellow-500"
-                : "text-gray-900 dark:text-foreground",
-            )}
-          >
-            {data?.alerts.lowStock ?? 0}
-          </p>
-          <p className="text-xs text-gray-400 dark:text-muted mt-1">
-            {data && data.alerts.lowStock > 0
-              ? "Reabastecer"
-              : "Inventario OK"}
-          </p>
         </div>
       </div>
 
-      {/* ── Action cards ─────────────────────────────────────────────────── */}
-      {actionCards.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-extrabold text-gray-700 dark:text-foreground uppercase tracking-wide">
-            Acciones sugeridas
-          </h3>
-          {actionCards.map((card) => {
-            const colors = COLOR_MAP[card.color];
-            const Icon = card.icon;
-            return (
-              <div
-                key={card.id}
-                className={cn(
-                  "flex items-center gap-4 rounded-2xl border border-l-4 p-4",
-                  colors.border,
-                  colors.bg,
-                  "border-gray-200 dark:border-card-border",
-                )}
-              >
-                <div
-                  className={cn(
-                    "flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-card shrink-0",
-                    colors.icon,
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-gray-900 dark:text-foreground">
-                    {card.title}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-muted mt-0.5">
-                    {card.description}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    // Dispatch navigation event for the admin shell
-                    window.dispatchEvent(
-                      new CustomEvent("admin:navigate", {
-                        detail: { tab: card.href },
-                      }),
-                    );
-                  }}
-                  className={cn(
-                    "shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1",
-                    colors.button,
-                  )}
-                >
-                  {card.action}
-                  <ArrowRight className="w-3 h-3" />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* ── All clear ────────────────────────────────────────────────────── */}
-      {actionCards.length === 0 && (
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-800/30 p-6 text-center">
-          <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-          <p className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-            Todo en orden
-          </p>
-          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
-            No hay alertas ni acciones pendientes. Sigue asi.
-          </p>
-        </div>
-      )}
-
-      {/* ── Quick Chat ───────────────────────────────────────────────────── */}
+      {/* ── AI Quick Chat ──────────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 sm:p-5">
-        <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-3">
-          Preguntale a tu asistente
-        </p>
-
         {chatAnswer && (
           <div className="mb-3 bg-gray-50 dark:bg-surface rounded-xl p-3 text-sm text-gray-700 dark:text-foreground whitespace-pre-line">
             {chatAnswer}
           </div>
         )}
-
         <div className="flex gap-2">
           <input
             type="text"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") void handleAsk();
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter") void handleAsk(); }}
             placeholder="Preguntame sobre tu negocio..."
             className="flex-1 bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/30 focus:border-[#2d6a4f] transition-colors"
             disabled={chatLoading}
@@ -591,14 +659,68 @@ export default function DashboardIATab({ tenantId: _tenantId }: Props) {
             disabled={chatLoading || !question.trim()}
             className="shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-[#2d6a4f] hover:bg-[#245a42] disabled:opacity-50 text-white transition-colors"
           >
-            {chatLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
+            {chatLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── KPI Card subcomponent ─────────────────────────────────────────────────────
+
+function KPICard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  trend: t,
+  alert,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  sub?: string;
+  trend?: { pct: number; direction: "up" | "down" | "flat" };
+  alert?: "red" | "yellow";
+}) {
+  const alertBorder = alert === "red"
+    ? "border-red-300 dark:border-red-800/40"
+    : alert === "yellow"
+      ? "border-yellow-300 dark:border-yellow-800/40"
+      : "border-gray-200 dark:border-card-border";
+
+  const alertValue = alert === "red"
+    ? "text-red-600 dark:text-red-400"
+    : alert === "yellow"
+      ? "text-yellow-600 dark:text-yellow-400"
+      : "text-gray-900 dark:text-foreground";
+
+  return (
+    <div className={cn("bg-white dark:bg-card rounded-2xl border p-4 transition-colors", alertBorder)}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-bold text-gray-500 dark:text-muted uppercase tracking-wide leading-tight">{label}</span>
+        <Icon className="w-4 h-4 text-[#2d6a4f] dark:text-emerald-400 shrink-0" />
+      </div>
+      <p className={cn("text-xl font-extrabold", alertValue)}>{value}</p>
+      {t && t.direction !== "flat" ? (
+        <div className={cn(
+          "flex items-center gap-1 mt-1 text-xs font-semibold",
+          t.direction === "up" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+        )}>
+          {t.direction === "up" ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+          {t.direction === "up" ? "+" : "-"}{t.pct}%
+        </div>
+      ) : sub ? (
+        <p className="text-xs text-gray-400 dark:text-muted mt-1">{sub}</p>
+      ) : t?.direction === "flat" ? (
+        <div className="flex items-center gap-1 mt-1 text-xs font-semibold text-gray-400 dark:text-muted">
+          <Minus className="w-3 h-3" />
+          Sin cambio
+        </div>
+      ) : (
+        <div className="h-4 mt-1" />
+      )}
     </div>
   );
 }
