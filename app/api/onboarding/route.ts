@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
   await prisma.$transaction([
     prisma.adminUser.create({
       data: {
-        tenantId: tenant.id,
+        tenantId: tenant.slug,
         username: adminUsername,
         passwordHash,
         role: "admin",
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
     }),
     prisma.settings.create({
       data: {
-        tenantId: tenant.id,
+        tenantId: tenant.slug,
         businessName: storeName,
         mode: "checkout",
         cashEnabled: true,
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
         name: storeName,
         email: ownerEmail,
         phone: ownerPhone ?? null,
-        tenantId: tenant.id,
+        tenantId: tenant.slug,
       },
     });
     await prisma.$transaction([
@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
       }),
       prisma.store.create({
         data: {
-          tenantId: tenant.id,
+          tenantId: tenant.slug,
           slug,
           name: storeName,
           isPublished: false,
@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
     // type === "store" (default) — Crear Store (draft)
     await prisma.store.create({
       data: {
-        tenantId: tenant.id,
+        tenantId: tenant.slug,
         slug,
         name: storeName,
         isPublished: false,

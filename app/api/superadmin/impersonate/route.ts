@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   // 4. Generar token de sesión admin para ese tenant
   // username = "superadmin" identifica el origen en logs/audit
   // role = "admin" para acceso completo al panel
-  const token = await createSessionToken("admin", "superadmin", tenant.id, "SuperAdmin");
+  const token = await createSessionToken("admin", "superadmin", tenant.slug, "SuperAdmin");
 
   // 5. Escribir la misma cookie que usa /api/auth/login
   const isProd = process.env.NODE_ENV === "production";
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Set active-tenant cookie for storefront isolation
-  response.cookies.set("active-tenant", tenant.id, {
+  response.cookies.set("active-tenant", tenant.slug, {
     path: "/",
     maxAge: SESSION.MAX_AGE,
     sameSite: "lax",
