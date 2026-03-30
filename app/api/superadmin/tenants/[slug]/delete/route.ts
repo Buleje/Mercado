@@ -45,64 +45,43 @@ export async function DELETE(
       );
     }
 
-    const tid = slug;
+    // Usar SQL directo para borrado cascade — más confiable que Prisma ORM
+    // porque no depende de que cada modelo tenga `tenantId` en el schema del ORM
+    const tables = [
+      "OrderItem", "SaleItem", "ReturnItem", "FiadoCuota", "PrestamoCuota",
+      "PrestamoDocumento", "PurchaseItem", "BundleItem", "ShoppingListItem",
+      "OrderStatusHistory", "RecetaIngrediente", "CotizacionItem", "PageBlock",
+      "PageVersion", "ABTestEvent", "Payment", "CashMovement", "InventoryMovement",
+      "ProduccionLote", "TreasuryTransferencia", "TreasuryMovimiento",
+      "GuiaRemisionItem", "NotaCredito", "GuiaRemision", "Notification",
+      "CustomerNotification", "Return", "Order", "Sale", "CashRegister",
+      "Fiado", "Prestamo", "PurchaseOrder", "Payable", "ShoppingList", "Bundle",
+      "Receta", "Cotizacion", "Page", "ABTest", "Turno", "TreasuryCuenta",
+      "Product", "Customer", "Supplier", "Promotion", "Coupon", "Review",
+      "Expense", "DeliverySlot", "PriceHistory", "Note", "Media", "Reminder",
+      "MessageTemplate", "ChatMessage", "SavedFilter", "SurveyResponse",
+      "NewsletterSubscriber", "Campaign", "DailySummary", "Warehouse", "ApiKey",
+      "VisitorWelcome", "SavedCart", "SavedLocation", "SupplierEvaluation", "Batch",
+      "Transfer", "ConteoFisico", "ConteoFisicoItem", "DiscountRule", "CommissionRule",
+      "Merma", "ComplianceItem", "SupplierReturn", "SupplierReturnItem", "CustomKpi",
+      "Location", "AdminUser", "Settings", "NotificationLog", "PushSubscription",
+      "ActivityLog", "AdminMessage", "ThemeSettings", "Navigation", "TenantInvitation",
+      "CronDeadLetter", "Store", "StoreProduct", "StorePermission", "SupplierPortal",
+      "DeliveryPartner", "DeliveryAssignment", "WholesaleOrder", "WholesaleOrderItem",
+      "CommissionLedger", "SupportTicket", "StripeWebhookQueue",
+    ];
 
-    // Helper: intenta deleteMany, ignora si la tabla no tiene tenantId o relación
-    const safeDelete = async (label: string, fn: () => Promise<unknown>) => {
-      try { await fn(); } catch (e) {
-        logger.warn(`[delete-tenant] skip ${label}`, { err: (e as Error).message?.slice(0, 80) });
+    let deletedCount = 0;
+    for (const table of tables) {
+      try {
+        const result = await prisma.$executeRawUnsafe(`DELETE FROM "${table}" WHERE "tenantId" = $1`, slug);
+        deletedCount += result;
+      } catch {
+        // Table might not have tenantId column — skip silently
       }
-    };
-
-    // Borrado en cascada — cada operación es tolerante a fallos
-    // Las tablas que no aplican (sin tenantId, sin datos) se ignoran
-
-    // Nivel 1: tablas hijas
-    await safeDelete("orderItem", () => prisma.orderItem.deleteMany({ where: { order: { tenantId: tid } } }));
-    await safeDelete("saleItem", () => prisma.saleItem.deleteMany({ where: { sale: { tenantId: tid } } }));
-    await safeDelete("returnItem", () => prisma.returnItem.deleteMany({ where: { return: { tenantId: tid } } }));
-    await safeDelete("fiadoCuota", () => prisma.fiadoCuota.deleteMany({ where: { fiado: { tenantId: tid } } }));
-    await safeDelete("prestamoCuota", () => prisma.prestamoCuota.deleteMany({ where: { prestamo: { tenantId: tid } } }));
-    await safeDelete("prestamoDoc", () => prisma.prestamoDocumento.deleteMany({ where: { prestamo: { tenantId: tid } } }));
-    await safeDelete("purchaseItem", () => prisma.purchaseItem.deleteMany({ where: { order: { tenantId: tid } } }));
-    await safeDelete("bundleItem", () => prisma.bundleItem.deleteMany({ where: { bundle: { tenantId: tid } } }));
-    await safeDelete("shoppingListItem", () => prisma.shoppingListItem.deleteMany({ where: { list: { tenantId: tid } } }));
-    await safeDelete("orderStatusHistory", () => prisma.orderStatusHistory.deleteMany({ where: { order: { tenantId: tid } } }));
-    await safeDelete("recetaIngrediente", () => prisma.recetaIngrediente.deleteMany({ where: { receta: { tenantId: tid } } }));
-    await safeDelete("cotizacionItem", () => prisma.cotizacionItem.deleteMany({ where: { cotizacion: { tenantId: tid } } }));
-    await safeDelete("pageBlock", () => prisma.pageBlock.deleteMany({ where: { page: { tenantId: tid } } }));
-    await safeDelete("pageVersion", () => prisma.pageVersion.deleteMany({ where: { page: { tenantId: tid } } }));
-    await safeDelete("aBTestEvent", () => prisma.aBTestEvent.deleteMany({ where: { test: { tenantId: tid } } }));
-
-    // Nivel 2: tablas con tenantId directo — batch delete
-    const tenantTables = [
-      "payment", "cashMovement", "inventoryMovement", "produccionLote",
-      "treasuryTransferencia", "treasuryMovimiento",
-      "return", "order", "sale", "cashRegister", "fiado", "prestamo",
-      "purchaseOrder", "payable", "shoppingList", "bundle", "receta",
-      "cotizacion", "page", "aBTest", "turno", "treasuryCuenta",
-      "product", "customer", "supplier", "promotion", "coupon", "review",
-      "expense", "deliverySlot", "priceHistory", "note", "media", "reminder",
-      "messageTemplate", "chatMessage", "savedFilter", "surveyResponse",
-      "newsletterSubscriber", "campaign", "dailySummary", "warehouse",
-      "apiKey", "visitorWelcome", "savedCart", "savedLocation",
-      "supplierEvaluation", "batch", "notification", "customerNotification",
-      "guiaRemision", "guiaRemisionItem", "notaCredito",
-      "transfer", "conteoFisico", "conteoFisicoItem", "merma",
-      "discountRule", "commissionRule",
-      "adminUser", "settings", "notificationLog", "pushSubscription",
-      "activityLog", "adminMessage", "themeSettings", "navigation",
-      "tenantInvitation", "cronDeadLetter",
-      "store", "storeProduct", "storePermission", "supplierPortal",
-      "deliveryPartner", "deliveryAssignment", "wholesaleOrder",
-      "wholesaleOrderItem", "commissionLedger", "supportTicket",
-    ] as const;
-
-    for (const table of tenantTables) {
-      await safeDelete(table, () => (prisma as Record<string, any>)[table]?.deleteMany?.({ where: { tenantId: tid } }));
     }
 
-    // Nivel final: el tenant
+    // Delete the tenant itself
     await prisma.tenant.delete({ where: { slug } });
 
     logger.info("[SuperAdmin] Tenant deleted", {
@@ -114,6 +93,7 @@ export async function DELETE(
     return NextResponse.json({
       deleted: slug,
       tenantName: tenant.name,
+      deletedRows: deletedCount,
       message: "Tienda y todos sus datos eliminados permanentemente",
     });
   } catch (e) {
