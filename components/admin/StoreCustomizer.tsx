@@ -460,6 +460,7 @@ export default function StoreCustomizer() {
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(true);
   const [previewKey, setPreviewKey] = useState(0);
+  const [previewWidth, setPreviewWidth] = useState(0); // 0 = full width (desktop)
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -639,11 +640,11 @@ export default function StoreCustomizer() {
         </button>
       </div>
 
-      {/* Layout 2 columnas */}
-      <div className="flex flex-1 gap-6 min-h-0">
+      {/* Layout: formulario arriba + preview abajo */}
+      <div className="flex flex-col flex-1 gap-6 min-h-0">
 
-        {/* ── Panel izquierdo ────────────────────────────────────────────── */}
-        <div className="w-full lg:w-[42%] flex flex-col gap-4 min-h-0">
+        {/* ── Panel principal (full width) ────────────────────────────────── */}
+        <div className="w-full flex flex-col gap-4 min-h-0">
 
           {/* Tabs de navegación */}
           <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide shrink-0">
@@ -1111,6 +1112,34 @@ export default function StoreCustomizer() {
                   )}
                 </div>
 
+                {/* QR de la tienda */}
+                <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3 border border-gray-100 dark:border-card-border">
+                  <p className="text-xs font-bold text-foreground">QR de tu tienda</p>
+                  <p className="text-[10px] text-muted">Codigo QR para pegar en tu local fisico. Los clientes escanean y entran a tu tienda.</p>
+                  <div className="flex items-center gap-4">
+                    <div className="bg-white p-2 rounded-xl border border-gray-200 dark:border-card-border">
+                      {/* QR usando API publica de Google Charts */}
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "https://tu-tienda.buleje.pe")}`}
+                        alt="QR de la tienda"
+                        className="h-28 w-28"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <a
+                        href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&format=png&data=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-[11px] font-bold hover:opacity-90"
+                      >
+                        Descargar QR grande
+                      </a>
+                      <p className="text-[9px] text-muted">Imprimelo y pegalo en tu puerta o mostrador</p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* CSS personalizado */}
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-foreground uppercase tracking-wider">CSS personalizado</p>
@@ -1270,46 +1299,61 @@ export default function StoreCustomizer() {
           </div>
         </div>
 
-        {/* ── Panel derecho: Preview en vivo con iframe ──────────────── */}
-        <div
-          className={cn(
-            "flex-1 min-h-0 relative",
-            showPreview ? "flex flex-col" : "hidden lg:flex lg:flex-col"
-          )}
-        >
-          <div className="flex items-center justify-between mb-3 shrink-0">
-            <p className="text-xs font-bold text-muted uppercase tracking-wider">Vista previa en vivo</p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setPreviewKey((k) => k + 1)}
-                className="text-[10px] text-primary font-semibold hover:underline"
-              >
-                Recargar
-              </button>
-              <a
-                href="/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[10px] text-muted hover:text-foreground"
-              >
-                Abrir en nueva pestaña
-              </a>
+        {/* ── Preview abajo con toggle responsive ──────────────────── */}
+        {showPreview && (
+          <div className="w-full shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <p className="text-xs font-bold text-muted uppercase tracking-wider">Vista previa en vivo</p>
+                {/* Toggle responsive */}
+                <div className="flex gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                  {([
+                    { mode: "mobile" as const, label: "Movil", w: 375 },
+                    { mode: "tablet" as const, label: "Tablet", w: 768 },
+                    { mode: "desktop" as const, label: "Desktop", w: 0 },
+                  ]).map((v) => (
+                    <button
+                      key={v.mode}
+                      type="button"
+                      onClick={() => setPreviewWidth(v.w)}
+                      className={cn(
+                        "px-2.5 py-1 rounded-md text-[10px] font-bold transition-all",
+                        previewWidth === v.w ? "bg-white dark:bg-card text-foreground shadow-sm" : "text-muted hover:text-foreground"
+                      )}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setPreviewKey((k) => k + 1)} className="text-[10px] text-primary font-semibold hover:underline">
+                  Recargar
+                </button>
+                <a href="/" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted hover:text-foreground">
+                  Abrir en nueva pestaña
+                </a>
+              </div>
             </div>
+            <div className="flex justify-center bg-gray-100 dark:bg-gray-800 rounded-2xl p-4">
+              <div
+                className="relative overflow-hidden rounded-xl border border-gray-200 dark:border-card-border bg-white transition-all duration-300"
+                style={{ width: previewWidth > 0 ? `${previewWidth}px` : "100%", maxWidth: "100%" }}
+              >
+                <iframe
+                  key={previewKey}
+                  src="/"
+                  title="Vista previa de la tienda"
+                  className="w-full border-0"
+                  style={{ height: 600 }}
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-muted text-center mt-2">
+              Guarda los cambios y toca &quot;Recargar&quot; para verlos. Toggle mobile/tablet/desktop arriba.
+            </p>
           </div>
-          <div className="flex-1 relative overflow-hidden rounded-2xl border border-gray-200 dark:border-card-border bg-white">
-            <iframe
-              key={previewKey}
-              src="/"
-              title="Vista previa de la tienda"
-              className="w-full h-full border-0"
-              style={{ minHeight: 500 }}
-            />
-          </div>
-          <p className="text-[10px] text-muted text-center mt-2 shrink-0">
-            Guarda los cambios para verlos reflejados aquí. Click &quot;Recargar&quot; para actualizar.
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );
