@@ -408,8 +408,11 @@ export const SurveyDB = {
     return r ? mapSurvey(r) : null;
   },
 
-  async getAll(limit = 100): Promise<DbSurveyResponse[]> {
+  async getAll(tenantId?: string, limit = 100): Promise<DbSurveyResponse[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
     const rows = await prisma.surveyResponse.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       take: limit,
     });

@@ -142,8 +142,10 @@ export const PriceHistoryDB = {
 // ── Bundles ───────────────────────────────────────────────────────────────────
 
 export const BundlesDB = {
-  async getAll(): Promise<DbBundle[]> {
-    return (await prisma.bundle.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);
+  async getAll(tenantId?: string): Promise<DbBundle[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.bundle.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);
   },
   async getActive(): Promise<DbBundle[]> {
     return (await prisma.bundle.findMany({ where: { active: true }, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);

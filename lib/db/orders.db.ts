@@ -108,8 +108,10 @@ function mapReturn(r: PReturn & { items: PReturnItem[] }): DbReturn {
 // ── Orders DB ─────────────────────────────────────────────────────────────────
 
 export const OrdersDB = {
-  async getAll(): Promise<DbOrder[]> {
-    return (await prisma.order.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapOrder);
+  async getAll(tenantId?: string): Promise<DbOrder[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.order.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapOrder);
   },
 
   /**
@@ -325,8 +327,10 @@ export const DeliverySlotsDB = {
 // ── Returns DB ────────────────────────────────────────────────────────────────
 
 export const ReturnsDB = {
-  async getAll(): Promise<DbReturn[]> {
-    return (await prisma.return.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapReturn);
+  async getAll(tenantId?: string): Promise<DbReturn[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.return.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapReturn);
   },
   async add(r: { saleId?: string; orderId?: string; reason: string; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: Omit<DbReturnItem, "id">[] }): Promise<DbReturn> {
     const total = r.items.reduce((s, i) => s + i.price * i.quantity, 0);

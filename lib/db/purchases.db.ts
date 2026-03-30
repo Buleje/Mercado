@@ -71,8 +71,10 @@ function mapSupplierEvaluation(e: PSupplierEvaluation): DbSupplierEvaluation {
 // ── Suppliers DB ──────────────────────────────────────────────────────────────
 
 export const SuppliersDB = {
-  async getAll(): Promise<DbSupplier[]> {
-    return (await prisma.supplier.findMany({ orderBy: { createdAt: "desc" } })).map(mapSupplier);
+  async getAll(tenantId?: string): Promise<DbSupplier[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.supplier.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapSupplier);
   },
   async getById(id: string): Promise<DbSupplier | null> {
     const row = await prisma.supplier.findUnique({ where: { id } });
@@ -100,8 +102,10 @@ export const SuppliersDB = {
 // ── Purchase Orders DB ────────────────────────────────────────────────────────
 
 export const PurchasesDB = {
-  async getAll(): Promise<DbPurchaseOrder[]> {
-    return (await prisma.purchaseOrder.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapPurchaseOrder);
+  async getAll(tenantId?: string): Promise<DbPurchaseOrder[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.purchaseOrder.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapPurchaseOrder);
   },
   async getById(id: string): Promise<DbPurchaseOrder | null> {
     const row = await prisma.purchaseOrder.findUnique({ where: { id }, include: { items: true } });
@@ -146,8 +150,10 @@ export const SupplierEvaluationsDB = {
   async getBySupplierId(supplierId: string): Promise<DbSupplierEvaluation[]> {
     return (await prisma.supplierEvaluation.findMany({ where: { supplierId }, orderBy: { createdAt: "desc" } })).map(mapSupplierEvaluation);
   },
-  async getAll(): Promise<DbSupplierEvaluation[]> {
-    return (await prisma.supplierEvaluation.findMany({ orderBy: { createdAt: "desc" } })).map(mapSupplierEvaluation);
+  async getAll(tenantId?: string): Promise<DbSupplierEvaluation[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.supplierEvaluation.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapSupplierEvaluation);
   },
   async add(data: Omit<DbSupplierEvaluation, "id" | "createdAt">): Promise<DbSupplierEvaluation> {
     const row = await prisma.supplierEvaluation.create({ data });

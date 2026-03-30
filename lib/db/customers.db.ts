@@ -105,8 +105,10 @@ function computePoints(amount: number): number {
 // ── CustomersDB ───────────────────────────────────────────────────────────────
 
 export const CustomersDB = {
-  async getAll(): Promise<DbCustomer[]> {
-    const rows = await prisma.customer.findMany({ include: { locations: true }, orderBy: { updatedAt: "desc" } });
+  async getAll(tenantId?: string): Promise<DbCustomer[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    const rows = await prisma.customer.findMany({ where, include: { locations: true }, orderBy: { updatedAt: "desc" } });
     return rows.map(mapCustomer);
   },
   async getByPhone(phone: string): Promise<DbCustomer | null> {
@@ -217,8 +219,10 @@ export const LoyaltyDB = {
 // ── ReviewsDB ─────────────────────────────────────────────────────────────────
 
 export const ReviewsDB = {
-  async getAll(): Promise<DbReview[]> {
-    return (await prisma.review.findMany({ orderBy: { date: "desc" } })).map(mapReview);
+  async getAll(tenantId?: string): Promise<DbReview[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.review.findMany({ where, orderBy: { date: "desc" } })).map(mapReview);
   },
   async getApproved(productId?: number): Promise<DbReview[]> {
     const where = productId != null

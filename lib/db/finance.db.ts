@@ -54,8 +54,10 @@ function mapExpense(e: PExpense): DbExpense {
 // ── Payables DB ───────────────────────────────────────────────────────────────
 
 export const PayablesDB = {
-  async getAll(): Promise<DbPayable[]> {
-    return (await prisma.payable.findMany({ include: { payments: true }, orderBy: { createdAt: "desc" } })).map(mapPayable);
+  async getAll(tenantId?: string): Promise<DbPayable[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.payable.findMany({ where, include: { payments: true }, orderBy: { createdAt: "desc" } })).map(mapPayable);
   },
   async getById(id: string): Promise<DbPayable | null> {
     const row = await prisma.payable.findUnique({ where: { id }, include: { payments: true } });
@@ -108,8 +110,10 @@ export const PayablesDB = {
 // ── Expenses DB ───────────────────────────────────────────────────────────────
 
 export const ExpensesDB = {
-  async getAll(): Promise<DbExpense[]> {
-    return (await prisma.expense.findMany({ orderBy: { date: "desc" } })).map(mapExpense);
+  async getAll(tenantId?: string): Promise<DbExpense[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.expense.findMany({ where, orderBy: { date: "desc" } })).map(mapExpense);
   },
   async getByDateRange(from: Date, to: Date): Promise<DbExpense[]> {
     return (await prisma.expense.findMany({ where: { date: { gte: from, lte: to } }, orderBy: { date: "desc" } })).map(mapExpense);

@@ -23,13 +23,13 @@ export async function GET(req: NextRequest) {
       const [products, orders, sales, customers, purchases, payables, suppliers, reviews] =
         await Promise.all([
           ProductsDB.getAll(auth.tenantId),
-          OrdersDB.getAll(),
-          SalesDB.getAll(),
-          CustomersDB.getAll(),
-          PurchasesDB.getAll(),
-          PayablesDB.getAll(),
-          SuppliersDB.getAll(),
-          ReviewsDB.getAll(),
+          OrdersDB.getAll(auth.tenantId),
+          SalesDB.getAll(auth.tenantId),
+          CustomersDB.getAll(auth.tenantId),
+          PurchasesDB.getAll(auth.tenantId),
+          PayablesDB.getAll(auth.tenantId),
+          SuppliersDB.getAll(auth.tenantId),
+          ReviewsDB.getAll(auth.tenantId),
         ]);
 
       const lowStock = products.filter(

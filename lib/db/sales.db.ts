@@ -91,8 +91,10 @@ function mapCashRegister(r: PCashRegister & { movements: PCashMovement[] }): DbC
 // ── POS Sales DB ──────────────────────────────────────────────────────────────
 
 export const SalesDB = {
-  async getAll(): Promise<DbSale[]> {
-    return (await prisma.sale.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapSale);
+  async getAll(tenantId?: string): Promise<DbSale[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.sale.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapSale);
   },
   async getById(id: string): Promise<DbSale | null> {
     const row = await prisma.sale.findUnique({ where: { id }, include: { items: true } });
@@ -136,8 +138,10 @@ export const SalesDB = {
 // ── Cash Registers DB ─────────────────────────────────────────────────────────
 
 export const CashRegistersDB = {
-  async getAll(): Promise<DbCashRegister[]> {
-    return (await prisma.cashRegister.findMany({ include: { movements: { orderBy: { createdAt: "desc" } } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
+  async getAll(tenantId?: string): Promise<DbCashRegister[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" } } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
   },
   async getAllPaginated(limit = 25, cursor?: string): Promise<{ items: DbCashRegister[]; nextCursor: string | null }> {
     const rows = await prisma.cashRegister.findMany({

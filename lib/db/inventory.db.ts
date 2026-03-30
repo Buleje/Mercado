@@ -78,8 +78,10 @@ function mapWarehouse(w: PWarehouse): DbWarehouse {
 // ── Inventory Movements DB ────────────────────────────────────────────────────
 
 export const InventoryMovementsDB = {
-  async getAll(limit = 200): Promise<DbInventoryMovement[]> {
-    return (await prisma.inventoryMovement.findMany({ orderBy: { createdAt: "desc" }, take: limit })).map(mapInventoryMovement);
+  async getAll(tenantId?: string, limit = 200): Promise<DbInventoryMovement[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.inventoryMovement.findMany({ where, orderBy: { createdAt: "desc" }, take: limit })).map(mapInventoryMovement);
   },
   async getByProduct(productId: number): Promise<DbInventoryMovement[]> {
     return (await prisma.inventoryMovement.findMany({ where: { productId }, orderBy: { createdAt: "desc" } })).map(mapInventoryMovement);
