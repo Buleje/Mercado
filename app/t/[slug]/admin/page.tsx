@@ -15,8 +15,9 @@ export default function TenantAdminRedirect() {
   useEffect(() => {
     if (!slug) return;
 
-    // Siempre guardar el tenant activo para que el admin lo use
-    localStorage.setItem("active-tenant-slug", slug);
+    // Guardar el tenant activo — sessionStorage es PER-TAB (permite múltiples tiendas abiertas)
+    sessionStorage.setItem("active-tenant-slug", slug);
+    localStorage.setItem("active-tenant-slug", slug); // fallback para componentes que no usan sessionStorage
     localStorage.setItem("superadmin-impersonate-tenant", slug);
 
     // Intentar impersonación SuperAdmin (auto-login sin contraseña)

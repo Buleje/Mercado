@@ -385,7 +385,8 @@ export default function StoreCustomizer() {
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/settings")
+    const tenantSlug = sessionStorage.getItem("active-tenant-slug") || localStorage.getItem("active-tenant-slug") || "main";
+    fetch("/api/settings", { headers: { "x-tenant-id": tenantSlug } })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.storeTheme) {
@@ -443,9 +444,10 @@ export default function StoreCustomizer() {
     setSaving(true);
     setError(null);
     try {
+      const tenantSlug = sessionStorage.getItem("active-tenant-slug") || localStorage.getItem("active-tenant-slug") || "main";
       const res = await fetch("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug },
         body: JSON.stringify({ storeTheme: theme }),
       });
       if (!res.ok) throw new Error("Error al guardar");
