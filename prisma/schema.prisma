@@ -415,6 +415,9 @@ model Settings {
   transferBankName   String?
   transferAccountNum String?
   transferAccountHolder String?
+
+  // ── Plantilla de tienda ──
+  productCategoriesJson String?  // JSON array: ["Abarrotes","Bebidas",...] — pre-cargado desde plantilla en onboarding
 }
 
 // ─── Suppliers ──────────────────────────────────────────
@@ -2234,4 +2237,23 @@ model SupplierPortal {
   autoPublish Boolean  @default(true)
   createdAt   DateTime @default(now())
   @@index([apiKey])
+}
+
+// ─── Support Tickets ─────────────────────────────────────
+model SupportTicket {
+  id        String   @id @default(cuid())
+  subject   String
+  message   String
+  priority  String   @default("medium") // low, medium, high
+  status    String   @default("open")   // open, replied, closed
+  reply     String?
+  repliedAt DateTime?
+  tenantId  String   @default("main")
+  createdBy String   @default("admin")  // username
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([tenantId, createdAt])
 }

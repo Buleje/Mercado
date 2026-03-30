@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, memo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion, type Variants } from "framer-motion";
 
 const SPRING = [0.175, 0.885, 0.32, 1.275] as [number, number, number, number];
@@ -250,6 +251,7 @@ type Tab = (typeof TABS)[number];
 
 export default function SaasHero() {
   const reduced = useReducedMotion();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("Dashboard");
   const mockupRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
@@ -257,6 +259,28 @@ export default function SaasHero() {
   const isDesktop = useRef(false);
   const { displayed: typed, done: typingDone } = useTypingEffect(SUBTITLE, 28, 800);
   const subtitle = reduced ? SUBTITLE : typed;
+
+  // ── Demo state ───────────────────────────────────────────
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
+
+  const handleDemo = useCallback(async () => {
+    setDemoLoading(true);
+    setDemoError(null);
+    try {
+      const res = await fetch("/api/demo/create", { method: "POST" });
+      const data = await res.json() as { slug?: string; error?: string };
+      if (!res.ok) {
+        setDemoError(data.error ?? "No se pudo crear el demo. Intenta en unos minutos.");
+        return;
+      }
+      router.push(`/t/${data.slug}/admin`);
+    } catch {
+      setDemoError("Error de red. Revisa tu conexión.");
+    } finally {
+      setDemoLoading(false);
+    }
+  }, [router]);
 
   useEffect(() => { isDesktop.current = window.matchMedia("(min-width: 1024px)").matches; }, []);
 
@@ -318,15 +342,41 @@ export default function SaasHero() {
               {!typingDone && !reduced && <span className="inline-block w-0.5 h-4 ml-0.5 align-middle animate-pulse" style={{ backgroundColor: "#0f766e" }} aria-hidden="true" />}
             </motion.p>
 
-            <motion.div variants={reduced ? {} : fadeUp} className="flex flex-col sm:flex-row gap-3 mb-6 w-full sm:w-auto">
+            <motion.div variants={reduced ? {} : fadeUp} className="flex flex-col sm:flex-row gap-3 mb-3 w-full sm:w-auto">
               <Link href="/registro" className="inline-flex items-center justify-center px-8 py-4 rounded-2xl text-lg font-bold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] min-h-[44px]"
                 style={{ background: "linear-gradient(135deg, #0f766e 0%, #0d5f58 100%)", boxShadow: "0 8px 32px -4px rgba(15,118,110,0.5), inset 0 1px 0 rgba(255,255,255,0.12)" }}>
                 Empezar gratis →
               </Link>
-              <button type="button" onClick={scrollToPlanes} className="inline-flex items-center justify-center px-8 py-4 rounded-2xl text-lg font-medium border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#0f766e] hover:text-[#0f766e] dark:hover:border-[#0f766e] dark:hover:text-[#0f766e] transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] min-h-[44px]">
-                Ver planes
+              <button
+                type="button"
+                onClick={handleDemo}
+                disabled={demoLoading}
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-2xl text-lg font-medium border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#0f766e] hover:text-[#0f766e] dark:hover:border-[#0f766e] dark:hover:text-[#0f766e] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] min-h-[44px]"
+              >
+                {demoLoading ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    Creando demo…
+                  </>
+                ) : (
+                  "Probar demo gratis"
+                )}
               </button>
             </motion.div>
+
+            {demoError && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-sm text-red-500 dark:text-red-400 mb-3"
+                role="alert"
+              >
+                {demoError}
+              </motion.p>
+            )}
 
             <motion.div variants={reduced ? {} : fadeUp} className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
               <span>✓ Sin tarjeta de credito</span>

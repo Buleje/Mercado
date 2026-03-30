@@ -6,9 +6,10 @@ import {
   Store, ArrowRight, ArrowLeft, CheckCircle2, Loader2,
   Eye, EyeOff, Zap, ShoppingBag, Users, ShoppingCart,
   Globe, BarChart2, Crown, AlertTriangle, ExternalLink,
-  Package, Truck,
+  Package, Truck, Heart, UtensilsCrossed,
 } from "lucide-react";
 import { PLANS, type PlanId, type PlanDef } from "@/lib/plans";
+import { STORE_TEMPLATES_LIST, type TemplateId } from "@/lib/store-templates";
 
 // ─── Step types ──────────────────────────────────────────
 type Step = 0 | 1 | 2 | 3 | 4; // 0 = tipo de cuenta, 4 = success
@@ -23,6 +24,7 @@ interface FormData {
   adminName: string;
   adminUsername: string;
   adminPassword: string;
+  template: TemplateId | "";
 }
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -100,6 +102,14 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { error?: st
   );
 }
 
+// ─── Mapa de iconos para plantillas ───────────────────────
+const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
+  Store:           <Store className="w-5 h-5" />,
+  ShoppingCart:    <ShoppingCart className="w-5 h-5" />,
+  Heart:           <Heart className="w-5 h-5" />,
+  UtensilsCrossed: <UtensilsCrossed className="w-5 h-5" />,
+};
+
 // ─── Main ─────────────────────────────────────────────────
 export default function RegistroPage() {
   const searchParams = useSearchParams();
@@ -112,6 +122,7 @@ export default function RegistroPage() {
       storeName: "", slug: "", ownerEmail: "", ownerPhone: "",
       plan: planParam && validPlans.includes(planParam) ? planParam : "free",
       adminName: "", adminUsername: "", adminPassword: "",
+      template: "",
     };
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
@@ -198,7 +209,11 @@ export default function RegistroPage() {
       const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, type: accountType }),
+        body: JSON.stringify({
+          ...form,
+          type: accountType,
+          template: form.template || undefined,
+        }),
       });
       const data = await res.json() as { message?: string; tenantSlug?: string; storeName?: string; trialEndsAt?: string; error?: string };
       if (!res.ok) {
@@ -380,6 +395,40 @@ export default function RegistroPage() {
                   placeholder="987 654 321"
                 />
               </Field>
+
+              {/* Selector de plantilla */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-foreground">
+                  Tipo de negocio <span className="text-muted font-normal">(opcional)</span>
+                </label>
+                <p className="text-xs text-muted -mt-1">Cargamos las categorías por ti para que empieces más rápido.</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {STORE_TEMPLATES_LIST.map((tmpl) => {
+                    const active = form.template === tmpl.id;
+                    return (
+                      <button
+                        key={tmpl.id}
+                        type="button"
+                        onClick={() => set("template", active ? "" : tmpl.id as TemplateId)}
+                        className={`text-left rounded-xl border-2 p-3 transition-all flex items-center gap-2.5 ${
+                          active
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                            : "border-(--color-card-border) hover:border-primary/40"
+                        }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${active ? "bg-primary text-white" : "bg-(--color-surface) text-muted"}`}>
+                          {TEMPLATE_ICONS[tmpl.icon]}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold leading-tight truncate">{tmpl.name}</p>
+                          <p className="text-muted" style={{ fontSize: "0.65rem" }}>{tmpl.categories.length} categorías</p>
+                        </div>
+                        {active && <CheckCircle2 className="w-4 h-4 text-primary ml-auto shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             <div className="flex gap-3">

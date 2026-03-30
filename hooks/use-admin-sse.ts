@@ -9,7 +9,8 @@ export type SSEEventType =
   | "order_status_changed"
   | "low_stock"
   | "payment"
-  | "delivery";
+  | "delivery"
+  | "fiado_vencido";
 
 export interface SSEEvent {
   type: SSEEventType;
@@ -69,6 +70,7 @@ export function useAdminSSE(): UseAdminSSEResult {
       "low_stock",
       "payment",
       "delivery",
+      "fiado_vencido",
     ];
 
     EVENTS.forEach((type) => {

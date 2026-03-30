@@ -125,6 +125,8 @@ const AIFloatingButton = dynamic(() => import("@/components/admin/AIFloatingButt
 // LeafletMap moved to SettingsModule
 const CierreDiarioModal = dynamic(() => import("@/components/cierre-diario/CierreDiarioModal"), { ssr: false });
 const MorningSummaryModal = dynamic(() => import("@/components/admin/MorningSummaryModal"), { ssr: false });
+const OnboardingWizard = dynamic(() => import("@/components/admin/OnboardingWizard"), { ssr: false });
+const LiveNotificationBell = dynamic(() => import("@/components/admin/LiveNotificationBell"), { ssr: false });
 
 // ── 8 módulos consolidados + pedidos + plan ──
 type Tab =
@@ -2141,6 +2143,7 @@ function AdminPage() {
   const [showModuleManager, setShowModuleManager] = useState(false);
   const [showCierreDiario, setShowCierreDiario] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // IDEA 7: Feria Mode — Modo especial para ferias y eventos
   const [feriaMode, setFeriaMode] = useState<{
@@ -2209,6 +2212,19 @@ function AdminPage() {
     try {
       const lastSeen = localStorage.getItem("changelog-last-seen");
       if (lastSeen !== "2.5") setChangelogHasNew(true);
+    } catch {}
+  }, []);
+
+  // ── Onboarding wizard: show on first visit ────────────────────────────────
+  useEffect(() => {
+    try {
+      const slug = localStorage.getItem("active-tenant-slug") ?? "main";
+      const key = `onboarding-completed-${slug}`;
+      if (!localStorage.getItem(key)) {
+        // Small delay so admin panel renders first
+        const t = setTimeout(() => setShowOnboarding(true), 1200);
+        return () => clearTimeout(t);
+      }
     } catch {}
   }, []);
   const [demoClearing, setDemoClearing] = useState<Tab | null>(null);
@@ -3281,6 +3297,9 @@ function AdminPage() {
           <div className="hidden sm:block">
             <NotificationBell />
           </div>
+          <div className="hidden sm:block">
+            <LiveNotificationBell />
+          </div>
           <AlertCenter
             pendingOrders={quickStats?.pendingOrders ?? 0}
             lowStock={quickStats?.lowStockProducts ?? 0}
@@ -4063,6 +4082,12 @@ function AdminPage() {
       })()}
       <SSEListener />
       <MorningSummaryModal />
+      {showOnboarding && (
+        <OnboardingWizard
+          tenantSlug={activeTenantSlug ?? "main"}
+          onClose={() => setShowOnboarding(false)}
+        />
+      )}
       <OnboardingTour
         isTourActive={onboarding.isTourActive}
         currentStep={onboarding.currentStep}

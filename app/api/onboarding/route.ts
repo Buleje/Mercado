@@ -4,6 +4,7 @@ import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sendWelcomeEmail } from "@/lib/mailer-onboarding";
+import { getTemplateCategories } from "@/lib/store-templates";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,8 @@ const OnboardingSchema = z.object({
   adminPassword: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   // Referido (opcional) — código de otra tienda que invitó a este registro
   referralCode:  z.string().min(1).max(30).trim().optional(),
+  // Plantilla de negocio (opcional) — pre-configura categorías
+  template:      z.enum(["bodega", "minimarket", "farmacia", "restaurante"]).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -54,7 +57,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { type, storeName, slug, ownerEmail, ownerPhone, plan, adminName, adminUsername, adminPassword, referralCode } = parsed.data;
+  const { type, storeName, slug, ownerEmail, ownerPhone, plan, adminName, adminUsername, adminPassword, referralCode, template } = parsed.data;
 
   // Reject reserved slugs
   if (RESERVED_SLUGS.has(slug)) {
@@ -156,6 +159,17 @@ export async function POST(req: NextRequest) {
         isPublished: false,
       },
     });
+  }
+
+  // ── Seed categorías desde plantilla (fire-and-forget) ───
+  if (template) {
+    const categories = getTemplateCategories(template);
+    if (categories.length > 0) {
+      prisma.settings.update({
+        where: { tenantId: tenant.id },
+        data: { productCategoriesJson: JSON.stringify(categories) },
+      }).catch(() => { /* no bloquear si la migración aún no se corrió */ });
+    }
   }
 
   // Fire-and-forget: canjear código de referido si viene uno

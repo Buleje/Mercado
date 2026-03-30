@@ -5,8 +5,9 @@ import Image from "next/image";
 import {
   Plus, Pencil, Trash2, Search, X, Package, CheckCircle, XCircle,
   ChevronUp, ChevronDown, RefreshCw, Eye, EyeOff, Save, AlertTriangle,
-  ImageOff, LayoutGrid, List, Filter, Download, Upload,
+  ImageOff, LayoutGrid, List, Filter, Download, Upload, Tag,
 } from "lucide-react";
+import TagBadge, { TAG_COLORS, type TagColor, type Tag as TagType } from "./TagBadge";
 import { cn } from "@/lib/utils";
 import { categories } from "@/data/products";
 import type { Product } from "@/types/erp";
@@ -15,6 +16,18 @@ import ExcelProductImporter from "./ExcelProductImporter";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+
+// Tags se manejan localmente como array; se serializan a JSON string en el campo badge
+// El campo badge sigue siendo el canal de persistencia (ya existe en el schema)
+// formato: si badge empieza con "[", se interpreta como JSON de tags;
+// si no, es el badge display legacy (string libre)
+function parseTags(badge?: string): TagType[] {
+  if (!badge) return [];
+  if (badge.startsWith("[")) {
+    try { return JSON.parse(badge) as TagType[]; } catch { return []; }
+  }
+  return [];
+}
 
 const DEFAULT_FORM: Omit<Product, "id"> = {
   name: "",
@@ -32,7 +45,6 @@ const DEFAULT_FORM: Omit<Product, "id"> = {
 
 const CATEGORY_OPTS = categories.filter((c) => c.id !== "todos");
 const UNIT_OPTS = ["kg", "unidad", "bolsa", "botella", "lata", "frasco", "caja", "paquete", "litro", "atado", "bandeja", "pack", "rollo", "barra", "bloque", "spray"];
-const BADGE_OPTS = ["", "Popular", "Oferta", "Nuevo", "Premium", "Fresco", "Temporada", "Peruano", "Ahorra más", "Amaz\u00f3nico", "Antibacterial", "Listo para cocinar"];
 
 // ── Notification Toast ───────────────────────────────────────────────────────
 
@@ -67,6 +79,36 @@ function ProductFormModal({
   const [nameChecking, setNameChecking] = useState(false);
   const nameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
+
+  // ── Tags state ──────────────────────────────────────────────────────────────
+  const [tags, setTags] = useState<TagType[]>(() => parseTags(initial.badge));
+  const [tagInput, setTagInput] = useState("");
+  const [tagColor, setTagColor] = useState<TagColor>("teal");
+  const [availableTags, setAvailableTags] = useState<TagType[]>([]);
+
+  useEffect(() => {
+    // Cargar tags disponibles para sugerir
+    fetch("/api/tags?entity=product")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: Array<{ name: string; color: TagColor }>) => setAvailableTags(data))
+      .catch(() => {});
+  }, []);
+
+  const addTag = (name: string, color: TagColor) => {
+    const trimmed = name.trim();
+    if (!trimmed || tags.some(t => t.name.toLowerCase() === trimmed.toLowerCase())) return;
+    const newTags = [...tags, { name: trimmed, color }];
+    setTags(newTags);
+    // Sincronizar al campo badge como JSON
+    set("badge", JSON.stringify(newTags));
+    setTagInput("");
+  };
+
+  const removeTag = (name: string) => {
+    const newTags = tags.filter(t => t.name !== name);
+    setTags(newTags);
+    set("badge", newTags.length > 0 ? JSON.stringify(newTags) : "");
+  };
 
   useEffect(() => {
     nameRef.current?.focus();
@@ -264,26 +306,90 @@ function ProductFormModal({
             />
           </div>
 
-          {/* Badge */}
+          {/* Tags personalizados */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Etiqueta</label>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {BADGE_OPTS.map((b) => (
-                <button
-                  key={b || "ninguna"}
-                  type="button"
-                  onClick={() => set("badge", b)}
-                  className={cn(
-                    "px-2.5 py-1 rounded-full text-xs font-semibold border transition-all",
-                    form.badge === b
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-gray-200 dark:border-card-border text-gray-500 hover:border-primary/50"
-                  )}
-                >
-                  {b || "Sin etiqueta"}
-                </button>
-              ))}
+            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider flex items-center gap-1.5">
+              <Tag className="h-3 w-3" />
+              Etiquetas
+            </label>
+            {/* Tags activos */}
+            {tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {tags.map(tag => (
+                  <TagBadge
+                    key={tag.name}
+                    tag={tag}
+                    onRemove={() => removeTag(tag.name)}
+                  />
+                ))}
+              </div>
+            )}
+            {/* Input nuevo tag */}
+            <div className="mt-2 flex gap-2 items-center">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(tagInput, tagColor); } }}
+                  placeholder="Agregar etiqueta…"
+                  maxLength={30}
+                  list="tag-suggestions"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+                {availableTags.length > 0 && (
+                  <datalist id="tag-suggestions">
+                    {availableTags
+                      .filter(t => !tags.some(at => at.name === t.name))
+                      .map(t => <option key={t.name} value={t.name} />)
+                    }
+                  </datalist>
+                )}
+              </div>
+              {/* Color picker */}
+              <div className="flex gap-1">
+                {(Object.keys(TAG_COLORS) as TagColor[]).map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setTagColor(c)}
+                    title={c}
+                    className={cn(
+                      "h-5 w-5 rounded-full border-2 transition-transform",
+                      TAG_COLORS[c].dot,
+                      tagColor === c ? "border-gray-700 dark:border-white scale-110" : "border-transparent",
+                    )}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => addTag(tagInput, tagColor)}
+                disabled={!tagInput.trim()}
+                className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-40 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
             </div>
+            {/* Tags sugeridos */}
+            {availableTags.filter(t => !tags.some(at => at.name === t.name)).length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {availableTags
+                  .filter(t => !tags.some(at => at.name === t.name))
+                  .slice(0, 8)
+                  .map(t => (
+                    <button
+                      key={t.name}
+                      type="button"
+                      onClick={() => addTag(t.name, t.color)}
+                      className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 hover:border-primary/50 hover:text-primary transition-colors"
+                    >
+                      + {t.name}
+                    </button>
+                  ))
+                }
+              </div>
+            )}
           </div>
 
           {/* Description */}
@@ -743,7 +849,7 @@ export default function ProductsAdminTab() {
       {/* Modals */}
       {modal !== null && (
         <ProductFormModal
-          initial={modal === "create" ? { ...DEFAULT_FORM } : { ...modal.product }}
+          initial={modal === "create" ? { ...DEFAULT_FORM } : { ...(modal.product as Omit<Product, "id"> & { id?: number }) }}
           onSave={handleSave}
           onClose={() => setModal(null)}
           saving={saving}
