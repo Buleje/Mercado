@@ -2234,6 +2234,42 @@ function AdminPage() {
   const [userName, setUserName] = useState("Admin");
   const [authReady, setAuthReady] = useState(false);
   const [savedRolePerms, setSavedRolePerms] = useState<Record<string, string[]> | null>(null);
+
+  // SuperAdmin impersonation + tenant name in header
+  const [isSuperAdminImpersonating, setIsSuperAdminImpersonating] = useState(false);
+  const [activeTenantName, setActiveTenantName] = useState<string | null>(null);
+  const [activeTenantSlug, setActiveTenantSlug] = useState<string | null>(null);
+  const [activeTenantType, setActiveTenantType] = useState<"tienda" | "proveedor" | "delivery">("tienda");
+
+  useEffect(() => {
+    // Detectar impersonación de SuperAdmin
+    const impersonateSlug = localStorage.getItem("superadmin-impersonate-tenant");
+    const tenantSlug = localStorage.getItem("active-tenant-slug");
+    const slug = impersonateSlug ?? tenantSlug;
+    if (impersonateSlug) setIsSuperAdminImpersonating(true);
+    if (slug && slug !== "main") {
+      setActiveTenantSlug(slug);
+      // Fetch del nombre de la tienda con el tenant activo
+      fetch("/api/settings", { headers: { "x-tenant-id": slug } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.businessName) setActiveTenantName(d.businessName);
+          // Detectar tipo de tenant por storeMode o flag
+          if (d?.storeType === "proveedor" || d?.mode === "proveedor") setActiveTenantType("proveedor");
+          else if (d?.storeType === "delivery" || d?.mode === "delivery") setActiveTenantType("delivery");
+          else setActiveTenantType("tienda");
+        })
+        .catch(() => {});
+    }
+  }, []);
+
+  const handleExitImpersonation = () => {
+    localStorage.removeItem("superadmin-impersonate-tenant");
+    localStorage.removeItem("active-tenant-slug");
+    setIsSuperAdminImpersonating(false);
+    window.location.href = "/superadmin";
+  };
+
   // Plan del tenant — loaded on mount (unused variable kept for future plan gating)
   useScrollLock(mobileNavOpen);
   const { resolved: theme, toggle: toggleTheme } = useTheme();
@@ -2668,6 +2704,24 @@ function AdminPage() {
 
   return (
     <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-background" data-admin-shell="true">
+      {/* SuperAdmin impersonation banner — fixed top-0, z-50 */}
+      {isSuperAdminImpersonating && (
+        <div className="fixed top-0 inset-x-0 z-50 bg-amber-500 text-white text-xs font-semibold flex items-center justify-center gap-3 h-10 px-4">
+          <Shield className="w-3.5 h-3.5 shrink-0" />
+          <span>Viendo como SuperAdmin —{" "}
+            <span className="font-bold">{activeTenantName ?? activeTenantSlug ?? "tienda"}</span>
+          </span>
+          <button
+            type="button"
+            onClick={handleExitImpersonation}
+            className="ml-3 flex items-center gap-1 bg-white/20 hover:bg-white/30 transition-colors rounded-md px-2.5 py-0.5 text-xs font-bold"
+          >
+            <LogOut className="w-3 h-3" />
+            Salir
+          </button>
+        </div>
+      )}
+
       {/* Mobile nav overlay */}
       {mobileNavOpen && (
         <div
@@ -3159,7 +3213,11 @@ function AdminPage() {
       {/* Content area */}
       <div className={cn("flex flex-col min-h-screen transition-[margin] duration-300", presentationMode ? "sm:ml-0" : focusMode ? "sm:ml-16" : "sm:ml-64")}>
       {/* Top bar */}
-      <header className={cn("bg-white dark:bg-card border-b border-gray-200 dark:border-card-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3 sticky top-0 z-40", presentationMode && "!hidden")}>
+      <header className={cn(
+        "bg-white dark:bg-card border-b border-gray-200 dark:border-card-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3 sticky z-40",
+        presentationMode && "!hidden",
+        isSuperAdminImpersonating ? "top-10" : "top-0"
+      )}>
         <div className="flex items-center gap-3">
           {/* Mobile hamburger */}
           <button
@@ -3175,8 +3233,25 @@ function AdminPage() {
           <div>
             {/* Mobile: show current tab name */}
             <h1 className="font-extrabold text-gray-900 dark:text-foreground text-base leading-tight sm:hidden truncate max-w-[40vw]">{currentTab.label}</h1>
-            <h1 className="font-extrabold text-gray-900 dark:text-foreground text-base leading-tight hidden sm:block">Panel de administración</h1>
-            <p className="text-xs text-gray-400 dark:text-muted hidden sm:block">Buleje</p>
+            {/* Desktop: mostrar nombre de tienda activa o título genérico */}
+            {activeTenantName ? (
+              <div className="hidden sm:flex items-center gap-2">
+                <h1 className="font-extrabold text-gray-900 dark:text-foreground text-lg leading-tight">{activeTenantName}</h1>
+                <span className={cn(
+                  "text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0",
+                  activeTenantType === "proveedor" && "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
+                  activeTenantType === "delivery" && "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
+                  activeTenantType === "tienda" && "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                )}>
+                  {activeTenantType === "proveedor" ? "Proveedor" : activeTenantType === "delivery" ? "Delivery" : "Tienda"}
+                </span>
+              </div>
+            ) : (
+              <h1 className="font-extrabold text-gray-900 dark:text-foreground text-base leading-tight hidden sm:block">Panel de administración</h1>
+            )}
+            <p className="text-xs text-gray-400 dark:text-muted hidden sm:block">
+              {activeTenantSlug ?? "Buleje"}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">

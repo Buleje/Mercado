@@ -15,6 +15,8 @@ export default function TenantAdminRedirect() {
     if (slug) {
       // Guardar el tenant activo para que el admin lo use
       localStorage.setItem("active-tenant-slug", slug);
+      // Marcar impersonación de SuperAdmin para mostrar banner en el panel
+      localStorage.setItem("superadmin-impersonate-tenant", slug);
       // Redirigir al admin normal
       window.location.href = "/admin";
     }

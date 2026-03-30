@@ -659,7 +659,7 @@ function TenantCard({
           className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-white transition-colors"
           style={{ background: "linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)" }}
         >
-          <ExternalLink className="w-3.5 h-3.5" /> Entrar como admin
+          <ExternalLink className="w-3.5 h-3.5" /> Ver panel admin
         </button>
       </div>
       <div className="flex gap-2">
@@ -894,7 +894,8 @@ export default function SuperAdminPage() {
     localStorage.setItem("superadmin-impersonate-tenant", slug);
     localStorage.setItem("active-tenant-slug", slug);
     setImpersonating(slug);
-    window.open(`/t/${slug}`, "_blank");
+    // Abrir directamente el panel admin del tenant (guarda slug y redirige a /admin)
+    window.open(`/t/${slug}/admin`, "_blank");
   };
 
   const clearImpersonation = () => {
