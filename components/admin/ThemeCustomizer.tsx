@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { RotateCcw, Check } from "lucide-react";
+import { RotateCcw, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -40,7 +40,6 @@ const PRESETS: Preset[] = [
 ];
 
 const DEFAULT_COLORS: ThemeColors = PRESETS[0].colors;
-const STORAGE_KEY = "bsm_theme_colors";
 
 const CSS_VAR_MAP: Record<keyof ThemeColors, string> = {
   primary:    "--color-primary",
@@ -51,14 +50,6 @@ const CSS_VAR_MAP: Record<keyof ThemeColors, string> = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function loadColors(): ThemeColors {
-  if (typeof window === "undefined") return DEFAULT_COLORS;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...DEFAULT_COLORS, ...(JSON.parse(raw) as Partial<ThemeColors>) } : DEFAULT_COLORS;
-  } catch { return DEFAULT_COLORS; }
-}
-
 function applyToDOM(colors: ThemeColors) {
   const root = document.documentElement;
   (Object.entries(colors) as [keyof ThemeColors, string][]).forEach(([key, val]) => {
@@ -66,11 +57,45 @@ function applyToDOM(colors: ThemeColors) {
   });
 }
 
-function hexToRgb(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgb(${r}, ${g}, ${b})`;
+// Carga colores desde la API /api/settings
+async function loadColorsFromDB(): Promise<ThemeColors> {
+  try {
+    const res = await fetch("/api/settings", { cache: "no-store" });
+    if (!res.ok) return DEFAULT_COLORS;
+    const data = await res.json() as {
+      storeTheme?: {
+        primaryColor?: string;
+        secondaryColor?: string;
+        backgroundColor?: string;
+        textColor?: string;
+      };
+    };
+    const t = data.storeTheme ?? {};
+    return {
+      primary:    t.primaryColor    ?? DEFAULT_COLORS.primary,
+      secondary:  t.secondaryColor  ?? DEFAULT_COLORS.secondary,
+      background: t.backgroundColor ?? DEFAULT_COLORS.background,
+      text:       t.textColor       ?? DEFAULT_COLORS.text,
+    };
+  } catch {
+    return DEFAULT_COLORS;
+  }
+}
+
+// Guarda colores en la DB via PUT /api/settings
+async function saveColorsToDB(colors: ThemeColors): Promise<void> {
+  await fetch("/api/settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      storeTheme: {
+        primaryColor:    colors.primary,
+        secondaryColor:  colors.secondary,
+        backgroundColor: colors.background,
+        textColor:       colors.text,
+      },
+    }),
+  });
 }
 
 // ── Color swatch ──────────────────────────────────────────────────────────────
@@ -132,7 +157,7 @@ function LivePreview({ colors }: { colors: ThemeColors }) {
         className="px-4 py-3 flex items-center justify-between"
         style={{ backgroundColor: colors.primary }}
       >
-        <span className="text-white text-sm font-semibold">Buleje</span>
+        <span className="text-white text-sm font-semibold">Mi Tienda</span>
         <div className="flex gap-2">
           <div className="w-2 h-2 rounded-full bg-white/40" />
           <div className="w-2 h-2 rounded-full bg-white/40" />
@@ -182,18 +207,23 @@ function LivePreview({ colors }: { colors: ThemeColors }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function ThemeCustomizer() {
-  const [colors, setColors]     = useState<ThemeColors>(DEFAULT_COLORS);
-  const [saved, setSaved]       = useState(false);
+  const [colors, setColors]           = useState<ThemeColors>(DEFAULT_COLORS);
+  const [saved, setSaved]             = useState(false);
+  const [saving, setSaving]           = useState(false);
+  const [loading, setLoading]         = useState(true);
   const [activePreset, setActivePreset] = useState<string | null>("bodega");
 
+  // Cargar colores desde DB al montar
   useEffect(() => {
-    const loaded = loadColors();
-    setColors(loaded);
-    applyToDOM(loaded);
-    const match = PRESETS.find(p =>
-      Object.entries(p.colors).every(([k, v]) => v === loaded[k as keyof ThemeColors])
-    );
-    setActivePreset(match?.id ?? null);
+    loadColorsFromDB().then(loaded => {
+      setColors(loaded);
+      applyToDOM(loaded);
+      const match = PRESETS.find(p =>
+        Object.entries(p.colors).every(([k, v]) => v === loaded[k as keyof ThemeColors])
+      );
+      setActivePreset(match?.id ?? null);
+      setLoading(false);
+    });
   }, []);
 
   const updateColor = useCallback((key: keyof ThemeColors, value: string) => {
@@ -211,10 +241,16 @@ export default function ThemeCustomizer() {
     setActivePreset(preset.id);
   };
 
-  const handleSave = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(colors));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  // Guarda en DB (aplica a todos los visitantes de la tienda)
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveColorsToDB(colors);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReset = () => {
@@ -230,13 +266,21 @@ export default function ThemeCustomizer() {
     { key: "text",       label: "Texto",             description: "Color del texto principal" },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Personalizacion de Colores</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Personalización de Colores</h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Cambia los colores de la tienda y ve el resultado en tiempo real
+          Los cambios se guardan en la base de datos y se aplican a todos los visitantes de tu tienda
         </p>
       </div>
 
@@ -303,22 +347,30 @@ export default function ThemeCustomizer() {
           <div className="flex gap-2">
             <button
               onClick={handleReset}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              disabled={saving}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-gray-400 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
               <RotateCcw className="w-4 h-4" />
               Restablecer
             </button>
             <button
               onClick={handleSave}
+              disabled={saving}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors",
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors disabled:opacity-70",
                 saved ? "bg-emerald-600" : "bg-[#0f766e] hover:bg-[#245a41]"
               )}
             >
-              {saved ? <Check className="w-4 h-4" /> : null}
-              {saved ? "Guardado" : "Guardar cambios"}
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : null}
+              {saving ? "Guardando..." : saved ? "Guardado en tienda" : "Guardar en tienda"}
             </button>
           </div>
+
+          {/* Aviso de persistencia */}
+          <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" />
+            Los colores guardados se aplican automáticamente a todos los visitantes de tu tienda
+          </p>
         </div>
 
         {/* Right: preview */}
@@ -326,7 +378,7 @@ export default function ThemeCustomizer() {
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Vista previa</p>
           <LivePreview colors={colors} />
           <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
-            Vista aproximada de como se vera la tienda
+            Vista aproximada de como se verá la tienda
           </p>
         </div>
       </div>

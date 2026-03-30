@@ -4,30 +4,31 @@ import { useSettings } from "@/contexts/settings-context";
 
 /**
  * ThemeInjector — inyecta CSS variables de colores del storeTheme en el DOM.
- * Debe ser Client Component para leer el contexto.
- * Se monta dentro de StoreProviders (que ya tiene SettingsProvider).
+ * Lee de settings-context (que a su vez lee de DB via /api/settings).
+ * Los cambios guardados en ThemeCustomizer se reflejan aquí para TODOS los visitantes.
  */
 export default function ThemeInjector() {
   const { storeTheme } = useSettings();
 
   if (!storeTheme) return null;
 
-  const { primaryColor, secondaryColor, accentColor } = storeTheme;
+  const { primaryColor, secondaryColor, accentColor, backgroundColor, textColor } = storeTheme;
 
   // Solo inyectar si hay al menos un color personalizado
-  if (!primaryColor && !secondaryColor && !accentColor) return null;
+  if (!primaryColor && !secondaryColor && !accentColor && !backgroundColor && !textColor) return null;
 
   const vars = [
-    primaryColor && `--color-primary: ${primaryColor};`,
-    primaryColor && `--brand-primary: ${primaryColor};`,
-    primaryColor && `--color-primary-dark: ${primaryColor};`,
-    secondaryColor && `--color-secondary: ${secondaryColor};`,
-    secondaryColor && `--brand-secondary: ${secondaryColor};`,
-    accentColor && `--color-accent: ${accentColor};`,
+    primaryColor    && `--color-primary: ${primaryColor};`,
+    primaryColor    && `--brand-primary: ${primaryColor};`,
+    primaryColor    && `--color-primary-dark: ${primaryColor};`,
+    secondaryColor  && `--color-secondary: ${secondaryColor};`,
+    secondaryColor  && `--brand-secondary: ${secondaryColor};`,
+    accentColor     && `--color-accent: ${accentColor};`,
+    backgroundColor && `--color-bg: ${backgroundColor};`,
+    textColor       && `--color-text: ${textColor};`,
   ].filter(Boolean).join("\n    ");
 
-  // Override ONLY backgrounds and borders with primary — NEVER text color
-  // Text stays white/dark for readability
+  // Override ONLY backgrounds and borders with primary — NEVER default text color
   const overrides = primaryColor ? `
     [class*="bg-[#2d6a4f]"] { background-color: ${primaryColor} !important; }
     [class*="border-[#2d6a4f]"] { border-color: ${primaryColor} !important; }
@@ -42,7 +43,11 @@ export default function ThemeInjector() {
     [class*="bg-[#f4a261]"] { background-color: ${secondaryColor} !important; }
   ` : "";
 
+  const bgOverride = backgroundColor ? `
+    body { background-color: ${backgroundColor}; }
+  ` : "";
+
   return (
-    <style>{`:root { ${vars} }${overrides}${secondaryOverrides}`}</style>
+    <style>{`:root { ${vars} }${overrides}${secondaryOverrides}${bgOverride}`}</style>
   );
 }

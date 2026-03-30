@@ -37,6 +37,8 @@ export type StoreTheme = {
   primaryColor?: string;
   secondaryColor?: string;
   accentColor?: string;
+  backgroundColor?: string;
+  textColor?: string;
   darkMode?: boolean;
   heroTitle?: string;
   heroSubtitle?: string;
