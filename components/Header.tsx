@@ -496,7 +496,7 @@ export default function Header() {
               onMouseEnter={cancelClose}
               onMouseLeave={closeDropdown}
               className={cn(
-                "absolute top-full left-0 mt-2 w-145 min-w-135 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden",
+                "absolute top-full left-0 mt-2 z-[60] w-145 min-w-135 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden",
                 inicioOpen ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
               )}
             >
@@ -582,7 +582,7 @@ export default function Header() {
               onMouseEnter={cancelClose}
               onMouseLeave={closeDropdown}
               className={cn(
-                "absolute top-full -left-32 mt-2 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden transition-all duration-200",
+                "absolute top-full -left-32 mt-2 z-[60] bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden transition-all duration-200",
                 "w-[640px]",
                 _megaOpen ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
               )}
@@ -1185,7 +1185,7 @@ export default function Header() {
 
         {/* Category quick-strip — only on /tienda pages */}
         {(pathname === "/tienda" || pathname?.startsWith("/tienda/")) && (
-        <div className="relative px-3 pb-2 pt-0 lg:border-t lg:border-white/10 lg:px-4">
+        <div className="relative z-[1] px-3 pb-2 pt-0 lg:border-t lg:border-white/10 lg:px-4">
           <button
             type="button"
             onClick={() => scrollCategoryStrip("left")}
