@@ -41,6 +41,22 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "mode must be 'whatsapp' or 'checkout'" }, { status: 400 });
     }
     const current = await SettingsDB.get(tenantId);
+
+    // Si SOLO viene storeTheme, guardar solo eso (no todo el objeto settings)
+    if (body.storeTheme && Object.keys(body).length === 1) {
+      try {
+        await prisma.settings.upsert({
+          where: { tenantId },
+          create: { tenantId, storeThemeJson: JSON.stringify(body.storeTheme) },
+          update: { storeThemeJson: JSON.stringify(body.storeTheme) },
+        });
+        return NextResponse.json({ ok: true });
+      } catch (e) {
+        logger.error("[settings] storeTheme save error", { err: (e as Error).message });
+        return NextResponse.json({ error: "Error guardando tema" }, { status: 500 });
+      }
+    }
+
     const updated: DbSettings = {
       ...current,
       ...(body.mode !== undefined && { mode: body.mode }),

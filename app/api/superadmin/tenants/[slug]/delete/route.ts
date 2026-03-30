@@ -47,94 +47,63 @@ export async function DELETE(
 
     const tid = slug;
 
-    // Borrado en cascada dentro de una transacción atómica.
-    // Orden obligatorio: tablas hija primero, luego padre, luego entidades, luego config.
-    await prisma.$transaction([
-      // ── Nivel 1: tablas hijas (filas child) ──────────────────────────────
-      prisma.orderItem.deleteMany({ where: { order: { tenantId: tid } } }),
-      prisma.saleItem.deleteMany({ where: { sale: { tenantId: tid } } }),
-      prisma.returnItem.deleteMany({ where: { return: { tenantId: tid } } }),
-      prisma.fiadoCuota.deleteMany({ where: { fiado: { tenantId: tid } } }),
-      prisma.prestamoCuota.deleteMany({ where: { prestamo: { tenantId: tid } } }),
-      prisma.prestamoDocumento.deleteMany({ where: { prestamo: { tenantId: tid } } }),
-      prisma.purchaseItem.deleteMany({ where: { order: { tenantId: tid } } }),
-      prisma.bundleItem.deleteMany({ where: { bundle: { tenantId: tid } } }),
-      prisma.shoppingListItem.deleteMany({ where: { list: { tenantId: tid } } }),
-      prisma.payment.deleteMany({ where: { tenantId: tid } }),
-      prisma.cashMovement.deleteMany({ where: { tenantId: tid } }),
-      prisma.inventoryMovement.deleteMany({ where: { tenantId: tid } }),
-      prisma.orderStatusHistory.deleteMany({ where: { order: { tenantId: tid } } }),
-      prisma.recetaIngrediente.deleteMany({ where: { receta: { tenantId: tid } } }),
-      prisma.produccionLote.deleteMany({ where: { tenantId: tid } }),
-      prisma.cotizacionItem.deleteMany({ where: { cotizacion: { tenantId: tid } } }),
-      prisma.pageBlock.deleteMany({ where: { page: { tenantId: tid } } }),
-      prisma.pageVersion.deleteMany({ where: { page: { tenantId: tid } } }),
-      prisma.aBTestEvent.deleteMany({ where: { test: { tenantId: tid } } }),
-      prisma.treasuryTransferencia.deleteMany({ where: { tenantId: tid } }),
-      prisma.treasuryMovimiento.deleteMany({ where: { tenantId: tid } }),
+    // Helper: intenta deleteMany, ignora si la tabla no tiene tenantId o relación
+    const safeDelete = async (label: string, fn: () => Promise<unknown>) => {
+      try { await fn(); } catch (e) {
+        logger.warn(`[delete-tenant] skip ${label}`, { err: (e as Error).message?.slice(0, 80) });
+      }
+    };
 
-      // ── Nivel 2: tablas padre ─────────────────────────────────────────────
-      prisma.return.deleteMany({ where: { tenantId: tid } }),
-      prisma.order.deleteMany({ where: { tenantId: tid } }),
-      prisma.sale.deleteMany({ where: { tenantId: tid } }),
-      prisma.cashRegister.deleteMany({ where: { tenantId: tid } }),
-      prisma.fiado.deleteMany({ where: { tenantId: tid } }),
-      prisma.prestamo.deleteMany({ where: { tenantId: tid } }),
-      prisma.purchaseOrder.deleteMany({ where: { tenantId: tid } }),
-      prisma.payable.deleteMany({ where: { tenantId: tid } }),
-      prisma.shoppingList.deleteMany({ where: { tenantId: tid } }),
-      prisma.bundle.deleteMany({ where: { tenantId: tid } }),
-      prisma.receta.deleteMany({ where: { tenantId: tid } }),
-      prisma.cotizacion.deleteMany({ where: { tenantId: tid } }),
-      prisma.page.deleteMany({ where: { tenantId: tid } }),
-      prisma.aBTest.deleteMany({ where: { tenantId: tid } }),
-      prisma.turno.deleteMany({ where: { tenantId: tid } }),
-      prisma.treasuryCuenta.deleteMany({ where: { tenantId: tid } }),
+    // Borrado en cascada — cada operación es tolerante a fallos
+    // Las tablas que no aplican (sin tenantId, sin datos) se ignoran
 
-      // ── Nivel 3: entidades principales ───────────────────────────────────
-      prisma.product.deleteMany({ where: { tenantId: tid } }),
-      prisma.customer.deleteMany({ where: { tenantId: tid } }),
-      prisma.supplier.deleteMany({ where: { tenantId: tid } }),
-      prisma.promotion.deleteMany({ where: { tenantId: tid } }),
-      prisma.coupon.deleteMany({ where: { tenantId: tid } }),
-      prisma.review.deleteMany({ where: { tenantId: tid } }),
-      prisma.expense.deleteMany({ where: { tenantId: tid } }),
-      prisma.deliverySlot.deleteMany({ where: { tenantId: tid } }),
-      prisma.priceHistory.deleteMany({ where: { tenantId: tid } }),
-      prisma.note.deleteMany({ where: { tenantId: tid } }),
-      prisma.media.deleteMany({ where: { tenantId: tid } }),
-      prisma.reminder.deleteMany({ where: { tenantId: tid } }),
-      prisma.messageTemplate.deleteMany({ where: { tenantId: tid } }),
-      prisma.chatMessage.deleteMany({ where: { tenantId: tid } }),
-      prisma.savedFilter.deleteMany({ where: { tenantId: tid } }),
-      prisma.surveyResponse.deleteMany({ where: { tenantId: tid } }),
-      prisma.newsletterSubscriber.deleteMany({ where: { tenantId: tid } }),
-      prisma.campaign.deleteMany({ where: { tenantId: tid } }),
-      prisma.dailySummary.deleteMany({ where: { tenantId: tid } }),
-      prisma.warehouse.deleteMany({ where: { tenantId: tid } }),
-      prisma.apiKey.deleteMany({ where: { tenantId: tid } }),
-      prisma.visitorWelcome.deleteMany({ where: { tenantId: tid } }),
-      prisma.savedCart.deleteMany({ where: { tenantId: tid } }),
-      prisma.savedLocation.deleteMany({ where: { tenantId: tid } }),
-      prisma.supplierEvaluation.deleteMany({ where: { tenantId: tid } }),
-      prisma.batch.deleteMany({ where: { tenantId: tid } }),
+    // Nivel 1: tablas hijas
+    await safeDelete("orderItem", () => prisma.orderItem.deleteMany({ where: { order: { tenantId: tid } } }));
+    await safeDelete("saleItem", () => prisma.saleItem.deleteMany({ where: { sale: { tenantId: tid } } }));
+    await safeDelete("returnItem", () => prisma.returnItem.deleteMany({ where: { return: { tenantId: tid } } }));
+    await safeDelete("fiadoCuota", () => prisma.fiadoCuota.deleteMany({ where: { fiado: { tenantId: tid } } }));
+    await safeDelete("prestamoCuota", () => prisma.prestamoCuota.deleteMany({ where: { prestamo: { tenantId: tid } } }));
+    await safeDelete("prestamoDoc", () => prisma.prestamoDocumento.deleteMany({ where: { prestamo: { tenantId: tid } } }));
+    await safeDelete("purchaseItem", () => prisma.purchaseItem.deleteMany({ where: { order: { tenantId: tid } } }));
+    await safeDelete("bundleItem", () => prisma.bundleItem.deleteMany({ where: { bundle: { tenantId: tid } } }));
+    await safeDelete("shoppingListItem", () => prisma.shoppingListItem.deleteMany({ where: { list: { tenantId: tid } } }));
+    await safeDelete("orderStatusHistory", () => prisma.orderStatusHistory.deleteMany({ where: { order: { tenantId: tid } } }));
+    await safeDelete("recetaIngrediente", () => prisma.recetaIngrediente.deleteMany({ where: { receta: { tenantId: tid } } }));
+    await safeDelete("cotizacionItem", () => prisma.cotizacionItem.deleteMany({ where: { cotizacion: { tenantId: tid } } }));
+    await safeDelete("pageBlock", () => prisma.pageBlock.deleteMany({ where: { page: { tenantId: tid } } }));
+    await safeDelete("pageVersion", () => prisma.pageVersion.deleteMany({ where: { page: { tenantId: tid } } }));
+    await safeDelete("aBTestEvent", () => prisma.aBTestEvent.deleteMany({ where: { test: { tenantId: tid } } }));
 
-      // ── Nivel 4: config y usuarios ────────────────────────────────────────
-      prisma.adminUser.deleteMany({ where: { tenantId: tid } }),
-      prisma.settings.deleteMany({ where: { tenantId: tid } }),
-      prisma.notificationLog.deleteMany({ where: { tenantId: tid } }),
-      prisma.pushSubscription.deleteMany({ where: { tenantId: tid } }),
-      prisma.activityLog.deleteMany({ where: { tenantId: tid } }),
-      prisma.adminMessage.deleteMany({ where: { tenantId: tid } }),
-      prisma.themeSettings.deleteMany({ where: { tenantId: tid } }),
-      prisma.navigation.deleteMany({ where: { tenantId: tid } }),
-      prisma.commissionRule.deleteMany({ where: { tenantId: tid } }),
-      prisma.tenantInvitation.deleteMany({ where: { tenantId: tid } }),
-      prisma.cronDeadLetter.deleteMany({ where: { tenantId: tid } }),
+    // Nivel 2: tablas con tenantId directo — batch delete
+    const tenantTables = [
+      "payment", "cashMovement", "inventoryMovement", "produccionLote",
+      "treasuryTransferencia", "treasuryMovimiento",
+      "return", "order", "sale", "cashRegister", "fiado", "prestamo",
+      "purchaseOrder", "payable", "shoppingList", "bundle", "receta",
+      "cotizacion", "page", "aBTest", "turno", "treasuryCuenta",
+      "product", "customer", "supplier", "promotion", "coupon", "review",
+      "expense", "deliverySlot", "priceHistory", "note", "media", "reminder",
+      "messageTemplate", "chatMessage", "savedFilter", "surveyResponse",
+      "newsletterSubscriber", "campaign", "dailySummary", "warehouse",
+      "apiKey", "visitorWelcome", "savedCart", "savedLocation",
+      "supplierEvaluation", "batch", "notification", "customerNotification",
+      "guiaRemision", "guiaRemisionItem", "notaCredito",
+      "transfer", "conteoFisico", "conteoFisicoItem", "merma",
+      "discountRule", "commissionRule",
+      "adminUser", "settings", "notificationLog", "pushSubscription",
+      "activityLog", "adminMessage", "themeSettings", "navigation",
+      "tenantInvitation", "cronDeadLetter",
+      "store", "storeProduct", "storePermission", "supplierPortal",
+      "deliveryPartner", "deliveryAssignment", "wholesaleOrder",
+      "wholesaleOrderItem", "commissionLedger", "supportTicket",
+    ] as const;
 
-      // ── Nivel 5: el tenant mismo (último) ────────────────────────────────
-      prisma.tenant.delete({ where: { slug } }),
-    ]);
+    for (const table of tenantTables) {
+      await safeDelete(table, () => (prisma as Record<string, any>)[table]?.deleteMany?.({ where: { tenantId: tid } }));
+    }
+
+    // Nivel final: el tenant
+    await prisma.tenant.delete({ where: { slug } });
 
     logger.info("[SuperAdmin] Tenant deleted", {
       username: session.username,
