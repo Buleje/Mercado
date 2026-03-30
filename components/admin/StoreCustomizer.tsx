@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import StorefrontEditor from "./StorefrontEditor";
 import type { SectionKey } from "./StorefrontEditor";
+import ImageUpload from "./ImageUpload";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -372,6 +373,7 @@ export default function StoreCustomizer() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(true);
+  const [previewKey, setPreviewKey] = useState(0);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
@@ -455,6 +457,8 @@ export default function StoreCustomizer() {
       setSaved(true);
       setSavedTheme(theme);
       setToastMsg("Cambios guardados correctamente");
+      // Recargar iframe de vista previa
+      setPreviewKey((k) => k + 1);
       setTimeout(() => setSaved(false), 3000);
       setTimeout(() => setToastMsg(null), 3000);
     } catch {
@@ -583,46 +587,15 @@ export default function StoreCustomizer() {
               <div className="space-y-5">
                 {/* Logo */}
                 <FieldRow label="Logo">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="h-16 w-16 rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border flex items-center justify-center bg-gray-50 dark:bg-surface cursor-pointer hover:border-teal-500 transition-colors shrink-0 overflow-hidden"
-                      onClick={() => logoInputRef.current?.click()}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === "Enter" && logoInputRef.current?.click()}
-                    >
-                      {theme.logo ? (
-                        <img src={theme.logo} alt="Logo" className="h-full w-full object-cover" />
-                      ) : (
-                        <ImageIcon className="h-6 w-6 text-muted" />
-                      )}
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <button
-                        type="button"
-                        onClick={() => logoInputRef.current?.click()}
-                        className="w-full px-3 py-2 rounded-xl bg-gray-100 dark:bg-surface text-xs font-semibold text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-accent transition-colors min-h-[44px]"
-                      >
-                        Subir logo
-                      </button>
-                      {theme.logo && (
-                        <button
-                          type="button"
-                          onClick={() => update("logo", "")}
-                          className="w-full px-3 py-1.5 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                        >
-                          Quitar logo
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      ref={logoInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageUpload(e, "logo")}
-                    />
-                  </div>
+                  <ImageUpload
+                    value={theme.logo}
+                    onChange={(url) => update("logo", url)}
+                    onClear={() => update("logo", "")}
+                    folder="branding"
+                    label=""
+                    aspectRatio="square"
+                    hint="Se muestra en el navbar y favicon de la tienda"
+                  />
                 </FieldRow>
 
                 {/* Nombre */}
@@ -792,42 +765,14 @@ export default function StoreCustomizer() {
 
                 {/* Imagen de fondo */}
                 <FieldRow label="Imagen de fondo del hero">
-                  <div
-                    className="relative h-28 rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface flex items-center justify-center cursor-pointer hover:border-teal-500 transition-colors overflow-hidden"
-                    onClick={() => heroImageInputRef.current?.click()}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => e.key === "Enter" && heroImageInputRef.current?.click()}
-                  >
-                    {theme.heroImage ? (
-                      <>
-                        <img src={theme.heroImage} alt="Hero" className="absolute inset-0 w-full h-full object-cover" />
-                        <div className="relative z-10 bg-black/50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg backdrop-blur-sm">
-                          Cambiar imagen
-                        </div>
-                      </>
-                    ) : (
-                      <div className="flex flex-col items-center gap-2 text-muted">
-                        <ImageIcon className="h-8 w-8" />
-                        <span className="text-xs font-semibold">Subir imagen de fondo</span>
-                      </div>
-                    )}
-                  </div>
-                  {theme.heroImage && (
-                    <button
-                      type="button"
-                      onClick={() => update("heroImage", "")}
-                      className="text-xs text-red-500 hover:underline mt-1"
-                    >
-                      Quitar imagen
-                    </button>
-                  )}
-                  <input
-                    ref={heroImageInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleImageUpload(e, "heroImage")}
+                  <ImageUpload
+                    value={theme.heroImage}
+                    onChange={(url) => update("heroImage", url)}
+                    onClear={() => update("heroImage", "")}
+                    folder="hero"
+                    label=""
+                    aspectRatio="banner"
+                    hint="Imagen de fondo del banner principal. Se recomienda 1200x400px."
                   />
                 </FieldRow>
               </div>
@@ -972,35 +917,15 @@ export default function StoreCustomizer() {
 
                 {/* Favicon */}
                 <FieldRow label="Favicon">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="h-10 w-10 rounded-lg border border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface flex items-center justify-center cursor-pointer hover:border-teal-500 transition-colors shrink-0 overflow-hidden"
-                      onClick={() => faviconInputRef.current?.click()}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === "Enter" && faviconInputRef.current?.click()}
-                    >
-                      {theme.favicon ? (
-                        <img src={theme.favicon} alt="Favicon" className="h-full w-full object-cover" />
-                      ) : (
-                        <ImageIcon className="h-4 w-4 text-muted" />
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => faviconInputRef.current?.click()}
-                      className="flex-1 px-3 py-2 rounded-xl bg-gray-100 dark:bg-surface text-xs font-semibold text-muted hover:text-foreground hover:bg-gray-200 dark:hover:bg-accent transition-colors min-h-[44px]"
-                    >
-                      {theme.favicon ? "Cambiar favicon" : "Subir favicon (32x32)"}
-                    </button>
-                    <input
-                      ref={faviconInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => handleImageUpload(e, "favicon")}
-                    />
-                  </div>
+                  <ImageUpload
+                    value={theme.favicon}
+                    onChange={(url) => update("favicon", url)}
+                    onClear={() => update("favicon", "")}
+                    folder="branding"
+                    label=""
+                    aspectRatio="square"
+                    hint="Icono de la pestaña del navegador. Se recomienda 32x32px o 180x180px."
+                  />
                 </FieldRow>
 
                 {/* Reset a valores por defecto */}
@@ -1077,7 +1002,7 @@ export default function StoreCustomizer() {
           </div>
         </div>
 
-        {/* ── Panel derecho: Preview ────────────────────────────────────── */}
+        {/* ── Panel derecho: Preview en vivo con iframe ──────────────── */}
         <div
           className={cn(
             "flex-1 min-h-0 relative",
@@ -1087,15 +1012,34 @@ export default function StoreCustomizer() {
           <div className="flex items-center justify-between mb-3 shrink-0">
             <p className="text-xs font-bold text-muted uppercase tracking-wider">Vista previa en vivo</p>
             <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] text-muted font-semibold">Se actualiza en tiempo real</span>
+              <button
+                type="button"
+                onClick={() => setPreviewKey((k) => k + 1)}
+                className="text-[10px] text-primary font-semibold hover:underline"
+              >
+                Recargar
+              </button>
+              <a
+                href="/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] text-muted hover:text-foreground"
+              >
+                Abrir en nueva pestaña
+              </a>
             </div>
           </div>
-          <div className="flex-1 relative overflow-hidden rounded-2xl">
-            <StorePreview theme={theme} />
+          <div className="flex-1 relative overflow-hidden rounded-2xl border border-gray-200 dark:border-card-border bg-white">
+            <iframe
+              key={previewKey}
+              src="/"
+              title="Vista previa de la tienda"
+              className="w-full h-full border-0"
+              style={{ minHeight: 500 }}
+            />
           </div>
           <p className="text-[10px] text-muted text-center mt-2 shrink-0">
-            Esta es una vista simplificada. Los colores y fuentes se aplican al guardar.
+            Guarda los cambios para verlos reflejados aquí. Click &quot;Recargar&quot; para actualizar.
           </p>
         </div>
       </div>
