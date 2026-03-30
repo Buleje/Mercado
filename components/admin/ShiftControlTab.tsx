@@ -460,7 +460,7 @@ export default function ShiftControlTab({ onNavigateToArqueo }: { onNavigateToAr
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setPrintingShift(null)}>
           <div id="shift-receipt" className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-xs space-y-3" onClick={e => e.stopPropagation()}>
             <div className="text-center border-b border-dashed border-gray-300 dark:border-card-border pb-3">
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Bodega San Martín</p>
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Buleje</p>
               <p className="font-extrabold text-gray-900 dark:text-foreground mt-1">Recibo de Turno</p>
               <p className="text-xs text-gray-500 dark:text-muted">{fmtDatetime(new Date().toISOString())}</p>
             </div>

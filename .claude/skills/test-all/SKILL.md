@@ -6,18 +6,18 @@ user-invocable: true
 allowed-tools: Bash, Read, Grep
 ---
 
-# Test All — Bodega San Martin
+# Test All — Buleje
 
-Ejecutar la suite completa de verificacion para el proyecto Bodega San Martin.
+Ejecutar la suite completa de verificacion para el proyecto Buleje.
 
 ## Pasos
 
-Todos los comandos se ejecutan desde el directorio `bodega-san-martin/`.
+Todos los comandos se ejecutan desde el directorio `buleje/`.
 
 ### 1. Lint
 
 ```bash
-cd bodega-san-martin && npm run lint
+cd buleje && npm run lint
 ```
 
 Registrar resultado: cantidad de errores y warnings.
@@ -25,7 +25,7 @@ Registrar resultado: cantidad de errores y warnings.
 ### 2. Build
 
 ```bash
-cd bodega-san-martin && npm run build
+cd buleje && npm run build
 ```
 
 Registrar resultado: si compilo exitosamente o fallo, y los errores relevantes.
@@ -33,7 +33,7 @@ Registrar resultado: si compilo exitosamente o fallo, y los errores relevantes.
 ### 3. Unit tests
 
 ```bash
-cd bodega-san-martin && npm run test
+cd buleje && npm run test
 ```
 
 Registrar resultado: cantidad de tests passed, failed, skipped.
@@ -41,7 +41,7 @@ Registrar resultado: cantidad de tests passed, failed, skipped.
 ### 4. E2E tests (si estan disponibles)
 
 ```bash
-cd bodega-san-martin && npm run test:e2e
+cd buleje && npm run test:e2e
 ```
 
 Si el comando no existe o no hay tests e2e configurados, marcar como "Omitido" en el reporte.

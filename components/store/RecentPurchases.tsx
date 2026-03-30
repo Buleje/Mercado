@@ -139,9 +139,9 @@ export default function RecentPurchases() {
       )}
     >
       {/* icono bolsa */}
-      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#2d6a4f]/10">
+      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#0f766e]/10">
         <svg
-          className="h-4 w-4 text-[#2d6a4f]"
+          className="h-4 w-4 text-[#0f766e]"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

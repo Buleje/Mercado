@@ -2,7 +2,7 @@
 applyTo: "**/whatsapp*,**/webhook*,**/reniec*"
 ---
 
-# WhatsApp & Webhooks — Bodega San Martín
+# WhatsApp & Webhooks — Buleje
 
 ## Endpoints relevantes
 

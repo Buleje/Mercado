@@ -145,7 +145,7 @@ export default function CommissionCalculator() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-[#2d6a4f]" />
+          <DollarSign className="w-5 h-5 text-[#0f766e]" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Calculadora de Comisiones
           </h2>
@@ -165,7 +165,7 @@ export default function CommissionCalculator() {
             className={cn(
               "p-1.5 rounded-lg border transition-colors",
               showSettings
-                ? "border-[#2d6a4f] bg-[#2d6a4f]/10 text-[#2d6a4f]"
+                ? "border-[#0f766e] bg-[#0f766e]/10 text-[#0f766e]"
                 : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750"
             )}
           >
@@ -199,7 +199,7 @@ export default function CommissionCalculator() {
                 step={0.5}
                 value={defaultRate}
                 onChange={(e) => setDefaultRate(Number(e.target.value))}
-                className="w-20 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-center text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]"
+                className="w-20 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-center text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
               />
               <span className="text-sm text-gray-500">%</span>
             </div>
@@ -228,7 +228,7 @@ export default function CommissionCalculator() {
                           [s.cashierId]: Number(e.target.value),
                         }))
                       }
-                      className="w-20 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-center text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]"
+                      className="w-20 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-center text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
                     />
                     <span className="text-sm text-gray-500">%</span>
                   </div>
@@ -260,7 +260,7 @@ export default function CommissionCalculator() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
             <div className="flex items-center gap-2 mb-1">
-              <Users className="w-4 h-4 text-[#2d6a4f]" />
+              <Users className="w-4 h-4 text-[#0f766e]" />
               <p className="text-xs text-gray-500 dark:text-gray-400">Cajeros activos</p>
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -269,15 +269,15 @@ export default function CommissionCalculator() {
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ventas totales</p>
-            <p className="text-2xl font-bold text-[#2d6a4f] dark:text-[#52b788]">
+            <p className="text-2xl font-bold text-[#0f766e] dark:text-[#14b8a6]">
               {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}
             </p>
           </div>
-          <div className="rounded-xl border border-[#f4a261] dark:border-[#f4a261]/40 bg-[#f4a261]/5 dark:bg-[#f4a261]/5 p-4">
+          <div className="rounded-xl border border-[#f97316] dark:border-[#f97316]/40 bg-[#f97316]/5 dark:bg-[#f97316]/5 p-4">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
               Total a pagar en comisiones
             </p>
-            <p className="text-2xl font-bold text-[#f4a261]">{fmt(totalCommissions)}</p>
+            <p className="text-2xl font-bold text-[#f97316]">{fmt(totalCommissions)}</p>
           </div>
         </div>
       )}
@@ -291,7 +291,7 @@ export default function CommissionCalculator() {
             </p>
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 text-xs text-[#2d6a4f] dark:text-[#52b788] hover:underline"
+              className="flex items-center gap-1.5 text-xs text-[#0f766e] dark:text-[#14b8a6] hover:underline"
             >
               <Download className="w-3.5 h-3.5" />
               Exportar CSV
@@ -335,7 +335,7 @@ export default function CommissionCalculator() {
                   <td className="px-4 py-2.5 text-right text-gray-500 dark:text-gray-400">
                     {s.rate}%
                   </td>
-                  <td className="px-4 py-2.5 text-right font-semibold text-[#f4a261]">
+                  <td className="px-4 py-2.5 text-right font-semibold text-[#f97316]">
                     {fmt(s.commission)}
                   </td>
                 </tr>
@@ -349,7 +349,7 @@ export default function CommissionCalculator() {
                   {summaries.reduce((s, c) => s + c.saleCount, 0)}
                 </td>
                 <td className="px-4 py-2.5" />
-                <td className="px-4 py-2.5 text-right text-[#f4a261] text-base">
+                <td className="px-4 py-2.5 text-right text-[#f97316] text-base">
                   {fmt(totalCommissions)}
                 </td>
               </tr>

@@ -18,6 +18,8 @@
  *   del(key): void
  */
 
+import { logger } from "@/lib/logger";
+
 export interface CacheStore {
   get<T>(key: string): T | null;
   set<T>(key: string, value: T, ttlSec: number): void;
@@ -97,7 +99,7 @@ class RedisStore implements CacheStore {
         console.error("[cache/redis] connection error:", err.message);
       });
     } catch {
-      console.warn("[cache/redis] ioredis not installed — falling back to MemoryStore");
+      logger.warn("[cache/redis] ioredis not installed — falling back to MemoryStore");
       this.client = null;
     }
   }

@@ -39,8 +39,8 @@ export function LoyaltyBanner({
     <div
       className={cn(
         "relative overflow-hidden rounded-2xl p-4",
-        "bg-gradient-to-r from-[#2d6a4f] via-[#3a8a65] to-[#2d6a4f]",
-        "dark:from-[#1a3d2e] dark:via-[#2d6a4f] dark:to-[#1a3d2e]",
+        "bg-gradient-to-r from-[#0f766e] via-[#3a8a65] to-[#0f766e]",
+        "dark:from-[#1a3d2e] dark:via-[#0f766e] dark:to-[#1a3d2e]",
         "text-white shadow-lg",
         className
       )}
@@ -53,7 +53,7 @@ export function LoyaltyBanner({
         className="pointer-events-none absolute inset-0 opacity-10"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 80% 50%, #f4a261 0%, transparent 60%)",
+            "radial-gradient(circle at 80% 50%, #f97316 0%, transparent 60%)",
         }}
       />
 
@@ -71,7 +71,7 @@ export function LoyaltyBanner({
                 ? "Tienes un premio disponible"
                 : `Te faltan ${remaining} puntos para ${rewardValue} de descuento`}
             </p>
-            <span className="flex-shrink-0 rounded-full bg-[#f4a261] px-2 py-0.5 text-xs font-bold text-white">
+            <span className="flex-shrink-0 rounded-full bg-[#f97316] px-2 py-0.5 text-xs font-bold text-white">
               {points} pts
             </span>
           </div>
@@ -99,7 +99,7 @@ export function LoyaltyBanner({
               className={cn(
                 "h-full rounded-full",
                 completed
-                  ? "bg-[#f4a261]"
+                  ? "bg-[#f97316]"
                   : "bg-white"
               )}
               style={{ width: "0%" }}

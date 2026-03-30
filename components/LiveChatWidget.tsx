@@ -106,7 +106,7 @@ export default function LiveChatWidget() {
           <div className="px-4 py-3 bg-green-600 text-white rounded-t-2xl flex items-center gap-2">
             <MessageCircle className="w-5 h-5" />
             <div>
-              <p className="font-semibold text-sm">Chat con Bodega San Martín</p>
+              <p className="font-semibold text-sm">Chat con Buleje</p>
               <p className="text-xs opacity-80">Responderemos pronto</p>
             </div>
           </div>

@@ -46,6 +46,19 @@ vi.mock("@/lib/analytics", () => ({
   trackAddToCart: vi.fn(),
 }));
 
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
+    forward: vi.fn(),
+  }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 const mockProduct: Product = {
   id: 1,
   name: "Test Product",
@@ -91,7 +104,8 @@ describe("ProductCard", () => {
     const outOfStockProduct = { ...mockProduct, stock: 0 };
     render(<ProductCard product={outOfStockProduct} />);
 
-    expect(screen.getByText("Agotado")).toBeInTheDocument();
+    const badges = screen.getAllByText("Agotado");
+    expect(badges.length).toBeGreaterThanOrEqual(1);
   });
 
   it("should show low stock badge when stock is low", () => {

@@ -83,7 +83,7 @@ export default function ReciboPage() {
     hour: "2-digit",
     minute: "2-digit",
   });
-  const biz = settings.businessName || "Bodega San Martín";
+  const biz = settings.businessName || "Buleje";
 
   return (
     <div className="min-h-screen bg-gray-100 print:bg-white">

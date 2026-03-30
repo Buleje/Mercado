@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { ChefHat, CheckCircle2, Circle, ShoppingCart, ChevronDown, ChevronUp } from "lucide-react";
+import { ChefHat, CheckCircle2, Circle, ShoppingCart, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -125,9 +126,9 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
       className={cn(
         "rounded-2xl border bg-white dark:bg-gray-900 overflow-hidden shadow-sm transition-all",
         matchPct === 100
-          ? "border-[#2d6a4f]"
+          ? "border-[#0f766e]"
           : matchPct >= 50
-            ? "border-[#f4a261]"
+            ? "border-[#f97316]"
             : "border-gray-200 dark:border-gray-700"
       )}
     >
@@ -138,7 +139,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <ChefHat className="w-4 h-4 text-[#f4a261] flex-shrink-0" />
+              <ChefHat className="w-4 h-4 text-[#f97316] flex-shrink-0" />
               <h3 className="font-bold text-gray-900 dark:text-white text-sm">
                 {recipe.name}
               </h3>
@@ -152,9 +153,9 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
               className={cn(
                 "text-xs font-bold px-2 py-1 rounded-full",
                 matchPct === 100
-                  ? "bg-[#2d6a4f]/10 text-[#2d6a4f] dark:text-[#52b788]"
+                  ? "bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6]"
                   : matchPct >= 50
-                    ? "bg-[#f4a261]/10 text-[#f4a261]"
+                    ? "bg-[#f97316]/10 text-[#f97316]"
                     : "bg-gray-100 dark:bg-gray-800 text-gray-500"
               )}
             >
@@ -172,7 +173,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
           <div
             className={cn(
               "h-full rounded-full transition-all",
-              matchPct === 100 ? "bg-[#2d6a4f]" : matchPct >= 50 ? "bg-[#f4a261]" : "bg-gray-300"
+              matchPct === 100 ? "bg-[#0f766e]" : matchPct >= 50 ? "bg-[#f97316]" : "bg-gray-300"
             )}
             style={{ width: `${matchPct}%` }}
           />
@@ -188,7 +189,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
                 <div key={ing} className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     {present ? (
-                      <CheckCircle2 className="w-4 h-4 text-[#2d6a4f] flex-shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-[#0f766e] flex-shrink-0" />
                     ) : (
                       <Circle className="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" />
                     )}
@@ -206,7 +207,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
                   {!present && onAddIngredient && (
                     <button
                       onClick={() => onAddIngredient(ing)}
-                      className="text-xs text-[#2d6a4f] dark:text-[#52b788] font-semibold hover:underline"
+                      className="text-xs text-[#0f766e] dark:text-[#14b8a6] font-semibold hover:underline"
                     >
                       + Agregar
                     </button>
@@ -218,7 +219,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
           {missing.length > 0 && onAddIngredient && (
             <button
               onClick={() => missing.forEach((ing) => onAddIngredient(ing))}
-              className="mt-4 w-full py-2.5 rounded-xl bg-[#2d6a4f] text-white text-sm font-semibold flex items-center justify-center gap-2"
+              className="mt-4 w-full py-2.5 rounded-xl bg-[#0f766e] text-white text-sm font-semibold flex items-center justify-center gap-2"
             >
               <ShoppingCart className="w-4 h-4" />
               Agregar {missing.length} ingrediente{missing.length !== 1 ? "s" : ""} faltante{missing.length !== 1 ? "s" : ""}
@@ -246,7 +247,7 @@ export default function RecipeSuggestions({ cartItems, onAddIngredient }: Props)
   return (
     <div className="bg-gray-50 dark:bg-gray-950 rounded-2xl p-4">
       <div className="flex items-center gap-2 mb-4">
-        <ChefHat className="w-5 h-5 text-[#f4a261]" />
+        <ChefHat className="w-5 h-5 text-[#f97316]" />
         <h2 className="text-base font-bold text-gray-900 dark:text-white">
           Recetas sugeridas
         </h2>
@@ -273,6 +274,14 @@ export default function RecipeSuggestions({ cartItems, onAddIngredient }: Props)
           ))}
         </div>
       )}
+
+      {/* Link al recetario completo */}
+      <Link
+        href="/recetas"
+        className="mt-4 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#0f766e]/8 hover:bg-[#0f766e]/15 text-[#0f766e] dark:text-[#14b8a6] text-sm font-bold transition-colors"
+      >
+        Ver todas las recetas <ArrowRight className="h-4 w-4" />
+      </Link>
     </div>
   );
 }

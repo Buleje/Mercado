@@ -2,7 +2,7 @@
 applyTo: "components/admin/**,app/admin/**"
 ---
 
-# ERP Admin Panel — Bodega San Martín
+# ERP Admin Panel — Buleje
 
 ## Estructura del panel (107 módulos)
 

@@ -2,7 +2,7 @@
 applyTo: "**/prisma/**,**/*.db.ts,**/db/**"
 ---
 
-# Database Migrations — Bodega San Martín
+# Database Migrations — Buleje
 
 ## Regla #1: DIRECT_URL para migraciones
 
@@ -18,7 +18,7 @@ DIRECT_URL="postgresql://user:pass@db.supabase.co:5432/postgres"
 ## Flujo seguro de migración
 
 ```bash
-cd bodega-san-martin
+cd buleje
 
 # 1. SIEMPRE validar el schema antes de migrar
 npx prisma validate

@@ -225,7 +225,7 @@ export default function PriceTagGenerator() {
     if (!win) return;
 
     win.document.write(`<!DOCTYPE html><html><head>
-      <title>Etiquetas de precio - Bodega San Martin</title>
+      <title>Etiquetas de precio - Buleje</title>
       <style>
         @media print {
           @page { margin: 10mm; }
@@ -248,7 +248,7 @@ export default function PriceTagGenerator() {
         <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
           <div className="border-b border-gray-100 px-5 py-3 dark:border-gray-700">
             <div className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-[#2d6a4f]" />
+              <Tag className="h-4 w-4 text-[#0f766e]" />
               <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                 Seleccionar productos
               </h3>
@@ -264,7 +264,7 @@ export default function PriceTagGenerator() {
                 placeholder="Buscar producto..."
                 className={cn(
                   "w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm",
-                  "text-gray-800 placeholder-gray-400 outline-none focus:border-[#2d6a4f] focus:ring-2 focus:ring-[#2d6a4f]/20",
+                  "text-gray-800 placeholder-gray-400 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
                   "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 )}
               />
@@ -286,7 +286,7 @@ export default function PriceTagGenerator() {
                     className={cn(
                       "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition",
                       isSelected
-                        ? "bg-[#2d6a4f]/10 text-[#2d6a4f] dark:bg-[#2d6a4f]/20 dark:text-green-300"
+                        ? "bg-[#0f766e]/10 text-[#0f766e] dark:bg-[#0f766e]/20 dark:text-green-300"
                         : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
                     )}
                   >
@@ -317,8 +317,8 @@ export default function PriceTagGenerator() {
                 className={cn(
                   "flex-1 rounded-lg border py-2 text-xs font-medium transition",
                   format === f
-                    ? "border-[#2d6a4f] bg-[#2d6a4f] text-white"
-                    : "border-gray-200 text-gray-600 hover:border-[#2d6a4f]/40 dark:border-gray-600 dark:text-gray-300"
+                    ? "border-[#0f766e] bg-[#0f766e] text-white"
+                    : "border-gray-200 text-gray-600 hover:border-[#0f766e]/40 dark:border-gray-600 dark:text-gray-300"
                 )}
               >
                 {FORMAT_CONFIG[f].label}
@@ -368,7 +368,7 @@ export default function PriceTagGenerator() {
                         onClick={() =>
                           setShowSaleInputFor(showSaleInputFor === p.id ? null : p.id)
                         }
-                        className="flex items-center gap-1 rounded-md border border-[#f4a261]/50 px-2 py-0.5 text-xs text-[#f4a261] hover:bg-[#f4a261]/10"
+                        className="flex items-center gap-1 rounded-md border border-[#f97316]/50 px-2 py-0.5 text-xs text-[#f97316] hover:bg-[#f97316]/10"
                       >
                         Oferta
                         <ChevronDown className="h-3 w-3" />
@@ -432,7 +432,7 @@ export default function PriceTagGenerator() {
 
             <button
               onClick={handlePrint}
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#2d6a4f] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#0f766e] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
             >
               <Printer className="h-4 w-4" />
               Imprimir {totalLabels} etiqueta{totalLabels !== 1 ? "s" : ""}

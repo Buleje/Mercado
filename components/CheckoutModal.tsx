@@ -832,7 +832,7 @@ export default function CheckoutModal() {
                   </div>
                   <div>
                     <h2 className="font-extrabold text-white text-xl leading-tight">Completar pedido</h2>
-                    <p className="text-sm text-white/70">Bodega San Martín · {items.length} {items.length === 1 ? "producto" : "productos"}</p>
+                    <p className="text-sm text-white/70">Buleje · {items.length} {items.length === 1 ? "producto" : "productos"}</p>
                   </div>
                 </div>
                 <button onClick={closeCheckout} aria-label="Cerrar checkout" className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
@@ -1291,11 +1291,28 @@ export default function CheckoutModal() {
                                       )}
                                     </div>
                                     
+                                    {/* Mejora 12: Mensaje personalizado mejorado */}
                                     <div>
-                                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Notas adicionales</label>
-                                      <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4}
-                                        placeholder="Instrucciones especiales, hora preferida…"
+                                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Mensaje especial (opcional)</label>
+                                      <textarea value={notes} onChange={(e) => { if (e.target.value.length <= 200) setNotes(e.target.value); }} rows={3}
+                                        placeholder="Ej: Feliz cumpleaños María, Dejar en portería, etc."
                                         className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm resize-none" />
+                                      <div className="flex items-center justify-between mt-1.5">
+                                        <div className="flex gap-1.5">
+                                          {[
+                                            { emoji: "🎂", text: "Feliz cumpleaños! " },
+                                            { emoji: "🎁", text: "Es un regalo, envolver por favor. " },
+                                            { emoji: "📦", text: "Dejar en portería. " },
+                                          ].map(q => (
+                                            <button key={q.emoji} type="button"
+                                              onClick={() => { const next = (notes + q.text).slice(0, 200); setNotes(next); }}
+                                              className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-surface text-xs font-medium hover:bg-[#f97316]/20 transition-colors">
+                                              {q.emoji} {q.text.trim().split(" ")[0]}
+                                            </button>
+                                          ))}
+                                        </div>
+                                        <span className={`text-[10px] font-semibold ${notes.length > 180 ? "text-amber-500" : "text-gray-300"}`}>{notes.length}/200</span>
+                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -1304,13 +1321,29 @@ export default function CheckoutModal() {
                           </>
                         )}
 
-                        {/* Notas adicionales si hay dirección guardada */}
+                        {/* Mejora 12: Notas mejoradas si hay dirección guardada */}
                         {((foundCustomer !== null || (customer !== null && !skippedAccount)) && !editingCustomerData) && (
                           <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Notas adicionales</label>
-                            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-                              placeholder="Instrucciones especiales, hora preferida…"
+                            <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Mensaje especial (opcional)</label>
+                            <textarea value={notes} onChange={(e) => { if (e.target.value.length <= 200) setNotes(e.target.value); }} rows={2}
+                              placeholder="Ej: Feliz cumpleaños María, Dejar en portería, etc."
                               className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm resize-none" />
+                            <div className="flex items-center justify-between mt-1.5">
+                              <div className="flex gap-1.5">
+                                {[
+                                  { emoji: "🎂", text: "Feliz cumpleaños! " },
+                                  { emoji: "🎁", text: "Es un regalo. " },
+                                  { emoji: "📦", text: "Dejar en portería. " },
+                                ].map(q => (
+                                  <button key={q.emoji} type="button"
+                                    onClick={() => { const next = (notes + q.text).slice(0, 200); setNotes(next); }}
+                                    className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-surface text-xs font-medium hover:bg-[#f97316]/20 transition-colors">
+                                    {q.emoji} {q.text.trim().split(" ")[0]}
+                                  </button>
+                                ))}
+                              </div>
+                              <span className={`text-[10px] font-semibold ${notes.length > 180 ? "text-amber-500" : "text-gray-300"}`}>{notes.length}/200</span>
+                            </div>
                           </div>
                         )}
 
@@ -1354,23 +1387,48 @@ export default function CheckoutModal() {
                               </button>
                             </div>
                           ) : (
-                            <>                              
-                              {/* Default: Lo antes posible + custom date side by side */}
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="flex items-center gap-2 px-3 py-3 rounded-xl border-2 border-primary bg-primary/5">
-                                  <span className="text-xl shrink-0">⚡</span>
-                                  <div className="min-w-0">
-                                    <p className="text-xs font-bold text-primary leading-tight">Lo antes posible</p>
-                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight">Enviamos de inmediato</p>
-                                  </div>
-                                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0 ml-auto" />
-                                </div>
-                                <button type="button" onClick={() => setUseCustomDateTime(true)}
-                                  className="flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl border-2 border-dashed border-primary/30 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">
-                                  <Clock className="h-4 w-4" />
-                                  ¿Fecha específica?
-                                </button>
+                            <>
+                              {/* Mejora 11: Delivery time slot selector */}
+                              <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-2">¿Cuándo quieres recibir tu pedido?</p>
+                              <div className="flex flex-wrap gap-2">
+                                {(() => {
+                                  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
+                                  const h = now.getHours();
+                                  const todaySlots = [
+                                    { id: "lo-antes-posible", label: "Lo antes posible", emoji: "⚡", disabled: false },
+                                    { id: "hoy-14-16", label: "Hoy 2-4pm", emoji: "🕑", disabled: h >= 15 },
+                                    { id: "hoy-16-18", label: "Hoy 4-6pm", emoji: "🕓", disabled: h >= 17 },
+                                    { id: "hoy-18-20", label: "Hoy 6-8pm", emoji: "🕕", disabled: h >= 19 },
+                                  ];
+                                  const tomorrowSlots = [
+                                    { id: "manana-8-10", label: "Mañana 8-10am", emoji: "🌅", disabled: false },
+                                    { id: "manana-10-12", label: "Mañana 10-12pm", emoji: "☀️", disabled: false },
+                                    { id: "manana-14-16", label: "Mañana 2-4pm", emoji: "🕑", disabled: false },
+                                  ];
+                                  return [...todaySlots, ...tomorrowSlots].map(slot => (
+                                    <button
+                                      key={slot.id}
+                                      type="button"
+                                      disabled={slot.disabled}
+                                      onClick={() => setDeliverySlot(slot.id)}
+                                      className={`px-3 py-2 rounded-full text-xs font-bold transition-all ${
+                                        deliverySlot === slot.id
+                                          ? "bg-[#0f766e] text-white shadow-md scale-105"
+                                          : slot.disabled
+                                            ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed"
+                                            : "bg-gray-100 dark:bg-surface text-gray-700 dark:text-gray-300 hover:bg-primary/10 hover:text-primary"
+                                      }`}
+                                    >
+                                      {slot.emoji} {slot.label}
+                                    </button>
+                                  ));
+                                })()}
                               </div>
+                              <button type="button" onClick={() => setUseCustomDateTime(true)}
+                                className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border-2 border-dashed border-primary/30 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">
+                                <Clock className="h-3.5 w-3.5" />
+                                ¿Otra fecha y hora específica?
+                              </button>
                             </>
                           )}
                         </div>
@@ -1406,17 +1464,46 @@ export default function CheckoutModal() {
                           {/* ─── Columna izquierda: detalle del pedido ─── */}
                           <div className="space-y-4 pr-0 sm:pr-6 pb-5 sm:pb-0">
 
-                            {/* Items list — redesigned */}
-                            <div>
-                              <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                <ShoppingCart className="h-4 w-4" />
-                                Tu pedido ({items.length} {items.length === 1 ? "producto" : "productos"})
-                              </p>
+                            {/* Mejora 12: Direccion de entrega resaltada */}
+                            {(location || effectiveCustomer?.location) ? (
+                              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg p-3">
+                                <div className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                                  <span className="text-sm font-medium text-blue-800 dark:text-blue-300">Entregaremos en:</span>
+                                </div>
+                                <p className="text-sm mt-1 text-gray-700 dark:text-foreground">{location || effectiveCustomer?.location}</p>
+                                {(reference || effectiveCustomer?.reference) && (
+                                  <p className="text-xs text-gray-500 mt-0.5">{reference || effectiveCustomer?.reference}</p>
+                                )}
+                                <button type="button" onClick={() => setStep("datos")} className="text-xs text-blue-600 dark:text-blue-400 mt-1 hover:underline font-medium">
+                                  Cambiar direccion →
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg p-3">
+                                <button type="button" onClick={() => setStep("datos")} className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 font-medium">
+                                  <MapPin className="h-4 w-4" /> Agrega tu direccion de entrega
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Mejora 19: Items list — collapsible review */}
+                            <details className="group">
+                              <summary className="flex items-center justify-between cursor-pointer list-none text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 py-2 px-3 rounded-xl bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-surface/80 transition-colors">
+                                <span className="flex items-center gap-2">
+                                  <ShoppingCart className="h-4 w-4" />
+                                  Revisar pedido ({items.length} {items.length === 1 ? "producto" : "productos"})
+                                </span>
+                                <span className="flex items-center gap-2">
+                                  <span className="text-sm font-extrabold text-gray-900 dark:text-foreground">S/{finalTotal.toFixed(2)}</span>
+                                  <svg className="h-4 w-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                </span>
+                              </summary>
                               <div className="rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden bg-white dark:bg-card shadow-sm">
                                 <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 dark:divide-card-border">
                                   {items.map((item) => (
                                     <div key={item.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                                      <div className="relative h-14 w-14 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface shrink-0 ring-1 ring-gray-100 dark:ring-card-border">
+                                      <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-surface shrink-0 ring-1 ring-gray-100 dark:ring-card-border">
                                         {item.image ? (
                                           /* eslint-disable-next-line @next/next/no-img-element */
                                           <img
@@ -1426,27 +1513,41 @@ export default function CheckoutModal() {
                                             onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                                           />
                                         ) : (
-                                          <div className="h-full w-full flex items-center justify-center text-gray-300 text-lg">📦</div>
+                                          <div className="h-full w-full flex items-center justify-center text-gray-300 text-sm">📦</div>
                                         )}
                                       </div>
                                       <div className="flex-1 min-w-0">
                                         <p className="text-sm font-bold text-gray-800 dark:text-foreground truncate leading-tight">{item.name}</p>
-                                        <div className="flex items-center gap-2 mt-1">
+                                        <div className="flex items-center gap-2 mt-0.5">
                                           <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-md bg-primary/10 text-primary text-xs font-bold">
-                                            ×{item.quantity}
+                                            x{item.quantity}
                                           </span>
                                           <span className="text-xs text-gray-400">{item.unit}</span>
+                                          <span className="text-xs text-gray-400">S/{item.price.toFixed(2)} c/u</span>
                                           {item.note && <span className="text-[10px] text-amber-500 truncate">📝 {item.note}</span>}
                                         </div>
                                       </div>
-                                      <p className="text-base font-extrabold text-gray-900 dark:text-foreground shrink-0 tabular-nums">
+                                      <p className="text-sm font-extrabold text-gray-900 dark:text-foreground shrink-0 tabular-nums">
                                         S/{(item.price * item.quantity).toFixed(2)}
                                       </p>
                                     </div>
                                   ))}
                                 </div>
+                                {/* Summary breakdown */}
+                                <div className="px-4 py-2.5 border-t border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 space-y-1">
+                                  <div className="flex justify-between text-xs text-gray-500">
+                                    <span>Subtotal</span>
+                                    <span>S/{items.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2)}</span>
+                                  </div>
+                                  {discount > 0 && (
+                                    <div className="flex justify-between text-xs text-emerald-600 font-bold">
+                                      <span>Descuento</span>
+                                      <span>-S/{discount.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
+                            </details>
 
                             {/* Cupón */}
                             <div>
@@ -1468,7 +1569,7 @@ export default function CheckoutModal() {
                             {/* K2 — WhatsApp summary */}
                             <a
                               href={`https://wa.me/?text=${encodeURIComponent(
-                                `📋 Mi pedido en Bodega San Martín:\n${items.map(i => `• ${i.name} ×${i.quantity} — S/${(i.price * i.quantity).toFixed(2)}`).join("\n")}\n\n💰 Total: S/${finalTotal.toFixed(2)}${discount > 0 ? ` (desc: -S/${discount.toFixed(2)})` : ""}`
+                                `📋 Mi pedido en Buleje:\n${items.map(i => `• ${i.name} ×${i.quantity} — S/${(i.price * i.quantity).toFixed(2)}`).join("\n")}\n\n💰 Total: S/${finalTotal.toFixed(2)}${discount > 0 ? ` (desc: -S/${discount.toFixed(2)})` : ""}`
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
@@ -1480,6 +1581,23 @@ export default function CheckoutModal() {
 
                           {/* ─── Columna derecha: pago y resumen ─── */}
                           <div className="space-y-4 pl-0 sm:pl-6 pt-5 sm:pt-0">
+
+                            {/* Mejora 14: Delivery time estimate */}
+                            {(() => {
+                              const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
+                              const h = now.getHours();
+                              const isOpen = h >= 8 && h < 21;
+                              const eta = isOpen ? "~30 minutos" : "Manana de 8:00 a 10:00 am";
+                              return (
+                                <div className="rounded-2xl border border-[#0f766e]/20 bg-[#0f766e]/5 dark:bg-[#0f766e]/10 p-3.5 flex items-center gap-3">
+                                  <span className="text-2xl">🚚</span>
+                                  <div>
+                                    <p className="text-xs font-bold text-[#0f766e] dark:text-emerald-400 uppercase tracking-wider">Entrega estimada</p>
+                                    <p className="text-sm font-bold text-gray-800 dark:text-foreground">{eta}</p>
+                                  </div>
+                                </div>
+                              );
+                            })()}
 
                             {/* R1: Tip */}
                             <div className="rounded-2xl border border-gray-100 dark:border-card-border p-3.5 bg-gray-50/50 dark:bg-surface/30">
@@ -1708,8 +1826,25 @@ export default function CheckoutModal() {
                   {/* ── Step: Éxito ──────────────────────── */}
                   {step === "exito" && (
                     <m.div key="exito" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ type: "spring", damping: 20, stiffness: 250 }}>
-                      <div className="px-5 py-10 flex flex-col items-center text-center space-y-5 relative">
-                        {/* Animated pulsing ring behind icon */}
+                      <div className="px-5 py-8 flex flex-col items-center text-center space-y-5 relative overflow-hidden">
+                        {/* Confetti CSS dots */}
+                        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                          {Array.from({ length: 12 }).map((_, i) => (
+                            <m.div
+                              key={i}
+                              initial={{ opacity: 0, y: -20, x: `${10 + (i * 7) % 80}%` }}
+                              animate={{ opacity: [0, 1, 0], y: ["-20%", "110%"], rotate: [0, 360 * (i % 2 === 0 ? 1 : -1)] }}
+                              transition={{ duration: 2.5 + (i % 3) * 0.5, delay: 0.2 + i * 0.15, ease: "easeOut" }}
+                              className="absolute w-2 h-2 rounded-sm"
+                              style={{
+                                left: `${10 + (i * 7) % 80}%`,
+                                backgroundColor: ["#0f766e", "#f97316", "#e63946", "#457b9d", "#ffd60a", "#9b5de5"][i % 6],
+                              }}
+                            />
+                          ))}
+                        </div>
+
+                        {/* Animated checkmark with SVG */}
                         <div className="relative">
                           <m.div
                             animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0, 0.3] }}
@@ -1717,34 +1852,85 @@ export default function CheckoutModal() {
                             className="absolute inset-0 rounded-full bg-emerald-300/30"
                           />
                           <m.div
-                            animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0, 0.4] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-                            className="absolute inset-0 rounded-full bg-emerald-400/20"
-                          />
-                          <m.div
                             initial={{ scale: 0, rotate: -180 }}
                             animate={{ scale: 1, rotate: 0 }}
                             transition={{ type: "spring", damping: 10, stiffness: 180, delay: 0.1 }}
                             className="relative h-24 w-24 rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-xl shadow-emerald-300/40"
                           >
-                            <CheckCircle2 className="h-12 w-12 text-white drop-shadow-md" />
+                            <svg viewBox="0 0 52 52" className="h-12 w-12">
+                              <m.path
+                                fill="none"
+                                stroke="white"
+                                strokeWidth={4}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M14 27l7.8 7.8L38 17"
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: 1 }}
+                                transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
+                              />
+                            </svg>
                           </m.div>
                         </div>
+
                         <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                          <h3 className="text-2xl font-extrabold text-gray-900 dark:text-foreground">¡Pedido enviado! 🎉</h3>
-                          <p className="text-sm text-gray-500 mt-1.5">Tu pedido está siendo preparado con cariño</p>
+                          <h3 className="text-2xl font-extrabold text-gray-900 dark:text-foreground">Pedido confirmado!</h3>
+                          <p className="text-sm text-gray-500 mt-1.5">Tu pedido esta siendo preparado con mucho cariño</p>
                         </m.div>
+
+                        {/* Order number - prominent */}
                         {orderId && (
                           <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-                            className="bg-linear-to-r from-primary/5 to-emerald-50 dark:from-primary/10 dark:to-emerald-900/20 rounded-2xl px-6 py-4 border border-primary/20">
-                            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Número de pedido</p>
-                            <p className="text-lg font-extrabold text-primary font-mono mt-1">{orderId}</p>
+                            className="bg-linear-to-r from-primary/5 to-emerald-50 dark:from-primary/10 dark:to-emerald-900/20 rounded-2xl px-6 py-4 border border-primary/20 w-full max-w-xs">
+                            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Numero de pedido</p>
+                            <p className="text-2xl font-extrabold text-primary font-mono mt-1">#{orderId}</p>
                           </m.div>
                         )}
-                        <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
-                          className="text-xs text-gray-400 flex items-center gap-2">
-                          <Loader2 className="h-3 w-3 animate-spin" /> Redirigiendo al seguimiento…
-                        </m.p>
+
+                        {/* Timeline estimado */}
+                        <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
+                          className="w-full max-w-sm">
+                          <div className="flex items-center justify-between text-[10px] font-bold text-gray-500 relative">
+                            <div className="absolute top-3 left-[14%] right-[14%] h-0.5 bg-gray-200 dark:bg-gray-700" />
+                            <m.div
+                              className="absolute top-3 left-[14%] h-0.5 bg-emerald-500"
+                              initial={{ width: 0 }}
+                              animate={{ width: "20%" }}
+                              transition={{ duration: 1, delay: 0.8, ease: "easeOut" }}
+                            />
+                            {[
+                              { icon: "📋", label: "Confirmado", active: true },
+                              { icon: "🍽", label: "Preparando", sub: "~10 min", active: false },
+                              { icon: "🚗", label: "En camino", sub: "~20 min", active: false },
+                              { icon: "✅", label: "Entregado", active: false },
+                            ].map((s, i) => (
+                              <div key={i} className="flex flex-col items-center gap-1 relative z-10">
+                                <span className={`text-lg ${s.active ? "" : "opacity-40"}`}>{s.icon}</span>
+                                <span className={s.active ? "text-emerald-600 font-extrabold" : "text-gray-400"}>{s.label}</span>
+                                {s.sub && <span className="text-[9px] text-gray-400">{s.sub}</span>}
+                              </div>
+                            ))}
+                          </div>
+                        </m.div>
+
+                        {/* Action buttons */}
+                        <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
+                          className="flex flex-col sm:flex-row gap-2 w-full max-w-sm pt-2">
+                          {orderId && (
+                            <a
+                              href={`/tracking?id=${orderId}`}
+                              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+                            >
+                              <MapPin className="h-4 w-4" /> Seguir mi pedido
+                            </a>
+                          )}
+                          <button
+                            onClick={closeCheckout}
+                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-surface hover:bg-gray-200 transition-colors"
+                          >
+                            <ShoppingCart className="h-4 w-4" /> Seguir comprando
+                          </button>
+                        </m.div>
                       </div>
                     </m.div>
                   )}

@@ -239,7 +239,7 @@ export default function OfflineSalesQueue() {
           disabled={isSyncing || !isOnline || pendingCount === 0}
           className={cn(
             "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition",
-            "bg-[#2d6a4f] hover:bg-[#245a40] disabled:opacity-40"
+            "bg-[#0f766e] hover:bg-[#245a40] disabled:opacity-40"
           )}
         >
           <RefreshCw className={cn("h-4 w-4", isSyncing && "animate-spin")} />

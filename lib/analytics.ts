@@ -1,5 +1,5 @@
 /**
- * Type-safe analytics tracking for Bodega San Martín
+ * Type-safe analytics tracking for Buleje
  * 
  * Integrates with:
  * - Google Analytics 4 (via gtag)
@@ -89,7 +89,9 @@ export function trackEvent(
   params?: EventParams
 ): void {
   if (!isAnalyticsLoaded()) {
-    console.log("[Analytics] Event would be tracked:", eventName, params);
+    if (process.env.NODE_ENV === "development") {
+      console.log("[Analytics] Event would be tracked:", eventName, params);
+    }
     return;
   }
 

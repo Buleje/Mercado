@@ -2,7 +2,7 @@
 applyTo: "**/*.tsx,**/*.css,**/tailwind*"
 ---
 
-# UI/UX Design — Bodega San Martín
+# UI/UX Design — Buleje
 
 ## Tokens de marca
 

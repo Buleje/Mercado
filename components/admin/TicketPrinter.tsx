@@ -116,7 +116,7 @@ export default function TicketPrinter({ data, className, variant = "button" }: T
   <div class="line"></div>
   <div class="center" style="font-size:10px; margin-top:4px">
     Gracias por su compra
-    <br>Bodega San Martin - Pucallpa
+    <br>Buleje - Pucallpa
   </div>
   <script>window.onload=function(){window.print();setTimeout(function(){window.close()},500)}</script>
 </body>

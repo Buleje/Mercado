@@ -44,7 +44,7 @@ describe("useToast", () => {
     expect(storeResult.current.toasts[0]).toMatchObject({
       type: "error",
       message: "Error message",
-      duration: 7000,
+      duration: 4000,
     });
   });
 

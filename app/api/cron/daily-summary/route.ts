@@ -103,12 +103,41 @@ export async function GET(req: NextRequest) {
           : null;
       }
 
+      // Mejora 18: Texto formateado para WhatsApp
+      const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
+      const fechaTexto = now.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
+
+      const whatsappText = [
+        `📊 *Resumen del día — ${fechaTexto}*`,
+        ``,
+        `💰 Ventas: S/ ${totalVentas.toFixed(2)} (${totalPedidos} transacciones)`,
+        `🧾 Ticket promedio: S/ ${ticketPromedio.toFixed(2)}`,
+        `📦 Stock bajo: ${productosStockBajo.length} productos`,
+        diferenciaCaja !== null ? `💵 Diferencia caja: S/ ${diferenciaCaja.toFixed(2)}` : null,
+        ``,
+        top5Productos.length > 0 ? `🏆 *Top productos:*` : null,
+        ...top5Productos.slice(0, 3).map((p, i) => `  ${i + 1}. ${p.nombre} (${p.cantidad} uds)`),
+        ``,
+        productosStockBajo.length > 0 ? `⚠ *Alertas stock:*` : null,
+        ...productosStockBajo.slice(0, 3).map(p => `  - ${p.name}: ${p.stock} uds (mín: ${p.stockMin ?? 5})`),
+        ``,
+        `─────`,
+        `Buleje 🏪`,
+      ].filter((line): line is string => line !== null).join("\n");
+
+      // Build WhatsApp URL for the owner
+      const businessPhone = process.env.BUSINESS_PHONE || "";
+      const waUrl = businessPhone
+        ? `https://wa.me/${businessPhone.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappText)}`
+        : null;
+
       const summary = {
         ok: true,
         fecha: now.toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" }),
         generadoA: now.toISOString(),
         totalVentas,
         totalPedidos,
+        ticketPromedio,
         stockBajo: {
           cantidad: productosStockBajo.length,
           productos: productosStockBajo.slice(0, 10).map((p) => ({
@@ -122,6 +151,8 @@ export async function GET(req: NextRequest) {
           abierta: openCash !== null,
           diferencia: diferenciaCaja,
         },
+        whatsappText,
+        whatsappUrl: waUrl,
       };
 
       logger.info("[cron/daily-summary] Resumen diario generado", {

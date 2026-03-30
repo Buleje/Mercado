@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sendWelcomeEmail } from "@/lib/mailer-onboarding";
 
+export const dynamic = "force-dynamic";
+
 // ─── Validation ──────────────────────────────────────────
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 const RESERVED_SLUGS = new Set([
@@ -15,6 +17,8 @@ const RESERVED_SLUGS = new Set([
 ]);
 
 const OnboardingSchema = z.object({
+  // Account type
+  type:          z.enum(["store", "supplier", "delivery"]).default("store"),
   // Store
   storeName:     z.string().min(2).max(80),
   slug:          z.string().regex(SLUG_RE, "El subdominio solo acepta letras minúsculas, números y guiones (ej: bodega-lima)"),
@@ -26,6 +30,8 @@ const OnboardingSchema = z.object({
   adminName:     z.string().min(2).max(64),
   adminUsername: z.string().min(3).max(32).regex(/^[a-z0-9_.]+$/i, "Solo letras, números, punto o guión bajo"),
   adminPassword: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  // Referido (opcional) — código de otra tienda que invitó a este registro
+  referralCode:  z.string().min(1).max(30).trim().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -48,7 +54,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { storeName, slug, ownerEmail, ownerPhone, plan, adminName, adminUsername, adminPassword } = parsed.data;
+  const { type, storeName, slug, ownerEmail, ownerPhone, plan, adminName, adminUsername, adminPassword, referralCode } = parsed.data;
 
   // Reject reserved slugs
   if (RESERVED_SLUGS.has(slug)) {
@@ -70,10 +76,10 @@ export async function POST(req: NextRequest) {
   // 14-day trial for all plans
   const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
-  // Create tenant + admin user + default settings atomically
+  // Create tenant atomically (con type según el actor)
   const [tenant] = await prisma.$transaction([
     prisma.tenant.create({
-      data: { slug, name: storeName, plan, active: true, ownerEmail, ownerPhone, trialEndsAt },
+      data: { slug, name: storeName, plan, type, active: true, ownerEmail, ownerPhone, trialEndsAt },
     }),
   ]);
 
@@ -101,6 +107,62 @@ export async function POST(req: NextRequest) {
     }),
   ]);
 
+  // ── Seed por tipo de actor ──────────────────────────────
+  if (type === "supplier") {
+    // Crear Supplier + SupplierPortal + Store (draft)
+    const supplier = await prisma.supplier.create({
+      data: {
+        id: slug,
+        name: storeName,
+        email: ownerEmail,
+        phone: ownerPhone ?? null,
+        tenantId: slug,
+      },
+    });
+    await prisma.$transaction([
+      prisma.supplierPortal.create({
+        data: {
+          supplierId: supplier.id,
+          isActive: true,
+          autoPublish: true,
+        },
+      }),
+      prisma.store.create({
+        data: {
+          tenantId: tenant.id,
+          slug,
+          name: storeName,
+          isPublished: false,
+        },
+      }),
+    ]);
+  } else if (type === "delivery") {
+    // Crear DeliveryPartner con datos básicos del owner
+    await prisma.deliveryPartner.create({
+      data: {
+        name: adminName,
+        phone: ownerPhone ?? "",
+        email: ownerEmail,
+        zone: "",
+      },
+    });
+  } else {
+    // type === "store" (default) — Crear Store (draft)
+    await prisma.store.create({
+      data: {
+        tenantId: tenant.id,
+        slug,
+        name: storeName,
+        isPublished: false,
+      },
+    });
+  }
+
+  // Fire-and-forget: canjear código de referido si viene uno
+  if (referralCode) {
+    redeemReferralSafe(referralCode, slug);
+  }
+
   // Send welcome email (fire-and-forget, doesn't block response)
   sendWelcomeEmailSafe({
     storeName, slug, ownerEmail, adminName, adminUsername, plan, trialEndsAt,
@@ -108,14 +170,27 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(
     {
-      message: "Tienda creada exitosamente",
+      message: "Cuenta creada exitosamente",
       tenantSlug: tenant.slug,
       storeName: tenant.name,
       plan: tenant.plan,
+      type: tenant.type,
       trialEndsAt: tenant.trialEndsAt,
     },
     { status: 201 }
   );
+}
+
+// Fire-and-forget: canjear código de referido entre tiendas
+async function redeemReferralSafe(referralCode: string, newTenantSlug: string) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    await fetch(`${baseUrl}/api/referrals/stores/redeem`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ referralCode, newTenantSlug }),
+    });
+  } catch { /* no bloquear el onboarding si falla el referido */ }
 }
 
 // Fire-and-forget welcome email (after response)

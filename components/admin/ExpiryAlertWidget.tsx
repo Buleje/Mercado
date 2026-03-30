@@ -43,12 +43,12 @@ const LEVEL_STYLES: Record<ExpiryLevel, { badge: string; row: string; label: str
     label: "Vence pronto",
   },
   warning: {
-    badge: "bg-[#f4a261]/10 text-[#f4a261]",
-    row: "bg-[#f4a261]/5 border-[#f4a261]/20",
+    badge: "bg-[#f97316]/10 text-[#f97316]",
+    row: "bg-[#f97316]/5 border-[#f97316]/20",
     label: "Esta semana",
   },
   soon: {
-    badge: "bg-[#2d6a4f]/10 text-[#2d6a4f] dark:text-[#52b788]",
+    badge: "bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6]",
     row: "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800",
     label: "Proximas 2 semanas",
   },
@@ -169,12 +169,12 @@ export default function ExpiryAlertWidget() {
               </span>
             )}
             {counts.warning > 0 && (
-              <span className="px-2.5 py-1 rounded-full bg-[#f4a261]/10 text-[#f4a261] text-xs font-bold">
+              <span className="px-2.5 py-1 rounded-full bg-[#f97316]/10 text-[#f97316] text-xs font-bold">
                 {counts.warning} esta semana
               </span>
             )}
             {counts.soon > 0 && (
-              <span className="px-2.5 py-1 rounded-full bg-[#2d6a4f]/10 text-[#2d6a4f] dark:text-[#52b788] text-xs font-bold">
+              <span className="px-2.5 py-1 rounded-full bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6] text-xs font-bold">
                 {counts.soon} en 2 semanas
               </span>
             )}
@@ -209,8 +209,8 @@ export default function ExpiryAlertWidget() {
                   item.level === "critical"
                     ? "border-l-red-500"
                     : item.level === "warning"
-                      ? "border-l-[#f4a261]"
-                      : "border-l-[#2d6a4f]"
+                      ? "border-l-[#f97316]"
+                      : "border-l-[#0f766e]"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -245,8 +245,8 @@ export default function ExpiryAlertWidget() {
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors",
                       action === "sale"
-                        ? "bg-[#f4a261] text-white border-[#f4a261]"
-                        : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#f4a261] hover:text-[#f4a261]"
+                        ? "bg-[#f97316] text-white border-[#f97316]"
+                        : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#f97316] hover:text-[#f97316]"
                     )}
                   >
                     <Tag className="w-3 h-3" />
@@ -266,7 +266,7 @@ export default function ExpiryAlertWidget() {
                   </button>
                 </div>
                 {action && (
-                  <p className="mt-2 text-xs text-[#2d6a4f] dark:text-[#52b788] font-medium">
+                  <p className="mt-2 text-xs text-[#0f766e] dark:text-[#14b8a6] font-medium">
                     {action === "sale"
                       ? "Marcado para oferta — recuerda actualizar el precio en el sistema"
                       : "Marcado para devolucion — contacta al proveedor"}

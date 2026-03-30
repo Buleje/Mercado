@@ -65,14 +65,14 @@ function KpiCard({ label, value, icon, accent }: KpiCardProps) {
         "flex flex-col items-center justify-center rounded-3xl p-10 gap-4",
         "border-2 shadow-2xl transition-colors",
         accent
-          ? "border-[#f4a261] bg-[#f4a261]/10 dark:bg-[#f4a261]/5"
-          : "border-[#2d6a4f] bg-[#2d6a4f]/10 dark:bg-[#2d6a4f]/5"
+          ? "border-[#f97316] bg-[#f97316]/10 dark:bg-[#f97316]/5"
+          : "border-[#0f766e] bg-[#0f766e]/10 dark:bg-[#0f766e]/5"
       )}
     >
       <div
         className={cn(
           "p-5 rounded-full",
-          accent ? "bg-[#f4a261]/20" : "bg-[#2d6a4f]/20"
+          accent ? "bg-[#f97316]/20" : "bg-[#0f766e]/20"
         )}
       >
         {icon}
@@ -146,9 +146,9 @@ export default function TVDashboard() {
   const progress = pct(data.salesToday, data.dailyGoal);
   const barColor =
     progress >= 80
-      ? "bg-[#2d6a4f]"
+      ? "bg-[#0f766e]"
       : progress >= 50
-        ? "bg-[#f4a261]"
+        ? "bg-[#f97316]"
         : "bg-red-500";
 
   return (
@@ -162,8 +162,8 @@ export default function TVDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-5xl font-black tracking-tight text-[#2d6a4f] dark:text-[#52b788]">
-            Bodega San Martin
+          <h1 className="text-5xl font-black tracking-tight text-[#0f766e] dark:text-[#14b8a6]">
+            Buleje
           </h1>
           <p className="text-2xl text-gray-500 dark:text-gray-400 mt-1">
             Panel en tiempo real
@@ -181,25 +181,25 @@ export default function TVDashboard() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-3 rounded-full bg-[#2d6a4f]/10 hover:bg-[#2d6a4f]/20 transition-colors disabled:opacity-50"
+            className="p-3 rounded-full bg-[#0f766e]/10 hover:bg-[#0f766e]/20 transition-colors disabled:opacity-50"
             aria-label="Actualizar"
           >
             <RefreshCw
               className={cn(
-                "w-7 h-7 text-[#2d6a4f]",
+                "w-7 h-7 text-[#0f766e]",
                 loading && "animate-spin"
               )}
             />
           </button>
           <button
             onClick={toggleFullscreen}
-            className="p-3 rounded-full bg-[#2d6a4f]/10 hover:bg-[#2d6a4f]/20 transition-colors"
+            className="p-3 rounded-full bg-[#0f766e]/10 hover:bg-[#0f766e]/20 transition-colors"
             aria-label={fullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
           >
             {fullscreen ? (
-              <Minimize className="w-7 h-7 text-[#2d6a4f]" />
+              <Minimize className="w-7 h-7 text-[#0f766e]" />
             ) : (
-              <Maximize className="w-7 h-7 text-[#2d6a4f]" />
+              <Maximize className="w-7 h-7 text-[#0f766e]" />
             )}
           </button>
         </div>
@@ -210,23 +210,23 @@ export default function TVDashboard() {
         <KpiCard
           label="Ventas hoy"
           value={fmt(data.salesToday)}
-          icon={<TrendingUp className="w-14 h-14 text-[#2d6a4f]" />}
+          icon={<TrendingUp className="w-14 h-14 text-[#0f766e]" />}
         />
         <KpiCard
           label="Meta %"
           value={`${progress}%`}
-          icon={<Target className="w-14 h-14 text-[#2d6a4f]" />}
+          icon={<Target className="w-14 h-14 text-[#0f766e]" />}
           accent={progress >= 100}
         />
         <KpiCard
           label="Pedidos activos"
           value={String(data.activeOrders)}
-          icon={<ShoppingCart className="w-14 h-14 text-[#2d6a4f]" />}
+          icon={<ShoppingCart className="w-14 h-14 text-[#0f766e]" />}
         />
         <KpiCard
           label={`#1 Cajero — ${data.topCashier}`}
           value={fmt(data.topCashierSales)}
-          icon={<Medal className="w-14 h-14 text-[#f4a261]" />}
+          icon={<Medal className="w-14 h-14 text-[#f97316]" />}
           accent
         />
       </div>

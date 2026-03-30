@@ -6,17 +6,17 @@ import Hero from "@/components/Hero";
 import { AnnouncementBar, StatsCounter, Benefits, CTABanner, RecommendedProducts } from "@/components/ClientSections";
 
 export const metadata: Metadata = {
-  title: "Bodega San Martín — Abarrotes con Delivery en Pucallpa | Yape y Efectivo",
+  title: "Buleje — Abarrotes con Delivery en Pucallpa | Yape y Efectivo",
   description:
     "Compra abarrotes, bebidas, carnes, pollo, golosinas y productos de limpieza online en Pucallpa. Delivery rápido a domicilio. Paga con Yape o efectivo. +500 productos, precios de bodega.",
   alternates: {
-    canonical: "https://www.bodegasanmartin.pe",
+    canonical: "https://www.buleje.pe",
   },
   openGraph: {
-    title: "Bodega San Martín — Abarrotes con Delivery en Pucallpa",
+    title: "Buleje — Abarrotes con Delivery en Pucallpa",
     description:
       "Tu bodega online en Pucallpa. +500 productos frescos con delivery rápido. Paga con Yape o efectivo.",
-    url: "https://www.bodegasanmartin.pe",
+    url: "https://www.buleje.pe",
     type: "website",
     locale: "es_PE",
     images: [
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Bodega San Martín — Tienda de Abarrotes en Pucallpa con delivery a domicilio",
+        alt: "Buleje — Tienda de Abarrotes en Pucallpa con delivery a domicilio",
       },
     ],
   },
@@ -38,13 +38,17 @@ import {
 } from "@/components/LoadingSkeleton";
 
 // Landing page sections — optimized conversion flow
-const ProductsPreview    = dynamic(() => import("@/components/ProductsPreview"),    { ssr: true });
+const ProductsPreview     = dynamic(() => import("@/components/ProductsPreview"),    { ssr: true });
+const PopularCategories  = dynamic(() => import("@/components/PopularCategories"));
+const DailyDeal          = dynamic(() => import("@/components/DailyDeal"));
 const HowItWorks         = dynamic(() => import("@/components/HowItWorks"),         { ssr: true });
 const Testimonials       = dynamic(() => import("@/components/Testimonials"),       { ssr: true });
 const BrandStory         = dynamic(() => import("@/components/BrandStory"),         { ssr: true });
+const StoreHours         = dynamic(() => import("@/components/StoreHours"),         { ssr: true });
 const FAQ                = dynamic(() => import("@/components/FAQ"),                { ssr: true });
-const ReferralBanner    = dynamic(() => import("@/components/ReferralBanner"));
-const DeliveryZoneMap   = dynamic(() => import("@/components/DeliveryZoneMap"));
+const ReferralBanner     = dynamic(() => import("@/components/ReferralBanner"));
+const PWAInstallBanner   = dynamic(() => import("@/components/PWAInstallBanner"));
+const DeliveryZoneMap    = dynamic(() => import("@/components/DeliveryZoneMap"));
 const Contact            = dynamic(() => import("@/components/Contact"),            { ssr: true });
 const Footer             = dynamic(() => import("@/components/Footer"),             { ssr: true });
 
@@ -64,9 +68,19 @@ export default function Home() {
           <StatsCounter />
         </Suspense>
 
+        {/* Mejora 11: Popular categories grid */}
+        <Suspense fallback={<LoadingSection />}>
+          <PopularCategories />
+        </Suspense>
+
         {/* Product preview — showcase + CTA to full catalog */}
         <Suspense fallback={<LoadingProducts />}>
           <ProductsPreview />
+        </Suspense>
+
+        {/* Mejora 13: Daily deal with countdown */}
+        <Suspense fallback={null}>
+          <DailyDeal />
         </Suspense>
 
         {/* Personalized recommendations / best-sellers */}
@@ -95,6 +109,11 @@ export default function Home() {
           <BrandStory />
         </Suspense>
 
+        {/* Horarios de atención */}
+        <Suspense fallback={<LoadingSection />}>
+          <StoreHours />
+        </Suspense>
+
         {/* Support */}
         <Suspense fallback={<LoadingFAQ />}>
           <FAQ />
@@ -115,6 +134,11 @@ export default function Home() {
               <DeliveryZoneMap />
             </div>
           </section>
+        </Suspense>
+
+        {/* Mejora 12: PWA install banner */}
+        <Suspense fallback={null}>
+          <PWAInstallBanner />
         </Suspense>
 
         {/* Invitar amigos — movido desde /tienda */}

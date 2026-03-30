@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { createBillingPortalSession } from "@/lib/stripe";
 
+export const dynamic = "force-dynamic";
+
 // POST /api/billing/portal
 // Opens the Stripe Customer Portal for managing subscription / payment method
 export async function POST(req: NextRequest) {

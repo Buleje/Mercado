@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { ShieldCheck, Save, CheckCircle, RotateCcw } from "lucide-react";
+import { ShieldCheck, Save, CheckCircle, RotateCcw, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const ALL_TAB_IDS = [
   { id: "dashboard", label: "Dashboard" },
@@ -56,6 +57,7 @@ export default function RolePermissionsTab() {
   const [perms, setPerms] = useState<RolePerms>(DEFAULT_ROLE_TABS);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -70,6 +72,7 @@ export default function RolePermissionsTab() {
 
   const save = useCallback(async () => {
     setSaving(true);
+    setSaveError(null);
     try {
       await fetch("/api/settings", {
         method: "POST",
@@ -79,6 +82,7 @@ export default function RolePermissionsTab() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
+      setSaveError("Error al guardar permisos de roles");
       console.error("Error saving role permissions:", e);
     } finally {
       setSaving(false);
@@ -110,6 +114,23 @@ export default function RolePermissionsTab() {
   };
 
   const roles = Object.keys(perms).filter((r) => r !== "admin");
+  const [hasChanges, setHasChanges] = useState(false);
+  const [hoveredCell, setHoveredCell] = useState<string | null>(null);
+
+  const handleToggle = (role: string, tabId: string) => {
+    toggle(role, tabId);
+    setHasChanges(true);
+  };
+
+  const handleSave = async () => {
+    await save();
+    setHasChanges(false);
+  };
+
+  const handleReset = (role: string) => {
+    reset(role);
+    setHasChanges(true);
+  };
 
   if (loading) return <div className="text-center py-20 text-gray-500">Cargando...</div>;
 
@@ -121,80 +142,120 @@ export default function RolePermissionsTab() {
           <ShieldCheck className="w-5 h-5 text-purple-400" />
           Permisos por Rol
         </h2>
-        <button
-          onClick={save}
-          disabled={saving}
-          className={`flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition ${
-            saved
-              ? "bg-green-600 text-white"
-              : "bg-blue-600 hover:bg-blue-700 text-white"
-          } disabled:opacity-50`}
-        >
-          {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-          {saving ? "Guardando..." : saved ? "¡Guardado!" : "Guardar"}
-        </button>
+        <div className="flex items-center gap-2">
+          {hasChanges && (
+            <span className="text-xs text-amber-400 font-medium animate-pulse">Cambios sin guardar</span>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving || !hasChanges}
+            className={cn(
+              "flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm font-medium transition disabled:opacity-50",
+              saved
+                ? "bg-green-600 text-white"
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+            )}
+          >
+            {saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            {saving ? "Guardando..." : saved ? "Guardado!" : "Guardar cambios"}
+          </button>
+        </div>
       </div>
 
       <p className="text-sm text-gray-400">
         El rol <span className="text-white font-medium">admin</span> siempre tiene acceso total.
-        Configura qué pestañas pueden ver los otros roles.
+        Haz click en las celdas para activar/desactivar permisos.
       </p>
 
-      {roles.map((role) => {
-        const tabs = perms[role] ?? [];
-        return (
-          <div key={role} className="bg-white/5 border border-white/10 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-white capitalize flex flex-wrap items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-xs">
-                  {role}
-                </span>
-                <span className="text-gray-500 text-xs font-normal">
-                  {tabs.length} / {ALL_TAB_IDS.length} pestañas
-                </span>
-              </h3>
-              <div className="flex flex-wrap gap-2">
+      {saveError && (
+        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400">
+          <span>{saveError}</span>
+          <button onClick={save} className="ml-auto text-xs font-bold hover:underline">Reintentar</button>
+        </div>
+      )}
+
+      {/* Mejora 18: Matriz visual de permisos */}
+      <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px]">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="sticky left-0 z-10 bg-gray-900 px-3 py-2.5 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider w-36">
+                  Modulo
+                </th>
+                {roles.map(role => (
+                  <th key={role} className="px-2 py-2.5 text-center">
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-xs font-bold capitalize">{role}</span>
+                      <span className="text-[9px] text-gray-500">{(perms[role] ?? []).length}/{ALL_TAB_IDS.length}</span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ALL_TAB_IDS.map((tab, i) => (
+                <tr key={tab.id} className={cn("border-b border-white/5 transition-colors", i % 2 === 0 ? "bg-white/[0.02]" : "")}>
+                  <td className="sticky left-0 z-10 bg-gray-900 px-3 py-1.5 text-xs font-medium text-gray-300 whitespace-nowrap">
+                    {tab.label}
+                  </td>
+                  {roles.map(role => {
+                    const checked = (perms[role] ?? []).includes(tab.id);
+                    const cellKey = `${role}-${tab.id}`;
+                    return (
+                      <td key={role} className="px-2 py-1.5 text-center">
+                        <button
+                          onClick={() => handleToggle(role, tab.id)}
+                          onMouseEnter={() => setHoveredCell(cellKey)}
+                          onMouseLeave={() => setHoveredCell(null)}
+                          className={cn(
+                            "w-8 h-8 rounded-lg flex items-center justify-center mx-auto transition-all duration-150",
+                            checked
+                              ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30"
+                              : "bg-red-500/10 text-red-400/50 hover:bg-red-500/20 border border-red-500/10"
+                          )}
+                          title={`${role} ${checked ? "tiene acceso a" : "NO tiene acceso a"} ${tab.label}`}
+                        >
+                          {checked ? (
+                            <CheckCircle className="w-4 h-4" />
+                          ) : (
+                            <X className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                        {hoveredCell === cellKey && (
+                          <p className="text-[9px] text-gray-500 mt-0.5 capitalize">{role} {checked ? "puede ver" : "no ve"}</p>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Role action buttons */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-white/10 bg-white/[0.02]">
+          <div className="flex flex-wrap gap-2">
+            {roles.map(role => (
+              <div key={role} className="flex items-center gap-1">
                 <button
-                  onClick={() => selectAll(role)}
-                  className="text-xs px-2 py-1 bg-blue-500/10 text-blue-300 rounded hover:bg-blue-500/20 transition"
+                  onClick={() => { selectAll(role); setHasChanges(true); }}
+                  className="text-[10px] px-2 py-1 bg-blue-500/10 text-blue-300 rounded hover:bg-blue-500/20 transition"
                 >
-                  Seleccionar todo
+                  Todo ({role})
                 </button>
                 <button
-                  onClick={() => reset(role)}
-                  className="text-xs px-2 py-1 bg-amber-500/10 text-amber-300 rounded hover:bg-amber-500/20 transition flex items-center gap-1"
+                  onClick={() => handleReset(role)}
+                  className="text-[10px] px-2 py-1 bg-amber-500/10 text-amber-300 rounded hover:bg-amber-500/20 transition flex items-center gap-0.5"
                 >
-                  <RotateCcw className="w-3 h-3" /> Restaurar
+                  <RotateCcw className="w-2.5 h-2.5" /> Reset
                 </button>
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              {ALL_TAB_IDS.map((t) => {
-                const checked = tabs.includes(t.id);
-                return (
-                  <label
-                    key={t.id}
-                    className={`flex items-center gap-2 p-2 rounded-lg border text-sm cursor-pointer transition ${
-                      checked
-                        ? "bg-blue-500/10 border-blue-500/30 text-white"
-                        : "bg-white/[0.02] border-white/5 text-gray-500 hover:border-white/10"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggle(role, t.id)}
-                      className="accent-blue-500"
-                    />
-                    <span className="truncate">{t.label}</span>
-                  </label>
-                );
-              })}
-            </div>
+            ))}
           </div>
-        );
-      })}
+          <span className="text-[10px] text-gray-500">{ALL_TAB_IDS.length} modulos</span>
+        </div>
+      </div>
     </div>
   );
 }

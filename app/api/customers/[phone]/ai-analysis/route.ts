@@ -53,6 +53,7 @@ export async function POST(req: Request) {
       loyaltyTier: "Nuevo",
       totalSpent: 0,
       creditBalance: 0,
+      creditLimit: 0,
       notifOrderUpdates: true,
       notifPromotions: true,
       notifRestock: true,

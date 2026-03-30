@@ -108,9 +108,9 @@ export default function PostDeliverySurvey({
 
   if (step === "done") {
     return (
-      <div className="rounded-xl border border-[#2d6a4f] bg-card dark:bg-card p-6 text-center space-y-3">
+      <div className="rounded-xl border border-[#0f766e] bg-card dark:bg-card p-6 text-center space-y-3">
         <div className="flex justify-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2d6a4f]">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#0f766e]">
             <Check className="h-6 w-6 text-white" />
           </div>
         </div>
@@ -119,7 +119,7 @@ export default function PostDeliverySurvey({
             Gracias por tu opinion
           </p>
           <p className="text-sm text-muted-foreground mt-1">
-            Tu resena nos ayuda a mejorar cada dia. Hasta la proxima en Bodega San Martin.
+            Tu resena nos ayuda a mejorar cada dia. Hasta la proxima en Buleje.
           </p>
         </div>
         <div className="flex justify-center">
@@ -163,7 +163,7 @@ export default function PostDeliverySurvey({
           disabled={step === "submitting"}
         />
         {rating > 0 && (
-          <p className="text-xs text-[#2d6a4f] font-medium">
+          <p className="text-xs text-[#0f766e] font-medium">
             {STAR_LABELS[rating - 1]}
           </p>
         )}
@@ -183,7 +183,7 @@ export default function PostDeliverySurvey({
           className={cn(
             "w-full rounded-md border border-border bg-background dark:bg-background",
             "text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground",
-            "px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/50",
+            "px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#0f766e]/50",
             "disabled:opacity-50"
           )}
         />
@@ -204,7 +204,7 @@ export default function PostDeliverySurvey({
         disabled={!canSubmit}
         className={cn(
           "w-full flex items-center justify-center gap-2 rounded-md px-4 py-2.5 text-sm font-medium transition-colors",
-          "bg-[#2d6a4f] text-white hover:bg-[#245a42]",
+          "bg-[#0f766e] text-white hover:bg-[#0d5f58]",
           "disabled:opacity-50 disabled:cursor-not-allowed"
         )}
       >

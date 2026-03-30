@@ -420,7 +420,7 @@ export default function ExpiredBatchesWidget() {
             <div className="px-4 py-2.5 border-t border-gray-50 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 flex items-center justify-between gap-2">
               <a
                 href="/admin?tab=inventario-almacenes"
-                className="text-xs font-semibold text-[#2d6a4f] dark:text-emerald-400 hover:underline"
+                className="text-xs font-semibold text-[#0f766e] dark:text-emerald-400 hover:underline"
               >
                 Ver todos los lotes
               </a>
@@ -548,7 +548,7 @@ export default function ExpiredBatchesWidget() {
                   value={modal.reason}
                   onChange={(e) => setModal((prev) => ({ ...prev, reason: e.target.value as MermaReason }))}
                   disabled={modal.submitting}
-                  className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs text-gray-800 dark:text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/30 disabled:opacity-50"
+                  className="w-full rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs text-gray-800 dark:text-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30 disabled:opacity-50"
                 >
                   <option value="vencimiento">Vencimiento</option>
                   <option value="deterioro">Deterioro / Daño</option>

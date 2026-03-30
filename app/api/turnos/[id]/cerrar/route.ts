@@ -1,0 +1,74 @@
+export const dynamic = "force-dynamic";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { TurnosDB } from "@/lib/db/turnos.db";
+import { requireAdmin } from "@/lib/require-admin";
+import { logActivity } from "@/lib/activity-logger";
+import { logger } from "@/lib/logger";
+import { prisma } from "@/lib/prisma";
+
+const CerrarTurnoSchema = z.object({
+  cierreEfectivo: z.number().min(0),
+  notas: z.string().max(1000).optional(),
+});
+
+// POST /api/turnos/[id]/cerrar — close turno
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+
+  const { id } = await params;
+  try {
+    const raw = await req.json();
+    const parsed = CerrarTurnoSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+        { status: 400 },
+      );
+    }
+
+    // Verify turno exists and belongs to tenant
+    const existing = await prisma.turno.findUnique({ where: { id } });
+    if (!existing || existing.tenantId !== auth.tenantId) {
+      return NextResponse.json({ error: "Turno no encontrado" }, { status: 404 });
+    }
+    if (existing.status !== "ABIERTO") {
+      return NextResponse.json({ error: "El turno ya está cerrado" }, { status: 422 });
+    }
+
+    // Calculate total sales during the turno period
+    const ventasTotal = await prisma.sale.aggregate({
+      where: {
+        tenantId: auth.tenantId,
+        createdAt: { gte: existing.abrioEn },
+      },
+      _sum: { total: true },
+    });
+    const totalVentas = ventasTotal._sum.total ?? 0;
+
+    const updated = await TurnosDB.cerrar(id, {
+      cierreEfectivo: parsed.data.cierreEfectivo,
+      ventasTotal: totalVentas,
+      notas: parsed.data.notas,
+    });
+
+    if (!updated) return NextResponse.json({ error: "Error al cerrar turno" }, { status: 500 });
+
+    const diferencia = parsed.data.cierreEfectivo - (Number(existing.inicioEfectivo) + totalVentas);
+
+    logActivity(
+      "Cerrar", "turno",
+      `Turno ${id.slice(-6)} cerrado — ventas: S/${totalVentas.toFixed(2)}, diferencia: S/${diferencia.toFixed(2)}`,
+      id, auth.username,
+    ).catch(() => {});
+
+    return NextResponse.json({ ...updated, diferencia });
+  } catch (e) {
+    logger.error("[turnos/id/cerrar] POST error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
+}

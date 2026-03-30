@@ -6,11 +6,13 @@ import {
   Store, ArrowRight, ArrowLeft, CheckCircle2, Loader2,
   Eye, EyeOff, Zap, ShoppingBag, Users, ShoppingCart,
   Globe, BarChart2, Crown, AlertTriangle, ExternalLink,
+  Package, Truck,
 } from "lucide-react";
 import { PLANS, type PlanId, type PlanDef } from "@/lib/plans";
 
 // ─── Step types ──────────────────────────────────────────
-type Step = 1 | 2 | 3 | 4; // 4 = success
+type Step = 0 | 1 | 2 | 3 | 4; // 0 = tipo de cuenta, 4 = success
+type AccountType = "store" | "supplier" | "delivery";
 
 interface FormData {
   storeName: string;
@@ -101,7 +103,8 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement> & { error?: st
 // ─── Main ─────────────────────────────────────────────────
 export default function RegistroPage() {
   const searchParams = useSearchParams();
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<Step>(0);
+  const [accountType, setAccountType] = useState<AccountType>("store");
   const [form, setForm] = useState<FormData>(() => {
     const planParam = (typeof window !== "undefined" ? searchParams.get("plan") : null) as PlanId | null;
     const validPlans: PlanId[] = ["free", "pro", "business", "enterprise"];
@@ -195,7 +198,7 @@ export default function RegistroPage() {
       const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, type: accountType }),
       });
       const data = await res.json() as { message?: string; tenantSlug?: string; storeName?: string; trialEndsAt?: string; error?: string };
       if (!res.ok) {
@@ -239,8 +242,8 @@ export default function RegistroPage() {
         <span className="text-xl font-extrabold tracking-tight">MiTienda SaaS</span>
       </div>
 
-      {/* Step indicators (not on success) */}
-      {step !== 4 && (
+      {/* Step indicators (solo pasos 1-3, no en paso 0 ni success) */}
+      {step !== 0 && step !== 4 && (
         <div className="flex items-center gap-2 mb-8">
           {([1, 2, 3] as const).map((n, i) => (
             <div key={n} className="flex items-center gap-2">
@@ -254,6 +257,66 @@ export default function RegistroPage() {
       {/* Card */}
       <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800 p-8 space-y-6">
 
+        {/* ─── Step 0: Tipo de cuenta ────────────────────── */}
+        {step === 0 && (
+          <>
+            <div>
+              <h1 className="text-2xl font-extrabold">¿Qué tipo de cuenta necesitas?</h1>
+              <p className="text-muted text-sm mt-1">Elige el perfil que mejor describe tu negocio.</p>
+            </div>
+
+            <div className="space-y-3">
+              {(
+                [
+                  {
+                    value: "store" as AccountType,
+                    icon: <Store className="w-6 h-6" />,
+                    label: "Tienda",
+                    description: "Gestiona tu bodega, vende online y en mostrador",
+                  },
+                  {
+                    value: "supplier" as AccountType,
+                    icon: <Package className="w-6 h-6" />,
+                    label: "Proveedor",
+                    description: "Vende al por mayor a las tiendas de la plataforma",
+                  },
+                  {
+                    value: "delivery" as AccountType,
+                    icon: <Truck className="w-6 h-6" />,
+                    label: "Delivery",
+                    description: "Ofrece servicios de reparto a las tiendas",
+                  },
+                ] as const
+              ).map((opt) => {
+                const active = accountType === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      setAccountType(opt.value);
+                      setStep(1);
+                    }}
+                    className={`w-full text-left rounded-2xl border-2 p-5 transition-all flex items-center gap-4 ${
+                      active
+                        ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                        : "border-(--color-card-border) hover:border-primary/40"
+                    }`}
+                  >
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-primary text-white" : "bg-(--color-surface) text-muted"}`}>
+                      {opt.icon}
+                    </div>
+                    <div>
+                      <p className="font-bold text-base">{opt.label}</p>
+                      <p className="text-muted text-sm mt-0.5">{opt.description}</p>
+                    </div>
+                    {active && <CheckCircle2 className="w-5 h-5 text-primary ml-auto shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+
         {/* ─── Step 1: Store info ────────────────────────── */}
         {step === 1 && (
           <>
@@ -263,12 +326,12 @@ export default function RegistroPage() {
             </div>
 
             <div className="space-y-4">
-              <Field label="Nombre de tu tienda" hint="Ej: Bodega San Martín, Minimarket El Sol">
+              <Field label="Nombre de tu tienda" hint="Ej: Buleje, Minimarket El Sol">
                 <Input
                   type="text"
                   value={form.storeName}
                   onChange={(e) => handleStoreName(e.target.value)}
-                  placeholder="Bodega San Martín"
+                  placeholder="Buleje"
                   error={errors.storeName}
                   autoFocus
                 />
@@ -319,12 +382,20 @@ export default function RegistroPage() {
               </Field>
             </div>
 
-            <button
-              onClick={next}
-              className="w-full py-3 rounded-2xl bg-primary text-white font-bold text-sm hover:opacity-90 flex items-center justify-center gap-2"
-            >
-              Siguiente <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep(0)}
+                className="flex-1 py-3 rounded-2xl border border-(--color-card-border) text-sm font-semibold hover:bg-(--color-surface) flex items-center justify-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" /> Atrás
+              </button>
+              <button
+                onClick={next}
+                className="flex-2 px-6 py-3 rounded-2xl bg-primary text-white font-bold text-sm hover:opacity-90 flex items-center justify-center gap-2"
+              >
+                Siguiente <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </>
         )}
 
@@ -524,6 +595,7 @@ export default function RegistroPage() {
           <a href="/admin" className="underline font-medium hover:text-foreground">Inicia sesión</a>
         </p>
       )}
+
     </div>
   );
 }

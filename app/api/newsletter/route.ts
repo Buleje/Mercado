@@ -1,15 +1,28 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
+
+export const dynamic = "force-dynamic";
 
 const schema = z.object({
   email: z.string().email("Email inválido").max(255),
 });
 
 export async function POST(req: Request) {
+  const limited = applyRateLimit(req, "STRICT", "newsletter");
+  if (limited) return limited;
+
   try {
     const body = await req.json();
-    const { email } = schema.parse(body);
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Datos inválidos" },
+        { status: 400 }
+      );
+    }
+    const { email } = parsed.data;
 
     // Upsert — don't fail if already subscribed
     await prisma.newsletterSubscriber.upsert({
@@ -20,9 +33,6 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
-    }
     return NextResponse.json({ error: "Error al suscribir" }, { status: 500 });
   }
 }

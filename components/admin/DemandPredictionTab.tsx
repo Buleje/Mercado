@@ -30,7 +30,7 @@ export default function DemandPredictionTab() {
         ]);
         
         if (!productsRes.ok || !salesRes.ok) {
-          console.error("Error fetching data");
+          setError("Error al cargar datos de productos o ventas");
           setLoadingAlerts(false);
           return;
         }
@@ -42,6 +42,7 @@ export default function DemandPredictionTab() {
         const alerts = calculateStockAlerts(products, sales);
         setStockAlerts(alerts);
       } catch (err) {
+        setError("Error al calcular alertas de stock");
         console.error("Error calculating stock alerts:", err);
       }
       setLoadingAlerts(false);

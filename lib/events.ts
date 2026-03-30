@@ -1,5 +1,5 @@
 /**
- * Type-safe custom event system for Bodega San Martín
+ * Type-safe custom event system for Buleje
  * 
  * Usage:
  * ```ts

@@ -49,8 +49,8 @@ export default function CategoriesEditorTab() {
             visible: true, 
             order: i,
             seo: {
-              metaTitle: `${c.label} - Bodega San Martín`,
-              metaDescription: `Compra ${c.label.toLowerCase()} frescos y de calidad en Bodega San Martín. Entrega rápida en tu zona.`,
+              metaTitle: `${c.label} - Buleje`,
+              metaDescription: `Compra ${c.label.toLowerCase()} frescos y de calidad en Buleje. Entrega rápida en tu zona.`,
               keywords: [c.label.toLowerCase()],
               slug: c.id,
             }
@@ -114,7 +114,7 @@ export default function CategoriesEditorTab() {
   const generateSeoForCategory = useCallback((idx: number) => {
     const cat = cats[idx];
     if (!cat) return;
-    const metaTitle = `${cat.label} - Bodega San Martín | Compra Online`;
+    const metaTitle = `${cat.label} - Buleje | Compra Online`;
     const metaDescription = `Descubre nuestra selección de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rápida a domicilio en San Martín de Porres. ¡Compra ahora!`;
     const keywords = [cat.label.toLowerCase(), "delivery", "san martín", "compra online"];
     const slug = cat.id;
@@ -139,7 +139,7 @@ export default function CategoriesEditorTab() {
       ...cat,
       seo: {
         ...cat.seo,
-        metaTitle: `${cat.label} - Bodega San Martín | Compra Online`,
+        metaTitle: `${cat.label} - Buleje | Compra Online`,
         metaDescription: `Descubre nuestra selección de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rápida a domicilio en San Martín de Porres. ¡Compra ahora!`,
         keywords: [cat.label.toLowerCase(), "delivery", "san martín", "compra online"],
         slug: cat.id,
@@ -309,7 +309,7 @@ export default function CategoriesEditorTab() {
                     <input
                       value={cat.seo?.metaTitle || ""}
                       onChange={(e) => updateSeoField(i, "metaTitle", e.target.value)}
-                      placeholder={`${cat.label} - Bodega San Martín`}
+                      placeholder={`${cat.label} - Buleje`}
                       className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
                       maxLength={70}
                     />
@@ -400,7 +400,7 @@ export default function CategoriesEditorTab() {
                     <input
                       value={cat.seo?.canonical || ""}
                       onChange={(e) => updateSeoField(i, "canonical", e.target.value)}
-                      placeholder="https://bodega-san-martin.pe/categoria/..."
+                      placeholder="https://buleje.pe/categoria/..."
                       className="w-full rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card px-3 py-2 text-sm"
                     />
                   </div>
@@ -413,13 +413,13 @@ export default function CategoriesEditorTab() {
                     </div>
                     <div className="space-y-1">
                       <div className="text-xs text-emerald-700 dark:text-emerald-400">
-                        bodega-san-martin.pe › categoria › {cat.seo?.slug || cat.id}
+                        buleje.pe › categoria › {cat.seo?.slug || cat.id}
                       </div>
                       <div className="text-lg text-blue-600 dark:text-blue-400 font-medium leading-snug">
-                        {cat.seo?.metaTitle || `${cat.label} - Bodega San Martín`}
+                        {cat.seo?.metaTitle || `${cat.label} - Buleje`}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                        {cat.seo?.metaDescription || `Compra ${cat.label.toLowerCase()} frescos y de calidad en Bodega San Martín. Entrega rápida en tu zona.`}
+                        {cat.seo?.metaDescription || `Compra ${cat.label.toLowerCase()} frescos y de calidad en Buleje. Entrega rápida en tu zona.`}
                       </div>
                     </div>
                   </div>

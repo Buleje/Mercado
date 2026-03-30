@@ -62,10 +62,11 @@ export async function POST(req: Request) {
   }
 
   // â”€â”€ Primary: query AdminUser table in Prisma â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  let dbUsers: { username: string; passwordHash: string; role: string; name: string }[] = [];
+  let dbUsers: { username: string; passwordHash: string; role: string; name: string; onboardingCompletedAt: Date | null }[] = [];
   try {
     dbUsers = await prisma.adminUser.findMany({
       where: { active: true, tenantId, ...(username ? { username } : {}) },
+      select: { username: true, passwordHash: true, role: true, name: true, onboardingCompletedAt: true },
     });
   } catch {
     // DB unavailable — continue with fallback auth
@@ -74,7 +75,8 @@ export async function POST(req: Request) {
   for (const u of dbUsers) {
     if (await checkPassword(password, u.passwordHash)) {
       const token = await createSessionToken(u.role as AdminRole, u.username, tenantId, u.name);
-      const response = NextResponse.json({ ok: true, role: u.role, name: u.name });
+      const onboardingPending = !u.onboardingCompletedAt;
+      const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending });
       response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
       return response;
     }
@@ -87,7 +89,7 @@ export async function POST(req: Request) {
     for (const u of candidates) {
       if (await checkPassword(password, u.password)) {
         const token = await createSessionToken(u.role, u.username, tenantId, u.name);
-        const response = NextResponse.json({ ok: true, role: u.role, name: u.name });
+        const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending: true });
         response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
         return response;
       }
@@ -100,7 +102,7 @@ export async function POST(req: Request) {
     const adminPassword = settings.adminPassword;
     if (adminPassword && await checkPassword(password, adminPassword)) {
       const token = await createSessionToken("admin", "admin", tenantId, "Administrador");
-      const response = NextResponse.json({ ok: true, role: "admin", name: "Administrador" });
+      const response = NextResponse.json({ ok: true, role: "admin", name: "Administrador", onboardingPending: true });
       response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
       return response;
     }

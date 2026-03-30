@@ -15,7 +15,7 @@ export function Skeleton({ className }: SkeletonProps) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-lg bg-gray-200 dark:bg-surface",
+        "rounded-lg shimmer",
         className
       )}
     />
@@ -23,23 +23,123 @@ export function Skeleton({ className }: SkeletonProps) {
 }
 
 // ── Product Card Skeleton ─────────────────────────────────────────────────────
+// Matches exact dimensions of ProductCard to prevent layout shift
 
 export function ProductCardSkeleton() {
   return (
     <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden">
-      {/* Image */}
+      {/* Image — 1:1 aspect ratio matching ProductCard */}
       <Skeleton className="aspect-square w-full" />
-      
-      {/* Body */}
-      <div className="p-3 sm:p-4 space-y-3">
-        {/* Title */}
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-        
-        {/* Price */}
-        <div className="flex items-end justify-between">
-          <Skeleton className="h-6 w-20" />
+
+      {/* Body — matches ProductCard p-3 sm:p-4 layout */}
+      <div className="p-3 sm:p-4 space-y-2.5">
+        {/* Category badge */}
+        <Skeleton className="h-[10px] w-16 rounded-full" />
+        {/* Product name (2 lines max like ProductCard) */}
+        <Skeleton className="h-[14px] w-[75%]" />
+        <Skeleton className="h-[14px] w-[50%]" />
+        {/* Price + cart button row */}
+        <div className="flex items-end justify-between pt-1">
+          <div className="space-y-1">
+            <Skeleton className="h-[18px] w-[60px]" />
+            <Skeleton className="h-[10px] w-[40px]" />
+          </div>
           <Skeleton className="h-10 w-10 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Product List Skeleton (vista lista) ─────────────────────────────────────
+
+export function ProductListSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 p-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border"
+        >
+          {/* Thumbnail */}
+          <Skeleton className="h-[60px] w-[60px] rounded-lg shrink-0" />
+          {/* Name + category */}
+          <div className="flex-1 min-w-0 space-y-2">
+            <Skeleton className="h-[14px] w-[200px] max-w-full" />
+            <Skeleton className="h-[10px] w-[80px]" />
+          </div>
+          {/* Price */}
+          <Skeleton className="h-[14px] w-[60px] shrink-0" />
+          {/* Cart button */}
+          <Skeleton className="h-9 w-9 rounded-lg shrink-0" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Product Detail Skeleton ─────────────────────────────────────────────────
+
+export function ProductDetailSkeleton() {
+  return (
+    <div className="min-h-screen bg-white dark:bg-background">
+      {/* Breadcrumbs */}
+      <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className="flex items-center gap-1.5">
+          <Skeleton className="h-3.5 w-12" />
+          <Skeleton className="h-3.5 w-3.5 rounded-sm" />
+          <Skeleton className="h-3.5 w-14" />
+          <Skeleton className="h-3.5 w-3.5 rounded-sm" />
+          <Skeleton className="h-3.5 w-24" />
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 pb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Left: Product gallery */}
+          <div className="space-y-3">
+            <Skeleton className="aspect-square w-full rounded-2xl" />
+            <div className="flex gap-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-16 rounded-lg" />
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Product info */}
+          <div className="space-y-6">
+            {/* Badge */}
+            <Skeleton className="h-6 w-16 rounded-full" />
+            {/* Title */}
+            <Skeleton className="h-9 w-full max-w-md" />
+            <Skeleton className="h-9 w-3/4 max-w-xs" />
+            {/* Category + rating */}
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+            {/* Price box */}
+            <div className="bg-gray-50 dark:bg-surface rounded-2xl p-5 border border-gray-100 dark:border-card-border space-y-3">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-5 w-20 rounded-full" />
+            </div>
+            {/* Add to cart + action buttons */}
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-14 flex-1 rounded-xl" />
+              <Skeleton className="h-12 w-12 rounded-xl" />
+              <Skeleton className="h-12 w-12 rounded-xl" />
+              <Skeleton className="h-12 w-12 rounded-xl" />
+            </div>
+            {/* Benefits grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 bg-gray-50 dark:bg-surface rounded-xl p-3 border border-gray-100 dark:border-card-border">
+                  <Skeleton className="h-5 w-5 rounded shrink-0" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

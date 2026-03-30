@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { HandCoins, CalendarDays, Calendar } from "lucide-react";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -14,6 +15,9 @@ const CheckManagementTab = dynamic(() => import("@/components/admin/CheckManagem
 const BankReconciliationTab = dynamic(() => import("@/components/admin/BankReconciliationTab"), { loading: S });
 const CollectionCenterTab = dynamic(() => import("@/components/admin/CollectionCenterTab"), { loading: S });
 const AccountsReceivableTab = dynamic(() => import("@/components/admin/AccountsReceivableTab"), { loading: S });
+const PayablesTab = dynamic(() => import("@/components/admin/PayablesTab"), { loading: S });
+const CxPCalendar = dynamic(() => import("@/components/admin/compras/CxPCalendar"), { loading: S });
+const PaymentCalendar = dynamic(() => import("@/components/admin/PaymentCalendar"), { loading: S });
 
 const TABS = [
   { id: "tesoreria" as const, label: "Tesorería" },
@@ -22,6 +26,9 @@ const TABS = [
   { id: "conciliacion" as const, label: "Conciliación" },
   { id: "cobros" as const, label: "Centro Cobros" },
   { id: "cxc" as const, label: "Cuentas x Cobrar" },
+  { id: "cuentas-pagar" as const, label: "Cuentas por Pagar", icon: HandCoins },
+  { id: "calendario-cxp" as const, label: "Calendario CxP", icon: CalendarDays },
+  { id: "pagos" as const, label: "Calendario Pagos", icon: Calendar },
 ];
 
 export default function TesoreriaModule() {
@@ -49,6 +56,9 @@ export default function TesoreriaModule() {
       {sub === "conciliacion" && <BankReconciliationTab />}
       {sub === "cobros" && <CollectionCenterTab />}
       {sub === "cxc" && <AccountsReceivableTab />}
+      {sub === "cuentas-pagar" && <PayablesTab />}
+      {sub === "calendario-cxp" && <CxPCalendar />}
+      {sub === "pagos" && <PaymentCalendar />}
     </div>
   );
 }

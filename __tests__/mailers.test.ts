@@ -76,7 +76,7 @@ describe("mailer-onboarding: sendWelcomeEmail", () => {
     await sendWelcomeEmail(sampleData);
 
     const call = mockSendMail.mock.calls[0][0];
-    expect(call.html).toContain("bodegasanmartin.com/mi-bodega");
+    expect(call.html).toContain("buleje.com/mi-bodega");
   });
 
   it("includes plan label for enterprise plan", async () => {
@@ -106,7 +106,7 @@ describe("mailer-superadmin: sendSuperAdminAlert", () => {
     subject: "Test Alert",
     title: "🆕 Test Title",
     items: [
-      { label: "Store", value: "Test Store", color: "#40916c" },
+      { label: "Store", value: "Test Store", color: "#0d9488" },
       { label: "Plan", value: "PRO" },
     ],
     actionUrl: "https://example.com/superadmin",
@@ -188,6 +188,6 @@ describe("mailer-superadmin: sendSuperAdminAlert", () => {
     await sendSuperAdminAlert(sampleAlert);
 
     const call = mockSendMail.mock.calls[0][0];
-    expect(call.html).toContain("#40916c"); // custom color for first item
+    expect(call.html).toContain("#0d9488"); // custom color for first item
   });
 });

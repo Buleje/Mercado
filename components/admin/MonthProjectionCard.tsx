@@ -131,7 +131,7 @@ export default function MonthProjectionCard() {
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="bg-[#2d6a4f] px-5 py-4 flex items-center justify-between">
+      <div className="bg-[#0f766e] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-white" />
           <span className="text-white font-semibold text-sm">Proyeccion de Cierre</span>
@@ -150,7 +150,7 @@ export default function MonthProjectionCard() {
       <div className="p-5">
         {loading ? (
           <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-[#2d6a4f]" />
+            <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
           </div>
         ) : error ? (
           <p className="text-sm text-red-500 dark:text-red-400 text-center py-6">{error}</p>
@@ -205,15 +205,15 @@ export default function MonthProjectionCard() {
                         className={cn(
                           "w-full rounded-t-sm min-h-[2px] transition-all",
                           isToday
-                            ? "bg-[#f4a261] dark:bg-orange-400"
-                            : "bg-[#2d6a4f] dark:bg-emerald-600"
+                            ? "bg-[#f97316] dark:bg-orange-400"
+                            : "bg-[#0f766e] dark:bg-emerald-600"
                         )}
                         style={{ height: `${Math.max(h, 2)}%` }}
                         title={`Dia ${d.label}: ${fmt(d.total)}`}
                       />
                       <span className={cn(
                         "text-[9px]",
-                        isToday ? "text-[#f4a261] font-semibold" : "text-gray-400"
+                        isToday ? "text-[#f97316] font-semibold" : "text-gray-400"
                       )}>
                         {d.label}
                       </span>

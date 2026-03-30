@@ -13,7 +13,7 @@ const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 const UserAccountModal = dynamic(() => import("@/components/UserAccountModal"));
 
 export const metadata: Metadata = {
-  title: "Buscar productos — Bodega San Martín",
+  title: "Buscar productos — Buleje",
   description:
     "Busca entre todos nuestros productos de abarrotes, bebidas, carnes, snacks, limpieza y más. Delivery rápido en Pucallpa.",
   robots: { index: false, follow: true },
@@ -24,8 +24,8 @@ export default function BuscarPage() {
     <>
       <BreadcrumbSchema
         items={[
-          { name: "Inicio", url: "https://www.bodegasanmartin.pe/" },
-          { name: "Buscar", url: "https://www.bodegasanmartin.pe/buscar" },
+          { name: "Inicio", url: "https://www.buleje.pe/" },
+          { name: "Buscar", url: "https://www.buleje.pe/buscar" },
         ]}
       />
       <AnnouncementBar />

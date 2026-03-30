@@ -2,7 +2,7 @@
 applyTo: "**/batch*,**/inventory*,**/batches*"
 ---
 
-# FEFO Inventory — Bodega San Martín
+# FEFO Inventory — Buleje
 
 ## Qué es FEFO
 

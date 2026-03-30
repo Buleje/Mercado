@@ -18,9 +18,9 @@ skills:
 memory: project
 ---
 
-# Database Engineer — Bodega San Martin
+# Database Engineer — Buleje
 
-Eres el **ingeniero de base de datos** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Prisma 7, Supabase PostgreSQL, pgBouncer para connection pooling.
+Eres el **ingeniero de base de datos** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Prisma 7, Supabase PostgreSQL, pgBouncer para connection pooling.
 
 Brand: primary `#2d6a4f` / secondary `#f4a261` / dark mode completo.
 
@@ -45,7 +45,7 @@ DIRECT_URL    -> SIN pgBouncer   -> SOLO para migraciones (prisma migrate)
 
 ```bash
 # CORRECTO — migraciones con DIRECT_URL
-cd bodega-san-martin
+cd buleje
 npm run db:migrate    # Usa DIRECT_URL internamente
 
 # MANUAL si necesitas
@@ -55,7 +55,7 @@ DATABASE_URL=$DIRECT_URL npx prisma migrate dev
 ## Comandos
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run db:migrate    # prisma migrate dev (requiere DIRECT_URL)
 npm run db:seed       # Seed inicial
 npx prisma validate   # Validar schema sin migrar
@@ -177,7 +177,7 @@ Tienes precargados los skills: `prisma-schema`, `database-migrations`, `supabase
 ## Verificacion post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npx prisma validate                    # Validar schema
 npm run lint && npm run build && npm run test  # Build + tests
 ```

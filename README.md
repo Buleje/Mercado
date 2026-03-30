@@ -1,4 +1,4 @@
-# 🛒 Bodega San Martín - E-commerce Platform
+# 🛒 Buleje - E-commerce Platform
 
 Plataforma completa de e-commerce para abarrotes con delivery, construida con Next.js 16, React 19, Tailwind CSS 4, y Prisma + Supabase.
 
@@ -82,7 +82,7 @@ Plataforma completa de e-commerce para abarrotes con delivery, construida con Ne
 ```bash
 # Clonar repositorio
 git clone https://github.com/Buleje/Mercado.git
-cd bodega-san-martin
+cd buleje
 
 # Instalar dependencias
 npm install
@@ -144,7 +144,7 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 ## 📁 Estructura del Proyecto
 
 ```
-bodega-san-martin/
+buleje/
 ├── app/                          # Next.js App Router
 │   ├── (store)/                  # Grupo de rutas públicas
 │   │   ├── page.tsx             # Landing page
@@ -241,10 +241,10 @@ AUTH_SECRET="tu-secret-key-super-segura-minimo-32-caracteres"
 # Email (SMTP - opcional para notificaciones)
 SMTP_USER="tu-email@gmail.com"
 SMTP_PASS="tu-app-password"
-NOTIFY_EMAIL="notificaciones@bodegasanmartin.com"
+NOTIFY_EMAIL="notificaciones@buleje.com"
 
 # Push Notifications (opcional - genera con web-push generate-vapid-keys)
-VAPID_EMAIL="mailto:tu-email@bodegasanmartin.com"
+VAPID_EMAIL="mailto:tu-email@buleje.com"
 NEXT_PUBLIC_VAPID_PUBLIC_KEY="tu-vapid-public-key"
 VAPID_PRIVATE_KEY="tu-vapid-private-key"
 
@@ -356,7 +356,7 @@ model Order {
 
 ```bash
 # En Vercel Dashboard → Settings → Domains
-# Agrega: www.bodegasanmartin.com
+# Agrega: www.buleje.com
 
 # Actualiza DNS:
 # A Record: @ → 76.76.21.21
@@ -494,11 +494,11 @@ Edita `lib/constants.ts`:
 
 ```typescript
 export const STORE_INFO = {
-  name: "Bodega San Martín",
+  name: "Buleje",
   phone: "+51 961 123 456",
   whatsapp: "+51961123456",
   address: "Jr. San Martín 123, Pucallpa",
-  email: "contacto@bodegasanmartin.com",
+  email: "contacto@buleje.com",
 };
 ```
 
@@ -567,9 +567,9 @@ export function NuevoComponente({ title, optional = false }: NuevoComponenteProp
 
 ## 📄 Licencia
 
-Este proyecto es privado y pertenece a **Bodega San Martín**. Todos los derechos reservados.
+Este proyecto es privado y pertenece a **Buleje**. Todos los derechos reservados.
 
-Para consultas comerciales: contacto@bodegasanmartin.com
+Para consultas comerciales: contacto@buleje.com
 
 ---
 
@@ -587,6 +587,6 @@ Desarrollado con ❤️ para modernizar la experiencia de compra de abarrotes en
 ---
 
 <div align="center">
-  <p><strong>🛒 Bodega San Martín</strong> - Tu tienda de abarrotes preferida, ahora online 📦</p>
+  <p><strong>🛒 Buleje</strong> - Tu tienda de abarrotes preferida, ahora online 📦</p>
   <p>Hecho con Next.js 16 • React 19 • TypeScript 5.7 • Tailwind CSS 4</p>
 </div>

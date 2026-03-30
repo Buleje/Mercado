@@ -48,7 +48,7 @@ const PROMOS: Promo[] = [
     subtitle: "Leche, yogurt y quesos siempre frescos",
     cta: "Ver Lácteos",
     category: "lacteos",
-    gradient: "linear-gradient(to right, #2d6a4f, #40916c)",
+    gradient: "linear-gradient(to right, #0f766e, #0d9488)",
     accent: "bg-blue-600",
   },
 ];

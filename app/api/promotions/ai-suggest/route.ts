@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     .slice(0, 10)
     .map(([phone, s]) => `${s.name} (${phone}): ${s.orders} pedidos, S/${s.spent.toFixed(2)} gastado – favoritos: ${Object.entries(s.products).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([n, q]) => `${n}(${q})`).join(", ")}`);
 
-  const prompt = `Eres un experto en marketing para una bodega/tienda de abarrotes en Pucallpa, Perú llamada "Bodega San Martín".
+  const prompt = `Eres un experto en marketing para una bodega/tienda de abarrotes en Pucallpa, Perú llamada "Buleje".
 
 Genera sugerencias de PROMOCIONES y PUBLICIDAD basadas en los datos de ventas y clientes.
 

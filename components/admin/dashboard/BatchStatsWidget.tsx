@@ -126,8 +126,8 @@ export default function BatchStatsWidget() {
           label: "Total unidades",
           value: stats.totalUnits,
           icon: Package,
-          colorClass: "text-[#2d6a4f] dark:text-emerald-400",
-          bgClass: "bg-[#2d6a4f]/10 dark:bg-emerald-900/30",
+          colorClass: "text-[#0f766e] dark:text-emerald-400",
+          bgClass: "bg-[#0f766e]/10 dark:bg-emerald-900/30",
         },
       ]
     : [];
@@ -136,8 +136,8 @@ export default function BatchStatsWidget() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-[#2d6a4f]/10 dark:bg-emerald-900/30 flex items-center justify-center">
-            <Package className="h-3.5 w-3.5 text-[#2d6a4f] dark:text-emerald-400" />
+          <div className="w-6 h-6 rounded-lg bg-[#0f766e]/10 dark:bg-emerald-900/30 flex items-center justify-center">
+            <Package className="h-3.5 w-3.5 text-[#0f766e] dark:text-emerald-400" />
           </div>
           <h3 className="text-sm font-bold text-gray-800 dark:text-foreground">Lotes de inventario</h3>
         </div>

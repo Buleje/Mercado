@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ShoppingCart, Clock, Users, Sparkles, Package, Minus, Plus } from "lucide-react";
+import Link from "next/link";
+import { ShoppingCart, Clock, Users, Sparkles, Package, Minus, Plus, ArrowRight } from "lucide-react";
 import { products, type Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
@@ -38,7 +39,7 @@ const RECIPES: Recipe[] = [
     emoji: "🥗",
     time: "10 min",
     servings: 2,
-    gradient: "linear-gradient(135deg, #2d6a4f, #245c43)",
+    gradient: "linear-gradient(135deg, #0f766e, #0d5f58)",
     ingredients: ["lechuga", "tomate", "palta", "limón", "aceite"],
   },
   {
@@ -187,6 +188,16 @@ export default function RecipeSuggestions() {
               </div>
             );
           })}
+        </div>
+
+        {/* Link al recetario completo */}
+        <div className="text-center mt-10">
+          <Link
+            href="/recetas"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-primary/10 hover:bg-primary/15 text-primary font-bold text-base transition-all hover:gap-3"
+          >
+            Ver todas las recetas <ArrowRight className="h-5 w-5" />
+          </Link>
         </div>
       </div>
     </section>

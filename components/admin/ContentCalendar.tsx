@@ -182,8 +182,8 @@ export default function ContentCalendar() {
           isCurrentMonth
             ? "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900"
             : "border-gray-100 bg-gray-50/50 dark:border-gray-800 dark:bg-gray-900/30",
-          dragOver === ymd && "border-[#2d6a4f] bg-[#2d6a4f]/5",
-          "cursor-pointer hover:border-[#2d6a4f]/40"
+          dragOver === ymd && "border-[#0f766e] bg-[#0f766e]/5",
+          "cursor-pointer hover:border-[#0f766e]/40"
         )}
         onDragOver={(e) => { e.preventDefault(); setDragOver(ymd); }}
         onDragLeave={() => setDragOver(null)}
@@ -199,7 +199,7 @@ export default function ContentCalendar() {
           className={cn(
             "mb-1 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold",
             isToday
-              ? "bg-[#2d6a4f] text-white"
+              ? "bg-[#0f766e] text-white"
               : isCurrentMonth
               ? "text-gray-700 dark:text-gray-300"
               : "text-gray-300 dark:text-gray-600"
@@ -261,7 +261,7 @@ export default function ContentCalendar() {
             className={cn(
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition",
               view === "month"
-                ? "border-[#2d6a4f] bg-[#2d6a4f] text-white"
+                ? "border-[#0f766e] bg-[#0f766e] text-white"
                 : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             )}
           >
@@ -273,7 +273,7 @@ export default function ContentCalendar() {
             className={cn(
               "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition",
               view === "week"
-                ? "border-[#2d6a4f] bg-[#2d6a4f] text-white"
+                ? "border-[#0f766e] bg-[#0f766e] text-white"
                 : "border-gray-200 text-gray-600 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
             )}
           >
@@ -282,7 +282,7 @@ export default function ContentCalendar() {
           </button>
           <button
             onClick={() => { setShowForm(true); setForm((f) => ({ ...f, date: toYMD(today) })); }}
-            className="flex items-center gap-1.5 rounded-lg bg-[#f4a261] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[#e08c4a]"
+            className="flex items-center gap-1.5 rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[#e08c4a]"
           >
             <Plus className="h-3.5 w-3.5" />
             Agregar
@@ -346,7 +346,7 @@ export default function ContentCalendar() {
               >
                 <div className={cn(
                   "mb-2 flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold",
-                  isToday ? "bg-[#2d6a4f] text-white" : "text-gray-700 dark:text-gray-300"
+                  isToday ? "bg-[#0f766e] text-white" : "text-gray-700 dark:text-gray-300"
                 )}>
                   {day.getDate()}
                 </div>
@@ -385,7 +385,7 @@ export default function ContentCalendar() {
                   type="date"
                   value={form.date}
                   onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#2d6a4f] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
               </div>
               <div>
@@ -395,7 +395,7 @@ export default function ContentCalendar() {
                 <select
                   value={form.type}
                   onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as EntryType }))}
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#2d6a4f] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 >
                   {ENTRY_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>{t.label}</option>
@@ -410,7 +410,7 @@ export default function ContentCalendar() {
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   placeholder="Ej: Oferta arroz 5kg"
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#2d6a4f] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
               </div>
               <div>
@@ -422,7 +422,7 @@ export default function ContentCalendar() {
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                   rows={2}
                   placeholder="Detalles adicionales..."
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#2d6a4f] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
               </div>
             </div>
@@ -436,7 +436,7 @@ export default function ContentCalendar() {
               <button
                 onClick={addEntry}
                 disabled={!form.title.trim()}
-                className="flex-1 rounded-lg bg-[#2d6a4f] py-2 text-sm font-semibold text-white transition hover:bg-[#245a42] disabled:opacity-50"
+                className="flex-1 rounded-lg bg-[#0f766e] py-2 text-sm font-semibold text-white transition hover:bg-[#0d5f58] disabled:opacity-50"
               >
                 Guardar
               </button>

@@ -1,5 +1,5 @@
 /**
- * Currency formatting utilities for Bodega San Martín
+ * Currency formatting utilities for Buleje
  * Provides consistent formatting for PEN (Peruvian Sol) across the application
  */
 

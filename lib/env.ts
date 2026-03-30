@@ -11,6 +11,8 @@
  *   export async function register() { validateEnv(); }
  */
 
+import { logger } from "@/lib/logger";
+
 interface EnvSpec {
   key: string;
   description: string;
@@ -82,9 +84,7 @@ export function validateEnv(): void {
   }
 
   if (warnings.length > 0) {
-    console.warn(
-      "[env] Optional env vars not set (OK for dev):\n" + warnings.join("\n"),
-    );
+    logger.warn("[env] Optional env vars not set (OK for dev)", { warnings });
   }
 
   if (missing.length > 0) {

@@ -10,6 +10,7 @@ const OrderStatusModalWrapper = dynamic(() => import("@/components/OrderStatusMo
 const OrderConfirmModal = dynamic(() => import("@/components/OrderConfirmModal"), { ssr: false });
 const LiveChatWidget = dynamic(() => import("@/components/LiveChatWidget"), { ssr: false });
 const WebVitalsReporter = dynamic(() => import("@/components/WebVitalsReporter"), { ssr: false });
+const FirstVisitCouponModal = dynamic(() => import("@/components/store/FirstVisitCouponModal"), { ssr: false });
 
 /** Defer modal mounting until the browser is idle + delay after hydration */
 function useDeferredMount(delay = 2500) {
@@ -47,6 +48,7 @@ export default function StoreClientShell() {
       <NotificationPrompt />
       <LiveChatWidget />
       <WebVitalsReporter />
+      <FirstVisitCouponModal />
     </>
   );
 }

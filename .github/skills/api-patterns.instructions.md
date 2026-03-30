@@ -2,7 +2,7 @@
 applyTo: "app/api/**"
 ---
 
-# API Patterns — Bodega San Martín
+# API Patterns — Buleje
 
 ## Estructura obligatoria de todo endpoint
 

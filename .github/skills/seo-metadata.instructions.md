@@ -2,7 +2,7 @@
 applyTo: "**/metadata*,**/layout.tsx,**/page.tsx,**/sitemap*,**/robots*"
 ---
 
-# SEO & Metadata — Bodega San Martín
+# SEO & Metadata — Buleje
 
 ## Metadata estática (layout.tsx)
 
@@ -12,15 +12,15 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | Bodega San Martín",
-    default: "Bodega San Martín — Abarrotes Delivery Pucallpa"
+    template: "%s | Buleje",
+    default: "Buleje — Abarrotes Delivery Pucallpa"
   },
   description: "Delivery de abarrotes a domicilio en Pucallpa. Productos frescos, precios bajos, entrega rápida.",
   keywords: ["bodega", "abarrotes", "delivery", "Pucallpa", "minimarket"],
   openGraph: {
     type: "website",
     locale: "es_PE",
-    siteName: "Bodega San Martín"
+    siteName: "Buleje"
   }
 };
 ```
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
   return {
     title: product.name,
-    description: product.description ?? `Compra ${product.name} en Bodega San Martín`,
+    description: product.description ?? `Compra ${product.name} en Buleje`,
     openGraph: {
       title: product.name,
       description: product.description ?? "",
@@ -85,15 +85,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = await ProductsDB.getAll("main");
 
   const productUrls = products.map(p => ({
-    url: `https://bodegasanmartin.com/producto/${p.id}`,
+    url: `https://buleje.com/producto/${p.id}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,
     priority: 0.8
   }));
 
   return [
-    { url: "https://bodegasanmartin.com", lastModified: new Date(), priority: 1 },
-    { url: "https://bodegasanmartin.com/tienda", lastModified: new Date(), priority: 0.9 },
+    { url: "https://buleje.com", lastModified: new Date(), priority: 1 },
+    { url: "https://buleje.com/tienda", lastModified: new Date(), priority: 0.9 },
     ...productUrls
   ];
 }
@@ -109,7 +109,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       { userAgent: "*", allow: "/", disallow: ["/admin/", "/api/"] }
     ],
-    sitemap: "https://bodegasanmartin.com/sitemap.xml"
+    sitemap: "https://buleje.com/sitemap.xml"
   };
 }
 ```
@@ -122,7 +122,7 @@ import { ImageResponse } from "next/og";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const title = searchParams.get("title") ?? "Bodega San Martín";
+  const title = searchParams.get("title") ?? "Buleje";
 
   return new ImageResponse(
     <div style={{ background: "#2d6a4f", width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -144,6 +144,6 @@ export async function GET(req: Request) {
 
 ## Anti-patrones
 
-- NO duplicar el title en template y en default — usar `template: "%s | Bodega San Martín"`
+- NO duplicar el title en template y en default — usar `template: "%s | Buleje"`
 - NO olvidar metadata en páginas de producto — son las más importantes para SEO
 - NO indexar el panel admin — `disallow: ["/admin/"]` en robots.txt

@@ -139,6 +139,6 @@ export const BenefitsBlockMetadata = {
   description: "Muestra las ventajas y beneficios del servicio",
   category: "marketing" as const,
   icon: "Gift",
-  defaultProps: BenefitsBlockSchema.parse({}),
+  defaultProps: (() => { const parsed = BenefitsBlockSchema.safeParse({}); return parsed.success ? parsed.data : { badge: "Nuestras ventajas", title: "¿Por qué elegirnos?", subtitle: "", benefits: [], showCTA: true, ctaText: "Empieza a comprar ahora", ctaLink: "/tienda" }; })(),
   propsSchema: BenefitsBlockSchema,
 };

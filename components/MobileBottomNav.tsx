@@ -2,22 +2,20 @@
 
 import { useState, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Home, Store, Search, ShoppingCart, User } from "lucide-react";
+import { Home, Store, Search, ShoppingCart, ChefHat } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
-import { useCustomer } from "@/contexts/customer-context";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { id: "home", label: "Inicio", icon: Home, action: "go-home" },
   { id: "tienda", label: "Tienda", icon: Store, action: "go-tienda" },
+  { id: "recetas", label: "Recetas", icon: ChefHat, action: "go-recetas" },
   { id: "buscar", label: "Buscar", icon: Search, action: "go-buscar" },
   { id: "cart", label: "Carrito", icon: ShoppingCart, action: "cart" },
-  { id: "cuenta", label: "Cuenta", icon: User, action: "account" },
 ] as const;
 
 export default function MobileBottomNav() {
   const { items, open: openCart } = useCart();
-  const { openModal } = useCustomer();
   const router = useRouter();
   const [visible, setVisible] = useState(false);
   const [active, setActive] = useState("home");
@@ -35,7 +33,13 @@ export default function MobileBottomNav() {
   }, []);
 
   const handleTap = (action: string) => {
-    setActive(action === "go-home" ? "home" : action === "go-tienda" ? "tienda" : action === "go-buscar" ? "buscar" : action);
+    setActive(
+      action === "go-home" ? "home" :
+      action === "go-tienda" ? "tienda" :
+      action === "go-recetas" ? "recetas" :
+      action === "go-buscar" ? "buscar" :
+      action
+    );
 
     switch (action) {
       case "go-home":
@@ -44,14 +48,14 @@ export default function MobileBottomNav() {
       case "go-tienda":
         router.push("/tienda");
         break;
+      case "go-recetas":
+        router.push("/recetas");
+        break;
       case "go-buscar":
         router.push("/buscar");
         break;
       case "cart":
         openCart();
-        break;
-      case "account":
-        openModal();
         break;
     }
   };

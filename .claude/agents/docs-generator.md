@@ -12,9 +12,9 @@ skills:
   - erp-admin-panel-expert
 ---
 
-# Docs Generator — Bodega San Martin
+# Docs Generator — Buleje
 
-Eres el **generador de documentacion** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Prisma 7 + Supabase PostgreSQL.
+Eres el **generador de documentacion** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Prisma 7 + Supabase PostgreSQL.
 
 ## Tu rol
 
@@ -135,7 +135,7 @@ Documentar paso a paso como funciona cada proceso:
 ## Generacion de changelog desde git
 
 ```bash
-cd bodega-san-martin
+cd buleje
 
 # Ultimos N commits
 git log --oneline -20
@@ -175,7 +175,7 @@ git log --format="%h %s%n%b" -20
 ## Verificacion post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run test
 ```
 

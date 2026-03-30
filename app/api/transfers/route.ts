@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { toErrorPayload } from "@/lib/api-error";
 
 const CreateSchema = z.object({
   fromWarehouseId: z.string().min(1),
@@ -59,83 +60,103 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const rows = await prisma.transfer.findMany({
-    where: { tenantId: auth.tenantId },
-    include: { fromWarehouse: true, toWarehouse: true, product: true },
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json(rows.map((row) => mapTransfer(row)));
+  try {
+    const rows = await prisma.transfer.findMany({
+      where: { tenantId: auth.tenantId },
+      include: { fromWarehouse: true, toWarehouse: true, product: true },
+      orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(rows.map((row) => mapTransfer(row)));
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err);
+    return NextResponse.json(payload, { status });
+  }
 }
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json();
-  const parsed = CreateSchema.safeParse(raw);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues.map((issue) => issue.message) }, { status: 400 });
+  try {
+    const raw = await req.json();
+    const parsed = CreateSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues.map((issue) => issue.message) }, { status: 400 });
+    }
+
+    if (parsed.data.fromWarehouseId === parsed.data.toWarehouseId) {
+      return NextResponse.json({ error: "El almacen origen y destino no pueden ser el mismo" }, { status: 400 });
+    }
+
+    const last = await prisma.transfer.findFirst({
+      where: { tenantId: auth.tenantId },
+      orderBy: { createdAt: "desc" },
+      select: { code: true },
+    });
+    const lastNumber = last?.code ? parseInt(last.code.replace(/\D/g, ""), 10) || 0 : 0;
+    const code = `TRF-${String(lastNumber + 1).padStart(3, "0")}`;
+
+    const row = await prisma.transfer.create({
+      data: {
+        code,
+        fromWarehouseId: parsed.data.fromWarehouseId,
+        toWarehouseId: parsed.data.toWarehouseId,
+        productId: parsed.data.productId,
+        quantity: parsed.data.quantity,
+        unit: parsed.data.unit || "und",
+        requestedBy: parsed.data.requestedBy,
+        notes: parsed.data.notes || "",
+        tenantId: auth.tenantId,
+      },
+      include: { fromWarehouse: true, toWarehouse: true, product: true },
+    });
+
+    return NextResponse.json(mapTransfer(row), { status: 201 });
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err);
+    return NextResponse.json(payload, { status });
   }
-
-  if (parsed.data.fromWarehouseId === parsed.data.toWarehouseId) {
-    return NextResponse.json({ error: "El almacen origen y destino no pueden ser el mismo" }, { status: 400 });
-  }
-
-  const last = await prisma.transfer.findFirst({
-    where: { tenantId: auth.tenantId },
-    orderBy: { createdAt: "desc" },
-    select: { code: true },
-  });
-  const lastNumber = last?.code ? parseInt(last.code.replace(/\D/g, ""), 10) || 0 : 0;
-  const code = `TRF-${String(lastNumber + 1).padStart(3, "0")}`;
-
-  const row = await prisma.transfer.create({
-    data: {
-      code,
-      fromWarehouseId: parsed.data.fromWarehouseId,
-      toWarehouseId: parsed.data.toWarehouseId,
-      productId: parsed.data.productId,
-      quantity: parsed.data.quantity,
-      unit: parsed.data.unit || "und",
-      requestedBy: parsed.data.requestedBy,
-      notes: parsed.data.notes || "",
-      tenantId: auth.tenantId,
-    },
-    include: { fromWarehouse: true, toWarehouse: true, product: true },
-  });
-
-  return NextResponse.json(mapTransfer(row), { status: 201 });
 }
 
 export async function PATCH(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json();
-  const parsed = UpdateSchema.safeParse(raw);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues.map((issue) => issue.message) }, { status: 400 });
+  try {
+    const raw = await req.json();
+    const parsed = UpdateSchema.safeParse(raw);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues.map((issue) => issue.message) }, { status: 400 });
+    }
+
+    const row = await prisma.transfer.update({
+      where: { id: parsed.data.id },
+      data: {
+        ...(parsed.data.status ? { status: parsed.data.status, deliveredDate: parsed.data.status === "recibido" ? new Date() : null } : {}),
+        ...(parsed.data.notes !== undefined ? { notes: parsed.data.notes } : {}),
+      },
+      include: { fromWarehouse: true, toWarehouse: true, product: true },
+    });
+
+    return NextResponse.json(mapTransfer(row));
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err);
+    return NextResponse.json(payload, { status });
   }
-
-  const row = await prisma.transfer.update({
-    where: { id: parsed.data.id },
-    data: {
-      ...(parsed.data.status ? { status: parsed.data.status, deliveredDate: parsed.data.status === "recibido" ? new Date() : null } : {}),
-      ...(parsed.data.notes !== undefined ? { notes: parsed.data.notes } : {}),
-    },
-    include: { fromWarehouse: true, toWarehouse: true, product: true },
-  });
-
-  return NextResponse.json(mapTransfer(row));
 }
 
 export async function DELETE(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const id = new URL(req.url).searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+  try {
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
 
-  await prisma.transfer.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+    await prisma.transfer.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err);
+    return NextResponse.json(payload, { status });
+  }
 }

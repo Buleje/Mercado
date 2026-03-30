@@ -15,11 +15,11 @@ import CommandPalette from "@/components/CommandPalette";
 import ClientEffects from "@/components/ui/ClientEffects";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.bodegasanmartin.pe"),
+  metadataBase: new URL("https://www.buleje.pe"),
   title: {
     default:
       "Tienda Virtual de Abarrotes en Pucallpa | Delivery, Yape y Efectivo",
-    template: "%s | Bodega San Martín",
+    template: "%s | Buleje",
   },
   description:
     "Compra abarrotes online en Pucallpa: bebidas, golosinas, carnes, pollo, productos de limpieza y más. Paga con Yape o efectivo. Delivery rápido y tienda virtual administrable.",
@@ -56,9 +56,9 @@ export const metadata: Metadata = {
     "compra por whatsapp pucallpa",
     "pago con yape pucallpa",
   ],
-  authors: [{ name: "Bodega San Martín" }],
-  creator: "Bodega San Martín",
-  publisher: "Bodega San Martín",
+  authors: [{ name: "Buleje" }],
+  creator: "Buleje",
+  publisher: "Buleje",
   formatDetection: {
     email: false,
     address: false,
@@ -67,8 +67,8 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "es_PE",
-    url: "https://www.bodegasanmartin.pe",
-    siteName: "Bodega San Martín",
+    url: "https://www.buleje.pe",
+    siteName: "Buleje",
     title:
       "Tienda Virtual de Abarrotes en Pucallpa | Delivery, Yape y Efectivo",
     description:
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Bodega San Martín - Tienda Virtual de Abarrotes en Pucallpa",
+        alt: "Buleje - Tienda Virtual de Abarrotes en Pucallpa",
       },
     ],
   },
@@ -106,15 +106,15 @@ export const metadata: Metadata = {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
   },
   alternates: {
-    canonical: "https://www.bodegasanmartin.pe",
+    canonical: "https://www.buleje.pe",
     languages: {
-      "es-PE": "https://www.bodegasanmartin.pe",
+      "es-PE": "https://www.buleje.pe",
     },
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2d6a4f",
+  themeColor: "#0f766e",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -176,7 +176,7 @@ export default async function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Bodega San Martín" />
+        <meta name="apple-mobile-web-app-title" content="Buleje" />
         <link rel="apple-touch-icon" href="/api/pwa-icon/180" />
         <link rel="apple-touch-icon" sizes="180x180" href="/api/pwa-icon/180" />
         <link rel="apple-touch-icon" sizes="152x152" href="/api/pwa-icon/152" />

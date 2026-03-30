@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 
-type CompareProduct = { id: number; name: string; category: string; price: number; image: string; unit: string; badge?: string };
+type CompareProduct = { id: number; name: string; category: string; price: number; image: string; unit: string; badge?: string; stock?: number; rating?: number; reviewCount?: number; description?: string };
 
 type CompareCtx = {
   items: CompareProduct[];

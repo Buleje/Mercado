@@ -4,6 +4,8 @@ import { sendSuperAdminAlert } from "@/lib/mailer-superadmin";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 
+export const dynamic = "force-dynamic";
+
 const CRON_SECRET = process.env.CRON_SECRET;
 
 /**
@@ -28,7 +30,7 @@ export async function GET(req: NextRequest) {
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
   const in24Hours = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://bodegasanmartin.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.com";
   const alerts: string[] = [];
 
   // 1) New signups in the last hour
@@ -44,7 +46,7 @@ export async function GET(req: NextRequest) {
         subject: `🆕 Nueva tienda: ${t.name} (${t.plan})`,
         title: "🆕 Nueva Tienda Registrada",
         items: [
-          { label: "Tienda", value: t.name, color: "#40916c" },
+          { label: "Tienda", value: t.name, color: "#0d9488" },
           { label: "Slug", value: t.slug },
           { label: "Plan", value: t.plan.toUpperCase(), color: "#34d399" },
           { label: "Email", value: t.ownerEmail ?? "—" },

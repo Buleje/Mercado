@@ -30,7 +30,12 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ username: username || undefined, password: pw }),
       });
       if (res.ok) {
-        router.push(fromRef.current ? decodeURIComponent(fromRef.current) : "/admin");
+        const data = await res.json() as { ok: boolean; onboardingPending?: boolean };
+        if (data.onboardingPending && !fromRef.current) {
+          router.push("/onboarding");
+        } else {
+          router.push(fromRef.current ? decodeURIComponent(fromRef.current) : "/admin");
+        }
       } else {
         setError("Credenciales incorrectas");
         setTimeout(() => setError(null), 2500);
@@ -63,14 +68,14 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm p-8">
         <div className="flex flex-col items-center mb-6">
           <div className="h-14 w-14 rounded-2xl bg-primary text-white flex items-center justify-center mb-4 shadow-lg shadow-primary/25">
             <ShoppingBasket className="h-8 w-8" />
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900">Admin</h1>
-          <p className="text-sm text-gray-400 mt-1">Bodega San Martín</p>
+          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100">Admin</h1>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Buleje</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
@@ -78,7 +83,7 @@ export default function AdminLoginPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Usuario (opcional)"
-            className="w-full px-4 py-3 rounded-xl border-2 text-gray-900 placeholder:text-gray-400 outline-none focus:border-primary transition-colors border-gray-200"
+            className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 outline-none focus:border-primary transition-colors border-gray-200 dark:border-gray-700"
           />
           <input
             type="password"
@@ -88,7 +93,7 @@ export default function AdminLoginPage() {
             autoFocus
             className={cn(
               "w-full px-4 py-3 rounded-xl border-2 text-gray-900 placeholder:text-gray-400 outline-none focus:border-primary transition-colors",
-              error ? "border-red-400 bg-red-50" : "border-gray-200"
+              error ? "border-red-400 bg-red-50 dark:bg-red-950/20" : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
             )}
           />
           {error && (
@@ -107,20 +112,20 @@ export default function AdminLoginPage() {
         </form>
         <div className="mt-4">
           <div className="flex items-center gap-3 mb-3">
-            <div className="h-px flex-1 bg-gray-200" />
-            <span className="text-xs text-gray-400">o</span>
-            <div className="h-px flex-1 bg-gray-200" />
+            <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+            <span className="text-xs text-gray-400 dark:text-gray-500">o</span>
+            <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
           </div>
           <button
             onClick={handleBypass}
             disabled={bypassLoading}
-            className="w-full py-3 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+            className="w-full py-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
           >
             {bypassLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
             {bypassLoading ? "Entrando…" : "Entrar sin login"}
           </button>
         </div>
-        <p className="text-[10px] text-gray-400 text-center mt-4">admin / cajero / almacen</p>
+        <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-4">admin / cajero / almacen</p>
       </div>
     </div>
   );

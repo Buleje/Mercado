@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
+import { toErrorPayload } from "@/lib/api-error";
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
@@ -30,12 +31,17 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const rules = await prisma.commissionRule.findMany({
-    where: { tenantId: auth.tenantId },
-    orderBy: [{ cashierId: "asc" }, { minSales: "asc" }],
-  });
+  try {
+    const rules = await prisma.commissionRule.findMany({
+      where: { tenantId: auth.tenantId },
+      orderBy: [{ cashierId: "asc" }, { minSales: "asc" }],
+    });
 
-  return NextResponse.json(rules);
+    return NextResponse.json(rules);
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err);
+    return NextResponse.json(payload, { status });
+  }
 }
 
 // ─── POST /api/commission-rules ───────────────────────────────────────────────
@@ -44,20 +50,25 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const body = await req.json();
-  const parsed = CreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  try {
+    const body = await req.json();
+    const parsed = CreateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const rule = await prisma.commissionRule.create({
+      data: { ...parsed.data, tenantId: auth.tenantId },
+    });
+
+    const requestId = req.headers.get("x-request-id") ?? undefined;
+    logActivity("commission_rule_created", "commission", rule.id, `Regla de comisión creada para ${parsed.data.cashierId}`, auth.username, requestId).catch(() => {});
+
+    return NextResponse.json(rule, { status: 201 });
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err);
+    return NextResponse.json(payload, { status });
   }
-
-  const rule = await prisma.commissionRule.create({
-    data: { ...parsed.data, tenantId: auth.tenantId },
-  });
-
-  const requestId = req.headers.get("x-request-id") ?? undefined;
-  logActivity("commission_rule_created", "commission", rule.id, `Regla de comisión creada para ${parsed.data.cashierId}`, auth.username, requestId).catch(() => {});
-
-  return NextResponse.json(rule, { status: 201 });
 }
 
 // ─── PATCH /api/commission-rules?id=xxx ──────────────────────────────────────
@@ -66,24 +77,29 @@ export async function PATCH(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  try {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const existing = await prisma.commissionRule.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const existing = await prisma.commissionRule.findFirst({ where: { id, tenantId: auth.tenantId } });
+    if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const body = await req.json();
-  const parsed = UpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const body = await req.json();
+    const parsed = UpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const updated = await prisma.commissionRule.update({ where: { id }, data: parsed.data });
+
+    const requestId = req.headers.get("x-request-id") ?? undefined;
+    logActivity("commission_rule_updated", "commission", id, `Regla de comisión actualizada para ${existing.cashierId}`, auth.username, requestId).catch(() => {});
+
+    return NextResponse.json(updated);
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err);
+    return NextResponse.json(payload, { status });
   }
-
-  const updated = await prisma.commissionRule.update({ where: { id }, data: parsed.data });
-
-  const requestId = req.headers.get("x-request-id") ?? undefined;
-  logActivity("commission_rule_updated", "commission", id, `Regla de comisión actualizada para ${existing.cashierId}`, auth.username, requestId).catch(() => {});
-
-  return NextResponse.json(updated);
 }
 
 // ─── DELETE /api/commission-rules?id=xxx ─────────────────────────────────────
@@ -92,16 +108,21 @@ export async function DELETE(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const id = req.nextUrl.searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  try {
+    const id = req.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  const existing = await prisma.commissionRule.findFirst({ where: { id, tenantId: auth.tenantId } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const existing = await prisma.commissionRule.findFirst({ where: { id, tenantId: auth.tenantId } });
+    if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  await prisma.commissionRule.delete({ where: { id } });
+    await prisma.commissionRule.delete({ where: { id } });
 
-  const requestId = req.headers.get("x-request-id") ?? undefined;
-  logActivity("commission_rule_deleted", "commission", id, `Regla de comisión eliminada para ${existing.cashierId}`, auth.username, requestId).catch(() => {});
+    const requestId = req.headers.get("x-request-id") ?? undefined;
+    logActivity("commission_rule_deleted", "commission", id, `Regla de comisión eliminada para ${existing.cashierId}`, auth.username, requestId).catch(() => {});
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err);
+    return NextResponse.json(payload, { status });
+  }
 }

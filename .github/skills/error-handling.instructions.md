@@ -2,7 +2,7 @@
 applyTo: "**/error.tsx,**/loading.tsx,**/not-found.tsx"
 ---
 
-# Error Handling — Bodega San Martín
+# Error Handling — Buleje
 
 ## Archivos de error de Next.js App Router
 

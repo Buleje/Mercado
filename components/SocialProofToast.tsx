@@ -2,21 +2,25 @@
 
 import { useState, useEffect, useRef, startTransition } from "react";
 import Image from "next/image";
-import { ShoppingBag, X } from "lucide-react";
+import { ShoppingBag, X, Star } from "lucide-react";
 import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
 import { products } from "@/data/products";
 import { cn } from "@/lib/utils";
 
 const NAMES = [
-  "María", "Carlos", "Ana", "José", "Lucía", "Pedro", "Rosa",
+  "Mar\u00eda", "Carlos", "Ana", "Jos\u00e9", "Luc\u00eda", "Pedro", "Rosa",
   "Juan", "Carmen", "Luis", "Elena", "Miguel", "Diana", "Roberto",
-  "Patricia", "Fernando", "Silvia", "Andrés", "Teresa", "Ricardo",
+  "Patricia", "Fernando", "Silvia", "Andr\u00e9s", "Teresa", "Ricardo",
 ];
 const ZONES = [
-  "Callería", "Yarinacocha", "Manantay", "Campo Verde",
+  "Caller\u00eda", "Yarinacocha", "Manantay", "Campo Verde",
   "San Fernando", "9 de Octubre", "Las Palmeras",
 ];
 const MINUTES_AGO = [2, 3, 5, 7, 10, 12, 15, 18, 20, 25];
+
+// Mejora 15: Different message types for variety
+type MessageType = "purchase" | "delivery" | "review";
+const MESSAGE_TYPES: MessageType[] = ["purchase", "purchase", "purchase", "delivery", "review"];
 
 type Notification = {
   id: number;
@@ -24,6 +28,7 @@ type Notification = {
   zone: string;
   product: typeof products[number];
   minutesAgo: number;
+  type: MessageType;
 };
 
 function pickRandom<T>(arr: T[]): T {
@@ -37,6 +42,7 @@ function generateNotification(id: number): Notification {
     zone: pickRandom(ZONES),
     product: pickRandom(products),
     minutesAgo: pickRandom(MINUTES_AGO),
+    type: pickRandom(MESSAGE_TYPES),
   };
 }
 
@@ -51,6 +57,14 @@ export default function SocialProofToast() {
   const userDismissedRef = useRef(false);
 
   useEffect(() => {
+    // Mejora 15: Check localStorage preference
+    try {
+      if (localStorage.getItem("social-proof-enabled") === "false") return;
+    } catch { /* ignore */ }
+
+    // Don't show during checkout
+    if (typeof window !== "undefined" && window.location.pathname.includes("checkout")) return;
+
     // Only show social proof after user has completed their first order
     if (hasFirstOrder !== true) return;
 
@@ -115,16 +129,43 @@ export default function SocialProofToast() {
             )}
           </div>
 
-          {/* Text */}
+          {/* Text — varies by message type */}
           <div className="flex-1 min-w-0 pr-5">
-            <p className="text-xs text-foreground leading-snug">
-              <strong className="font-bold">{notification.name}</strong> de{" "}
-              <span className="text-primary font-semibold">{notification.zone}</span>{" "}
-              compró
-            </p>
-            <p className="text-sm font-bold text-foreground truncate mt-0.5">
-              {notification.product.name}
-            </p>
+            {notification.type === "review" ? (
+              <>
+                <p className="text-xs text-foreground leading-snug">
+                  <strong className="font-bold">{notification.name}</strong>{" "}
+                  dejo una resena
+                </p>
+                <div className="flex items-center gap-0.5 mt-0.5">
+                  {[1, 2, 3, 4, 5].map(s => (
+                    <Star key={s} className="h-3 w-3 text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+              </>
+            ) : notification.type === "delivery" ? (
+              <>
+                <p className="text-xs text-foreground leading-snug">
+                  <strong className="font-bold">{notification.name}</strong> de{" "}
+                  <span className="text-primary font-semibold">{notification.zone}</span>{" "}
+                  pidio delivery
+                </p>
+                <p className="text-sm font-bold text-foreground truncate mt-0.5">
+                  {notification.product.name}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-foreground leading-snug">
+                  <strong className="font-bold">{notification.name}</strong> de{" "}
+                  <span className="text-primary font-semibold">{notification.zone}</span>{" "}
+                  compro
+                </p>
+                <p className="text-sm font-bold text-foreground truncate mt-0.5">
+                  {notification.product.name}
+                </p>
+              </>
+            )}
             <p className="text-[10px] text-muted mt-0.5">
               hace {notification.minutesAgo} minutos
             </p>
@@ -141,7 +182,7 @@ export default function SocialProofToast() {
         </div>
 
         {/* Bottom accent bar */}
-        <div className="h-1" style={{ background: "linear-gradient(90deg, #2d6a4f, #f59e0b)" }} />
+        <div className="h-1" style={{ background: "linear-gradient(90deg, #0f766e, #f59e0b)" }} />
       </div>
     </div>
   );

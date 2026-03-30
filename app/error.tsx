@@ -19,7 +19,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         <div className="flex gap-3 justify-center">
           <button
             onClick={reset}
-            className="px-5 py-2.5 rounded-xl bg-[#2d6a4f] hover:bg-[#245a42] text-white text-sm font-bold transition-colors"
+            className="px-5 py-2.5 rounded-xl bg-[#0f766e] hover:bg-[#0d5f58] text-white text-sm font-bold transition-colors"
           >
             Reintentar
           </button>

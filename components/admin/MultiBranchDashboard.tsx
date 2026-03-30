@@ -35,7 +35,7 @@ export default function MultiBranchDashboard() {
       // Build branch data from dashboard response
       const main: BranchData = {
         id: "main",
-        name: "Bodega San Martin - Principal",
+        name: "Buleje - Principal",
         salesTotal: data.totalSales ?? data.todaySales ?? 0,
         ordersCount: data.totalOrders ?? data.todayOrders ?? 0,
         productsCount: data.totalProducts ?? 0,

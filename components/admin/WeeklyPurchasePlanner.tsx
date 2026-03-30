@@ -63,8 +63,8 @@ const URGENCY_STYLES: Record<PlanItem["urgency"], { badge: string; row: string; 
     label: "Critico",
   },
   high: {
-    badge: "bg-[#f4a261]/10 text-[#f4a261]",
-    row: "border-[#f4a261]/20 bg-[#f4a261]/5 dark:bg-[#f4a261]/5",
+    badge: "bg-[#f97316]/10 text-[#f97316]",
+    row: "border-[#f97316]/20 bg-[#f97316]/5 dark:bg-[#f97316]/5",
     label: "Urgente",
   },
   medium: {
@@ -185,8 +185,8 @@ export default function WeeklyPurchasePlanner() {
       <div className="p-5 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#2d6a4f]/10">
-              <ShoppingBag className="w-5 h-5 text-[#2d6a4f]" />
+            <div className="p-2 rounded-xl bg-[#0f766e]/10">
+              <ShoppingBag className="w-5 h-5 text-[#0f766e]" />
             </div>
             <div>
               <h2 className="font-bold text-gray-900 dark:text-white">
@@ -229,15 +229,15 @@ export default function WeeklyPurchasePlanner() {
                 {plan.filter((i) => i.urgency === "critical").length} criticos
               </span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f4a261]/10 border border-[#f4a261]/20">
-              <Clock className="w-3.5 h-3.5 text-[#f4a261]" />
-              <span className="text-xs font-semibold text-[#f4a261]">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#f97316]/10 border border-[#f97316]/20">
+              <Clock className="w-3.5 h-3.5 text-[#f97316]" />
+              <span className="text-xs font-semibold text-[#f97316]">
                 {plan.filter((i) => i.urgency === "high").length} urgentes
               </span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#2d6a4f]/10 border border-[#2d6a4f]/20 ml-auto">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#2d6a4f]" />
-              <span className="text-xs font-semibold text-[#2d6a4f] dark:text-[#52b788]">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0f766e]/10 border border-[#0f766e]/20 ml-auto">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#0f766e]" />
+              <span className="text-xs font-semibold text-[#0f766e] dark:text-[#14b8a6]">
                 Costo estimado: {fmt(totalCost)}
               </span>
             </div>
@@ -256,7 +256,7 @@ export default function WeeklyPurchasePlanner() {
           ))
         ) : plan.length === 0 ? (
           <div className="p-8 text-center">
-            <CheckCircle2 className="w-10 h-10 text-[#2d6a4f] mx-auto mb-3" />
+            <CheckCircle2 className="w-10 h-10 text-[#0f766e] mx-auto mb-3" />
             <p className="font-semibold text-gray-900 dark:text-white">
               Todo en orden
             </p>
@@ -275,7 +275,7 @@ export default function WeeklyPurchasePlanner() {
                   item.urgency === "critical"
                     ? "border-l-red-500"
                     : item.urgency === "high"
-                      ? "border-l-[#f4a261]"
+                      ? "border-l-[#f97316]"
                       : item.urgency === "medium"
                         ? "border-l-blue-400"
                         : "border-l-gray-200 dark:border-l-gray-700"
@@ -297,7 +297,7 @@ export default function WeeklyPurchasePlanner() {
                     <p className="font-bold text-gray-900 dark:text-white text-sm">
                       {item.suggestedQty} {item.product.unit ?? "u"}
                     </p>
-                    <p className="text-xs text-[#2d6a4f] dark:text-[#52b788]">
+                    <p className="text-xs text-[#0f766e] dark:text-[#14b8a6]">
                       {fmt(item.estimatedCost)}
                     </p>
                   </div>
@@ -317,8 +317,8 @@ export default function WeeklyPurchasePlanner() {
       </div>
 
       {error && (
-        <div className="px-5 py-3 bg-[#f4a261]/10 border-t border-[#f4a261]/20">
-          <p className="text-xs text-[#f4a261]">{error}</p>
+        <div className="px-5 py-3 bg-[#f97316]/10 border-t border-[#f97316]/20">
+          <p className="text-xs text-[#f97316]">{error}</p>
         </div>
       )}
     </div>

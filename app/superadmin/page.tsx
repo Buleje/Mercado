@@ -491,7 +491,7 @@ export default function SuperAdminPage() {
             </div>
             <div>
               <span className="font-bold text-white">Platform Admin</span>
-              <span className="text-gray-500 text-xs ml-2">Bodega San Martín SaaS</span>
+              <span className="text-gray-500 text-xs ml-2">Buleje SaaS</span>
             </div>
           </div>
           <div className="flex items-center gap-4">

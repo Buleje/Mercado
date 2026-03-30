@@ -31,12 +31,12 @@ export function ShareProductButton({
         "inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium",
         "transition-colors duration-150",
         // Light mode
-        "border-[#2d6a4f] bg-transparent text-[#2d6a4f]",
-        "hover:bg-[#2d6a4f]/10",
+        "border-[#0f766e] bg-transparent text-[#0f766e]",
+        "hover:bg-[#0f766e]/10",
         // Dark mode
         "dark:border-[#3a8a65] dark:text-[#3a8a65]",
-        "dark:hover:bg-[#2d6a4f]/20",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2d6a4f] focus-visible:ring-offset-2",
+        "dark:hover:bg-[#0f766e]/20",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f766e] focus-visible:ring-offset-2",
         "dark:focus-visible:ring-offset-gray-900",
         className
       )}

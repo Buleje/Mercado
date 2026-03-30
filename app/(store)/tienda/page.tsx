@@ -15,26 +15,26 @@ import {
 } from "@/components/LoadingSkeleton";
 
 export const metadata: Metadata = {
-  title: "Tienda Online de Abarrotes en Pucallpa — Bodega San Martín",
+  title: "Tienda Online de Abarrotes en Pucallpa — Buleje",
   description:
     "Explora nuestro catálogo completo de abarrotes, bebidas, carnes, snacks, limpieza y más. Delivery gratis desde S/50 en Pucallpa. Paga con Yape o efectivo.",
   alternates: {
-    canonical: "https://www.bodegasanmartin.pe/tienda",
+    canonical: "https://www.buleje.pe/tienda",
   },
   openGraph: {
-    title: "Tienda Online — Bodega San Martín Pucallpa",
+    title: "Tienda Online — Buleje Pucallpa",
     description: "Más de 500 productos con delivery gratis en Pucallpa. Abarrotes, bebidas, carnes, snacks y más. Paga con Yape o efectivo.",
-    url: "https://www.bodegasanmartin.pe/tienda",
+    url: "https://www.buleje.pe/tienda",
     type: "website",
     locale: "es_PE",
-    siteName: "Bodega San Martín",
-    images: [{ url: "https://www.bodegasanmartin.pe/og-image.jpg", width: 1200, height: 630, alt: "Tienda online Bodega San Martín — Abarrotes en Pucallpa" }],
+    siteName: "Buleje",
+    images: [{ url: "https://www.buleje.pe/og-image.jpg", width: 1200, height: 630, alt: "Tienda online Buleje — Abarrotes en Pucallpa" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tienda Online — Bodega San Martín Pucallpa",
+    title: "Tienda Online — Buleje Pucallpa",
     description: "Más de 500 productos con delivery gratis en Pucallpa.",
-    images: ["https://www.bodegasanmartin.pe/og-image.jpg"],
+    images: ["https://www.buleje.pe/og-image.jpg"],
   },
 };
 
@@ -43,6 +43,9 @@ const DailySpecial      = dynamic(() => import("@/components/DailySpecial"));
 const CountdownBanner   = dynamic(() => import("@/components/CountdownBanner"));
 const FlashDeals        = dynamic(() => import("@/components/FlashDeals"));
 const SeasonalPromo     = dynamic(() => import("@/components/SeasonalPromo"));
+
+// ── Idea 15: Compra Colaborativa ──
+const CollaborativeShoppingBanner = dynamic(() => import("@/components/CollaborativeShoppingBanner"));
 
 // ── Main catalog & sections ──
 const PopularProducts   = dynamic(() => import("@/components/PopularProducts"));
@@ -57,8 +60,8 @@ export default function TiendaPage() {
       {/* SEO: Breadcrumb navigation */}
       <BreadcrumbSchema
         items={[
-          { name: "Inicio", url: "https://www.bodegasanmartin.pe/" },
-          { name: "Tienda", url: "https://www.bodegasanmartin.pe/tienda" },
+          { name: "Inicio", url: "https://www.buleje.pe/" },
+          { name: "Tienda", url: "https://www.buleje.pe/tienda" },
         ]}
       />
       {/* SEO: ItemList schema for category navigation */}
@@ -68,7 +71,7 @@ export default function TiendaPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "ItemList",
-            name: "Categorías de productos — Bodega San Martín",
+            name: "Categorías de productos — Buleje",
             description: "Catálogo completo de productos con delivery en Pucallpa.",
             numberOfItems: categories.filter((c) => c.id !== "todos").length,
             itemListElement: categories
@@ -77,7 +80,7 @@ export default function TiendaPage() {
                 "@type": "ListItem",
                 position: i + 1,
                 name: cat.label,
-                url: `https://www.bodegasanmartin.pe/tienda/categoria/${cat.id}`,
+                url: `https://www.buleje.pe/tienda/categoria/${cat.id}`,
               })),
           }),
         }}
@@ -94,6 +97,9 @@ export default function TiendaPage() {
         </div>
       </nav>
       <main id="main-content">
+        {/* ── Idea 15: Compra Colaborativa Banner ──────────────────── */}
+        <CollaborativeShoppingBanner />
+
         <FreeDeliveryProgress />
         <Suspense fallback={<SectionLoadingSkeleton />}>
           <DailySpecial />

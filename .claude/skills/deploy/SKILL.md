@@ -1,23 +1,23 @@
 ---
 name: deploy
-description: Ejecutar el proceso completo de deploy para Bodega San Martin. Usar cuando el usuario quiera deployar, subir a produccion o publicar cambios.
+description: Ejecutar el proceso completo de deploy para Buleje. Usar cuando el usuario quiera deployar, subir a produccion o publicar cambios.
 disable-model-invocation: true
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
-# Deploy — Bodega San Martin
+# Deploy — Buleje
 
-Ejecutar el proceso completo de deploy para el proyecto Bodega San Martin.
+Ejecutar el proceso completo de deploy para el proyecto Buleje.
 
 ## Pasos
 
 ### 1. Pre-flight checks
 
-Ejecutar los siguientes comandos en orden desde `bodega-san-martin/`. Si alguno falla, DETENER el proceso y reportar el error.
+Ejecutar los siguientes comandos en orden desde `buleje/`. Si alguno falla, DETENER el proceso y reportar el error.
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint
 ```
 

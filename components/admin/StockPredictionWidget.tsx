@@ -143,7 +143,7 @@ export default function StockPredictionWidget() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Package className="h-4 w-4 text-[#2d6a4f]" />
+          <Package className="h-4 w-4 text-[#0f766e]" />
           <span className="text-sm font-semibold text-foreground dark:text-foreground">
             Prediccion de agotamiento de stock
           </span>
@@ -200,9 +200,9 @@ export default function StockPredictionWidget() {
       {/* Item list */}
       {!loading && !error && items.length > 0 && (
         <ul className="space-y-1.5">
-          {items.map((item) => (
+          {items.map((item, idx) => (
             <li
-              key={item.id}
+              key={item.id ?? idx}
               className={cn(
                 "flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm",
                 urgencyClass(item.daysLeft)

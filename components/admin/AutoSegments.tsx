@@ -9,7 +9,7 @@ import {
   UserPlus,
   User,
   Loader2,
-  _AlertCircle,
+  AlertCircle,
   ChevronDown,
   ChevronRight,
   RefreshCw,
@@ -111,7 +111,7 @@ export default function AutoSegments() {
         label: "Regular",
         description: "Entre S/100 y S/500 al mes",
         icon: ShoppingCart,
-        color: "text-[#2d6a4f] dark:text-emerald-400",
+        color: "text-[#0f766e] dark:text-emerald-400",
         bg: "bg-emerald-50 dark:bg-emerald-900/20",
         border: "border-emerald-200 dark:border-emerald-800",
       },
@@ -197,11 +197,11 @@ export default function AutoSegments() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#2d6a4f]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#0f766e]" />
         </div>
       ) : error ? (
         <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-900/10">
-          <_AlertCircle className="h-5 w-5 text-red-500" />
+          <AlertCircle className="h-5 w-5 text-red-500" />
           <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       ) : (
@@ -288,7 +288,7 @@ export default function AutoSegments() {
                               </p>
                               <p className="text-xs text-gray-400">{c.phone}</p>
                             </div>
-                            <span className="ml-2 shrink-0 text-sm font-semibold text-[#2d6a4f]">
+                            <span className="ml-2 shrink-0 text-sm font-semibold text-[#0f766e]">
                               {fmt(c.totalSpent ?? 0)}
                             </span>
                           </div>

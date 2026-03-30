@@ -9,20 +9,11 @@ const S = () => (
   </div>
 );
 
-const AnalyticsProDashboard = dynamic(
-  () => import("@/components/admin/analytics/AnalyticsProDashboard"),
+const AnalyticsBIModule = dynamic(
+  () => import("@/components/admin/unified/AnalyticsBIModule"),
   { loading: S }
 );
 
 export default function AnalyticsProModule() {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <BarChart3 className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-extrabold text-gray-900 dark:text-foreground">Analytics Pro</h1>
-        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">Avanzado</span>
-      </div>
-      <AnalyticsProDashboard />
-    </div>
-  );
+  return <AnalyticsBIModule />;
 }

@@ -1,74 +1,77 @@
-"use client";
+﻿"use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { motion, AnimatePresence } from "framer-motion";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOnboarding } from "@/hooks/use-onboarding";
+import { useSwipe } from "@/hooks/use-swipe";
 import { OnboardingTour } from "@/components/admin/OnboardingTour";
 import {
-  Trash2, Pencil, Check, X, AlertTriangle,
-  Users, Star, LogOut, ShoppingBasket, MessageCircle, ShoppingCart,
-  Loader2, Truck, HandCoins, FileText, Settings, Menu, Store,
-  MapPin, Clock, Phone, Image as ImageIcon, AlignLeft, ExternalLink, Search, User,
-  Upload, ArrowUp, ArrowDown, Eye, EyeOff, Link as LinkIcon,
-  Lock, ChevronRight, Activity,
+  Trash2, Check, X, AlertTriangle,
+  Users, Star, LogOut, ShoppingBasket, ShoppingCart,
+  Loader2, Truck, FileText, Settings, Menu, Store,
+  MapPin, Clock, Phone, ExternalLink, Search,
+  Eye, EyeOff, ChevronRight, Activity,
   Brain,
-  Package, Bell, UserCog, Printer, FlaskConical,
-  DollarSign, Layers, Sun, Moon, Target, Download,
-  Cake, Shield, Smartphone, Copy, ChevronDown, ChevronUp,
-  CheckCircle, Bike, UserCheck, SlidersHorizontal, Filter, Reply, Sparkles, Save,
-  Maximize2, Zap, Tag, RefreshCw,
+  Package, Printer, FlaskConical,
+  DollarSign, Layers, Sun, Moon, Download,
+  Cake, Shield, ChevronDown, ChevronUp,
+  CheckCircle, Bike, UserCheck, SlidersHorizontal, Sparkles,
+  Maximize2, Minimize2, Zap, Tag, RefreshCw, CreditCard, Landmark,
+  ClipboardList, Power, RotateCcw,
+  Lightbulb, Target,
 } from "lucide-react";
-import type { DbCustomer, DbReview, DbOrder, OrderStatus, StoreMode } from "@/lib/jsondb";
+import type { DbOrder, OrderStatus, StoreMode } from "@/lib/jsondb";
 import { googleMapsUrl } from "@/lib/order-utils";
-import { cn, exportToCSV } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
 import { MODULE_PERMISSIONS } from "@/lib/module-permissions";
 import {
   fetchAllOrders,
-  Stars,
   parseGps,
   formatDate,
   haversineKm,
-  avatarColor,
   getOrderTimeline,
-  mdToHtml,
 } from "@/lib/admin-helpers";
 import { AdminStatsMobile, AdminStatsDesktop } from "@/components/admin/AdminStats";
 import { ShortcutsModal, ClearDataModal } from "@/components/admin/AdminModals";
 
 // Lazy-load heavy admin tabs for better initial load performance
 const TabSpinner = () => (
-  <div className="space-y-3 sm:space-y-4 animate-pulse">
+  <div className="space-y-6 animate-pulse">
+    {/* Header skeleton */}
     <div className="flex items-center gap-3">
-      <div className="h-8 w-48 bg-gray-200 dark:bg-surface rounded-lg" />
-      <div className="h-8 w-32 bg-gray-200 dark:bg-surface rounded-lg ml-auto" />
-    </div>
-    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="space-y-2">
-            <div className="h-4 bg-gray-200 dark:bg-surface rounded w-1/3" />
-            <div className="h-6 bg-gray-200 dark:bg-surface rounded w-2/3" />
-          </div>
-        ))}
+      <div className="h-10 w-10 rounded-xl bg-gray-200 dark:bg-gray-700" />
+      <div>
+        <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded" />
+        <div className="h-3 w-60 bg-gray-200 dark:bg-gray-700 rounded mt-2" />
       </div>
     </div>
+    {/* KPI cards skeleton */}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+      ))}
+    </div>
+    {/* Table skeleton */}
     <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6 space-y-3">
       {[1, 2, 3, 4].map(i => (
         <div key={i} className="flex items-center gap-4">
-          <div className="h-10 w-10 bg-gray-200 dark:bg-surface rounded-xl shrink-0" />
+          <div className="h-10 w-10 bg-gray-200 dark:bg-gray-700 rounded-xl shrink-0" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 bg-gray-200 dark:bg-surface rounded w-1/2" />
-            <div className="h-3 bg-gray-200 dark:bg-surface rounded w-1/3" />
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
           </div>
-          <div className="h-8 w-20 bg-gray-200 dark:bg-surface rounded-lg" />
+          <div className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-lg" />
         </div>
       ))}
     </div>
+    {/* Secondary content skeleton */}
+    <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
   </div>
 );
 // ── Unified Module Imports (8 consolidated modules) ──
@@ -81,17 +84,47 @@ const FinanzasModule = dynamic(() => import("@/components/admin/unified/Finanzas
 const CRMClientesModule = dynamic(() => import("@/components/admin/unified/CRMClientesModule"), { loading: TabSpinner });
 const AnalyticsProModule = dynamic(() => import("@/components/admin/unified/AnalyticsProModule"), { loading: TabSpinner });
 const AICommandModule = dynamic(() => import("@/components/admin/unified/AICommandModule"), { loading: TabSpinner });
+const SugerenciasIAModule = dynamic(() => import("@/components/admin/unified/SugerenciasIAModule"), { loading: TabSpinner });
+const MetasLogrosModule = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"), { loading: TabSpinner });
+const MarketplaceModule = dynamic(() => import("@/components/admin/unified/MarketplaceModule"), { loading: TabSpinner });
+const DeliveryPartnersModule = dynamic(() => import("@/components/admin/unified/DeliveryPartnersModule"), { loading: TabSpinner });
+
+// ── Módulos adicionales ──
+const AuditTrailModule = dynamic(() => import("@/components/admin/AuditTrailModule"), { loading: TabSpinner });
+const DevolucionesProveedorModule = dynamic(() => import("@/components/admin/DevolucionesProveedorModule"), { loading: TabSpinner });
+const FiadosModule = dynamic(() => import("@/components/admin/FiadosModule"), { loading: TabSpinner });
+const TurnosModule = dynamic(() => import("@/components/admin/TurnosModule"), { loading: TabSpinner });
+const RecetasModule = dynamic(() => import("@/components/admin/RecetasModule"), { loading: TabSpinner });
+const PrestamosModule = dynamic(() => import("@/components/admin/PrestamosModule"), { loading: TabSpinner });
+const TreasuryDashboard = dynamic(() => import("@/components/admin/TreasuryDashboard"), { loading: TabSpinner });
+const PromocionesModule = dynamic(() => import("@/components/admin/PromocionesModule"), { loading: TabSpinner });
+const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCrediticioTab"), { loading: TabSpinner });
+
+// ── Módulos de documentos ──
+const CotizacionesModule = dynamic(() => import("@/components/admin/CotizacionesModule"), { loading: TabSpinner });
+const GuiasRemisionModule = dynamic(() => import("@/components/admin/GuiasRemisionModule"), { loading: TabSpinner });
+const NotasCreditoModule = dynamic(() => import("@/components/admin/NotasCreditoModule"), { loading: TabSpinner });
+const ContratosModule = dynamic(() => import("@/components/admin/ContratosModule"), { loading: TabSpinner });
+// DeclaracionInventarioModule movido dentro del módulo Inventario (tab "Declaración")
 
 import SSEListener from "@/components/admin/SSEListener";
+import NotificationBell from "@/components/notifications/NotificationBell";
+import AdminCommandPalette from "@/components/admin/shared/AdminCommandPalette";
+
+// Changelog + Export
+const ChangelogModal = dynamic(() => import("@/components/admin/ChangelogModal"), { ssr: false });
 
 const TeamTab        = dynamic(() => import("@/components/admin/TeamTab"),        { loading: TabSpinner });
 const PlanTab        = dynamic(() => import("@/components/admin/PlanTab"),        { loading: TabSpinner });
+const SettingsModule = dynamic(() => import("@/components/admin/SettingsModule"), { loading: TabSpinner });
 
 // Utility components (not tab modules)
 const GlobalSearch = dynamic(() => import("@/components/admin/GlobalSearch"), { ssr: false });
 const AlertCenter = dynamic(() => import("@/components/admin/AlertCenter"), { ssr: false });
 const AIFloatingButton = dynamic(() => import("@/components/admin/AIFloatingButton"), { ssr: false });
-const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
+// LeafletMap moved to SettingsModule
+const CierreDiarioModal = dynamic(() => import("@/components/cierre-diario/CierreDiarioModal"), { ssr: false });
+const MorningSummaryModal = dynamic(() => import("@/components/admin/MorningSummaryModal"), { ssr: false });
 
 // ── 8 módulos consolidados + pedidos + plan ──
 type Tab =
@@ -108,7 +141,28 @@ type Tab =
   | "plan"
   // Nuevos módulos avanzados
   | "analytics-pro"
-  | "ai-command";
+  | "ai-command"
+  // Módulos adicionales
+  | "fiados"
+  | "turnos"
+  | "recetas"
+  | "prestamos"
+  // Módulos de documentos
+  | "cotizaciones"
+  | "guias-remision"
+  | "notas-credito"
+  | "contratos"
+  // Módulos nuevos
+  | "auditoria"
+  | "devoluciones-proveedor"
+  | "tesoreria"
+  | "promociones"
+  | "scoring"
+  | "sugerencias-ia"
+  | "metas-logros"
+  // Módulos de operaciones de marketplace y delivery
+  | "marketplace"
+  | "delivery-partners";
 
 // Old tab IDs → consolidated module IDs for localStorage migration
 // Maps all legacy tab IDs from previous 14-module and 28-module layouts to new 8-module layout
@@ -117,7 +171,7 @@ const TAB_MIGRATION: Record<string, Tab> = {
   dashboard: "asistente-ia", "dashboard-ejecutivo": "asistente-ia", "panel-principal": "asistente-ia",
   agentes: "asistente-ia", changelog: "asistente-ia",
   // → Ventas & Caja
-  pos: "ventas-caja", caja: "ventas-caja", "pos-caja": "ventas-caja", "arqueo-caja": "ventas-caja", turnos: "ventas-caja",
+  pos: "ventas-caja", caja: "ventas-caja", "pos-caja": "ventas-caja", "arqueo-caja": "ventas-caja",
   "ventas-marketing": "ventas-caja", marketing: "ventas-caja", "forecast-ventas": "ventas-caja",
   "metricas-conversion": "ventas-caja", referidos: "ventas-caja",
   // → Inventario
@@ -164,7 +218,7 @@ const TAB_MIGRATION: Record<string, Tab> = {
   devoluciones: "clientes", "devoluciones-avanzadas": "clientes", calidad: "clientes", anomalias: "clientes",
   // → Configuración (seguridad, sistema, RRHH, comunicaciones, tareas, agenda)
   usuarios: "config", "usuarios-admin": "config", "permisos-roles": "config", "logs-seguridad": "config",
-  auditoria: "config", actividad: "config", cumplimiento: "config",
+  actividad: "config", cumplimiento: "config",
   "salud-sistema": "config", "backup-restaurar": "config", webhooks: "config",
   sistema: "config", configuracion: "config", equipo: "config", seguridad: "config",
   rrhh: "config", nomina: "config", sucursales: "config",
@@ -180,6 +234,27 @@ const TAB_MIGRATION: Record<string, Tab> = {
   // Especiales
   pedidos: "pedidos",
   plan: "plan",
+  // Módulos nuevos
+  sugerencias: "sugerencias-ia",
+  metas: "metas-logros",
+  auditoria: "auditoria",
+  "devoluciones-proveedor": "devoluciones-proveedor",
+  scoring: "scoring",
+  // Marketplace & Delivery
+  marketplace: "marketplace",
+  "marketplace-tienda": "marketplace",
+  "marketplace-productos": "marketplace",
+  "marketplace-ordenes": "marketplace",
+  "marketplace-comisiones": "marketplace",
+  delivery: "delivery-partners",
+  "delivery-partners": "delivery-partners",
+  repartidores: "delivery-partners",
+  asignaciones: "delivery-partners",
+  // Módulos adicionales
+  fiados: "fiados",
+  turnos: "turnos",
+  recetas: "recetas",
+  prestamos: "prestamos",
 };
 
 // Modules that ship with auto-seeded demo data and their API cleanup endpoint
@@ -199,6 +274,12 @@ const MODULE_INFO: Partial<Record<Tab, { emoji: string; priority: "core" | "high
   "config":        { emoji: "⚙️", priority: "core",   desc: "Usuarios, permisos, plan y configuración de la página web.",             tip: "Configura esto primero para que todo funcione correctamente." },
   "pedidos":       { emoji: "🛒", priority: "core",   desc: "Gestiona pedidos recibidos, su estado, asignación y entrega.",           tip: "Centraliza pedidos de WhatsApp, tienda online y mostrador." },
   "plan":          { emoji: "⚡", priority: "medium", desc: "Tu plan actual, límites y opciones de mejora.",                          tip: "Revisa tu plan para aprovechar al máximo la plataforma." },
+  "fiados":        { emoji: "💰", priority: "high",   desc: "Control de créditos informales: registro, pagos y saldos pendientes.",  tip: "Lleva la cuenta de lo que te deben tus clientes de confianza." },
+  "turnos":        { emoji: "⏱️", priority: "high",   desc: "Apertura y cierre de turnos con conteo de efectivo.",                   tip: "Control de caja por turno para saber exactamente cuánto entró." },
+  "recetas":       { emoji: "🍳", priority: "medium", desc: "Recetas de producción con ingredientes y control de lotes.",            tip: "Calcula costos de producción y descuenta stock automáticamente." },
+  "prestamos":     { emoji: "🏦", priority: "medium", desc: "Préstamos a clientes con cuotas, interés y tabla de amortización.",     tip: "Gestiona préstamos con calculadora integrada y seguimiento de pagos." },
+  "sugerencias-ia": { emoji: "💡", priority: "high" as const,   desc: "Combos, cross-sell y recomendaciones personalizadas por cliente.", tip: "La IA analiza tus ventas y te dice qué ofrecer." },
+  "metas-logros":   { emoji: "🏆", priority: "medium" as const, desc: "Metas de ventas, clientes y logros desbloqueados.", tip: "Configura tus objetivos y celebra cada logro." },
 };
 
 type TabCategory = {
@@ -212,9 +293,9 @@ type TabCategory = {
 const BASIC_MODULES: TabCategory[] = [
   {
     id: "asistente-ia",
-    label: "Asistente IA",
+    label: "IA & Analítica",
     icon: Brain,
-    tabs: ["asistente-ia"],
+    tabs: ["asistente-ia", "analytics-pro", "ai-command", "sugerencias-ia", "metas-logros"],
   },
   {
     id: "ventas-caja",
@@ -251,6 +332,72 @@ const BASIC_MODULES: TabCategory[] = [
     label: "Mis Clientes",
     icon: Users,
     tabs: ["clientes"],
+  },
+  {
+    id: "fiados",
+    label: "Fíados",
+    icon: CreditCard,
+    tabs: ["fiados"],
+  },
+  {
+    id: "turnos",
+    label: "Turnos",
+    icon: Clock,
+    tabs: ["turnos"],
+  },
+  {
+    id: "recetas",
+    label: "Recetas",
+    icon: FlaskConical,
+    tabs: ["recetas"],
+  },
+  {
+    id: "prestamos",
+    label: "Préstamos",
+    icon: Landmark,
+    tabs: ["prestamos"],
+  },
+  {
+    id: "auditoria",
+    label: "Auditoría",
+    icon: Shield,
+    tabs: ["auditoria"],
+  },
+  {
+    id: "devoluciones-proveedor",
+    label: "Devoluciones",
+    icon: RotateCcw,
+    tabs: ["devoluciones-proveedor"],
+  },
+  {
+    id: "tesoreria",
+    label: "Tesorería",
+    icon: Landmark,
+    tabs: ["tesoreria"],
+  },
+  {
+    id: "promociones",
+    label: "Promociones",
+    icon: Tag,
+    tabs: ["promociones"],
+  },
+  {
+    id: "scoring",
+    label: "Scoring Crédito",
+    icon: Shield,
+    tabs: ["scoring"],
+  },
+  {
+    id: "documentos",
+    label: "Documentos",
+    icon: FileText,
+    tabs: ["cotizaciones", "guias-remision", "notas-credito", "contratos"],
+  },
+  {
+    id: "marketplace-ops",
+    label: "Marketplace",
+    icon: Store,
+    tabs: ["marketplace", "delivery-partners"],
   },
 ];
 
@@ -368,7 +515,6 @@ function OrdersTab() {
     setLoading(false);
   }, []);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
     fetch("/api/settings").then(r => r.ok ? r.json() : null).then(d => {
@@ -1598,7 +1744,7 @@ function OrdersTab() {
                         <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
                           <Store className="h-8 w-8 text-primary" />
                         </div>
-                        <h2 className="text-lg font-extrabold text-gray-900">Bodega San Martín</h2>
+                        <h2 className="text-lg font-extrabold text-gray-900">Buleje</h2>
                         <p className="text-xs text-gray-500 mt-0.5">Ticket de Delivery</p>
                       </div>
 
@@ -1778,1019 +1924,144 @@ function OrdersTab() {
   );
 }
 
-function SettingsSaveBtn({ section, data, extra, saving, savedSection, onSave }: {
-  section: string;
-  data: Record<string, unknown>;
-  extra?: () => void;
-  saving: boolean;
-  savedSection: string | null;
-  onSave: (section: string, data: Record<string, unknown>, extra?: () => void) => void;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={saving}
-      onClick={() => onSave(section, data, extra)}
-      className={cn(
-        "flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all",
-        savedSection === section ? "bg-emerald-500 text-white" : "bg-gray-900 text-white hover:bg-gray-800"
-      )}
-    >
-      {saving && savedSection !== section ? <><Loader2 className="h-4 w-4 animate-spin" /> Guardando…</> :
-       savedSection === section ? <><Check className="h-4 w-4" /> ¡Guardado!</> :
-       "Guardar"}
-    </button>
-  );
-}
+// ── SettingsTab extracted to components/admin/SettingsModule.tsx ──
+// ── Configuración de tab por defecto por módulo ──────────────────────────────
 
-type NavLinkItem = { id: string; visible: boolean };
-const NAV_LABEL: Record<string, string> = {
-  inicio: "Inicio",
-  productos: "Productos",
-  beneficios: "Beneficios",
-  contacto: "Contacto",
-};
-const DEFAULT_NAV_LINKS: NavLinkItem[] = [
-  { id: "inicio", visible: true },
-  { id: "productos", visible: true },
-  { id: "beneficios", visible: true },
-  { id: "contacto", visible: true },
+const NAV_MODULES = [
+  {
+    id: "ventas-caja",
+    name: "Ventas & Caja",
+    tabs: [
+      { id: "dashboard", label: "Dashboard" },
+      { id: "vender", label: "Vender" },
+      { id: "turnos", label: "Turnos" },
+      { id: "caja", label: "Caja" },
+      { id: "pedidos", label: "Pedidos" },
+      { id: "fiados", label: "Me deben" },
+      { id: "cuadrar", label: "Cuadrar" },
+    ],
+  },
+  {
+    id: "inventario",
+    name: "Inventario",
+    tabs: [
+      { id: "stock", label: "Existencias" },
+      { id: "alertas", label: "Alertas" },
+      { id: "movimientos", label: "Movimientos" },
+      { id: "conteo", label: "Conteo fisico" },
+      { id: "valorizado", label: "Valorizado" },
+    ],
+  },
+  {
+    id: "productos",
+    name: "Productos",
+    tabs: [
+      { id: "dashboard", label: "Dashboard" },
+      { id: "catalogo", label: "Catalogo" },
+      { id: "categorias", label: "Categorias" },
+      { id: "precios", label: "Precios" },
+      { id: "promociones", label: "Promociones" },
+    ],
+  },
+  {
+    id: "compras",
+    name: "Compras",
+    tabs: [
+      { id: "dashboard", label: "Dashboard" },
+      { id: "sugerencias", label: "Sugerencias" },
+      { id: "ordenes", label: "Ordenes" },
+      { id: "proveedores", label: "Proveedores" },
+      { id: "recepcion", label: "Recepcion" },
+    ],
+  },
+  {
+    id: "plata",
+    name: "Mi Plata",
+    tabs: [
+      { id: "dashboard", label: "Dashboard" },
+      { id: "pl", label: "Ingresos y egresos" },
+      { id: "gastos", label: "Gastos" },
+      { id: "rentabilidad", label: "Rentabilidad" },
+      { id: "presupuesto", label: "Meta vs Real" },
+      { id: "reportes", label: "Reportes" },
+    ],
+  },
+  {
+    id: "clientes",
+    name: "CRM",
+    tabs: [
+      { id: "dashboard", label: "Dashboard" },
+      { id: "clientes", label: "Clientes" },
+      { id: "delivery", label: "Delivery" },
+      { id: "fidelizacion", label: "Fidelizacion" },
+      { id: "segmentos", label: "Segmentos" },
+    ],
+  },
 ];
 
-function SettingsTab({ storeMode, onModeChange }: { storeMode: StoreMode; onModeChange: (m: StoreMode) => void }) {
-  const [loading, setLoading] = useState(true);
-  const [openModal, setOpenModal] = useState<"mode" | "business" | "payment" | "nav" | "password" | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [savedSection, setSavedSection] = useState<string | null>(null);
-  
-  // Backup/restore state
-  const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [restoreFile, setRestoreFile] = useState<File | null>(null);
-  const [restorePreview, setRestorePreview] = useState<{ date: string; size: string; products: number; orders: number; customers: number; sales: number; suppliers: number } | null>(null);
-  const [restoring, setRestoring] = useState(false);
-  const [restoreSuccess, setRestoreSuccess] = useState(false);
-  const [restoreError, setRestoreError] = useState<string | null>(null);
-  const [backupSchedule, setBackupSchedule] = useState<"none" | "daily" | "weekly">(() => {
-    if (typeof window === "undefined") return "none";
-    return (localStorage.getItem("bsm-backup-schedule") as "none" | "daily" | "weekly") || "none";
-  });
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Mode
-  const [mode, setMode] = useState<StoreMode>(storeMode);
-  // Business
-  const [businessName, setBusinessName] = useState("Bodega San Martín");
-  const [businessPhone, setBusinessPhone] = useState("51916409675");
-  const [businessAddress, setBusinessAddress] = useState("Pucallpa, Ucayali");
-  const [logoUrl, setLogoUrl] = useState("");
-  const [description, setDescription] = useState("Productos frescos, precios justos y entrega directa a tu puerta.");
-  const [hours, setHours] = useState("Lun - Sáb: 7am - 9pm");
-  const [deliveryZone, setDeliveryZone] = useState("Pucallpa");
-  const [businessLat, setBusinessLat] = useState<number | null>(null);
-  const [businessLon, setBusinessLon] = useState<number | null>(null);
-  const [showMapPicker, setShowMapPicker] = useState(false);
-  const [pickerLat, setPickerLat] = useState(-8.38001);
-  const [pickerLon, setPickerLon] = useState(-74.53551);
-  // Payment
-  const [yapeEnabled, setYapeEnabled] = useState(true);
-  const [yapeImage, setYapeImage] = useState("");
-  const [yapeName, setYapeName] = useState("");
-  const [yapePhone, setYapePhone] = useState("");
-  const [cashEnabled, setCashEnabled] = useState(true);
-  // Nav
-  const [navLinks, setNavLinks] = useState<NavLinkItem[]>(DEFAULT_NAV_LINKS);
-  // Password
-  const [currentPwInput, setCurrentPwInput] = useState("");
-  const [newPw, setNewPw] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [pwChangeError, setPwChangeError] = useState("");
-  const [storedAdminPw, setStoredAdminPw] = useState("admin2024");
-  // Maintenance
-  const [maintenanceMode, setMaintenanceMode] = useState(false);
-  const [maintenanceMsg, setMaintenanceMsg] = useState("");
-  // Bypass login
-  const [bypassLogin, setBypassLogin] = useState(false);
-
-  const yapeImgRef = useRef<HTMLInputElement>(null);
-  const logoImgRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    fetch("/api/settings")
-      .then(r => r.ok ? r.json() : null)
-      .then((d) => {
-        if (d) {
-          if (d.mode) setMode(d.mode);
-          if (d.businessName) setBusinessName(d.businessName);
-          if (d.businessPhone) setBusinessPhone(d.businessPhone);
-          if (d.businessAddress) setBusinessAddress(d.businessAddress);
-          if (d.logoUrl) setLogoUrl(d.logoUrl);
-          if (d.description) setDescription(d.description);
-          if (d.hours) setHours(d.hours);
-          if (d.deliveryZone) setDeliveryZone(d.deliveryZone);
-          if (d.businessLat) { setBusinessLat(d.businessLat); setPickerLat(d.businessLat); }
-          if (d.businessLon) { setBusinessLon(d.businessLon); setPickerLon(d.businessLon); }
-          if (d.yapeEnabled !== undefined) setYapeEnabled(d.yapeEnabled);
-          if (d.yapeImage) setYapeImage(d.yapeImage);
-          if (d.yapeName) setYapeName(d.yapeName);
-          if (d.yapePhone) setYapePhone(d.yapePhone);
-          if (d.cashEnabled !== undefined) setCashEnabled(d.cashEnabled);
-          if (Array.isArray(d.navLinks) && d.navLinks.length > 0) setNavLinks(d.navLinks);
-          if (d.adminPassword) setStoredAdminPw(d.adminPassword);
-          if (d.maintenanceMode !== undefined) setMaintenanceMode(d.maintenanceMode);
-          if (d.maintenanceMessage) setMaintenanceMsg(d.maintenanceMessage);
-          if (d.adminBypassLogin !== undefined) setBypassLogin(d.adminBypassLogin);
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  const patch = async (data: Record<string, unknown>) => {
-    await fetch("/api/settings", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-  };
-
-  const saveSection = async (section: string, data: Record<string, unknown>, extraAction?: () => void) => {
-    setSaving(true);
+function NavDefaultTabsConfig() {
+  const [defaults, setDefaults] = useState<Record<string, string>>(() => {
+    if (typeof window === "undefined") return {};
     try {
-      await patch(data);
-      if (extraAction) extraAction();
-      setSavedSection(section);
-      setTimeout(() => { setSavedSection(null); setOpenModal(null); }, 1300);
-    } catch {}
-    setSaving(false);
+      const saved = localStorage.getItem("nav-default-tabs");
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
+  const [saved, setSaved] = useState(false);
+
+  const handleChange = (moduleId: string, tabId: string) => {
+    const next = { ...defaults, [moduleId]: tabId };
+    setDefaults(next);
+    localStorage.setItem("nav-default-tabs", JSON.stringify(next));
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
-  const handleFileUpload = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setter(reader.result as string);
-    reader.readAsDataURL(file);
+  const handleReset = () => {
+    setDefaults({});
+    localStorage.removeItem("nav-default-tabs");
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
-
-  const moveNavLink = (idx: number, dir: -1 | 1) => {
-    const next = [...navLinks];
-    const swap = idx + dir;
-    if (swap < 0 || swap >= next.length) return;
-    [next[idx], next[swap]] = [next[swap], next[idx]];
-    setNavLinks(next);
-  };
-
-  const toggleNavVis = (idx: number) =>
-    setNavLinks(prev => prev.map((l, i) => i === idx ? { ...l, visible: !l.visible } : l));
-
-  if (loading) return (
-    <div className="space-y-4 animate-pulse">
-      {[1, 2, 3].map(i => (
-        <div key={i} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 bg-gray-200 dark:bg-surface rounded-xl shrink-0" />
-            <div className="flex-1 space-y-2">
-              <div className="h-5 bg-gray-200 dark:bg-surface rounded w-1/3" />
-              <div className="h-3 bg-gray-200 dark:bg-surface rounded w-2/3" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
-  const sections = [
-    {
-      id: "mode" as const,
-      icon: <ShoppingCart className="h-6 w-6 text-blue-500" />,
-      bg: "bg-blue-50",
-      title: "Modo de tienda",
-      desc: "Cómo reciben pedidos tus clientes",
-      badge: mode === "whatsapp" ? "WhatsApp" : "Checkout",
-      badgeColor: mode === "whatsapp" ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700",
-    },
-    {
-      id: "business" as const,
-      icon: <Store className="h-6 w-6 text-orange-500" />,
-      bg: "bg-orange-50",
-      title: "Información del negocio",
-      desc: "Nombre, teléfono, horario y logo",
-      badge: businessName,
-      badgeColor: "bg-orange-100 text-orange-700",
-    },
-    {
-      id: "payment" as const,
-      icon: <HandCoins className="h-6 w-6 text-purple-500" />,
-      bg: "bg-purple-50",
-      title: "Métodos de pago",
-      desc: "Efectivo y Yape",
-      badge: [cashEnabled && "Efectivo", yapeEnabled && "Yape"].filter(Boolean).join(" · ") || "Ninguno",
-      badgeColor: "bg-purple-100 text-purple-700",
-    },
-    {
-      id: "nav" as const,
-      icon: <LinkIcon className="h-6 w-6 text-indigo-500" />,
-      bg: "bg-indigo-50",
-      title: "Navegación del sitio",
-      desc: "Orden y visibilidad de los enlaces",
-      badge: `${navLinks.filter(l => l.visible).length} de ${navLinks.length} visibles`,
-      badgeColor: "bg-indigo-100 text-indigo-700",
-    },
-    {
-      id: "password" as const,
-      icon: <Lock className="h-6 w-6 text-red-500" />,
-      bg: "bg-red-50",
-      title: "Contraseña de admin",
-      desc: "Cambia la contraseña de acceso al panel",
-      badge: "••••••",
-      badgeColor: "bg-red-100 text-red-700",
-    },
-  ];
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div>
-        <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-foreground">Configuración</h2>
-        <p className="text-sm text-gray-500 dark:text-muted">Personaliza tu tienda, pagos y navegación</p>
-      </div>
-
-      {/* Section cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {sections.map(s => (
-          <div key={s.id} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm flex flex-col gap-4 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0", s.bg)}>
-                {s.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 dark:text-foreground text-sm">{s.title}</p>
-                <p className="text-xs text-gray-500 dark:text-muted">{s.desc}</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className={cn("inline-flex px-2.5 py-1 rounded-full text-xs font-semibold truncate max-w-[58%]", s.badgeColor)}>
-                {s.badge}
-              </span>
-              <button
-                onClick={() => setOpenModal(s.id)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors shrink-0"
-              >
-                <Pencil className="h-4 w-4" /> Editar
-              </button>
-            </div>
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm">
+      <div className="space-y-1">
+        {NAV_MODULES.map((mod) => (
+          <div key={mod.id} className="flex items-center justify-between py-2.5 border-b border-gray-100 dark:border-white/5 last:border-b-0">
+            <span className="text-sm font-medium text-gray-800 dark:text-foreground">{mod.name}</span>
+            <select
+              value={defaults[mod.id] ?? mod.tabs[0].id}
+              onChange={(e) => handleChange(mod.id, e.target.value)}
+              className="text-xs border border-gray-200 dark:border-card-border bg-white dark:bg-card rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-foreground focus:ring-2 focus:ring-[#0f766e]/30 focus:border-[#0f766e] outline-none transition-all"
+            >
+              {mod.tabs.map((t) => (
+                <option key={t.id} value={t.id}>{t.label}</option>
+              ))}
+            </select>
           </div>
         ))}
       </div>
-
-      {/* Maintenance mode toggle */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
-            <AlertTriangle className="h-6 w-6 text-amber-500" />
-          </div>
-          <div className="flex-1">
-            <p className="font-bold text-gray-900 dark:text-foreground text-sm">Modo mantenimiento</p>
-            <p className="text-xs text-gray-500 dark:text-muted">Bloquea la tienda para los clientes</p>
-          </div>
-          <button
-            onClick={async () => {
-              const next = !maintenanceMode;
-              setMaintenanceMode(next);
-              await patch({ maintenanceMode: next, maintenanceMessage: maintenanceMsg || undefined });
-            }}
-            className={cn(
-              "relative w-12 h-6 rounded-full transition-colors",
-              maintenanceMode ? "bg-amber-500" : "bg-gray-200 dark:bg-surface"
-            )}
-          >
-            <span className={cn("absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform", maintenanceMode && "translate-x-6")} />
-          </button>
-        </div>
-        {maintenanceMode && (
-          <div className="mt-3">
-            <input
-              type="text"
-              value={maintenanceMsg}
-              onChange={e => setMaintenanceMsg(e.target.value)}
-              onBlur={() => patch({ maintenanceMessage: maintenanceMsg || undefined })}
-              placeholder="Mensaje personalizado (opcional)"
-              className="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border rounded-xl outline-none focus:ring-2 focus:ring-amber-200"
-            />
-          </div>
+      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 dark:border-white/5">
+        <button
+          onClick={handleReset}
+          className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+        >
+          Restablecer todos
+        </button>
+        {saved && (
+          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+            <Check className="h-3 w-3" /> Guardado
+          </span>
         )}
       </div>
-
-      {/* Bypass login toggle */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-cyan-50 flex items-center justify-center shrink-0">
-            <UserCog className="h-6 w-6 text-cyan-500" />
-          </div>
-          <div className="flex-1">
-            <p className="font-bold text-gray-900 dark:text-foreground text-sm">Acceso sin login</p>
-            <p className="text-xs text-gray-500 dark:text-muted">Permite entrar al panel sin credenciales</p>
-          </div>
-          <button
-            onClick={async () => {
-              const next = !bypassLogin;
-              setBypassLogin(next);
-              await patch({ adminBypassLogin: next });
-            }}
-            className={cn(
-              "relative w-12 h-6 rounded-full transition-colors",
-              bypassLogin ? "bg-cyan-500" : "bg-gray-200 dark:bg-surface"
-            )}
-          >
-            <span className={cn("absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform", bypassLogin && "translate-x-6")} />
-          </button>
-        </div>
-        {bypassLogin && (
-          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium">⚠️ Cualquier persona podrá acceder al panel de administración</p>
-        )}
-      </div>
-
-      {/* Enhanced Backup & Restore Section */}
-      <div className="bg-linear-to-br from-teal-50 to-cyan-50 dark:from-teal-950/30 dark:to-cyan-950/30 border border-teal-100 dark:border-teal-900/30 rounded-2xl p-5 shadow-sm">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-11 h-11 rounded-xl bg-linear-to-br from-teal-500 to-cyan-500 flex items-center justify-center shrink-0">
-            <Shield className="h-6 w-6 text-white" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-gray-900 dark:text-foreground text-base">Respaldo de Datos</h3>
-            <p className="text-xs text-gray-500 dark:text-muted">Protege tu información con backups regulares</p>
-          </div>
-        </div>
-        
-        {/* Last backup reminder */}
-        {(() => {
-          const lastBackup = localStorage.getItem("bsm-last-backup");
-          const lastBackupDate = lastBackup ? new Date(lastBackup) : null;
-          const daysSince = lastBackupDate ? Math.floor((Date.now() - lastBackupDate.getTime()) / 86400000) : null;
-          const needsBackup = !lastBackupDate || daysSince! > 7;
-          
-          if (needsBackup) {
-            return (
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 mb-4">
-                <div className="flex items-start gap-2.5">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
-                      {lastBackupDate ? `Último respaldo hace ${daysSince} días` : "No hay respaldos recientes"}
-                    </p>
-                    <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
-                      Se recomienda hacer respaldos semanales para proteger tus datos.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            );
-          }
-          
-          return (
-            <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 mb-4">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <p className="text-xs text-emerald-800 dark:text-emerald-300">
-                  <strong>Último respaldo:</strong> {lastBackupDate.toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}
-                  {daysSince === 0 ? " (hoy)" : ` (hace ${daysSince} día${(daysSince ?? 0) > 1 ? "s" : ""})`}
-                </p>
-              </div>
-            </div>
-          );
-        })()}
-        
-        <div className="grid sm:grid-cols-2 gap-3">
-          {/* Generate Backup */}
-          <button
-            onClick={async () => {
-              try {
-                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
-                const link = document.createElement("a");
-                link.href = "/api/backup";
-                link.download = `bodega-backup-${timestamp}.json`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                localStorage.setItem("bsm-last-backup", new Date().toISOString());
-                // Show success briefly
-                setTimeout(() => window.location.reload(), 1500);
-              } catch (err) {
-                console.error("Backup error:", err);
-              }
-            }}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-teal-200 dark:border-teal-800 bg-white dark:bg-card hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-colors text-sm font-semibold text-teal-700 dark:text-teal-400 group"
-          >
-            <Download className="h-4 w-4 group-hover:animate-bounce" />
-            Generar respaldo
-          </button>
-          
-          {/* Restore from Backup */}
-          <button
-            onClick={() => setShowRestoreModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-cyan-200 dark:border-cyan-800 bg-white dark:bg-card hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors text-sm font-semibold text-cyan-700 dark:text-cyan-400 group"
-          >
-            <Upload className="h-4 w-4 group-hover:-translate-y-0.5 transition-transform" />
-            Restaurar desde respaldo
-          </button>
-        </div>
-        
-        {/* Backup Schedule */}
-        <div className="mt-4 pt-4 border-t border-teal-100 dark:border-teal-900/30">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold text-gray-700 dark:text-foreground">Programación automática</p>
-              <p className="text-[11px] text-gray-500 dark:text-muted">Recibe recordatorios periódicos</p>
-            </div>
-            <select
-              value={backupSchedule}
-              onChange={e => {
-                const val = e.target.value as typeof backupSchedule;
-                setBackupSchedule(val);
-                localStorage.setItem("bsm-backup-schedule", val);
-              }}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-700 dark:text-foreground bg-white dark:bg-card outline-none focus:border-teal-500 cursor-pointer"
-            >
-              <option value="none">Ninguno</option>
-              <option value="daily">Diario</option>
-              <option value="weekly">Semanal</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      
-      {/* Restore Modal */}
-      {showRestoreModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => !restoring && setShowRestoreModal(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-linear-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
-                  <Upload className="h-4 w-4 text-white" />
-                </div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground">Restaurar Base de Datos</h3>
-              </div>
-              {!restoring && (
-                <button onClick={() => setShowRestoreModal(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent">
-                  <X className="h-5 w-5" />
-                </button>
-              )}
-            </div>
-            
-            <div className="px-6 py-5 space-y-4">
-              {!restoreSuccess && !restoreFile && (
-                <>
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 shrink-0" />
-                      <div>
-                        <p className="text-sm font-bold text-red-800 dark:text-red-300">ADVERTENCIA</p>
-                        <p className="text-xs text-red-700 dark:text-red-400 mt-1">
-                          Esta acción <strong>sobrescribirá todos los datos actuales</strong> (productos, pedidos, clientes, etc.) con los del archivo de respaldo.
-                          Asegúrate de tener un backup reciente antes de proceder.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-2">Seleccionar archivo de respaldo</label>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".json,application/json"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        setRestoreError(null);
-                        try {
-                          const text = await file.text();
-                          const data = JSON.parse(text);
-                          // Validate structure
-                          if (!data.products || !data.orders) {
-                            setRestoreError("Archivo inválido: formato incorrecto");
-                            return;
-                          }
-                          setRestoreFile(file);
-                          setRestorePreview({
-                            date: data.exportDate || "Desconocida",
-                            products: data.products?.length || 0,
-                            orders: data.orders?.length || 0,
-                            customers: data.customers?.length || 0,
-                            sales: data.sales?.length || 0,
-                            suppliers: data.suppliers?.length || 0,
-                            size: (file.size / 1024).toFixed(2) + " KB",
-                          });
-                        } catch {
-                          setRestoreError("Error al leer el archivo: formato JSON inválido");
-                        }
-                      }}
-                    />
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full py-8 rounded-xl border-2 border-dashed border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 hover:border-cyan-500 dark:hover:border-cyan-500 hover:bg-cyan-100 dark:hover:bg-cyan-900/30 transition-colors group"
-                    >
-                      <Upload className="h-8 w-8 mx-auto mb-2 group-hover:-translate-y-1 transition-transform" />
-                      <p className="text-sm font-semibold">Haz clic para seleccionar archivo</p>
-                      <p className="text-xs text-gray-500 dark:text-muted mt-1">Solo archivos .json</p>
-                    </button>
-                  </div>
-                  
-                  {restoreError && (
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-                      <p className="text-xs font-semibold text-red-700 dark:text-red-400">{restoreError}</p>
-                    </div>
-                  )}
-                </>
-              )}
-              
-              {restoreFile && !restoreSuccess && restorePreview && (
-                <>
-                  <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 border border-gray-200 dark:border-card-border">
-                    <p className="text-xs font-bold text-gray-700 dark:text-foreground mb-3">Vista previa del respaldo</p>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <span className="text-gray-500 dark:text-muted block">Fecha export:</span>
-                        <span className="font-semibold text-gray-900 dark:text-foreground">{restorePreview.date}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 dark:text-muted block">Tamaño:</span>
-                        <span className="font-semibold text-gray-900 dark:text-foreground">{restorePreview.size}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 dark:text-muted block">Productos:</span>
-                        <span className="font-semibold text-gray-900 dark:text-foreground">{restorePreview.products}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 dark:text-muted block">Pedidos:</span>
-                        <span className="font-semibold text-gray-900 dark:text-foreground">{restorePreview.orders}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 dark:text-muted block">Clientes:</span>
-                        <span className="font-semibold text-gray-900 dark:text-foreground">{restorePreview.customers}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-500 dark:text-muted block">Ventas POS:</span>
-                        <span className="font-semibold text-gray-900 dark:text-foreground">{restorePreview.sales}</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3">
-                    <div className="flex items-start gap-2.5">
-                      <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                      <p className="text-xs text-amber-800 dark:text-amber-300">
-                        <strong>Importante:</strong> Se recomienda descargar un respaldo de los datos actuales antes de restaurar.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {restoreError && (
-                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-                      <p className="text-xs font-semibold text-red-700 dark:text-red-400">{restoreError}</p>
-                    </div>
-                  )}
-                </>
-              )}
-              
-              {restoreSuccess && (
-                <div className="text-center py-6">
-                  <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-3">
-                    <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <p className="text-lg font-bold text-gray-900 dark:text-foreground">¡Restauración exitosa!</p>
-                  <p className="text-sm text-gray-500 dark:text-muted mt-1">Los datos han sido restaurados correctamente.</p>
-                  <p className="text-xs text-gray-400 dark:text-muted mt-2">Recargando página...</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-card-border">
-              {!restoreSuccess && (
-                <>
-                  <button
-                    onClick={() => {
-                      setShowRestoreModal(false);
-                      setRestoreFile(null);
-                      setRestorePreview(null);
-                      setRestoreError(null);
-                    }}
-                    disabled={restoring}
-                    className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors disabled:opacity-50"
-                  >
-                    Cancelar
-                  </button>
-                  
-                  {restoreFile && (
-                    <button
-                      onClick={async () => {
-                        if (!restoreFile) return;
-                        setRestoring(true);
-                        setRestoreError(null);
-                        try {
-                          const text = await restoreFile.text();
-                          const res = await fetch("/api/restore", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: text,
-                          });
-                          if (!res.ok) {
-                            const err = await res.text();
-                            throw new Error(err || "Error al restaurar");
-                          }
-                          setRestoreSuccess(true);
-                          setTimeout(() => {
-                            window.location.reload();
-                          }, 2000);
-                        } catch (err: unknown) {
-                          setRestoreError(err instanceof Error ? err.message : "Error al restaurar los datos");
-                          setRestoring(false);
-                        }
-                      }}
-                      disabled={restoring}
-                      className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-linear-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {restoring ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Restaurando...
-                        </>
-                      ) : (
-                        <>
-                          <AlertTriangle className="h-4 w-4" />
-                          Confirmar restauración
-                        </>
-                      )}
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Modal: Modo de tienda ───────────────────────────────────────────── */}
-      {openModal === "mode" && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setOpenModal(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Modo de tienda</h3>
-              <button onClick={() => setOpenModal(null)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="px-6 py-5 space-y-4">
-              <p className="text-sm text-gray-500 dark:text-muted">Elige cómo tus clientes realizan pedidos</p>
-              <div className="grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => setMode("whatsapp")}
-                  className={cn("flex flex-col items-center gap-2 py-5 px-3 rounded-xl border-2 transition-all",
-                    mode === "whatsapp" ? "border-emerald-400 bg-emerald-50" : "border-gray-200 dark:border-card-border hover:border-gray-300")}>
-                  <MessageCircle className={cn("h-8 w-8", mode === "whatsapp" ? "text-emerald-600" : "text-gray-300 dark:text-muted")} />
-                  <span className={cn("font-bold text-sm", mode === "whatsapp" ? "text-emerald-700" : "text-gray-400 dark:text-muted")}>WhatsApp</span>
-                  <span className="text-xs text-gray-400 dark:text-muted text-center leading-tight">Pedidos via mensaje</span>
-                </button>
-                <button type="button" onClick={() => setMode("checkout")}
-                  className={cn("flex flex-col items-center gap-2 py-5 px-3 rounded-xl border-2 transition-all",
-                    mode === "checkout" ? "border-primary bg-primary/5" : "border-gray-200 dark:border-card-border hover:border-gray-300")}>
-                  <ShoppingCart className={cn("h-8 w-8", mode === "checkout" ? "text-primary" : "text-gray-300 dark:text-muted")} />
-                  <span className={cn("font-bold text-sm", mode === "checkout" ? "text-primary" : "text-gray-400 dark:text-muted")}>Checkout</span>
-                  <span className="text-xs text-gray-400 dark:text-muted text-center leading-tight">Formulario integrado</span>
-                </button>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-card-border">
-              <button onClick={() => setOpenModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
-              <SettingsSaveBtn section="mode" data={{ mode }} extra={() => onModeChange(mode)} saving={saving} savedSection={savedSection} onSave={saveSection} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Modal: Información del negocio ─────────────────────────────────── */}
-      {openModal === "business" && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setOpenModal(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Información del negocio</h3>
-              <button onClick={() => setOpenModal(null)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="overflow-y-auto px-6 py-5 flex-1 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Store className="h-4 w-4" /> Nombre del negocio</label>
-                  <input value={businessName} onChange={e => setBusinessName(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
-                </div>
-                <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Phone className="h-4 w-4" /> WhatsApp (con código país)</label>
-                  <input value={businessPhone} onChange={e => setBusinessPhone(e.target.value)} placeholder="51916409675" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
-                </div>
-                <div className="sm:col-span-2">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5">
-                    <MapPin className="h-4 w-4" /> Dirección / Ciudad
-                    <button type="button" onClick={() => setShowMapPicker(true)} className="ml-auto inline-flex items-center gap-1 text-xs text-blue-600 font-semibold hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2 py-0.5 rounded-lg transition-colors" title="Seleccionar en mapa">
-                      <MapPin className="h-3 w-3" /> Abrir mapa
-                    </button>
-                  </label>
-                  <input value={businessAddress} onChange={e => setBusinessAddress(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
-                  <button type="button"
-                    onClick={() => {
-                      if (!navigator.geolocation) return;
-                      navigator.geolocation.getCurrentPosition(pos => {
-                        const lat = pos.coords.latitude;
-                        const lon = pos.coords.longitude;
-                        setBusinessLat(lat);
-                        setBusinessLon(lon);
-                        setPickerLat(lat);
-                        setPickerLon(lon);
-                        setBusinessAddress(`GPS: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
-                      });
-                    }}
-                    className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors py-1"
-                  >
-                    <MapPin className="h-3 w-3" /> Usar ubicación actual
-                  </button>
-                </div>
-                <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Truck className="h-4 w-4" /> Zona de delivery</label>
-                  <input value={deliveryZone} onChange={e => setDeliveryZone(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
-                </div>
-                <div>
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Clock className="h-4 w-4" /> Horario de atención</label>
-                  <input value={hours} onChange={e => setHours(e.target.value)} placeholder="Lun - Sáb: 7am - 9pm" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
-                </div>
-              </div>
-              <div>
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><AlignLeft className="h-4 w-4" /> Descripción del negocio</label>
-                <textarea value={description} onChange={e => setDescription(e.target.value)} rows={2} className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none" />
-              </div>
-              {/* Logo */}
-              <div>
-                <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-2"><ImageIcon className="h-4 w-4" /> Logo del negocio</label>
-                <div className="flex flex-col gap-2">
-                  <button type="button" onClick={() => logoImgRef.current?.click()}
-                    className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-gray-300 hover:border-primary text-sm font-semibold text-gray-500 dark:text-muted hover:text-primary bg-gray-50 dark:bg-surface hover:bg-primary/5 transition-colors">
-                    <Upload className="h-4 w-4" /> Subir imagen desde dispositivo
-                  </button>
-                  <input ref={logoImgRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload(setLogoUrl)} />
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-px bg-gray-200" />
-                    <span className="text-xs text-gray-400 dark:text-muted">o URL</span>
-                    <div className="flex-1 h-px bg-gray-200" />
-                  </div>
-                  <input value={logoUrl.startsWith("data:") ? "" : logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://… o /logo.png" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
-                </div>
-                {logoUrl && (
-                  <div className="flex items-center gap-3 mt-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={logoUrl} alt="Logo preview" className="h-14 w-14 object-contain rounded-xl bg-white dark:bg-card border border-gray-100 dark:border-card-border" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                    <span className="text-xs text-gray-500 dark:text-muted flex-1">Vista previa del logo</span>
-                    <button type="button" onClick={() => setLogoUrl("")} className="text-xs text-red-400 hover:text-red-600 transition-colors">Quitar</button>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-card-border shrink-0">
-              <button onClick={() => setOpenModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
-              <SettingsSaveBtn section="business" data={{ businessName, businessPhone, businessAddress, businessLat, businessLon, logoUrl, description, hours, deliveryZone }} saving={saving} savedSection={savedSection} onSave={saveSection} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Modal: Métodos de pago ──────────────────────────────────────────── */}
-      {openModal === "payment" && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setOpenModal(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Métodos de pago</h3>
-              <button onClick={() => setOpenModal(null)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="overflow-y-auto px-6 py-5 flex-1 space-y-4">
-              {/* Cash */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
-                <div className="flex items-center gap-3">
-                  <HandCoins className="h-6 w-6 text-emerald-600" />
-                  <div>
-                    <p className="font-bold text-sm text-gray-900 dark:text-foreground">Efectivo</p>
-                    <p className="text-xs text-gray-500 dark:text-muted">Pago contra entrega</p>
-                  </div>
-                </div>
-                <button type="button" onClick={() => setCashEnabled(!cashEnabled)}
-                  className={cn("relative w-11 h-6 rounded-full transition-colors", cashEnabled ? "bg-primary" : "bg-gray-300")}>
-                  <span className={cn("absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white dark:bg-card shadow transition-transform", cashEnabled && "translate-x-5")} />
-                </button>
-              </div>
-              {/* Yape */}
-              <div className="p-4 bg-purple-50 rounded-xl border border-purple-100 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-sm">Y</div>
-                    <div>
-                      <p className="font-bold text-sm text-gray-900 dark:text-foreground">Yape</p>
-                      <p className="text-xs text-gray-500 dark:text-muted">QR de cobro antes de entrega</p>
-                    </div>
-                  </div>
-                  <button type="button" onClick={() => setYapeEnabled(!yapeEnabled)}
-                    className={cn("relative w-11 h-6 rounded-full transition-colors", yapeEnabled ? "bg-purple-600" : "bg-gray-300")}>
-                    <span className={cn("absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white dark:bg-card shadow transition-transform", yapeEnabled && "translate-x-5")} />
-                  </button>
-                </div>
-                {yapeEnabled && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><User className="h-4 w-4" /> Nombre del titular</label>
-                      <input value={yapeName} onChange={e => setYapeName(e.target.value)} placeholder="Juan Pérez" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-500 outline-none text-sm" />
-                    </div>
-                    <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-1.5"><Phone className="h-4 w-4" /> Número de Yape</label>
-                      <input value={yapePhone} onChange={e => setYapePhone(e.target.value)} placeholder="987654321" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-500 outline-none text-sm font-mono" />
-                    </div>
-                    <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-muted mb-2"><ImageIcon className="h-4 w-4" /> Imagen / QR de Yape</label>
-                      <div className="flex flex-col gap-2">
-                        <button type="button" onClick={() => yapeImgRef.current?.click()}
-                          className="inline-flex items-center justify-center gap-2 w-full py-3 rounded-xl border-2 border-dashed border-purple-300 hover:border-purple-500 text-sm font-semibold text-purple-600 hover:text-purple-700 bg-white dark:bg-card hover:bg-purple-50 transition-colors">
-                          <Upload className="h-4 w-4" /> Subir desde dispositivo o celular
-                        </button>
-                        <input ref={yapeImgRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload(setYapeImage)} />
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-px bg-gray-200" />
-                          <span className="text-xs text-gray-400 dark:text-muted">o URL</span>
-                          <div className="flex-1 h-px bg-gray-200" />
-                        </div>
-                        <input value={yapeImage.startsWith("data:") ? "" : yapeImage} onChange={e => setYapeImage(e.target.value)} placeholder="https://…" className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground focus:border-purple-500 outline-none text-sm" />
-                      </div>
-                      {yapeImage && (
-                        <div className="flex items-center gap-3 mt-3 p-3 bg-white dark:bg-card rounded-xl border border-purple-100">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={yapeImage} alt="Yape QR" className="h-24 w-24 object-contain rounded-xl border border-gray-100 dark:border-card-border" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                          <div className="text-xs text-gray-500 dark:text-muted">
-                            <p className="font-semibold text-gray-700 dark:text-foreground">{yapeName || "Titular"}</p>
-                            <p className="font-mono mt-0.5">{yapePhone || "Número"}</p>
-                            <button type="button" onClick={() => setYapeImage("")} className="mt-2 text-red-400 hover:text-red-600 transition-colors">Quitar imagen</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-card-border shrink-0">
-              <button onClick={() => setOpenModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
-              <SettingsSaveBtn section="payment" data={{ yapeEnabled, yapeImage, yapeName, yapePhone, cashEnabled }} saving={saving} savedSection={savedSection} onSave={saveSection} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Modal: Navegación del sitio ────────────────────────────────────── */}
-      {openModal === "nav" && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setOpenModal(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
-              <div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground">Navegación del sitio</h3>
-                <p className="text-xs text-gray-500 dark:text-muted mt-0.5">Reordena y oculta los enlaces del menú</p>
-              </div>
-              <button onClick={() => setOpenModal(null)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="px-6 py-4 space-y-2">
-              {navLinks.map((link, idx) => (
-                <div key={link.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
-                  <div className="flex flex-col gap-0.5">
-                    <button type="button" disabled={idx === 0} onClick={() => moveNavLink(idx, -1)}
-                      className="p-0.5 rounded text-gray-400 dark:text-muted hover:text-gray-800 dark:hover:text-foreground disabled:opacity-25 transition-colors">
-                      <ArrowUp className="h-4 w-4" />
-                    </button>
-                    <button type="button" disabled={idx === navLinks.length - 1} onClick={() => moveNavLink(idx, 1)}
-                      className="p-0.5 rounded text-gray-400 dark:text-muted hover:text-gray-800 dark:hover:text-foreground disabled:opacity-25 transition-colors">
-                      <ArrowDown className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <span className="flex-1 font-semibold text-sm text-gray-800 dark:text-foreground">{NAV_LABEL[link.id] || link.id}</span>
-                  <span className="text-xs text-gray-400 dark:text-muted font-mono">#{idx + 1}</span>
-                  <button type="button" onClick={() => toggleNavVis(idx)}
-                    className={cn("p-1.5 rounded-lg transition-colors", link.visible ? "text-primary bg-primary/10 hover:bg-primary/20" : "text-gray-300 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent")}>
-                    {link.visible ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
-                  </button>
-                </div>
-              ))}
-              <p className="text-xs text-gray-400 dark:text-muted pt-1">ðŸ’¡ Los cambios se reflejarán en el menú de clientes al guardar.</p>
-            </div>
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-card-border">
-              <button onClick={() => setOpenModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
-              <SettingsSaveBtn section="nav" data={{ navLinks }} saving={saving} savedSection={savedSection} onSave={saveSection} />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Password change modal ─────────────────────────────── */}
-      {openModal === "password" && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setOpenModal(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-card-border">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">Cambiar contraseña</h3>
-              <button onClick={() => setOpenModal(null)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
-            </div>
-            <form className="px-6 py-5 space-y-4" onSubmit={async (e) => {
-              e.preventDefault();
-              setPwChangeError("");
-              if (currentPwInput !== storedAdminPw) { setPwChangeError("La contraseña actual es incorrecta"); return; }
-              if (newPw.length < 4) { setPwChangeError("La nueva contraseña debe tener al menos 4 caracteres"); return; }
-              if (newPw !== confirmPw) { setPwChangeError("Las contraseñas no coinciden"); return; }
-              await saveSection("password", { adminPassword: newPw });
-              setStoredAdminPw(newPw);
-              setCurrentPwInput(""); setNewPw(""); setConfirmPw(""); setPwChangeError("");
-              // Re-issue cookie session with new password so the user stays logged in
-              await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: newPw }) });
-            }}>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Contraseña actual</label>
-                <input type="password" value={currentPwInput} onChange={e => setCurrentPwInput(e.target.value)} required autoFocus
-                  className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted outline-none focus:border-primary transition-colors" placeholder="••••••" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Nueva contraseña</label>
-                <input type="password" value={newPw} onChange={e => setNewPw(e.target.value)} required
-                  className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted outline-none focus:border-primary transition-colors" placeholder="Mínimo 4 caracteres" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-foreground mb-1">Confirmar nueva contraseña</label>
-                <input type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)} required
-                  className="w-full px-4 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted outline-none focus:border-primary transition-colors" placeholder="Repite la contraseña" />
-              </div>
-              {pwChangeError && <p className="text-sm text-red-500 font-semibold">{pwChangeError}</p>}
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setOpenModal(null)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
-                <button type="submit" disabled={saving}
-                  className="px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors shadow-md shadow-primary/20 disabled:opacity-50 flex items-center gap-2">
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-                  {savedSection === "password" ? "¡Guardado!" : "Cambiar contraseña"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ── Mapa picker: ubicación del negocio ─────────────────────────────── */}
-      {showMapPicker && (
-        <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/60" onClick={() => setShowMapPicker(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border shrink-0">
-              <div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground">Ubicación del negocio</h3>
-                <p className="text-xs text-gray-500 dark:text-muted mt-0.5">Haz clic en el mapa o arrastra el marcador para seleccionar la ubicación exacta</p>
-              </div>
-              <button onClick={() => setShowMapPicker(false)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="p-4 flex flex-col gap-3">
-              <button type="button"
-                onClick={() => {
-                  if (!navigator.geolocation) return;
-                  navigator.geolocation.getCurrentPosition(pos => {
-                    setPickerLat(pos.coords.latitude);
-                    setPickerLon(pos.coords.longitude);
-                    setBusinessLat(pos.coords.latitude);
-                    setBusinessLon(pos.coords.longitude);
-                    setBusinessAddress(`GPS: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`);
-                  });
-                }}
-                className="self-start inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors"
-              >
-                <MapPin className="h-4 w-4" /> Usar ubicación actual
-              </button>
-              <LeafletMap
-                lat={pickerLat}
-                lon={pickerLon}
-                zoom={15}
-                height={340}
-                onPick={(lat, lon, address) => {
-                  setPickerLat(lat);
-                  setPickerLon(lon);
-                  setBusinessLat(lat);
-                  setBusinessLon(lon);
-                  setBusinessAddress(address);
-                }}
-              />
-              {businessLat !== null && businessLon !== null && (
-                <p className="text-xs text-gray-500 dark:text-muted font-mono">GPS: {businessLat.toFixed(5)}, {businessLon.toFixed(5)}</p>
-              )}
-            </div>
-            <div className="flex justify-end gap-3 px-5 py-4 border-t border-gray-100 dark:border-card-border shrink-0">
-              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-colors">Cancelar</button>
-              <button onClick={() => setShowMapPicker(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors">Confirmar ubicación</button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
+
 function AdminPage() {
   const router = useRouter();
-  const VALID_TABS: Tab[] = ["asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command"];
+  const VALID_TABS: Tab[] = ["asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command","fiados","turnos","cotizaciones","guias-remision","notas-credito","contratos","sugerencias-ia","metas-logros","marketplace","delivery-partners"];
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window === "undefined") return "asistente-ia";
     // 1. Check URL hash first (e.g. /admin#inventario)
@@ -2823,7 +2094,12 @@ function AdminPage() {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("admin_compact") === "1";
   });
-  const [focusMode, setFocusMode] = useState(false);
+  const [focusMode, setFocusMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("admin_focus_mode") === "1";
+  });
+  const [presentationMode, setPresentationMode] = useState(false);
+  const [showModuleHelp, setShowModuleHelp] = useState(false);
   const [favoriteTabs, setFavoriteTabs] = useState<Set<Tab>>(() => {
     if (typeof window === "undefined") return new Set<Tab>();
     try { const s = localStorage.getItem("admin_fav_tabs"); return s ? new Set<Tab>(JSON.parse(s)) : new Set<Tab>(); } catch { return new Set<Tab>(); }
@@ -2843,6 +2119,9 @@ function AdminPage() {
     "cash", "reviews", "expenses", "returns", "activity", "cms", "notifications",
   ]));
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const [openAccordionCategories, setOpenAccordionCategories] = useState<Set<string>>(new Set());
+  const [sidebarFlyout, setSidebarFlyout] = useState<{ categoryId: string; top: number } | null>(null);
+  const flyoutTimerRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hiddenTabs, setHiddenTabs] = useState<Set<Tab>>(() => {
     if (typeof window === "undefined") return new Set<Tab>();
     try { const s = localStorage.getItem("admin_hidden_tabs"); return s ? new Set<Tab>(JSON.parse(s)) : new Set<Tab>(); } catch { return new Set<Tab>(); }
@@ -2860,6 +2139,78 @@ function AdminPage() {
     try { const s = localStorage.getItem("admin_demo_cleared"); return s ? new Set<Tab>(JSON.parse(s)) : new Set<Tab>(); } catch { return new Set<Tab>(); }
   });
   const [showModuleManager, setShowModuleManager] = useState(false);
+  const [showCierreDiario, setShowCierreDiario] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
+
+  // IDEA 7: Feria Mode — Modo especial para ferias y eventos
+  const [feriaMode, setFeriaMode] = useState<{
+    active: boolean;
+    name: string;
+    discount: number;
+    startTime: number;
+    salesCount: number;
+    salesTotal: number;
+  }>(() => {
+    if (typeof window === "undefined") return { active: false, name: "", discount: 0, startTime: 0, salesCount: 0, salesTotal: 0 };
+    try {
+      const raw = localStorage.getItem("feria-mode");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.active) return parsed;
+      }
+    } catch {}
+    return { active: false, name: "", discount: 0, startTime: 0, salesCount: 0, salesTotal: 0 };
+  });
+  const [showFeriaSetup, setShowFeriaSetup] = useState(false);
+  const [feriaName, setFeriaName] = useState("");
+  const [feriaDiscount, setFeriaDiscount] = useState("10");
+
+  const toggleFeriaMode = () => {
+    if (feriaMode.active) {
+      // Desactivar: guardar en historial
+      try {
+        const history = JSON.parse(localStorage.getItem("feria-history") || "[]");
+        history.unshift({
+          nombre: feriaMode.name,
+          fecha: new Date().toISOString(),
+          ventas: feriaMode.salesTotal,
+          clientes: feriaMode.salesCount,
+          duracion: Math.round((Date.now() - feriaMode.startTime) / 60000),
+        });
+        localStorage.setItem("feria-history", JSON.stringify(history.slice(0, 10)));
+      } catch {}
+      const next = { active: false, name: "", discount: 0, startTime: 0, salesCount: 0, salesTotal: 0 };
+      setFeriaMode(next);
+      localStorage.removeItem("feria-mode");
+    } else {
+      setShowFeriaSetup(true);
+    }
+  };
+
+  const startFeria = () => {
+    const next = {
+      active: true,
+      name: feriaName.trim() || "Feria Especial",
+      discount: Number(feriaDiscount) || 10,
+      startTime: Date.now(),
+      salesCount: 0,
+      salesTotal: 0,
+    };
+    setFeriaMode(next);
+    localStorage.setItem("feria-mode", JSON.stringify(next));
+    setShowFeriaSetup(false);
+    setFeriaName("");
+    setFeriaDiscount("10");
+  };
+
+  // Changelog badge — check if user has seen the latest version
+  const [changelogHasNew, setChangelogHasNew] = useState(false);
+  useEffect(() => {
+    try {
+      const lastSeen = localStorage.getItem("changelog-last-seen");
+      if (lastSeen !== "2.5") setChangelogHasNew(true);
+    } catch {}
+  }, []);
   const [demoClearing, setDemoClearing] = useState<Tab | null>(null);
   const dismissDemoTab = (id: Tab) => {
     setClearedDemoTabs(prev => {
@@ -2972,6 +2323,16 @@ function AdminPage() {
         e.preventDefault();
         handleLogout();
       }
+      // Ctrl+Shift+C para cierre del día
+      if (e.ctrlKey && e.shiftKey && e.key === "C") {
+        e.preventDefault();
+        setShowCierreDiario(v => !v);
+      }
+      // Ctrl+Shift+P para modo presentación
+      if (e.ctrlKey && e.shiftKey && e.key === "P") {
+        e.preventDefault();
+        setPresentationMode(v => !v);
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -2990,6 +2351,7 @@ function AdminPage() {
 
   const navigateTab = useCallback((id: Tab) => {
     setTab(id);
+    setShowModuleHelp(false);
     try { localStorage.setItem("admin_active_tab", id); } catch {}
     // Persist active tab in URL hash so reloading restores the same tab
     try { window.history.replaceState(null, "", `#${id}`); } catch {}
@@ -3000,8 +2362,60 @@ function AdminPage() {
     });
   }, []);
 
+  // ── Mejora 13: Scroll to top al cambiar módulo ──
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [tab]);
+
+  // ── Mejora 20: Título dinámico del navegador ──
+  useEffect(() => {
+    const labels: Record<string, string> = {
+      "ventas-caja": "POS",
+      "inventario": "Inventario",
+      "productos": "Productos",
+      "compras": "Compras",
+      "plata": "Finanzas",
+      "clientes": "CRM",
+      "fiados": "Fiados",
+      "turnos": "Turnos",
+      "recetas": "Recetas",
+      "prestamos": "Préstamos",
+      "pedidos": "Pedidos",
+      "analytics-pro": "Analytics",
+      "ai-command": "AI Center",
+      "config": "Configuración",
+      "asistente-ia": "Asistente IA",
+      "cotizaciones": "Cotizaciones",
+      "guias-remision": "Guías Remisión",
+      "notas-credito": "Notas Crédito",
+      "contratos": "Contratos",
+      "plan": "Plan",
+    };
+    document.title = `${labels[tab] || "Panel"} — Buleje`;
+  }, [tab]);
+
+  // ── Mejora 16: Swipe para navegar tabs en mobile ──
+  const swipeHandlers = useSwipe(
+    useCallback(() => {
+      // Swipe left → siguiente tab
+      const allIds = TAB_CATEGORIES.flatMap(c => c.tabs);
+      const idx = allIds.indexOf(tab);
+      if (idx >= 0 && idx < allIds.length - 1) navigateTab(allIds[idx + 1]);
+    }, [tab, navigateTab]),
+    useCallback(() => {
+      // Swipe right → tab anterior
+      const allIds = TAB_CATEGORIES.flatMap(c => c.tabs);
+      const idx = allIds.indexOf(tab);
+      if (idx > 0) navigateTab(allIds[idx - 1]);
+    }, [tab, navigateTab])
+  );
+
   const toggleCompact = useCallback(() => {
     setCompactMode(prev => { const next = !prev; localStorage.setItem("admin_compact", next ? "1" : "0"); return next; });
+  }, []);
+
+  const toggleFocusMode = useCallback(() => {
+    setFocusMode(prev => { const next = !prev; localStorage.setItem("admin_focus_mode", next ? "1" : "0"); return next; });
   }, []);
 
   // ── Auto-start onboarding tour for first-time visitors ──────────────
@@ -3138,13 +2552,28 @@ function AdminPage() {
     { id: "compras" as Tab,        label: "Compras",                icon: Truck },
     { id: "plata" as Tab,          label: "Mi Plata",               icon: DollarSign },
     { id: "clientes" as Tab,       label: "Mis Clientes",           icon: Users },
+    // — OPERACIONES —
     { id: "config" as Tab,         label: "Configuración",          icon: Settings },
-    // — Especiales —
     { id: "pedidos" as Tab,        label: "Pedidos",                icon: ShoppingBasket },
-    { id: "plan" as Tab,           label: "Plan & Límites",         icon: Zap },
-    // — Módulos avanzados —
+    // — INTELIGENCIA —
     { id: "analytics-pro" as Tab,  label: "Analytics Pro",          icon: Activity },
     { id: "ai-command" as Tab,     label: "AI Command Center",      icon: Brain },
+    { id: "sugerencias-ia" as Tab, label: "Sugerencias IA",          icon: Lightbulb },
+    { id: "metas-logros" as Tab,   label: "Metas y Logros",          icon: Target },
+    // — FINANZAS EXTRA —
+    { id: "prestamos" as Tab,      label: "Préstamos",              icon: Landmark },
+    { id: "plan" as Tab,           label: "Plan & Límites",         icon: Zap },
+    // — PRODUCCIÓN —
+    { id: "recetas" as Tab,        label: "Recetas",                icon: FlaskConical },
+    // — DOCUMENTOS COMERCIALES —
+    { id: "cotizaciones" as Tab,          label: "Cotizaciones",           icon: ClipboardList },
+    { id: "guias-remision" as Tab,        label: "Guías de Remisión",      icon: Truck },
+    { id: "notas-credito" as Tab,         label: "Notas de Crédito",       icon: FileText },
+    { id: "contratos" as Tab,             label: "Contratos",              icon: FileText },
+    // — Declaración Inventario ahora está dentro de Inventario (tab "Declaración") —
+    // — MARKETPLACE & DELIVERY —
+    { id: "marketplace" as Tab,        label: "Marketplace",          icon: Store },
+    { id: "delivery-partners" as Tab,  label: "Delivery Partners",    icon: Truck },
   ] as const;
 
   // All modules available — no plan gating
@@ -3189,6 +2618,46 @@ function AdminPage() {
 
   const currentTab = filteredTabs.find(t => t.id === tab) ?? filteredTabs[0];
 
+  const commandItems = useMemo(() => {
+    const items: Array<{ id: string; label: string; category: string; icon?: string; onSelect: () => void }> = [];
+
+    const modules: Array<{ id: Tab; label: string; icon: string; category: string }> = [
+      { id: "asistente-ia",   label: "Asistente IA",            icon: "🧠", category: "Módulo" },
+      { id: "ventas-caja",    label: "Ventas & Caja (POS)",     icon: "🖥️", category: "Módulo" },
+      { id: "inventario",     label: "Inventario & Almacenes",  icon: "📦", category: "Módulo" },
+      { id: "productos",      label: "Productos & Precios",     icon: "🏪", category: "Módulo" },
+      { id: "compras",        label: "Compras & Proveedores",   icon: "📋", category: "Módulo" },
+      { id: "plata",          label: "Mi Plata (Finanzas)",     icon: "💵", category: "Módulo" },
+      { id: "clientes",       label: "Mis Clientes (CRM)",      icon: "👥", category: "Módulo" },
+      { id: "analytics-pro",  label: "Analytics Pro",           icon: "📊", category: "Módulo" },
+      { id: "ai-command",     label: "Comandos IA",             icon: "🤖", category: "Módulo" },
+      { id: "fiados",         label: "Fiados",                  icon: "💰", category: "Módulo" },
+      { id: "turnos",         label: "Turnos de Caja",          icon: "⏱️", category: "Módulo" },
+      { id: "recetas",        label: "Recetas & Producción",    icon: "🍳", category: "Módulo" },
+      { id: "prestamos",      label: "Préstamos",               icon: "🏦", category: "Módulo" },
+      { id: "pedidos",        label: "Pedidos",                 icon: "🛒", category: "Módulo" },
+      { id: "cotizaciones",   label: "Cotizaciones",            icon: "📄", category: "Documento" },
+      { id: "guias-remision", label: "Guías de Remisión",       icon: "🚚", category: "Documento" },
+      { id: "notas-credito",  label: "Notas de Crédito",        icon: "📝", category: "Documento" },
+      { id: "contratos",      label: "Contratos",               icon: "📑", category: "Documento" },
+      { id: "config",         label: "Configuración",           icon: "⚙️", category: "Sistema" },
+      { id: "plan",           label: "Plan & Suscripción",      icon: "⚡", category: "Sistema" },
+    ];
+
+    modules.forEach(m => {
+      items.push({ ...m, onSelect: () => navigateTab(m.id) });
+    });
+
+    items.push(
+      { id: "action-new-sale",     label: "Nueva venta (POS)",  icon: "➕", category: "Acción", onSelect: () => navigateTab("ventas-caja") },
+      { id: "action-new-product",  label: "Nuevo producto",     icon: "➕", category: "Acción", onSelect: () => navigateTab("productos") },
+      { id: "action-new-customer", label: "Nuevo cliente",      icon: "➕", category: "Acción", onSelect: () => navigateTab("clientes") },
+      { id: "action-inventario",   label: "Ver stock",          icon: "🔍", category: "Acción", onSelect: () => navigateTab("inventario") },
+    );
+
+    return items;
+  }, [navigateTab]);
+
   if (!authReady) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-background flex items-center justify-center">
@@ -3219,7 +2688,7 @@ function AdminPage() {
             <div className="h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center">
               <ShoppingBasket className="h-4 w-4" />
             </div>
-            <span className="font-extrabold text-gray-900 dark:text-foreground text-sm">Bodega San Martín</span>
+            <span className="font-extrabold text-gray-900 dark:text-foreground text-sm">Buleje</span>
           </div>
           <button onClick={() => setMobileNavOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
             <X className="h-5 w-5 text-gray-500 dark:text-muted" />
@@ -3385,6 +2854,12 @@ function AdminPage() {
               )}
             </Link>
           )}
+          <button
+            onClick={() => { setShowCierreDiario(true); setMobileNavOpen(false); }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-all"
+          >
+            <Power className="h-5 w-5" /> Cerrar d&iacute;a
+          </button>
           {userRole === "admin" && (
             <button
               onClick={() => { setClearConfirmStep(1); setClearConfirmText(""); setShowClearConfirm(true); setMobileNavOpen(false); }}
@@ -3399,188 +2874,65 @@ function AdminPage() {
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-all"
           >
-            <LogOut className="h-5 w-5" /> Cerrar sesión
+            <LogOut className="h-5 w-5" /> Cerrar sesi&oacute;n
           </button>
         </div>
       </aside>
 
       {/* Desktop permanent sidebar */}
       <aside className={cn(
-        "hidden sm:flex fixed top-0 left-0 bottom-0 w-64 z-40 bg-white dark:bg-card border-r border-gray-200 dark:border-card-border flex-col transition-transform duration-300",
-        focusMode && "-translate-x-full"
+        "hidden sm:flex fixed top-0 left-0 bottom-0 z-40 bg-white dark:bg-card border-r border-gray-200 dark:border-card-border flex-col transition-all duration-300 overflow-hidden",
+        focusMode ? "w-16" : "w-64",
+        presentationMode && "!hidden"
       )}>
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-gray-200 dark:border-card-border bg-primary/5">
+        <div className={cn("flex items-center gap-3 py-5 border-b border-gray-200 dark:border-card-border bg-primary/5 transition-all duration-300", focusMode ? "px-3 justify-center" : "px-5")}>
           <div className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm shrink-0">
             <ShoppingBasket className="h-5 w-5" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-extrabold text-gray-900 dark:text-foreground text-sm leading-tight">Bodega San Martín</p>
-            <p className="text-xs text-gray-400 dark:text-muted"><span className="capitalize">{userName}</span> · <span className="uppercase text-[10px] font-bold text-primary">{userRole}</span></p>
-          </div>
-          <button
-            onClick={() => setShowModuleManager(true)}
-            title="Gestionar módulos"
-            className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </button>
-          {userRole === "admin" && (
-            <button
-              onClick={() => { setClearConfirmStep(1); setClearConfirmText(""); setShowClearConfirm(true); }}
-              disabled={clearingData}
-              title="Borrar todos los datos"
-              className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-            >
-              {clearingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-            </button>
-          )}
-        </div>
-        
-        {/* Category selector */}
-        <div className="relative px-3 py-3 border-b border-gray-200 dark:border-card-border">
-          <button
-            onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent transition-all border border-gray-200 dark:border-card-border"
-          >
-            <div className="flex items-center gap-2">
-              {selectedCategory ? (
-                <>
-                  {visibleCategories.find(c => c.id === selectedCategory)?.icon && (
-                    React.createElement(visibleCategories.find(c => c.id === selectedCategory)!.icon, { className: "h-4 w-4 shrink-0" })
-                  )}
-                  <span className="truncate">{visibleCategories.find(c => c.id === selectedCategory)?.label}</span>
-                </>
-              ) : (
-                <>
-                  <Layers className="h-4 w-4 shrink-0" />
-                  <span>Todas las categorías</span>
-                </>
-              )}
-            </div>
-            <ChevronDown className={cn("h-4 w-4 transition-transform shrink-0", categoryDropdownOpen && "rotate-180")} />
-          </button>
-          
-          {categoryDropdownOpen && (
+          {!focusMode && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => { setCategoryDropdownOpen(false); setHoveredCategory(null); }} />
-              <div className="absolute top-full left-3 mt-1 bg-white dark:bg-card shadow-xl rounded-xl border border-gray-200 dark:border-card-border z-20 py-2 w-60"
-                onMouseLeave={() => setHoveredCategory(null)}>
-                <button
-                  onClick={() => { setSelectedCategory(null); setCategoryDropdownOpen(false); setHoveredCategory(null); }}
-                  onMouseEnter={() => setHoveredCategory(null)}
-                  className={cn(
-                    "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
-                    !selectedCategory ? "bg-primary/10 text-primary" : "text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
-                  )}
-                >
-                  <Layers className="h-4 w-4 shrink-0" />
-                  <span>Todas ({allowedTabs.length - hiddenTabs.size})</span>
-                </button>
-                {hiddenTabs.size > 0 && (
-                  <button
-                    onClick={() => { setHiddenTabs(new Set()); try { localStorage.removeItem("admin_hidden_tabs"); } catch {} setCategoryDropdownOpen(false); }}
-                    onMouseEnter={() => setHoveredCategory(null)}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
-                  >
-                    <CheckCircle className="h-4 w-4 shrink-0" />
-                    <span>Restablecer {hiddenTabs.size} oculto{hiddenTabs.size !== 1 ? "s" : ""}</span>
-                  </button>
-                )}
-                <div className="h-px bg-gray-100 dark:bg-card-border my-1" />
-                {visibleCategories.map(category => {
-                  const catTabs = category.tabs.filter(t => allowedTabs.includes(t));
-                  if (catTabs.length === 0) return null;
-                  const CategoryIcon = category.icon;
-                  const isHovered = hoveredCategory === category.id;
-                  return (
-                    <div key={category.id} className="relative"
-                      onMouseEnter={() => setHoveredCategory(category.id)}>
-                      <button
-                        onClick={() => { setSelectedCategory(category.id); setCategoryDropdownOpen(false); setHoveredCategory(null); }}
-                        className={cn(
-                          "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
-                          isHovered ? "bg-primary/5 dark:bg-primary/10" : "",
-                          selectedCategory === category.id ? "bg-primary/10 text-primary" : "text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
-                        )}
-                      >
-                        <CategoryIcon className="h-4 w-4 shrink-0" />
-                        <span className="truncate flex-1 text-left">{category.label}</span>
-                        <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
-                      </button>
-                      {/* Flyout sub-menu */}
-                      {isHovered && (
-                        <div className="absolute left-full top-0 ml-1 w-56 bg-white dark:bg-card shadow-xl rounded-xl border border-gray-200 dark:border-card-border py-2 z-30">
-                          <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted">{category.label}</p>
-                          {catTabs.map(tabId => {
-                            const tabInfo = ALL_TABS.find(t => t.id === tabId);
-                            if (!tabInfo) return null;
-                            const TabIcon = tabInfo.icon;
-                            const isHidden = hiddenTabs.has(tabId as Tab);
-                            return (
-                              <div
-                                key={tabId}
-                                className={cn(
-                                  "group flex items-center gap-2 px-3 py-2 text-sm transition-colors",
-                                  tab === tabId ? "bg-primary/10 text-primary font-semibold" : "text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface font-medium",
-                                  isHidden && "opacity-40"
-                                )}
-                              >
-                                <button
-                                  onClick={() => { if (!isHidden) { navigateTab(tabId as Tab); setCategoryDropdownOpen(false); setHoveredCategory(null); } }}
-                                  className="flex items-center gap-2 flex-1 min-w-0"
-                                >
-                                  <TabIcon className="h-4 w-4 shrink-0" />
-                                  <span className="truncate">{tabInfo.label}</span>
-                                  {DEMO_DATA_MODULES[tabId as Tab] && !clearedDemoTabs.has(tabId as Tab) && (
-                                    <span className="h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" title="Datos de ejemplo" />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={e => { e.stopPropagation(); toggleHideTab(tabId as Tab); }}
-                                  title={isHidden ? "Mostrar módulo" : "Ocultar módulo"}
-                                  className={cn(
-                                    "shrink-0 opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5",
-                                    isHidden ? "text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 opacity-100" : "text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                  )}
-                                >
-                                  {isHidden ? <CheckCircle className="h-4 w-4" /> : <X className="h-4 w-4" />}
-                                </button>
-                              </div>
-                            );
-                          })}
-                          <div className="h-px bg-gray-100 dark:bg-card-border mx-2 my-1.5" />
-                          <button
-                            onClick={() => { setSelectedCategory(category.id); setCategoryDropdownOpen(false); setHoveredCategory(null); }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold text-primary hover:bg-primary/5 transition-colors"
-                          >
-                            <Layers className="h-4 w-4 shrink-0" />
-                            <span>Ver toda la categoría</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="flex-1 min-w-0">
+                <p className="font-extrabold text-gray-900 dark:text-foreground text-sm leading-tight">Buleje</p>
+                <p className="text-xs text-gray-400 dark:text-muted"><span className="capitalize">{userName}</span> · <span className="uppercase text-[10px] font-bold text-primary">{userRole}</span></p>
               </div>
+              <button
+                onClick={() => setShowModuleManager(true)}
+                title="Gestionar módulos"
+                className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+              </button>
+              {userRole === "admin" && (
+                <button
+                  onClick={() => { setClearConfirmStep(1); setClearConfirmText(""); setShowClearConfirm(true); }}
+                  disabled={clearingData}
+                  title="Borrar todos los datos"
+                  className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+                >
+                  {clearingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                </button>
+              )}
             </>
           )}
         </div>
         
-        <nav className="flex-1 overflow-y-auto py-3 px-3">
-          {/* Sidebar search */}
-          <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
-            <input
-              type="text"
-              placeholder="Filtrar módulos…"
-              value={sidebarSearch}
-              onChange={e => setSidebarSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-lg bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted outline-none focus:ring-1 focus:ring-primary/40"
-            />
-          </div>
+        <nav className={cn("flex-1 overflow-y-auto py-3 transition-all duration-300", focusMode ? "px-1" : "px-3")}>
+          {/* Sidebar search — hidden in focus mode */}
+          {!focusMode && (
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
+              <input
+                type="text"
+                placeholder="Filtrar módulos…"
+                value={sidebarSearch}
+                onChange={e => setSidebarSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-lg bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted outline-none focus:ring-1 focus:ring-primary/40"
+              />
+            </div>
+          )}
 
-          {/* Favorite tabs section */}
-          {!sidebarSearch && favoriteTabItems.length > 0 && (
+          {/* Favorite tabs section — hidden in focus mode */}
+          {!focusMode && !sidebarSearch && favoriteTabItems.length > 0 && (
             <div className="mb-2">
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1"><Star className="h-3 w-3" /> Favoritos</p>
               {favoriteTabItems.map(({ id, label, icon: Icon }) => (
@@ -3600,8 +2952,8 @@ function AdminPage() {
             </div>
           )}
 
-          {/* Recent tabs section */}
-          {!sidebarSearch && recentTabItems.length > 0 && (
+          {/* Recent tabs section — hidden in focus mode */}
+          {!focusMode && !sidebarSearch && recentTabItems.length > 0 && (
             <div className="mb-2">
               <button onClick={() => setRecentCollapsed(c => !c)} className="w-full text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1 hover:text-gray-600 dark:hover:text-foreground transition-colors">
                 <Clock className="h-3 w-3" /> Recientes
@@ -3624,58 +2976,190 @@ function AdminPage() {
             </div>
           )}
 
-          {/* All tabs */}
-          {filteredTabs.map(({ id, label, icon: Icon }) => (
+          {/* Category accordion — normal mode, no search */}
+          {!focusMode && !sidebarSearch && visibleCategories.map(category => {
+            const catTabs = category.tabs.filter(t => allowedTabs.includes(t) && !hiddenTabs.has(t as Tab));
+            if (catTabs.length === 0) return null;
+            const CategoryIcon = category.icon;
+            const isOpen = openAccordionCategories.has(category.id);
+            return (
+              <div key={category.id} className="mb-0.5">
+                <button
+                  onClick={() => setOpenAccordionCategories(prev =>
+                    prev.has(category.id) ? new Set() : new Set([category.id])
+                  )}
+                  onMouseEnter={(e) => {
+                    if (flyoutTimerRef2.current) clearTimeout(flyoutTimerRef2.current);
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setSidebarFlyout({ categoryId: category.id, top: rect.top });
+                  }}
+                  onMouseLeave={() => { flyoutTimerRef2.current = setTimeout(() => setSidebarFlyout(null), 150); }}
+                  className={cn(
+                    "w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all",
+                    isOpen ? "bg-primary/10 text-primary" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                  )}
+                >
+                  <CategoryIcon className="h-4 w-4 shrink-0" />
+                  <span className="truncate flex-1 text-left">{category.label}</span>
+                  <span className="text-[10px] font-bold text-gray-400 dark:text-muted tabular-nums">{catTabs.length}</span>
+                  <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-gray-400", isOpen && "rotate-180")} />
+                </button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      key="content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pl-3 pr-1 pt-0.5 pb-1">
+                        {catTabs.map(tabId => {
+                          const tabInfo = ALL_TABS.find(t => t.id === tabId);
+                          if (!tabInfo) return null;
+                          const TabIcon = tabInfo.icon;
+                          return (
+                            <button
+                              key={tabId}
+                              data-tour-tab={tabId}
+                              onClick={() => navigateTab(tabId as Tab)}
+                              className={cn(
+                                "group w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all mb-0.5",
+                                tab === tabId ? "bg-primary text-white shadow-sm" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                              )}
+                            >
+                              <TabIcon className="h-4 w-4 shrink-0" />
+                              <span className="truncate flex-1 text-left">{tabInfo.label}</span>
+                              {DEMO_DATA_MODULES[tabId as Tab] && !clearedDemoTabs.has(tabId as Tab) && (
+                                <span title="Datos de ejemplo" className={cn("h-1.5 w-1.5 rounded-full shrink-0", tab === tabId ? "bg-red-300" : "bg-red-500")} />
+                              )}
+                              {alerts[tabId] && <span className={cn("text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center", tab === tabId ? "bg-white/20 text-white" : "bg-red-500 text-white")}>{alerts[tabId]}</span>}
+                              <Star
+                                onClick={e => { e.stopPropagation(); toggleFavorite(tabId as Tab); }}
+                                className={cn("h-3.5 w-3.5 shrink-0 transition-all cursor-pointer", favoriteTabs.has(tabId as Tab) ? "fill-amber-400 text-amber-400" : "opacity-0 group-hover:opacity-60 text-gray-400")}
+                              />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+          {/* Flat list when searching */}
+          {!focusMode && sidebarSearch && filteredTabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               data-tour-tab={id}
               onClick={() => navigateTab(id)}
               className={cn(
-                "group w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all mb-1",
+                "group w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-1",
+                tab === id ? "bg-primary text-white shadow-sm" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="truncate flex-1 text-left">{label}</span>
+              {DEMO_DATA_MODULES[id] && !clearedDemoTabs.has(id) && (
+                <span title="Datos de ejemplo" className={cn("h-2 w-2 rounded-full shrink-0", tab === id ? "bg-red-300" : "bg-red-500")} />
+              )}
+              {alerts[id] && <span className={cn("text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center", tab === id ? "bg-white/20 text-white" : "bg-red-500 text-white")}>{alerts[id]}</span>}
+            </button>
+          ))}
+          {/* Icon-only in focus mode */}
+          {focusMode && filteredTabs.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              data-tour-tab={id}
+              onClick={() => navigateTab(id)}
+              title={label}
+              className={cn(
+                "w-full flex items-center justify-center rounded-xl text-sm font-semibold transition-all mb-1 px-0 py-2.5",
                 tab === id ? "bg-primary text-white shadow-sm" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
               )}
             >
               <Icon className="h-5 w-5 shrink-0" />
-              <span className="truncate flex-1 text-left">{label}</span>
-              {DEMO_DATA_MODULES[id] && !clearedDemoTabs.has(id) && (
-                <span title="Contiene datos de ejemplo" className={cn("h-2 w-2 rounded-full shrink-0", tab === id ? "bg-red-300" : "bg-red-500")} />
-              )}
-              {alerts[id] && <span className={cn("text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center", tab === id ? "bg-white/20 text-white" : "bg-red-500 text-white")}>{alerts[id]}</span>}
-              <Star
-                onClick={e => { e.stopPropagation(); toggleFavorite(id); }}
-                className={cn(
-                  "h-4 w-4 shrink-0 transition-all cursor-pointer",
-                  favoriteTabs.has(id) ? "fill-amber-400 text-amber-400" : "opacity-0 group-hover:opacity-60 text-gray-400"
-                )}
-              />
             </button>
           ))}
         </nav>
-        <div className="px-3 py-4 border-t border-gray-200 dark:border-card-border space-y-1">
-          <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-all">
-            <Store className="h-5 w-5" /> Ver tienda
+        <div className={cn("py-4 border-t border-gray-200 dark:border-card-border space-y-1 transition-all duration-300", focusMode ? "px-1" : "px-3")}>
+          <Link href="/" title={focusMode ? "Ver tienda" : undefined} className={cn("flex items-center rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-all", focusMode ? "justify-center px-0 py-2.5" : "gap-3 px-4 py-3")}>
+            <Store className="h-5 w-5" /> {!focusMode && "Ver tienda"}
           </Link>
           {userRole === "admin" && (
-            <Link href="/admin/webhook-queue" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-all">
-              <Activity className="h-5 w-5" /> Cola Stripe
-              {webhookPendingCount > 0 && (
+            <Link href="/admin/webhook-queue" title={focusMode ? "Cola Stripe" : undefined} className={cn("flex items-center rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-all", focusMode ? "justify-center px-0 py-2.5" : "gap-3 px-4 py-3")}>
+              <Activity className="h-5 w-5" /> {!focusMode && "Cola Stripe"}
+              {!focusMode && webhookPendingCount > 0 && (
                 <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">{webhookPendingCount}</span>
+              )}
+              {focusMode && webhookPendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center">{webhookPendingCount}</span>
               )}
             </Link>
           )}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-all"
+            title={focusMode ? "Cerrar sesión" : undefined}
+            className={cn("w-full flex items-center rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-all", focusMode ? "justify-center px-0 py-2.5" : "gap-3 px-4 py-3")}
           >
-            <LogOut className="h-5 w-5" /> Cerrar sesión
+            <LogOut className="h-5 w-5" /> {!focusMode && "Cerrar sesión"}
           </button>
         </div>
       </aside>
 
+      {/* Sidebar category flyout panel */}
+      {!focusMode && sidebarFlyout && (() => {
+        const cat = visibleCategories.find(c => c.id === sidebarFlyout.categoryId);
+        if (!cat) return null;
+        const catTabs = cat.tabs.filter(t => allowedTabs.includes(t));
+        const FlyoutCatIcon = cat.icon;
+        return (
+          <motion.div
+            key={sidebarFlyout.categoryId}
+            initial={{ opacity: 0, x: -8, scale: 0.97 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            style={{ position: "fixed", top: sidebarFlyout.top, left: 264, zIndex: 50 }}
+            onMouseEnter={() => { if (flyoutTimerRef2.current) clearTimeout(flyoutTimerRef2.current); }}
+            onMouseLeave={() => { flyoutTimerRef2.current = setTimeout(() => setSidebarFlyout(null), 150); }}
+            className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-2xl py-2 w-60 max-h-[80vh] overflow-y-auto"
+          >
+            <div className="flex items-center gap-2 px-3 pb-2 mb-1 border-b border-gray-100 dark:border-card-border">
+              <FlyoutCatIcon className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-muted truncate">{cat.label}</p>
+              <span className="ml-auto text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-surface rounded-full px-1.5 py-0.5 shrink-0">{catTabs.length}</span>
+            </div>
+            {catTabs.map(tabId => {
+              const tabInfo = ALL_TABS.find(t => t.id === tabId);
+              if (!tabInfo) return null;
+              const FlyoutTabIcon = tabInfo.icon;
+              return (
+                <button
+                  key={tabId}
+                  onClick={() => { navigateTab(tabId as Tab); setSidebarFlyout(null); }}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors",
+                    tab === tabId
+                      ? "bg-primary/10 text-primary font-semibold"
+                      : "text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface font-medium"
+                  )}
+                >
+                  <FlyoutTabIcon className="h-4 w-4 shrink-0" />
+                  <span className="truncate flex-1 text-left">{tabInfo.label}</span>
+                  {tab === tabId && <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
+                </button>
+              );
+            })}
+          </motion.div>
+        );
+      })()}
+
       {/* Content area */}
-      <div className={cn("flex flex-col min-h-screen transition-[margin] duration-300", focusMode ? "sm:ml-0" : "sm:ml-64")}>
+      <div className={cn("flex flex-col min-h-screen transition-[margin] duration-300", presentationMode ? "sm:ml-0" : focusMode ? "sm:ml-16" : "sm:ml-64")}>
       {/* Top bar */}
-      <header className="bg-white dark:bg-card border-b border-gray-200 dark:border-card-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3 sticky top-0 z-40">
+      <header className={cn("bg-white dark:bg-card border-b border-gray-200 dark:border-card-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3 sticky top-0 z-40", presentationMode && "!hidden")}>
         <div className="flex items-center gap-3">
           {/* Mobile hamburger */}
           <button
@@ -3692,42 +3176,21 @@ function AdminPage() {
             {/* Mobile: show current tab name */}
             <h1 className="font-extrabold text-gray-900 dark:text-foreground text-base leading-tight sm:hidden truncate max-w-[40vw]">{currentTab.label}</h1>
             <h1 className="font-extrabold text-gray-900 dark:text-foreground text-base leading-tight hidden sm:block">Panel de administración</h1>
-            <p className="text-xs text-gray-400 dark:text-muted hidden sm:block">Bodega San Martín</p>
+            <p className="text-xs text-gray-400 dark:text-muted hidden sm:block">Buleje</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {/* Grupo 1 - Busqueda (siempre visible) */}
           <button
             onClick={() => setSearchOpen(true)}
-            title="Búsqueda global (Ctrl+K)"
+            title="Busqueda global (Ctrl+K)"
             className="hidden sm:flex items-center gap-1.5 px-3 h-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors text-xs font-semibold border border-gray-200 dark:border-card-border"
           >
             <Search className="h-4 w-4" />
             <span>Buscar</span>
             <kbd className="ml-1 text-xs bg-gray-100 dark:bg-surface px-1 rounded opacity-70">Ctrl+K</kbd>
           </button>
-          <button
-            onClick={() => setShowShortcuts(v => !v)}
-            title="Atajos de teclado (Alt+?)"
-            className="hidden sm:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors text-xs font-bold"
-          >
-            ⌨
-          </button>
-          <button
-            onClick={() => permission !== "granted" && requestPermission()}
-            title={permission === "granted" ? "Notificaciones activadas" : permission === "denied" ? "Notificaciones bloqueadas" : "Activar notificaciones"}
-            className={cn(
-              "hidden sm:flex items-center justify-center h-8 w-8 rounded-lg transition-colors",
-              permission === "granted" 
-                ? "text-green-500 hover:bg-green-50 dark:hover:bg-green-950/30" 
-                : permission === "denied" 
-                ? "text-gray-300 dark:text-muted cursor-not-allowed" 
-                : "text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary"
-            )}
-            disabled={permission === "denied"}
-          >
-            <Bell className={cn("h-4 w-4", permission === "granted" && "animate-pulse")} />
-          </button>
-          {/* Mobile search icon – only visible on small screens */}
+          {/* Mobile search icon */}
           <button
             onClick={() => setSearchOpen(true)}
             title="Buscar"
@@ -3735,6 +3198,14 @@ function AdminPage() {
           >
             <Search className="h-4 w-4" />
           </button>
+
+          {/* Separador 1 */}
+          <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden sm:block" />
+
+          {/* Grupo 2 - Notificaciones y Acciones (visible desde tablet) */}
+          <div className="hidden sm:block">
+            <NotificationBell />
+          </div>
           <AlertCenter
             pendingOrders={quickStats?.pendingOrders ?? 0}
             lowStock={quickStats?.lowStockProducts ?? 0}
@@ -3743,28 +3214,97 @@ function AdminPage() {
             oldPendingOrders={quickStats?.oldPendingOrders ?? 0}
             onNavigate={(t) => navigateTab(t as Tab)}
           />
+          {/* IDEA 7: Feria Mode toggle */}
+          <button
+            onClick={toggleFeriaMode}
+            title={feriaMode.active ? `Feria activa: ${feriaMode.name}` : "Activar Modo Feria"}
+            className={cn(
+              "hidden md:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold transition-colors border",
+              feriaMode.active
+                ? "bg-gradient-to-r from-[#f97316]/20 to-amber-100 dark:from-[#f97316]/20 dark:to-amber-900/30 text-[#f97316] border-[#f97316]/40 animate-pulse"
+                : "text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent border-gray-200 dark:border-gray-700"
+            )}
+          >
+            <Cake className="h-4 w-4" />
+            <span>{feriaMode.active ? "Feria" : "Feria"}</span>
+          </button>
+          <button
+            onClick={() => setShowCierreDiario(true)}
+            title="Cerrar dia (Ctrl+Shift+C)"
+            className="hidden md:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors border border-amber-200 dark:border-amber-800"
+          >
+            <Power className="h-4 w-4" />
+            <span>Cerrar dia</span>
+          </button>
+
+          {/* Separador 2 */}
+          <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden lg:block" />
+
+          {/* Grupo 3 - Vista (solo desktop lg+) */}
           <button
             onClick={toggleTheme}
             title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-            className="hidden sm:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
+            className="hidden md:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
           >
-            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            <motion.div
+              animate={{ rotate: theme === "dark" ? 180 : 0 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </motion.div>
+          </button>
+          <button
+            onClick={toggleFocusMode}
+            title={focusMode ? "Salir modo enfoque" : "Modo enfoque"}
+            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
+          >
+            {focusMode ? <Minimize2 className="h-4 w-4 text-primary" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={() => setPresentationMode(true)}
+            title="Modo presentacion (Ctrl+Shift+P)"
+            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
+          >
+            <Eye className="h-4 w-4" />
           </button>
           <button
             onClick={toggleCompact}
             title={compactMode ? "Modo normal" : "Modo compacto"}
-            className="hidden sm:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
+            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
           >
             <SlidersHorizontal className={cn("h-4 w-4", compactMode && "text-primary")} />
           </button>
           <button
-            onClick={() => setFocusMode(f => !f)}
-            title={focusMode ? "Salir modo enfoque" : "Modo enfoque"}
-            className="hidden sm:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
+            onClick={() => setShowShortcuts(v => !v)}
+            title="Atajos de teclado (Alt+?)"
+            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors text-xs font-bold"
           >
-            <Maximize2 className={cn("h-4 w-4", focusMode && "text-primary")} />
+            ⌨
           </button>
-          <Link href="/" className="text-xs sm:text-sm font-semibold text-gray-400 dark:text-muted hover:text-primary transition-colors hidden sm:block">Ver tienda</Link>
+          <button
+            onClick={() => window.print()}
+            title="Exportar a PDF"
+            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
+          >
+            <Download className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => { setShowChangelog(true); setChangelogHasNew(false); localStorage.setItem("changelog-last-seen", "2.5"); }}
+            title="Novedades del sistema"
+            className="hidden lg:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-gray-400 dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors border border-gray-200 dark:border-card-border relative"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Novedades</span>
+            {changelogHasNew && (
+              <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-card" />
+            )}
+          </button>
+
+          {/* Separador 3 */}
+          <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden lg:block" />
+
+          {/* Grupo 4 - Links y salir */}
+          <Link href="/" className="text-xs sm:text-sm font-semibold text-gray-400 dark:text-muted hover:text-primary transition-colors hidden lg:block">Ver tienda</Link>
           {userRole === "admin" && (
             <>
               <button
@@ -3774,21 +3314,21 @@ function AdminPage() {
                   fetch("/api/admin/seed-data", { method: "POST" })
                     .then(r => r.json())
                     .then(d => { if (d.success) window.location.reload(); else alert(d.error || "Error al generar datos"); })
-                    .catch(() => alert("Error de conexión"))
+                    .catch(() => alert("Error de conexion"))
                     .finally(() => setSeedingData(false));
                 }}
                 disabled={seedingData}
-                title="Generar datos de simulación"
-                className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-gray-400 dark:text-muted hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 transition-colors border border-gray-200 dark:border-card-border"
+                title="Generar datos de simulacion"
+                className="hidden lg:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-gray-400 dark:text-muted hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 transition-colors border border-gray-200 dark:border-card-border"
               >
                 {seedingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />}
-                <span>Simulación</span>
+                <span>Simulacion</span>
               </button>
               <button
                 onClick={() => { setClearConfirmStep(1); setClearConfirmText(""); setShowClearConfirm(true); }}
                 disabled={clearingData}
                 title="Borrar todos los datos"
-                className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-gray-400 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-colors border border-gray-200 dark:border-card-border"
+                className="hidden lg:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-gray-400 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-colors border border-gray-200 dark:border-card-border"
               >
                 {clearingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                 <span>Borrar datos</span>
@@ -3804,6 +3344,9 @@ function AdminPage() {
           </button>
         </div>
       </header>
+
+      {/* Command Palette global — Ctrl+K en todo el panel */}
+      <AdminCommandPalette items={commandItems} />
 
       {/* Clear data confirmation modal — extracted to AdminModals */}
       <ClearDataModal
@@ -3828,6 +3371,73 @@ function AdminPage() {
       />
 
       {tab !== "asistente-ia" && <AIFloatingButton moduleContext={tab} />}
+
+      {/* ── IDEA 7: Feria Mode Banner & Setup Modal ── */}
+      {feriaMode.active && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-[#f97316] to-amber-500 text-white px-4 py-2 flex items-center justify-between shadow-lg">
+          <div className="flex items-center gap-3">
+            <Cake className="h-5 w-5 animate-bounce" />
+            <span className="font-bold text-sm">{feriaMode.name}</span>
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{feriaMode.discount}% dcto</span>
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <span>{feriaMode.salesCount} ventas</span>
+            <span>S/{feriaMode.salesTotal.toFixed(0)}</span>
+            <span>
+              {(() => {
+                const mins = Math.round((Date.now() - feriaMode.startTime) / 60000);
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                return h > 0 ? `${h}h ${m}m` : `${m}m`;
+              })()}
+            </span>
+            <button onClick={toggleFeriaMode} className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold text-xs transition-colors">
+              Terminar feria
+            </button>
+          </div>
+        </div>
+      )}
+      {showFeriaSetup && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowFeriaSetup(false)}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-5 space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <Cake className="h-6 w-6 text-[#f97316]" />
+              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Activar Modo Feria</h3>
+            </div>
+            <input
+              type="text"
+              placeholder="Nombre del evento (ej: San Juan 2026)"
+              value={feriaName}
+              onChange={e => setFeriaName(e.target.value)}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+              autoFocus
+            />
+            <div>
+              <label className="text-xs font-bold text-gray-600 mb-1 block">Descuento global (%)</label>
+              <input
+                type="number"
+                min="0"
+                max="50"
+                value={feriaDiscount}
+                onChange={e => setFeriaDiscount(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setShowFeriaSetup(false)} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-bold text-gray-600">Cancelar</button>
+              <button onClick={startFeria} className="flex-1 py-2.5 rounded-xl bg-[#f97316] text-white text-sm font-bold hover:bg-[#e8934e] transition-colors">
+                Iniciar Feria
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cierre Diario Modal ── */}
+      <CierreDiarioModal open={showCierreDiario} onClose={() => setShowCierreDiario(false)} />
+
+      {/* ── Changelog Modal ── */}
+      <ChangelogModal open={showChangelog} onClose={() => setShowChangelog(false)} />
 
       {/* ── Module Manager Modal ── */}
       {showModuleManager && (
@@ -3984,19 +3594,60 @@ function AdminPage() {
         </div>
       )}
 
-      {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="hidden sm:flex items-center gap-1.5 px-6 py-2 text-xs text-gray-400 dark:text-muted bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
-        <span>Panel</span>
+      {/* Breadcrumb — enhanced with clickable category navigation */}
+      <nav aria-label="Breadcrumb" className={cn("hidden sm:flex items-center gap-1.5 px-6 py-2 text-xs text-gray-400 dark:text-muted bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border", presentationMode && "!hidden")}>
+        <button onClick={() => navigateTab("asistente-ia")} className="hover:text-primary transition-colors">
+          Panel
+        </button>
+        {(() => {
+          const cat = TAB_CATEGORIES.find(c => (c.tabs as readonly string[]).includes(tab));
+          if (cat && tab !== "asistente-ia") return (
+            <>
+              <ChevronRight className="h-3 w-3" />
+              <button onClick={() => setSelectedCategory(cat.id)} className="hover:text-primary transition-colors">
+                {cat.label}
+              </button>
+            </>
+          );
+          return null;
+        })()}
         <ChevronRight className="h-3 w-3" />
         <span className="text-gray-700 dark:text-foreground font-semibold">{currentTab.label}</span>
       </nav>
+
+      {/* Mejora 4: Recent tabs as quick-access chips */}
+      {(() => {
+        const chips = recentTabs
+          .filter(id => id !== tab)
+          .map(id => ALL_TABS.find(t => t.id === id))
+          .filter(Boolean)
+          .slice(0, 4);
+        if (chips.length < 2 || presentationMode) return null;
+        return (
+          <div className="hidden sm:flex gap-2 px-6 py-1.5 border-b border-gray-100 dark:border-gray-800 overflow-x-auto bg-gray-50/50 dark:bg-surface/50">
+            <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 self-center mr-1">Recientes:</span>
+            {chips.map(t => t && (
+              <button
+                key={t.id}
+                onClick={() => navigateTab(t.id)}
+                className="px-3 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-[#0f766e] hover:text-white transition-all whitespace-nowrap font-medium"
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        );
+      })()}
 
       {/* Quick stats bars (mobile + desktop) — extracted to AdminStats */}
       {quickStats && <AdminStatsMobile quickStats={quickStats} navigateTab={navigateTab} />}
       {quickStats && <AdminStatsDesktop quickStats={quickStats} navigateTab={navigateTab} />}
 
       {/* Body */}
-      <main className={cn("flex-1 mx-auto max-w-7xl w-full pb-24 sm:pb-8", compactMode ? "px-2 sm:px-3 py-2 sm:py-4" : "px-3 sm:px-6 py-4 sm:py-8")}>
+      <main
+        className={cn("flex-1 mx-auto w-full pb-24 sm:pb-8", presentationMode ? "max-w-full px-4 py-4" : "max-w-7xl", compactMode && !presentationMode ? "px-2 sm:px-3 py-2 sm:py-4" : !presentationMode ? "px-3 sm:px-6 py-4 sm:py-8" : "")}
+        {...swipeHandlers}
+      >
         {/* Breadcrumb navigation */}
         {tab !== "asistente-ia" && (
           <nav className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-muted mb-3 overflow-x-auto" aria-label="Breadcrumb">
@@ -4015,70 +3666,258 @@ function AdminPage() {
             <span className="font-semibold text-gray-700 dark:text-foreground shrink-0">{ALL_TABS.find(t => t.id === tab)?.label ?? tab}</span>
           </nav>
         )}
-        {/* ── 1. Asistente IA ── */}
-        {tab === "asistente-ia" && <AsistenteIAModule />}
-        {/* ── 2. Ventas & Caja ── */}
-        {tab === "ventas-caja" && <POSCajaModule />}
-        {/* ── 3. Inventario ── */}
-        {tab === "inventario" && <InventarioAlmacenesModule />}
-        {/* ── 4. Productos & Precios ── */}
-        {tab === "productos" && <CatalogoTiendaModule />}
-        {/* ── 5. Compras ── */}
-        {tab === "compras" && <ComprasModule />}
-        {/* ── 6. Mi Plata ── */}
-        {tab === "plata" && <FinanzasModule />}
-        {/* ── 7. Mis Clientes ── */}
-        {tab === "clientes" && <CRMClientesModule />}
-        {/* ── 8. Configuración ── */}
-        {tab === "config" && (
-          <div className="space-y-8">
-            <SettingsTab storeMode={storeMode} onModeChange={setStoreModeState} />
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground mb-4">Gestión de Equipo</h3>
-              <TeamTab />
-            </div>
-            {/* ── Repetir tutorial ── */}
-            <div className="pt-8 border-t border-gray-200 dark:border-card-border">
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
-                    <span className="text-xl">🎓</span>
+        {/* ── Mejora 12: Transición suave al cambiar módulo ── */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {/* ── 1. Asistente IA ── */}
+            {tab === "asistente-ia" && <AsistenteIAModule />}
+            {/* ── 2. Ventas & Caja ── */}
+            {tab === "ventas-caja" && <POSCajaModule />}
+            {/* ── 3. Inventario ── */}
+            {tab === "inventario" && <InventarioAlmacenesModule />}
+            {/* ── 4. Productos & Precios ── */}
+            {tab === "productos" && <CatalogoTiendaModule />}
+            {/* ── 5. Compras ── */}
+            {tab === "compras" && <ComprasModule />}
+            {/* ── 6. Mi Plata ── */}
+            {tab === "plata" && <FinanzasModule />}
+            {/* ── 7. Mis Clientes ── */}
+            {tab === "clientes" && <CRMClientesModule />}
+            {/* ── Módulos adicionales ── */}
+            {tab === "fiados" && <FiadosModule />}
+            {tab === "turnos" && <TurnosModule />}
+            {tab === "recetas" && <RecetasModule />}
+            {tab === "prestamos" && <PrestamosModule />}
+            {/* ── Documentos ── */}
+            {tab === "cotizaciones" && <CotizacionesModule />}
+            {tab === "guias-remision" && <GuiasRemisionModule />}
+            {tab === "notas-credito" && <NotasCreditoModule />}
+            {tab === "contratos" && <ContratosModule />}
+            {/* ── Módulos nuevos ── */}
+            {tab === "auditoria" && <AuditTrailModule />}
+            {tab === "devoluciones-proveedor" && <DevolucionesProveedorModule />}
+            {tab === "tesoreria" && <TreasuryDashboard />}
+            {tab === "promociones" && <PromocionesModule />}
+            {tab === "scoring" && <ScoringCrediticioTab />}
+            {/* Declaración Inventario movido dentro del módulo Inventario */}
+            {/* ── 8. Configuración ── */}
+            {tab === "config" && (
+              <div className="space-y-8">
+                <SettingsModule storeMode={storeMode} onModeChange={setStoreModeState} />
+                <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+                  {/* Mejora 16 (R3): Sección con icono y subtítulo descriptivo */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-9 h-9 rounded-xl bg-cyan-50 dark:bg-cyan-900/20 flex items-center justify-center shrink-0">
+                      <Users className="h-5 w-5 text-cyan-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Gestión de Equipo</h3>
+                      <p className="text-xs text-gray-500 dark:text-muted">Gestiona tu equipo y control de acceso por rol</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-gray-900 dark:text-foreground text-sm">Tutorial de bienvenida</p>
-                    <p className="text-xs text-gray-500 dark:text-muted">Repasa cómo funciona cada sección del panel</p>
+                  <TeamTab />
+                </div>
+                {/* ── Navegación por defecto ── */}
+                <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-9 h-9 rounded-xl bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center shrink-0">
+                      <SlidersHorizontal className="h-5 w-5 text-violet-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Navegacion</h3>
+                      <p className="text-xs text-gray-500 dark:text-muted">Configura que tab se abre por defecto en cada seccion</p>
+                    </div>
+                  </div>
+                  <NavDefaultTabsConfig />
+                </div>
+                {/* ── Repetir tutorial ── */}
+                <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+                  <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
+                        <span className="text-xl">🎓</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-900 dark:text-foreground text-sm">Tutorial de bienvenida</p>
+                        <p className="text-xs text-gray-500 dark:text-muted">Repasa cómo funciona cada sección del panel</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        onboarding.resetTour();
+                        setTab("asistente-ia");
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors shrink-0"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Repetir tutorial de bienvenida
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    onboarding.resetTour();
-                    setTab("asistente-ia");
-                  }}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#2d6a4f] hover:bg-[#245a42] shadow-sm transition-colors shrink-0"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Repetir tutorial de bienvenida
-                </button>
               </div>
-            </div>
-          </div>
-        )}
-        {/* ── Especiales ── */}
-        {tab === "pedidos" && <OrdersTab />}
-        {tab === "plan" && <PlanTab />}
-        {/* ── Módulos avanzados ── */}
-        {tab === "analytics-pro" && <AnalyticsProModule />}
-        {tab === "ai-command" && <AICommandModule />}
+            )}
+            {/* ── Especiales ── */}
+            {tab === "pedidos" && <OrdersTab />}
+            {tab === "plan" && <PlanTab />}
+            {/* ── Módulos avanzados ── */}
+            {tab === "analytics-pro" && <AnalyticsProModule />}
+            {tab === "ai-command" && <AICommandModule />}
+            {tab === "sugerencias-ia" && <SugerenciasIAModule />}
+            {tab === "metas-logros" && <MetasLogrosModule />}
+            {/* ── Marketplace & Delivery ── */}
+            {tab === "marketplace" && <MarketplaceModule />}
+            {tab === "delivery-partners" && <DeliveryPartnersModule />}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* ── Mejora 10: Botón de ayuda rápida por módulo ── */}
+        {(() => {
+          const AYUDA: Partial<Record<Tab, string[]>> = {
+            "ventas-caja": [
+              "Busca productos por nombre o escanea el código de barras",
+              "Usa F1 para buscar, F2 para cobrar rápido",
+              "Puedes combinar efectivo + Yape en el mismo pago",
+              "Pulsa 'Historial' para ver las ventas del día",
+            ],
+            "inventario": [
+              "El semáforo te muestra el estado del stock de cada producto",
+              "Usa 'Conteo Físico' para hacer inventario guiado con escáner",
+              "Exporta tu inventario para el contador con 'Descargar para mi Contador'",
+            ],
+            "fiados": [
+              "La 'Libreta' simula tu cuaderno de fiados de papel",
+              "El score de estrellas te dice qué tan puntual es el cliente",
+              "Usa 'Lista de cobro' para imprimir y salir a cobrar",
+            ],
+            "plata": [
+              "El semáforo financiero te dice si tu negocio va bien de un vistazo",
+              "Usa 'Presupuesto' para controlar gastos por categoría",
+              "El reporte bancario genera un PDF para pedir crédito",
+            ],
+            "productos": [
+              "Crea categorías y organiza tu catálogo para que los clientes encuentren todo rápido",
+              "Usa el historial de precios para ver cómo han cambiado los costos",
+              "Los cupones y promociones se activan desde esta sección",
+            ],
+            "compras": [
+              "Registra tus proveedores y evalúa su desempeño con el Scorecard",
+              "Usa el plan de compras para saber qué necesitas pedir esta semana",
+              "La recepción verifica cantidades y detecta faltantes automáticamente",
+            ],
+            "clientes": [
+              "El CRM 360 muestra todo el historial de cada cliente en una sola vista",
+              "El programa de puntos fideliza a tus mejores compradores",
+              "Gestiona delivery, rutas y horarios de entrega desde aquí",
+            ],
+            "pedidos": [
+              "Centraliza pedidos de WhatsApp, tienda online y mostrador",
+              "Cambia el estado del pedido y el cliente recibe notificación automática",
+              "Filtra por estado, fecha o monto para encontrar pedidos rápido",
+            ],
+            "config": [
+              "Configura los datos de tu negocio: nombre, dirección y horarios",
+              "Gestiona usuarios y permisos del equipo",
+              "Personaliza la apariencia de tu tienda online",
+            ],
+            "asistente-ia": [
+              "El asistente IA te da un resumen diario del negocio cada mañana",
+              "Pregunta lo que necesites: ventas, stock, clientes, tendencias",
+              "Las alertas inteligentes te avisan de oportunidades y riesgos",
+            ],
+            "sugerencias-ia": [
+              "Revisa combos sugeridos según lo que tus clientes compran juntos",
+              "Busca un cliente y ve qué productos recomendarle",
+              "La IA te dice qué productos comprar para tu stock",
+            ],
+            "metas-logros": [
+              "Configura metas diarias, semanales y mensuales",
+              "Desbloquea logros vendiendo más y siendo constante",
+              "Mira tu racha de días consecutivos alcanzando la meta",
+            ],
+          };
+          const tips = AYUDA[tab];
+          if (!tips) return null;
+          const tabLabel = ALL_TABS.find(t => t.id === tab)?.label ?? tab;
+          return (
+            <>
+              <button
+                onClick={() => setShowModuleHelp(true)}
+                className="fixed bottom-20 right-6 z-40 h-10 w-10 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all text-lg font-bold"
+                title={`Ayuda — ${tabLabel}`}
+              >
+                ?
+              </button>
+              <AnimatePresence>
+                {showModuleHelp && (
+                  <motion.div
+                    className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setShowModuleHelp(false)}
+                    onKeyDown={(e) => { if (e.key === "Escape") setShowModuleHelp(false); }}
+                  >
+                    <motion.div
+                      className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-md w-full p-6"
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.95, opacity: 0 }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <h3 className="text-lg font-extrabold text-foreground mb-4">
+                        Ayuda — {tabLabel}
+                      </h3>
+                      <ul className="space-y-3">
+                        {tips.map((tip, i) => (
+                          <li key={i} className="flex items-start gap-2.5 text-sm text-muted">
+                            <span className="mt-0.5 h-5 w-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">
+                              {i + 1}
+                            </span>
+                            {tip}
+                          </li>
+                        ))}
+                      </ul>
+                      <button
+                        onClick={() => setShowModuleHelp(false)}
+                        className="mt-6 w-full py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors"
+                      >
+                        Entendido
+                      </button>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          );
+        })()}
       </main>
 
-      {/* Focus mode floating sidebar toggle */}
-      {focusMode && (
+      {/* Focus mode floating expand toggle — only on desktop */}
+      {focusMode && !presentationMode && (
         <button
-          onClick={() => setFocusMode(false)}
-          className="fixed bottom-20 sm:bottom-6 left-4 z-50 h-10 w-10 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all"
-          title="Mostrar sidebar"
+          onClick={toggleFocusMode}
+          className="hidden sm:flex fixed bottom-6 left-4 z-50 h-10 w-10 rounded-full bg-primary text-white shadow-lg items-center justify-center hover:bg-primary/90 transition-all"
+          title="Expandir sidebar"
         >
-          <Menu className="h-5 w-5" />
+          <Maximize2 className="h-5 w-5" />
+        </button>
+      )}
+
+      {/* Presentation mode — floating exit button */}
+      {presentationMode && (
+        <button
+          onClick={() => setPresentationMode(false)}
+          className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-xl bg-black/30 backdrop-blur-md text-white/80 text-sm font-semibold hover:bg-black/50 hover:text-white transition-all shadow-lg"
+          title="Salir de presentación (Ctrl+Shift+P)"
+        >
+          <EyeOff className="h-4 w-4" />
+          Salir
         </button>
       )}
 
@@ -4148,6 +3987,7 @@ function AdminPage() {
         );
       })()}
       <SSEListener />
+      <MorningSummaryModal />
       <OnboardingTour
         isTourActive={onboarding.isTourActive}
         currentStep={onboarding.currentStep}

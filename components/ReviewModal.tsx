@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { m, AnimatePresence } from "framer-motion";
-import { X, Star, Send, Pencil } from "lucide-react";
+import { X, Star, Send, Pencil, Camera, ZoomIn } from "lucide-react";
 import { useReviews } from "@/contexts/reviews-context";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 
@@ -47,6 +47,8 @@ export default function ReviewModal() {
   const [published, setPublished] = useState(false);
   const [textareaFocused, setTextareaFocused] = useState(false);
   const [promptPulse, setPromptPulse] = useState(false);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [photoPreviewFull, setPhotoPreviewFull] = useState(false);
 
   // Start pulse timer when modal opens; clear it (and the flag) on close
   useEffect(() => {
@@ -86,15 +88,26 @@ export default function ReviewModal() {
     setPromptPulse(false);
   };
 
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return; // max 5MB
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhotoBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handlePublish = async () => {
     if (!canPublish) return;
-    addReview({ name: customerName, location: customerLocation, text: activeText.trim(), rating });
+    addReview({ name: customerName, location: customerLocation, text: activeText.trim(), rating, photo: photoBase64 ?? undefined });
     // Persist to backend
     try {
       await fetch("/api/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: customerName, location: customerLocation, text: activeText.trim(), rating }),
+        body: JSON.stringify({ name: customerName, location: customerLocation, text: activeText.trim(), rating, photo: photoBase64 }),
       });
     } catch { /* non-critical — review saved locally */ }
     setPublished(true);
@@ -143,7 +156,7 @@ export default function ReviewModal() {
         >
           <div className="pointer-events-auto w-full max-w-md bg-white dark:bg-background rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="px-6 py-4 flex items-center justify-between shrink-0" style={{ background: "linear-gradient(90deg, #245c43, #2d6a4f, #245c43)" }}>
+            <div className="px-6 py-4 flex items-center justify-between shrink-0" style={{ background: "linear-gradient(90deg, #0d5f58, #0f766e, #0d5f58)" }}>
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                   <span className="text-xl">⭐</span>
@@ -302,7 +315,7 @@ export default function ReviewModal() {
                         onChange={(e) => handleCustomChange(e.target.value)}
                         onFocus={() => setTextareaFocused(true)}
                         onBlur={() => setTextareaFocused(false)}
-                        placeholder="Cuéntanos tu experiencia con Bodega San Martín…"
+                        placeholder="Cuéntanos tu experiencia con Buleje…"
                         rows={3}
                         maxLength={240}
                         className={`w-full rounded-xl border px-4 py-3 text-sm text-foreground resize-none outline-none transition-all leading-relaxed ${
@@ -318,6 +331,60 @@ export default function ReviewModal() {
                     </m.div>
                     <p className="text-xs text-muted text-right mt-1">{customText.length}/240</p>
                   </div>
+
+                  {/* Photo upload */}
+                  <div>
+                    <p className="text-sm font-semibold text-foreground mb-2">Agrega una foto (opcional)</p>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm font-medium text-foreground cursor-pointer hover:border-primary/40 transition-colors">
+                        <Camera className="h-4 w-4 text-primary" />
+                        {photoBase64 ? "Cambiar foto" : "Subir foto"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          onChange={handlePhotoChange}
+                          className="hidden"
+                        />
+                      </label>
+                      {photoBase64 && (
+                        <div className="relative group">
+                          <img
+                            src={photoBase64}
+                            alt="Preview"
+                            className="h-16 w-16 rounded-xl object-cover border-2 border-primary/20 cursor-pointer"
+                            onClick={() => setPhotoPreviewFull(true)}
+                          />
+                          <button
+                            onClick={() => setPhotoBase64(null)}
+                            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-500 text-white flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => setPhotoPreviewFull(true)}
+                            className="absolute bottom-0.5 right-0.5 h-5 w-5 rounded-full bg-black/50 text-white flex items-center justify-center"
+                          >
+                            <ZoomIn className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Photo full preview overlay */}
+                  {photoPreviewFull && photoBase64 && (
+                    <div
+                      className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 cursor-pointer"
+                      style={{ zIndex: 9100 }}
+                      onClick={() => setPhotoPreviewFull(false)}
+                    >
+                      <img src={photoBase64} alt="Foto ampliada" className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl object-contain" />
+                      <button className="absolute top-4 right-4 p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors">
+                        <X className="h-6 w-6" />
+                      </button>
+                    </div>
+                  )}
 
                   {/* Preview */}
                   {activeText.trim().length >= 10 && (

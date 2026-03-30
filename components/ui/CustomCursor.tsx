@@ -84,7 +84,7 @@ export default function CustomCursor() {
           width: 12,
           height: 12,
           borderRadius: "50%",
-          background: hover ? "#f59e0b" : "#2d6a4f",
+          background: hover ? "#f59e0b" : "#0f766e",
           pointerEvents: "none",
           willChange: "transform",
           transform: "translate(-200px, -200px)",

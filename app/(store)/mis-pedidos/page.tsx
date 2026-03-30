@@ -14,6 +14,7 @@ import { useCart } from "@/contexts/cart-context";
 import { cn } from "@/lib/utils";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import dynamic from "next/dynamic";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
@@ -429,6 +430,13 @@ export default function MisPedidosPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
 
+      {/* ── SEO Breadcrumbs ─────────────────────────────────────── */}
+      <BreadcrumbSchema
+        items={[
+          { name: "Inicio", url: "https://www.buleje.pe/" },
+          { name: "Mis Pedidos", url: "https://www.buleje.pe/mis-pedidos" },
+        ]}
+      />
       {/* ── Shared navigation ─────────────────────────────────────── */}
       <AnnouncementBar />
       <Header />
@@ -436,7 +444,7 @@ export default function MisPedidosPage() {
       {/* ── Hero header — matches site gradient ──────────────────── */}
       <div
         className="pt-32 sm:pt-36 pb-10 sm:pb-14"
-        style={{ background: "linear-gradient(135deg, #245c43 0%, #2d6a4f 50%, #40916c 100%)" }}
+        style={{ background: "linear-gradient(135deg, #0d5f58 0%, #0f766e 50%, #0d9488 100%)" }}
       >
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-3 mb-6">
@@ -448,7 +456,7 @@ export default function MisPedidosPage() {
             </Link>
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">Mis Pedidos</h1>
-              <p className="text-xs text-white/60 mt-0.5">Bodega San Martín · Pucallpa</p>
+              <p className="text-xs text-white/60 mt-0.5">Buleje · Pucallpa</p>
             </div>
             {identified && safeOrders.length > 0 && (
               <div className="text-right shrink-0 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/15">

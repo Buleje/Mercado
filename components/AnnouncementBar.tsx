@@ -20,6 +20,65 @@ function messagesHash(msgs: typeof FALLBACK_MESSAGES): string {
   return msgs.map(m => m.text).join("|");
 }
 
+// ── Mejora 12: First Purchase Discount Banner ───────────────────────────────
+function FirstPurchaseBanner() {
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const hasPurchased = localStorage.getItem("has-purchased") === "true";
+      const dismissed = localStorage.getItem("bsm-first-purchase-dismissed");
+      if (hasPurchased) return false;
+      if (dismissed && Date.now() - Number(dismissed) < 86_400_000) return false;
+      return true;
+    } catch { return false; }
+  });
+  const [copied, setCopied] = useState(false);
+
+  if (!visible) return null;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText("BIENVENIDO").then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
+
+  const handleClose = () => {
+    setVisible(false);
+    try { localStorage.setItem("bsm-first-purchase-dismissed", String(Date.now())); } catch { /* silent */ }
+  };
+
+  return (
+    <div
+      className="fixed top-0 left-0 right-0 text-white text-center shadow-lg"
+      style={{
+        background: "linear-gradient(90deg, #f97316, #e76f51)",
+        zIndex: 61,
+        padding: "10px 16px",
+      }}
+    >
+      <div className="relative mx-auto max-w-7xl flex items-center justify-center gap-3 flex-wrap">
+        <span className="text-sm font-bold tracking-wide">
+          🎉 Primera compra: 10% de descuento con codigo <span className="font-mono bg-white/20 px-1.5 py-0.5 rounded">BIENVENIDO</span>
+        </span>
+        <button
+          onClick={handleCopy}
+          className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-bold transition-colors"
+        >
+          {copied ? "✓ Copiado" : "Copiar codigo"}
+        </button>
+        <button
+          onClick={handleClose}
+          className="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 rounded-full hover:bg-white/20 transition-colors"
+          aria-label="Cerrar"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function AnnouncementBar() {
   const { homepage: hp } = useSettings();
   const messages = hp.announcementMessages?.length ? hp.announcementMessages : FALLBACK_MESSAGES;
@@ -74,16 +133,18 @@ export default function AnnouncementBar() {
     dispatchAppEvent("announcementDismissed", {});
   }, [hash]);
 
-  if (!mounted || dismissed || hp.announcementEnabled === false) return null;
+  if (!mounted || dismissed || hp.announcementEnabled === false) return <FirstPurchaseBanner />;
 
   const msg = messages[idx];
 
   return (
+    <>
+    <FirstPurchaseBanner />
     <div
       id="announcement-bar"
       className="fixed top-0 left-0 right-0 h-11 text-white text-center overflow-hidden shadow-lg"
       style={{
-        background: "linear-gradient(90deg, #245c43, #2d6a4f, #245c43)",
+        background: "linear-gradient(90deg, #0d5f58, #0f766e, #0d5f58)",
         zIndex: 60,
         transform: scrollHidden ? "translateY(-100%)" : "translateY(0)",
         transition: "transform 0.35s cubic-bezier(0.4,0,0.2,1)",
@@ -119,5 +180,6 @@ export default function AnnouncementBar() {
         <X className="h-4 w-4" />
       </button>
     </div>
+    </>
   );
 }

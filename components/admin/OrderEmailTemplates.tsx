@@ -75,20 +75,20 @@ export function generateOrderConfirmationHTML(order: OrderEmailData): string {
   <div style="max-width:560px;margin:24px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
     <!-- Header -->
-    <div style="background:#2d6a4f;padding:28px 28px 20px;">
+    <div style="background:#0f766e;padding:28px 28px 20px;">
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="background:rgba(255,255,255,0.15);width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;text-align:center;line-height:48px;">
           B
         </div>
         <div>
-          <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Bodega San Martin</h1>
+          <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Buleje</h1>
           <p style="margin:2px 0 0;color:#a8d5ba;font-size:13px;">Pucallpa, Peru</p>
         </div>
       </div>
     </div>
 
     <!-- Banner confirmacion -->
-    <div style="background:#f4a261;padding:16px 28px;text-align:center;">
+    <div style="background:#f97316;padding:16px 28px;text-align:center;">
       <p style="margin:0;color:#ffffff;font-size:17px;font-weight:700;">Pedido confirmado</p>
       <p style="margin:4px 0 0;color:rgba(255,255,255,0.85);font-size:13px;">Orden #${order.id} &bull; ${fmtDate(order.createdAt)}</p>
     </div>
@@ -103,21 +103,21 @@ export function generateOrderConfirmationHTML(order: OrderEmailData): string {
 
     <!-- Detalle items -->
     <div style="padding:20px 28px 0;">
-      <h2 style="margin:0 0 12px;font-size:15px;color:#2d6a4f;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
+      <h2 style="margin:0 0 12px;font-size:15px;color:#0f766e;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">
         Detalle del pedido
       </h2>
       <table style="width:100%;border-collapse:collapse;">
         <thead>
           <tr style="background:#f0fdf4;">
-            <th style="padding:10px 12px;text-align:left;font-size:12px;color:#2d6a4f;text-transform:uppercase;letter-spacing:0.5px;">Producto</th>
-            <th style="padding:10px 12px;text-align:right;font-size:12px;color:#2d6a4f;text-transform:uppercase;letter-spacing:0.5px;">Subtotal</th>
+            <th style="padding:10px 12px;text-align:left;font-size:12px;color:#0f766e;text-transform:uppercase;letter-spacing:0.5px;">Producto</th>
+            <th style="padding:10px 12px;text-align:right;font-size:12px;color:#0f766e;text-transform:uppercase;letter-spacing:0.5px;">Subtotal</th>
           </tr>
         </thead>
         <tbody>${itemsHtml}</tbody>
         <tfoot>
           <tr style="background:#f0fdf4;">
             <td style="padding:12px;font-weight:700;font-size:15px;color:#111;">Total</td>
-            <td style="padding:12px;text-align:right;font-weight:700;font-size:17px;color:#2d6a4f;">${fmt(order.total)}</td>
+            <td style="padding:12px;text-align:right;font-weight:700;font-size:17px;color:#0f766e;">${fmt(order.total)}</td>
           </tr>
         </tfoot>
       </table>
@@ -138,14 +138,14 @@ export function generateOrderConfirmationHTML(order: OrderEmailData): string {
     <!-- Boton tracking -->
     ${order.trackingUrl ? `
     <div style="padding:8px 28px 20px;text-align:center;">
-      <a href="${order.trackingUrl}" style="display:inline-block;background:#2d6a4f;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:8px;font-size:14px;font-weight:700;">
+      <a href="${order.trackingUrl}" style="display:inline-block;background:#0f766e;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:8px;font-size:14px;font-weight:700;">
         Ver estado de mi pedido
       </a>
     </div>` : ""}
 
     <!-- Footer -->
     <div style="border-top:1px solid #e8e8e8;padding:16px 28px;text-align:center;">
-      <p style="margin:0;font-size:12px;color:#aaa;">Bodega San Martin &bull; Pucallpa, Peru</p>
+      <p style="margin:0;font-size:12px;color:#aaa;">Buleje &bull; Pucallpa, Peru</p>
       <p style="margin:4px 0 0;font-size:12px;color:#aaa;">Este es un mensaje automatico, no responder a este correo.</p>
     </div>
   </div>
@@ -171,8 +171,8 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData): string 
   <div style="max-width:560px;margin:24px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
     <!-- Header -->
-    <div style="background:#2d6a4f;padding:28px 28px 20px;">
-      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Bodega San Martin</h1>
+    <div style="background:#0f766e;padding:28px 28px 20px;">
+      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Buleje</h1>
       <p style="margin:4px 0 0;color:#a8d5ba;font-size:13px;">Pucallpa, Peru</p>
     </div>
 
@@ -202,7 +202,7 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData): string 
           </tr>
           <tr>
             <td style="padding:4px 0;color:#555;">Total pagado</td>
-            <td style="padding:4px 0;text-align:right;font-weight:700;color:#2d6a4f;">${fmt(order.total)}</td>
+            <td style="padding:4px 0;text-align:right;font-weight:700;color:#0f766e;">${fmt(order.total)}</td>
           </tr>
           <tr>
             <td style="padding:4px 0;color:#555;">Productos</td>
@@ -216,7 +216,7 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData): string 
       <div style="text-align:center;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:20px 16px;margin-bottom:20px;">
         <p style="margin:0 0 6px;font-size:15px;font-weight:700;color:#92400e;">Como fue tu experiencia?</p>
         <p style="margin:0 0 14px;font-size:13px;color:#78350f;">Tu opinion nos ayuda a mejorar el servicio.</p>
-        <a href="${order.surveyUrl}" style="display:inline-block;background:#f4a261;color:#ffffff;text-decoration:none;padding:11px 28px;border-radius:8px;font-size:14px;font-weight:700;">
+        <a href="${order.surveyUrl}" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;padding:11px 28px;border-radius:8px;font-size:14px;font-weight:700;">
           Dar mi opinion (30 segundos)
         </a>
       </div>` : `
@@ -233,7 +233,7 @@ export function generateDeliveryConfirmationHTML(order: OrderEmailData): string 
 
     <!-- Footer -->
     <div style="border-top:1px solid #e8e8e8;padding:16px 28px;text-align:center;">
-      <p style="margin:0;font-size:12px;color:#aaa;">Bodega San Martin &bull; Pucallpa, Peru</p>
+      <p style="margin:0;font-size:12px;color:#aaa;">Buleje &bull; Pucallpa, Peru</p>
       <p style="margin:4px 0 0;font-size:12px;color:#aaa;">Este es un mensaje automatico, no responder a este correo.</p>
     </div>
   </div>
@@ -262,7 +262,7 @@ export function generateWeeklyOffersHTML(products: OfferProduct[], customerName:
               <td style="width:80px;padding-right:12px;vertical-align:top;">
                 ${p.imageUrl
           ? `<img src="${p.imageUrl}" alt="${p.name}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;display:block;">`
-          : `<div style="width:72px;height:72px;background:#f0fdf4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px;text-align:center;line-height:72px;color:#2d6a4f;font-weight:700;">${p.name.charAt(0)}</div>`
+          : `<div style="width:72px;height:72px;background:#f0fdf4;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:28px;text-align:center;line-height:72px;color:#0f766e;font-weight:700;">${p.name.charAt(0)}</div>`
         }
               </td>
               <td style="vertical-align:middle;">
@@ -270,7 +270,7 @@ export function generateWeeklyOffersHTML(products: OfferProduct[], customerName:
                 <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#222;">${p.name}</p>
                 <p style="margin:0 0 6px;font-size:12px;color:#888;">${p.unit}${p.category ? ` &bull; ${p.category}` : ""}</p>
                 <div>
-                  <span style="font-size:16px;font-weight:700;color:#2d6a4f;">${fmt(p.price)}</span>
+                  <span style="font-size:16px;font-weight:700;color:#0f766e;">${fmt(p.price)}</span>
                   ${hasDiscount ? `<span style="font-size:13px;color:#aaa;text-decoration:line-through;margin-left:6px;">${fmt(p.originalPrice!)}</span>` : ""}
                 </div>
               </td>
@@ -292,13 +292,13 @@ export function generateWeeklyOffersHTML(products: OfferProduct[], customerName:
   <div style="max-width:560px;margin:24px auto;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
     <!-- Header -->
-    <div style="background:#2d6a4f;padding:28px 28px 20px;">
-      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Bodega San Martin</h1>
+    <div style="background:#0f766e;padding:28px 28px 20px;">
+      <h1 style="margin:0;color:#ffffff;font-size:20px;font-weight:700;">Buleje</h1>
       <p style="margin:4px 0 0;color:#a8d5ba;font-size:13px;">Pucallpa, Peru</p>
     </div>
 
     <!-- Banner -->
-    <div style="background:linear-gradient(135deg,#f4a261,#e8803a);padding:22px 28px;text-align:center;">
+    <div style="background:linear-gradient(135deg,#f97316,#e8803a);padding:22px 28px;text-align:center;">
       <p style="margin:0;color:#ffffff;font-size:22px;font-weight:700;">Ofertas de la semana</p>
       <p style="margin:6px 0 0;color:rgba(255,255,255,0.9);font-size:13px;">Valido hasta el ${validStr}</p>
     </div>
@@ -321,14 +321,14 @@ export function generateWeeklyOffersHTML(products: OfferProduct[], customerName:
     <!-- CTA -->
     <div style="padding:20px 28px 24px;text-align:center;">
       <p style="margin:0 0 14px;font-size:13px;color:#777;">Haz tu pedido por WhatsApp o visita nuestra tienda.</p>
-      <div style="display:inline-block;background:#2d6a4f;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:8px;font-size:14px;font-weight:700;">
+      <div style="display:inline-block;background:#0f766e;color:#ffffff;text-decoration:none;padding:13px 32px;border-radius:8px;font-size:14px;font-weight:700;">
         Ver todas las ofertas
       </div>
     </div>
 
     <!-- Footer -->
     <div style="border-top:1px solid #e8e8e8;padding:16px 28px;text-align:center;">
-      <p style="margin:0;font-size:12px;color:#aaa;">Bodega San Martin &bull; Pucallpa, Peru</p>
+      <p style="margin:0;font-size:12px;color:#aaa;">Buleje &bull; Pucallpa, Peru</p>
       <p style="margin:4px 0 0;font-size:12px;color:#aaa;">
         Si no deseas recibir mas correos, puedes ignorar este mensaje.
       </p>
@@ -388,7 +388,7 @@ export default function OrderEmailTemplates() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Mail className="w-5 h-5 text-[#2d6a4f] dark:text-[#4ade80]" />
+        <Mail className="w-5 h-5 text-[#0f766e] dark:text-[#4ade80]" />
         <div>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Templates de Email
@@ -408,7 +408,7 @@ export default function OrderEmailTemplates() {
             className={cn(
               "flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors",
               activeTab === t.id
-                ? "border-[#2d6a4f] text-[#2d6a4f] dark:border-[#4ade80] dark:text-[#4ade80]"
+                ? "border-[#0f766e] text-[#0f766e] dark:border-[#4ade80] dark:text-[#4ade80]"
                 : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             )}
           >

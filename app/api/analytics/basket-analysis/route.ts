@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   try {
     const orders = await prisma.order.findMany({
       where: { tenantId: auth.tenantId, createdAt: { gte: since }, status: { not: "cancelado" } },
-      select: { id: true, total: true, items: { select: { name: true, category: true } } },
+      select: { id: true, total: true, items: { select: { name: true } } },
     });
 
     if (orders.length < 5) throw new Error("not-enough-data");
@@ -31,15 +31,14 @@ export async function GET(req: NextRequest) {
     const pairCategory = new Map<string, string>();
 
     for (const order of orders) {
-      const names = [...new Set(order.items.map((i) => i.name))];
+      const names = [...new Set(order.items.map((i: { name: string }) => i.name))];
       for (const n of names) itemFreq.set(n, (itemFreq.get(n) ?? 0) + 1);
       for (let i = 0; i < names.length; i++) {
         for (let j = i + 1; j < names.length; j++) {
           const key = [names[i], names[j]].sort().join("|||");
           pairFreq.set(key, (pairFreq.get(key) ?? 0) + 1);
           if (!pairCategory.has(key)) {
-            const cat = order.items.find((x) => x.name === names[i])?.category ?? "General";
-            pairCategory.set(key, cat ?? "General");
+            pairCategory.set(key, "General");
           }
         }
       }
@@ -58,7 +57,7 @@ export async function GET(req: NextRequest) {
     }
     associations.sort((a, b) => b.count - a.count);
 
-    const avgBasketSize = orders.reduce((s, o) => s + o.items.length, 0) / totalOrders;
+    const avgBasketSize = orders.reduce((s, o) => s + (o.items?.length ?? 0), 0) / totalOrders;
     const avgBasketValue = orders.reduce((s, o) => s + (o.total ?? 0), 0) / totalOrders;
 
     return NextResponse.json({ associations: associations.slice(0, 50), avgBasketSize, avgBasketValue, totalOrders });

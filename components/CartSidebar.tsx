@@ -97,11 +97,63 @@ export default function CartSidebar() {
     _setValidatingCoupon(false);
   };
 
+  /* Mejora 18: Guardar carrito para después con link compartible */
+  const [savedCartCode, setSavedCartCode] = useState<string | null>(null);
+  const [showSavedModal, setShowSavedModal] = useState(false);
+  const [loadCartCode, setLoadCartCode] = useState("");
+  const [loadCartMsg, setLoadCartMsg] = useState("");
+
+  const saveCartForLater = () => {
+    if (items.length === 0) return;
+    const code = "BSM-" + Date.now().toString(36).toUpperCase();
+    const cartData = {
+      items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit, image: i.image })),
+      savedAt: Date.now(),
+    };
+    try { localStorage.setItem(`saved-carts-${code}`, JSON.stringify(cartData)); } catch { /* ignore */ }
+    setSavedCartCode(code);
+    setShowSavedModal(true);
+  };
+
+  const loadSavedCart = () => {
+    const code = loadCartCode.trim().toUpperCase();
+    if (!code) { setLoadCartMsg("Ingresa un codigo"); return; }
+    try {
+      const raw = localStorage.getItem(`saved-carts-${code}`);
+      if (!raw) { setLoadCartMsg("Codigo no encontrado"); return; }
+      const data = JSON.parse(raw);
+      // Check expiration (7 days)
+      if (Date.now() - data.savedAt > 7 * 24 * 60 * 60 * 1000) {
+        setLoadCartMsg("Este codigo ha expirado");
+        localStorage.removeItem(`saved-carts-${code}`);
+        return;
+      }
+      // Add items to cart
+      for (const item of data.items) {
+        const product = allProducts.find(p => p.id === item.id);
+        if (product) {
+          for (let q = 0; q < item.quantity; q++) addItem(product);
+        }
+      }
+      setLoadCartMsg("Lista cargada con exito");
+      setLoadCartCode("");
+      setTimeout(() => setLoadCartMsg(""), 3000);
+    } catch { setLoadCartMsg("Error al cargar la lista"); }
+  };
+
+  const shareCartWhatsApp = () => {
+    if (!savedCartCode) return;
+    const itemList = items.map((i, idx) => `${idx + 1}. ${i.name} - S/${(i.price * i.quantity).toFixed(2)}`).join("\n");
+    const url = typeof window !== "undefined" ? window.location.origin : "";
+    const msg = `🛒 Mi lista de Buleje:\n${itemList}\nCodigo: ${savedCartCode}\nIngresa en ${url}/tienda y usa este codigo para cargar la lista`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
   /* Z4: Print cart as shopping list */
   const _printCart = () => {
     const now = new Date().toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" });
     const rows = items.map((i, idx) => `<tr><td style="padding:4px 8px;border-bottom:1px solid #eee">${idx + 1}</td><td style="padding:4px 8px;border-bottom:1px solid #eee">${i.name}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:center">${i.quantity}</td><td style="padding:4px 8px;border-bottom:1px solid #eee;text-align:right">S/${(i.price * i.quantity).toFixed(2)}</td></tr>`).join("");
-    const html = `<html><head><title>Lista de compras</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#1a1a1a}table{width:100%;border-collapse:collapse}th{text-align:left;padding:6px 8px;border-bottom:2px solid #333;font-size:13px}td{font-size:12px}.total{margin-top:12px;text-align:right;font-size:16px;font-weight:bold}h2{margin:0 0 4px}p{margin:0 0 12px;color:#666;font-size:12px}@media print{body{padding:12px}}</style></head><body><h2>🛒 Bodega San Martín</h2><p>Lista de compras — ${now}</p><table><thead><tr><th>#</th><th>Producto</th><th style="text-align:center">Cant.</th><th style="text-align:right">Subtotal</th></tr></thead><tbody>${rows}</tbody></table>${discount > 0 ? `<p class="total" style="font-size:13px;color:#888">Desc. promo: -S/${discount.toFixed(2)}</p>` : ""}${couponDiscount > 0 ? `<p class="total" style="font-size:13px;color:#888">Cupón: -S/${couponDiscount.toFixed(2)}</p>` : ""}<p class="total">Total: S/${finalTotal.toFixed(2)}</p></body></html>`;
+    const html = `<html><head><title>Lista de compras</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#1a1a1a}table{width:100%;border-collapse:collapse}th{text-align:left;padding:6px 8px;border-bottom:2px solid #333;font-size:13px}td{font-size:12px}.total{margin-top:12px;text-align:right;font-size:16px;font-weight:bold}h2{margin:0 0 4px}p{margin:0 0 12px;color:#666;font-size:12px}@media print{body{padding:12px}}</style></head><body><h2>🛒 Buleje</h2><p>Lista de compras — ${now}</p><table><thead><tr><th>#</th><th>Producto</th><th style="text-align:center">Cant.</th><th style="text-align:right">Subtotal</th></tr></thead><tbody>${rows}</tbody></table>${discount > 0 ? `<p class="total" style="font-size:13px;color:#888">Desc. promo: -S/${discount.toFixed(2)}</p>` : ""}${couponDiscount > 0 ? `<p class="total" style="font-size:13px;color:#888">Cupón: -S/${couponDiscount.toFixed(2)}</p>` : ""}<p class="total">Total: S/${finalTotal.toFixed(2)}</p></body></html>`;
     const w = window.open("", "_blank", "width=400,height=600");
     if (w) { w.document.write(html); w.document.close(); w.print(); }
   };
@@ -130,6 +182,28 @@ export default function CartSidebar() {
     return () => clearInterval(t);
   }, [items.length]);
   const [isFirstOrder, setIsFirstOrder] = useState(false);
+  /* Stock verification on cart open */
+  const [stockAlerts, setStockAlerts] = useState<Record<number, number>>({});
+  useEffect(() => {
+    if (!isOpen || items.length === 0) return;
+    // Fetch current stock for cart items
+    const ids = items.map(i => i.id).filter(id => id > 0);
+    if (ids.length === 0) return;
+    fetch(`/api/products/stock-check?ids=${ids.join(",")}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (Array.isArray(data)) {
+          const map: Record<number, number> = {};
+          for (const item of data) {
+            if (item && typeof item.id === "number" && typeof item.stock === "number") {
+              map[item.id] = item.stock;
+            }
+          }
+          setStockAlerts(map);
+        }
+      })
+      .catch(() => { /* silent — stock alerts are best-effort */ });
+  }, [isOpen, items.length]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isOpen) return;
     try {
@@ -355,14 +429,30 @@ export default function CartSidebar() {
                       <h3 className="font-semibold text-sm text-foreground leading-tight line-clamp-2">
                         {item.name}
                       </h3>
-                      {(item as { stock?: number }).stock != null &&
-                        (item as { stock?: number }).stock! > 0 &&
-                        (item as { stock?: number }).stock! <= 5 && (
+                      {(() => {
+                        const liveStock = stockAlerts[item.id];
+                        const itemStock = liveStock ?? (item as { stock?: number }).stock;
+                        if (itemStock == null) return null;
+                        if (itemStock === 0) return (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full mt-0.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
+                            Agotado — elimina del carrito
+                          </span>
+                        );
+                        if (itemStock <= 3) return (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded-full mt-0.5">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                            ¡Solo quedan {itemStock}!
+                          </span>
+                        );
+                        if (itemStock <= 5) return (
                           <p className="text-[10px] text-amber-500 font-semibold mt-0.5 flex items-center gap-1">
                             <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
-                            ¡Solo {(item as { stock?: number }).stock} en stock!
+                            ¡Solo {itemStock} en stock!
                           </p>
-                        )}
+                        );
+                        return null;
+                      })()}
                       {(item as { stock?: number }).stock != null &&
                         (item as { stock?: number }).stock! > 0 &&
                         item.quantity >= (item as { stock?: number }).stock! && (
@@ -557,6 +647,48 @@ export default function CartSidebar() {
                   </div>
                 </details>
 
+                {/* Mejora 18: Guardar carrito + Cargar código */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={saveCartForLater}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-primary/30 text-xs font-bold text-primary hover:bg-primary/5 transition-colors"
+                  >
+                    <Clipboard className="h-3.5 w-3.5" />
+                    Guardar mi lista
+                  </button>
+                  <div className="flex-1 flex gap-1">
+                    <input
+                      type="text"
+                      value={loadCartCode}
+                      onChange={e => { setLoadCartCode(e.target.value); setLoadCartMsg(""); }}
+                      placeholder="Codigo lista..."
+                      className="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border text-[11px] text-gray-700 dark:text-foreground outline-none focus:border-primary/40"
+                    />
+                    <button
+                      onClick={loadSavedCart}
+                      className="px-2 py-1.5 rounded-lg bg-primary/10 text-primary text-[11px] font-bold hover:bg-primary/20 transition-colors shrink-0"
+                    >
+                      Cargar
+                    </button>
+                  </div>
+                </div>
+                {loadCartMsg && (
+                  <p className={`text-[10px] font-semibold text-center ${loadCartMsg.includes("exito") ? "text-emerald-600" : "text-red-500"}`}>{loadCartMsg}</p>
+                )}
+
+                {/* Mejora 14: Delivery time estimate */}
+                {(() => {
+                  const now = new Date().getHours();
+                  const isDeliveryHours = now >= 8 && now < 21;
+                  const estimado = isDeliveryHours ? "~30 minutos" : "manana 8-10am";
+                  return (
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-muted py-1">
+                      <Truck className="h-3.5 w-3.5 shrink-0" />
+                      <span>Entrega estimada: <span className="font-bold text-gray-700 dark:text-foreground">{estimado}</span></span>
+                    </div>
+                  );
+                })()}
+
                 {/* Total */}
                 <div className="flex items-center justify-between">
                   <span className="text-base font-semibold text-muted">
@@ -573,6 +705,22 @@ export default function CartSidebar() {
                     </span>
                   </div>
                 </div>
+
+                {/* Mejora 13: Mensaje motivacional segun monto */}
+                {items.length > 0 && (
+                  <p className={[
+                    "text-xs text-center py-1",
+                    finalTotal < 40 ? "text-gray-400" :
+                    finalTotal < 80 ? "text-green-600 dark:text-green-400" :
+                    "text-amber-600 dark:text-amber-400 font-medium"
+                  ].join(" ")}>
+                    {finalTotal < 15 ? "🛒 Buen inicio" :
+                     finalTotal < 40 ? "👍 Vas bien" :
+                     finalTotal < 80 ? "💪 ¡Gran compra!" :
+                     finalTotal < 150 ? "🎉 ¡Compra VIP!" :
+                     "🏆 ¡Eres nuestro mejor cliente hoy!"}
+                  </p>
+                )}
 
                 {/* Order Button — WhatsApp or Checkout depending on mode */}
                 {mode === "checkout" ? (
@@ -627,7 +775,7 @@ export default function CartSidebar() {
                           <p className="text-sm font-bold text-[#075e54] dark:text-emerald-300">Vista previa del pedido</p>
                         </div>
                         <div className="text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono leading-relaxed max-h-36 overflow-y-auto bg-white/60 dark:bg-black/20 rounded-xl px-3 py-2.5 border border-[#25D366]/20">
-                          {`🛒 *Pedido — Bodega San Martín*\n\n${items.map(i => `• ${i.quantity}× ${i.name} — S/${(i.price * i.quantity).toFixed(2)}`).join("\n")}\n\n💰 *Total: S/${finalTotal.toFixed(2)}*${promo ? `\n🏷️ Descuento: -S/${discount.toFixed(2)}` : ""}${couponDiscount > 0 ? `\n🎟️ Cupón: -S/${couponDiscount.toFixed(2)}` : ""}`}
+                          {`🛒 *Pedido — Buleje*\n\n${items.map(i => `• ${i.quantity}× ${i.name} — S/${(i.price * i.quantity).toFixed(2)}`).join("\n")}\n\n💰 *Total: S/${finalTotal.toFixed(2)}*${promo ? `\n🏷️ Descuento: -S/${discount.toFixed(2)}` : ""}${couponDiscount > 0 ? `\n🎟️ Cupón: -S/${couponDiscount.toFixed(2)}` : ""}`}
                         </div>
                         <div className="flex gap-2">
                           <button
@@ -673,7 +821,7 @@ export default function CartSidebar() {
                         {sendResult === "shared" && (
                           <>
                             <p className="text-sm font-bold text-[#157c3c]">¡Imagen enviada!</p>
-                            <p className="text-xs text-foreground/70 mt-0.5">Selecciona el chat de Bodega San Martín en WhatsApp para enviar tu pedido.</p>
+                            <p className="text-xs text-foreground/70 mt-0.5">Selecciona el chat de Buleje en WhatsApp para enviar tu pedido.</p>
                           </>
                         )}
                         {sendResult === "clipboard" && (
@@ -712,6 +860,56 @@ export default function CartSidebar() {
               </div>
             )}
           </m.aside>
+
+          {/* Mejora 18: Modal de lista guardada */}
+          {showSavedModal && savedCartCode && (
+            <m.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-6002 bg-black/50 flex items-center justify-center p-4"
+              onClick={() => setShowSavedModal(false)}
+            >
+              <m.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-base font-bold text-gray-900 dark:text-foreground">Lista guardada</p>
+                    <p className="text-xs text-gray-500 dark:text-muted">Valida por 7 dias</p>
+                  </div>
+                </div>
+                <div className="bg-gray-50 dark:bg-surface rounded-xl px-4 py-3 text-center">
+                  <p className="text-xs text-gray-500 dark:text-muted mb-1">Codigo:</p>
+                  <p className="text-2xl font-extrabold text-primary tracking-wider">{savedCartCode}</p>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-muted text-center">
+                  Comparte este codigo para que alguien mas compre lo mismo
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowSavedModal(false)}
+                    className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-50 transition-colors"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    onClick={shareCartWhatsApp}
+                    className="flex-1 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-bold hover:bg-[#20BD5A] transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Share2 className="h-3.5 w-3.5" />
+                    Compartir
+                  </button>
+                </div>
+              </m.div>
+            </m.div>
+          )}
         </>
       )}
     </AnimatePresence>

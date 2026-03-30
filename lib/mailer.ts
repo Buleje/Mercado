@@ -44,12 +44,12 @@ export async function sendOrderNotification(order: {
     order.paymentMethod === "yape" ? "Yape" : order.paymentMethod === "efectivo" ? "Efectivo" : order.paymentMethod ?? "—";
 
   await transporter.sendMail({
-    from: `"Bodega San Martín" <${smtpUser}>`,
+    from: `"Buleje" <${smtpUser}>`,
     to: notifyEmail,
     subject: `🛒 Nuevo pedido — ${order.customerName} — S/${order.total.toFixed(2)}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
-        <div style="background:#2d6a4f;padding:20px 24px;">
+        <div style="background:#0f766e;padding:20px 24px;">
           <h2 style="color:#fff;margin:0;font-size:18px;">🛒 Nuevo pedido recibido</h2>
           <p style="color:#a8d5ba;margin:4px 0 0;font-size:13px;">ID: ${order.id}</p>
         </div>
@@ -65,21 +65,21 @@ export async function sendOrderNotification(order: {
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
               <tr style="background:#f0fdf4;">
-                <th style="text-align:left;padding:6px 8px;color:#2d6a4f;">Producto</th>
-                <th style="text-align:right;padding:6px 8px;color:#2d6a4f;">Subtotal</th>
+                <th style="text-align:left;padding:6px 8px;color:#0f766e;">Producto</th>
+                <th style="text-align:right;padding:6px 8px;color:#0f766e;">Subtotal</th>
               </tr>
             </thead>
             <tbody>${itemsHtml}</tbody>
             <tfoot>
               <tr style="background:#f0fdf4;">
                 <td style="padding:8px;font-weight:bold;color:#111;">Total</td>
-                <td style="padding:8px;text-align:right;font-weight:bold;color:#2d6a4f;font-size:16px;">S/${order.total.toFixed(2)}</td>
+                <td style="padding:8px;text-align:right;font-weight:bold;color:#0f766e;font-size:16px;">S/${order.total.toFixed(2)}</td>
               </tr>
             </tfoot>
           </table>
         </div>
         <div style="padding:12px 24px;border-top:1px solid #eee;text-align:center;">
-          <p style="font-size:12px;color:#999;margin:0;">Bodega San Martín · Panel de administración</p>
+          <p style="font-size:12px;color:#999;margin:0;">Buleje · Panel de administración</p>
         </div>
       </div>
     `,
@@ -122,7 +122,7 @@ export async function sendCashSummaryEmail(summary: {
   };
 
   await transporter.sendMail({
-    from: `"Bodega San Martín" <${smtpUser}>`,
+    from: `"Buleje" <${smtpUser}>`,
     to: notifyEmail,
     subject: `🏦 Cierre de caja — ${fmtDate(summary.closedAt)} — ${fmt(summary.closingAmount)}`,
     html: `
@@ -153,7 +153,7 @@ export async function sendCashSummaryEmail(summary: {
             ${summary.totalOut > 0 ? `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px 4px;color:#475569;">Egresos</td><td style="padding:8px 4px;text-align:right;color:#dc2626;">−${fmt(summary.totalOut)}</td></tr>` : ""}
             <tr style="border-bottom:2px solid #cbd5e1;background:#f1f5f9;">
               <td style="padding:10px 4px;font-weight:700;color:#0a0f0d;">Efectivo esperado</td>
-              <td style="padding:10px 4px;text-align:right;font-weight:700;color:#2d6a4f;">${fmt(summary.expectedAmount)}</td>
+              <td style="padding:10px 4px;text-align:right;font-weight:700;color:#0f766e;">${fmt(summary.expectedAmount)}</td>
             </tr>
             <tr style="border-bottom:1px solid #e2e8f0;">
               <td style="padding:8px 4px;color:#475569;">Efectivo contado</td>
@@ -167,7 +167,7 @@ export async function sendCashSummaryEmail(summary: {
           ${summary.notes ? `<div style="margin-top:12px;padding:10px;background:#fef9c3;border-radius:8px;font-size:13px;color:#854d0e;"><strong>Notas:</strong> ${summary.notes}</div>` : ""}
         </div>
         <div style="padding:12px 24px;border-top:1px solid #eee;text-align:center;">
-          <p style="font-size:12px;color:#999;margin:0;">Bodega San Martín · Cierre de caja automático</p>
+          <p style="font-size:12px;color:#999;margin:0;">Buleje · Cierre de caja automático</p>
         </div>
       </div>
     `,

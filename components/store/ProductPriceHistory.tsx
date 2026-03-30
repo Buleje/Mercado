@@ -55,7 +55,7 @@ function MiniChart({ points }: { points: PricePoint[] }) {
             <div
               className={cn(
                 "w-full rounded-t-sm transition-all",
-                isLast  ? "bg-[#2d6a4f]" :
+                isLast  ? "bg-[#0f766e]" :
                 isMax   ? "bg-red-400 dark:bg-red-500" :
                 isMin   ? "bg-emerald-400 dark:bg-emerald-500" :
                 "bg-gray-200 dark:bg-gray-700"
@@ -106,7 +106,7 @@ export default function ProductPriceHistory({ productId }: ProductPriceHistoryPr
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-600 py-2">
-        <div className="w-3 h-3 border-2 border-gray-300 dark:border-gray-600 border-t-[#2d6a4f] rounded-full animate-spin" />
+        <div className="w-3 h-3 border-2 border-gray-300 dark:border-gray-600 border-t-[#0f766e] rounded-full animate-spin" />
         Cargando historial...
       </div>
     );

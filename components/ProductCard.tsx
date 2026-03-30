@@ -1,17 +1,19 @@
 import { memo, useCallback, useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus, Minus, Package, Heart, Eye, Flame, Clock, ShoppingCart, Star } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Plus, Minus, Package, Heart, Eye, Flame, Clock, ShoppingCart, Star, GitCompareArrows } from "lucide-react";
 import { getProductSlug } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useFavorites } from "@/contexts/favorites-context";
+import { useCompare } from "@/contexts/compare-context";
 import { cn } from "@/lib/utils";
 import { trackAddToCart } from "@/lib/analytics";
 import type { Product } from "@/data/products";
 import { trackView } from "@/components/RecentlyViewed";
 
-type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number };
+type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number; isTopSeller?: boolean; comparePrice?: number; promoEndDate?: string };
 
 /* U4: Selling fast tracker — counts add-to-cart events per product in a rolling 24h window */
 const SELLING_FAST_KEY = "bsm-selling-fast";
@@ -34,6 +36,13 @@ function isSellingFast(productId: number): boolean {
     return timestamps.length >= SELLING_FAST_THRESHOLD;
   } catch { return false; }
 }
+function getSellingCount(productId: number): number {
+  try {
+    const now = Date.now();
+    const data: Record<string, number[]> = JSON.parse(localStorage.getItem(SELLING_FAST_KEY) || "{}");
+    return (data[productId] || []).filter(t => now - t < 86400000).length;
+  } catch { return 0; }
+}
 
 interface ProductCardProps {
   product: LiveProduct;
@@ -51,15 +60,35 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
   const { items, addItem, updateQty } = useCart();
   const { showToast } = useToast();
   const { isFavorite, toggle: toggleFav } = useFavorites();
+  const { add: addToCompare, isIn: isInCompare, remove: removeFromCompare } = useCompare();
+  const router = useRouter();
+
+  // Mejora 18: Prefetch product page on hover (desktop only)
+  const prefetchedRef = useRef(false);
+  const handlePrefetch = useCallback(() => {
+    if (prefetchedRef.current) return;
+    // Only prefetch on desktop (no touchscreen)
+    if (typeof window !== "undefined" && !("ontouchstart" in window)) {
+      router.prefetch(`/tienda/${getProductSlug(product)}`);
+      prefetchedRef.current = true;
+    }
+  }, [router, product]);
 
   const cartItem = items.find((i) => i.id === product.id);
   const qty = cartItem?.quantity ?? 0;
   const fav = isFavorite(String(product.id));
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  /* Mejora 12: Animacion feedback al agregar */
+  const [justAdded, setJustAdded] = useState(false);
 
   /* U4: Selling fast check — deferred to avoid localStorage read on mount for every card */
   const [sellingFast, setSellingFast] = useState(false);
-  useEffect(() => { setSellingFast(isSellingFast(product.id)); }, [product.id]);
+  const [soldCount, setSoldCount] = useState(0);
+  useEffect(() => {
+    setSellingFast(isSellingFast(product.id));
+    setSoldCount(getSellingCount(product.id));
+  }, [product.id]);
 
   /* Z1: Recently viewed badge — deferred to avoid localStorage read on mount for every card */
   const [recentlyViewed, setRecentlyViewed] = useState(false);
@@ -70,23 +99,27 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
     } catch {}
   }, [product.id]);
 
-  /* Y1: Offer countdown (shows when badge is "Oferta", displays time remaining until midnight) */
+  /* Y1+M11: Offer countdown — uses promoEndDate if available, else midnight */
   const [offerCountdown, setOfferCountdown] = useState("");
+  const [offerUrgent, setOfferUrgent] = useState(false);
+  const [offerExpired, setOfferExpired] = useState(false);
   useEffect(() => {
     if (product.badge !== "Oferta") return;
     const calc = () => {
       const now = new Date();
-      const midnight = new Date(now);
-      midnight.setHours(24, 0, 0, 0);
-      const diff = midnight.getTime() - now.getTime();
+      const endDate = product.promoEndDate ? new Date(product.promoEndDate) : (() => { const m = new Date(now); m.setHours(24, 0, 0, 0); return m; })();
+      const diff = endDate.getTime() - now.getTime();
+      if (diff <= 0) { setOfferExpired(true); setOfferCountdown(""); return; }
+      setOfferExpired(false);
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
-      setOfferCountdown(`${h}h ${String(m).padStart(2, "0")}m`);
+      setOfferUrgent(diff < 3600000); // < 1 hora
+      setOfferCountdown(h > 0 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`);
     };
     calc();
     const t = setInterval(calc, 60000);
     return () => clearInterval(t);
-  }, [product.badge]);
+  }, [product.badge, product.promoEndDate]);
 
   const isOutOfStock = product.stock != null && product.stock <= 0;
   const isLowStock =
@@ -115,6 +148,10 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
     /* U4: Track selling activity */
     recordPurchaseActivity(product.id);
     setSellingFast(isSellingFast(product.id));
+    setSoldCount(getSellingCount(product.id));
+    /* Mejora 12: Feedback visual */
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 1500);
 
   }, [isOutOfStock, addItem, product, showToast]);
 
@@ -134,6 +171,26 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
     [onQuickView, product]
   );
 
+  const handleCompareToggle = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (isInCompare(product.id)) {
+        removeFromCompare(product.id);
+      } else {
+        addToCompare({
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          price: product.price,
+          image: product.image,
+          unit: product.unit,
+          badge: product.badge,
+        });
+      }
+    },
+    [isInCompare, removeFromCompare, addToCompare, product]
+  );
+
   const handleDecrement = useCallback(() => {
     const now = Date.now();
     if (now - lastActionRef.current < 300) return;
@@ -147,8 +204,14 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         "group relative bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-card-border hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 transition-shadow duration-300 flex flex-col",
         isOutOfStock && "opacity-60 pointer-events-none"
       )}
+      onMouseEnter={handlePrefetch}
     >
-      {product.badge && (
+      {/* Mejora 11: Badge "Mas vendido" — priorizado sobre otros badges */}
+      {product.isTopSeller ? (
+        <span className="absolute top-3 left-3 z-10 rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-sm bg-orange-500 animate-pulse flex items-center gap-1">
+          <Flame className="h-3 w-3" /> Mas vendido
+        </span>
+      ) : product.badge ? (
         <span
           className={cn(
             "absolute top-3 left-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm",
@@ -157,19 +220,36 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         >
           {product.badge}
         </span>
-      )}
+      ) : null}
 
-      {/* Y1: Offer countdown */}
-      {offerCountdown && (
-        <span className="absolute top-3 left-20 z-10 rounded-full px-2 py-0.5 text-[9px] font-bold bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 shadow-sm flex items-center gap-0.5">
-          <Clock className="h-3 w-3" /> {offerCountdown}
+      {/* Y1+M11: Offer countdown with urgency */}
+      {offerCountdown && !offerExpired && (
+        <span className={cn(
+          "absolute top-3 left-20 z-10 rounded-full px-2 py-0.5 text-[9px] font-bold shadow-sm flex items-center gap-0.5",
+          offerUrgent
+            ? "bg-red-500 text-white animate-pulse"
+            : "bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+        )}>
+          <Clock className="h-3 w-3" /> {offerUrgent ? "Ultima hora!" : offerCountdown}
         </span>
       )}
 
-      {/* U4: Selling fast badge */}
+      {/* U4: Selling fast badge with count */}
       {sellingFast && !isOutOfStock && (
-        <span className="absolute z-10 rounded-full px-2 py-0.5 text-[9px] font-bold text-orange-700 bg-orange-100 dark:bg-orange-900/40 dark:text-orange-300 shadow-sm flex items-center gap-0.5 animate-pulse" style={{ top: product.badge ? "2.5rem" : "0.75rem", left: "0.75rem" }}>
-          <Flame className="h-3 w-3" /> Vendiendo rápido
+        <span className="absolute z-10 rounded-full px-2 py-0.5 text-[9px] font-bold shadow-sm flex items-center gap-0.5" style={{ top: product.badge ? "2.5rem" : "0.75rem", left: "0.75rem" }}>
+          {soldCount >= 20 ? (
+            <span className="flex items-center gap-0.5 bg-red-500 text-white rounded-full px-2 py-0.5">
+              <Star className="h-3 w-3 fill-current" /> Popular
+            </span>
+          ) : soldCount >= 5 ? (
+            <span className="flex items-center gap-0.5 bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 rounded-full px-2 py-0.5 animate-pulse">
+              <Flame className="h-3 w-3" /> {soldCount} vendidos hoy
+            </span>
+          ) : (
+            <span className="flex items-center gap-0.5 bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 rounded-full px-2 py-0.5 animate-pulse">
+              <Flame className="h-3 w-3" /> Vendiendo rápido
+            </span>
+          )}
         </span>
       )}
 
@@ -198,6 +278,22 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         <Heart className={cn("h-5 w-5", fav && "fill-current")} />
       </button>
 
+      {/* Compare button */}
+      <button
+        onClick={handleCompareToggle}
+        aria-label={isInCompare(product.id) ? "Quitar de comparación" : "Agregar a comparación"}
+        className={cn(
+          "absolute z-10 flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-full transition-all duration-200 pointer-events-auto opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
+          isOutOfStock || isLowStock ? "top-[4.2rem] right-1.5" : "top-[2.8rem] right-2",
+          isInCompare(product.id)
+            ? "bg-primary text-white shadow-md scale-105"
+            : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-primary hover:bg-white dark:hover:bg-card shadow-sm"
+        )}
+        style={{ opacity: isInCompare(product.id) ? 1 : undefined }}
+      >
+        <GitCompareArrows className="h-3.5 w-3.5" />
+      </button>
+
       <div className="relative aspect-square bg-gray-50 overflow-hidden shrink-0">
         {product.image && !imgError ? (
           <Image
@@ -206,10 +302,14 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
             fill
             loading="lazy"
             unoptimized={product.image.startsWith("data:")}
-            className="object-cover group-hover:scale-110 transition-transform duration-500"
+            className={cn(
+              "object-cover group-hover:scale-110 transition-all duration-500",
+              imgLoaded ? "opacity-100" : "opacity-0"
+            )}
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 20vw, 16vw"
             placeholder="blur"
             blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNCIgaGVpZ2h0PSI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNlNWU3ZWIiLz48L3N2Zz4="
+            onLoad={() => setImgLoaded(true)}
             onError={() => setImgError(true)}
           />
         ) : (
@@ -229,6 +329,45 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
               <Eye className="h-3.5 w-3.5" /> Vista rápida
             </span>
           </button>
+        )}
+
+        {/* Quick-add overlay button */}
+        {!isOutOfStock && (
+          <div className="absolute bottom-2 right-2 z-10">
+            {qty === 0 ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); handleAdd(); }}
+                className={cn(
+                  "flex items-center justify-center h-8 w-8 rounded-full bg-primary text-white shadow-lg transition-all duration-200 active:scale-90",
+                  "sm:opacity-0 sm:scale-75 sm:group-hover:opacity-100 sm:group-hover:scale-100"
+                )}
+                aria-label={`Agregar rápido ${product.name}`}
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            ) : (
+              <div className="flex items-center gap-0.5 bg-primary rounded-full shadow-lg overflow-hidden animate-[scaleIn_0.15s_ease-out]">
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDecrement(); }}
+                  className="h-7 w-7 flex items-center justify-center text-white hover:bg-primary-dark transition-colors"
+                >
+                  <Minus className="h-3 w-3" />
+                </button>
+                <span className="w-5 text-center text-xs font-bold text-white tabular-nums">{qty}</span>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleAdd(); }}
+                  className="h-7 w-7 flex items-center justify-center text-white hover:bg-primary-dark transition-colors"
+                >
+                  <Plus className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+        {isOutOfStock && (
+          <div className="absolute bottom-2 right-2 z-10">
+            <span className="bg-gray-500/90 text-white text-[9px] font-bold px-2 py-1 rounded-full">Agotado</span>
+          </div>
         )}
       </div>
 
@@ -277,19 +416,35 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         <div>
           <div className="flex items-center justify-between gap-2 mt-1">
             <div>
-              <span className="text-base sm:text-lg font-extrabold text-primary leading-none">
-                S/{product.price.toFixed(2)}
-              </span>
+              {/* Mejora 12: Precio anterior tachado cuando hay descuento */}
+              {product.comparePrice && product.comparePrice > product.price ? (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-xs text-gray-400 line-through">S/{product.comparePrice.toFixed(2)}</span>
+                  <span className="text-base sm:text-lg font-extrabold text-green-700 dark:text-green-400 leading-none">
+                    S/{product.price.toFixed(2)}
+                  </span>
+                  <span className="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1 rounded font-bold">
+                    -{Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}%
+                  </span>
+                </div>
+              ) : (
+                <span className="text-base sm:text-lg font-extrabold text-primary leading-none">
+                  S/{product.price.toFixed(2)}
+                </span>
+              )}
               <span className="block text-[10px] text-muted mt-0.5">/{product.unit}</span>
             </div>
 
             {qty === 0 ? (
               <button
                 onClick={handleAdd}
-                className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-primary text-white shadow-lg hover:bg-primary-dark hover:scale-105 active:scale-95 transition-all duration-200 shrink-0 animate-[scaleIn_0.15s_ease-out]"
+                className={cn(
+                  "flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl text-white shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 shrink-0 animate-[scaleIn_0.15s_ease-out]",
+                  justAdded ? "bg-green-600 scale-95" : "bg-primary hover:bg-primary-dark"
+                )}
                 aria-label={`Agregar ${product.name}`}
               >
-                <ShoppingCart className="h-5 w-5" />
+                {justAdded ? <span className="text-sm font-bold">✓</span> : <ShoppingCart className="h-5 w-5" />}
               </button>
             ) : (
               <div className="flex items-center bg-primary rounded-2xl overflow-hidden shadow-md animate-[scaleIn_0.15s_ease-out] shrink-0">
@@ -340,6 +495,8 @@ export const ProductCard = memo(ProductCardComponent, (prev, next) => {
     prev.product.badge === next.product.badge &&
     prev.product.image === next.product.image &&
     prev.product.rating === next.product.rating &&
+    prev.product.isTopSeller === next.product.isTopSeller &&
+    prev.product.comparePrice === next.product.comparePrice &&
     prev.onQuickView === next.onQuickView
   );
 });

@@ -110,7 +110,7 @@ function ToggleRow({ alertType, enabled, onToggle, onPreview }: ToggleRowProps) 
     <div className="flex items-center justify-between gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
       <div className="flex items-center gap-3 min-w-0">
         {enabled ? (
-          <Bell className="w-4 h-4 text-[#2d6a4f] flex-shrink-0" />
+          <Bell className="w-4 h-4 text-[#0f766e] flex-shrink-0" />
         ) : (
           <BellOff className="w-4 h-4 text-gray-400 flex-shrink-0" />
         )}
@@ -133,7 +133,7 @@ function ToggleRow({ alertType, enabled, onToggle, onPreview }: ToggleRowProps) 
           onClick={onToggle}
           className={cn(
             "relative w-11 h-6 rounded-full transition-colors flex-shrink-0",
-            enabled ? "bg-[#2d6a4f]" : "bg-gray-300 dark:bg-gray-600"
+            enabled ? "bg-[#0f766e]" : "bg-gray-300 dark:bg-gray-600"
           )}
         >
           <span
@@ -211,7 +211,7 @@ export default function WhatsAppAlertManager() {
             value={config.phone}
             onChange={(e) => setConfig((p) => ({ ...p, phone: e.target.value }))}
             placeholder="51999999999"
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#2d6a4f]"
+            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#0f766e]"
           />
         </div>
 
@@ -227,7 +227,7 @@ export default function WhatsAppAlertManager() {
             onChange={(e) =>
               setConfig((p) => ({ ...p, bigSaleThreshold: Number(e.target.value) }))
             }
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#2d6a4f]"
+            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#0f766e]"
           />
         </div>
 
@@ -280,8 +280,8 @@ export default function WhatsAppAlertManager() {
           className={cn(
             "w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors",
             saved
-              ? "bg-[#2d6a4f] text-white"
-              : "bg-[#2d6a4f]/10 text-[#2d6a4f] dark:text-[#52b788] hover:bg-[#2d6a4f]/20"
+              ? "bg-[#0f766e] text-white"
+              : "bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6] hover:bg-[#0f766e]/20"
           )}
         >
           <Save className="w-4 h-4" />

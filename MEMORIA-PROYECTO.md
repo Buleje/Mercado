@@ -1,4 +1,4 @@
-# MEMORIA DEL PROYECTO — Bodega San Martín ERP
+# MEMORIA DEL PROYECTO — Buleje ERP
 
 > **Última actualización:** 17 de marzo de 2026
 > **Versión del sistema:** v14.4 — Fase 1 completada (ComisionesTab conectado a datos reales + cálculo por tramos)
@@ -8,7 +8,7 @@
 
 ## 1. VISIÓN GENERAL DEL PRODUCTO
 
-**Bodega San Martín** es un sistema integral de e-commerce + POS + ERP para una bodega/minimarket real ubicada en **Pucallpa, Perú**. Combina tienda online, terminal de punto de venta, y un panel administrativo con **107 módulos** que cubren finanzas, inventario, RRHH, logística, marketing, CRM, analytics, proveedores, compras, tesorería y control empresarial.
+**Buleje** es un sistema integral de e-commerce + POS + ERP para una bodega/minimarket real ubicada en **Pucallpa, Perú**. Combina tienda online, terminal de punto de venta, y un panel administrativo con **107 módulos** que cubren finanzas, inventario, RRHH, logística, marketing, CRM, analytics, proveedores, compras, tesorería y control empresarial.
 
 **Objetivo:** Ser el ERP más completo y profesional para gestión de bodegas/minimarkets en Perú.
 
@@ -42,7 +42,7 @@
 ## 3. ARQUITECTURA DEL PROYECTO
 
 ```
-bodega-san-martin/
+buleje/
 ├── app/
 │   ├── (store)/              # Tienda pública (home, catálogo, cuenta, pedidos, búsqueda)
 │   │   ├── layout.tsx

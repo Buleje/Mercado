@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { OrdersDB, SettingsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { toErrorPayload } from "@/lib/api-error";
 
 const IGV_RATE = 0.18;
 
@@ -9,32 +10,33 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
   const auth = await requireAdmin(req, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const { orderId } = await params;
-  const orders = await OrdersDB.getAll();
-  const order = orders.find(o => o.id === orderId);
-  if (!order) {
-    return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
-  }
+  try {
+    const { orderId } = await params;
+    const orders = await OrdersDB.getAll();
+    const order = orders.find(o => o.id === orderId);
+    if (!order) {
+      return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
+    }
 
-  const settings = await SettingsDB.get();
-  const businessName = settings.businessName || "Bodega San Martín";
-  const businessPhone = settings.businessPhone || "";
-  const businessAddress = settings.businessAddress || "Pucallpa, Ucayali, Perú";
+    const settings = await SettingsDB.get();
+    const businessName = settings.businessName || "Buleje";
+    const businessPhone = settings.businessPhone || "";
+    const businessAddress = settings.businessAddress || "Pucallpa, Ucayali, Perú";
 
-  const subtotal = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
-  const discount = (order.couponDiscount ?? 0) + (order.discountAmount ?? 0);
-  const total = order.total;
-  const igv = +(total * IGV_RATE / (1 + IGV_RATE)).toFixed(2);
-  const baseImponible = +(total - igv).toFixed(2);
+    const subtotal = order.items.reduce((s, i) => s + i.price * i.quantity, 0);
+    const discount = (order.couponDiscount ?? 0) + (order.discountAmount ?? 0);
+    const total = order.total;
+    const igv = +(total * IGV_RATE / (1 + IGV_RATE)).toFixed(2);
+    const baseImponible = +(total - igv).toFixed(2);
 
-  const date = new Date(order.createdAt).toLocaleDateString("es-PE", {
-    timeZone: "America/Lima",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+    const date = new Date(order.createdAt).toLocaleDateString("es-PE", {
+      timeZone: "America/Lima",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
 
-  const html = `<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -111,9 +113,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
 </body>
 </html>`;
 
-  return new NextResponse(html, {
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-    },
-  });
+    return new NextResponse(html, {
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+      },
+    });
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err);
+    return NextResponse.json(payload, { status });
+  }
 }

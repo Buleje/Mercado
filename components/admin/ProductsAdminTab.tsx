@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { categories } from "@/data/products";
 import type { Product } from "@/types/erp";
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,6 +62,9 @@ function ProductFormModal({
 }) {
   const [form, setForm] = useState(initial);
   const [imgError, setImgError] = useState(false);
+  const [nameDuplicate, setNameDuplicate] = useState(false);
+  const [nameChecking, setNameChecking] = useState(false);
+  const nameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -73,6 +77,30 @@ function ProductFormModal({
   const set = (k: keyof typeof form, v: unknown) => {
     setForm((f) => ({ ...f, [k]: v }));
     if (k === "image") setImgError(false);
+  };
+
+  const checkNameDuplicate = (name: string) => {
+    if (nameDebounceRef.current) clearTimeout(nameDebounceRef.current);
+    if (name.trim().length < 2) { setNameDuplicate(false); return; }
+    setNameChecking(true);
+    nameDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/products?search=${encodeURIComponent(name.trim())}`);
+        if (res.ok) {
+          const products: Product[] = await res.json();
+          const exists = products.some(
+            (p) =>
+              p.name.trim().toLowerCase() === name.trim().toLowerCase() &&
+              p.id !== initial.id
+          );
+          setNameDuplicate(exists);
+        }
+      } catch {
+        // Si falla la consulta, no bloqueamos
+      } finally {
+        setNameChecking(false);
+      }
+    }, 300);
   };
 
   const valid = form.name.trim().length >= 2 && form.price > 0 && form.unit.trim().length > 0;
@@ -121,10 +149,28 @@ function ProductFormModal({
             <input
               ref={nameRef}
               value={form.name}
-              onChange={(e) => set("name", e.target.value)}
+              onChange={(e) => {
+                set("name", e.target.value);
+                setNameDuplicate(false);
+              }}
+              onBlur={(e) => checkNameDuplicate(e.target.value)}
               placeholder="Ej: Arroz Extra 5kg"
-              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className={cn(
+                "mt-1 w-full px-3 py-2.5 rounded-xl border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:border-primary",
+                nameDuplicate
+                  ? "border-amber-400 dark:border-amber-500 focus:ring-amber-300"
+                  : "border-gray-200 dark:border-card-border focus:ring-primary/30"
+              )}
             />
+            {nameChecking && (
+              <p className="mt-1 text-xs text-gray-400">Verificando nombre...</p>
+            )}
+            {nameDuplicate && !nameChecking && (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3 shrink-0" />
+                Ya existe un producto con este nombre
+              </p>
+            )}
           </div>
 
           {/* Category + Unit */}
@@ -286,33 +332,6 @@ function ProductFormModal({
             {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {saving ? "Guardando…" : form.id ? "Guardar cambios" : "Crear producto"}
           </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Confirm Delete Modal ─────────────────────────────────────────────────────
-
-function ConfirmDelete({ name, onConfirm, onCancel }: { name: string; onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onCancel}>
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-3 sm:p-6 max-w-sm w-full border border-gray-200 dark:border-card-border" onClick={(e) => e.stopPropagation()}>
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
-          </div>
-          <div>
-            <h3 className="font-extrabold text-foreground">¿Eliminar producto?</h3>
-            <p className="text-xs text-muted">Esta acción no se puede deshacer</p>
-          </div>
-        </div>
-        <p className="text-sm text-muted bg-gray-50 dark:bg-surface rounded-xl px-2 sm:px-4 py-2 sm:py-3 mb-5">
-          <strong className="text-foreground">&ldquo;{name}&rdquo;</strong> será eliminado del catálogo.
-        </p>
-        <div className="flex flex-wrap gap-2 justify-end">
-          <button onClick={onCancel} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors">Cancelar</button>
-          <button onClick={onConfirm} className="px-5 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 active:scale-95 transition-all">Eliminar</button>
         </div>
       </div>
     </div>
@@ -721,13 +740,15 @@ export default function ProductsAdminTab() {
           saving={saving}
         />
       )}
-      {deleteTarget && (
-        <ConfirmDelete
-          name={deleteTarget.name}
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="¿Eliminar producto?"
+        description={deleteTarget ? `"${deleteTarget.name}" será eliminado del catálogo. Esta acción no se puede deshacer.` : "Esta acción no se puede deshacer"}
+        confirmText="Sí, eliminar"
+        loading={saving}
+      />
       {toast && <Toast msg={toast.msg} type={toast.type} />}
     </>
   );

@@ -16,6 +16,8 @@ import {
 } from "@/lib/feature-flags";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+
 const FlagUpdateSchema = z.object({
   flag: z.string(),
   enabled: z.boolean(),

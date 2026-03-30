@@ -28,7 +28,7 @@ export async function generateMetadata({
     };
   }
 
-  const pageUrl = `https://www.bodegasanmartin.pe/cms/${params.slug}`;
+  const pageUrl = `https://www.buleje.pe/cms/${params.slug}`;
 
   return {
     title: page.metaTitle || page.title,
@@ -40,7 +40,7 @@ export async function generateMetadata({
       url: pageUrl,
       type: "article",
       locale: "es_PE",
-      siteName: "Bodega San Martín",
+      siteName: "Buleje",
       ...(page.ogImage ? { images: [{ url: page.ogImage, width: 1200, height: 630, alt: page.title }] } : {}),
     },
     twitter: {
@@ -94,13 +94,13 @@ export default async function DynamicPage({
             "@type": "Article",
             headline: page.title,
             description: page.metaDescription || page.description,
-            url: `https://www.bodegasanmartin.pe/cms/${params.slug}`,
+            url: `https://www.buleje.pe/cms/${params.slug}`,
             ...(page.ogImage ? { image: page.ogImage } : {}),
-            author: { "@type": "Organization", name: "Bodega San Martín" },
+            author: { "@type": "Organization", name: "Buleje" },
             publisher: {
               "@type": "Organization",
-              name: "Bodega San Martín",
-              logo: { "@type": "ImageObject", url: "https://www.bodegasanmartin.pe/og-image.jpg" },
+              name: "Buleje",
+              logo: { "@type": "ImageObject", url: "https://www.buleje.pe/og-image.jpg" },
             },
             datePublished: page.createdAt ?? new Date().toISOString(),
             dateModified: page.updatedAt ?? new Date().toISOString(),
@@ -111,9 +111,9 @@ export default async function DynamicPage({
         const BlockComponent = BLOCK_COMPONENTS[block.type];
 
         if (!BlockComponent) {
-          console.warn(
-            `[DynamicPage] Block type "${block.type}" not registered`
-          );
+          if (process.env.NODE_ENV === "development") {
+            console.warn(`[DynamicPage] Block type "${block.type}" not registered`);
+          }
           return null;
         }
 

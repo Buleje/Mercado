@@ -201,6 +201,6 @@ export const ProductsBlockMetadata = {
   description: "Grid de productos con filtros y carrito",
   category: "producto" as const,
   icon: "ShoppingBag",
-  defaultProps: ProductsBlockSchema.parse({}),
+  defaultProps: (() => { const parsed = ProductsBlockSchema.safeParse({}); return parsed.success ? parsed.data : { badge: "Nuestros Productos", title: "Productos Frescos del Día", titleAccent: "Frescos", subtitle: "", categoryFilter: "todos", maxProducts: 8, gridCols: "4" as const, showBadges: true, showRatings: false, showAddToCart: true, ctaText: "Ver Tienda", ctaLink: "/tienda", showCTA: true }; })(),
   propsSchema: ProductsBlockSchema,
 };

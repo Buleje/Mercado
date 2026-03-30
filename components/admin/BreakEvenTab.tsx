@@ -510,7 +510,7 @@ export default function BreakEvenTab() {
                     y1="0"
                     x2={(generalAnalysis.totalRevenue / maxChartVal) * 380 + 20}
                     y2="200"
-                    stroke="#2d6a4f"
+                    stroke="#0f766e"
                     strokeWidth="1.5"
                     strokeDasharray="4 2"
                     opacity="0.6"

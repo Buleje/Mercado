@@ -68,12 +68,12 @@ export default function CatalogPDFGenerator() {
       let y = margin;
 
       // ── Cover ──
-      doc.setFillColor(45, 106, 79); // #2d6a4f
+      doc.setFillColor(45, 106, 79); // #0f766e
       doc.rect(0, 0, pageW, 45, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(22);
       doc.setFont("helvetica", "bold");
-      doc.text("Bodega San Martin", pageW / 2, 20, { align: "center" });
+      doc.text("Buleje", pageW / 2, 20, { align: "center" });
       doc.setFontSize(11);
       doc.setFont("helvetica", "normal");
       doc.text("Catalogo de Productos — Pucallpa, Peru", pageW / 2, 30, {
@@ -99,7 +99,7 @@ export default function CatalogPDFGenerator() {
       }
 
       // ── Table header ──
-      doc.setFillColor(244, 162, 97); // #f4a261
+      doc.setFillColor(244, 162, 97); // #f97316
       doc.rect(margin, y, pageW - margin * 2, 8, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(9);
@@ -139,7 +139,7 @@ export default function CatalogPDFGenerator() {
         doc.setFontSize(7.5);
         doc.setFont("helvetica", "normal");
         doc.text(
-          "Bodega San Martin | Jr. Ucayali, Pucallpa | WhatsApp: +51 900 000 000 | Lun-Dom 7am-10pm",
+          "Buleje | Jr. Ucayali, Pucallpa | WhatsApp: +51 900 000 000 | Lun-Dom 7am-10pm",
           pageW / 2,
           292,
           { align: "center" }
@@ -147,7 +147,7 @@ export default function CatalogPDFGenerator() {
       }
 
       doc.save(
-        `catalogo-bodega-san-martin-${selectedCategory}-${Date.now()}.pdf`
+        `catalogo-buleje-${selectedCategory}-${Date.now()}.pdf`
       );
     } catch (err) {
       setError("Error al generar el PDF. Asegurate de tener jspdf instalado.");
@@ -158,7 +158,7 @@ export default function CatalogPDFGenerator() {
   };
 
   const waText = encodeURIComponent(
-    `Hola! Quiero el catalogo de productos de Bodega San Martin.`
+    `Hola! Quiero el catalogo de productos de Buleje.`
   );
   const waLink = `https://wa.me/51900000000?text=${waText}`;
 
@@ -190,7 +190,7 @@ export default function CatalogPDFGenerator() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#2d6a4f] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               >
                 <option value="todas">Todas las categorias</option>
                 {categories.map((c) => (
@@ -219,9 +219,9 @@ export default function CatalogPDFGenerator() {
 
         {/* Stats */}
         <div className="mt-4 flex items-center gap-2 rounded-lg bg-gray-50 px-4 py-3 dark:bg-gray-800">
-          <Package className="h-4 w-4 text-[#2d6a4f]" />
+          <Package className="h-4 w-4 text-[#0f766e]" />
           <span className="text-sm text-gray-700 dark:text-gray-300">
-            <span className="font-semibold text-[#2d6a4f]">
+            <span className="font-semibold text-[#0f766e]">
               {filtered.length}
             </span>{" "}
             productos en el catalogo
@@ -232,14 +232,14 @@ export default function CatalogPDFGenerator() {
       {/* Preview */}
       {showPreview && (
         <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
-          <div className="rounded-t-xl bg-[#2d6a4f] p-4 text-center text-white">
-            <p className="text-lg font-bold">Bodega San Martin</p>
+          <div className="rounded-t-xl bg-[#0f766e] p-4 text-center text-white">
+            <p className="text-lg font-bold">Buleje</p>
             <p className="text-xs opacity-80">Catalogo de Productos — Pucallpa, Peru</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#f4a261]/20">
+                <tr className="bg-[#f97316]/20">
                   <th className="px-4 py-2 text-left font-semibold text-gray-700 dark:text-gray-200">
                     Producto
                   </th>
@@ -271,7 +271,7 @@ export default function CatalogPDFGenerator() {
                     <td className="px-4 py-2 text-gray-500 dark:text-gray-400">
                       {p.category ?? "—"}
                     </td>
-                    <td className="px-4 py-2 text-right font-medium text-[#2d6a4f]">
+                    <td className="px-4 py-2 text-right font-medium text-[#0f766e]">
                       {fmt(p.price)}
                     </td>
                     <td className="px-4 py-2 text-center">
@@ -297,8 +297,8 @@ export default function CatalogPDFGenerator() {
               </p>
             )}
           </div>
-          <div className="rounded-b-xl bg-[#2d6a4f] p-3 text-center text-xs text-white opacity-80">
-            Bodega San Martin | Jr. Ucayali, Pucallpa | WhatsApp: +51 900 000
+          <div className="rounded-b-xl bg-[#0f766e] p-3 text-center text-xs text-white opacity-80">
+            Buleje | Jr. Ucayali, Pucallpa | WhatsApp: +51 900 000
             000 | Lun-Dom 7am-10pm
           </div>
         </div>
@@ -309,7 +309,7 @@ export default function CatalogPDFGenerator() {
         <button
           onClick={handleGeneratePDF}
           disabled={generating || filtered.length === 0}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#2d6a4f] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#245a42] disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0f766e] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0d5f58] disabled:opacity-50"
         >
           {generating ? (
             <Loader2 className="h-4 w-4 animate-spin" />

@@ -138,7 +138,7 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Camera className="h-5 w-5 text-[#2d6a4f]" />
+          <Camera className="h-5 w-5 text-[#0f766e]" />
           <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
             Foto del producto
           </span>
@@ -221,7 +221,7 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
             {cameraSupported && (
               <button
                 onClick={startCamera}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#2d6a4f] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
               >
                 <Camera className="h-4 w-4" />
                 Abrir cámara
@@ -242,7 +242,7 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
         ) : state === "streaming" ? (
           <button
             onClick={capturePhoto}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#2d6a4f] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
           >
             <Camera className="h-4 w-4" />
             Tomar foto
@@ -251,7 +251,7 @@ export default function ProductPhotoCapture({ onCapture, onClose, className }: P
           <>
             <button
               onClick={usePhoto}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#2d6a4f] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40]"
             >
               <Check className="h-4 w-4" />
               Usar foto

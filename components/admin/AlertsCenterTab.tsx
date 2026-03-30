@@ -7,17 +7,18 @@ import {
   Package,
   ShoppingCart,
   CreditCard,
-  CheckCircle2,
   ArrowRight,
   RefreshCw,
   ShieldAlert,
   XCircle,
+  Check,
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 type Urgency = "critical" | "warning" | "info";
+type AlertCategory = "pedidos" | "inventario" | "finanzas" | "general";
 
 interface Alert {
   id: string;
@@ -27,6 +28,49 @@ interface Alert {
   description: string;
   action: string;
   href: string;
+  moduleId?: string;
+  tabId?: string;
+  category: AlertCategory;
+  createdAt: number;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+const CATEGORY_LABELS: Record<AlertCategory, { label: string; emoji: string }> = {
+  pedidos: { label: "Pedidos", emoji: "\uD83D\uDCE6" },
+  inventario: { label: "Inventario", emoji: "\uD83D\uDCE6" },
+  finanzas: { label: "Finanzas", emoji: "\uD83D\uDCB0" },
+  general: { label: "General", emoji: "\uD83D\uDD14" },
+};
+
+function timeAgo(ts: number): string {
+  const diffSec = Math.floor((Date.now() - ts) / 1000);
+  if (diffSec < 60) return "hace unos segundos";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `hace ${diffMin} min`;
+  const diffHrs = Math.floor(diffMin / 60);
+  if (diffHrs < 24) return `hace ${diffHrs}h`;
+  return `hace ${Math.floor(diffHrs / 24)}d`;
+}
+
+function getDismissedKey(): string {
+  return `dismissed-alerts-${new Date().toISOString().slice(0, 10)}`;
+}
+
+function getDismissedAlerts(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(getDismissedKey()) ?? "[]");
+  } catch { return []; }
+}
+
+function dismissAlert(alertId: string) {
+  try {
+    const dismissed = getDismissedAlerts();
+    if (!dismissed.includes(alertId)) {
+      dismissed.push(alertId);
+      localStorage.setItem(getDismissedKey(), JSON.stringify(dismissed));
+    }
+  } catch { /* ignore */ }
 }
 
 interface DashboardAlerts {
@@ -57,6 +101,7 @@ interface LowStockProduct {
 
 interface Props {
   tenantId?: string;
+  onNavigate?: (moduleId: string, tabId: string) => void;
 }
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -123,10 +168,11 @@ function AlertSkeleton() {
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
-export default function AlertsCenterTab({ tenantId: _tenantId }: Props) {
+export default function AlertsCenterTab({ tenantId: _tenantId, onNavigate }: Props) {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState<string[]>(() => getDismissedAlerts());
 
   const fetchAlerts = useCallback(async () => {
     setLoading(true);
@@ -164,6 +210,10 @@ export default function AlertsCenterTab({ tenantId: _tenantId }: Props) {
               "Los clientes esperan. Atiende estos pedidos inmediatamente.",
             action: "Atender",
             href: "pedidos",
+            moduleId: "ventas-caja",
+            tabId: "pedidos",
+            category: "pedidos",
+            createdAt: twoHoursAgo,
           });
         }
 
@@ -176,6 +226,10 @@ export default function AlertsCenterTab({ tenantId: _tenantId }: Props) {
             description: "Confirma o procesa estos pedidos para no perder ventas.",
             action: "Ver pedidos",
             href: "pedidos",
+            moduleId: "ventas-caja",
+            tabId: "pedidos",
+            category: "pedidos",
+            createdAt: Date.now() - 30 * 60_000,
           });
         }
 
@@ -201,6 +255,10 @@ export default function AlertsCenterTab({ tenantId: _tenantId }: Props) {
                 : "Revisa tus cuentas por pagar.",
             action: "Ver deudas",
             href: "tesoreria",
+            moduleId: "compras",
+            tabId: "cuentas-pagar",
+            category: "finanzas",
+            createdAt: Date.now() - 60 * 60_000,
           });
         }
       }
@@ -231,6 +289,10 @@ export default function AlertsCenterTab({ tenantId: _tenantId }: Props) {
               "Retira estos productos de la venta inmediatamente.",
             action: "Revisar",
             href: "inventario-almacenes",
+            moduleId: "inventario",
+            tabId: "lotes",
+            category: "inventario",
+            createdAt: Date.now() - 10 * 60_000,
           });
         }
 
@@ -244,6 +306,10 @@ export default function AlertsCenterTab({ tenantId: _tenantId }: Props) {
               "Ponlos en oferta o dales prioridad de salida para evitar perdidas.",
             action: "Revisar",
             href: "inventario-almacenes",
+            moduleId: "inventario",
+            tabId: "lotes",
+            category: "inventario",
+            createdAt: Date.now() - 20 * 60_000,
           });
         }
       }
@@ -273,6 +339,10 @@ export default function AlertsCenterTab({ tenantId: _tenantId }: Props) {
                 : `${critical.slice(0, 2).map((p) => p.name).join(", ")} y ${critical.length - 2} mas`,
             action: "Reabastecer",
             href: "reposicion",
+            moduleId: "inventario",
+            tabId: "alertas-stock",
+            category: "inventario",
+            createdAt: Date.now() - 45 * 60_000,
           });
         }
 
@@ -285,6 +355,10 @@ export default function AlertsCenterTab({ tenantId: _tenantId }: Props) {
             description: "Programa una reposicion para evitar quiebre de stock.",
             action: "Ver inventario",
             href: "inventario-almacenes",
+            moduleId: "inventario",
+            tabId: "alertas-stock",
+            category: "inventario",
+            createdAt: Date.now() - 50 * 60_000,
           });
         }
       }
@@ -330,129 +404,208 @@ export default function AlertsCenterTab({ tenantId: _tenantId }: Props) {
     return <AlertSkeleton />;
   }
 
-  if (alerts.length === 0) {
+  // Filter out dismissed alerts
+  const visibleAlerts = alerts.filter((a) => !dismissed.includes(a.id));
+
+  const handleDismiss = (alertId: string) => {
+    dismissAlert(alertId);
+    setDismissed((prev) => [...prev, alertId]);
+  };
+
+  if (visibleAlerts.length === 0) {
     return (
-      <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-800/30 p-8 text-center">
-        <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-        <p className="text-base font-bold text-emerald-700 dark:text-emerald-300">
+      <div className="text-center py-16">
+        <span className="text-6xl block mb-4">&#x2705;</span>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-foreground">
           Todo en orden
+        </h3>
+        <p className="text-sm text-gray-500 dark:text-muted mt-2">
+          Tu negocio marcha bien — sin alertas activas
         </p>
-        <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
-          No hay alertas activas. Tu negocio esta funcionando bien.
+        <p className="text-xs text-gray-400 dark:text-muted mt-1">
+          Se revisa automaticamente cada 2 minutos
         </p>
         <button
           onClick={fetchAlerts}
-          className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-sm font-bold hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
+          className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-sm font-bold hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors"
         >
           <RefreshCw className="w-4 h-4" />
-          Actualizar
+          Actualizar ahora
         </button>
+        {dismissed.length > 0 && (
+          <button
+            onClick={() => { setDismissed([]); localStorage.removeItem(getDismissedKey()); }}
+            className="mt-3 block mx-auto text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            Mostrar {dismissed.length} alerta{dismissed.length > 1 ? "s" : ""} resuelta{dismissed.length > 1 ? "s" : ""}
+          </button>
+        )}
       </div>
     );
   }
 
   // Count by urgency
-  const criticalCount = alerts.filter((a) => a.urgency === "critical").length;
-  const warningCount = alerts.filter((a) => a.urgency === "warning").length;
-  const infoCount = alerts.filter((a) => a.urgency === "info").length;
+  const criticalCount = visibleAlerts.filter((a) => a.urgency === "critical").length;
+  const warningCount = visibleAlerts.filter((a) => a.urgency === "warning").length;
+  const infoCount = visibleAlerts.filter((a) => a.urgency === "info").length;
+
+  // Group by category
+  const grouped = visibleAlerts.reduce<Record<AlertCategory, Alert[]>>((acc, alert) => {
+    const cat = alert.category ?? "general";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(alert);
+    return acc;
+  }, {} as Record<AlertCategory, Alert[]>);
+
+  // Order categories: pedidos, inventario, finanzas, general
+  const categoryOrder: AlertCategory[] = ["pedidos", "inventario", "finanzas", "general"];
+  const orderedCategories = categoryOrder.filter((cat) => grouped[cat]?.length > 0);
 
   return (
     <div className="space-y-4">
-      {/* Summary bar */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-        <h3 className="text-sm font-extrabold text-gray-700 dark:text-foreground uppercase tracking-wide mr-auto">
-          {alerts.length} alerta{alerts.length > 1 ? "s" : ""} activa
-          {alerts.length > 1 ? "s" : ""}
-        </h3>
+      {/* KPI badges */}
+      <div className="flex flex-wrap gap-3 mb-1">
         {criticalCount > 0 && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300">
-            {criticalCount} critico{criticalCount > 1 ? "s" : ""}
+          <span className="px-3 py-1.5 bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+            {criticalCount} Critica{criticalCount > 1 ? "s" : ""}
           </span>
         )}
         {warningCount > 0 && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300">
-            {warningCount} atencion
+          <span className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            {warningCount} Advertencia{warningCount > 1 ? "s" : ""}
           </span>
         )}
         {infoCount > 0 && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-            {infoCount} info
+          <span className="px-3 py-1.5 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-bold inline-flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-blue-500" />
+            {infoCount} Info
           </span>
         )}
         <button
           onClick={fetchAlerts}
           disabled={loading}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+          className="ml-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-surface transition-colors"
           title="Actualizar alertas"
         >
           <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
         </button>
       </div>
 
-      {/* Alert cards */}
-      <div className="space-y-3">
-        {alerts.map((alert) => {
-          const config = URGENCY_CONFIG[alert.urgency];
-          const Icon = alert.icon;
-          return (
-            <div
-              key={alert.id}
-              className={cn(
-                "flex items-center gap-3 sm:gap-4 rounded-2xl border border-l-4 p-4",
-                config.border,
-                config.bg,
-                "border-gray-200 dark:border-card-border",
-              )}
-            >
-              {/* Icon */}
-              <div
-                className={cn(
-                  "flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-card shrink-0",
-                  config.icon,
-                )}
-              >
-                <Icon className="w-5 h-5" />
-              </div>
+      {/* Grouped alert cards */}
+      {orderedCategories.map((cat) => {
+        const catAlerts = grouped[cat];
+        const catConfig = CATEGORY_LABELS[cat];
+        return (
+          <div key={cat} className="space-y-2">
+            {/* Category separator */}
+            <div className="flex items-center gap-2 pt-2">
+              <span className="text-sm">{catConfig.emoji}</span>
+              <h4 className="text-xs font-extrabold text-gray-500 dark:text-muted uppercase tracking-wider">
+                {catConfig.label}
+              </h4>
+              <div className="flex-1 h-px bg-gray-200 dark:bg-card-border" />
+            </div>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">
-                    {alert.title}
-                  </p>
-                  <span
+            {/* Alerts in this category */}
+            <div className="space-y-2">
+              {catAlerts.map((alert) => {
+                const config = URGENCY_CONFIG[alert.urgency];
+                const Icon = alert.icon;
+                return (
+                  <div
+                    key={alert.id}
                     className={cn(
-                      "hidden sm:inline-flex shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide",
-                      config.badge,
-                      config.badgeText,
+                      "flex items-center gap-3 sm:gap-4 rounded-2xl border border-l-4 p-4",
+                      config.border,
+                      config.bg,
+                      "border-gray-200 dark:border-card-border",
                     )}
                   >
-                    {URGENCY_LABEL[alert.urgency]}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-muted line-clamp-2">
-                  {alert.description}
-                </p>
-              </div>
+                    {/* Icon */}
+                    <div
+                      className={cn(
+                        "flex items-center justify-center w-10 h-10 rounded-xl bg-white dark:bg-card shrink-0",
+                        config.icon,
+                      )}
+                    >
+                      <Icon className="w-5 h-5" />
+                    </div>
 
-              {/* Action button */}
-              <button
-                onClick={() => {
-                  window.dispatchEvent(
-                    new CustomEvent("admin:navigate", {
-                      detail: { tab: alert.href },
-                    }),
-                  );
-                }}
-                className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
-              >
-                {alert.action}
-                <ArrowRight className="w-3 h-3" />
-              </button>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">
+                          {alert.title}
+                        </p>
+                        <span
+                          className={cn(
+                            "hidden sm:inline-flex shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide",
+                            config.badge,
+                            config.badgeText,
+                          )}
+                        >
+                          {URGENCY_LABEL[alert.urgency]}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-muted line-clamp-2">
+                        {alert.description}
+                      </p>
+                      {alert.createdAt > 0 && (
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">
+                          {timeAgo(alert.createdAt)}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="shrink-0 flex flex-col gap-1.5">
+                      <button
+                        onClick={() => {
+                          if (onNavigate && alert.moduleId && alert.tabId) {
+                            onNavigate(alert.moduleId, alert.tabId);
+                          } else {
+                            window.dispatchEvent(
+                              new CustomEvent("admin:navigate", {
+                                detail: { tab: alert.href },
+                              }),
+                            );
+                          }
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                      >
+                        {alert.action}
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => handleDismiss(alert.id)}
+                        className="flex items-center gap-1 px-3 py-1 rounded-lg text-[10px] font-medium text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
+                        title="Marcar como resuelta"
+                      >
+                        <Check className="w-3 h-3" />
+                        Resuelta
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+          </div>
+        );
+      })}
+
+      {/* Show dismissed count */}
+      {dismissed.length > 0 && (
+        <div className="text-center pt-2">
+          <button
+            onClick={() => { setDismissed([]); localStorage.removeItem(getDismissedKey()); }}
+            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            {dismissed.length} alerta{dismissed.length > 1 ? "s" : ""} resuelta{dismissed.length > 1 ? "s" : ""} hoy — mostrar
+          </button>
+        </div>
+      )}
     </div>
   );
 }

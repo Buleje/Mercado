@@ -28,7 +28,7 @@ function StepDot({
       className={cn(
         "relative flex h-7 w-7 items-center justify-center rounded-full border-2 transition-all duration-500",
         filled
-          ? "border-[#2d6a4f] bg-[#2d6a4f]"
+          ? "border-[#0f766e] bg-[#0f766e]"
           : "border-border bg-background dark:bg-background",
         animate && filled && "scale-110"
       )}
@@ -54,8 +54,8 @@ const CONFETTI_PIECES = Array.from({ length: 12 }, (_, i) => {
   const angle = (i / 12) * 360;
   const distance = 30 + (i * 3); // deterministic instead of random
   const color = [
-    "bg-[#2d6a4f]",
-    "bg-[#f4a261]",
+    "bg-[#0f766e]",
+    "bg-[#f97316]",
     "bg-yellow-400",
     "bg-blue-400",
     "bg-pink-400",
@@ -115,7 +115,7 @@ export default function FrequencyRewardCard({
       className={cn(
         "relative rounded-xl border bg-card dark:bg-card p-4 space-y-3 overflow-hidden transition-all",
         completed
-          ? "border-[#2d6a4f] shadow-md shadow-[#2d6a4f]/20"
+          ? "border-[#0f766e] shadow-md shadow-[#0f766e]/20"
           : "border-border"
       )}
     >
@@ -135,7 +135,7 @@ export default function FrequencyRewardCard({
           className={cn(
             "flex h-8 w-8 items-center justify-center rounded-full shrink-0",
             completed
-              ? "bg-[#2d6a4f] text-white"
+              ? "bg-[#0f766e] text-white"
               : "bg-muted dark:bg-muted/50 text-muted-foreground"
           )}
         >
@@ -146,7 +146,7 @@ export default function FrequencyRewardCard({
       {/* Message */}
       <p className="text-sm text-foreground dark:text-foreground leading-snug">
         {completed ? (
-          <span className="font-semibold text-[#2d6a4f]">
+          <span className="font-semibold text-[#0f766e]">
             Completaste las {targetCount} compras. Tu proxima compra de{" "}
             {productName} es GRATIS.
           </span>
@@ -154,7 +154,7 @@ export default function FrequencyRewardCard({
           <>
             Compraste{" "}
             <span className="font-semibold">{productName}</span>{" "}
-            <span className="font-bold text-[#2d6a4f]">{currentCount}</span> de{" "}
+            <span className="font-bold text-[#0f766e]">{currentCount}</span> de{" "}
             <span className="font-bold">{targetCount}</span> veces.{" "}
             <span className="font-semibold">
               {remaining} mas y la siguiente es GRATIS.
@@ -180,7 +180,7 @@ export default function FrequencyRewardCard({
         <div
           className={cn(
             "h-full rounded-full transition-all duration-700 ease-out",
-            completed ? "bg-[#2d6a4f]" : "bg-[#2d6a4f]/70"
+            completed ? "bg-[#0f766e]" : "bg-[#0f766e]/70"
           )}
           style={{ width: `${progressPct}%` }}
         />

@@ -15,9 +15,9 @@ skills:
 memory: project
 ---
 
-# Performance Engineer — Bodega San Martin
+# Performance Engineer — Buleje
 
-Eres el **ingeniero de rendimiento** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Framer Motion 12, GSAP 3.
+Eres el **ingeniero de rendimiento** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Framer Motion 12, GSAP 3.
 
 Brand: primary `#2d6a4f` / secondary `#f4a261` / dark mode completo.
 
@@ -33,7 +33,7 @@ Brand: primary `#2d6a4f` / secondary `#f4a261` / dark mode completo.
 
 ## Contexto de rendimiento (Pucallpa)
 
-Los usuarios de Bodega San Martin estan en Pucallpa, Peru:
+Los usuarios de Buleje estan en Pucallpa, Peru:
 - **90% celular Android barato** — poca RAM, CPU limitada
 - **Conexion 3G/4G variable** — ancho de banda limitado
 - **Bundle size es critico** — cada KB cuenta en 3G
@@ -51,7 +51,7 @@ Los usuarios de Bodega San Martin estan en Pucallpa, Peru:
 ## Comandos
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run build         # Build de produccion
 npm run analyze       # Analisis de bundle (webpack-bundle-analyzer)
 npm run test:load     # k6 load test
@@ -135,7 +135,7 @@ Tienes precargados los skills: `performance-web`, `caching-strategy`, `responsiv
 ## Verificacion post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run analyze && npm run test
 ```
 

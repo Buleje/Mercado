@@ -63,7 +63,7 @@ const PAY_LABELS: Record<string, string> = {
 
 function fmt(n: number) { return `S/ ${n.toFixed(2)}`; }
 
-// Store location (Bodega San Martín - Pucallpa)
+// Store location (Buleje - Pucallpa)
 const STORE_LAT = -8.3791;
 const STORE_LON = -74.5539;
 
@@ -511,7 +511,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                         <MapPin className="h-3.5 w-3.5 text-white" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-white">{order.status === "en_camino" ? "🚚 Delivery en ruta" : "📍 Bodega San Martín"}</p>
+                        <p className="text-xs font-bold text-white">{order.status === "en_camino" ? "🚚 Delivery en ruta" : "📍 Buleje"}</p>
                         <p className="text-[10px] text-white/60">Jr. San Martín · Callería, Pucallpa</p>
                       </div>
                     </div>
@@ -577,7 +577,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
 
                 {/* WhatsApp share */}
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`🛒 Mi pedido en Bodega San Martín #${order.id.slice(-6)}\nEstado: ${currentStep?.label ?? order.status}\n⏱ ETA: ${ETA[order.status]}\n¡Encuéntralos en Pucallpa!`)}`}
+                  href={`https://wa.me/?text=${encodeURIComponent(`🛒 Mi pedido en Buleje #${order.id.slice(-6)}\nEstado: ${currentStep?.label ?? order.status}\n⏱ ETA: ${ETA[order.status]}\n¡Encuéntralos en Pucallpa!`)}`}
                   target="_blank" rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2.5 w-full px-4 py-3 rounded-2xl bg-[#25D366] text-white text-sm font-bold hover:bg-[#1eb858] transition-all shadow-md"
                 >
@@ -608,7 +608,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                     </m.div>
                     <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">¡Pedido entregado!</p>
                     <p className="text-sm text-gray-500 dark:text-muted mt-2 max-w-xs mx-auto">
-                      Tu pedido #{order.id.slice(-6)} llegó con éxito. ¡Gracias por confiar en Bodega San Martín!
+                      Tu pedido #{order.id.slice(-6)} llegó con éxito. ¡Gracias por confiar en Buleje!
                     </p>
                     {order.items && order.items.length > 0 && (
                       <m.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
@@ -638,7 +638,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                       <div className="flex items-center gap-1 justify-center">
                         {[1,2,3,4,5].map(s => <Star key={s} className="h-5 w-5 text-amber-400 fill-amber-400" />)}
                       </div>
-                      <a href={`https://wa.me/?text=${encodeURIComponent("¡Me acaba de llegar mi pedido de Bodega San Martín! 🛒🎉 Los recomiendo al 100%")}`}
+                      <a href={`https://wa.me/?text=${encodeURIComponent("¡Me acaba de llegar mi pedido de Buleje! 🛒🎉 Los recomiendo al 100%")}`}
                         target="_blank" rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-2xl bg-[#25D366] text-white text-sm font-bold hover:bg-[#1eb858] transition-all"
                       >📲 Compartir con amigos</a>

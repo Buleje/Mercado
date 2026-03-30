@@ -97,7 +97,7 @@ export default function FlashDeals() {
   const flashOffersSchema = {
     "@context": "https://schema.org",
     "@type": "OfferCatalog",
-    name: "Ofertas Relámpago — Bodega San Martín",
+    name: "Ofertas Relámpago — Buleje",
     itemListElement: deals.map((d) => ({
       "@type": "Offer",
       name: d.name,

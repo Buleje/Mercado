@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   if (!order) return NextResponse.json({ error: "order not found" }, { status: 404 });
 
   const settings = await SettingsDB.get();
-  const storeName = settings?.businessName ?? "Bodega San Martín";
+  const storeName = settings?.businessName ?? "Buleje";
 
   const STATUS_MSGS: Record<string, string> = {
     pendiente: `ðŸ›’ ¡Hola! Tu pedido #${order.id.slice(-6)} en ${storeName} ha sido recibido. Te confirmaremos pronto. Total: S/${order.total.toFixed(2)}`,

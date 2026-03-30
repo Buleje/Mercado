@@ -4,11 +4,11 @@ import { Truck, CheckCircle2, MapPin, Clock } from "lucide-react";
 import { useInView } from "@/hooks/use-in-view";
 
 const ZONES = [
-  { name: "Centro de Pucallpa", time: "20-30 min", free: true, color: "bg-emerald-500", ring: "ring-emerald-500/20" },
-  { name: "San Fernando", time: "30-40 min", free: true, color: "bg-emerald-400", ring: "ring-emerald-400/20" },
-  { name: "Manantay", time: "30-45 min", free: false, color: "bg-amber-500", ring: "ring-amber-500/20" },
-  { name: "Yarinacocha", time: "40-60 min", free: false, color: "bg-orange-500", ring: "ring-orange-500/20" },
-  { name: "Campo Verde", time: "50-70 min", free: false, color: "bg-red-500", ring: "ring-red-500/20" },
+  { name: "Centro de Pucallpa", time: "20-30 min", free: true,  price: "Gratis", color: "bg-emerald-500", ring: "ring-emerald-500/20", circleColor: "rgba(45,106,79,0.25)" },
+  { name: "San Fernando",       time: "30-40 min", free: true,  price: "Gratis", color: "bg-emerald-400", ring: "ring-emerald-400/20", circleColor: "rgba(52,211,153,0.20)" },
+  { name: "Manantay",           time: "30-45 min", free: false, price: "S/3",    color: "bg-amber-500",   ring: "ring-amber-500/20",   circleColor: "rgba(245,158,11,0.18)" },
+  { name: "Yarinacocha",        time: "40-60 min", free: false, price: "S/3",    color: "bg-orange-500",  ring: "ring-orange-500/20",  circleColor: "rgba(249,115,22,0.15)" },
+  { name: "Campo Verde",        time: "50-70 min", free: false, price: "S/5",    color: "bg-red-500",     ring: "ring-red-500/20",     circleColor: "rgba(239,68,68,0.12)" },
 ];
 
 export default function DeliveryZoneMap() {
@@ -61,7 +61,7 @@ export default function DeliveryZoneMap() {
                     <CheckCircle2 className="w-3.5 h-3.5" /> Gratis
                   </span>
                 ) : (
-                  <span className="text-sm font-bold text-foreground bg-gray-100 dark:bg-surface px-3 py-1.5 rounded-full">S/3.00</span>
+                  <span className="text-sm font-bold text-foreground bg-gray-100 dark:bg-surface px-3 py-1.5 rounded-full">{zone.price}</span>
                 )}
               </div>
             ))}
@@ -92,8 +92,8 @@ export default function DeliveryZoneMap() {
                       height: `${size}%`,
                       top: `${(100 - size) / 2}%`,
                       left: `${(100 - size) / 2}%`,
-                      borderColor: `color-mix(in srgb, var(--color-primary) ${20 + i * 10}%, transparent)`,
-                      backgroundColor: `color-mix(in srgb, var(--color-primary) ${5 + i * 3}%, transparent)`,
+                      borderColor: zone.circleColor,
+                      backgroundColor: zone.circleColor,
                     }}
                   />
                 );
@@ -103,19 +103,29 @@ export default function DeliveryZoneMap() {
                 <div className="bg-primary text-white rounded-full p-3 shadow-xl shadow-primary/30 ring-4 ring-primary/20">
                   <MapPin className="w-6 h-6" />
                 </div>
-                <span className="text-xs font-bold text-primary mt-2 whitespace-nowrap bg-white dark:bg-card px-2 py-0.5 rounded-full shadow-sm">Bodega San Martín</span>
+                <span className="text-xs font-bold text-primary mt-2 whitespace-nowrap bg-white dark:bg-card px-2 py-0.5 rounded-full shadow-sm">Buleje</span>
               </div>
             </div>
 
-            {/* Legend */}
+            {/* Legend with prices */}
             <div className="flex flex-wrap justify-center gap-4 mt-6">
               {ZONES.map((z) => (
                 <div key={z.name} className="flex items-center gap-1.5">
                   <div className={`w-2.5 h-2.5 rounded-full ${z.color}`} />
-                  <span className="text-xs font-medium text-muted">{z.name}</span>
+                  <span className="text-xs font-medium text-muted">
+                    {z.name} ({z.price})
+                  </span>
                 </div>
               ))}
             </div>
+
+            {/* Phone CTA */}
+            <p className="text-center text-xs text-muted mt-4">
+              No estas en la zona? Llamanos al{" "}
+              <a href="tel:+51961234567" className="font-bold text-primary hover:underline">
+                961 234 567
+              </a>
+            </p>
           </div>
         </div>
       </div>

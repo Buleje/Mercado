@@ -10,7 +10,7 @@ import { toast } from "@/hooks/use-toast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type BatchStatus = "vigente" | "por-vencer" | "critico" | "vencido";
+type BatchStatus = "vigente" | "proximo" | "por-vencer" | "critico" | "vencido";
 
 type Batch = {
   id: string;
@@ -43,6 +43,7 @@ function batchStatus(expiryDate: string): BatchStatus {
   if (d < 0) return "vencido";
   if (d <= 7) return "critico";
   if (d <= 30) return "por-vencer";
+  if (d <= 60) return "proximo";
   return "vigente";
 }
 
@@ -56,6 +57,7 @@ function fmtDate(iso: string) {
 
 const STATUS_META: Record<BatchStatus, { label: string; color: string; bg: string; icon: typeof AlertTriangle }> = {
   vigente:     { label: "Vigente",    color: "text-emerald-700 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle },
+  proximo:     { label: "Próximo",    color: "text-blue-700 dark:text-blue-400",      bg: "bg-blue-50 dark:bg-blue-950/30",      icon: Clock },
   "por-vencer":{ label: "Por vencer", color: "text-amber-700 dark:text-amber-400",    bg: "bg-amber-50 dark:bg-amber-950/30",    icon: Clock },
   critico:     { label: "Crítico",    color: "text-orange-700 dark:text-orange-400",  bg: "bg-orange-50 dark:bg-orange-950/30",  icon: AlertTriangle },
   vencido:     { label: "Vencido",    color: "text-red-700 dark:text-red-400",        bg: "bg-red-50 dark:bg-red-950/30",        icon: AlertTriangle },
@@ -86,6 +88,44 @@ function ModuleTooltip() {
         </div>
       )}
     </div>
+  );
+}
+
+// ── Mejora 8: Expiry Countdown Badge ──────────────────────────────────────────
+
+function ExpiryCountdownBadge({ daysLeft }: { daysLeft: number }) {
+  if (daysLeft <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-700">
+        VENCIDO hace {Math.abs(daysLeft)}d
+      </span>
+    );
+  }
+  if (daysLeft <= 3) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-700 animate-pulse">
+        Vence en {daysLeft}d
+      </span>
+    );
+  }
+  if (daysLeft <= 7) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400 border border-orange-300 dark:border-orange-700">
+        Vence en {daysLeft}d
+      </span>
+    );
+  }
+  if (daysLeft <= 30) {
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700">
+        Vence en {daysLeft}d
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700">
+      Vence en {daysLeft}d
+    </span>
   );
 }
 
@@ -429,8 +469,8 @@ export default function BatchesTab() {
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted truncate max-w-30">{b.supplierName || "—"}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{fmtDate(b.entryDate)}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-semibold text-gray-700 dark:text-foreground">{fmtDate(b.expiryDate)}</td>
-                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-extrabold", b.daysLeft < 0 ? "text-red-500" : b.daysLeft <= 7 ? "text-orange-500" : b.daysLeft <= 30 ? "text-amber-500" : "text-emerald-600")}>
-                      {b.daysLeft < 0 ? `${Math.abs(b.daysLeft)}d vencido` : b.daysLeft === 0 ? "Hoy" : `${b.daysLeft}d`}
+                    <td className="px-2 sm:px-4 py-2 sm:py-3">
+                      <ExpiryCountdownBadge daysLeft={b.daysLeft} />
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-xs font-semibold text-gray-700 dark:text-foreground">{b.costUnit > 0 ? fmt(b.costUnit) : "—"}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">

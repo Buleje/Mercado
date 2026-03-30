@@ -2,7 +2,7 @@
 applyTo: "**/push*,**/subscription*,**/notification*,**/vapid*"
 ---
 
-# Push Notifications — Bodega San Martín
+# Push Notifications — Buleje
 
 ## Stack
 
@@ -34,7 +34,7 @@ model PushSubscription {
 import webpush from "web-push";
 
 webpush.setVapidDetails(
-  "mailto:admin@bodegasanmartin.com",
+  "mailto:admin@buleje.com",
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );

@@ -1,5 +1,5 @@
 {
-  "name": "bodega-san-martin",
+  "name": "buleje",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -17,7 +17,7 @@
     "test:load": "k6 run k6/superadmin.js",
     "db:seed": "tsx prisma/seed.ts",
     "db:migrate": "prisma migrate dev",
-    "cap:init": "npx cap init \"Bodega San Martín\" pe.bodegasanmartin.app --web-dir out",
+    "cap:init": "npx cap init \"Buleje\" pe.buleje.app --web-dir out",
     "cap:add:android": "npx cap add android",
     "cap:add:ios": "npx cap add ios",
     "cap:sync": "npx cap sync",
@@ -54,6 +54,7 @@
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",
     "leaflet": "^1.9.4",
+    "leaflet.heat": "^0.2.0",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "next-sitemap": "^4.2.3",
@@ -70,6 +71,7 @@
     "tailwind-merge": "^3.5.0",
     "web-push": "^3.6.7",
     "web-vitals": "^5.1.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {

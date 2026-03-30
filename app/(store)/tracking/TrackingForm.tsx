@@ -78,7 +78,7 @@ function TimelineStep({
         <span
           className={cn(
             "absolute left-4 top-8 h-full w-0.5 -translate-x-1/2",
-            isDone ? "bg-[#2d6a4f]" : "bg-border dark:bg-border",
+            isDone ? "bg-[#0f766e]" : "bg-border dark:bg-border",
           )}
         />
       )}
@@ -88,7 +88,7 @@ function TimelineStep({
         className={cn(
           "relative z-10 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors",
           isDone
-            ? "border-[#2d6a4f] bg-[#2d6a4f]"
+            ? "border-[#0f766e] bg-[#0f766e]"
             : "border-border bg-card dark:border-border dark:bg-card",
         )}
       >
@@ -106,7 +106,7 @@ function TimelineStep({
         <p className={cn("text-sm font-semibold", isDone ? "text-foreground dark:text-foreground" : "text-muted-foreground dark:text-muted")}>
           {step.label}
           {isActive && (
-            <span className="ml-2 inline-flex items-center rounded-full bg-[#f4a261]/20 px-2 py-0.5 text-xs font-medium text-[#f4a261]">
+            <span className="ml-2 inline-flex items-center rounded-full bg-[#f97316]/20 px-2 py-0.5 text-xs font-medium text-[#f97316]">
               Ahora
             </span>
           )}
@@ -240,7 +240,7 @@ export default function TrackingForm() {
           required
           className={cn(
             "flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]",
+            "focus:outline-none focus:ring-2 focus:ring-[#0f766e]",
             "dark:bg-card dark:border-border dark:text-foreground dark:placeholder:text-muted",
           )}
         />
@@ -248,8 +248,8 @@ export default function TrackingForm() {
           type="submit"
           disabled={isPending}
           className={cn(
-            "rounded-xl bg-[#2d6a4f] px-5 py-3 text-sm font-semibold text-white transition-colors",
-            "hover:bg-[#245a42] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed",
+            "rounded-xl bg-[#0f766e] px-5 py-3 text-sm font-semibold text-white transition-colors",
+            "hover:bg-[#0d5f58] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed",
           )}
         >
           {isPending ? "Buscando..." : "Buscar"}

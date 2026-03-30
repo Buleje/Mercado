@@ -35,7 +35,7 @@ const POST_TYPES: { value: PostType; label: string }[] = [
 ];
 
 const HASHTAGS =
-  "#BodegaSanMartin #Pucallpa #Ofertas #Abarrotes #Delivery #TiendaLocal";
+  "#Buleje #Pucallpa #Ofertas #Abarrotes #Delivery #TiendaLocal";
 
 const TYPE_COLORS: Record<PostType, string> = {
   oferta:
@@ -64,7 +64,7 @@ function generateText(
       return (
         `OFERTA DEL DIA — ${product.name} a solo S/ ${product.price.toFixed(2)}!` +
         (prev > 0 ? ` Antes S/ ${prev.toFixed(2)}.` : "") +
-        ` Solo en Bodega San Martin. Pide por WhatsApp!`
+        ` Solo en Buleje. Pide por WhatsApp!`
       );
     case "nuevo":
       return `RECIEN LLEGADO — ${product.name}. Ya disponible en nuestra tienda. Ven a visitarnos o pide por WhatsApp!`;
@@ -72,11 +72,11 @@ function generateText(
       return (
         `SABIAS QUE... con ${product.name} puedes preparar platos deliciosos?` +
         (customNote ? ` ${customNote}` : "") +
-        ` Consiguelo en Bodega San Martin, Pucallpa.`
+        ` Consiguelo en Buleje, Pucallpa.`
       );
     case "motivacional":
       return (
-        `Gracias por confiar en Bodega San Martin. Cada compra apoya a una familia pucallpina.` +
+        `Gracias por confiar en Buleje. Cada compra apoya a una familia pucallpina.` +
         (customNote ? ` ${customNote}` : "") +
         ` Los esperamos!`
       );
@@ -199,8 +199,8 @@ export default function SocialPostGenerator() {
                   className={cn(
                     "rounded-lg border px-3 py-2 text-sm font-medium transition",
                     postType === t.value
-                      ? "border-[#2d6a4f] bg-[#2d6a4f] text-white"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#2d6a4f]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                      ? "border-[#0f766e] bg-[#0f766e] text-white"
+                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#0f766e]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
                   )}
                 >
                   {t.label}
@@ -221,7 +221,7 @@ export default function SocialPostGenerator() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar producto..."
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#2d6a4f] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
               </div>
               {search && (
@@ -243,7 +243,7 @@ export default function SocialPostGenerator() {
                         <span className="text-gray-800 dark:text-gray-200">
                           {p.name}
                         </span>
-                        <span className="font-medium text-[#2d6a4f]">
+                        <span className="font-medium text-[#0f766e]">
                           S/ {p.price?.toFixed(2)}
                         </span>
                       </button>
@@ -252,7 +252,7 @@ export default function SocialPostGenerator() {
                 </div>
               )}
               {selectedProduct && (
-                <p className="mt-1 text-xs text-[#2d6a4f]">
+                <p className="mt-1 text-xs text-[#0f766e]">
                   Seleccionado: {selectedProduct.name} — S/{" "}
                   {selectedProduct.price.toFixed(2)}
                 </p>
@@ -271,7 +271,7 @@ export default function SocialPostGenerator() {
                 value={prevPrice}
                 onChange={(e) => setPrevPrice(e.target.value)}
                 placeholder="Ej: 5.50"
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#2d6a4f] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </div>
           )}
@@ -287,7 +287,7 @@ export default function SocialPostGenerator() {
                 onChange={(e) => setCustomNote(e.target.value)}
                 rows={2}
                 placeholder="Agrega un detalle personal..."
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#2d6a4f] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </div>
           )}
@@ -295,7 +295,7 @@ export default function SocialPostGenerator() {
           <button
             onClick={handleGenerate}
             disabled={!selectedProduct && postType !== "motivacional"}
-            className="w-full rounded-lg bg-[#2d6a4f] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#245a42] disabled:opacity-50"
+            className="w-full rounded-lg bg-[#0f766e] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d5f58] disabled:opacity-50"
           >
             Generar post
           </button>
@@ -311,9 +311,9 @@ export default function SocialPostGenerator() {
               </span>
             </div>
             {generatedText ? (
-              <div className="rounded-xl border border-gray-100 bg-gradient-to-br from-[#2d6a4f] to-[#1a3d2e] p-5 dark:border-gray-800">
-                <div className="mb-1 text-xs font-bold text-[#f4a261]">
-                  Bodega San Martin
+              <div className="rounded-xl border border-gray-100 bg-gradient-to-br from-[#0f766e] to-[#1a3d2e] p-5 dark:border-gray-800">
+                <div className="mb-1 text-xs font-bold text-[#f97316]">
+                  Buleje
                 </div>
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-white">
                   {generatedText}
@@ -336,7 +336,7 @@ export default function SocialPostGenerator() {
                 "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition",
                 copied
                   ? "bg-emerald-600 text-white"
-                  : "bg-[#f4a261] text-white hover:bg-[#e08c4a]"
+                  : "bg-[#f97316] text-white hover:bg-[#e08c4a]"
               )}
             >
               {copied ? (
@@ -358,7 +358,7 @@ export default function SocialPostGenerator() {
             {HASHTAGS.split(" ").map((tag) => (
               <span
                 key={tag}
-                className="flex items-center gap-1 rounded-full bg-[#2d6a4f]/10 px-2.5 py-1 text-xs text-[#2d6a4f] dark:bg-[#2d6a4f]/20 dark:text-emerald-400"
+                className="flex items-center gap-1 rounded-full bg-[#0f766e]/10 px-2.5 py-1 text-xs text-[#0f766e] dark:bg-[#0f766e]/20 dark:text-emerald-400"
               >
                 <Hash className="h-3 w-3" />
                 {tag.replace("#", "")}

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { SurveyDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 
+export const dynamic = "force-dynamic";
+
 // POST — submit a survey response (public, from customer)
 export async function POST(req: NextRequest) {
   try {

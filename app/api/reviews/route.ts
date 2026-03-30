@@ -5,6 +5,9 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
+  const limited = applyRateLimit(req, "MODERATE", "reviews");
+  if (limited) return limited;
+
   try {
     const { searchParams } = new URL(req.url);
     const all = searchParams.get("all") === "1";

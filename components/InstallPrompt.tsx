@@ -80,10 +80,12 @@ export default function InstallPrompt() {
     // Wait for the user's response
     const { outcome } = await deferredPrompt.userChoice;
 
-    if (outcome === "accepted") {
-      console.log("[PWA] User accepted the install prompt");
-    } else {
-      console.log("[PWA] User dismissed the install prompt");
+    if (process.env.NODE_ENV === "development") {
+      if (outcome === "accepted") {
+        console.log("[PWA] User accepted the install prompt");
+      } else {
+        console.log("[PWA] User dismissed the install prompt");
+      }
     }
 
     // Clear the prompt
@@ -110,7 +112,7 @@ export default function InstallPrompt() {
               <Smartphone className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h3 className="text-white font-bold text-sm">Instalar Bodega San Martín</h3>
+              <h3 className="text-white font-bold text-sm">Instalar Buleje</h3>
               <p className="text-white/70 text-xs">Acceso rápido desde tu inicio</p>
             </div>
           </div>

@@ -1,0 +1,44 @@
+# Buleje — Sistema de Gestión para Bodegas y Minimarkets
+# https://buleje.pe
+
+## Qué es Buleje
+Buleje es un software ERP/SaaS diseñado para bodegas, minimarkets y tiendas de abarrotes en Perú y Latinoamérica. Permite gestionar ventas (POS), inventario, fiados, clientes, delivery y más desde el celular.
+
+## Características principales
+- 20+ módulos integrados: POS, inventario, CRM, fiados, tesorería, analytics
+- Bot de WhatsApp: toma pedidos, cobra y confirma automáticamente
+- Inteligencia artificial: predicción de stock, recomendaciones, asistente virtual
+- Modo offline: funciona sin internet y sincroniza después
+- Semáforo de crédito: evalúa riesgo antes de fiar
+- OCR de facturas: escanea con foto y registra automáticamente
+- Comandos de voz: "muéstrame ventas de hoy"
+- Cobranza inteligente: 4 niveles automáticos con descuentos por pronto pago
+- Delivery integrado con zonas y tracking
+- Mapa de clientes con heat map
+- Campañas automáticas por WhatsApp según hábitos de compra
+- Cliente frecuente sin tarjeta física, solo con teléfono
+- Combos inteligentes sugeridos por IA
+- Simulador de utilidad por producto
+- Radar de fuga de clientes
+- Multi-tenant: múltiples tiendas desde una cuenta
+
+## Planes
+- Free: S/ 0/mes (50 productos, 2 usuarios, 200 pedidos)
+- Pro: S/ 49/mes (500 productos, 10 usuarios, analytics, WhatsApp bot) [Más popular]
+- Business: S/ 149/mes (ilimitado, 5 tiendas, API access, soporte prioritario)
+- Enterprise: personalizado (white label, SLA, soporte dedicado)
+
+## Stack tecnológico
+Next.js 16, React 19, TypeScript 5.7, Prisma 7, PostgreSQL (Supabase), Tailwind CSS 4, Framer Motion 12
+
+## Para quién es
+- Dueños de bodegas y minimarkets en Perú
+- Tiendas de abarrotes que quieren modernizarse
+- Distribuidores con múltiples puntos de venta
+- Emprendedores del sector retail en Latinoamérica
+
+## Contacto
+- Web: https://buleje.pe
+- Landing SaaS: https://buleje.pe/saas
+- Registro gratuito: https://buleje.pe/registro
+- Planes y precios: https://buleje.pe/pricing

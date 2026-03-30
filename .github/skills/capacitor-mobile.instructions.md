@@ -2,12 +2,12 @@
 applyTo: "**/capacitor*,**/android*,**/ios*,**/app:build*"
 ---
 
-# Capacitor Mobile — Bodega San Martín
+# Capacitor Mobile — Buleje
 
 ## Build command
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run app:build    # = next build + next export + npx cap sync
 ```
 
@@ -15,8 +15,8 @@ npm run app:build    # = next build + next export + npx cap sync
 
 ```json
 {
-  "appId": "com.bodegasanmartin.app",
-  "appName": "Bodega San Martín",
+  "appId": "com.buleje.app",
+  "appName": "Buleje",
   "webDir": "out",
   "server": {
     "androidScheme": "https"
@@ -65,8 +65,8 @@ PushNotifications.addListener("registration", token => {
 // capacitor.config.json:
 "plugins": {
   "Deeplinks": {
-    "iosScheme": "bodegasanmartin",
-    "androidScheme": "bodegasanmartin"
+    "iosScheme": "buleje",
+    "androidScheme": "buleje"
   }
 }
 ```

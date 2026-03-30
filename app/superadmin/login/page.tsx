@@ -44,7 +44,7 @@ export default function SuperAdminLoginPage() {
           </div>
           <div className="text-center">
             <h1 className="text-xl font-bold text-white">Platform Admin</h1>
-            <p className="text-gray-400 text-sm mt-1">Bodega San Martín SaaS</p>
+            <p className="text-gray-400 text-sm mt-1">Buleje SaaS</p>
           </div>
         </div>
 

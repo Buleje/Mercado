@@ -79,7 +79,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
   const valid = name.trim().length > 0 && sqm > 0 && cats.length > 0;
 
   return (
-    <div className="p-4 rounded-2xl border-2 border-[#2d6a4f]/30 bg-[#2d6a4f]/5 dark:bg-[#2d6a4f]/10 space-y-3">
+    <div className="p-4 rounded-2xl border-2 border-[#0f766e]/30 bg-[#0f766e]/5 dark:bg-[#0f766e]/10 space-y-3">
       <div className="grid grid-cols-2 gap-3">
         <div className="col-span-2">
           <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
@@ -89,7 +89,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ej: Pasillo A - Abarrotes"
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#2d6a4f]"
+            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#0f766e]"
           />
         </div>
         <div>
@@ -102,7 +102,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             step={0.5}
             value={sqm}
             onChange={(e) => setSqm(Number(e.target.value))}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#2d6a4f]"
+            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#0f766e]"
           />
         </div>
         <div>
@@ -114,7 +114,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
             min={0}
             value={revenue}
             onChange={(e) => setRevenue(Number(e.target.value))}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#2d6a4f]"
+            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white outline-none focus:border-[#0f766e]"
           />
         </div>
         <div className="col-span-2">
@@ -129,7 +129,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
                 className={cn(
                   "px-2.5 py-1 rounded-full text-xs font-medium border transition-colors",
                   cats.includes(cat)
-                    ? "bg-[#2d6a4f] text-white border-[#2d6a4f]"
+                    ? "bg-[#0f766e] text-white border-[#0f766e]"
                     : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400"
                 )}
               >
@@ -143,7 +143,7 @@ function AreaForm({ initial, onSave, onCancel }: AreaFormProps) {
         <button
           onClick={() => valid && onSave({ name: name.trim(), sqm, revenue, categories: cats })}
           disabled={!valid}
-          className="flex-1 py-2.5 rounded-xl bg-[#2d6a4f] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+          className="flex-1 py-2.5 rounded-xl bg-[#0f766e] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
         >
           <Save className="w-4 h-4" />
           Guardar area
@@ -210,8 +210,8 @@ export default function RevenuePerSquareMeter() {
       {/* Header */}
       <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-[#2d6a4f]/10">
-            <LayoutGrid className="w-5 h-5 text-[#2d6a4f]" />
+          <div className="p-2 rounded-xl bg-[#0f766e]/10">
+            <LayoutGrid className="w-5 h-5 text-[#0f766e]" />
           </div>
           <div>
             <h2 className="font-bold text-gray-900 dark:text-white">
@@ -225,7 +225,7 @@ export default function RevenuePerSquareMeter() {
         {!showForm && !editingId && (
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#2d6a4f] text-white text-sm font-semibold"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#0f766e] text-white text-sm font-semibold"
           >
             <Plus className="w-4 h-4" />
             Nueva area
@@ -240,10 +240,10 @@ export default function RevenuePerSquareMeter() {
 
         {/* Recommendation */}
         {ranked.length >= 2 && !showForm && (
-          <div className="p-3 rounded-xl bg-[#2d6a4f]/5 border border-[#2d6a4f]/20">
+          <div className="p-3 rounded-xl bg-[#0f766e]/5 border border-[#0f766e]/20">
             <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4 text-[#2d6a4f]" />
-              <p className="text-xs font-bold text-[#2d6a4f] dark:text-[#52b788]">
+              <TrendingUp className="w-4 h-4 text-[#0f766e]" />
+              <p className="text-xs font-bold text-[#0f766e] dark:text-[#14b8a6]">
                 Recomendacion
               </p>
             </div>
@@ -272,7 +272,7 @@ export default function RevenuePerSquareMeter() {
                 className={cn(
                   "p-4 rounded-2xl border",
                   index === 0
-                    ? "border-[#2d6a4f]/30 bg-[#2d6a4f]/5 dark:bg-[#2d6a4f]/10"
+                    ? "border-[#0f766e]/30 bg-[#0f766e]/5 dark:bg-[#0f766e]/10"
                     : "border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50"
                 )}
               >
@@ -282,7 +282,7 @@ export default function RevenuePerSquareMeter() {
                       className={cn(
                         "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black",
                         index === 0
-                          ? "bg-[#2d6a4f] text-white"
+                          ? "bg-[#0f766e] text-white"
                           : "bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
                       )}
                     >
@@ -327,7 +327,7 @@ export default function RevenuePerSquareMeter() {
                       className={cn(
                         "text-sm font-black",
                         index === 0
-                          ? "text-[#2d6a4f] dark:text-[#52b788]"
+                          ? "text-[#0f766e] dark:text-[#14b8a6]"
                           : "text-gray-900 dark:text-white"
                       )}
                     >
@@ -340,7 +340,7 @@ export default function RevenuePerSquareMeter() {
                       <div
                         className={cn(
                           "h-full rounded-full",
-                          index === 0 ? "bg-[#2d6a4f]" : "bg-gray-400 dark:bg-gray-500"
+                          index === 0 ? "bg-[#0f766e]" : "bg-gray-400 dark:bg-gray-500"
                         )}
                         style={{
                           width: topArea

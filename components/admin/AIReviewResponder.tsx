@@ -30,7 +30,7 @@ function buildResponse(
     ];
     const extras =
       rating === 5
-        ? " Eres parte de la familia Bodega San Martin y siempre sera un placer atenderte."
+        ? " Eres parte de la familia Buleje y siempre sera un placer atenderte."
         : " Seguiremos trabajando para darte lo mejor en cada pedido.";
     return positives.join(" ") + extras;
   }
@@ -127,7 +127,7 @@ export default function AIReviewResponder({
       </div>
 
       {/* Review text */}
-      <blockquote className="border-l-2 border-[#2d6a4f] pl-3 text-sm text-muted-foreground dark:text-muted-foreground italic">
+      <blockquote className="border-l-2 border-[#0f766e] pl-3 text-sm text-muted-foreground dark:text-muted-foreground italic">
         {reviewText || "Sin texto en la resena."}
       </blockquote>
 
@@ -145,7 +145,7 @@ export default function AIReviewResponder({
             className={cn(
               "w-full rounded-md border border-border bg-background dark:bg-background",
               "text-sm text-foreground dark:text-foreground",
-              "px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/50",
+              "px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#0f766e]/50",
               "placeholder:text-muted-foreground"
             )}
           />
@@ -168,7 +168,7 @@ export default function AIReviewResponder({
             onClick={handleGenerate}
             className={cn(
               "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-              "bg-[#2d6a4f] text-white hover:bg-[#245a42]"
+              "bg-[#0f766e] text-white hover:bg-[#0d5f58]"
             )}
           >
             <Edit3 className="h-3.5 w-3.5" />
@@ -183,7 +183,7 @@ export default function AIReviewResponder({
               disabled={!draft.trim()}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                "bg-[#2d6a4f] text-white hover:bg-[#245a42] disabled:opacity-50 disabled:cursor-not-allowed"
+                "bg-[#0f766e] text-white hover:bg-[#0d5f58] disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
               <Send className="h-3.5 w-3.5" />

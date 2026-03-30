@@ -2,7 +2,7 @@
 applyTo: "**/prisma/**,**/schema.prisma"
 ---
 
-# Prisma Schema — Bodega San Martín
+# Prisma Schema — Buleje
 
 ## Configuración crítica
 
@@ -116,7 +116,7 @@ updatedAt   DateTime  @updatedAt
 ## Comandos de schema
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npx prisma validate          # Validar sin migrar
 npm run db:migrate           # Migrar (requiere DIRECT_URL en .env)
 npx prisma generate          # Regenerar cliente después de cambios

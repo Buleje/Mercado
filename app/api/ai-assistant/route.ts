@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ProductsDB, OrdersDB, CustomersDB, SalesDB, PayablesDB, PurchasesDB, ReviewsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
 
 // ── Snapshot cache (5 min TTL) ────────────────────────────────────────────────
 
@@ -122,7 +123,7 @@ COMPRAS:
   return cachedSnapshot;
 }
 
-const SYSTEM_PROMPT_TEMPLATE = (snapshot: string) => `Eres el Asistente Ejecutivo IA de "Bodega San Martín", una tienda de abarrotes premium en Pucallpa, Perú.
+const SYSTEM_PROMPT_TEMPLATE = (snapshot: string) => `Eres el Asistente Ejecutivo IA de "Buleje", una tienda de abarrotes premium en Pucallpa, Perú.
 
 PERSONALIDAD:
 - Profesional, directo, estratégico — como un gerente general millonario que domina retail y ventas
@@ -253,7 +254,7 @@ export async function POST(req: NextRequest) {
   // ── If no API key, use rule-based immediately ─────────────────────────────
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    console.warn("[ai-assistant] GROQ_API_KEY not configured — using rule-based fallback");
+    logger.warn("[ai-assistant] GROQ_API_KEY not configured — using rule-based fallback");
     return returnRuleBased();
   }
 

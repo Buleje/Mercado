@@ -29,8 +29,8 @@ const QUADRANT_META: Record<BCGQuadrant, {
   label: string; icon: string; color: string;
   bg: string; text: string; recommendation: string;
 }> = {
-  star:     { label: "Estrellas",    icon: "↑↑", color: "#2d6a4f", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300", recommendation: "Invertir para crecer — alta prioridad" },
-  cow:      { label: "Vacas",        icon: "→↑", color: "#f4a261", bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-800 dark:text-amber-300", recommendation: "Mantener y cosechar — generan caja" },
+  star:     { label: "Estrellas",    icon: "↑↑", color: "#0f766e", bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300", recommendation: "Invertir para crecer — alta prioridad" },
+  cow:      { label: "Vacas",        icon: "→↑", color: "#f97316", bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-800 dark:text-amber-300", recommendation: "Mantener y cosechar — generan caja" },
   question: { label: "Interrogantes",icon: "↑↓", color: "#3b82f6", bg: "bg-blue-100 dark:bg-blue-900/30",  text: "text-blue-800 dark:text-blue-300",  recommendation: "Evaluar potencial — requieren inversion" },
   dog:      { label: "Perros",       icon: "↓↓", color: "#ef4444", bg: "bg-red-100 dark:bg-red-900/30",    text: "text-red-800 dark:text-red-300",    recommendation: "Reducir o descontinuar" },
 };
@@ -181,7 +181,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
             className={cn(
               "rounded-lg border px-2 py-1.5 text-left transition-all",
               meta.bg,
-              activeQuadrant === q && "ring-2 ring-offset-1 ring-[#2d6a4f]"
+              activeQuadrant === q && "ring-2 ring-offset-1 ring-[#0f766e]"
             )}
             style={{ borderColor: meta.color + "60" }}
           >
@@ -262,7 +262,7 @@ export default function ProductPerformanceMatrix({ products, sales }: ProductPer
                 <span
                   className={cn(
                     "font-medium",
-                    p.growth >= 0 ? "text-[#2d6a4f] dark:text-[#52b788]" : "text-red-600 dark:text-red-400"
+                    p.growth >= 0 ? "text-[#0f766e] dark:text-[#14b8a6]" : "text-red-600 dark:text-red-400"
                   )}
                 >
                   {fmtPct(p.growth)}

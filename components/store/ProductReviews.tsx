@@ -28,8 +28,8 @@ function StarIcon({ filled, size = 16 }: { filled: boolean; size?: number }) {
       width={size}
       height={size}
       viewBox="0 0 20 20"
-      fill={filled ? "#f4a261" : "none"}
-      stroke={filled ? "#f4a261" : "#9ca3af"}
+      fill={filled ? "#f97316" : "none"}
+      stroke={filled ? "#f97316" : "#9ca3af"}
       strokeWidth={1.5}
       aria-hidden="true"
     >
@@ -201,7 +201,7 @@ function ReviewForm({
 
   if (submitted) {
     return (
-      <div className="rounded-xl border border-[#2d6a4f]/40 bg-[#2d6a4f]/10 px-4 py-3 text-sm text-[#2d6a4f] dark:border-[#2d6a4f]/40 dark:bg-[#2d6a4f]/10 dark:text-green-300">
+      <div className="rounded-xl border border-[#0f766e]/40 bg-[#0f766e]/10 px-4 py-3 text-sm text-[#0f766e] dark:border-[#0f766e]/40 dark:bg-[#0f766e]/10 dark:text-green-300">
         Gracias por tu opinion. Tu resena esta en revision y se publicara pronto.
       </div>
     );
@@ -227,7 +227,7 @@ function ReviewForm({
           maxLength={60}
           className={cn(
             "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]",
+            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#0f766e]",
             "dark:bg-background dark:border-border dark:text-foreground dark:placeholder:text-muted",
           )}
         />
@@ -254,7 +254,7 @@ function ReviewForm({
           required
           className={cn(
             "w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]",
+            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#0f766e]",
             "dark:bg-background dark:border-border dark:text-foreground dark:placeholder:text-muted",
           )}
         />
@@ -269,8 +269,8 @@ function ReviewForm({
         type="submit"
         disabled={isPending}
         className={cn(
-          "w-full rounded-lg bg-[#2d6a4f] px-4 py-2.5 text-sm font-semibold text-white transition-colors",
-          "hover:bg-[#245a42] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed",
+          "w-full rounded-lg bg-[#0f766e] px-4 py-2.5 text-sm font-semibold text-white transition-colors",
+          "hover:bg-[#0d5f58] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed",
         )}
       >
         {isPending ? "Enviando..." : "Publicar resena"}

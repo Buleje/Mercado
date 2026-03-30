@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Política de Privacidad | Bodega San Martín",
-  description: "Cómo recopilamos, usamos y protegemos tu información personal en Bodega San Martín.",
+  title: "Política de Privacidad | Buleje",
+  description: "Cómo recopilamos, usamos y protegemos tu información personal en Buleje.",
 };
 
 export default function PrivacidadPage() {
@@ -19,7 +19,7 @@ export default function PrivacidadPage() {
         <section>
           <h2 className="text-xl font-bold">1. Información que recopilamos</h2>
           <p>
-            Cuando realizas un pedido en Bodega San Martín, recopilamos la siguiente información:
+            Cuando realizas un pedido en Buleje, recopilamos la siguiente información:
           </p>
           <ul className="list-disc pl-5 space-y-1">
             <li><strong>Nombre completo</strong> — para identificar tu pedido.</li>

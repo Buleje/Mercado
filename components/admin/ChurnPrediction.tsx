@@ -181,7 +181,7 @@ export default function ChurnPrediction() {
 
   const waLink = (phone: string, name: string) => {
     const text = encodeURIComponent(
-      `Hola ${name}! Te extrañamos en Bodega San Martin. Tenemos una oferta especial para ti.`
+      `Hola ${name}! Te extrañamos en Buleje. Tenemos una oferta especial para ti.`
     );
     return `https://wa.me/${phone.replace(/\D/g, "")}?text=${text}`;
   };
@@ -217,7 +217,7 @@ export default function ChurnPrediction() {
             className={cn(
               "rounded-xl border p-4 text-left transition",
               filterRisk === r
-                ? "border-[#2d6a4f] bg-[#2d6a4f]/5 dark:bg-[#2d6a4f]/10"
+                ? "border-[#0f766e] bg-[#0f766e]/5 dark:bg-[#0f766e]/10"
                 : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900"
             )}
           >
@@ -233,7 +233,7 @@ export default function ChurnPrediction() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#2d6a4f]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#0f766e]" />
         </div>
       ) : error ? (
         <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-900/10">
@@ -251,7 +251,7 @@ export default function ChurnPrediction() {
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-xs font-medium transition",
                   filterRisk === r
-                    ? "bg-[#2d6a4f] text-white"
+                    ? "bg-[#0f766e] text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                 )}
               >

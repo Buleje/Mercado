@@ -2,11 +2,11 @@
   "$schema": "https://pixel-agents.dev/schema/v1/config.json",
   "version": 1,
   "project": {
-    "name": "Bodega San Martín",
+    "name": "Buleje",
     "description": "ERP/e-commerce para bodega familiar en Pucallpa, Perú",
     "theme": {
-      "primary": "#2d6a4f",
-      "secondary": "#f4a261",
+      "primary": "#0f766e",
+      "secondary": "#f97316",
       "background": "#1a1a2e",
       "floor": "#2a2a3e"
     }
@@ -16,7 +16,7 @@
       "id": "leadership",
       "name": "Oficina de Dirección",
       "description": "Liderazgo estratégico — modelos Opus para decisiones críticas",
-      "color": "#2d6a4f",
+      "color": "#0f766e",
       "icon": "crown",
       "gridArea": { "col": 1, "row": 7, "width": 9, "height": 6 }
     },
@@ -32,7 +32,7 @@
       "id": "support",
       "name": "Área de Soporte",
       "description": "Soporte, diseño y documentación — modelos mixtos",
-      "color": "#f4a261",
+      "color": "#f97316",
       "icon": "support",
       "gridArea": { "col": 22, "row": 7, "width": 9, "height": 18 }
     },
@@ -328,7 +328,7 @@
     { "id": "plant-3", "type": "PLANT_2", "position": { "col": 22, "row": 7 } },
     { "id": "plant-4", "type": "CACTUS", "position": { "col": 30, "row": 14 } },
     { "id": "plant-5", "type": "HANGING_PLANT", "position": { "col": 22, "row": 19 } },
-    { "id": "painting-bodega", "type": "LARGE_PAINTING", "position": { "col": 26, "row": 7 }, "label": "Bodega San Martín" },
+    { "id": "painting-bodega", "type": "LARGE_PAINTING", "position": { "col": 26, "row": 7 }, "label": "Buleje" },
     { "id": "painting-pucallpa", "type": "SMALL_PAINTING", "position": { "col": 4, "row": 7 }, "label": "Pucallpa" },
     { "id": "lounge-sofa-1", "type": "SOFA_FRONT", "position": { "col": 3, "row": 15 } },
     { "id": "lounge-sofa-2", "type": "SOFA_BACK", "position": { "col": 3, "row": 18 } },

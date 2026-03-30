@@ -46,6 +46,6 @@ npm run cap:open:ios
 5. Enviar a revisión
 
 ## Notas
-- La app carga la web desplegada en `https://www.bodegasanmartin.pe`
+- La app carga la web desplegada en `https://www.buleje.pe`
 - Funciona como un wrapper nativo — misma funcionalidad que la PWA
 - Ventaja: acceso desde Play Store/App Store, push notifications nativas, splash screen

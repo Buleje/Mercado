@@ -129,8 +129,8 @@ export default function SupplierPortalLink() {
       {/* Header */}
       <div className="p-5 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-[#2d6a4f]/10">
-            <Link className="w-5 h-5 text-[#2d6a4f]" />
+          <div className="p-2 rounded-xl bg-[#0f766e]/10">
+            <Link className="w-5 h-5 text-[#0f766e]" />
           </div>
           <div>
             <h2 className="font-bold text-gray-900 dark:text-white">
@@ -154,7 +154,7 @@ export default function SupplierPortalLink() {
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
               placeholder="Ej: Distribuidora Hernandez SAC"
-              className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#2d6a4f]"
+              className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#0f766e]"
               onKeyDown={(e) => {
                 if (e.key === "Enter") generateLink();
               }}
@@ -162,7 +162,7 @@ export default function SupplierPortalLink() {
             <button
               onClick={generateLink}
               disabled={!supplierName.trim() || generating}
-              className="px-4 py-2.5 rounded-xl bg-[#2d6a4f] text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+              className="px-4 py-2.5 rounded-xl bg-[#0f766e] text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
             >
               {generating ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -177,7 +177,7 @@ export default function SupplierPortalLink() {
         {/* Preview toggle */}
         <button
           onClick={() => setShowPreview((v) => !v)}
-          className="flex items-center gap-2 text-sm font-medium text-[#2d6a4f] dark:text-[#52b788] hover:underline"
+          className="flex items-center gap-2 text-sm font-medium text-[#0f766e] dark:text-[#14b8a6] hover:underline"
         >
           <Eye className="w-4 h-4" />
           {showPreview ? "Ocultar preview del portal" : "Ver preview del portal"}
@@ -185,12 +185,12 @@ export default function SupplierPortalLink() {
 
         {/* Preview */}
         {showPreview && (
-          <div className="rounded-2xl border-2 border-dashed border-[#2d6a4f]/30 p-4 bg-[#2d6a4f]/5 dark:bg-[#2d6a4f]/10">
-            <p className="text-xs font-bold text-[#2d6a4f] dark:text-[#52b788] uppercase tracking-wider mb-3">
+          <div className="rounded-2xl border-2 border-dashed border-[#0f766e]/30 p-4 bg-[#0f766e]/5 dark:bg-[#0f766e]/10">
+            <p className="text-xs font-bold text-[#0f766e] dark:text-[#14b8a6] uppercase tracking-wider mb-3">
               Vista del proveedor
             </p>
             <p className="text-sm font-bold text-gray-900 dark:text-white mb-2">
-              Productos con stock bajo — Bodega San Martin
+              Productos con stock bajo — Buleje
             </p>
             <div className="space-y-2">
               {lowStock.map((item, i) => (
@@ -208,7 +208,7 @@ export default function SupplierPortalLink() {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-gray-500">Pedido sugerido</p>
-                    <p className="font-bold text-[#2d6a4f] dark:text-[#52b788] text-sm">
+                    <p className="font-bold text-[#0f766e] dark:text-[#14b8a6] text-sm">
                       {item.suggestedOrder} {item.unit}
                     </p>
                   </div>
@@ -247,7 +247,7 @@ export default function SupplierPortalLink() {
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                           {url}
                         </p>
-                        <p className="text-xs text-[#f4a261] mt-0.5">
+                        <p className="text-xs text-[#f97316] mt-0.5">
                           Vence en {hoursLeft}h
                         </p>
                       </div>
@@ -264,8 +264,8 @@ export default function SupplierPortalLink() {
                         className={cn(
                           "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold border transition-colors",
                           copiedToken === config.token
-                            ? "bg-[#2d6a4f] text-white border-[#2d6a4f]"
-                            : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#2d6a4f] hover:text-[#2d6a4f]"
+                            ? "bg-[#0f766e] text-white border-[#0f766e]"
+                            : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#0f766e] hover:text-[#0f766e]"
                         )}
                       >
                         {copiedToken === config.token ? (
@@ -296,10 +296,10 @@ export default function SupplierPortalLink() {
         )}
 
         {/* Stock summary */}
-        <div className="p-4 rounded-2xl bg-[#f4a261]/5 border border-[#f4a261]/20">
+        <div className="p-4 rounded-2xl bg-[#f97316]/5 border border-[#f97316]/20">
           <div className="flex items-center gap-2 mb-2">
-            <Package className="w-4 h-4 text-[#f4a261]" />
-            <p className="text-xs font-semibold text-[#f4a261]">
+            <Package className="w-4 h-4 text-[#f97316]" />
+            <p className="text-xs font-semibold text-[#f97316]">
               {lowStock.length} producto{lowStock.length !== 1 ? "s" : ""} bajo stock incluido{lowStock.length !== 1 ? "s" : ""} en el portal
             </p>
           </div>

@@ -31,7 +31,7 @@ export default function About() {
               <span className="text-primary">abarrotes en Pucallpa</span>
             </h2>
             <p className="text-lg text-foreground/70 leading-relaxed mb-6">
-              Desde 2011, Bodega San Martín ha sido el corazón del barrio en Pucallpa.
+              Desde 2011, Buleje ha sido el corazón del barrio en Pucallpa.
               Comenzamos como un pequeño negocio familiar con la visión de
               ofrecer productos de primera calidad a precios accesibles, con delivery rápido
               y pago fácil por Yape o efectivo.
@@ -80,7 +80,7 @@ export default function About() {
               <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-2xl">
                 <Image
                   src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&h=600&fit=crop&q=80"
-                  alt="Interior de Bodega San Martin en Pucallpa con productos frescos y abarrotes"
+                  alt="Interior de Buleje en Pucallpa con productos frescos y abarrotes"
                   width={800}
                   height={600}
                   loading="lazy"

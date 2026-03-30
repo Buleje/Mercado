@@ -38,7 +38,7 @@ const faqs = [
   {
     question: "¿Cómo hago mi pedido online?",
     answer:
-      "Es muy fácil: navega por nuestro catálogo de productos en bodegasanmartin.pe, agrega lo que necesites al carrito y completa tu pedido. También puedes escribirnos directamente por WhatsApp al 916 409 675. Aceptamos pagos por Yape o efectivo contra entrega.",
+      "Es muy fácil: navega por nuestro catálogo de productos en buleje.pe, agrega lo que necesites al carrito y completa tu pedido. También puedes escribirnos directamente por WhatsApp al 916 409 675. Aceptamos pagos por Yape o efectivo contra entrega.",
   },
   {
     question: "¿Cuánto demora el delivery en Pucallpa?",
@@ -56,9 +56,9 @@ const faqs = [
       "¡Claro! Si recibiste un producto en mal estado o diferente al pedido, te lo cambiamos o devolvemos tu dinero. Revisamos cada pedido antes de enviarlo para asegurar la mejor calidad. Avísanos dentro de las 24 horas de recibido tu pedido.",
   },
   {
-    question: "¿Desde cuándo opera Bodega San Martín?",
+    question: "¿Desde cuándo opera Buleje?",
     answer:
-      "Bodega San Martín opera desde 2011 en Pucallpa, Ucayali. Somos un negocio familiar con más de 13 años de experiencia atendiendo a familias de Pucallpa y alrededores con productos de calidad y delivery rápido.",
+      "Buleje opera desde 2011 en Pucallpa, Ucayali. Somos un negocio familiar con más de 13 años de experiencia atendiendo a familias de Pucallpa y alrededores con productos de calidad y delivery rápido.",
   },
   {
     question: "¿Atienden los domingos?",

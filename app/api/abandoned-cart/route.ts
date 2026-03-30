@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import nodemailer from "nodemailer";
 
+export const dynamic = "force-dynamic";
+
 const CartItemSchema = z.object({
   name: z.string().min(1).max(200),
   price: z.number().min(0),
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
       .join("");
 
     await transporter.sendMail({
-      from: `"Bodega San Martín" <${smtpUser}>`,
+      from: `"Buleje" <${smtpUser}>`,
       to: notifyEmail,
       subject: `🛒 Carrito abandonado — S/${total.toFixed(2)} en espera`,
       html: `
@@ -74,13 +76,13 @@ export async function POST(req: NextRequest) {
               <tfoot>
                 <tr>
                   <td style="padding:10px 8px;font-weight:bold;font-size:15px;">Total:</td>
-                  <td style="padding:10px 8px;font-weight:bold;font-size:15px;text-align:right;color:#2d6a4f;">S/${total.toFixed(2)}</td>
+                  <td style="padding:10px 8px;font-weight:bold;font-size:15px;text-align:right;color:#0f766e;">S/${total.toFixed(2)}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
           <div style="padding:16px 24px;background:#fff;border-top:1px solid #eee;">
-            <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">Bodega San Martín · Pucallpa, Perú</p>
+            <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">Buleje · Pucallpa, Perú</p>
           </div>
         </div>`,
     });

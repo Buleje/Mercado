@@ -1,5 +1,5 @@
 /**
- * k6 Load Test — Bodega San Martín
+ * k6 Load Test — Buleje
  *
  * Tests the two highest-traffic API endpoints:
  *   1. GET /api/products  — Product catalog (read-heavy)
@@ -7,7 +7,7 @@
  *
  * Usage:
  *   k6 run scripts/k6-load-test.js
- *   BASE_URL=https://staging.bodegasanmartin.pe k6 run scripts/k6-load-test.js
+ *   BASE_URL=https://staging.buleje.pe k6 run scripts/k6-load-test.js
  *
  * Install k6: https://k6.io/docs/get-started/installation/
  *

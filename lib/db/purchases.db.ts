@@ -51,6 +51,9 @@ function mapPurchaseOrder(po: PPurchaseOrder & { items: PPurchaseItem[] }): DbPu
     items: po.items.map((i: PPurchaseItem) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })),
     total: po.total, status: po.status as PurchaseStatus,
     ...(po.notes != null && { notes: po.notes }),
+    ...(po.paymentMethod != null && { paymentMethod: po.paymentMethod }),
+    ...(po.deliveryDate != null && { deliveryDate: toISO(po.deliveryDate) }),
+    ...(po.discount != null && { discount: po.discount }),
     createdAt: toISO(po.createdAt), updatedAt: toISO(po.updatedAt),
   };
 }
@@ -109,6 +112,9 @@ export const PurchasesDB = {
       data: {
         id: po.id, supplierId: po.supplierId, supplierName: po.supplierName,
         total: po.total, status: po.status as never, notes: po.notes,
+        paymentMethod: po.paymentMethod ?? null,
+        deliveryDate: po.deliveryDate ? new Date(po.deliveryDate) : null,
+        discount: po.discount ?? 0,
         items: { create: po.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })) },
       },
       include: { items: true },
@@ -123,6 +129,9 @@ export const PurchasesDB = {
     if (patch.notes !== undefined) data.notes = patch.notes;
     if (patch.total !== undefined) data.total = patch.total;
     if (patch.supplierName !== undefined) data.supplierName = patch.supplierName;
+    if (patch.paymentMethod !== undefined) data.paymentMethod = patch.paymentMethod;
+    if (patch.deliveryDate !== undefined) data.deliveryDate = patch.deliveryDate ? new Date(patch.deliveryDate) : null;
+    if (patch.discount !== undefined) data.discount = patch.discount;
     const row = await prisma.purchaseOrder.update({ where: { id }, data, include: { items: true } });
     return mapPurchaseOrder(row);
   },

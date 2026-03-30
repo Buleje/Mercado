@@ -2,7 +2,7 @@
 applyTo: "**/__tests__/**,**/e2e/**,**/vitest*,**/playwright*"
 ---
 
-# Testing Strategy — Bodega San Martín
+# Testing Strategy — Buleje
 
 ## Stack de testing
 
@@ -47,7 +47,7 @@ describe("GET /api/orders", () => {
 ## Correr un solo test
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run test -- --grep "nombre-del-test"
 # o
 npx vitest run __tests__/api/orders.test.ts
@@ -107,7 +107,7 @@ vi.mock("@/lib/cache", () => ({
 ## Checklist de verificación post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint          # 1. Sin errores ESLint
 npm run build         # 2. Build exitoso (detecta errores TypeScript)
 npm run test          # 3. Unit tests pasan

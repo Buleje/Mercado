@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 
+export const dynamic = "force-dynamic";
+
 const RESERVED = new Set([
   "main", "admin", "api", "www", "app", "mail", "smtp", "ftp",
   "static", "cdn", "assets", "test", "demo", "dev", "staging",

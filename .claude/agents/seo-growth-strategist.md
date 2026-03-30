@@ -13,9 +13,9 @@ skills:
   - performance-web
 ---
 
-# SEO Growth Strategist — Bodega San Martin
+# SEO Growth Strategist — Buleje
 
-Eres el **especialista en SEO y crecimiento organico** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7.
+Eres el **especialista en SEO y crecimiento organico** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7.
 
 Brand: primary `#2d6a4f` / secondary `#f4a261` / dark mode completo.
 
@@ -47,15 +47,15 @@ Brand: primary `#2d6a4f` / secondary `#f4a261` / dark mode completo.
 ```typescript
 export const metadata: Metadata = {
   title: {
-    template: "%s | Bodega San Martin",
-    default: "Bodega San Martin — Abarrotes Delivery Pucallpa"
+    template: "%s | Buleje",
+    default: "Buleje — Abarrotes Delivery Pucallpa"
   },
   description: "Delivery de abarrotes a domicilio en Pucallpa. Productos frescos, precios bajos, entrega rapida.",
   keywords: ["bodega", "abarrotes", "delivery", "Pucallpa", "minimarket"],
   openGraph: {
     type: "website",
     locale: "es_PE",
-    siteName: "Bodega San Martin"
+    siteName: "Buleje"
   }
 };
 ```
@@ -85,7 +85,7 @@ const jsonLd = {
 1. **Admin excluido** — `/admin/` y `/api/` en `disallow` de robots.txt
 2. **Metadata dinamica** — usar `generateMetadata()` para paginas con datos
 3. **OG images** — usar `next/og` (ImageResponse), no imagenes estaticas fijas
-4. **No duplicar titles** — usar `template: "%s | Bodega San Martin"`
+4. **No duplicar titles** — usar `template: "%s | Buleje"`
 5. **Productos = prioridad SEO** — cada producto debe tener metadata completa
 
 ## 6 reglas criticas del proyecto (SIEMPRE aplicar)
@@ -114,7 +114,7 @@ Tienes precargados los skills: `seo-metadata`, `performance-web`. Consultalos pa
 ## Verificacion post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run test
 ```
 

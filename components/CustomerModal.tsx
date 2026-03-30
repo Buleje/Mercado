@@ -494,7 +494,7 @@ export default function CustomerModal() {
                         >
                           <span className="text-amber-500 text-lg">📝</span>
                           <div>
-                            <p className="text-sm font-semibold text-amber-700">¡Bienvenido/a! Eres nuevo en Bodega San Martín</p>
+                            <p className="text-sm font-semibold text-amber-700">¡Bienvenido/a! Eres nuevo en Buleje</p>
                             <p className="text-xs text-amber-600 mt-0.5">Completemos tus datos para tu primer pedido</p>
                           </div>
                         </m.div>

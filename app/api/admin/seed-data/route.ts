@@ -111,6 +111,41 @@ export async function POST(req: NextRequest) {
       { name: "Pilas Duracell AA x2", category: "Varios", price: 6.00, costPrice: 4.00, unit: "paquete", stock: 20, stockMin: 5, stockMax: 30 },
       { name: "Frugo Néctar 1L", category: "Bebidas", price: 4.50, costPrice: 3.20, unit: "caja", stock: 32, stockMin: 8, stockMax: 50 },
       { name: "Mantequilla Laive 200g", category: "Lácteos", price: 6.80, costPrice: 5.00, unit: "barra", stock: 14, stockMin: 4, stockMax: 25 },
+      // ── Frutas y verduras ──
+      { name: "Tomates Frescos 1kg", category: "Frutas y Verduras", price: 3.50, costPrice: 2.00, unit: "kg", stock: 30, stockMin: 5, stockMax: 40 },
+      { name: "Cebollas Rojas 1kg", category: "Frutas y Verduras", price: 3.00, costPrice: 1.80, unit: "kg", stock: 25, stockMin: 5, stockMax: 35 },
+      { name: "Papas Nativas 1kg", category: "Frutas y Verduras", price: 4.00, costPrice: 2.50, unit: "kg", stock: 30, stockMin: 5, stockMax: 40 },
+      { name: "Plátanos de Seda 1kg", category: "Frutas y Verduras", price: 2.50, costPrice: 1.50, unit: "kg", stock: 20, stockMin: 5, stockMax: 30 },
+      { name: "Palta Hass", category: "Frutas y Verduras", price: 5.00, costPrice: 3.50, unit: "unidad", stock: 15, stockMin: 3, stockMax: 25 },
+      { name: "Zanahoria 1kg", category: "Frutas y Verduras", price: 2.50, costPrice: 1.50, unit: "kg", stock: 20, stockMin: 5, stockMax: 30 },
+      { name: "Limones 1kg", category: "Frutas y Verduras", price: 5.00, costPrice: 3.00, unit: "kg", stock: 30, stockMin: 5, stockMax: 40 },
+      // ── Carnes ──
+      { name: "Pollo Entero", category: "Carnes", price: 12.00, costPrice: 9.00, unit: "kg", stock: 8, stockMin: 3, stockMax: 15 },
+      { name: "Carne de Res 1kg", category: "Carnes", price: 28.00, costPrice: 22.00, unit: "kg", stock: 5, stockMin: 2, stockMax: 10 },
+      // ── Más abarrotes ──
+      { name: "Arroz Extra 1kg", category: "Abarrotes", price: 5.50, costPrice: 4.20, unit: "bolsa", stock: 80, stockMin: 15, stockMax: 120 },
+      { name: "Avena 3 Ositos 500g", category: "Abarrotes", price: 4.50, costPrice: 3.20, unit: "bolsa", stock: 25, stockMin: 5, stockMax: 40 },
+      { name: "Sillao Kikko 500ml", category: "Abarrotes", price: 4.50, costPrice: 3.00, unit: "botella", stock: 15, stockMin: 3, stockMax: 25 },
+      { name: "Huevos x30", category: "Abarrotes", price: 15.00, costPrice: 11.00, unit: "bandeja", stock: 10, stockMin: 3, stockMax: 20 },
+      { name: "Pan Integral 500g", category: "Panadería", price: 5.00, costPrice: 3.50, unit: "paquete", stock: 15, stockMin: 3, stockMax: 25 },
+      { name: "Café Instantáneo Nescafé 200g", category: "Abarrotes", price: 12.00, costPrice: 9.00, unit: "frasco", stock: 10, stockMin: 3, stockMax: 20 },
+      // ── Más bebidas ──
+      { name: "Chicha Morada Naturale 1L", category: "Bebidas", price: 5.00, costPrice: 3.50, unit: "botella", stock: 20, stockMin: 5, stockMax: 35 },
+      { name: "Cerveza Cusqueña 620ml", category: "Bebidas", price: 7.50, costPrice: 5.50, unit: "botella", stock: 36, stockMin: 8, stockMax: 60 },
+      // ── Más limpieza ──
+      { name: "Detergente Bolívar 2kg", category: "Limpieza", price: 15.00, costPrice: 11.00, unit: "bolsa", stock: 20, stockMin: 5, stockMax: 35 },
+      { name: "Lavavajillas Ayudín 500ml", category: "Limpieza", price: 5.50, costPrice: 3.80, unit: "botella", stock: 15, stockMin: 3, stockMax: 25 },
+      // ── Más snacks ──
+      { name: "Galletas Oreo 6pk", category: "Snacks", price: 4.50, costPrice: 3.20, unit: "paquete", stock: 25, stockMin: 5, stockMax: 40 },
+      { name: "Chocolate Sublime", category: "Snacks", price: 2.50, costPrice: 1.80, unit: "unidad", stock: 30, stockMin: 8, stockMax: 50 },
+      // ── Cuidado personal ──
+      { name: "Shampoo Head & Shoulders 375ml", category: "Cuidado Personal", price: 16.50, costPrice: 12.00, unit: "botella", stock: 10, stockMin: 3, stockMax: 20 },
+      { name: "Pasta Dental Colgate 75ml", category: "Cuidado Personal", price: 4.50, costPrice: 3.00, unit: "tubo", stock: 18, stockMin: 5, stockMax: 30 },
+      { name: "Jabón Camay 120g", category: "Cuidado Personal", price: 2.50, costPrice: 1.60, unit: "barra", stock: 25, stockMin: 5, stockMax: 40 },
+      // ── Condimentos ──
+      { name: "Ajinomoto 100g", category: "Abarrotes", price: 2.50, costPrice: 1.70, unit: "bolsa", stock: 35, stockMin: 8, stockMax: 50 },
+      { name: "Ají Panca Molido 80g", category: "Abarrotes", price: 3.00, costPrice: 2.00, unit: "sobre", stock: 20, stockMin: 5, stockMax: 30 },
+      { name: "Comino Molido 50g", category: "Abarrotes", price: 2.00, costPrice: 1.20, unit: "sobre", stock: 25, stockMin: 5, stockMax: 35 },
     ];
 
     const products = await Promise.all(

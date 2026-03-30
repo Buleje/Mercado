@@ -32,8 +32,8 @@ export default function HeroIllustration({ className = "" }: { className?: strin
           <stop offset="100%" stopColor="#312e81" />
         </linearGradient>
         <linearGradient id="bldg2" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#2d6a4f" />
-          <stop offset="100%" stopColor="#245c43" />
+          <stop offset="0%" stopColor="#0f766e" />
+          <stop offset="100%" stopColor="#0d5f58" />
         </linearGradient>
         <filter id="glow">
           <feGaussianBlur stdDeviation="3" result="coloredBlur" />
@@ -148,10 +148,10 @@ export default function HeroIllustration({ className = "" }: { className?: strin
       <rect x="84" y="154" width="14" height="16" fill="#c7d2fe" className="win-blink3" opacity="0.55" rx="1" />
       <rect x="104" y="154" width="14" height="16" fill="#fbbf24" className="win-blink" opacity="0.45" rx="1" />
       {/* Rooftop antenna */}
-      <rect x="96" y="108" width="2" height="14" fill="#40916c" />
+      <rect x="96" y="108" width="2" height="14" fill="#0d9488" />
       <circle cx="97" cy="107" r="3" fill="#f59e0b" filter="url(#glow)" />
       {/* Sign Bodega */}
-      <rect x="64" y="200" width="62" height="20" fill="#2d6a4f" rx="4" />
+      <rect x="64" y="200" width="62" height="20" fill="#0f766e" rx="4" />
       <text x="95" y="213" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold" fontFamily="sans-serif">BODEGA</text>
 
       {/* Main building — center-right */}
@@ -209,16 +209,16 @@ export default function HeroIllustration({ className = "" }: { className?: strin
       <g className="scooter-group">
         <g className="scooter-bob">
           {/* Box / package */}
-          <rect x="14" y="287" width="18" height="14" fill="#2d6a4f" rx="2" />
-          <rect x="15" y="288" width="16" height="12" fill="none" stroke="#40916c" strokeWidth="0.8" rx="1.5" />
+          <rect x="14" y="287" width="18" height="14" fill="#0f766e" rx="2" />
+          <rect x="15" y="288" width="16" height="12" fill="none" stroke="#0d9488" strokeWidth="0.8" rx="1.5" />
           <text x="23" y="297" textAnchor="middle" fill="white" fontSize="5" fontWeight="bold" fontFamily="sans-serif">📦</text>
 
           {/* Body */}
-          <ellipse cx="20" cy="308" rx="18" ry="7" fill="#245c43" />
-          <rect x="8" y="302" width="24" height="10" fill="#2d6a4f" rx="4" />
+          <ellipse cx="20" cy="308" rx="18" ry="7" fill="#0d5f58" />
+          <rect x="8" y="302" width="24" height="10" fill="#0f766e" rx="4" />
 
           {/* Seat + rider */}
-          <rect x="18" y="298" width="12" height="5" fill="#40916c" rx="2" />
+          <rect x="18" y="298" width="12" height="5" fill="#0d9488" rx="2" />
           {/* Helmet */}
           <circle cx="26" cy="295" r="6" fill="#f59e0b" />
           <rect x="21" y="297" width="10" height="3" fill="#fbbf24" rx="1" />
@@ -228,10 +228,10 @@ export default function HeroIllustration({ className = "" }: { className?: strin
           {/* Wheels */}
           <circle cx="10" cy="313" r="7" fill="#1f2937" />
           <circle cx="10" cy="313" r="5" fill="#374151" />
-          <circle cx="10" cy="313" r="2" fill="#2d6a4f" />
+          <circle cx="10" cy="313" r="2" fill="#0f766e" />
           <circle cx="34" cy="313" r="7" fill="#1f2937" />
           <circle cx="34" cy="313" r="5" fill="#374151" />
-          <circle cx="34" cy="313" r="2" fill="#2d6a4f" />
+          <circle cx="34" cy="313" r="2" fill="#0f766e" />
 
           {/* Exhaust particles */}
           <circle cx="-2" cy="309" r="1.5" fill="rgba(255,255,255,0.3)" />

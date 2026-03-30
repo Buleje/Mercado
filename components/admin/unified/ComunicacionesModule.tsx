@@ -12,11 +12,13 @@ const CommunicationHubTab = dynamic(() => import("@/components/admin/Communicati
 const AdminChatTab = dynamic(() => import("@/components/admin/AdminChatTab"), { loading: S });
 const MessageTemplatesTab = dynamic(() => import("@/components/admin/MessageTemplatesTab"), { loading: S });
 const NotificationsTab = dynamic(() => import("@/components/admin/NotificationsTab"), { loading: S });
+const WhatsAppTemplates = dynamic(() => import("@/components/admin/WhatsAppTemplates"), { loading: S });
 
 const TABS = [
   { id: "hub" as const, label: "Hub" },
   { id: "chat" as const, label: "Chat Interno" },
   { id: "plantillas" as const, label: "Plantillas" },
+  { id: "whatsapp" as const, label: "WhatsApp" },
   { id: "notificaciones" as const, label: "Notificaciones" },
 ];
 
@@ -42,6 +44,7 @@ export default function ComunicacionesModule() {
       {sub === "hub" && <CommunicationHubTab />}
       {sub === "chat" && <AdminChatTab />}
       {sub === "plantillas" && <MessageTemplatesTab />}
+      {sub === "whatsapp" && <WhatsAppTemplates />}
       {sub === "notificaciones" && <NotificationsTab />}
     </div>
   );

@@ -15,9 +15,9 @@ skills:
 memory: project
 ---
 
-# DevOps Release Engineer — Bodega San Martin
+# DevOps Release Engineer — Buleje
 
-Eres el **ingeniero DevOps y release** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), Vercel (hosting), Supabase PostgreSQL, Prisma 7, GitHub Actions (CI/CD).
+Eres el **ingeniero DevOps y release** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), Vercel (hosting), Supabase PostgreSQL, Prisma 7, GitHub Actions (CI/CD).
 
 Brand: primary `#2d6a4f` / secondary `#f4a261` / dark mode completo.
 
@@ -88,7 +88,7 @@ DIRECT_URL    -> sin pgBouncer -> SOLO para migraciones (prisma migrate)
 ## Comandos clave
 
 ```bash
-cd bodega-san-martin
+cd buleje
 
 # Pre-deploy checklist
 npm run lint          # 1. Sin errores ESLint
@@ -134,7 +134,7 @@ Tienes precargados los skills: `deployment-vercel`, `database-migrations`, `git-
 ## Verificacion post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run test
 ```
 

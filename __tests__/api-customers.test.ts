@@ -20,7 +20,7 @@ vi.mock("@/lib/cache", () => ({
 }));
 
 const { mockApplyRateLimit } = vi.hoisted(() => ({
-  mockApplyRateLimit: vi.fn(() => null),
+  mockApplyRateLimit: vi.fn(() => null as null | ReturnType<typeof NextResponse.json>),
 }));
 vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: mockApplyRateLimit,

@@ -41,7 +41,7 @@ export default function KioskPage() {
           <div className="h-6 w-6 rounded-lg bg-primary text-white flex items-center justify-center">
             <span className="text-[10px] font-extrabold">B</span>
           </div>
-          <span className="text-xs font-bold text-gray-700">Bodega San Martín</span>
+          <span className="text-xs font-bold text-gray-700">Buleje</span>
           <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-extrabold uppercase tracking-wide">Kiosk</span>
         </div>
         <div className="flex items-center gap-2">

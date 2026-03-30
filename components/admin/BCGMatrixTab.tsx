@@ -69,8 +69,8 @@ export default function BCGMatrixTab() {
                 <span className="text-xl sm:text-2xl">{c.emoji}</span>
                 <span className={cn("font-extrabold text-sm", c.color)}>{c.label}</span>
               </div>
-              <p className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">{items.length}</p>
-              <p className="text-xs text-gray-500 dark:text-muted mt-1">{fmt(rev)} ({((rev / totalRevenue) * 100).toFixed(0)}%)</p>
+              <p className="text-2xl sm:text-3xl font-mono font-extrabold text-gray-900 dark:text-foreground">{items.length}</p>
+              <p className="text-xs text-gray-500 dark:text-muted mt-1">{fmt(rev)} ({totalRevenue > 0 ? ((rev / totalRevenue) * 100).toFixed(0) : 0}%)</p>
             </button>
           );
         })}
@@ -79,25 +79,33 @@ export default function BCGMatrixTab() {
       {/* Visual Matrix */}
       <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-6">
         <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground mb-4">Mapa Visual BCG</h3>
-        <div className="relative w-full aspect-square max-w-[500px] mx-auto">
+        <div className="relative w-full aspect-square max-w-[500px] mx-auto" style={{ minHeight: 400 }}>
           {/* Axes */}
-          <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2">
-            <div className="border-b-2 border-r-2 border-gray-200 dark:border-card-border bg-amber-50/50 dark:bg-amber-950/10 flex items-center justify-center text-xs font-bold text-amber-600 dark:text-amber-400 p-2">⭐ Estrellas</div>
-            <div className="border-b-2 border-gray-200 dark:border-card-border bg-blue-50/50 dark:bg-blue-950/10 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 p-2">❓ Interrogantes</div>
-            <div className="border-r-2 border-gray-200 dark:border-card-border bg-emerald-50/50 dark:bg-emerald-950/10 flex items-center justify-center text-xs font-bold text-emerald-600 dark:text-emerald-400 p-2">🐄 Vacas Lecheras</div>
-            <div className="bg-gray-50/50 dark:bg-gray-950/10 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400 p-2">🐕 Perros</div>
+          <div className="absolute inset-0 grid grid-cols-1 sm:grid-cols-2 grid-rows-2 rounded-xl overflow-hidden">
+            <div className="border-b-2 border-r-2 border-gray-200 dark:border-card-border bg-green-50/50 dark:bg-green-950/10 flex items-center justify-center p-2">
+              <span className="text-sm font-semibold text-green-600/40 dark:text-green-400/40">Estrellas</span>
+            </div>
+            <div className="border-b-2 border-gray-200 dark:border-card-border bg-blue-50/50 dark:bg-blue-950/10 flex items-center justify-center p-2">
+              <span className="text-sm font-semibold text-blue-600/40 dark:text-blue-400/40">Interrogantes</span>
+            </div>
+            <div className="border-r-2 border-gray-200 dark:border-card-border bg-amber-50/50 dark:bg-amber-950/10 flex items-center justify-center p-2">
+              <span className="text-sm font-semibold text-amber-600/40 dark:text-amber-400/40">Vacas Lecheras</span>
+            </div>
+            <div className="bg-red-50/50 dark:bg-red-950/10 flex items-center justify-center p-2">
+              <span className="text-sm font-semibold text-gray-500/40 dark:text-gray-400/40">Perros</span>
+            </div>
           </div>
           {/* Axis labels */}
-          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-xs font-bold text-gray-400">← Participación Mercado → Baja</div>
-          <div className="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-bold text-gray-400 whitespace-nowrap">← Tasa Crecimiento → Alta</div>
+          <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-xs font-semibold text-gray-400">Participacion (%)</div>
+          <div className="absolute -left-10 top-1/2 -translate-y-1/2 -rotate-90 text-xs font-semibold text-gray-400 whitespace-nowrap">Crecimiento (%)</div>
           {/* Product dots */}
           {PRODUCTS.map(p => {
             const pos = DOT_POSITIONS.get(p.id) ?? { x: 50, y: 50 };
             const x = pos.x;
             const y = pos.y;
-            const size = Math.max(16, Math.min(40, (p.revenue / totalRevenue) * 300));
+            const size = Math.max(24, Math.min(48, (p.revenue / totalRevenue) * 400));
             return (
-              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[8px] font-bold shadow-md hover:scale-110 transition-transform", p.quadrant === "estrella" ? "bg-amber-400 text-amber-900" : p.quadrant === "vaca" ? "bg-emerald-400 text-emerald-900" : p.quadrant === "interrogante" ? "bg-blue-400 text-blue-900" : "bg-gray-400 text-gray-900")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
+              <button key={p.id} onClick={() => setDetail(p)} title={p.name} className={cn("absolute rounded-full border-2 border-white dark:border-card flex items-center justify-center text-[9px] font-bold shadow-lg hover:scale-125 transition-transform z-10", p.quadrant === "estrella" ? "bg-green-500 text-white" : p.quadrant === "vaca" ? "bg-amber-500 text-white" : p.quadrant === "interrogante" ? "bg-blue-500 text-white" : "bg-gray-400 text-white")} style={{ left: `${x}%`, top: `${y}%`, width: size, height: size }}>
                 {p.name.slice(0, 2)}
               </button>
             );

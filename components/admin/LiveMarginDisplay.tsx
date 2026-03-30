@@ -42,14 +42,14 @@ function getLevel(marginPct: number): MarginLevel {
 
 const LEVEL_STYLES: Record<MarginLevel, { bar: string; text: string; badge: string }> = {
   good: {
-    bar: "bg-[#2d6a4f]",
-    text: "text-[#2d6a4f] dark:text-[#52b788]",
-    badge: "bg-[#2d6a4f]/10 text-[#2d6a4f] dark:text-[#52b788]",
+    bar: "bg-[#0f766e]",
+    text: "text-[#0f766e] dark:text-[#14b8a6]",
+    badge: "bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6]",
   },
   warning: {
-    bar: "bg-[#f4a261]",
-    text: "text-[#f4a261]",
-    badge: "bg-[#f4a261]/10 text-[#f4a261]",
+    bar: "bg-[#f97316]",
+    text: "text-[#f97316]",
+    badge: "bg-[#f97316]/10 text-[#f97316]",
   },
   danger: {
     bar: "bg-red-500",
@@ -128,9 +128,9 @@ export default function LiveMarginDisplay({ items }: Props) {
       className={cn(
         "rounded-2xl border-2 overflow-hidden transition-colors shadow-sm",
         level === "good"
-          ? "border-[#2d6a4f]/30"
+          ? "border-[#0f766e]/30"
           : level === "warning"
-            ? "border-[#f4a261]/30"
+            ? "border-[#f97316]/30"
             : "border-red-300 dark:border-red-800"
       )}
     >
@@ -144,9 +144,9 @@ export default function LiveMarginDisplay({ items }: Props) {
             className={cn(
               "p-2 rounded-xl",
               level === "good"
-                ? "bg-[#2d6a4f]/10"
+                ? "bg-[#0f766e]/10"
                 : level === "warning"
-                  ? "bg-[#f4a261]/10"
+                  ? "bg-[#f97316]/10"
                   : "bg-red-50 dark:bg-red-950/30"
             )}
           >
@@ -154,9 +154,9 @@ export default function LiveMarginDisplay({ items }: Props) {
               className={cn(
                 "w-5 h-5",
                 level === "good"
-                  ? "text-[#2d6a4f]"
+                  ? "text-[#0f766e]"
                   : level === "warning"
-                    ? "text-[#f4a261]"
+                    ? "text-[#f97316]"
                     : "text-red-500"
               )}
             />

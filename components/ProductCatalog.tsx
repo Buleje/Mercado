@@ -21,6 +21,7 @@ import type { Product } from "@/data/products";
 import { ProductCard } from "./ProductCard";
 import { useCachedData } from "@/hooks/use-cached-data";
 import { levenshteinDistance } from "@/hooks/use-advanced-search";
+import { FixedSizeList, type ListChildComponentProps } from "react-window";
 
 // QuickViewModal loaded on-demand only when user clicks "Vista rápida"
 const QuickViewModal = dynamic(() => import("@/components/QuickViewModal"), { ssr: false });
@@ -270,17 +271,43 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Fetch live products from API (admin changes reflect here) - with caching
+  // Fetch live products from API (admin changes reflect here) - with in-memory + sessionStorage caching
   const { data: apiProducts, isLoading: isLoadingProducts, isError: apiError, refetch: refetchProducts } = useCachedData<Array<LiveProduct & { active?: boolean }>>(
     "products",
     async () => {
       const response = await fetch("/api/products");
-      if (!response.ok) return [];
-      return response.json();
+      if (!response.ok) {
+        // Fallback: try sessionStorage cache
+        try {
+          const cached = sessionStorage.getItem("products-cache");
+          if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < 5 * 60 * 1000) return data;
+          }
+        } catch { /* ignore */ }
+        return [];
+      }
+      const data = await response.json();
+      // Persist to sessionStorage for cross-navigation cache
+      try {
+        sessionStorage.setItem("products-cache", JSON.stringify({ data, timestamp: Date.now() }));
+      } catch { /* quota exceeded — ignore */ }
+      return data;
     },
     {
       staleTime: 2 * 60 * 1000, // 2 minutes - products don't change that often
       refetchOnFocus: true, // Refetch when user returns to tab
+      initialData: (() => {
+        // Seed from sessionStorage on mount for instant display
+        try {
+          const cached = sessionStorage.getItem("products-cache");
+          if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < 5 * 60 * 1000) return data;
+          }
+        } catch { /* ignore */ }
+        return undefined;
+      })(),
     }
   );
 
@@ -411,20 +438,32 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
   }, [search]);
 
   const searchTerm = debouncedSearch;
-  const filteredProducts = useMemo(() => sortProducts(
-    (searchTerm
-      ? productList
-          .map(p => ({ p, score: fuzzyScore(p.name, searchTerm) + fuzzyScore(p.category, searchTerm) }))
-          .filter(({ score }) => score > 0)
-          .sort((a, b) => b.score - a.score)
-          .map(({ p }) => p)
-      : productList
-    )
-      .filter(p => p.price >= priceRange[0] && p.price <= priceRange[1])
-      .filter(p => !filterOnSale || (p.badge && /\d+%|oferta|promo|sale/i.test(p.badge)))
-      .filter(p => !filterAvailable || p.stock === undefined || p.stock > 0),
-    sort
-  ), [searchTerm, productList, priceRange, filterOnSale, filterAvailable, sort]);
+  // Mejora 13: Products out of stock go to the end
+  const filteredProducts = useMemo(() => {
+    const sorted = sortProducts(
+      (searchTerm
+        ? productList
+            .map(p => ({ p, score: fuzzyScore(p.name, searchTerm) + fuzzyScore(p.category, searchTerm) }))
+            .filter(({ score }) => score > 0)
+            .sort((a, b) => b.score - a.score)
+            .map(({ p }) => p)
+        : productList
+      )
+        .filter(p => p.price >= priceRange[0] && p.price <= priceRange[1])
+        .filter(p => !filterOnSale || (p.badge && /\d+%|oferta|promo|sale/i.test(p.badge)))
+        .filter(p => !filterAvailable || p.stock === undefined || p.stock > 0),
+      sort
+    );
+    // Push out-of-stock products to the end
+    sorted.sort((a, b) => {
+      const aStock = a.stock ?? 1;
+      const bStock = b.stock ?? 1;
+      if (aStock === 0 && bStock > 0) return 1;
+      if (bStock === 0 && aStock > 0) return -1;
+      return 0;
+    });
+    return sorted;
+  }, [searchTerm, productList, priceRange, filterOnSale, filterAvailable, sort]);
 
   const handleQuickView = useCallback((p: LiveProduct) => setQuickViewProduct(p), []);
 
@@ -553,40 +592,115 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               <span className="hidden sm:inline">✅ Disponible</span>
               <span className="sm:hidden">✅</span>
             </button>
-            {/* U1: Grid/List toggle */}
-            <div className="flex items-center bg-gray-100 dark:bg-accent rounded-xl p-0.5 shadow-sm">
+            {/* U1: Grid/List toggle — enhanced with active indicator */}
+            <div className="flex items-center bg-gray-100 dark:bg-accent rounded-xl p-0.5 shadow-sm relative">
               <button
                 onClick={() => { setViewMode("grid"); localStorage.setItem("bsm-view-mode", "grid"); }}
-                className={cn("p-2.5 rounded-lg transition-all", viewMode === "grid" ? "bg-white dark:bg-card text-primary shadow-sm" : "text-gray-400 hover:text-gray-600")}
+                className={cn(
+                  "p-2.5 rounded-lg transition-all relative z-10",
+                  viewMode === "grid"
+                    ? "bg-white dark:bg-card text-primary shadow-sm font-bold"
+                    : "text-gray-400 hover:text-gray-600"
+                )}
                 aria-label="Vista cuadrícula"
+                title="Vista cuadrícula"
               >
                 <LayoutGrid className="h-4 w-4" />
               </button>
               <button
                 onClick={() => { setViewMode("list"); localStorage.setItem("bsm-view-mode", "list"); }}
-                className={cn("p-2.5 rounded-lg transition-all", viewMode === "list" ? "bg-white dark:bg-card text-primary shadow-sm" : "text-gray-400 hover:text-gray-600")}
+                className={cn(
+                  "p-2.5 rounded-lg transition-all relative z-10",
+                  viewMode === "list"
+                    ? "bg-white dark:bg-card text-primary shadow-sm font-bold"
+                    : "text-gray-400 hover:text-gray-600"
+                )}
                 aria-label="Vista lista"
+                title="Vista lista"
               >
                 <List className="h-4 w-4" />
               </button>
+              {/* Active count indicator */}
+              <span className="ml-1 pr-2 text-[10px] font-bold text-muted hidden sm:inline">
+                {viewMode === "grid" ? "Grid" : "Lista"}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Price Range Filter */}
+        {/* Price Range Filter — Dual range slider */}
         {showPriceFilter && (
           <div className="max-w-3xl mx-auto mb-6 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4 shadow-sm animate-[fadeUp_0.2s_ease-out]">
+            <style>{`
+              .price-range-slider { position: relative; height: 28px; }
+              .price-range-slider input[type="range"] {
+                position: absolute; width: 100%; top: 50%; transform: translateY(-50%);
+                pointer-events: none; -webkit-appearance: none; appearance: none;
+                background: transparent; height: 6px; margin: 0;
+              }
+              .price-range-slider input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none; appearance: none;
+                width: 18px; height: 18px; border-radius: 50%;
+                background: #0f766e; border: 3px solid #fff;
+                box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+                cursor: grab; pointer-events: all;
+                transition: transform 0.15s, box-shadow 0.15s;
+              }
+              .price-range-slider input[type="range"]::-webkit-slider-thumb:hover {
+                transform: scale(1.2); box-shadow: 0 2px 10px rgba(45,106,79,0.4);
+              }
+              .price-range-slider input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; }
+              .price-range-slider input[type="range"]::-moz-range-thumb {
+                width: 18px; height: 18px; border-radius: 50%;
+                background: #0f766e; border: 3px solid #fff;
+                box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+                cursor: grab; pointer-events: all;
+              }
+              .price-range-track {
+                position: absolute; top: 50%; transform: translateY(-50%);
+                height: 6px; border-radius: 3px;
+              }
+            `}</style>
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-foreground">Filtrar por precio</span>
-              <span className="text-sm font-bold text-primary">S/{priceRange[0].toFixed(0)} — S/{priceRange[1].toFixed(0)}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-primary bg-primary/8 px-2.5 py-0.5 rounded-lg">S/{priceRange[0].toFixed(0)}</span>
+                <span className="text-xs text-muted">—</span>
+                <span className="text-sm font-bold text-primary bg-primary/8 px-2.5 py-0.5 rounded-lg">S/{priceRange[1].toFixed(0)}</span>
+              </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-xs text-muted w-10">S/0</span>
-              <div className="flex-1 flex flex-col gap-2">
-                <input type="range" min={0} max={maxPrice} step={1} value={priceRange[0]} onChange={(e) => setPriceRange([Math.min(+e.target.value, priceRange[1] - 1), priceRange[1]])} className="w-full accent-primary" />
-                <input type="range" min={0} max={maxPrice} step={1} value={priceRange[1]} onChange={(e) => setPriceRange([priceRange[0], Math.max(+e.target.value, priceRange[0] + 1)])} className="w-full accent-primary" />
+              <span className="text-xs text-muted font-semibold w-10">S/0</span>
+              <div className="flex-1 price-range-slider">
+                {/* Background track */}
+                <div className="price-range-track bg-gray-200 dark:bg-surface" style={{ left: 0, right: 0 }} />
+                {/* Active range track */}
+                <div
+                  className="price-range-track"
+                  style={{
+                    left: `${(priceRange[0] / maxPrice) * 100}%`,
+                    right: `${100 - (priceRange[1] / maxPrice) * 100}%`,
+                    background: "linear-gradient(90deg, #f97316, #0f766e)",
+                  }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={maxPrice}
+                  step={1}
+                  value={priceRange[0]}
+                  onChange={(e) => setPriceRange([Math.min(+e.target.value, priceRange[1] - 1), priceRange[1]])}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={maxPrice}
+                  step={1}
+                  value={priceRange[1]}
+                  onChange={(e) => setPriceRange([priceRange[0], Math.max(+e.target.value, priceRange[0] + 1)])}
+                />
               </div>
-              <span className="text-xs text-muted w-14 text-right">S/{maxPrice}</span>
+              <span className="text-xs text-muted font-semibold w-14 text-right">S/{maxPrice}</span>
             </div>
           </div>
         )}
@@ -691,53 +805,130 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-gray-500">
                     {filteredProducts.length} resultado{filteredProducts.length !== 1 ? "s" : ""} para &ldquo;{search.trim()}&rdquo;
-                    {totalSearchPages > 1 && (
+                    {filteredProducts.length <= 50 && totalSearchPages > 1 && (
                       <span className="ml-2 text-gray-400">· página {searchPage} de {totalSearchPages}</span>
+                    )}
+                    {filteredProducts.length > 50 && viewMode === "list" && (
+                      <span className="ml-2 text-gray-400">· scroll virtualizado</span>
                     )}
                   </p>
                 </div>
-                <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3" : "space-y-2"}>
-                  {paginatedSearchProducts.map((product) => (
-                    viewMode === "list" ? (
-                      <ListProductRow key={product.id} product={product} onQuickView={handleQuickView} />
-                    ) : (
-                      <ProductCard key={product.id} product={product} onQuickView={handleQuickView} />
-                    )
-                  ))}
-                </div>
-                {totalSearchPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-6 pt-5 border-t border-gray-100 dark:border-card-border">
-                    <button
-                      disabled={searchPage <= 1}
-                      onClick={() => { setSearchPage(p => p - 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    >
-                      ← Anterior
-                    </button>
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: totalSearchPages }, (_, i) => i + 1).map(pg => (
-                        <button
-                          key={pg}
-                          onClick={() => { setSearchPage(pg); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
-                          className={cn(
-                            "h-8 w-8 rounded-full text-sm font-bold transition-all",
-                            pg === searchPage
-                              ? "bg-primary text-white shadow-md shadow-primary/25"
-                              : "text-gray-500 hover:bg-primary/10 hover:text-primary"
-                          )}
-                        >
-                          {pg}
-                        </button>
+
+                {/* Virtualización con react-window cuando hay más de 50 resultados en vista lista */}
+                {filteredProducts.length > 50 && viewMode === "list" ? (
+                  (() => {
+                    const ROW_HEIGHT = 80; // altura fija por fila ListProductRow (px)
+                    const VirtualRow = ({ index, style }: ListChildComponentProps) => (
+                      <div style={style} className="px-0 py-1">
+                        <ListProductRow
+                          product={filteredProducts[index]}
+                          onQuickView={handleQuickView}
+                        />
+                      </div>
+                    );
+                    return (
+                      <FixedSizeList
+                        height={typeof window !== "undefined" ? Math.min(filteredProducts.length * ROW_HEIGHT, window.innerHeight - 200) : 600}
+                        itemCount={filteredProducts.length}
+                        itemSize={ROW_HEIGHT}
+                        width="100%"
+                        overscanCount={5}
+                        className="scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
+                      >
+                        {VirtualRow}
+                      </FixedSizeList>
+                    );
+                  })()
+                ) : filteredProducts.length > 50 && viewMode === "grid" ? (
+                  /* Grid con más de 50 resultados: mantener paginación normal */
+                  <>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3">
+                      {paginatedSearchProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} onQuickView={handleQuickView} />
                       ))}
                     </div>
-                    <button
-                      disabled={searchPage >= totalSearchPages}
-                      onClick={() => { setSearchPage(p => p + 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    >
-                      Siguiente →
-                    </button>
-                  </div>
+                    {totalSearchPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-6 pt-5 border-t border-gray-100 dark:border-card-border">
+                        <button
+                          disabled={searchPage <= 1}
+                          onClick={() => { setSearchPage(p => p - 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          ← Anterior
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: totalSearchPages }, (_, i) => i + 1).map(pg => (
+                            <button
+                              key={pg}
+                              onClick={() => { setSearchPage(pg); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                              className={cn(
+                                "h-8 w-8 rounded-full text-sm font-bold transition-all",
+                                pg === searchPage
+                                  ? "bg-primary text-white shadow-md shadow-primary/25"
+                                  : "text-gray-500 hover:bg-primary/10 hover:text-primary"
+                              )}
+                            >
+                              {pg}
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          disabled={searchPage >= totalSearchPages}
+                          onClick={() => { setSearchPage(p => p + 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          Siguiente →
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  /* Render normal para <=50 resultados (grid o lista) */
+                  <>
+                    <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3" : "space-y-2"}>
+                      {paginatedSearchProducts.map((product) => (
+                        viewMode === "list" ? (
+                          <ListProductRow key={product.id} product={product} onQuickView={handleQuickView} />
+                        ) : (
+                          <ProductCard key={product.id} product={product} onQuickView={handleQuickView} />
+                        )
+                      ))}
+                    </div>
+                    {totalSearchPages > 1 && (
+                      <div className="flex items-center justify-center gap-2 mt-6 pt-5 border-t border-gray-100 dark:border-card-border">
+                        <button
+                          disabled={searchPage <= 1}
+                          onClick={() => { setSearchPage(p => p - 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          ← Anterior
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: totalSearchPages }, (_, i) => i + 1).map(pg => (
+                            <button
+                              key={pg}
+                              onClick={() => { setSearchPage(pg); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                              className={cn(
+                                "h-8 w-8 rounded-full text-sm font-bold transition-all",
+                                pg === searchPage
+                                  ? "bg-primary text-white shadow-md shadow-primary/25"
+                                  : "text-gray-500 hover:bg-primary/10 hover:text-primary"
+                              )}
+                            >
+                              {pg}
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          disabled={searchPage >= totalSearchPages}
+                          onClick={() => { setSearchPage(p => p + 1); document.getElementById("productos")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-primary hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                        >
+                          Siguiente →
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )

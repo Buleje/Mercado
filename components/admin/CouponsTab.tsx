@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Ticket, Plus, Trash2, Check, X, Loader2, Copy, Gift, Sparkles, Zap, UserPlus, PartyPopper, Settings, Calendar } from "lucide-react";
+import { Ticket, Plus, Trash2, Check, X, Loader2, Copy, Gift, Sparkles, Zap, UserPlus, PartyPopper, Settings, Calendar, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Coupon = {
@@ -66,6 +66,8 @@ export default function CouponsTab() {
   });
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
   const [templatePattern, setTemplatePattern] = useState("BDAY{MMDD}{RND3}");
+  const [whatsappCoupon, setWhatsappCoupon] = useState<Coupon | null>(null);
+  const [whatsappPhone, setWhatsappPhone] = useState("");
 
   const load = useCallback(() => {
     fetch("/api/coupons").then(r => r.json()).then(setCoupons).catch(() => {}).finally(() => setLoading(false));
@@ -135,6 +137,22 @@ export default function CouponsTab() {
     const code = templatePattern.replace("{MMDD}", mmdd).replace("{RND3}", rnd);
     alert(`Código generado: ${code}`);
     return code;
+  };
+
+  const buildWhatsappMsg = (c: Coupon) => {
+    const descuento = c.discountType === "percent" ? `${c.discountValue}%` : c.discountType === "giftcard" ? `Gift Card S/${c.discountValue}` : `S/${c.discountValue}`;
+    const expira = c.expiresAt ? `\nValido hasta: ${new Date(c.expiresAt).toLocaleDateString("es-PE")}` : "";
+    return `🎟 ¡Cupon especial de Buleje!\nUsa el codigo: ${c.code}\nDescuento: ${descuento}${expira}\n¡No te lo pierdas! 🛒`;
+  };
+
+  const sendWhatsapp = (phone: string, msg: string) => {
+    const cleanPhone = phone.replace(/\D/g, "");
+    const fullPhone = cleanPhone.startsWith("51") ? cleanPhone : `51${cleanPhone}`;
+    window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
+  const copyWhatsappMsg = (c: Coupon) => {
+    navigator.clipboard.writeText(buildWhatsappMsg(c));
   };
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -315,6 +333,20 @@ export default function CouponsTab() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                onClick={() => { setWhatsappCoupon(c); setWhatsappPhone(""); }}
+                className="p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition"
+                title="Enviar por WhatsApp"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => copyWhatsappMsg(c)}
+                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900/20 transition"
+                title="Copiar mensaje"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
               <button onClick={() => toggleActive(c)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition", c.active ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200")}>
                 {c.active ? "Desactivar" : "Activar"}
               </button>
@@ -383,6 +415,59 @@ export default function CouponsTab() {
             <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-3">
               <button onClick={() => setShowRuleConfig(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cancelar</button>
               <button onClick={saveRuleConfig} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-primary hover:bg-primary-dark transition-colors">Guardar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── WhatsApp Send Modal ──────────────────────────────────────────── */}
+      {whatsappCoupon && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4" style={{ zIndex: 100 }} onClick={() => setWhatsappCoupon(null)}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
+              <div>
+                <h3 className="font-extrabold text-gray-900 dark:text-foreground text-lg">Enviar cupon por WhatsApp</h3>
+                <p className="text-xs text-gray-500 dark:text-muted">Codigo: <span className="font-mono font-bold text-primary">{whatsappCoupon.code}</span></p>
+              </div>
+              <button onClick={() => setWhatsappCoupon(null)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              {/* Preview del mensaje */}
+              <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3">
+                <p className="text-xs text-gray-700 dark:text-foreground whitespace-pre-line">{buildWhatsappMsg(whatsappCoupon)}</p>
+              </div>
+              {/* Enviar a un cliente */}
+              <div>
+                <label className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide">Enviar a un cliente</label>
+                <div className="flex gap-2 mt-1">
+                  <input
+                    type="tel"
+                    value={whatsappPhone}
+                    onChange={e => setWhatsappPhone(e.target.value)}
+                    placeholder="Ej: 916409675"
+                    className="flex-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary bg-white dark:bg-surface"
+                  />
+                  <button
+                    onClick={() => { if (whatsappPhone.trim()) { sendWhatsapp(whatsappPhone, buildWhatsappMsg(whatsappCoupon)); } }}
+                    disabled={!whatsappPhone.trim()}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 transition-colors inline-flex items-center gap-1"
+                  >
+                    <MessageCircle className="h-4 w-4" /> Enviar
+                  </button>
+                </div>
+              </div>
+              {/* Copiar mensaje */}
+              <button
+                onClick={() => { copyWhatsappMsg(whatsappCoupon); }}
+                className="w-full py-2.5 rounded-xl text-sm font-bold text-primary bg-primary/10 hover:bg-primary/20 transition-colors inline-flex items-center justify-center gap-2"
+              >
+                <Copy className="h-4 w-4" /> Copiar mensaje al portapapeles
+              </button>
+            </div>
+            <div className="px-5 py-3 border-t border-gray-100 dark:border-card-border">
+              <button onClick={() => setWhatsappCoupon(null)} className="w-full py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 transition-colors">Cerrar</button>
             </div>
           </div>
         </div>

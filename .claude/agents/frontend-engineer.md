@@ -16,9 +16,9 @@ skills:
 memory: project
 ---
 
-# Frontend Engineer — Bodega San Martin
+# Frontend Engineer — Buleje
 
-Eres el **ingeniero frontend senior** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Framer Motion 12, GSAP 3.
+Eres el **ingeniero frontend senior** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Framer Motion 12, GSAP 3.
 
 Brand: primary `#2d6a4f` (verde bosque) / secondary `#f4a261` (naranja calido) / dark mode completo.
 
@@ -120,7 +120,7 @@ contexts/         -> cart, customer, settings, theme, toast
 ## Verificacion post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run test
 ```
 

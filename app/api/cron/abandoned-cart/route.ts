@@ -5,6 +5,7 @@ import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "@/lib/create-notification";
 
 /**
  * GET /api/cron/abandoned-cart
@@ -13,6 +14,7 @@ import { prisma } from "@/lib/prisma";
  * Usa la tabla SavedCart (customerPhone, itemsJson, updatedAt).
  * Retorna JSON con la lista de clientes y sus productos para
  * que un proceso externo (WhatsApp, etc.) envie el recordatorio.
+ * Tambien crea notificaciones admin para el Notification Center.
  *
  * Sugerencia vercel.json: "0 *\/2 * * *" (cada 2 horas)
  * Autorizacion: Bearer <CRON_SECRET>
@@ -35,6 +37,7 @@ type AbandonedCartResult = {
   items: CartItem[];
   totalItems: number;
   estimatedValue: number;
+  whatsappUrl: string;
   whatsappText: string;
 };
 
@@ -48,7 +51,12 @@ function buildWhatsappText(name: string | null, items: CartItem[]): string {
     })
     .join("\n");
   const more = items.length > 3 ? `\n...y ${items.length - 3} mas` : "";
-  return `${greeting}, tienes productos esperando en Bodega San Martin:\n${itemLines}${more}\n\nCompleta tu pedido aqui: ${process.env.NEXT_PUBLIC_APP_URL ?? "https://bodega.san-martin.pe"}`;
+  return `${greeting}, tienes productos esperando en Buleje:\n${itemLines}${more}\n\nCompleta tu pedido aqui: ${process.env.NEXT_PUBLIC_APP_URL ?? "https://bodega.san-martin.pe"}`;
+}
+
+function buildWhatsappUrl(phone: string, text: string): string {
+  const cleanPhone = phone.replace(/[^0-9]/g, "");
+  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
 }
 
 function estimateValue(items: CartItem[]): number {
@@ -70,11 +78,12 @@ export async function GET(req: NextRequest) {
   try {
     const result = await withCronRetry("abandoned-cart", async () => {
       const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 horas atras
+      const maxAge = new Date(Date.now() - 24 * 60 * 60 * 1000); // maximo 24 horas
 
-      // Buscar carritos guardados actualizados hace mas de 2 horas
+      // Buscar carritos guardados actualizados hace mas de 2 horas pero menos de 24
       const carts = await prisma.savedCart.findMany({
         where: {
-          updatedAt: { lt: cutoff },
+          updatedAt: { lt: cutoff, gt: maxAge },
           // Solo carritos con contenido
           NOT: { itemsJson: "[]" },
         },
@@ -88,10 +97,11 @@ export async function GET(req: NextRequest) {
 
       if (carts.length === 0) {
         logger.info("[cron/abandoned-cart] Sin carritos abandonados");
-        return { total: 0, carts: [] };
+        return { total: 0, carts: [], notificationsCreated: 0 };
       }
 
       const now = Date.now();
+      let notificationsCreated = 0;
 
       const abandonados: AbandonedCartResult[] = carts.flatMap((cart) => {
         let items: CartItem[] = [];
@@ -106,6 +116,7 @@ export async function GET(req: NextRequest) {
 
         const minutesAbandoned = Math.floor((now - cart.updatedAt.getTime()) / 60000);
         const customerName = cart.customer?.name ?? null;
+        const whatsappText = buildWhatsappText(customerName, items);
 
         return [
           {
@@ -116,14 +127,32 @@ export async function GET(req: NextRequest) {
             items,
             totalItems: items.length,
             estimatedValue: estimateValue(items),
-            whatsappText: buildWhatsappText(customerName, items),
+            whatsappUrl: buildWhatsappUrl(cart.customerPhone, whatsappText),
+            whatsappText,
           } satisfies AbandonedCartResult,
         ];
       });
 
-      logger.info(`[cron/abandoned-cart] ${abandonados.length} carritos abandonados detectados`);
+      // Crear notificaciones admin para cada carrito abandonado
+      for (const cart of abandonados) {
+        const displayName = cart.customerName || cart.customerPhone;
+        const valorStr = `S/${cart.estimatedValue.toFixed(2)}`;
+        createNotification({
+          tenantId: "main",
+          type: "CARRITO_ABANDONADO",
+          severity: cart.estimatedValue > 100 ? "HIGH" : "MEDIUM",
+          title: `Carrito abandonado: ${displayName}`,
+          body: `${displayName} dejo un carrito con ${cart.totalItems} producto${cart.totalItems !== 1 ? "s" : ""} (${valorStr}). Hace ${Math.floor(cart.minutesAbandoned / 60)}h ${cart.minutesAbandoned % 60}min.`,
+          actionUrl: cart.whatsappUrl,
+          actionLabel: "Contactar por WhatsApp",
+          entityId: `abandoned-${cart.customerPhone}`,
+        }).catch(() => {});
+        notificationsCreated++;
+      }
 
-      return { total: abandonados.length, carts: abandonados };
+      logger.info(`[cron/abandoned-cart] ${abandonados.length} carritos abandonados detectados, ${notificationsCreated} notificaciones creadas`);
+
+      return { total: abandonados.length, carts: abandonados, notificationsCreated };
     });
 
     return NextResponse.json({ ok: true, ...result });

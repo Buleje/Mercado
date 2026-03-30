@@ -123,7 +123,7 @@ const sampleDoc: SunatDocument = {
 describe("generateXML", () => {
   beforeEach(() => {
     process.env.RUC_EMISOR = "20123456789";
-    process.env.RAZON_SOCIAL_EMISOR = "Bodega San Martín";
+    process.env.RAZON_SOCIAL_EMISOR = "Buleje";
   });
 
   // 11. Genera string con tags UBL esperados
@@ -159,7 +159,7 @@ describe("generateXML", () => {
 describe("SunatDocument serie por tipo", () => {
   beforeEach(() => {
     process.env.RUC_EMISOR = "20123456789";
-    process.env.RAZON_SOCIAL_EMISOR = "Bodega San Martín";
+    process.env.RAZON_SOCIAL_EMISOR = "Buleje";
   });
 
   // 14. Boleta (03/B001) y factura (01/F001) tienen identificadores distintos en el XML
@@ -185,7 +185,7 @@ describe("SunatDocument serie por tipo", () => {
 describe("moneda en comprobante", () => {
   beforeEach(() => {
     process.env.RUC_EMISOR = "20123456789";
-    process.env.RAZON_SOCIAL_EMISOR = "Bodega San Martín";
+    process.env.RAZON_SOCIAL_EMISOR = "Buleje";
   });
 
   // 15. PEN por defecto y USD cuando se especifica

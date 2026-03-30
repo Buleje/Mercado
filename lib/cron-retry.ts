@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * Wraps a cron job function with retry logic and dead-letter logging.
@@ -16,7 +17,7 @@ export async function withCronRetry<T>(
       return await fn();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.warn(`[cron/${jobName}] Attempt ${attempt}/${maxRetries} failed: ${message}`);
+      logger.warn(`[cron/${jobName}] Attempt failed`, { jobName, attempt, maxRetries, error: message });
 
       if (attempt === maxRetries) {
         // Dead-letter: log the permanent failure

@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 
   // Verificar configuración del emisor
   const rucEmisor = process.env.RUC_EMISOR ?? "";
-  const razonSocial = process.env.RAZON_SOCIAL_EMISOR ?? "Bodega San Martín";
+  const razonSocial = process.env.RAZON_SOCIAL_EMISOR ?? "Buleje";
 
   if (!rucEmisor) {
     return NextResponse.json(
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
     orderId,
     tipoDoc,
     tenantId: auth.tenantId,
-    userId: auth.userId,
+    username: auth.username,
   });
 
   try {
@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Registrar la emisión en actividad
-    logActivity(auth.userId, "emit_comprobante", "invoice", orderId, {
+    logActivity(auth.username, "emit_comprobante", "invoice", orderId, {
       tipo,
       serie,
       correlativo,

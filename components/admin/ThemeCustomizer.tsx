@@ -24,8 +24,8 @@ type Preset = {
 const PRESETS: Preset[] = [
   {
     id:   "bodega",
-    name: "Bodega San Martin",
-    colors: { primary: "#2d6a4f", secondary: "#f4a261", background: "#f9fafb", text: "#111827" },
+    name: "Buleje",
+    colors: { primary: "#0f766e", secondary: "#f97316", background: "#f9fafb", text: "#111827" },
   },
   {
     id:   "moderno",
@@ -113,7 +113,7 @@ function ColorField({
           if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onChange(v);
         }}
         maxLength={7}
-        className="w-24 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/40"
+        className="w-24 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
       />
     </div>
   );
@@ -132,7 +132,7 @@ function LivePreview({ colors }: { colors: ThemeColors }) {
         className="px-4 py-3 flex items-center justify-between"
         style={{ backgroundColor: colors.primary }}
       >
-        <span className="text-white text-sm font-semibold">Bodega San Martin</span>
+        <span className="text-white text-sm font-semibold">Buleje</span>
         <div className="flex gap-2">
           <div className="w-2 h-2 rounded-full bg-white/40" />
           <div className="w-2 h-2 rounded-full bg-white/40" />
@@ -254,7 +254,7 @@ export default function ThemeCustomizer() {
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
                     activePreset === preset.id
-                      ? "border-[#2d6a4f] bg-[#2d6a4f]/10 text-[#2d6a4f] dark:text-[#4a9e78]"
+                      ? "border-[#0f766e] bg-[#0f766e]/10 text-[#0f766e] dark:text-[#4a9e78]"
                       : "border-gray-200 dark:border-card-border text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                   )}
                 >
@@ -312,7 +312,7 @@ export default function ThemeCustomizer() {
               onClick={handleSave}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors",
-                saved ? "bg-emerald-600" : "bg-[#2d6a4f] hover:bg-[#245a41]"
+                saved ? "bg-emerald-600" : "bg-[#0f766e] hover:bg-[#245a41]"
               )}
             >
               {saved ? <Check className="w-4 h-4" /> : null}

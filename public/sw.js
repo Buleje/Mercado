@@ -11,6 +11,8 @@ const STATIC_URLS = [
   "/tienda/categoria/limpieza",
   "/manifest.webmanifest",
   "/offline.html",
+  "/offline",
+  "/admin",
 ];
 const API_CACHE = "bsm-api-v4";
 const IMG_CACHE = "bsm-img-v4";
@@ -216,7 +218,7 @@ function trimCache(cacheName, maxItems) {
 
 // ── Web Push ──────────────────────────────────────────────────────
 self.addEventListener("push", (event) => {
-  let data = { title: "Bodega San Martín", body: "Tienes una nueva notificación", url: "/", icon: "/icons/icon-192x192.png" };
+  let data = { title: "Buleje", body: "Tienes una nueva notificación", url: "/", icon: "/icons/icon-192x192.png" };
   if (event.data) {
     try { data = { ...data, ...JSON.parse(event.data.text()) }; } catch {}
   }

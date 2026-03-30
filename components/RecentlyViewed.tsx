@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, startTransition } from "react";
 import Image from "next/image";
-import { Clock, ShoppingCart, Package, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
+import { Clock, ShoppingCart, Package, ChevronLeft, ChevronRight, Minus, Plus, X } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import type { Product } from "@/data/products";
@@ -27,11 +27,14 @@ export function trackView(product: Product) {
 export default function RecentlyViewed() {
   const [items, setItems] = useState<Product[]>([]);
   const [scrollIdx, setScrollIdx] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const { addItem, items: cartItems, updateQty } = useCart();
   const { showToast } = useToast();
 
   useEffect(() => {
     startTransition(() => setItems(getRecent()));
+    // Fade-in after mount
+    requestAnimationFrame(() => setMounted(true));
     // Re-check when product is viewed (custom event)
     const handler = () => startTransition(() => setItems(getRecent()));
     window.addEventListener("bsm:productViewed", handler);
@@ -43,18 +46,28 @@ export default function RecentlyViewed() {
     setItems([]);
   }, []);
 
+  const removeItem = useCallback((productId: number) => {
+    const updated = getRecent().filter(p => p.id !== productId);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    startTransition(() => setItems(updated));
+  }, []);
+
   if (items.length === 0) return null;
 
   const visibleCount = 6; // 6 on desktop
   const maxScroll = Math.max(0, items.length - visibleCount);
 
   return (
-    <section className="py-10 sm:py-14 bg-white dark:bg-background">
+    <section
+      className="py-10 sm:py-14 bg-white dark:bg-background transition-opacity duration-500"
+      style={{ opacity: mounted ? 1 : 0 }}
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-primary" />
             <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">Vistos recientemente</h2>
+            <span className="text-xs text-muted font-medium">({items.length})</span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -92,7 +105,15 @@ export default function RecentlyViewed() {
                 key={product.id}
                 className="shrink-0 w-[calc(33.333%-6px)] sm:w-[calc(25%-6px)] lg:w-[calc(16.666%-7px)]"
               >
-                <div className="group bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                <div className="group relative bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                  {/* Remove button */}
+                  <button
+                    onClick={() => removeItem(product.id)}
+                    className="absolute top-1.5 right-1.5 z-10 h-6 w-6 rounded-full bg-black/40 backdrop-blur-sm text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
+                    aria-label={`Eliminar ${product.name} del historial`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                   <div className="relative aspect-square bg-gray-50 dark:bg-surface overflow-hidden">
                     {product.image ? (
                       <Image

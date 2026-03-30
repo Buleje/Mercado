@@ -62,7 +62,7 @@ const TYPE_META: Record<string, { label: string; color: string; bg: string; dir:
   venta: { label: "Venta POS", color: "text-amber-700 dark:text-amber-400", bg: "bg-amber-100 dark:bg-amber-900/30", dir: "out" },
   venta_online: { label: "Venta Online", color: "text-orange-700 dark:text-orange-400", bg: "bg-orange-100 dark:bg-orange-900/30", dir: "out" },
   ajuste_negativo: { label: "Ajuste (-)", color: "text-red-700 dark:text-red-400", bg: "bg-red-100 dark:bg-red-900/30", dir: "out" },
-  merma: { label: "Merma", color: "text-rose-700 dark:text-rose-400", bg: "bg-rose-100 dark:bg-rose-900/30", dir: "out" },
+  merma: { label: "Pérdida", color: "text-rose-700 dark:text-rose-400", bg: "bg-rose-100 dark:bg-rose-900/30", dir: "out" },
   transferencia: { label: "Transferencia", color: "text-violet-700 dark:text-violet-400", bg: "bg-violet-100 dark:bg-violet-900/30", dir: "out" },
 };
 
@@ -89,15 +89,15 @@ function ModuleTooltip() {
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         className="text-gray-400 hover:text-primary transition-colors focus:outline-none"
-        aria-label="Ayuda sobre Kardex"
+        aria-label="Ayuda sobre Movimientos"
       >
         <Info className="h-4 w-4" />
       </button>
       {open && (
         <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 text-xs leading-relaxed shadow-xl dark:border-card-border dark:bg-card">
-          <p className="mb-2 text-sm font-extrabold text-gray-900 dark:text-foreground">Kardex de Inventario</p>
-          <p className="mb-3 text-gray-600 dark:text-muted">Te muestra el historial real de entradas, salidas y saldo por producto para auditar stock y costo.</p>
-          <p className="text-gray-500 dark:text-muted">Ejemplo: si entra una compra de 24 unidades y luego se venden 5, el Kardex deja ver ambas operaciones y el saldo exacto.</p>
+          <p className="mb-2 text-sm font-extrabold text-gray-900 dark:text-foreground">Movimientos del Producto</p>
+          <p className="mb-3 text-gray-600 dark:text-muted">Te muestra todo lo que entró y salió de cada producto, para que sepas exactamente cuánto tienes.</p>
+          <p className="text-gray-500 dark:text-muted">Ejemplo: si entra una compra de 24 unidades y luego se venden 5, aquí puedes ver ambas operaciones y el saldo exacto.</p>
         </div>
       )}
     </div>
@@ -281,15 +281,15 @@ export default function KardexTab() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="flex flex-wrap items-center gap-2 text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">
-            <BookOpen className="h-6 w-6 text-primary" /> Kardex de Inventario <ModuleTooltip />
+            <BookOpen className="h-6 w-6 text-primary" /> Movimientos del Producto <ModuleTooltip />
           </h1>
-          <p className="mt-0.5 text-sm text-gray-500 dark:text-muted">Registro historico por producto: entradas, salidas y saldo valorizado</p>
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-muted">Historial por producto: qué entró, qué salió y cuánto queda</p>
         </div>
         <button
           onClick={() => exportToCSV(lines.map((line) => ({ fecha: line.date, tipo: TYPE_META[line.type]?.label || line.type, referencia: line.reference, descripcion: line.description, entrada: line.qtyIn || "", salida: line.qtyOut || "", saldo: line.balance, costo_unit: line.costUnit, costo_total: line.totalCost, almacen: line.warehouse })), `kardex-${product.name}`)}
           className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-surface dark:text-foreground dark:hover:bg-accent"
         >
-          <Download className="h-4 w-4" /> Exportar kardex
+          <Download className="h-4 w-4" /> Descargar movimientos
         </button>
       </div>
 

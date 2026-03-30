@@ -141,7 +141,7 @@ export default function TaskKanban() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <ListChecks className="w-5 h-5 text-[#2d6a4f]" />
+          <ListChecks className="w-5 h-5 text-[#0f766e]" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Tablero de Tareas
           </h2>
@@ -161,7 +161,7 @@ export default function TaskKanban() {
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
               showForm
                 ? "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-                : "bg-[#2d6a4f] hover:bg-[#235c43] text-white"
+                : "bg-[#0f766e] hover:bg-[#235c43] text-white"
             )}
           >
             {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -195,7 +195,7 @@ export default function TaskKanban() {
 
       {/* Formulario */}
       {showForm && (
-        <div className="rounded-xl border border-[#2d6a4f]/30 bg-white dark:bg-gray-800 p-4 space-y-3">
+        <div className="rounded-xl border border-[#0f766e]/30 bg-white dark:bg-gray-800 p-4 space-y-3">
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Nueva tarea</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <input
@@ -203,19 +203,19 @@ export default function TaskKanban() {
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="Titulo de la tarea"
-              className="sm:col-span-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]"
+              className="sm:col-span-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
             />
             <input
               type="text"
               value={form.assignedTo}
               onChange={(e) => setForm((f) => ({ ...f, assignedTo: e.target.value }))}
               placeholder="Asignado a"
-              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
             />
             <select
               value={form.priority}
               onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as Priority }))}
-              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]"
+              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
             >
               <option value="urgente">Urgente</option>
               <option value="normal">Normal</option>
@@ -224,7 +224,7 @@ export default function TaskKanban() {
             <button
               onClick={addTask}
               disabled={!form.title.trim()}
-              className="rounded-lg bg-[#2d6a4f] hover:bg-[#235c43] text-white text-sm font-medium py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="rounded-lg bg-[#0f766e] hover:bg-[#235c43] text-white text-sm font-medium py-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Agregar tarea
             </button>
@@ -271,13 +271,13 @@ export default function TaskKanban() {
                             type="text"
                             value={form.title}
                             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                            className="w-full rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 px-2 py-1 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#2d6a4f]"
+                            className="w-full rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 px-2 py-1 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#0f766e]"
                           />
                           <input
                             type="text"
                             value={form.assignedTo}
                             onChange={(e) => setForm((f) => ({ ...f, assignedTo: e.target.value }))}
-                            className="w-full rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 px-2 py-1 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#2d6a4f]"
+                            className="w-full rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 px-2 py-1 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-[#0f766e]"
                           />
                           <select
                             value={form.priority}
@@ -291,7 +291,7 @@ export default function TaskKanban() {
                           <div className="flex gap-1.5">
                             <button
                               onClick={() => saveEdit(task.id)}
-                              className="flex-1 flex items-center justify-center gap-1 py-1 rounded bg-[#2d6a4f] text-white text-xs"
+                              className="flex-1 flex items-center justify-center gap-1 py-1 rounded bg-[#0f766e] text-white text-xs"
                             >
                               <Check className="w-3 h-3" />
                               Guardar

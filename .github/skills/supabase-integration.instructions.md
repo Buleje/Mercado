@@ -2,7 +2,7 @@
 applyTo: "**/supabase*,**/prisma.ts,**/prisma.config*"
 ---
 
-# Supabase Integration — Bodega San Martín
+# Supabase Integration — Buleje
 
 ## Conexión (2 URLs, propósitos distintos)
 
@@ -60,7 +60,7 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 
 ```typescript
 // proxy.ts resuelve tenantId desde el hostname:
-// bodega-san-martin.bodegasaas.com → tenantId = "bodega-san-martin"
+// buleje.bodegasaas.com → tenantId = "buleje"
 // localhost → tenantId = "main" (desarrollo)
 const ROOT_DOMAIN = process.env.ROOT_DOMAIN ?? "localhost";
 ```

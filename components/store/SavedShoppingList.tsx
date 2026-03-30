@@ -132,7 +132,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <List className="h-4 w-4 text-[#2d6a4f]" />
+          <List className="h-4 w-4 text-[#0f766e]" />
           <span className="text-sm font-semibold text-foreground dark:text-foreground">
             Mis listas de compra
           </span>
@@ -143,7 +143,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
             "flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
             creating
               ? "bg-muted dark:bg-muted/50 text-muted-foreground"
-              : "bg-[#2d6a4f] text-white hover:bg-[#245a42]"
+              : "bg-[#0f766e] text-white hover:bg-[#0d5f58]"
           )}
         >
           {creating ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
@@ -153,7 +153,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
 
       {/* Create form */}
       {creating && (
-        <div className="rounded-md border border-[#2d6a4f]/30 bg-[#2d6a4f]/5 dark:bg-[#2d6a4f]/10 p-3 space-y-3">
+        <div className="rounded-md border border-[#0f766e]/30 bg-[#0f766e]/5 dark:bg-[#0f766e]/10 p-3 space-y-3">
           <input
             type="text"
             placeholder="Nombre de la lista (ej: Compra semanal)"
@@ -162,7 +162,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
             className={cn(
               "w-full rounded-md border border-border bg-background dark:bg-background",
               "text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground",
-              "px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/50"
+              "px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/50"
             )}
           />
 
@@ -177,7 +177,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                   className={cn(
                     "flex-1 rounded-md border border-border bg-background dark:bg-background",
                     "text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground",
-                    "px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/50"
+                    "px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/50"
                   )}
                 />
                 <input
@@ -188,7 +188,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                   className={cn(
                     "w-16 rounded-md border border-border bg-background dark:bg-background",
                     "text-sm text-foreground dark:text-foreground text-center",
-                    "px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/50"
+                    "px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/50"
                   )}
                 />
                 {newItems.length > 1 && (
@@ -206,7 +206,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
           <div className="flex gap-2">
             <button
               onClick={addItemRow}
-              className="text-xs text-[#2d6a4f] hover:underline flex items-center gap-1"
+              className="text-xs text-[#0f766e] hover:underline flex items-center gap-1"
             >
               <Plus className="h-3 w-3" /> Agregar producto
             </button>
@@ -216,7 +216,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
               disabled={!newName.trim() || newItems.every((i) => !i.name.trim())}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                "bg-[#2d6a4f] text-white hover:bg-[#245a42] disabled:opacity-50 disabled:cursor-not-allowed"
+                "bg-[#0f766e] text-white hover:bg-[#0d5f58] disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
               <Check className="h-3.5 w-3.5" /> Guardar lista
@@ -255,7 +255,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                     onKeyDown={(e) => e.key === "Enter" && saveEdit(list.id)}
                     onClick={(e) => e.stopPropagation()}
                     className={cn(
-                      "flex-1 rounded border border-[#2d6a4f]/40 bg-card dark:bg-card",
+                      "flex-1 rounded border border-[#0f766e]/40 bg-card dark:bg-card",
                       "text-sm text-foreground dark:text-foreground px-2 py-0.5 focus:outline-none"
                     )}
                     autoFocus
@@ -276,7 +276,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                   <>
                     <button
                       onClick={() => saveEdit(list.id)}
-                      className="rounded p-1 text-[#2d6a4f] hover:bg-[#2d6a4f]/10 transition-colors"
+                      className="rounded p-1 text-[#0f766e] hover:bg-[#0f766e]/10 transition-colors"
                     >
                       <Check className="h-3.5 w-3.5" />
                     </button>
@@ -296,7 +296,7 @@ export default function SavedShoppingList({ onApplyList }: SavedShoppingListProp
                         "flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors",
                         appliedId === list.id
                           ? "bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400"
-                          : "bg-[#2d6a4f]/10 text-[#2d6a4f] hover:bg-[#2d6a4f]/20 dark:bg-[#2d6a4f]/20 dark:hover:bg-[#2d6a4f]/30"
+                          : "bg-[#0f766e]/10 text-[#0f766e] hover:bg-[#0f766e]/20 dark:bg-[#0f766e]/20 dark:hover:bg-[#0f766e]/30"
                       )}
                     >
                       {appliedId === list.id ? (

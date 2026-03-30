@@ -143,13 +143,13 @@ export default function ImportExportTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Upload className="h-6 w-6 text-primary" /> Importar / Exportar</h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Centro de importación y exportación masiva de datos</p>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Upload className="h-6 w-6 text-primary" /> Subir / Descargar Datos</h2>
+          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Descarga tus datos a Excel o sube archivos para cargar productos de golpe</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {(["export", "import", "history"] as const).map(v => (
             <button key={v} onClick={() => setView(v)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
-              {v === "export" ? "Exportar" : v === "import" ? "Importar" : "Historial"}
+              {v === "export" ? "Descargar" : v === "import" ? "Subir" : "Historial"}
             </button>
           ))}
         </div>
@@ -198,7 +198,7 @@ export default function ImportExportTab() {
         <div className="space-y-4">
           {/* Module selector */}
           <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-            <h3 className="font-bold text-gray-900 dark:text-foreground mb-3">1. Selecciona módulo destino</h3>
+            <h3 className="font-bold text-gray-900 dark:text-foreground mb-3">1. Elige a dónde van los datos</h3>
             <div className="flex flex-wrap gap-2">
               {EXPORT_MODULES.map(m => (
                 <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-xl text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-gray-50 dark:bg-surface text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary")}>
@@ -248,7 +248,7 @@ export default function ImportExportTab() {
             <div className="flex flex-wrap items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
               <div className="text-xs text-amber-700 dark:text-amber-400">
-                <p className="font-bold mb-1">Reglas de importación:</p>
+                <p className="font-bold mb-1">Reglas para subir archivos:</p>
                 <ul className="list-disc ml-4 space-y-0.5">
                   <li>La primera fila debe contener los encabezados</li>
                   <li>Los campos requeridos dependen del módulo seleccionado</li>

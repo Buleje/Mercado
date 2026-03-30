@@ -146,7 +146,7 @@ export async function generateCorrelativo(
  */
 export function generateXML(doc: SunatDocument): string {
   const rucEmisor = process.env.RUC_EMISOR ?? "";
-  const razonSocial = process.env.RAZON_SOCIAL_EMISOR ?? "Bodega San Martín";
+  const razonSocial = process.env.RAZON_SOCIAL_EMISOR ?? "Buleje";
   const tipoDoc = doc.tipo === "boleta" ? "03" : doc.tipo === "factura" ? "01" : doc.tipo === "nota_credito" ? "07" : "08";
 
   const clienteTipoDoc = doc.cliente.ruc ? "6" : "1";

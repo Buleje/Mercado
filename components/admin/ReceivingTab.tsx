@@ -73,7 +73,7 @@ export default function ReceivingTab() {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/receptions").then(r => r.ok ? r.json() : []).then((data: Reception[]) => {
+    fetch("/api/compras/recepciones").then(r => r.ok ? r.json() : []).then((data: Reception[]) => {
       if (active) { setReceptions(data); setLoading(false); }
     }).catch(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -121,7 +121,7 @@ export default function ReceivingTab() {
       photos: 0,
       nonConformities,
     };
-    const res = await fetch("/api/receptions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const res = await fetch("/api/compras/recepciones", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     if (res.ok) {
       const created: Reception = await res.json();
       setReceptions(prev => [created, ...prev]);

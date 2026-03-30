@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { verifySessionToken, SESSION } from "@/lib/session";
 
+export const dynamic = "force-dynamic";
+
 // ─── Validation ───────────────────────────────────────────
 const VisitorSchema = z.object({
   name: z.string().min(1).max(100).trim(),

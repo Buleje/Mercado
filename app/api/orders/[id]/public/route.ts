@@ -1,23 +1,20 @@
 ﻿export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { OrdersDB } from "@/lib/jsondb";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/orders/[id]/public
  * Public endpoint — no auth required.
  * Returns only safe, customer-facing fields (no phone, address, or reference).
- * Rate-limited: 60 requests per IP per minute.
+ * Rate-limited: MODERATE preset (20 req / 5 min per IP).
  */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const ip = getClientIp(req);
-  const { allowed } = rateLimit(`public-order:${ip}`, 60, 60);
-  if (!allowed) {
-    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
-  }
+  const limited = applyRateLimit(req, "MODERATE", "public-order");
+  if (limited) return limited;
 
   const { id } = await params;
   try {

@@ -210,7 +210,7 @@ describe("POST /api/orders", () => {
     mockTenantFindFirst.mockResolvedValue({ plan: "free" });
     mockProductFindMany.mockResolvedValue([]);
     mockCustomerFindUnique.mockResolvedValue(null);
-    mockCustomerNotifCreate.mockResolvedValue({});
+    mockCustomerNotifCreate.mockResolvedValue(undefined);
     // Default OrdersDB mocks
     mockOrdersAdd.mockResolvedValue(SAVED_ORDER);
     mockOrdersGetByCustomerPhone.mockResolvedValue([SAVED_ORDER]);

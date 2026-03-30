@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 
-type Theme = "light" | "dark" | "system";
+type Theme = "light" | "dark" | "system" | "auto";
 
 interface ThemeCtx {
   theme: Theme;
@@ -29,6 +29,13 @@ function getSystemTheme(): "light" | "dark" {
     : "light";
 }
 
+// Mejora 5: Determine theme based on time of day
+function getTimeBasedTheme(): "light" | "dark" {
+  const hour = new Date().getHours();
+  // Dark mode from 7pm (19) to 6am (6)
+  return hour >= 19 || hour < 6 ? "dark" : "light";
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
   const [resolved, setResolved] = useState<"light" | "dark">("light");
@@ -36,10 +43,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Hydrate from localStorage after mount to avoid SSR mismatch
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const t = stored && ["light", "dark", "system"].includes(stored) ? stored : "light";
+    const t = stored && ["light", "dark", "system", "auto"].includes(stored) ? stored : "light";
     startTransition(() => {
       setThemeState(t);
-      setResolved(t === "system" ? getSystemTheme() : t);
+      setResolved(
+        t === "system" ? getSystemTheme() :
+        t === "auto" ? getTimeBasedTheme() :
+        t
+      );
     });
   }, []);
 
@@ -49,7 +60,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     const apply = () => {
       // Force light mode on mobile/small screens
-      const r = isMobile ? "light" : theme === "system" ? getSystemTheme() : theme;
+      const r = isMobile
+        ? "light"
+        : theme === "system"
+          ? getSystemTheme()
+          : theme === "auto"
+            ? getTimeBasedTheme()
+            : theme;
       setResolved(r);
       document.documentElement.classList.toggle("dark", r === "dark");
     };
@@ -75,9 +92,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener("resize", resizeHandler);
 
+    // Mejora 5: Auto-mode timer — check every minute
+    let autoInterval: ReturnType<typeof setInterval> | null = null;
+    if (theme === "auto") {
+      autoInterval = setInterval(apply, 60_000);
+    }
+
     return () => {
       mq.removeEventListener("change", handler);
       window.removeEventListener("resize", resizeHandler);
+      if (autoInterval) clearInterval(autoInterval);
     };
   }, [theme]);
 
@@ -87,8 +111,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggle = useCallback(() => {
-    setTheme(resolved === "dark" ? "light" : "dark");
-  }, [resolved, setTheme]);
+    // Cycle: light → dark → auto → light
+    if (theme === "light") setTheme("dark");
+    else if (theme === "dark") setTheme("auto");
+    else setTheme("light");
+  }, [theme, setTheme]);
 
   return (
     <ThemeContext.Provider value={{ theme, resolved, setTheme, toggle }}>

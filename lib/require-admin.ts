@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionPayload, SESSION } from "@/lib/session";
 import type { AdminRole, SessionPayload } from "@/lib/session";
+import { logger } from "@/lib/logger";
 
 /**
  * Verify the admin session from an API request.
@@ -25,29 +26,25 @@ export async function requireAdmin(
   const method = req.method;
 
   if (!token) {
-    console.warn(`[AUTH] Unauthorized: ${method} ${path} from ${ip}`);
+    logger.warn("[AUTH] Unauthorized", { method, path, ip });
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
   const payload = await getSessionPayload(token);
   if (!payload) {
-    console.warn(`[AUTH] Invalid/expired token: ${method} ${path} from ${ip}`);
+    logger.warn("[AUTH] Invalid/expired token", { method, path, ip });
     return NextResponse.json({ error: "session expired" }, { status: 401 });
   }
 
   if (allowedRoles && !allowedRoles.includes(payload.role)) {
-    console.warn(
-      `[AUTH] Forbidden: ${payload.username} (${payload.role}) → ${method} ${path}`
-    );
+    logger.warn("[AUTH] Forbidden", { username: payload.username, role: payload.role, method, path });
     return NextResponse.json(
       { error: "forbidden", message: `Requires: ${allowedRoles.join(", ")}` },
       { status: 403 }
     );
   }
 
-  if (process.env.NODE_ENV === "development") {
-    console.log(`[AUTH] OK: ${payload.username} (${payload.role}) tenant:${payload.tenantId} → ${method} ${path}`);
-  }
+  logger.debug("[AUTH] OK", { username: payload.username, role: payload.role, tenantId: payload.tenantId, method, path });
 
   return payload;
 }

@@ -8,16 +8,16 @@ export default function LocalBusinessJsonLd() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "GroceryStore",
-    name: "Bodega San Mart\u00edn",
-    alternateName: "Bodega San Martin - Abarrotes Delivery Pucallpa",
+    name: "Buleje",
+    alternateName: "Buleje - Abarrotes Delivery Pucallpa",
     description:
       "Bodega de abarrotes con delivery en Pucallpa. Arroz, aceite, az\u00facar, fideos, productos de limpieza y m\u00e1s. Pedidos por WhatsApp y web. Pago con Yape, Plin o efectivo.",
-    url: "https://www.bodegasanmartin.pe",
+    url: "https://www.buleje.pe",
     telephone: process.env.NEXT_PUBLIC_WHATSAPP_PHONE
       ? `+51${process.env.NEXT_PUBLIC_WHATSAPP_PHONE}`
       : "+51000000000",
-    image: "https://www.bodegasanmartin.pe/logo.png",
-    logo: "https://www.bodegasanmartin.pe/logo.png",
+    image: "https://www.buleje.pe/logo.png",
+    logo: "https://www.buleje.pe/logo.png",
     priceRange: "S/1 - S/200",
     currenciesAccepted: "PEN",
     paymentAccepted: "Efectivo, Yape, Plin",

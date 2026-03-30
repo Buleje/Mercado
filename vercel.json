@@ -99,6 +99,22 @@
     {
       "path": "/api/cron/abandoned-cart",
       "schedule": "0 */2 * * *"
+    },
+    {
+      "path": "/api/prestamos/cron/mora",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/prestamos/cron/recordatorios",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/settle-commissions",
+      "schedule": "0 0 * * 0"
+    },
+    {
+      "path": "/api/cron/monthly-report",
+      "schedule": "0 6 1 * *"
     }
   ]
 }

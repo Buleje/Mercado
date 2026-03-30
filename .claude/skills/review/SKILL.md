@@ -8,16 +8,16 @@ agent: general-purpose
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
-# Review — Bodega San Martin
+# Review — Buleje
 
-Revisar los cambios del branch actual antes de hacer merge o PR en el proyecto Bodega San Martin.
+Revisar los cambios del branch actual antes de hacer merge o PR en el proyecto Buleje.
 
 ## Pasos
 
 ### 1. Ver diferencias contra master
 
 ```bash
-cd bodega-san-martin
+cd buleje
 git diff master...HEAD
 git log --oneline master..HEAD
 git diff --stat master...HEAD
@@ -31,7 +31,7 @@ Analizar:
 ### 2. Verificar calidad (lint + build + tests)
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint
 npm run build
 npm run test

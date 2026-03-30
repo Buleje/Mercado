@@ -32,8 +32,8 @@ function fmtPct(n: number) {
 }
 
 const QUADRANT_META = {
-  star:     { label: "Alto volumen + Alto margen",  color: "#2d6a4f", bg: "bg-green-100 dark:bg-green-900/30",  text: "text-green-800 dark:text-green-300" },
-  cash:     { label: "Alto volumen + Bajo margen",  color: "#f4a261", bg: "bg-amber-100 dark:bg-amber-900/30",  text: "text-amber-800 dark:text-amber-300" },
+  star:     { label: "Alto volumen + Alto margen",  color: "#0f766e", bg: "bg-green-100 dark:bg-green-900/30",  text: "text-green-800 dark:text-green-300" },
+  cash:     { label: "Alto volumen + Bajo margen",  color: "#f97316", bg: "bg-amber-100 dark:bg-amber-900/30",  text: "text-amber-800 dark:text-amber-300" },
   question: { label: "Bajo volumen + Alto margen",  color: "#3b82f6", bg: "bg-blue-100 dark:bg-blue-900/30",    text: "text-blue-800 dark:text-blue-300" },
   dog:      { label: "Bajo volumen + Bajo margen",  color: "#ef4444", bg: "bg-red-100 dark:bg-red-900/30",      text: "text-red-800 dark:text-red-300" },
 };
@@ -149,9 +149,9 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
     <div className="flex flex-col gap-4 text-sm">
       {/* Summary row */}
       <div className="flex gap-2">
-        <div className="flex-1 rounded-lg bg-[#2d6a4f]/10 dark:bg-[#2d6a4f]/20 border border-[#2d6a4f]/30 p-2 text-center">
+        <div className="flex-1 rounded-lg bg-[#0f766e]/10 dark:bg-[#0f766e]/20 border border-[#0f766e]/30 p-2 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">Margen prom. ponderado</p>
-          <p className="text-base font-bold text-[#2d6a4f] dark:text-[#52b788]">{fmtPct(avgWeightedMargin)}</p>
+          <p className="text-base font-bold text-[#0f766e] dark:text-[#14b8a6]">{fmtPct(avgWeightedMargin)}</p>
         </div>
         <div className="flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">Productos analizados</p>
@@ -210,7 +210,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
             className={cn(
               "px-2 py-0.5 rounded text-xs border transition-colors",
               showTop === "best"
-                ? "bg-[#2d6a4f] text-white border-[#2d6a4f]"
+                ? "bg-[#0f766e] text-white border-[#0f766e]"
                 : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700"
             )}
           >
@@ -244,7 +244,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
                   className={cn(
                     "text-sm font-bold",
                     p.margin >= 30
-                      ? "text-[#2d6a4f] dark:text-[#52b788]"
+                      ? "text-[#0f766e] dark:text-[#14b8a6]"
                       : p.margin >= 15
                       ? "text-amber-600 dark:text-amber-400"
                       : "text-red-600 dark:text-red-400"

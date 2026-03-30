@@ -138,9 +138,9 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
     <div className="flex flex-col gap-4 text-sm">
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="rounded-lg bg-[#2d6a4f]/10 dark:bg-[#2d6a4f]/20 border border-[#2d6a4f]/30 p-2 text-center">
+        <div className="rounded-lg bg-[#0f766e]/10 dark:bg-[#0f766e]/20 border border-[#0f766e]/30 p-2 text-center">
           <p className="text-[10px] text-gray-500 dark:text-gray-400">CLV promedio</p>
-          <p className="text-base font-bold text-[#2d6a4f] dark:text-[#52b788]">{fmt(avgCLV)}</p>
+          <p className="text-base font-bold text-[#0f766e] dark:text-[#14b8a6]">{fmt(avgCLV)}</p>
         </div>
         <div className="rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 text-center">
           <p className="text-[10px] text-gray-500 dark:text-gray-400">Clientes con datos</p>
@@ -170,7 +170,7 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
               className={cn(
                 "flex-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors",
                 filterTier === tier
-                  ? cn(style.bg, style.text, style.border, "ring-2 ring-offset-1 ring-[#2d6a4f]")
+                  ? cn(style.bg, style.text, style.border, "ring-2 ring-offset-1 ring-[#0f766e]")
                   : cn(style.bg, style.text, style.border)
               )}
             >
@@ -196,7 +196,7 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
                 style={{
                   height: `${(bucket.count / maxHistCount) * 100}%`,
                   minHeight: bucket.count > 0 ? "2px" : "0px",
-                  backgroundColor: "#2d6a4f",
+                  backgroundColor: "#0f766e",
                   opacity: bucket.count > 0 ? 0.85 : 0.15,
                 }}
               />
@@ -260,7 +260,7 @@ export default function CustomerLifetimeValue({ customers, sales }: CustomerLife
                     <td className="px-2 py-1.5 text-right text-gray-600 dark:text-gray-300">
                       {c.orderCount}
                     </td>
-                    <td className="px-2 py-1.5 text-right font-bold text-[#2d6a4f] dark:text-[#52b788]">
+                    <td className="px-2 py-1.5 text-right font-bold text-[#0f766e] dark:text-[#14b8a6]">
                       {fmt(c.clv)}
                     </td>
                   </tr>

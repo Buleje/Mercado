@@ -64,7 +64,7 @@ function showToast(message: string) {
     "z-index:9999",
     "padding:0.65rem 1.1rem",
     "border-radius:0.75rem",
-    "background:#2d6a4f",
+    "background:#0f766e",
     "color:#fff",
     "font-size:0.875rem",
     "font-weight:500",

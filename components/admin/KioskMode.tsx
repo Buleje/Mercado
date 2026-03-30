@@ -183,7 +183,7 @@ export default function KioskMode() {
           <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
             <Package className="h-4 w-4 text-white" />
           </div>
-          <span className="text-xl font-bold text-gray-900 dark:text-foreground">Bodega San Martin</span>
+          <span className="text-xl font-bold text-gray-900 dark:text-foreground">Buleje</span>
         </div>
 
         <div className="flex items-center gap-3">

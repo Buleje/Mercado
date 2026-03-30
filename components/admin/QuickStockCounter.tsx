@@ -182,7 +182,7 @@ export default function QuickStockCounter() {
       {/* Scanner input */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
         <div className="mb-4 flex items-center gap-2">
-          <Barcode className="h-5 w-5 text-[#2d6a4f]" />
+          <Barcode className="h-5 w-5 text-[#0f766e]" />
           <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
             Escanear o ingresar código
           </h3>
@@ -199,14 +199,14 @@ export default function QuickStockCounter() {
             className={cn(
               "flex-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm",
               "text-gray-800 placeholder-gray-400 outline-none transition",
-              "focus:border-[#2d6a4f] focus:ring-2 focus:ring-[#2d6a4f]/20",
+              "focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
               "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
             )}
           />
           <button
             onClick={() => lookupBarcode(code)}
             disabled={lookupState === "loading" || !code.trim()}
-            className="flex items-center gap-2 rounded-lg bg-[#2d6a4f] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40] disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#245a40] disabled:opacity-50"
           >
             {lookupState === "loading" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -229,7 +229,7 @@ export default function QuickStockCounter() {
 
         {/* Found product */}
         {lookupState === "found" && foundProduct && (
-          <div className="mt-4 rounded-lg border border-[#2d6a4f]/30 bg-[#2d6a4f]/5 p-4 dark:bg-[#2d6a4f]/10">
+          <div className="mt-4 rounded-lg border border-[#0f766e]/30 bg-[#0f766e]/5 p-4 dark:bg-[#0f766e]/10">
             <div className="mb-3 flex items-start justify-between gap-2">
               <div>
                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
@@ -239,7 +239,7 @@ export default function QuickStockCounter() {
                   SKU: {foundProduct.sku} · Stock sistema: {foundProduct.stock} {foundProduct.unit}
                 </p>
               </div>
-              <span className="rounded-full bg-[#2d6a4f]/10 px-2 py-0.5 text-xs font-medium text-[#2d6a4f] dark:bg-[#2d6a4f]/20 dark:text-green-300">
+              <span className="rounded-full bg-[#0f766e]/10 px-2 py-0.5 text-xs font-medium text-[#0f766e] dark:bg-[#0f766e]/20 dark:text-green-300">
                 {fmt(foundProduct.price)}
               </span>
             </div>
@@ -253,7 +253,7 @@ export default function QuickStockCounter() {
                   onClick={() =>
                     setPhysicalStock((v) => Math.max(0, (Number(v) || 0) - 1))
                   }
-                  className="rounded-md p-1 text-gray-500 hover:text-[#2d6a4f] dark:hover:text-green-300"
+                  className="rounded-md p-1 text-gray-500 hover:text-[#0f766e] dark:hover:text-green-300"
                 >
                   <MinusCircle className="h-5 w-5" />
                 </button>
@@ -270,13 +270,13 @@ export default function QuickStockCounter() {
                   }}
                   className={cn(
                     "w-20 rounded-lg border border-gray-200 bg-white px-2 py-1 text-center text-sm",
-                    "text-gray-800 outline-none focus:border-[#2d6a4f] focus:ring-2 focus:ring-[#2d6a4f]/20",
+                    "text-gray-800 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
                     "dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                   )}
                 />
                 <button
                   onClick={() => setPhysicalStock((v) => (Number(v) || 0) + 1)}
-                  className="rounded-md p-1 text-gray-500 hover:text-[#2d6a4f] dark:hover:text-green-300"
+                  className="rounded-md p-1 text-gray-500 hover:text-[#0f766e] dark:hover:text-green-300"
                 >
                   <PlusCircle className="h-5 w-5" />
                 </button>
@@ -304,7 +304,7 @@ export default function QuickStockCounter() {
               <button
                 onClick={addToCount}
                 disabled={physicalStock === ""}
-                className="ml-auto rounded-lg bg-[#2d6a4f] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#245a40] disabled:opacity-40"
+                className="ml-auto rounded-lg bg-[#0f766e] px-3 py-1.5 text-xs font-medium text-white transition hover:bg-[#245a40] disabled:opacity-40"
               >
                 Agregar
               </button>
@@ -413,7 +413,7 @@ export default function QuickStockCounter() {
                   ? "bg-green-600"
                   : saveState === "error"
                   ? "bg-red-600"
-                  : "bg-[#2d6a4f] hover:bg-[#245a40]",
+                  : "bg-[#0f766e] hover:bg-[#245a40]",
                 "disabled:opacity-60"
               )}
             >

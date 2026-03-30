@@ -31,7 +31,7 @@ vi.mock("@/lib/logger", () => ({
 
 // ── Mock: jsondb / SettingsDB — default: no adminPassword ────────────────────
 const { mockSettingsGet } = vi.hoisted(() => ({
-  mockSettingsGet: vi.fn(async () => ({ adminPassword: null })),
+  mockSettingsGet: vi.fn(async () => ({ adminPassword: null as string | null })),
 }));
 vi.mock("@/lib/jsondb", () => ({
   SettingsDB: { get: mockSettingsGet },

@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import TrackingForm from "./TrackingForm";
 
 export const metadata: Metadata = {
-  title: "Seguir mi pedido | Bodega San Martin",
+  title: "Seguir mi pedido | Buleje",
   description:
-    "Rastrea el estado de tu pedido en Bodega San Martin. Ingresa tu numero de pedido y ve en tiempo real donde esta tu delivery.",
+    "Rastrea el estado de tu pedido en Buleje. Ingresa tu numero de pedido y ve en tiempo real donde esta tu delivery.",
 };
 
 export default function TrackingPage() {

@@ -133,7 +133,7 @@ function waitForCompletion(taskId: string): Promise<Record<string, unknown>> {
       unsubCompleted();
       unsubFailed();
       clearTimeout(timer);
-      resolve(orchestrator.getTask(taskId) ?? fallback);
+      resolve((orchestrator.getTask(taskId) as Record<string, unknown> | undefined) ?? fallback);
     };
 
     const unsubCompleted = agentBus.on("task:completed", (data) => {
@@ -152,7 +152,7 @@ function waitForCompletion(taskId: string): Promise<Record<string, unknown>> {
     // Check if already completed synchronously
     const current = orchestrator.getTask(taskId);
     if (current && (current.status === "completed" || current.status === "failed" || current.status === "cancelled")) {
-      settle(current);
+      settle(current as unknown as Record<string, unknown>);
     }
   });
 }

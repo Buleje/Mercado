@@ -1,5 +1,5 @@
 // types/erp.ts
-// Tipos core unificados para todo el ERP Bodega San Martín
+// Tipos core unificados para todo el ERP Buleje
 
 export interface Product {
   id: number | string;

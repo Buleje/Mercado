@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, CustomersDB, OrdersDB, SuppliersDB } from "@/lib/jsondb";
+import { applyRateLimit } from "@/lib/rate-limit";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const limited = applyRateLimit(req, "GENEROUS", "search");
+  if (limited) return limited;
+
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

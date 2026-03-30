@@ -5,6 +5,8 @@ import { createInvite, verifyInvite, acceptInvite } from "@/lib/invite";
 import { verifySessionToken, SESSION } from "@/lib/session";
 import type { InviteRole } from "@/lib/invite";
 
+export const dynamic = "force-dynamic";
+
 // ─── POST /api/invite ─────────────────────────────────────────────────────────
 // Create a new invitation link. Requires admin session.
 

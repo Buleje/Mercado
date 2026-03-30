@@ -1,6 +1,9 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
-import { TrendingDown, AlertTriangle, CheckCircle, Download, Loader2, RefreshCw } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  TrendingDown, TrendingUp, AlertTriangle, CheckCircle,
+  Download, Loader2, RefreshCw, Target, Save,
+} from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 /* ── Types ──────────────────────────────────────────────────── */
@@ -13,6 +16,12 @@ type ExpenseItem = {
   recurring: boolean;
 };
 
+type SaleItem = {
+  id: string;
+  total: number;
+  createdAt: string;
+};
+
 type BudgetLine = {
   id: string;
   category: string;
@@ -20,6 +29,12 @@ type BudgetLine = {
   budgeted: number;
   actual: number;
   month: string;
+};
+
+type BudgetConfig = {
+  month: string; // "YYYY-MM"
+  salesGoal: number;
+  expensesGoal: number;
 };
 
 /* ── Helpers ─────────────────────────────────────────────────── */
@@ -38,6 +53,36 @@ function monthLabel(iso: string) {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const y = d.getFullYear();
   return `${MONTH_LABELS[m] ?? m} ${y}`;
+}
+
+function currentYearMonth() {
+  const now = new Date();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  return `${now.getFullYear()}-${m}`;
+}
+
+function dayOfMonth() {
+  return new Date().getDate();
+}
+
+function daysInMonth() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+}
+
+// Carga config desde localStorage
+function loadBudgetConfig(ym: string): BudgetConfig {
+  try {
+    const raw = localStorage.getItem("bodega-budget-config");
+    if (!raw) return { month: ym, salesGoal: 0, expensesGoal: 0 };
+    const parsed: BudgetConfig = JSON.parse(raw);
+    if (parsed.month === ym) return parsed;
+  } catch { /* noop */ }
+  return { month: ym, salesGoal: 0, expensesGoal: 0 };
+}
+
+function saveBudgetConfig(cfg: BudgetConfig) {
+  localStorage.setItem("bodega-budget-config", JSON.stringify(cfg));
 }
 
 // Agrupa gastos reales por categoría y mes
@@ -81,9 +126,125 @@ function estimateBudget(cat: string): number {
   return 1000;
 }
 
+/* ── Barra de progreso con semáforo ─────────────────────────── */
+function ProgressBar({
+  label, current, goal, isSales,
+}: {
+  label: string;
+  current: number;
+  goal: number;
+  isSales: boolean;
+}) {
+  const pct = goal > 0 ? (current / goal) * 100 : 0;
+  const display = Math.min(pct, 100);
+
+  // Para ventas: verde >80%, amarillo 50-80%, rojo <50%
+  // Para gastos: verde <80%, amarillo 80-100%, rojo >100%
+  let color = "bg-emerald-500";
+  let textColor = "text-emerald-600 dark:text-emerald-400";
+  let bgLight = "bg-emerald-100 dark:bg-emerald-900/30";
+  if (isSales) {
+    if (pct >= 80) { color = "bg-emerald-500"; textColor = "text-emerald-600 dark:text-emerald-400"; bgLight = "bg-emerald-100 dark:bg-emerald-900/30"; }
+    else if (pct >= 50) { color = "bg-amber-400"; textColor = "text-amber-600 dark:text-amber-400"; bgLight = "bg-amber-100 dark:bg-amber-900/30"; }
+    else { color = "bg-red-500"; textColor = "text-red-600 dark:text-red-400"; bgLight = "bg-red-100 dark:bg-red-900/30"; }
+  } else {
+    if (pct < 80) { color = "bg-emerald-500"; textColor = "text-emerald-600 dark:text-emerald-400"; bgLight = "bg-emerald-100 dark:bg-emerald-900/30"; }
+    else if (pct <= 100) { color = "bg-amber-400"; textColor = "text-amber-600 dark:text-amber-400"; bgLight = "bg-amber-100 dark:bg-amber-900/30"; }
+    else { color = "bg-red-500"; textColor = "text-red-600 dark:text-red-400"; bgLight = "bg-red-100 dark:bg-red-900/30"; }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-gray-700 dark:text-foreground">{label}</span>
+        <span className={cn("text-sm font-bold", textColor)}>
+          {pct.toFixed(0)}% {isSales ? "logrado" : "utilizado"}
+        </span>
+      </div>
+      <div className="w-full h-4 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+        <div
+          className={cn("h-full rounded-full transition-all duration-500", color)}
+          style={{ width: `${display}%` }}
+        />
+      </div>
+      <div className="flex items-center justify-between text-xs">
+        <span className={cn("font-bold px-2 py-0.5 rounded-full", bgLight, textColor)}>
+          Llevas {fmt(current)} de {fmt(goal)}
+        </span>
+        {goal > 0 && (
+          <span className="text-gray-400 dark:text-muted">
+            {isSales ? `Falta ${fmt(Math.max(goal - current, 0))}` : `Queda ${fmt(Math.max(goal - current, 0))}`}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Gráfico de barras por categoría (SVG-free, solo divs) ─── */
+function CategoryChart({
+  categories,
+}: {
+  categories: { label: string; budgeted: number; actual: number }[];
+}) {
+  const max = Math.max(...categories.flatMap((c) => [c.budgeted, c.actual]), 1);
+  return (
+    <div className="space-y-4">
+      {categories.map((c) => {
+        const variance = c.budgeted > 0 ? ((c.actual - c.budgeted) / c.budgeted) * 100 : 0;
+        const isOver = variance > 10;
+        const isUnder = variance < -10;
+        return (
+          <div key={c.label} className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-gray-700 dark:text-foreground truncate max-w-[140px] sm:max-w-none">
+                {c.label}
+              </span>
+              <span className={cn("font-bold", isOver ? "text-red-600" : isUnder ? "text-emerald-600" : "text-gray-500 dark:text-muted")}>
+                {fmtPct(variance)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-gray-400 w-14 shrink-0">Presup.</span>
+              <div className="flex-1 h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-blue-300 dark:bg-blue-700"
+                  style={{ width: `${(c.budgeted / max) * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-gray-500 w-20 text-right shrink-0">{fmt(c.budgeted)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-gray-400 w-14 shrink-0">Real</span>
+              <div className="flex-1 h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full", isOver ? "bg-red-500" : isUnder ? "bg-emerald-500" : "bg-[#0f766e]")}
+                  style={{ width: `${Math.min((c.actual / max) * 100, 100)}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-bold text-gray-700 dark:text-foreground w-20 text-right shrink-0">
+                {fmt(c.actual)}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+      <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-400">
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-blue-300 dark:bg-blue-700" /> Presupuestado</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[#0f766e]" /> Real (OK)</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-red-500" /> Real (exceso)</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-emerald-500" /> Real (ahorro)</span>
+      </div>
+    </div>
+  );
+}
+
 /* ── Component ───────────────────────────────────────────────── */
 export default function BudgetVsRealTab() {
+  const ym = currentYearMonth();
+
   const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
+  const [sales, setSales] = useState<SaleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [search, setSearch] = useState("");
@@ -91,38 +252,89 @@ export default function BudgetVsRealTab() {
   const [deptFilter, setDeptFilter] = useState("all");
   const [alertFilter, setAlertFilter] = useState<"all" | "over" | "under" | "ok">("all");
 
-  const load = () => {
-    setLoading(true);
-    setError(false);
-    fetch("/api/expenses")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data: ExpenseItem[]) => {
-        setExpenses(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError(true);
-        setLoading(false);
-      });
+  // Config de presupuesto
+  const [budgetConfig, setBudgetConfig] = useState<BudgetConfig>({ month: ym, salesGoal: 0, expensesGoal: 0 });
+  const [formSalesGoal, setFormSalesGoal] = useState("");
+  const [formExpensesGoal, setFormExpensesGoal] = useState("");
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  useEffect(() => {
+    const cfg = loadBudgetConfig(ym);
+    setBudgetConfig(cfg);
+    setFormSalesGoal(cfg.salesGoal > 0 ? String(cfg.salesGoal) : "");
+    setFormExpensesGoal(cfg.expensesGoal > 0 ? String(cfg.expensesGoal) : "");
+  }, [ym]);
+
+  const handleSaveConfig = () => {
+    const cfg: BudgetConfig = {
+      month: ym,
+      salesGoal: parseFloat(formSalesGoal) || 0,
+      expensesGoal: parseFloat(formExpensesGoal) || 0,
+    };
+    saveBudgetConfig(cfg);
+    setBudgetConfig(cfg);
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 2000);
   };
 
-  useEffect(() => { load(); }, []);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const [expRes, salesRes] = await Promise.all([
+        fetch("/api/expenses"),
+        fetch("/api/sales"),
+      ]);
+      const expData: ExpenseItem[] = expRes.ok ? await expRes.json() : [];
+      const salesData: SaleItem[] = salesRes.ok ? await salesRes.json() : [];
+      setExpenses(Array.isArray(expData) ? expData : []);
+      setSales(Array.isArray(salesData) ? salesData : []);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Ventas del mes actual
+  const currentMonthSales = useMemo(() => {
+    return sales
+      .filter((s) => s.createdAt?.startsWith(ym))
+      .reduce((sum, s) => sum + (s.total ?? 0), 0);
+  }, [sales, ym]);
+
+  // Gastos del mes actual
+  const currentMonthExpenses = useMemo(() => {
+    return expenses
+      .filter((e) => e.date?.startsWith(ym))
+      .reduce((sum, e) => sum + (e.amount ?? 0), 0);
+  }, [expenses, ym]);
+
+  // Proyección fin de mes
+  const projection = useMemo(() => {
+    const day = dayOfMonth();
+    const total = daysInMonth();
+    if (day === 0) return { sales: 0, expenses: 0 };
+    return {
+      sales: (currentMonthSales / day) * total,
+      expenses: (currentMonthExpenses / day) * total,
+    };
+  }, [currentMonthSales, currentMonthExpenses]);
 
   const lines = useMemo(() => buildBudgetLines(expenses), [expenses]);
 
   const MONTHS = useMemo(() => ["all", ...new Set(lines.map((b) => b.month))], [lines]);
   const DEPARTMENTS = useMemo(() => [...new Set(lines.map((b) => b.department))], [lines]);
 
-  // Mes más reciente por defecto
-  useEffect(() => {
-    if (MONTHS.length > 1 && monthFilter === "all") {
-      setMonthFilter(MONTHS[MONTHS.length - 1]);
-    }
-  }, [MONTHS, monthFilter]);
+  const effectiveMonthFilter = monthFilter === "all" && MONTHS.length > 1
+    ? MONTHS[MONTHS.length - 1]
+    : monthFilter;
 
   const filtered = useMemo(() => {
     return lines.filter((b) => {
-      if (monthFilter !== "all" && b.month !== monthFilter) return false;
+      if (effectiveMonthFilter !== "all" && b.month !== effectiveMonthFilter) return false;
       if (deptFilter !== "all" && b.department !== deptFilter) return false;
       if (search && !b.category.toLowerCase().includes(search.toLowerCase())) return false;
       const variance = b.budgeted > 0 ? ((b.actual - b.budgeted) / b.budgeted) * 100 : 0;
@@ -131,7 +343,7 @@ export default function BudgetVsRealTab() {
       if (alertFilter === "ok" && Math.abs(variance) > 10) return false;
       return true;
     });
-  }, [lines, search, monthFilter, deptFilter, alertFilter]);
+  }, [lines, search, effectiveMonthFilter, deptFilter, alertFilter]);
 
   const totals = useMemo(() => {
     const budgeted = filtered.reduce((s, b) => s + b.budgeted, 0);
@@ -151,22 +363,38 @@ export default function BudgetVsRealTab() {
     (b) => b.budgeted > 0 && ((b.actual - b.budgeted) / b.budgeted) * 100 < -10
   ).length;
 
-  // Datos para gráfico de barras por categoría (top 8)
-  const chartData = useMemo(() => {
-    return [...filtered]
-      .sort((a, b) => b.actual - a.actual)
-      .slice(0, 8);
-  }, [filtered]);
-  const chartMax = useMemo(
-    () => Math.max(...chartData.map((b) => Math.max(b.budgeted, b.actual)), 1),
-    [chartData]
-  );
+  // Categorías principales para el gráfico (top 6)
+  const mainCategories = useMemo(() => {
+    const salesTotal = currentMonthSales;
+    const expTotal = currentMonthExpenses;
+    const netProfit = salesTotal - expTotal;
+
+    const expensesByDept: Record<string, { budgeted: number; actual: number }> = {};
+    lines
+      .filter((b) => b.month === (MONTHS[MONTHS.length - 1] ?? ""))
+      .forEach((b) => {
+        if (!expensesByDept[b.department]) expensesByDept[b.department] = { budgeted: 0, actual: 0 };
+        expensesByDept[b.department].budgeted += b.budgeted;
+        expensesByDept[b.department].actual += b.actual;
+      });
+
+    const cats = [
+      { label: "Ventas", budgeted: budgetConfig.salesGoal, actual: salesTotal },
+      { label: "Gastos totales", budgeted: budgetConfig.expensesGoal, actual: expTotal },
+      { label: "Ganancia neta", budgeted: Math.max(budgetConfig.salesGoal - budgetConfig.expensesGoal, 0), actual: netProfit },
+      ...Object.entries(expensesByDept)
+        .sort((a, b) => b[1].actual - a[1].actual)
+        .slice(0, 3)
+        .map(([dept, v]) => ({ label: dept, budgeted: v.budgeted, actual: v.actual })),
+    ];
+    return cats;
+  }, [lines, currentMonthSales, currentMonthExpenses, budgetConfig, MONTHS]);
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-sm text-gray-500 dark:text-muted">Cargando gastos...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-[#0f766e]" />
+        <p className="text-sm text-gray-500 dark:text-muted">Cargando datos...</p>
       </div>
     );
   }
@@ -175,10 +403,10 @@ export default function BudgetVsRealTab() {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
         <AlertTriangle className="h-10 w-10 text-red-400" />
-        <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos de gastos</p>
+        <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0f766e] text-white text-sm font-semibold"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -186,16 +414,21 @@ export default function BudgetVsRealTab() {
     );
   }
 
+  const monthName = MONTH_LABELS[ym.split("-")[1]] ?? "";
+  const yearNum = ym.split("-")[0];
+  const day = dayOfMonth();
+  const totalDays = daysInMonth();
+
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">
-            Presupuesto vs Real
+            Meta vs Real
           </h2>
           <p className="text-sm text-gray-500 dark:text-muted mt-1">
-            Compara gastos presupuestados contra ejecución real ({expenses.length} registros)
+            {monthName} {yearNum} · Día {day} de {totalDays}
           </p>
         </div>
         <button
@@ -207,21 +440,150 @@ export default function BudgetVsRealTab() {
                 Mes: b.month,
                 Presupuestado: b.budgeted,
                 Real: b.actual,
-                Variación:
-                  b.budgeted > 0
-                    ? fmtPct(((b.actual - b.budgeted) / b.budgeted) * 100)
-                    : "N/A",
+                Variación: b.budgeted > 0 ? fmtPct(((b.actual - b.budgeted) / b.budgeted) * 100) : "N/A",
               })),
-              "presupuesto-vs-real"
+              "meta-vs-real"
             )
           }
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0f766e] text-white text-sm font-bold hover:bg-[#0f766e]/90 transition-colors shadow-md shadow-[#0f766e]/20 min-h-[44px]"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
 
-      {/* KPIs */}
+      {/* ── 1. Configurador de metas mensuales ── */}
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Target className="h-4 w-4 text-[#0f766e]" />
+          <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">
+            Mis metas de {monthName} {yearNum}
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">
+              Meta de ventas del mes (S/)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={formSalesGoal}
+              onChange={(e) => setFormSalesGoal(e.target.value)}
+              placeholder="Ej: 15000"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#0f766e] transition-colors min-h-[44px]"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">
+              Máximo de gastos del mes (S/)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={formExpensesGoal}
+              onChange={(e) => setFormExpensesGoal(e.target.value)}
+              placeholder="Ej: 8000"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#0f766e] transition-colors min-h-[44px]"
+            />
+          </div>
+        </div>
+        <button
+          onClick={handleSaveConfig}
+          className={cn(
+            "mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all min-h-[44px]",
+            savedFlash
+              ? "bg-emerald-500 text-white"
+              : "bg-[#0f766e] text-white hover:bg-[#0f766e]/90"
+          )}
+        >
+          <Save className="h-4 w-4" />
+          {savedFlash ? "Guardado" : "Guardar metas"}
+        </button>
+      </div>
+
+      {/* ── 2. Barras de progreso ventas y gastos ── */}
+      {(budgetConfig.salesGoal > 0 || budgetConfig.expensesGoal > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {budgetConfig.salesGoal > 0 && (
+            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+              <ProgressBar
+                label="Ventas del mes"
+                current={currentMonthSales}
+                goal={budgetConfig.salesGoal}
+                isSales={true}
+              />
+            </div>
+          )}
+          {budgetConfig.expensesGoal > 0 && (
+            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+              <ProgressBar
+                label="Gastos del mes"
+                current={currentMonthExpenses}
+                goal={budgetConfig.expensesGoal}
+                isSales={false}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 4. Proyección fin de mes ── */}
+      {(currentMonthSales > 0 || currentMonthExpenses > 0) && (
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">
+            Proyeccion al {totalDays} de {monthName}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3">
+              <p className="text-xs text-gray-500 dark:text-muted font-semibold mb-1">Ventas proyectadas</p>
+              <div className="flex items-center gap-2">
+                {projection.sales >= (budgetConfig.salesGoal || projection.sales)
+                  ? <TrendingUp className="h-4 w-4 text-emerald-500 shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-amber-500 shrink-0" />}
+                <span className="text-lg font-extrabold text-gray-900 dark:text-foreground">
+                  {fmt(projection.sales)}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-muted mt-1">
+                Al ritmo actual ({fmt(currentMonthSales)} en {day} días)
+              </p>
+            </div>
+            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3">
+              <p className="text-xs text-gray-500 dark:text-muted font-semibold mb-1">Gastos proyectados</p>
+              <div className="flex items-center gap-2">
+                {projection.expenses > (budgetConfig.expensesGoal || projection.expenses)
+                  ? <TrendingUp className="h-4 w-4 text-red-500 shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-emerald-500 shrink-0" />}
+                <span className="text-lg font-extrabold text-gray-900 dark:text-foreground">
+                  {fmt(projection.expenses)}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-muted mt-1">
+                Al ritmo actual ({fmt(currentMonthExpenses)} en {day} días)
+              </p>
+            </div>
+            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3">
+              <p className="text-xs text-gray-500 dark:text-muted font-semibold mb-1">Ganancia proyectada</p>
+              <div className="flex items-center gap-2">
+                {(projection.sales - projection.expenses) >= 0
+                  ? <TrendingUp className="h-4 w-4 text-emerald-500 shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-red-500 shrink-0" />}
+                <span className={cn(
+                  "text-lg font-extrabold",
+                  (projection.sales - projection.expenses) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                )}>
+                  {fmt(projection.sales - projection.expenses)}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-muted mt-1">
+                Ventas menos gastos
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* KPIs de gastos */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Total presupuestado</p>
@@ -235,30 +597,15 @@ export default function BudgetVsRealTab() {
             {fmt(totals.actual)}
           </p>
         </div>
-        <div
-          className={cn(
-            "bg-white dark:bg-card rounded-2xl border p-4 shadow-sm",
-            totals.variance > 0
-              ? "border-red-200 dark:border-red-800"
-              : "border-emerald-200 dark:border-emerald-800"
-          )}
-        >
-          <p className="text-xs text-gray-500 dark:text-muted font-semibold">Desviación</p>
-          <p
-            className={cn(
-              "text-xl font-extrabold mt-1",
-              totals.variance > 0 ? "text-red-600" : "text-emerald-600"
-            )}
-          >
-            {totals.variance > 0 ? "+" : ""}
-            {fmt(totals.variance)}
+        <div className={cn(
+          "bg-white dark:bg-card rounded-2xl border p-4 shadow-sm",
+          totals.variance > 0 ? "border-red-200 dark:border-red-800" : "border-emerald-200 dark:border-emerald-800"
+        )}>
+          <p className="text-xs text-gray-500 dark:text-muted font-semibold">Desviación gastos</p>
+          <p className={cn("text-xl font-extrabold mt-1", totals.variance > 0 ? "text-red-600" : "text-emerald-600")}>
+            {totals.variance > 0 ? "+" : ""}{fmt(totals.variance)}
           </p>
-          <p
-            className={cn(
-              "text-xs font-bold",
-              totals.pct > 0 ? "text-red-500" : "text-emerald-600"
-            )}
-          >
+          <p className={cn("text-xs font-bold", totals.pct > 0 ? "text-red-500" : "text-emerald-600")}>
             {fmtPct(totals.pct)}
           </p>
         </div>
@@ -273,80 +620,19 @@ export default function BudgetVsRealTab() {
         </div>
       </div>
 
-      {/* Gráfico de barras comparativo */}
-      {chartData.length > 0 && (
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">
-            Presupuesto vs Real por categoría (top {chartData.length})
-          </h3>
-          <div className="space-y-3">
-            {chartData.map((b) => {
-              const variance =
-                b.budgeted > 0 ? ((b.actual - b.budgeted) / b.budgeted) * 100 : 0;
-              const isOver = variance > 10;
-              const isUnder = variance < -10;
-              return (
-                <div key={b.id} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-gray-700 dark:text-foreground truncate max-w-[150px]">
-                      {b.category}
-                    </span>
-                    <span
-                      className={cn(
-                        "font-bold",
-                        isOver ? "text-red-600" : isUnder ? "text-emerald-600" : "text-gray-500"
-                      )}
-                    >
-                      {fmtPct(variance)}
-                    </span>
-                  </div>
-                  {/* Barra presupuesto */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-gray-400 w-16 shrink-0">Presup.</span>
-                    <div className="flex-1 h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-blue-300 dark:bg-blue-700"
-                        style={{ width: `${(b.budgeted / chartMax) * 100}%` }}
-                      />
-                    </div>
-                    <span className="text-[10px] text-gray-500 w-20 text-right">{fmt(b.budgeted)}</span>
-                  </div>
-                  {/* Barra real */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-gray-400 w-16 shrink-0">Real</span>
-                    <div className="flex-1 h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          "h-full rounded-full",
-                          isOver ? "bg-red-500" : isUnder ? "bg-emerald-500" : "bg-primary"
-                        )}
-                        style={{ width: `${Math.min((b.actual / chartMax) * 100, 100)}%` }}
-                      />
-                    </div>
-                    <span className="text-[10px] font-bold text-gray-700 dark:text-foreground w-20 text-right">
-                      {fmt(b.actual)}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex items-center gap-4 mt-4 text-xs text-gray-400">
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-2 rounded bg-blue-300 dark:bg-blue-700" /> Presupuestado
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-2 rounded bg-primary" /> Real (OK)
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-2 rounded bg-red-500" /> Real (exceso)
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-2 rounded bg-emerald-500" /> Real (ahorro)
-            </span>
-          </div>
-        </div>
-      )}
+      {/* ── 3. Gráfico de barras por categoría principal ── */}
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">
+          Ventas · Gastos · Ganancia · Por departamento
+        </h3>
+        {mainCategories.every((c) => c.actual === 0 && c.budgeted === 0) ? (
+          <p className="text-sm text-gray-400 dark:text-muted text-center py-6">
+            Sin datos para este mes. Registra ventas o gastos para ver el gráfico.
+          </p>
+        ) : (
+          <CategoryChart categories={mainCategories} />
+        )}
+      </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
@@ -355,30 +641,26 @@ export default function BudgetVsRealTab() {
           placeholder="Buscar categoría..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary transition-colors w-48"
+          className="px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#0f766e] transition-colors w-48 min-h-[44px]"
         />
         <select
-          value={monthFilter}
+          value={effectiveMonthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary"
+          className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#0f766e] min-h-[44px]"
         >
           <option value="all">Todos los meses</option>
           {MONTHS.filter((m) => m !== "all").map((m) => (
-            <option key={m} value={m}>
-              {m}
-            </option>
+            <option key={m} value={m}>{m}</option>
           ))}
         </select>
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary"
+          className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#0f766e] min-h-[44px]"
         >
           <option value="all">Todos los dptos</option>
           {DEPARTMENTS.map((d) => (
-            <option key={d} value={d}>
-              {d}
-            </option>
+            <option key={d} value={d}>{d}</option>
           ))}
         </select>
         <div className="flex rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
@@ -394,9 +676,9 @@ export default function BudgetVsRealTab() {
               key={val}
               onClick={() => setAlertFilter(val)}
               className={cn(
-                "px-3 py-2 text-sm font-semibold transition-colors",
+                "px-3 py-2 text-sm font-semibold transition-colors min-h-[44px]",
                 alertFilter === val
-                  ? "bg-primary text-white"
+                  ? "bg-[#0f766e] text-white"
                   : "text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
               )}
             >
@@ -406,7 +688,7 @@ export default function BudgetVsRealTab() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Tabla de detalle por categoría */}
       <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
@@ -424,37 +706,23 @@ export default function BudgetVsRealTab() {
             </thead>
             <tbody>
               {filtered.map((b) => {
-                const variance =
-                  b.budgeted > 0 ? ((b.actual - b.budgeted) / b.budgeted) * 100 : 0;
+                const variance = b.budgeted > 0 ? ((b.actual - b.budgeted) / b.budgeted) * 100 : 0;
                 const pctUsed = b.budgeted > 0 ? Math.min((b.actual / b.budgeted) * 100, 150) : 0;
-                const status =
-                  Math.abs(variance) <= 10 ? "ok" : variance > 10 ? "over" : "under";
+                const status = Math.abs(variance) <= 10 ? "ok" : variance > 10 ? "over" : "under";
                 return (
                   <tr
                     key={b.id}
                     className="border-b border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors"
                   >
-                    <td className="px-4 py-3 font-semibold text-gray-900 dark:text-foreground">
-                      {b.category}
-                    </td>
+                    <td className="px-4 py-3 font-semibold text-gray-900 dark:text-foreground">{b.category}</td>
                     <td className="px-4 py-3 text-gray-500 dark:text-muted">{b.department}</td>
                     <td className="px-4 py-3 text-xs text-gray-400 dark:text-muted">{b.month}</td>
-                    <td className="px-4 py-3 text-right font-mono text-gray-700 dark:text-foreground">
-                      {fmt(b.budgeted)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-gray-900 dark:text-foreground">
-                      {fmt(b.actual)}
-                    </td>
-                    <td
-                      className={cn(
-                        "px-4 py-3 text-right font-bold",
-                        status === "over"
-                          ? "text-red-600"
-                          : status === "under"
-                          ? "text-emerald-600"
-                          : "text-gray-500 dark:text-muted"
-                      )}
-                    >
+                    <td className="px-4 py-3 text-right font-mono text-gray-700 dark:text-foreground">{fmt(b.budgeted)}</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-gray-900 dark:text-foreground">{fmt(b.actual)}</td>
+                    <td className={cn(
+                      "px-4 py-3 text-right font-bold",
+                      status === "over" ? "text-red-600" : status === "under" ? "text-emerald-600" : "text-gray-500 dark:text-muted"
+                    )}>
                       {fmtPct(variance)}
                     </td>
                     <td className="px-4 py-3">
@@ -462,11 +730,7 @@ export default function BudgetVsRealTab() {
                         <div
                           className={cn(
                             "h-full rounded-full transition-all",
-                            status === "over"
-                              ? "bg-red-500"
-                              : status === "under"
-                              ? "bg-emerald-500"
-                              : "bg-blue-500"
+                            status === "over" ? "bg-red-500" : status === "under" ? "bg-emerald-500" : "bg-blue-500"
                           )}
                           style={{ width: `${Math.min(pctUsed, 100)}%` }}
                         />

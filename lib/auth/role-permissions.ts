@@ -5,7 +5,7 @@
  * Usado por lib/require-admin.ts para validación granular de permisos.
  */
 
-export type Role = "admin" | "cajero" | "almacenero";
+export type Role = "admin" | "cajero" | "almacenero" | "proveedor" | "delivery" | "tienda_owner";
 export type Action = "read" | "write" | "delete";
 export type Resource =
   | "orders"
@@ -38,7 +38,13 @@ export type Resource =
   | "price-history"
   | "inventory-movements"
   | "returns"
-  | "supplier-evaluations";
+  | "supplier-evaluations"
+  | "store_products"
+  | "store_orders"
+  | "store_analytics"
+  | "store_settings"
+  | "wholesale_orders"
+  | "delivery_assignments";
 
 /**
  * Matriz de permisos: role → resource → actions permitidas
@@ -96,6 +102,14 @@ const PERMISSIONS: Record<Role, Partial<Record<Resource, Action[]>>> = {
     notifications: ["read", "write", "delete"],
     "barcode-lookup": ["read"],
     "price-history": ["read", "write"],
+
+    // Marketplace
+    store_products: ["read", "write", "delete"],
+    store_orders: ["read", "write", "delete"],
+    store_analytics: ["read"],
+    store_settings: ["read", "write", "delete"],
+    wholesale_orders: ["read", "write", "delete"],
+    delivery_assignments: ["read", "write", "delete"],
   },
 
   /**
@@ -183,6 +197,62 @@ const PERMISSIONS: Record<Role, Partial<Record<Resource, Action[]>>> = {
     // Operaciones
     chat: ["read", "write"], // Chat interno
     notifications: ["read"],
+  },
+
+  /**
+   * PROVEEDOR - Gestión de productos propios y órdenes mayoristas
+   */
+  proveedor: {
+    // Catálogo y productos
+    products: ["read", "write"],
+
+    // Inventario (gestión del stock propio)
+    inventory: ["read", "write"],
+
+    // Marketplace
+    store_products: ["read", "write"],
+    store_analytics: ["read"],
+    wholesale_orders: ["read", "write"],
+  },
+
+  /**
+   * DELIVERY - Gestión de asignaciones y entregas
+   */
+  delivery: {
+    // Pedidos (solo lectura para preparar entrega)
+    orders: ["read"],
+
+    // Asignaciones de delivery (gestión completa)
+    delivery_assignments: ["read", "write"],
+
+    // Clientes (solo consulta de dirección/contacto)
+    customers: ["read"],
+  },
+
+  /**
+   * TIENDA_OWNER - Propietario de tienda en marketplace
+   */
+  tienda_owner: {
+    // Catálogo y productos
+    products: ["read", "write"],
+
+    // Pedidos
+    orders: ["read", "write"],
+
+    // Clientes
+    customers: ["read", "write"],
+
+    // Analytics (solo lectura)
+    analytics: ["read"],
+
+    // Inventario
+    inventory: ["read", "write"],
+
+    // Marketplace (acceso completo a su tienda)
+    store_products: ["read", "write", "delete"],
+    store_orders: ["read", "write"],
+    store_analytics: ["read"],
+    store_settings: ["read", "write"],
   },
 };
 
@@ -311,6 +381,12 @@ export const API_RESOURCE_MAP: Record<string, Resource> = {
   "/api/inventory-movements": "inventory-movements",
   "/api/returns": "returns",
   "/api/supplier-evaluations": "supplier-evaluations",
+  "/api/store/products": "store_products",
+  "/api/store/orders": "store_orders",
+  "/api/store/analytics": "store_analytics",
+  "/api/store/settings": "store_settings",
+  "/api/wholesale/orders": "wholesale_orders",
+  "/api/delivery/assignments": "delivery_assignments",
 };
 
 /**
@@ -373,4 +449,28 @@ export const ALLOWED_ROLES = {
   
   // Analytics dashboards
   ANALYTICS: ["admin"] as Role[],
+
+  // Marketplace — store products
+  STORE_PRODUCTS_READ: ["admin", "proveedor", "tienda_owner"] as Role[],
+  STORE_PRODUCTS_WRITE: ["admin", "proveedor", "tienda_owner"] as Role[],
+  STORE_PRODUCTS_DELETE: ["admin", "tienda_owner"] as Role[],
+
+  // Marketplace — store orders
+  STORE_ORDERS_READ: ["admin", "tienda_owner"] as Role[],
+  STORE_ORDERS_WRITE: ["admin", "tienda_owner"] as Role[],
+
+  // Marketplace — store analytics
+  STORE_ANALYTICS: ["admin", "proveedor", "tienda_owner"] as Role[],
+
+  // Marketplace — store settings
+  STORE_SETTINGS_READ: ["admin", "tienda_owner"] as Role[],
+  STORE_SETTINGS_WRITE: ["admin", "tienda_owner"] as Role[],
+
+  // Wholesale orders (B2B)
+  WHOLESALE_ORDERS_READ: ["admin", "proveedor"] as Role[],
+  WHOLESALE_ORDERS_WRITE: ["admin", "proveedor"] as Role[],
+
+  // Delivery assignments
+  DELIVERY_ASSIGNMENTS_READ: ["admin", "delivery"] as Role[],
+  DELIVERY_ASSIGNMENTS_WRITE: ["admin", "delivery"] as Role[],
 };

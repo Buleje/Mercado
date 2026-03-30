@@ -91,9 +91,9 @@ function FlashSalePreview({ product, salePrice, duration, endIso }: PreviewProps
   const pct = discountPct(product.price, salePrice);
 
   return (
-    <div className="rounded-xl border-2 border-[#f4a261] bg-white dark:bg-gray-900 overflow-hidden shadow-md">
+    <div className="rounded-xl border-2 border-[#f97316] bg-white dark:bg-gray-900 overflow-hidden shadow-md">
       {/* Cabecera oferta */}
-      <div className="flex items-center justify-between bg-[#f4a261] px-3 py-2">
+      <div className="flex items-center justify-between bg-[#f97316] px-3 py-2">
         <div className="flex items-center gap-1.5">
           <Zap className="h-4 w-4 text-white" aria-hidden="true" />
           <span className="text-sm font-bold text-white uppercase tracking-wide">Oferta Relampago</span>
@@ -105,7 +105,7 @@ function FlashSalePreview({ product, salePrice, duration, endIso }: PreviewProps
       <div className="p-3">
         <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">{product.name}</p>
         <div className="mt-1.5 flex items-baseline gap-2">
-          <span className="text-xl font-bold text-[#2d6a4f] dark:text-[#3a8a65]">{fmtPrice(salePrice)}</span>
+          <span className="text-xl font-bold text-[#0f766e] dark:text-[#3a8a65]">{fmtPrice(salePrice)}</span>
           <span className="text-sm text-gray-400 line-through">{fmtPrice(product.price)}</span>
           {pct > 0 && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
@@ -114,7 +114,7 @@ function FlashSalePreview({ product, salePrice, duration, endIso }: PreviewProps
           )}
         </div>
         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-          Dura {duration.label} — solo en Bodega San Martin
+          Dura {duration.label} — solo en Buleje
         </p>
       </div>
     </div>
@@ -240,8 +240,8 @@ export function FlashSaleCreator({ className }: { className?: string }) {
     >
       {/* Encabezado */}
       <div className="mb-4 flex items-center gap-2">
-        <div className="rounded-lg bg-[#f4a261]/10 p-1.5">
-          <Zap className="h-5 w-5 text-[#f4a261]" aria-hidden="true" />
+        <div className="rounded-lg bg-[#f97316]/10 p-1.5">
+          <Zap className="h-5 w-5 text-[#f97316]" aria-hidden="true" />
         </div>
         <h2 className="text-base font-semibold text-gray-900 dark:text-white">Oferta Relampago</h2>
       </div>
@@ -269,8 +269,8 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                 "bg-white dark:bg-gray-800",
                 "border-gray-300 dark:border-gray-600",
                 "text-gray-900 dark:text-white placeholder-gray-400",
-                "focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent",
-                selected && "border-[#2d6a4f] dark:border-[#3a8a65]"
+                "focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent",
+                selected && "border-[#0f766e] dark:border-[#3a8a65]"
               )}
             />
             {(searching) && (
@@ -330,7 +330,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
               <label htmlFor="flash-sale-price" className="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">
                 Precio de oferta
               </label>
-              <div className="flex items-center gap-1.5 rounded-lg border border-[#f4a261] bg-white dark:bg-gray-800 px-3 py-2 focus-within:ring-2 focus-within:ring-[#f4a261]">
+              <div className="flex items-center gap-1.5 rounded-lg border border-[#f97316] bg-white dark:bg-gray-800 px-3 py-2 focus-within:ring-2 focus-within:ring-[#f97316]">
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">S/</span>
                 <input
                   id="flash-sale-price"
@@ -339,7 +339,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                   step="0.10"
                   value={salePrice}
                   onChange={(e) => setSalePrice(e.target.value)}
-                  className="w-full bg-transparent text-sm font-semibold text-[#f4a261] focus:outline-none"
+                  className="w-full bg-transparent text-sm font-semibold text-[#f97316] focus:outline-none"
                   placeholder="0.00"
                 />
               </div>
@@ -370,10 +370,10 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                 onClick={() => setDuration(d)}
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2d6a4f]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f766e]",
                   duration.hours === d.hours
-                    ? "border-[#2d6a4f] bg-[#2d6a4f] text-white dark:bg-[#2d6a4f]"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-[#2d6a4f]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                    ? "border-[#0f766e] bg-[#0f766e] text-white dark:bg-[#0f766e]"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-[#0f766e]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
                 )}
               >
                 <Clock className="h-3 w-3" aria-hidden="true" />
@@ -411,10 +411,10 @@ export function FlashSaleCreator({ className }: { className?: string }) {
             className={cn(
               "flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-semibold",
               "transition-colors duration-150",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f4a261]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316]",
               saving || !selected || salePriceNum <= 0
                 ? "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600"
-                : "bg-[#f4a261] text-white hover:bg-[#e08c4a]"
+                : "bg-[#f97316] text-white hover:bg-[#e08c4a]"
             )}
           >
             {saving ? (
@@ -434,7 +434,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                 "border-gray-300 dark:border-gray-600",
                 "text-gray-600 dark:text-gray-400",
                 "hover:bg-gray-50 dark:hover:bg-gray-800",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2d6a4f]"
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f766e]"
               )}
               aria-pressed={showPreview}
               aria-label={showPreview ? "Ocultar preview" : "Ver preview"}

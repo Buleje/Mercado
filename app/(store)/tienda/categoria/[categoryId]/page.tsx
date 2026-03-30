@@ -37,11 +37,11 @@ const categoryDescriptions: Record<string, string> = {
   abarrotes:
     "Abarrotes esenciales: arroz, fideos, aceite, azúcar, enlatados y más. Compra tus productos de despensa con delivery rápido en Pucallpa.",
   carnes:
-    "Carnes frescas de calidad: pollo, res, cerdo y más. Delivery en frío garantizado en Pucallpa. Bodega San Martín.",
+    "Carnes frescas de calidad: pollo, res, cerdo y más. Delivery en frío garantizado en Pucallpa. Buleje.",
   lacteos:
     "Productos lácteos frescos: leche, queso, yogurt, mantequilla y más. Delivery rápido en Pucallpa.",
   bebidas:
-    "Bebidas para toda la familia: agua, gaseosas, jugos naturales y más. Delivery en Pucallpa con Bodega San Martín.",
+    "Bebidas para toda la familia: agua, gaseosas, jugos naturales y más. Delivery en Pucallpa con Buleje.",
   limpieza:
     "Productos de limpieza para tu hogar: detergente, lejía, desinfectante y más. Delivery en Pucallpa.",
 };
@@ -61,13 +61,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const baseDec =
     categoryDescriptions[cat.id] ??
-    `Compra ${cat.label} online con delivery gratis en Pucallpa. Bodega San Martín.`;
+    `Compra ${cat.label} online con delivery gratis en Pucallpa. Buleje.`;
   const desc = `${baseDec} ${productCount} productos desde S/${minPrice.toFixed(2)}.`;
 
-  const categoryUrl = `https://www.bodegasanmartin.pe/tienda/categoria/${cat.id}`;
+  const categoryUrl = `https://www.buleje.pe/tienda/categoria/${cat.id}`;
 
   return {
-    title: `${cat.emoji} ${cat.label} en Pucallpa — Delivery Gratis | Bodega San Martín`,
+    title: `${cat.emoji} ${cat.label} en Pucallpa — Delivery Gratis | Buleje`,
     description: desc,
     openGraph: {
       title: `${cat.label} — Compra Online con Delivery en Pucallpa`,
@@ -75,14 +75,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "website",
       url: categoryUrl,
       locale: "es_PE",
-      siteName: "Bodega San Martín",
-      images: [{ url: "https://www.bodegasanmartin.pe/og-image.jpg", width: 1200, height: 630, alt: `${cat.label} — Bodega San Martín Pucallpa` }],
+      siteName: "Buleje",
+      images: [{ url: "https://www.buleje.pe/og-image.jpg", width: 1200, height: 630, alt: `${cat.label} — Buleje Pucallpa` }],
     },
     twitter: {
       card: "summary_large_image",
-      title: `${cat.emoji} ${cat.label} — Bodega San Martín`,
+      title: `${cat.emoji} ${cat.label} — Buleje`,
       description: desc,
-      images: ["https://www.bodegasanmartin.pe/og-image.jpg"],
+      images: ["https://www.buleje.pe/og-image.jpg"],
     },
     alternates: {
       canonical: categoryUrl,
@@ -97,15 +97,15 @@ export default async function CategoryPage({ params }: Props) {
   if (!cat) notFound();
 
   const breadcrumbs = [
-    { name: "Inicio", url: "https://www.bodegasanmartin.pe" },
-    { name: "Tienda", url: "https://www.bodegasanmartin.pe/tienda" },
+    { name: "Inicio", url: "https://www.buleje.pe" },
+    { name: "Tienda", url: "https://www.buleje.pe/tienda" },
     {
       name: cat.label,
-      url: `https://www.bodegasanmartin.pe/tienda/categoria/${cat.id}`,
+      url: `https://www.buleje.pe/tienda/categoria/${cat.id}`,
     },
   ];
 
-  const categoryUrl = `https://www.bodegasanmartin.pe/tienda/categoria/${cat.id}`;
+  const categoryUrl = `https://www.buleje.pe/tienda/categoria/${cat.id}`;
   const catProducts = products.filter((p) => p.category === cat.id);
 
   return (
@@ -117,7 +117,7 @@ export default async function CategoryPage({ params }: Props) {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "CollectionPage",
-            name: `${cat.label} — Bodega San Martín`,
+            name: `${cat.label} — Buleje`,
             description:
               categoryDescriptions[cat.id] ??
               `${cat.label} con delivery en Pucallpa.`,
@@ -125,8 +125,8 @@ export default async function CategoryPage({ params }: Props) {
             numberOfItems: catProducts.length,
             isPartOf: {
               "@type": "WebSite",
-              name: "Bodega San Martín",
-              url: "https://www.bodegasanmartin.pe",
+              name: "Buleje",
+              url: "https://www.buleje.pe",
             },
           }),
         }}
@@ -157,7 +157,7 @@ export default async function CategoryPage({ params }: Props) {
                     : "https://schema.org/OutOfStock",
                   seller: {
                     "@type": "Organization",
-                    name: "Bodega San Martín",
+                    name: "Buleje",
                   },
                 },
               },

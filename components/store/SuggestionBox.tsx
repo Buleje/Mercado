@@ -81,8 +81,8 @@ export default function SuggestionBox() {
     return (
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center shadow-sm">
         <div className="flex justify-center mb-4">
-          <div className="p-4 rounded-full bg-[#2d6a4f]/10">
-            <CheckCircle2 className="w-10 h-10 text-[#2d6a4f]" />
+          <div className="p-4 rounded-full bg-[#0f766e]/10">
+            <CheckCircle2 className="w-10 h-10 text-[#0f766e]" />
           </div>
         </div>
         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
@@ -90,11 +90,11 @@ export default function SuggestionBox() {
         </h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
           Tu opinion es muy importante para nosotros.
-          La usaremos para mejorar el servicio de Bodega San Martin.
+          La usaremos para mejorar el servicio de Buleje.
         </p>
         <button
           onClick={reset}
-          className="px-6 py-3 rounded-xl bg-[#2d6a4f]/10 text-[#2d6a4f] dark:text-[#52b788] font-semibold text-sm hover:bg-[#2d6a4f]/20 transition-colors"
+          className="px-6 py-3 rounded-xl bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6] font-semibold text-sm hover:bg-[#0f766e]/20 transition-colors"
         >
           Enviar otra sugerencia
         </button>
@@ -106,8 +106,8 @@ export default function SuggestionBox() {
     <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
       {/* Header */}
       <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-[#2d6a4f]/10">
-          <MessageSquare className="w-5 h-5 text-[#2d6a4f]" />
+        <div className="p-2 rounded-xl bg-[#0f766e]/10">
+          <MessageSquare className="w-5 h-5 text-[#0f766e]" />
         </div>
         <div>
           <h2 className="font-bold text-gray-900 dark:text-white">
@@ -139,7 +139,7 @@ export default function SuggestionBox() {
                   className={cn(
                     "w-8 h-8 transition-colors",
                     (hoveredStar || rating) >= star
-                      ? "fill-[#f4a261] text-[#f4a261]"
+                      ? "fill-[#f97316] text-[#f97316]"
                       : "text-gray-300 dark:text-gray-600"
                   )}
                 />
@@ -166,8 +166,8 @@ export default function SuggestionBox() {
                 className={cn(
                   "px-3 py-1.5 rounded-full text-sm font-medium border transition-colors",
                   category === cat.value
-                    ? "bg-[#2d6a4f] text-white border-[#2d6a4f]"
-                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#2d6a4f] hover:text-[#2d6a4f]"
+                    ? "bg-[#0f766e] text-white border-[#0f766e]"
+                    : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#0f766e] hover:text-[#0f766e]"
                 )}
               >
                 {cat.label}
@@ -187,7 +187,7 @@ export default function SuggestionBox() {
             placeholder="Que podemos mejorar? Que te gusto? Que necesitas?"
             rows={4}
             maxLength={500}
-            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#2d6a4f] resize-none"
+            className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 outline-none focus:border-[#0f766e] resize-none"
           />
           <p className="text-xs text-gray-400 text-right mt-1">
             {message.length}/500
@@ -201,7 +201,7 @@ export default function SuggestionBox() {
         <button
           onClick={submit}
           disabled={!message.trim() || rating === 0 || submitting}
-          className="w-full py-3.5 rounded-xl bg-[#2d6a4f] text-white font-bold text-sm disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
+          className="w-full py-3.5 rounded-xl bg-[#0f766e] text-white font-bold text-sm disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
         >
           {submitting ? (
             <>

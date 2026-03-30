@@ -2,7 +2,7 @@
 applyTo: "**/contexts/**,**/hooks/use*,**/cart*"
 ---
 
-# State Management — Bodega San Martín
+# State Management — Buleje
 
 ## Contextos disponibles
 

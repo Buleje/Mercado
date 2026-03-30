@@ -2,7 +2,7 @@
 applyTo: "**/.gitignore,**/.husky/**,**/.github/**"
 ---
 
-# Git Workflow — Bodega San Martín
+# Git Workflow — Buleje
 
 ## Ramas
 

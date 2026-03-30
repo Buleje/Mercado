@@ -2,7 +2,7 @@
 applyTo: "**/auth/**,**/session*,**/require-admin*"
 ---
 
-# Security & Auth — Bodega San Martín
+# Security & Auth — Buleje
 
 ## Sistema de autenticación
 

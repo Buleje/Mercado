@@ -94,7 +94,7 @@ export default function ProductQRGenerator() {
   const generateQR = useCallback(async () => {
     if (!selected || !canvasRef.current) return;
     const slug = selected.slug ?? selected.id.toString();
-    const url = `https://bodegasanmartin.pe/tienda/${slug}`;
+    const url = `https://buleje.pe/tienda/${slug}`;
     setRendering(true);
     await renderQRToCanvas(canvasRef.current, url, SIZE_PX[size]);
     setRendering(false);
@@ -119,7 +119,7 @@ export default function ProductQRGenerator() {
             body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; }
             img { display: block; }
             .label { margin-top: 12px; font-size: 14px; font-weight: bold; color: #1a3d2e; }
-            .price { font-size: 16px; color: #2d6a4f; }
+            .price { font-size: 16px; color: #0f766e; }
             @media print { body { -webkit-print-color-adjust: exact; } }
           </style>
         </head>
@@ -172,7 +172,7 @@ export default function ProductQRGenerator() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Escribe el nombre del producto..."
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#2d6a4f] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </div>
             {search && (
@@ -194,7 +194,7 @@ export default function ProductQRGenerator() {
                       <span className="text-gray-800 dark:text-gray-200">
                         {p.name}
                       </span>
-                      <span className="font-medium text-[#2d6a4f]">
+                      <span className="font-medium text-[#0f766e]">
                         S/ {p.price?.toFixed(2)}
                       </span>
                     </button>
@@ -217,8 +217,8 @@ export default function ProductQRGenerator() {
                   className={cn(
                     "flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition",
                     size === s
-                      ? "border-[#2d6a4f] bg-[#2d6a4f] text-white"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#2d6a4f]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                      ? "border-[#0f766e] bg-[#0f766e] text-white"
+                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#0f766e]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
                   )}
                 >
                   {s === "small"
@@ -240,8 +240,8 @@ export default function ProductQRGenerator() {
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
                 URL del QR
               </p>
-              <p className="mt-1 break-all font-mono text-xs text-[#2d6a4f]">
-                https://bodegasanmartin.pe/tienda/
+              <p className="mt-1 break-all font-mono text-xs text-[#0f766e]">
+                https://buleje.pe/tienda/
                 {selected.slug ?? selected.id}
               </p>
             </div>
@@ -254,7 +254,7 @@ export default function ProductQRGenerator() {
             <>
               <div
                 className={cn(
-                  "rounded-xl border-2 border-[#2d6a4f] bg-white p-4",
+                  "rounded-xl border-2 border-[#0f766e] bg-white p-4",
                   rendering && "opacity-50"
                 )}
               >
@@ -262,7 +262,7 @@ export default function ProductQRGenerator() {
                 <p className="mt-2 text-center text-sm font-bold text-[#1a3d2e]">
                   {selected.name}
                 </p>
-                <p className="text-center text-base font-bold text-[#2d6a4f]">
+                <p className="text-center text-base font-bold text-[#0f766e]">
                   S/ {selected.price.toFixed(2)}
                 </p>
               </div>
@@ -270,7 +270,7 @@ export default function ProductQRGenerator() {
                 <button
                   onClick={handlePrint}
                   disabled={rendering}
-                  className="flex items-center gap-2 rounded-lg bg-[#2d6a4f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#245a42] disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0d5f58] disabled:opacity-50"
                 >
                   <Printer className="h-4 w-4" />
                   Imprimir
@@ -278,7 +278,7 @@ export default function ProductQRGenerator() {
                 <button
                   onClick={handleDownload}
                   disabled={rendering}
-                  className="flex items-center gap-2 rounded-lg border border-[#2d6a4f] px-4 py-2 text-sm font-semibold text-[#2d6a4f] transition hover:bg-[#2d6a4f]/5 disabled:opacity-50 dark:text-emerald-400"
+                  className="flex items-center gap-2 rounded-lg border border-[#0f766e] px-4 py-2 text-sm font-semibold text-[#0f766e] transition hover:bg-[#0f766e]/5 disabled:opacity-50 dark:text-emerald-400"
                 >
                   <Download className="h-4 w-4" />
                   Descargar

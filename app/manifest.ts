@@ -2,15 +2,16 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Bodega San Martín - Abarrotes Delivery Pucallpa",
-    short_name: "BSM",
+    name: "Buleje - Abarrotes Delivery Pucallpa",
+    short_name: "BLJ",
     description:
       "Compra abarrotes online en Pucallpa: bebidas, golosinas, carnes, pollo, productos de limpieza y más. Delivery rápido, paga con Yape o efectivo.",
+    id: "buleje-pwa",
     start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#2d6a4f",
+    theme_color: "#0f766e",
     orientation: "portrait-primary",
     lang: "es",
     dir: "ltr",

@@ -14,14 +14,15 @@ function parseStatValue(str: string): { value: number; suffix: string; decimals?
 }
 
 const statMeta = [
-  { icon: ShoppingBag, label: "Productos disponibles", accent: "#2d6a4f", accentGradient: "linear-gradient(to bottom, rgba(45,106,79,0.12), transparent)" },
-  { icon: Users, label: "Clientes satisfechos", accent: "#f4a261", accentGradient: "linear-gradient(to bottom, rgba(244,162,97,0.12), transparent)" },
+  { icon: ShoppingBag, label: "Productos disponibles", accent: "#0f766e", accentGradient: "linear-gradient(to bottom, rgba(45,106,79,0.12), transparent)" },
+  { icon: Users, label: "Clientes satisfechos", accent: "#f97316", accentGradient: "linear-gradient(to bottom, rgba(244,162,97,0.12), transparent)" },
   { icon: Truck, label: "Pedidos entregados", accent: "#60a5fa", accentGradient: "linear-gradient(to bottom, rgba(96,165,250,0.12), transparent)" },
   { icon: Star, label: "Calificación promedio", accent: "#fbbf24", accentGradient: "linear-gradient(to bottom, rgba(251,191,36,0.12), transparent)" },
 ];
 
 function AnimatedNumber({ target, decimals = 0, started }: { target: number; decimals?: number; started: boolean }) {
   const [current, setCurrent] = useState(0);
+  const [done, setDone] = useState(false);
   const rafRef = useRef<number>(0);
 
   useEffect(() => {
@@ -36,6 +37,8 @@ function AnimatedNumber({ target, decimals = 0, started }: { target: number; dec
       setCurrent(target * eased);
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(animate);
+      } else {
+        setDone(true);
       }
     };
 
@@ -43,7 +46,11 @@ function AnimatedNumber({ target, decimals = 0, started }: { target: number; dec
     return () => cancelAnimationFrame(rafRef.current);
   }, [target, started]);
 
-  return <>{decimals > 0 ? current.toFixed(decimals) : Math.floor(current)}</>;
+  return (
+    <span className={done ? "animate-[statPop_0.3s_ease-out]" : ""}>
+      {decimals > 0 ? current.toFixed(decimals) : Math.floor(current)}
+    </span>
+  );
 }
 
 export default function StatsCounter() {
@@ -64,6 +71,18 @@ export default function StatsCounter() {
 
   return (
     <section className="relative py-16 sm:py-24 overflow-hidden bg-surface" ref={ref}>
+      <style>{`
+        @keyframes statPop {
+          0%   { transform: scale(1); }
+          50%  { transform: scale(1.08); }
+          100% { transform: scale(1); }
+        }
+        @keyframes counterGlow {
+          0%   { box-shadow: 0 0 0 0 rgba(45,106,79,0.15); }
+          50%  { box-shadow: 0 0 30px 4px rgba(45,106,79,0.1); }
+          100% { box-shadow: 0 0 0 0 rgba(45,106,79,0.15); }
+        }
+      `}</style>
       {/* Subtle background pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,var(--color-primary)/0.04,transparent_50%),radial-gradient(circle_at_70%_80%,var(--color-secondary)/0.04,transparent_50%)]" />
 
@@ -105,7 +124,7 @@ export default function StatsCounter() {
                 >
                   <stat.icon className="h-5.5 w-5.5" />
                 </div>
-                <div className="text-4xl sm:text-5xl font-black text-foreground mb-1.5 tabular-nums tracking-tighter">
+                <div className="text-4xl sm:text-5xl font-black text-foreground mb-1.5 font-mono tabular-nums tracking-tighter">
                   <AnimatedNumber target={stat.value} decimals={stat.decimals} started={started} />
                   <span style={{ color: stat.accent }}>{stat.suffix}</span>
                 </div>

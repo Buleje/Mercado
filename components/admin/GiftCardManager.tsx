@@ -110,16 +110,16 @@ function GiftCardDisplay({ card }: { card: GiftCard }) {
 
   return (
     <div className="relative rounded-2xl overflow-hidden p-5 text-white"
-      style={{ background: "linear-gradient(135deg, #1a3a2a 0%, #2d6a4f 50%, #1a3a2a 100%)" }}>
+      style={{ background: "linear-gradient(135deg, #1a3a2a 0%, #0f766e 50%, #1a3a2a 100%)" }}>
       {/* Gold border accent */}
       <div className="absolute inset-0 rounded-2xl pointer-events-none"
         style={{ border: "2px solid rgba(244,162,97,0.5)" }} />
 
       {/* Decorative circles */}
       <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-10"
-        style={{ background: "#f4a261" }} />
+        style={{ background: "#f97316" }} />
       <div className="absolute -bottom-4 -left-4 w-16 h-16 rounded-full opacity-10"
-        style={{ background: "#f4a261" }} />
+        style={{ background: "#f97316" }} />
 
       <div className="relative flex items-start justify-between mb-3">
         <div>

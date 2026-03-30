@@ -103,7 +103,7 @@ async function resolveResponse(input: string): Promise<string> {
 export default function StoreChatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
-    botMessage("Hola, soy el asistente de Bodega San Martin. Puedo ayudarte con precios, horarios, delivery o estado de tu pedido."),
+    botMessage("Hola, soy el asistente de Buleje. Puedo ayudarte con precios, horarios, delivery o estado de tu pedido."),
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
@@ -150,7 +150,7 @@ export default function StoreChatbot() {
         aria-label={open ? "Cerrar chat" : "Abrir chat"}
         className={cn(
           "fixed bottom-6 left-6 z-50 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all",
-          "bg-[#2d6a4f] text-white hover:bg-[#245a42] focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/50"
+          "bg-[#0f766e] text-white hover:bg-[#0d5f58] focus:outline-none focus:ring-2 focus:ring-[#0f766e]/50"
         )}
       >
         {open ? <ChevronDown className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
@@ -165,7 +165,7 @@ export default function StoreChatbot() {
           )}
         >
           {/* Header */}
-          <div className="flex items-center justify-between bg-[#2d6a4f] px-4 py-3">
+          <div className="flex items-center justify-between bg-[#0f766e] px-4 py-3">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4 text-white" />
               <span className="text-sm font-semibold text-white">
@@ -194,7 +194,7 @@ export default function StoreChatbot() {
                   className={cn(
                     "max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed",
                     msg.role === "user"
-                      ? "bg-[#2d6a4f] text-white rounded-br-sm"
+                      ? "bg-[#0f766e] text-white rounded-br-sm"
                       : "bg-muted dark:bg-muted/60 text-foreground dark:text-foreground rounded-bl-sm"
                   )}
                 >
@@ -235,7 +235,7 @@ export default function StoreChatbot() {
               className={cn(
                 "flex-1 rounded-md border border-border bg-background dark:bg-background",
                 "text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground",
-                "px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/50 disabled:opacity-50"
+                "px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/50 disabled:opacity-50"
               )}
             />
             <button
@@ -243,7 +243,7 @@ export default function StoreChatbot() {
               disabled={!input.trim() || typing}
               className={cn(
                 "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors",
-                "bg-[#2d6a4f] text-white hover:bg-[#245a42] disabled:opacity-50 disabled:cursor-not-allowed"
+                "bg-[#0f766e] text-white hover:bg-[#0d5f58] disabled:opacity-50 disabled:cursor-not-allowed"
               )}
             >
               <Send className="h-3.5 w-3.5" />

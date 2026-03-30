@@ -41,14 +41,14 @@ async function main() {
       await prisma.tenant.create({
         data: {
           slug: "main",
-          name: "Bodega San Martín",
+          name: "Buleje",
           plan: "pro",
           active: true,
           ownerPhone: process.env.NOTIFY_PHONE ?? undefined,
           ownerEmail: process.env.NOTIFY_EMAIL ?? undefined,
         },
       });
-      console.log("✅  Default tenant 'main' created (Bodega San Martín)");
+      console.log("✅  Default tenant 'main' created (Buleje)");
     } else {
       console.log("ℹ️   Default tenant 'main' already exists — skipping");
     }

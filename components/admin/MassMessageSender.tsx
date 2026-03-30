@@ -44,7 +44,7 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
   oferta:
     "Hola {nombre}, tenemos ofertas especiales para ti esta semana. Ven a visitarnos o escríbenos para más info.",
   reactivar:
-    "Hola {nombre}, hace tiempo no te vemos por Bodega San Martín. Te esperamos con productos frescos y buenos precios.",
+    "Hola {nombre}, hace tiempo no te vemos por Buleje. Te esperamos con productos frescos y buenos precios.",
   deuda:
     "Hola {nombre}, te recordamos que tienes un saldo pendiente de {deuda}. Puedes pasar a regularizarlo cuando gustes.",
   nueva:
@@ -85,6 +85,8 @@ export default function MassMessageSender() {
   const [selectedTemplateKey, setSelectedTemplateKey] = useState("oferta");
   const [copied, setCopied] = useState(false);
   const [previewCustomer, setPreviewCustomer] = useState<Customer | null>(null);
+  // Mejora 8 nueva: WhatsApp links + bulk preview
+  const [showWaLinks, setShowWaLinks] = useState(false);
 
   useEffect(() => {
     fetch("/api/customers?limit=500")
@@ -172,7 +174,7 @@ export default function MassMessageSender() {
       {/* Segment selector */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
         <div className="mb-3 flex items-center gap-2">
-          <Filter className="h-4 w-4 text-[#2d6a4f]" />
+          <Filter className="h-4 w-4 text-[#0f766e]" />
           <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
             Segmento de clientes
           </h3>
@@ -186,8 +188,8 @@ export default function MassMessageSender() {
               className={cn(
                 "rounded-lg border px-3 py-2 text-left text-xs font-medium transition",
                 segment === s
-                  ? "border-[#2d6a4f] bg-[#2d6a4f] text-white"
-                  : "border-gray-200 text-gray-600 hover:border-[#2d6a4f]/40 dark:border-gray-600 dark:text-gray-300"
+                  ? "border-[#0f766e] bg-[#0f766e] text-white"
+                  : "border-gray-200 text-gray-600 hover:border-[#0f766e]/40 dark:border-gray-600 dark:text-gray-300"
               )}
             >
               {SEGMENT_LABELS[s]}
@@ -204,7 +206,7 @@ export default function MassMessageSender() {
             placeholder="Buscar en el segmento..."
             className={cn(
               "w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm",
-              "text-gray-800 placeholder-gray-400 outline-none focus:border-[#2d6a4f] focus:ring-2 focus:ring-[#2d6a4f]/20",
+              "text-gray-800 placeholder-gray-400 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
               "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
             )}
           />
@@ -216,7 +218,7 @@ export default function MassMessageSender() {
             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
           ) : (
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              <strong className="text-[#2d6a4f]">{filtered.length}</strong> destinatario
+              <strong className="text-[#0f766e]">{filtered.length}</strong> destinatario
               {filtered.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -227,7 +229,7 @@ export default function MassMessageSender() {
         {/* Template editor */}
         <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
           <div className="mb-3 flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-[#2d6a4f]" />
+            <MessageSquare className="h-4 w-4 text-[#0f766e]" />
             <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
               Mensaje
             </h3>
@@ -242,8 +244,8 @@ export default function MassMessageSender() {
                 className={cn(
                   "rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize transition",
                   selectedTemplateKey === key
-                    ? "border-[#2d6a4f] bg-[#2d6a4f] text-white"
-                    : "border-gray-200 text-gray-500 hover:border-[#2d6a4f]/40 dark:border-gray-600"
+                    ? "border-[#0f766e] bg-[#0f766e] text-white"
+                    : "border-gray-200 text-gray-500 hover:border-[#0f766e]/40 dark:border-gray-600"
                 )}
               >
                 {key}
@@ -257,7 +259,7 @@ export default function MassMessageSender() {
             rows={5}
             className={cn(
               "w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm leading-relaxed",
-              "text-gray-800 placeholder-gray-400 outline-none focus:border-[#2d6a4f] focus:ring-2 focus:ring-[#2d6a4f]/20",
+              "text-gray-800 placeholder-gray-400 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
               "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500",
               "resize-none"
             )}
@@ -293,10 +295,10 @@ export default function MassMessageSender() {
                       filtered.find((c) => c.id === Number(e.target.value)) ?? null
                     )
                   }
-                  className="appearance-none rounded-lg border border-gray-200 bg-gray-50 py-1 pl-2 pr-6 text-xs text-gray-700 focus:border-[#2d6a4f] focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                  className="appearance-none rounded-lg border border-gray-200 bg-gray-50 py-1 pl-2 pr-6 text-xs text-gray-700 focus:border-[#0f766e] focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
                 >
-                  {filtered.slice(0, 10).map((c) => (
-                    <option key={c.id} value={c.id}>
+                  {filtered.slice(0, 10).map((c, idx) => (
+                    <option key={c.id ?? idx} value={c.id}>
                       {c.name}
                     </option>
                   ))}
@@ -338,32 +340,79 @@ export default function MassMessageSender() {
       {/* Action */}
       <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Se generará una lista con <strong>{filtered.length}</strong> destinatario
+          Se generara una lista con <strong>{filtered.length}</strong> destinatario
           {filtered.length !== 1 ? "s" : ""} para copiar y usar en WhatsApp o SMS.
-          No se realiza ningún envío automático.
+          No se realiza ningun envio automatico.
         </p>
-        <button
-          onClick={generateList}
-          disabled={filtered.length === 0 || !template.trim()}
-          className={cn(
-            "flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition",
-            copied ? "bg-green-600" : "bg-[#2d6a4f] hover:bg-[#245a40]",
-            "disabled:opacity-40"
-          )}
-        >
-          {copied ? (
-            <>
-              <CheckCheck className="h-4 w-4" />
-              Lista copiada al portapapeles
-            </>
-          ) : (
-            <>
-              <Copy className="h-4 w-4" />
-              Preparar envío — copiar lista
-            </>
-          )}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={generateList}
+            disabled={filtered.length === 0 || !template.trim()}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition",
+              copied ? "bg-green-600" : "bg-[#0f766e] hover:bg-[#245a40]",
+              "disabled:opacity-40"
+            )}
+          >
+            {copied ? (
+              <>
+                <CheckCheck className="h-4 w-4" />
+                Lista copiada
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4" />
+                Copiar todos los mensajes
+              </>
+            )}
+          </button>
+          {/* Mejora 8 nueva: Generar links WhatsApp */}
+          <button
+            onClick={() => setShowWaLinks(!showWaLinks)}
+            disabled={filtered.length === 0 || !template.trim()}
+            className="flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition disabled:opacity-40"
+          >
+            <MessageSquare className="h-4 w-4" />
+            Links WhatsApp
+          </button>
+        </div>
       </div>
+
+      {/* Mejora 8 nueva: WhatsApp links list */}
+      {showWaLinks && filtered.length > 0 && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-800 dark:bg-emerald-950/20">
+          <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-3 flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Links de WhatsApp ({filtered.length} clientes)
+          </h3>
+          <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-3">
+            Haz click en cada link para abrir WhatsApp con el mensaje personalizado.
+          </p>
+          <div className="space-y-1.5 max-h-60 overflow-y-auto">
+            {filtered.map((c) => {
+              if (!c.phone) return null;
+              const msg = applyTemplate(template, c);
+              const cleanPhone = c.phone.replace(/\D/g, "");
+              const fullPhone = cleanPhone.startsWith("51") ? cleanPhone : "51" + cleanPhone;
+              const waUrl = `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`;
+              return (
+                <div key={c.id} className="flex items-center gap-2 text-sm">
+                  <a
+                    href={waUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 transition-colors"
+                  >
+                    <span className="font-bold text-gray-900 dark:text-white truncate">{c.name}</span>
+                    <span className="text-gray-400 text-xs">{c.phone}</span>
+                    <span className="ml-auto text-emerald-600 text-xs font-bold">Abrir</span>
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

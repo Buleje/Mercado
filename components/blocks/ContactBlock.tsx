@@ -131,7 +131,7 @@ subtitle,
           {ctaTitle && (
             <div
               className="rounded-2xl p-8 sm:p-10 text-white shadow-xl"
-              style={{ background: "linear-gradient(135deg, #2d6a4f, #245c43)" }}
+              style={{ background: "linear-gradient(135deg, #0f766e, #0d5f58)" }}
             >
               <h3 className="text-2xl sm:text-3xl font-extrabold mb-4">
                 {ctaTitle}
@@ -167,6 +167,6 @@ export const ContactBlockMetadata = {
   description: "Información de contacto y formulario",
   category: "informativo" as const,
   icon: "Phone",
-  defaultProps: ContactBlockSchema.parse({}),
+  defaultProps: (() => { const parsed = ContactBlockSchema.safeParse({}); return parsed.success ? parsed.data : { badge: "Contacto", title: "Delivery de Abarrotes en Pucallpa", subtitle: "", contactInfo: [], ctaTitle: "¿Listo para pedir?", ctaDescription: "", ctaSteps: [] }; })(),
   propsSchema: ContactBlockSchema,
 };

@@ -5,6 +5,7 @@ import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { BatchesDB, NotificationLogsDB } from "@/lib/db";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/cron/batch-expiry-alerts
@@ -58,9 +59,7 @@ export async function GET(req: NextRequest) {
         totalNotifications++;
         tenantsAlerted.push(tenant.slug);
 
-        console.log(
-          `[cron/batch-expiry-alerts] Tenant ${tenant.slug}: ${expiringBatches.length} lote(s) por vencer`
-        );
+        logger.info("[cron/batch-expiry-alerts] Lotes por vencer", { tenant: tenant.slug, count: expiringBatches.length });
       }
 
       return {

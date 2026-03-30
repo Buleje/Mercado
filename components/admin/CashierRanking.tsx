@@ -168,7 +168,7 @@ function RankRow({
           "font-bold text-lg",
           cashier.rank === 1
             ? "text-yellow-700 dark:text-yellow-400"
-            : "text-[#2d6a4f] dark:text-green-400"
+            : "text-[#0f766e] dark:text-green-400"
         )}>
           {fmt(cashier.totalRevenue)}
         </p>
@@ -251,7 +251,7 @@ export default function CashierRanking() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Users className="w-5 h-5 text-[#2d6a4f] dark:text-green-400" />
+          <Users className="w-5 h-5 text-[#0f766e] dark:text-green-400" />
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Ranking del dia
@@ -269,7 +269,7 @@ export default function CashierRanking() {
           disabled={loading}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            "text-[#2d6a4f] dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
+            "text-[#0f766e] dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
             loading && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -289,7 +289,7 @@ export default function CashierRanking() {
             key={stat.label}
             className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-center"
           >
-            <div className="flex justify-center text-[#2d6a4f] dark:text-green-400 mb-1">
+            <div className="flex justify-center text-[#0f766e] dark:text-green-400 mb-1">
               {stat.icon}
             </div>
             <p className="font-bold text-lg text-gray-900 dark:text-gray-100">{stat.value}</p>

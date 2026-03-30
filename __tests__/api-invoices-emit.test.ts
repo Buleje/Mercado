@@ -124,7 +124,7 @@ describe("POST /api/invoices/emit", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.RUC_EMISOR = "20123456789";
-    process.env.RAZON_SOCIAL_EMISOR = "Bodega San Martín";
+    process.env.RAZON_SOCIAL_EMISOR = "Buleje";
     process.env.NUBEFACT_TOKEN = "test-token";
 
     // Defaults felices

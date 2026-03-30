@@ -2,7 +2,7 @@
 applyTo: "**/cache*,**/lib/cache*,**/*.db.ts"
 ---
 
-# Caching Strategy — Bodega San Martín
+# Caching Strategy — Buleje
 
 ## lib/cache.ts — La capa de cache
 

@@ -60,7 +60,7 @@ ROOT_DOMAIN=bodegasaas.com  # Subdominio raíz
 
 ```bash
 # Antes del deploy:
-cd bodega-san-martin
+cd buleje
 npm run lint        # 1. Sin errores ESLint
 npm run build       # 2. Build exitoso (con npx prisma generate incluido)
 npm run test        # 3. Tests pasan

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export type CLVCustomer = {
   phone: string;
   name: string;

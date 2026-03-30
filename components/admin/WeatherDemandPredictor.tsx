@@ -85,7 +85,7 @@ function getConditionLabel(c: WeatherCondition): string {
 }
 
 function WeatherIcon({ condition, className }: { condition: WeatherCondition; className?: string }) {
-  if (condition === "hot") return <Sun className={cn("text-[#f4a261]", className)} />;
+  if (condition === "hot") return <Sun className={cn("text-[#f97316]", className)} />;
   if (condition === "rainy") return <CloudRain className={cn("text-blue-400", className)} />;
   if (condition === "cold") return <Wind className={cn("text-cyan-400", className)} />;
   return <Sun className={cn("text-yellow-400", className)} />;
@@ -93,7 +93,7 @@ function WeatherIcon({ condition, className }: { condition: WeatherCondition; cl
 
 const PRIORITY_STYLES: Record<string, string> = {
   high: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-  medium: "bg-[#f4a261]/10 text-[#f4a261]",
+  medium: "bg-[#f97316]/10 text-[#f97316]",
   low: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
 };
 
@@ -182,7 +182,7 @@ export default function WeatherDemandPredictor() {
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {weather.description}
                   {usingMock && (
-                    <span className="ml-2 text-xs text-[#f4a261]">(datos estimados)</span>
+                    <span className="ml-2 text-xs text-[#f97316]">(datos estimados)</span>
                   )}
                 </p>
               </>
@@ -221,7 +221,7 @@ export default function WeatherDemandPredictor() {
                 className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <Thermometer className="w-4 h-4 text-[#2d6a4f] flex-shrink-0" />
+                  <Thermometer className="w-4 h-4 text-[#0f766e] flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
                       {sug.product}

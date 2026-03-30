@@ -164,6 +164,6 @@ export const FAQBlockMetadata = {
   description: "Acordeón de preguntas y respuestas",
   category: "informativo" as const,
   icon: "HelpCircle",
-  defaultProps: FAQBlockSchema.parse({}),
+  defaultProps: (() => { const parsed = FAQBlockSchema.safeParse({}); return parsed.success ? parsed.data : { badge: "Ayuda", title: "Preguntas frecuentes", titleAccent: "frecuentes", subtitle: "", faqs: [], showNumbering: true, accentColor: "#3b82f6" }; })(),
   propsSchema: FAQBlockSchema,
 };

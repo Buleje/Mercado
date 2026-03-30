@@ -6,6 +6,105 @@ import { prisma } from "@/lib/prisma";
 // IDs of the 24 products auto-seeded from data/products.ts when the DB was empty
 const DEMO_IDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24];
 
+/**
+ * POST /api/admin/demo-products
+ * Seed productos demo de bodega peruana real.
+ * Solo ejecuta si hay <10 productos (evita duplicados).
+ */
+const PRODUCTOS_BODEGA = [
+  // Abarrotes
+  { name: "Arroz Extra 5kg", price: 22.50, costPrice: 18.00, category: "Abarrotes", unit: "bolsa", stock: 50, stockMin: 10, stockMax: 80 },
+  { name: "Arroz Costeño 1kg", price: 5.50, costPrice: 4.20, category: "Abarrotes", unit: "bolsa", stock: 80, stockMin: 15, stockMax: 120 },
+  { name: "Azúcar Rubia 1kg", price: 4.50, costPrice: 3.50, category: "Abarrotes", unit: "bolsa", stock: 60, stockMin: 10, stockMax: 100 },
+  { name: "Aceite Vegetal Primor 1L", price: 9.90, costPrice: 7.50, category: "Abarrotes", unit: "botella", stock: 30, stockMin: 8, stockMax: 50 },
+  { name: "Fideos Spaghetti Don Vittorio 500g", price: 3.80, costPrice: 2.80, category: "Abarrotes", unit: "paquete", stock: 45, stockMin: 10, stockMax: 70 },
+  { name: "Sal Yodada Emsal 1kg", price: 2.00, costPrice: 1.20, category: "Abarrotes", unit: "bolsa", stock: 40, stockMin: 10, stockMax: 60 },
+  { name: "Avena 3 Ositos 500g", price: 4.50, costPrice: 3.20, category: "Abarrotes", unit: "bolsa", stock: 25, stockMin: 5, stockMax: 40 },
+  { name: "Lentejas 500g", price: 4.00, costPrice: 3.00, category: "Abarrotes", unit: "bolsa", stock: 20, stockMin: 5, stockMax: 35 },
+  { name: "Atún Florida 170g", price: 5.50, costPrice: 4.00, category: "Conservas", unit: "lata", stock: 35, stockMin: 8, stockMax: 60 },
+  { name: "Leche Evaporada Gloria 400ml", price: 4.80, costPrice: 3.80, category: "Lácteos", unit: "lata", stock: 60, stockMin: 15, stockMax: 100 },
+  // Bebidas
+  { name: "Coca-Cola 1.5L", price: 8.00, costPrice: 5.50, category: "Bebidas", unit: "botella", stock: 40, stockMin: 10, stockMax: 60 },
+  { name: "Agua San Luis 2.5L", price: 3.50, costPrice: 2.00, category: "Bebidas", unit: "botella", stock: 30, stockMin: 8, stockMax: 50 },
+  { name: "Inca Kola 1.5L", price: 8.00, costPrice: 5.50, category: "Bebidas", unit: "botella", stock: 38, stockMin: 10, stockMax: 60 },
+  { name: "Cerveza Pilsen Pack x6", price: 18.00, costPrice: 13.50, category: "Bebidas", unit: "pack", stock: 15, stockMin: 5, stockMax: 30 },
+  { name: "Yogurt Gloria Natural 1L", price: 7.50, costPrice: 5.50, category: "Lácteos", unit: "botella", stock: 25, stockMin: 5, stockMax: 40 },
+  { name: "Chicha Morada Naturale 1L", price: 5.00, costPrice: 3.50, category: "Bebidas", unit: "botella", stock: 20, stockMin: 5, stockMax: 35 },
+  // Limpieza
+  { name: "Detergente Ariel 2kg", price: 15.00, costPrice: 11.00, category: "Limpieza", unit: "bolsa", stock: 20, stockMin: 5, stockMax: 35 },
+  { name: "Lejía Clorox 1L", price: 4.50, costPrice: 3.00, category: "Limpieza", unit: "botella", stock: 25, stockMin: 5, stockMax: 40 },
+  { name: "Jabón Bolívar en Barra", price: 3.00, costPrice: 2.00, category: "Limpieza", unit: "barra", stock: 30, stockMin: 8, stockMax: 50 },
+  { name: "Papel Higiénico Elite x4", price: 8.00, costPrice: 5.50, category: "Limpieza", unit: "paquete", stock: 20, stockMin: 5, stockMax: 35 },
+  { name: "Lavavajillas Ayudín 500ml", price: 5.50, costPrice: 3.80, category: "Limpieza", unit: "botella", stock: 15, stockMin: 3, stockMax: 25 },
+  // Lácteos
+  { name: "Leche Gloria Entera 1L", price: 7.00, costPrice: 5.50, category: "Lácteos", unit: "caja", stock: 40, stockMin: 10, stockMax: 60 },
+  { name: "Mantequilla Laive 200g", price: 6.00, costPrice: 4.50, category: "Lácteos", unit: "barra", stock: 15, stockMin: 3, stockMax: 25 },
+  { name: "Queso Fresco 250g", price: 8.00, costPrice: 6.00, category: "Lácteos", unit: "unidad", stock: 10, stockMin: 3, stockMax: 20 },
+  // Carnes
+  { name: "Pollo Entero 1kg", price: 12.00, costPrice: 9.00, category: "Carnes", unit: "kg", stock: 8, stockMin: 3, stockMax: 15 },
+  { name: "Carne de Res 1kg", price: 28.00, costPrice: 22.00, category: "Carnes", unit: "kg", stock: 5, stockMin: 2, stockMax: 10 },
+  // Frutas y verduras
+  { name: "Tomates Frescos 1kg", price: 3.50, costPrice: 2.00, category: "Frutas y Verduras", unit: "kg", stock: 30, stockMin: 5, stockMax: 40 },
+  { name: "Cebollas Rojas 1kg", price: 3.00, costPrice: 1.80, category: "Frutas y Verduras", unit: "kg", stock: 25, stockMin: 5, stockMax: 35 },
+  { name: "Papas Nativas 1kg", price: 4.00, costPrice: 2.50, category: "Frutas y Verduras", unit: "kg", stock: 30, stockMin: 5, stockMax: 40 },
+  { name: "Plátanos de Seda 1kg", price: 2.50, costPrice: 1.50, category: "Frutas y Verduras", unit: "kg", stock: 20, stockMin: 5, stockMax: 30 },
+  { name: "Palta Hass", price: 5.00, costPrice: 3.50, category: "Frutas y Verduras", unit: "unidad", stock: 15, stockMin: 3, stockMax: 25 },
+  { name: "Zanahoria 1kg", price: 2.50, costPrice: 1.50, category: "Frutas y Verduras", unit: "kg", stock: 20, stockMin: 5, stockMax: 30 },
+  { name: "Limones 1kg", price: 5.00, costPrice: 3.00, category: "Frutas y Verduras", unit: "kg", stock: 30, stockMin: 5, stockMax: 40 },
+  // Snacks
+  { name: "Galletas Oreo 6pk", price: 4.50, costPrice: 3.20, category: "Snacks", unit: "paquete", stock: 25, stockMin: 5, stockMax: 40 },
+  { name: "Chocolate Sublime", price: 2.50, costPrice: 1.80, category: "Snacks", unit: "unidad", stock: 30, stockMin: 8, stockMax: 50 },
+  // Otros
+  { name: "Huevos x30", price: 15.00, costPrice: 11.00, category: "Abarrotes", unit: "bandeja", stock: 10, stockMin: 3, stockMax: 20 },
+  { name: "Pan Integral 500g", price: 5.00, costPrice: 3.50, category: "Panadería", unit: "paquete", stock: 15, stockMin: 3, stockMax: 25 },
+  { name: "Café Instantáneo Nescafé 200g", price: 12.00, costPrice: 9.00, category: "Abarrotes", unit: "frasco", stock: 10, stockMin: 3, stockMax: 20 },
+  { name: "Sillao Kikko 500ml", price: 4.50, costPrice: 3.00, category: "Abarrotes", unit: "botella", stock: 15, stockMin: 3, stockMax: 25 },
+  { name: "Vinagre Venturo 500ml", price: 3.50, costPrice: 2.20, category: "Abarrotes", unit: "botella", stock: 15, stockMin: 3, stockMax: 25 },
+];
+
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+
+  try {
+    const currentCount = await prisma.product.count();
+    if (currentCount >= 10) {
+      return NextResponse.json({
+        created: 0,
+        message: `Ya existen ${currentCount} productos. No se crearon productos demo para evitar duplicados.`,
+      });
+    }
+
+    let created = 0;
+    for (const p of PRODUCTOS_BODEGA) {
+      await prisma.product.create({
+        data: {
+          name: p.name,
+          category: p.category,
+          price: p.price,
+          costPrice: p.costPrice,
+          unit: p.unit,
+          stock: p.stock,
+          stockMin: p.stockMin,
+          stockMax: p.stockMax,
+          image: "",
+          active: true,
+          barcode: `7750${Math.floor(100000 + Math.random() * 900000)}`,
+        },
+      });
+      created++;
+    }
+
+    return NextResponse.json({
+      created,
+      message: `${created} productos de bodega peruana creados exitosamente`,
+    });
+  } catch (e) {
+    console.error("[demo-products] POST error:", e);
+    return NextResponse.json({ error: "Error al crear productos demo" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;

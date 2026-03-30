@@ -92,9 +92,9 @@ describe("formatWhatsAppMessage", () => {
     expect(msg).toContain("maps.google.com");
   });
 
-  it("includes the header 'Bodega San Martin'", () => {
+  it("includes the header 'Buleje'", () => {
     const msg = formatWhatsAppMessage(baseCustomer, baseItems, 19.0);
-    expect(msg).toContain("Bodega San Martin");
+    expect(msg).toContain("Buleje");
   });
 
   it("formats total with exactly 2 decimal places", () => {

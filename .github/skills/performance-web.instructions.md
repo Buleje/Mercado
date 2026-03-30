@@ -2,7 +2,7 @@
 applyTo: "**/layout.tsx,**/page.tsx,**/loading.tsx"
 ---
 
-# Performance Web — Bodega San Martín
+# Performance Web — Buleje
 
 ## Core Web Vitals — targets
 
@@ -83,7 +83,7 @@ export const dynamic = "force-dynamic";
 ## Bundle analysis
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run analyze  # Genera report de bundle — ver qué es pesado
 ```
 

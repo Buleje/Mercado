@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
-  Search, Trophy, Gift, History, PackageCheck, User, ClipboardList, Mic, Flame,
+  Search, Trophy, Gift, History, PackageCheck, User, ClipboardList, Mic, Flame, ChefHat,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -36,21 +36,27 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
 const categoryMenuItems = [
   { id: "frutas-verduras", label: "Frutas y Verduras", emoji: "🥬", icon: Leaf,
     desc: "Productos frescos del día",
+    subs: ["Frutas", "Verduras", "Tubérculos", "Hierbas"],
     iconBg: "bg-emerald-100 dark:bg-emerald-900/40", iconColor: "text-emerald-700 dark:text-emerald-400" },
   { id: "abarrotes", label: "Abarrotes", emoji: "🏪", icon: Package,
     desc: "Arroz, fideos, aceite y más",
+    subs: ["Arroz", "Aceite", "Azúcar", "Fideos", "Enlatados"],
     iconBg: "bg-amber-100 dark:bg-amber-900/40", iconColor: "text-amber-700 dark:text-amber-400" },
   { id: "carnes", label: "Carnes", emoji: "🥩", icon: Beef,
     desc: "Carnes frescas de calidad",
+    subs: ["Pollo", "Res", "Cerdo", "Pescado"],
     iconBg: "bg-red-100 dark:bg-red-900/40", iconColor: "text-red-600 dark:text-red-400" },
   { id: "lacteos", label: "Lácteos", emoji: "🧀", icon: Milk,
     desc: "Leche, queso, yogurt",
+    subs: ["Leche", "Queso", "Yogurt", "Mantequilla"],
     iconBg: "bg-sky-100 dark:bg-sky-900/40", iconColor: "text-sky-600 dark:text-sky-400" },
   { id: "bebidas", label: "Bebidas", emoji: "🥤", icon: GlassWater,
     desc: "Agua, gaseosas, jugos",
+    subs: ["Gaseosas", "Agua", "Jugos", "Cervezas"],
     iconBg: "bg-blue-100 dark:bg-blue-900/40", iconColor: "text-blue-600 dark:text-blue-400" },
   { id: "limpieza", label: "Limpieza", emoji: "🧹", icon: Sparkles,
     desc: "Todo para tu hogar limpio",
+    subs: ["Detergente", "Jabón", "Lejía", "Desinfectante"],
     iconBg: "bg-violet-100 dark:bg-violet-900/40", iconColor: "text-violet-600 dark:text-violet-400" },
 ];
 
@@ -553,7 +559,88 @@ export default function Header() {
       case "tienda":
         return <Link key="tienda" href="/tienda" className={navLinkCls}>Tienda</Link>;
       case "categorias":
-        return null; // Categorías ahora está dentro del dropdown de Inicio
+        return (
+          <div key="categorias" className="relative"
+            onMouseEnter={() => openDropdown("categorias")}
+            onMouseLeave={closeDropdown}
+          >
+            <button
+              onClick={() => setActiveDropdown(prev => prev === "categorias" ? null : "categorias")}
+              aria-expanded={_megaOpen}
+              aria-haspopup="true"
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-base font-semibold",
+                scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
+                _megaOpen && (scrolled ? "text-primary bg-primary/8" : "text-white bg-white/15")
+              )}
+            >
+              Categorías
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", _megaOpen && "rotate-180")} />
+            </button>
+            {/* Mega Menu Panel */}
+            <div
+              onMouseEnter={cancelClose}
+              onMouseLeave={closeDropdown}
+              className={cn(
+                "absolute top-full -left-32 mt-2 bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden transition-all duration-200",
+                "w-[640px]",
+                _megaOpen ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
+              )}
+            >
+              {/* Overlay behind mega menu */}
+              <div className="px-5 py-3 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-primary/5 to-transparent">
+                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Todas las categorías</p>
+              </div>
+              <div className="grid grid-cols-3 gap-0 p-3">
+                {categoryMenuItems.map((cat) => (
+                  <div key={cat.id} className="p-2">
+                    <Link
+                      href={`/tienda/categoria/${cat.id}`}
+                      onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
+                      className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-primary/5 group"
+                    >
+                      <span className={cn("flex items-center justify-center h-8 w-8 rounded-lg text-base shrink-0 group-hover:scale-110 transition-transform", cat.iconBg)}>
+                        {cat.emoji}
+                      </span>
+                      <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{cat.label}</span>
+                    </Link>
+                    <div className="ml-12 mt-0.5 space-y-0.5">
+                      {cat.subs.map((sub) => (
+                        <Link
+                          key={sub}
+                          href={`/tienda/categoria/${cat.id}`}
+                          onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
+                          className="block text-xs text-muted hover:text-primary transition-colors py-0.5 pl-1"
+                        >
+                          {sub}
+                        </Link>
+                      ))}
+                      <Link
+                        href={`/tienda/categoria/${cat.id}`}
+                        onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
+                        className="block text-xs font-semibold text-primary hover:text-primary/80 transition-colors py-0.5 pl-1 mt-1"
+                      >
+                        Ver todo &rarr;
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="px-4 py-2.5 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border">
+                <Link href="/tienda" onClick={() => setActiveDropdown(null)}
+                  className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-sm font-bold text-primary hover:bg-primary/8 transition-colors">
+                  Ver todos los productos &rarr;
+                </Link>
+              </div>
+            </div>
+          </div>
+        );
+      case "recetas":
+        return (
+          <Link key="recetas" href="/recetas" className={cn(navLinkCls, "flex items-center gap-1.5")}>
+            <ChefHat className="h-4 w-4" /> Recetas
+          </Link>
+        );
       default:
         return null;
     }
@@ -626,7 +713,54 @@ export default function Header() {
       case "tienda":
         return <Link key="tienda" href="/tienda" onClick={() => setMobileOpen(false)} className={cls}>Tienda</Link>;
       case "categorias":
-        return null; // Ya está dentro del menú Inicio
+        return (
+          <div key="categorias">
+            <button
+              onClick={() => setMobileCatOpen((o) => !o)}
+              aria-expanded={_mobileCatOpen}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors"
+            >
+              <span>Categorías</span>
+              <span className={cn("transition-transform duration-200 inline-block", _mobileCatOpen && "rotate-180")}>
+                <ChevronDown className="h-4 w-4 text-muted" />
+              </span>
+            </button>
+            {_mobileCatOpen && (
+              <div className="mx-4 my-2 space-y-1">
+                {categoryMenuItems.map((cat) => (
+                  <div key={cat.id}>
+                    <Link
+                      href={`/tienda/categoria/${cat.id}`}
+                      onClick={() => { setMobileOpen(false); setMobileCatOpen(false); handleCategoryClick(cat.id); }}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-card-border hover:border-primary/25 hover:bg-primary/5"
+                    >
+                      <span className={cn("flex items-center justify-center h-9 w-9 rounded-xl text-lg shrink-0", cat.iconBg)}>
+                        {cat.emoji}
+                      </span>
+                      <div>
+                        <p className="text-sm font-bold text-foreground">{cat.label}</p>
+                        <p className="text-xs text-muted">{cat.desc}</p>
+                      </div>
+                    </Link>
+                  </div>
+                ))}
+                <Link
+                  href="/tienda"
+                  onClick={() => { setMobileOpen(false); setMobileCatOpen(false); }}
+                  className="flex items-center justify-center gap-1.5 mt-2 py-2.5 rounded-xl bg-primary/8 text-sm font-bold text-primary"
+                >
+                  Ver todos los productos &rarr;
+                </Link>
+              </div>
+            )}
+          </div>
+        );
+      case "recetas":
+        return (
+          <Link key="recetas" href="/recetas" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <ChefHat className="h-4 w-4 text-[#f97316]" /> Recetas
+          </Link>
+        );
       default:
         return null;
     }
@@ -661,7 +795,7 @@ export default function Header() {
             <div 
               className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl text-white shadow-lg"
               style={{ 
-                background: "linear-gradient(135deg, #2d6a4f 0%, #245c43 50%, #1b4332 100%)",
+                background: "linear-gradient(135deg, #0f766e 0%, #0d5f58 50%, #1b4332 100%)",
                 boxShadow: "0 4px 12px rgba(45, 106, 79, 0.35)"
               }}
             >
@@ -990,12 +1124,14 @@ export default function Header() {
               <span className={cartBounce ? "inline-block animate-[cartBounce_0.5s_ease-out]" : "inline-block"}>
                 <ShoppingCart className="h-6 w-6" />
               </span>
+              {/* Mejora 13: Badge con bounce animado al agregar items */}
               {count > 0 && (
                 <span
                   key={count}
                   aria-live="polite"
                   aria-atomic="true"
-                  className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-xs font-bold text-white shadow-md animate-[scaleIn_0.2s_ease-out]"
+                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-md animate-[cartBadgeBounce_0.3s_ease-out]"
+                  style={{ minWidth: count > 9 ? "1.5rem" : undefined }}
                 >
                   {count > 99 ? "99+" : count}
                 </span>

@@ -33,6 +33,7 @@ export default function DeliveryScheduleTab() {
   const [config, setConfig] = useState<DeliveryConfig>(DEFAULT_DELIVERY);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function DeliveryScheduleTab() {
 
   const save = useCallback(async () => {
     setSaving(true);
+    setSaveError(null);
     try {
       await fetch("/api/settings", {
         method: "POST",
@@ -56,6 +58,7 @@ export default function DeliveryScheduleTab() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
+      setSaveError("Error al guardar configuración de delivery");
       console.error("Error saving delivery config:", e);
     } finally {
       setSaving(false);
@@ -110,6 +113,13 @@ export default function DeliveryScheduleTab() {
           {saving ? "Guardando..." : saved ? "¡Guardado!" : "Guardar"}
         </button>
       </div>
+
+      {saveError && (
+        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400">
+          <span>{saveError}</span>
+          <button onClick={save} className="ml-auto text-xs font-bold hover:underline">Reintentar</button>
+        </div>
+      )}
 
       {/* Schedule */}
       <div className="bg-white/5 border border-white/10 rounded-xl p-4">

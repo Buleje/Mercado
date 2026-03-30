@@ -668,12 +668,12 @@ git commit -m "feat: add PUT /api/products/bulk-price endpoint"
 
 - [ ] **Step 1: Run lint**
 
-Run: `cd bodega-san-martin && npm run lint`
+Run: `cd buleje && npm run lint`
 Expected: No new errors. Existing 16 warnings are acceptable.
 
 - [ ] **Step 2: Run build**
 
-Run: `cd bodega-san-martin && npm run build`
+Run: `cd buleje && npm run build`
 Expected: Build succeeds. Fix any import errors from removed modules.
 
 - [ ] **Step 3: Fix any build errors**
@@ -691,7 +691,7 @@ Navigate to localhost:3000/admin and verify:
 
 - [ ] **Step 5: Run tests**
 
-Run: `cd bodega-san-martin && npm run test`
+Run: `cd buleje && npm run test`
 Expected: All tests pass. Some tests may reference old module names — fix if broken.
 
 - [ ] **Step 6: Final commit**

@@ -211,6 +211,6 @@ export const CTABlockMetadata = {
   description: "Sección de CTA con botones y diseño flexible",
   category: "marketing" as const,
   icon: "Megaphone",
-  defaultProps: CTABlockSchema.parse({}),
+  defaultProps: (() => { const parsed = CTABlockSchema.safeParse({}); return parsed.success ? parsed.data : { layout: "centered" as const, title: "¿Listo para hacer tu pedido?", subtitle: "", primaryCTA: { text: "Ver Productos", link: "/tienda", icon: "arrow" as const }, secondaryCTA: { text: "Contactar por WhatsApp", link: "https://wa.me/51916409675", show: true }, backgroundColor: "#1b4332", textColor: "#ffffff", primaryButtonColor: "#22c55e", showPattern: true }; })(),
   propsSchema: CTABlockSchema,
 };

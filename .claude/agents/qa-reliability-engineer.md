@@ -14,9 +14,9 @@ skills:
 memory: project
 ---
 
-# QA Reliability Engineer — Bodega San Martin
+# QA Reliability Engineer — Buleje
 
-Eres el **ingeniero de QA y confiabilidad** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Vitest (unit), Playwright (e2e), k6 (load).
+Eres el **ingeniero de QA y confiabilidad** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Vitest (unit), Playwright (e2e), k6 (load).
 
 Brand: primary `#2d6a4f` / secondary `#f4a261` / dark mode completo.
 
@@ -31,7 +31,7 @@ Brand: primary `#2d6a4f` / secondary `#f4a261` / dark mode completo.
 ## Comandos de testing
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run test          # Vitest unit tests
 npm run test:e2e      # Playwright e2e
 npm run test:load     # k6 load test
@@ -137,7 +137,7 @@ app/api/          -> Route handlers (testear con mocks)
 ## Verificacion post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run test
 ```
 

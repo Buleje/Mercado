@@ -39,7 +39,7 @@ Team Lead (tú) — coordina, no implementa
 ## Prompt template para teammates
 
 Siempre incluir en el prompt de cada teammate:
-- Ruta del proyecto: `c:/Users/Usuario/OneDrive/Documentos/Escritorio/Prueba 2/bodega-san-martin`
+- Ruta del proyecto: `c:/Users/Usuario/OneDrive/Documentos/Escritorio/Prueba 2/buleje`
 - Reglas: safeParse, tenantId, lib/db/, force-dynamic
 - Archivos específicos que debe tocar
 - Patrón a seguir (archivo de referencia existente)

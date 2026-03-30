@@ -227,7 +227,7 @@ export default function AnalyticsProDashboard() {
           disabled={loading}
           className={cn(
             "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-            "bg-[#2d6a4f] text-white hover:bg-[#245a41] disabled:opacity-50"
+            "bg-[#0f766e] text-white hover:bg-[#245a41] disabled:opacity-50"
           )}
         >
           <svg
@@ -256,8 +256,8 @@ export default function AnalyticsProDashboard() {
             className={cn(
               "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors border",
               period === key
-                ? "bg-[#2d6a4f] text-white border-[#2d6a4f]"
-                : "bg-white dark:bg-card text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-[#2d6a4f] hover:text-[#2d6a4f]"
+                ? "bg-[#0f766e] text-white border-[#0f766e]"
+                : "bg-white dark:bg-card text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-[#0f766e] hover:text-[#0f766e]"
             )}
           >
             {PERIOD_LABELS[key]}

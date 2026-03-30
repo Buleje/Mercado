@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/admin/clear-data
@@ -137,7 +138,7 @@ export async function POST(req: NextRequest) {
           await (prisma[model] as any).deleteMany();
           deleted.push(label);
         } catch (e) {
-          console.warn(`[CLEAR-DATA] skip ${label}:`, (e as Error).message);
+          logger.warn("[CLEAR-DATA] skip", { label, error: (e as Error).message });
           failed.push(label);
         }
       }
@@ -152,7 +153,7 @@ export async function POST(req: NextRequest) {
             await (prisma[model] as any).deleteMany();
             deleted.push(label);
           } catch (e) {
-            console.warn(`[CLEAR-DATA] skip ${label}:`, (e as Error).message);
+            logger.warn("[CLEAR-DATA] skip", { label, error: (e as Error).message });
             failed.push(label);
           }
         }

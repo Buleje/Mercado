@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import {
+  Crown, Heart, AlertTriangle, XCircle, Sparkles, User,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Customer, Sale } from "@/types/erp";
 
@@ -25,13 +28,13 @@ interface RFMSegmentationPanelProps {
 }
 
 // ── Segment Config ─────────────────────────────────────────────────────────────
-const SEGMENT_STYLE: Record<RFMSegment, { bg: string; text: string; border: string }> = {
-  Champions:  { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-800 dark:text-green-300", border: "border-green-300 dark:border-green-700" },
-  Loyal:      { bg: "bg-blue-100 dark:bg-blue-900/30",   text: "text-blue-800 dark:text-blue-300",   border: "border-blue-300 dark:border-blue-700" },
-  "At Risk":  { bg: "bg-amber-100 dark:bg-amber-900/30", text: "text-amber-800 dark:text-amber-300", border: "border-amber-300 dark:border-amber-700" },
-  Lost:       { bg: "bg-red-100 dark:bg-red-900/30",     text: "text-red-800 dark:text-red-300",     border: "border-red-300 dark:border-red-700" },
-  New:        { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-800 dark:text-purple-300", border: "border-purple-300 dark:border-purple-700" },
-  Regular:    { bg: "bg-gray-100 dark:bg-gray-700/50",   text: "text-gray-700 dark:text-gray-300",   border: "border-gray-300 dark:border-gray-600" },
+const SEGMENT_STYLE: Record<RFMSegment, { bg: string; text: string; border: string; icon: typeof Crown; color: string }> = {
+  Champions:  { bg: "bg-emerald-100 dark:bg-emerald-900/30", text: "text-emerald-800 dark:text-emerald-300", border: "border-emerald-500 dark:border-emerald-600", icon: Crown, color: "#059669" },
+  Loyal:      { bg: "bg-blue-100 dark:bg-blue-900/30",   text: "text-blue-800 dark:text-blue-300",   border: "border-blue-500 dark:border-blue-600", icon: Heart, color: "#2563eb" },
+  "At Risk":  { bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-800 dark:text-orange-300", border: "border-orange-500 dark:border-orange-600", icon: AlertTriangle, color: "#ea580c" },
+  Lost:       { bg: "bg-red-100 dark:bg-red-900/30",     text: "text-red-800 dark:text-red-300",     border: "border-red-500 dark:border-red-600", icon: XCircle, color: "#dc2626" },
+  New:        { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-800 dark:text-purple-300", border: "border-purple-500 dark:border-purple-600", icon: Sparkles, color: "#7c3aed" },
+  Regular:    { bg: "bg-gray-100 dark:bg-gray-700/50",   text: "text-gray-700 dark:text-gray-300",   border: "border-gray-400 dark:border-gray-500", icon: User, color: "#6b7280" },
 };
 
 const ALL_SEGMENTS: RFMSegment[] = ["Champions", "Loyal", "At Risk", "Lost", "New", "Regular"];
@@ -132,9 +135,10 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
   return (
     <div className="flex flex-col gap-4 text-sm">
       {/* Segment summary cards */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
         {ALL_SEGMENTS.map((seg) => {
           const style = segStyle(seg);
+          const SegIcon = style.icon;
           const pctRevenue =
             segmentCounts.totalRevenue > 0
               ? Math.round((segmentCounts.revenue[seg] / segmentCounts.totalRevenue) * 100)
@@ -144,17 +148,20 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
               key={seg}
               onClick={() => setFilterSegment(filterSegment === seg ? "Todos" : seg)}
               className={cn(
-                "rounded-lg border p-2 text-left transition-all",
+                "rounded-xl border-2 p-3 text-left transition-all hover:shadow-md",
                 style.bg,
                 style.border,
-                filterSegment === seg && "ring-2 ring-offset-1 ring-[#2d6a4f]"
+                filterSegment === seg && "ring-2 ring-offset-1 ring-[#0f766e] dark:ring-offset-gray-900"
               )}
             >
-              <p className={cn("text-xs font-semibold leading-tight", style.text)}>{seg}</p>
-              <p className="text-lg font-bold text-gray-800 dark:text-foreground mt-0.5">
+              <div className="flex items-center gap-1.5 mb-1">
+                <SegIcon className={cn("h-4 w-4 shrink-0", style.text)} />
+                <p className={cn("text-xs font-bold leading-tight truncate", style.text)}>{seg}</p>
+              </div>
+              <p className="text-2xl font-mono font-extrabold text-gray-800 dark:text-foreground">
                 {segmentCounts.counts[seg]}
               </p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400">{pctRevenue}% revenue</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{pctRevenue}% revenue</p>
             </button>
           );
         })}
@@ -174,7 +181,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
               className={cn(
                 "px-2 py-0.5 rounded text-xs border transition-colors",
                 sortKey === k
-                  ? "bg-[#2d6a4f] text-white border-[#2d6a4f]"
+                  ? "bg-[#0f766e] text-white border-[#0f766e]"
                   : "bg-white dark:bg-card text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700"
               )}
             >
@@ -185,7 +192,7 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
       </div>
 
       {/* Table */}
-      <div className="overflow-auto max-h-72 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="overflow-auto max-h-80 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
@@ -205,12 +212,15 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
                 </td>
               </tr>
             )}
-            {visible.slice(0, 100).map((c) => {
+            {visible.slice(0, 100).map((c, idx) => {
               const style = segStyle(c.segment);
               return (
                 <tr
                   key={c.phone}
-                  className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                  className={cn(
+                    "border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors",
+                    idx % 2 === 1 && "bg-gray-50/50 dark:bg-gray-800/20"
+                  )}
                 >
                   <td className="px-3 py-2">
                     <p className="font-medium text-gray-800 dark:text-foreground truncate max-w-[100px]">{c.name}</p>
@@ -219,21 +229,22 @@ export default function RFMSegmentationPanel({ customers, sales }: RFMSegmentati
                   <td className="px-2 py-2 text-center">
                     <span
                       className={cn(
-                        "inline-block px-1.5 py-0.5 rounded-full text-[10px] font-semibold border",
+                        "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border",
                         style.bg, style.text, style.border
                       )}
                     >
+                      {(() => { const SegIcon = style.icon; return <SegIcon className="h-3 w-3 shrink-0" />; })()}
                       {c.segment}
                     </span>
                   </td>
                   <td className="px-2 py-2 text-right font-mono text-gray-600 dark:text-gray-300">
                     {rfmScore(c.R, c.F, c.M)}
                   </td>
-                  <td className="px-2 py-2 text-right text-gray-600 dark:text-gray-300">
-                    {c.R === 999 ? "—" : c.R}
+                  <td className="px-2 py-2 text-right font-mono text-gray-600 dark:text-gray-300">
+                    {c.R === 999 ? "--" : c.R}
                   </td>
-                  <td className="px-2 py-2 text-right text-gray-600 dark:text-gray-300">{c.F}</td>
-                  <td className="px-2 py-2 text-right font-medium text-[#2d6a4f] dark:text-[#52b788]">
+                  <td className="px-2 py-2 text-right font-mono text-gray-600 dark:text-gray-300">{c.F}</td>
+                  <td className="px-2 py-2 text-right font-mono font-medium text-[#0f766e] dark:text-[#14b8a6]">
                     {fmt(c.M)}
                   </td>
                 </tr>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, startTransition } from "react";
+import { useState, useEffect, useCallback, startTransition, useRef } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { Star, Quote, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -99,16 +99,29 @@ function TestiCard({ item, position }: { item: TItem; position: "left" | "center
           />
         ))}
       </div>
-      <div>
-        <p
+      <div className="flex items-center gap-2.5">
+        <div
           className={cn(
-            "font-bold",
-            isCenter ? "text-foreground text-sm" : "text-gray-600 text-xs"
+            "shrink-0 rounded-full flex items-center justify-center font-bold text-white",
+            isCenter ? "h-9 w-9 text-sm" : "h-7 w-7 text-xs"
           )}
+          style={{
+            background: `hsl(${item.name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360}, 55%, 45%)`,
+          }}
         >
-          {item.name}
-        </p>
-        <p className="text-xs text-muted">{item.location}, Pucallpa</p>
+          {item.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
+        </div>
+        <div>
+          <p
+            className={cn(
+              "font-bold",
+              isCenter ? "text-foreground text-sm" : "text-gray-600 text-xs"
+            )}
+          >
+            {item.name}
+          </p>
+          <p className="text-xs text-muted">{item.location}, Pucallpa</p>
+        </div>
       </div>
     </div>
   );
@@ -136,6 +149,8 @@ export default function Testimonials() {
   const [direction, setDirection] = useState(1);
   const [isPaused, setIsPaused] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
 
   useEffect(() => { startTransition(() => setMounted(true)); }, []);
 
@@ -197,7 +212,7 @@ export default function Testimonials() {
   const reviewSchema = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
-    "@id": "https://www.bodegasanmartin.pe/#grocery-store",
+    "@id": "https://www.buleje.pe/#grocery-store",
     review: STATIC_TESTIMONIALS.map((t, i) => ({
       "@type": "Review",
       author: { "@type": "Person", name: t.name },
@@ -253,6 +268,15 @@ export default function Testimonials() {
           aria-label="Testimonios de clientes"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; setIsPaused(true); }}
+          onTouchMove={(e) => { touchEndX.current = e.touches[0].clientX; }}
+          onTouchEnd={() => {
+            const diff = touchStartX.current - touchEndX.current;
+            if (Math.abs(diff) > 50) {
+              handleNav(diff > 0 ? 1 : -1);
+            }
+            setTimeout(() => setIsPaused(false), 5000);
+          }}
         >
           {/* Nav arrows */}
           <button

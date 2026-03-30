@@ -6,7 +6,7 @@ import { useInView } from "@/hooks/use-in-view";
 const MILESTONES = [
   {
     year: "2015",
-    title: "Nace Bodega San Martín",
+    title: "Nace Buleje",
     desc: "Abrimos nuestra primera tienda en el Jr. Ucayali con solo 50 productos.",
     icon: Heart,
     color: "bg-red-500",

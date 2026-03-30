@@ -2,7 +2,7 @@
 applyTo: "**/components/**/*.tsx,**/app/**/*.tsx"
 ---
 
-# Responsive & Mobile — Bodega San Martín
+# Responsive & Mobile — Buleje
 
 ## Mobile-first siempre
 
@@ -40,7 +40,7 @@ xl: 1280px  → Desktop wide
 ## Capacitor — builds móviles
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run app:build    # Build Next.js + sync Capacitor (iOS/Android)
 ```
 
@@ -48,8 +48,8 @@ npm run app:build    # Build Next.js + sync Capacitor (iOS/Android)
 
 ```json
 {
-  "appId": "com.bodegasanmartin.app",
-  "appName": "Bodega San Martín",
+  "appId": "com.buleje.app",
+  "appName": "Buleje",
   "webDir": "out"  // Carpeta de output de Next.js export
 }
 ```

@@ -156,7 +156,7 @@ export default function TrainingCenter() {
           <input
             value={user}
             onChange={(e) => setUser(e.target.value.trim() || "empleado")}
-            className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm focus:border-[#2d6a4f] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             placeholder="Tu nombre"
           />
         </div>
@@ -179,7 +179,7 @@ export default function TrainingCenter() {
           <span
             className={cn(
               "text-sm font-semibold",
-              allDone ? "text-amber-500" : "text-[#2d6a4f]"
+              allDone ? "text-amber-500" : "text-[#0f766e]"
             )}
           >
             {progress} de {total} completados
@@ -189,7 +189,7 @@ export default function TrainingCenter() {
           <div
             className={cn(
               "h-full transition-all duration-500",
-              allDone ? "bg-amber-400" : "bg-[#2d6a4f]"
+              allDone ? "bg-amber-400" : "bg-[#0f766e]"
             )}
             style={{ width: `${pct}%` }}
           />
@@ -272,7 +272,7 @@ export default function TrainingCenter() {
                   <ol className="space-y-3">
                     {tutorial.steps.map((step) => (
                       <li key={step.id} className="flex items-start gap-3">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#2d6a4f]/10 text-xs font-bold text-[#2d6a4f] dark:bg-[#2d6a4f]/20 dark:text-emerald-400">
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0f766e]/10 text-xs font-bold text-[#0f766e] dark:bg-[#0f766e]/20 dark:text-emerald-400">
                           {step.id}
                         </span>
                         <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
@@ -290,7 +290,7 @@ export default function TrainingCenter() {
                       "mt-4 w-full rounded-lg py-2 text-sm font-semibold transition",
                       isDone
                         ? "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
-                        : "bg-[#2d6a4f] text-white hover:bg-[#245a42]"
+                        : "bg-[#0f766e] text-white hover:bg-[#0d5f58]"
                     )}
                   >
                     {isDone

@@ -19,6 +19,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+
 // ── GET — data export ─────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {

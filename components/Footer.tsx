@@ -21,6 +21,7 @@ import { useSettings } from "@/contexts/settings-context";
 const quickLinks = [
   { href: "/", label: "Inicio" },
   { href: "/tienda", label: "Tienda" },
+  { href: "/recetas", label: "Recetario" },
   { href: "/#beneficios", label: "Beneficios" },
   { href: "/#preguntas", label: "Preguntas Frecuentes" },
   { href: "/#contacto", label: "Contacto" },
@@ -49,14 +50,14 @@ export default function Footer() {
   const hoursLabel = todayEntry?.enabled ? `Hoy: ${todayEntry.open} – ${todayEntry.close}` : "Hoy: cerrado";
 
   const perks = [
-    { icon: Truck, label: "Delivery Gratis en Pucallpa", color: "#40916c" },
+    { icon: Truck, label: "Delivery Gratis en Pucallpa", color: "#0d9488" },
     { icon: MessageCircle, label: "Pedidos por WhatsApp", color: "#25D366" },
-    { icon: Clock, label: hoursLabel, color: "#f4a261" },
+    { icon: Clock, label: hoursLabel, color: "#f97316" },
     { icon: ShieldCheck, label: "Pago con Yape o Efectivo", color: "#60a5fa" },
   ];
 
   return (
-    <footer style={{ background: "linear-gradient(180deg, #2d6a4f 0%, #1b4332 100%)" }} className="text-white">
+    <footer style={{ background: "linear-gradient(180deg, #0f766e 0%, #1b4332 100%)" }} className="text-white">
       {/* Perks Bar */}
       <div className="border-b border-white/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
@@ -85,14 +86,14 @@ export default function Footer() {
               <div
                 className="flex h-11 w-11 items-center justify-center rounded-2xl"
                 style={{
-                  background: "linear-gradient(135deg, #2d6a4f 0%, #245c43 50%, #1b4332 100%)",
+                  background: "linear-gradient(135deg, #0f766e 0%, #0d5f58 50%, #1b4332 100%)",
                   boxShadow: "0 4px 12px rgba(45,106,79,0.35)",
                 }}
               >
                 <Store className="h-5 w-5 text-white" />
               </div>
               <div>
-                <span className="text-lg font-extrabold block leading-tight">Bodega San Martín</span>
+                <span className="text-lg font-extrabold block leading-tight">Buleje</span>
                 <span className="text-[11px] text-white/40 font-medium tracking-wide">Pucallpa · Ucayali</span>
               </div>
             </div>
@@ -109,7 +110,7 @@ export default function Footer() {
             {/* Social + WhatsApp */}
             <div className="flex items-center gap-2 flex-wrap">
               <a
-                href={`${hp.footerWhatsApp}${hp.footerWhatsApp.includes("?") ? "&" : "?"}text=${encodeURIComponent("Hola Bodega San Martín 👋, quiero hacer un pedido")}`}
+                href={`${hp.footerWhatsApp}${hp.footerWhatsApp.includes("?") ? "&" : "?"}text=${encodeURIComponent("Hola Buleje 👋, quiero hacer un pedido")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all hover:scale-[1.03] active:scale-[0.97] shadow-lg shadow-[#25D366]/20"
@@ -287,7 +288,7 @@ export default function Footer() {
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-2">
               <p className="flex items-center gap-1.5 text-xs text-white/35">
-                © {year} Bodega San Martín · Hecho con <Heart className="h-3 w-3 text-red-400 fill-red-400" aria-hidden="true" /> en Pucallpa
+                © {year} Buleje · Hecho con <Heart className="h-3 w-3 text-red-400 fill-red-400" aria-hidden="true" /> en Pucallpa
                 <span className="mx-1">·</span>
                 <a href="/privacidad" className="hover:text-white/60 transition-colors">Privacidad</a>
                 <span className="mx-0.5">·</span>
