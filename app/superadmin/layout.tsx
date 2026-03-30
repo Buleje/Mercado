@@ -7,10 +7,8 @@ export const metadata = {
 
 export default function SuperAdminLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" className="dark">
-      <body className="bg-gray-950 antialiased">
-        {children}
-      </body>
-    </html>
+    <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white antialiased">
+      {children}
+    </div>
   );
 }

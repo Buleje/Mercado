@@ -36,7 +36,7 @@ export default function SuperAdminLoginPage() {
 
   return (
     <div
-      className="min-h-screen bg-gray-950 flex items-center justify-center p-4"
+      className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4"
       style={{
         backgroundImage:
           "radial-gradient(circle, rgba(15,118,110,0.08) 1px, transparent 1px)",
@@ -44,7 +44,7 @@ export default function SuperAdminLoginPage() {
       }}
     >
       <div
-        className={`bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-3xl w-full max-w-sm p-8 shadow-2xl transition-all ${
+        className={`bg-white dark:bg-gray-900/80 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-3xl w-full max-w-sm p-8 shadow-xl dark:shadow-2xl transition-all ${
           error ? "animate-[shake_0.4s_ease-in-out]" : ""
         }`}
       >
@@ -62,14 +62,14 @@ export default function SuperAdminLoginPage() {
             <h1
               className="text-xl font-bold"
               style={{
-                background: "linear-gradient(135deg, #14b8a6, #5eead4)",
+                background: "linear-gradient(135deg, #0f766e, #14b8a6)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
             >
               Platform Admin
             </h1>
-            <p className="text-gray-400 text-sm mt-1">Buleje SaaS</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Buleje SaaS</p>
           </div>
         </div>
 
@@ -84,7 +84,7 @@ export default function SuperAdminLoginPage() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
-              className="w-full bg-gray-800/50 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40 placeholder:text-gray-600"
+              className="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40 placeholder:text-gray-400 dark:placeholder:text-gray-600"
               placeholder="platform"
             />
           </div>
@@ -99,13 +99,13 @@ export default function SuperAdminLoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full bg-gray-800/50 border border-gray-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40 placeholder:text-gray-600"
+              className="w-full bg-gray-50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40 placeholder:text-gray-400 dark:placeholder:text-gray-600"
               placeholder="••••••••"
             />
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 bg-red-950 border border-red-800 text-red-300 rounded-xl px-4 py-2.5 text-sm animate-[shake_0.4s_ease-in-out]">
+            <div className="flex items-center gap-2 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-300 rounded-xl px-4 py-2.5 text-sm animate-[shake_0.4s_ease-in-out]">
               <Lock className="w-4 h-4 shrink-0" />
               Credenciales inválidas
             </div>
