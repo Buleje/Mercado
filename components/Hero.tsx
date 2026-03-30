@@ -42,7 +42,7 @@ function getCategoryStyle(label: string) {
 }
 
 export default function Hero() {
-  const { homepage: hp, deliveryConfig } = useSettings();
+  const { homepage: hp, deliveryConfig, storeTheme } = useSettings();
   const { categories } = useStoreProducts();
   const [greeting, setGreeting] = useState("");
 
@@ -238,7 +238,7 @@ export default function Hero() {
               color: "#f0f4f1", marginBottom: "1.5rem",
               textShadow: "0 2px 20px rgba(0,0,0,0.5), 0 0 40px rgba(45,106,79,0.2)",
             }}>
-              {hp.heroTitle}{" "}
+              {storeTheme?.heroTitle || hp.heroTitle}{" "}
               <span style={{
                 background: "linear-gradient(130deg, #4ade80 0%, #0f766e 40%, #f97316 75%, #f97316 100%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
@@ -253,7 +253,7 @@ export default function Hero() {
               fontSize: "clamp(0.95rem,1.7vw,1.1rem)", color: "rgba(240,244,241,0.52)",
               marginBottom: "2.2rem", lineHeight: 1.78, maxWidth: "36rem",
             }}>
-              {hp.heroSubtitle}
+              {storeTheme?.heroSubtitle || hp.heroSubtitle}
             </p>
 
             {/* CTA row */}
@@ -262,8 +262,8 @@ export default function Hero() {
               marginBottom: "2.5rem", justifyContent: "center",
             }}>
               <Link
-                href={hp.heroCta1Link}
-                onClick={() => trackCTAClick({ source: "hero", destination: hp.heroCta1Link, ctaText: hp.heroCta1Text })}
+                href={storeTheme?.heroLink ? `/${storeTheme.heroLink}` : hp.heroCta1Link}
+                onClick={() => trackCTAClick({ source: "hero", destination: storeTheme?.heroLink ? `/${storeTheme.heroLink}` : hp.heroCta1Link, ctaText: storeTheme?.heroCTA || hp.heroCta1Text })}
                 className="hero-cta-primary group relative overflow-hidden"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: "0.65rem",
@@ -279,7 +279,7 @@ export default function Hero() {
                   style={{ background: "linear-gradient(105deg, transparent 35%, rgba(255,255,255,0.14) 50%, transparent 65%)", animation: "shimmerSlide 1s ease-in-out" }}
                 />
                 <ShoppingCart style={{ width: 19, height: 19, position: "relative", zIndex: 1 }} />
-                <span style={{ position: "relative", zIndex: 1 }}>{hp.heroCta1Text}</span>
+                <span style={{ position: "relative", zIndex: 1 }}>{storeTheme?.heroCTA || hp.heroCta1Text}</span>
                 <ArrowRight style={{ width: 15, height: 15, position: "relative", zIndex: 1 }} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <a

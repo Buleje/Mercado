@@ -138,6 +138,9 @@ export async function PUT(req: NextRequest) {
       ...(body.transferBankName !== undefined && { transferBankName: body.transferBankName }),
       ...(body.transferAccountNum !== undefined && { transferAccountNum: body.transferAccountNum }),
       ...(body.transferAccountHolder !== undefined && { transferAccountHolder: body.transferAccountHolder }),
+
+      // ── StoreCustomizer ──
+      ...(body.storeTheme !== undefined && { storeTheme: body.storeTheme }),
     };
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");
     const requestId = req.headers.get("x-request-id") ?? undefined;

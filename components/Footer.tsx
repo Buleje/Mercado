@@ -40,7 +40,7 @@ const categoryLinks = [
 
 export default function Footer() {
   const year = new Date().getFullYear();
-  const { homepage: hp, deliveryConfig } = useSettings();
+  const { homepage: hp, deliveryConfig, storeTheme } = useSettings();
   const [nlEmail, setNlEmail] = useState("");
   const [nlStatus, setNlStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
@@ -93,7 +93,7 @@ export default function Footer() {
                 <Store className="h-5 w-5 text-white" />
               </div>
               <div>
-                <span className="text-lg font-extrabold block leading-tight">Buleje</span>
+                <span className="text-lg font-extrabold block leading-tight">{storeTheme?.name || "Buleje"}</span>
                 <span className="text-[11px] text-white/40 font-medium tracking-wide">Pucallpa · Ucayali</span>
               </div>
             </div>
@@ -105,12 +105,12 @@ export default function Footer() {
               <span className="text-white/60 text-xs ml-1.5">{hp.footerRating}</span>
             </div>
             <p className="text-white/50 text-sm leading-relaxed mb-5">
-              {hp.footerDescription}
+              {storeTheme?.description || hp.footerDescription}
             </p>
             {/* Social + WhatsApp */}
             <div className="flex items-center gap-2 flex-wrap">
               <a
-                href={`${hp.footerWhatsApp}${hp.footerWhatsApp.includes("?") ? "&" : "?"}text=${encodeURIComponent("Hola Buleje 👋, quiero hacer un pedido")}`}
+                href={`${storeTheme?.whatsapp || hp.footerWhatsApp}${(storeTheme?.whatsapp || hp.footerWhatsApp).includes("?") ? "&" : "?"}text=${encodeURIComponent(`Hola ${storeTheme?.name || "Buleje"} 👋, quiero hacer un pedido`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all hover:scale-[1.03] active:scale-[0.97] shadow-lg shadow-[#25D366]/20"
@@ -191,15 +191,43 @@ export default function Footer() {
                   Jr. Ucayali 450, Pucallpa, Ucayali
                 </span>
               </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 text-secondary shrink-0" />
-                <a
-                  href="tel:+51916409675"
-                  className="text-sm text-white/70 hover:text-secondary transition-colors"
-                >
-                  916 409 675
-                </a>
-              </li>
+              {(storeTheme?.phone || storeTheme?.email) && (
+                <li className="flex items-center gap-2.5">
+                  <Phone className="h-4 w-4 text-secondary shrink-0" />
+                  {storeTheme?.phone ? (
+                    <a
+                      href={`tel:${storeTheme.phone}`}
+                      className="text-sm text-white/70 hover:text-secondary transition-colors"
+                    >
+                      {storeTheme.phone}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-white/70">916 409 675</span>
+                  )}
+                </li>
+              )}
+              {!storeTheme?.phone && !storeTheme?.email && (
+                <li className="flex items-center gap-2.5">
+                  <Phone className="h-4 w-4 text-secondary shrink-0" />
+                  <a
+                    href="tel:+51916409675"
+                    className="text-sm text-white/70 hover:text-secondary transition-colors"
+                  >
+                    916 409 675
+                  </a>
+                </li>
+              )}
+              {storeTheme?.email && (
+                <li className="flex items-center gap-2.5">
+                  <Mail className="h-4 w-4 text-secondary shrink-0" />
+                  <a
+                    href={`mailto:${storeTheme.email}`}
+                    className="text-sm text-white/70 hover:text-secondary transition-colors"
+                  >
+                    {storeTheme.email}
+                  </a>
+                </li>
+              )}
               <li className="flex items-center gap-2.5">
                 <Clock className="h-4 w-4 text-secondary shrink-0" />
                 <span className="text-sm text-white/70">
@@ -288,7 +316,7 @@ export default function Footer() {
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-2">
               <p className="flex items-center gap-1.5 text-xs text-white/35">
-                © {year} Buleje · Hecho con <Heart className="h-3 w-3 text-red-400 fill-red-400" aria-hidden="true" /> en Pucallpa
+                © {year} {storeTheme?.name || "Buleje"} · Hecho con <Heart className="h-3 w-3 text-red-400 fill-red-400" aria-hidden="true" /> en Pucallpa
                 <span className="mx-1">·</span>
                 <a href="/privacidad" className="hover:text-white/60 transition-colors">Privacidad</a>
                 <span className="mx-0.5">·</span>

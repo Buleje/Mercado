@@ -176,7 +176,7 @@ export default function Header() {
   const pathname = usePathname();
   const { count, toggle, addItem } = useCart();
   const { customer, openModal: openCustomerModal, openAccountModal, openOrderStatusModal, clear } = useCustomer();
-  const { navLinks: storedNavLinks, businessName } = useSettings();
+  const { navLinks: storedNavLinks, businessName, storeTheme } = useSettings();
   const { resolved: _theme, toggle: _toggleTheme } = useTheme();
   const megaRef = useRef<HTMLDivElement>(null);
   const navLinks = storedNavLinks?.length ? storedNavLinks : DEFAULT_NAV_LINKS;
@@ -792,20 +792,24 @@ export default function Header() {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <div 
-              className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl text-white shadow-lg"
-              style={{ 
+            <div
+              className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl text-white shadow-lg overflow-hidden"
+              style={{
                 background: "linear-gradient(135deg, #0f766e 0%, #0d5f58 50%, #1b4332 100%)",
                 boxShadow: "0 4px 12px rgba(45, 106, 79, 0.35)"
               }}
             >
-              <Store className="h-5 w-5 sm:h-6 sm:w-6" />
+              {storeTheme?.logo ? (
+                <Image src={storeTheme.logo} alt={storeTheme.name || businessName || "logo"} width={44} height={44} className="h-full w-full object-cover" />
+              ) : (
+                <Store className="h-5 w-5 sm:h-6 sm:w-6" />
+              )}
             </div>
             <div className="hidden sm:flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className={cn("text-base sm:text-xl font-bold leading-tight transition-colors",
                   scrolled ? "text-primary-dark" : "text-white")}>
-                  {businessName || "Mi Bodega"}
+                  {storeTheme?.name || businessName || "Mi Bodega"}
                 </span>
                 <span className={cn(
                   "inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold leading-none tracking-wide border",

@@ -30,6 +30,29 @@ export const DEFAULT_NAV_LINKS: NavLinkItem[] = [
   { id: "contacto", visible: true },
 ];
 
+export type StoreTheme = {
+  name?: string;
+  slogan?: string;
+  description?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  darkMode?: boolean;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  heroCTA?: string;
+  heroLink?: string;
+  fontFamily?: string;
+  borderRadius?: number;
+  spacing?: string;
+  whatsapp?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  logo?: string;
+  visibleSections?: string[];
+};
+
 type SettingsCtx = {
   mode: StoreMode;
   modeLoading: boolean;
@@ -39,6 +62,7 @@ type SettingsCtx = {
   homepage: HomepageContent;
   deliveryConfig: DeliveryConfig;
   businessName: string;
+  storeTheme: StoreTheme | null;
   setMode: (m: StoreMode) => Promise<void>;
 };
 
@@ -77,6 +101,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [homepage, setHomepage] = useState<HomepageContent>(DEFAULT_HOMEPAGE);
   const [deliveryConfig, setDeliveryConfig] = useState<DeliveryConfig>(DEFAULT_DELIVERY);
   const [businessName, setBusinessName] = useState<string>("");
+  const [storeTheme, setStoreTheme] = useState<StoreTheme | null>(null);
 
   useEffect(() => {
     // Detectar si el tenant activo es "main" leyendo la cookie active-tenant
@@ -114,6 +139,31 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           if (data.deliveryConfig && typeof data.deliveryConfig === "object") {
             setDeliveryConfig({ ...DEFAULT_DELIVERY, ...(data.deliveryConfig as Partial<DeliveryConfig>) });
           }
+          if (data.storeTheme && typeof data.storeTheme === "object") {
+            const raw = data.storeTheme as Record<string, unknown>;
+            setStoreTheme({
+              name: raw.storeName as string | undefined,
+              slogan: raw.slogan as string | undefined,
+              description: raw.description as string | undefined,
+              primaryColor: raw.primaryColor as string | undefined,
+              secondaryColor: raw.secondaryColor as string | undefined,
+              accentColor: raw.accentColor as string | undefined,
+              darkMode: raw.darkModeDefault as boolean | undefined,
+              heroTitle: raw.heroTitle as string | undefined,
+              heroSubtitle: raw.heroSubtitle as string | undefined,
+              heroCTA: raw.heroCTA as string | undefined,
+              heroLink: raw.heroLink as string | undefined,
+              fontFamily: raw.fontFamily as string | undefined,
+              borderRadius: raw.borderRadius as number | undefined,
+              spacing: raw.spacing as string | undefined,
+              whatsapp: raw.whatsapp as string | undefined,
+              email: raw.email as string | undefined,
+              phone: raw.phone as string | undefined,
+              address: raw.address as string | undefined,
+              logo: raw.logo as string | undefined,
+              visibleSections: Array.isArray(raw.sections) ? (raw.sections as string[]) : undefined,
+            });
+          }
         }
       })
       .catch(() => {})
@@ -130,7 +180,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <SettingsContext.Provider value={{ mode, modeLoading, yape, cashEnabled, navLinks, homepage, deliveryConfig, businessName, setMode }}>
+    <SettingsContext.Provider value={{ mode, modeLoading, yape, cashEnabled, navLinks, homepage, deliveryConfig, businessName, storeTheme, setMode }}>
       {children}
     </SettingsContext.Provider>
   );

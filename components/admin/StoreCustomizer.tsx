@@ -228,23 +228,30 @@ function StorePreview({ theme }: { theme: StoreTheme }) {
 
       {/* Header mockup */}
       <div
-        className="flex items-center justify-between px-4 py-2.5 shrink-0"
+        className="flex items-center justify-between shrink-0"
         style={{ backgroundColor: theme.primaryColor, padding: spacingPad }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           {theme.logo ? (
-            <img src={theme.logo} alt="logo" className="h-7 w-7 rounded-lg object-cover" />
+            <img src={theme.logo} alt="logo" className="h-7 w-7 rounded-lg object-cover shrink-0" />
           ) : (
-            <div className="h-7 w-7 rounded-lg bg-white/20 flex items-center justify-center">
+            <div className="h-7 w-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
               <Store className="h-4 w-4 text-white" />
             </div>
           )}
-          <span className="text-white font-extrabold text-sm leading-tight truncate max-w-[120px]">
-            {theme.storeName || "Mi Tienda"}
-          </span>
+          <div className="min-w-0">
+            <span className="text-white font-extrabold text-sm leading-tight truncate block max-w-[110px]">
+              {theme.storeName || "Mi Tienda"}
+            </span>
+            {theme.slogan && (
+              <span className="text-white/60 text-[9px] leading-tight truncate block max-w-[110px]">
+                {theme.slogan}
+              </span>
+            )}
+          </div>
         </div>
         <div
-          className="h-7 px-3 rounded-full text-[11px] font-bold flex items-center"
+          className="h-7 px-3 rounded-full text-[11px] font-bold flex items-center shrink-0"
           style={{ backgroundColor: theme.secondaryColor, color: "#fff" }}
         >
           Ver todo
@@ -268,9 +275,9 @@ function StorePreview({ theme }: { theme: StoreTheme }) {
           {theme.heroSubtitle || "Subtítulo del hero"}
         </p>
         <button
-          className="mt-3 px-4 py-1.5 rounded-full text-[11px] font-bold text-white shadow"
+          className="mt-3 px-4 py-1.5 text-[11px] font-bold text-white shadow"
           style={{
-            backgroundColor: theme.secondaryColor,
+            backgroundColor: theme.primaryColor,
             borderRadius: `${theme.borderRadius}px`,
           }}
         >
@@ -358,12 +365,17 @@ function StorePreview({ theme }: { theme: StoreTheme }) {
 export default function StoreCustomizer() {
   const [activeTab, setActiveTab] = useState<Tab>("identidad");
   const [theme, setTheme] = useState<StoreTheme>(DEFAULT_THEME);
+  const [savedTheme, setSavedTheme] = useState<StoreTheme>(DEFAULT_THEME);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(true);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // Detecta si hay cambios pendientes comparando con la última versión guardada
+  const hasUnsavedChanges = JSON.stringify(theme) !== JSON.stringify(savedTheme);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const heroImageInputRef = useRef<HTMLInputElement>(null);
@@ -377,17 +389,21 @@ export default function StoreCustomizer() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.storeTheme) {
-          setTheme((prev) => ({ ...prev, ...data.storeTheme }));
+          const loaded = { ...DEFAULT_THEME, ...data.storeTheme };
+          setTheme(loaded);
+          setSavedTheme(loaded);
         } else {
           // Rellenar con datos básicos que ya existan en settings
-          setTheme((prev) => ({
-            ...prev,
-            storeName: data?.businessName || prev.storeName,
-            whatsapp: data?.whatsappNumber || prev.whatsapp,
-            phone: data?.contactPhone || prev.phone,
-            email: data?.contactEmail || prev.email,
-            address: data?.businessAddress || prev.address,
-          }));
+          const loaded = {
+            ...DEFAULT_THEME,
+            storeName: data?.businessName || DEFAULT_THEME.storeName,
+            whatsapp: data?.whatsappNumber || DEFAULT_THEME.whatsapp,
+            phone: data?.contactPhone || DEFAULT_THEME.phone,
+            email: data?.contactEmail || DEFAULT_THEME.email,
+            address: data?.businessAddress || DEFAULT_THEME.address,
+          };
+          setTheme(loaded);
+          setSavedTheme(loaded);
         }
       })
       .catch(() => {})
@@ -398,6 +414,12 @@ export default function StoreCustomizer() {
 
   const update = useCallback(<K extends keyof StoreTheme>(key: K, value: StoreTheme[K]) => {
     setTheme((prev) => ({ ...prev, [key]: value }));
+    setSaved(false);
+  }, []);
+
+  const handleReset = useCallback(() => {
+    if (!confirm("¿Restaurar todos los valores por defecto? Se perderán los cambios no guardados.")) return;
+    setTheme(DEFAULT_THEME);
     setSaved(false);
   }, []);
 
@@ -428,7 +450,10 @@ export default function StoreCustomizer() {
       });
       if (!res.ok) throw new Error("Error al guardar");
       setSaved(true);
+      setSavedTheme(theme);
+      setToastMsg("Cambios guardados correctamente");
       setTimeout(() => setSaved(false), 3000);
+      setTimeout(() => setToastMsg(null), 3000);
     } catch {
       setError("No se pudo guardar. Intenta de nuevo.");
     } finally {
@@ -492,6 +517,14 @@ export default function StoreCustomizer() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Toast de éxito */}
+      {toastMsg && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-emerald-600 text-white text-sm font-bold shadow-xl animate-[fadeDown_0.35s_ease-out_both] pointer-events-none">
+          <Check className="h-4 w-4 shrink-0" />
+          {toastMsg}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6 shrink-0">
         <div className="flex items-center gap-3">
@@ -1027,6 +1060,18 @@ export default function StoreCustomizer() {
                   </div>
                 </FieldRow>
 
+                {/* Reset a valores por defecto */}
+                <div className="pt-2 border-t border-gray-100 dark:border-card-border">
+                  <button
+                    type="button"
+                    onClick={handleReset}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-red-200 dark:border-red-800/50 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors min-h-[44px]"
+                  >
+                    Restaurar valores por defecto
+                  </button>
+                  <p className="text-[10px] text-muted text-center mt-1.5">Esta acción borra los cambios no guardados</p>
+                </div>
+
                 {/* Tracking */}
                 <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-card-border">
                   <p className="text-xs font-semibold text-muted uppercase tracking-wide flex items-center gap-1.5">
@@ -1066,7 +1111,7 @@ export default function StoreCustomizer() {
               onClick={handleSave}
               disabled={saving}
               className={cn(
-                "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all min-h-[48px]",
+                "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all min-h-[48px] relative",
                 saved
                   ? "bg-emerald-600 text-white"
                   : "bg-teal-600 hover:bg-teal-700 text-white shadow-md hover:shadow-lg active:scale-[0.98]",
@@ -1079,6 +1124,11 @@ export default function StoreCustomizer() {
                 <><Check className="h-4 w-4" /> Cambios guardados</>
               ) : (
                 <><Save className="h-4 w-4" /> Guardar cambios</>
+              )}
+              {hasUnsavedChanges && !saving && !saved && (
+                <span className="absolute -top-1.5 -right-1.5 h-5 px-1.5 rounded-full bg-amber-400 text-[9px] font-bold text-gray-900 flex items-center">
+                  Sin guardar
+                </span>
               )}
             </button>
           </div>

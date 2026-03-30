@@ -13,6 +13,7 @@ import { SettingsProvider } from "@/contexts/settings-context";
 import { PromotionsProvider } from "@/contexts/promotions-context";
 import { FavoritesProvider } from "@/contexts/favorites-context";
 import { CompareProvider } from "@/contexts/compare-context";
+import ThemeInjector from "@/components/store/ThemeInjector";
 
 export default function StoreProviders({
   children,
@@ -23,6 +24,7 @@ export default function StoreProviders({
     <ToastProvider>
       <ReviewsProvider>
         <SettingsProvider>
+          <ThemeInjector />
           <PromotionsProvider>
             <CartProvider>
               <FavoritesProvider>

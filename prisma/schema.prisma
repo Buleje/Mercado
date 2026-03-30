@@ -418,6 +418,9 @@ model Settings {
 
   // ── Plantilla de tienda ──
   productCategoriesJson String?  // JSON array: ["Abarrotes","Bebidas",...] — pre-cargado desde plantilla en onboarding
+
+  // ── StoreCustomizer ──
+  storeThemeJson        String?  // JSON: StoreCustomizer theme data
 }
 
 // ─── Suppliers ──────────────────────────────────────────

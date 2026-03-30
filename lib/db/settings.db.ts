@@ -147,6 +147,9 @@ function mapSettings(s: PSettings): DbSettings {
     ...(r.transferBankName != null && { transferBankName: r.transferBankName as string }),
     ...(r.transferAccountNum != null && { transferAccountNum: r.transferAccountNum as string }),
     ...(r.transferAccountHolder != null && { transferAccountHolder: r.transferAccountHolder as string }),
+
+    // ── StoreCustomizer ──
+    ...spreadJson(r.storeThemeJson as string, 'storeTheme'),
   };
 }
 
@@ -282,6 +285,9 @@ export const SettingsDB = {
       ...(s.transferBankName !== undefined && { transferBankName: s.transferBankName }),
       ...(s.transferAccountNum !== undefined && { transferAccountNum: s.transferAccountNum }),
       ...(s.transferAccountHolder !== undefined && { transferAccountHolder: s.transferAccountHolder }),
+
+      // ── StoreCustomizer ──
+      ...(s.storeTheme !== undefined && { storeThemeJson: JSON.stringify(s.storeTheme) }),
     };
     const row = await prisma.settings.upsert({
       where: { tenantId: tid },

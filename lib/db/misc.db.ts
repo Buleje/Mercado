@@ -241,6 +241,9 @@ export type DbSettings = {
   transferBankName?: string;
   transferAccountNum?: string;
   transferAccountHolder?: string;
+
+  // ── StoreCustomizer ──
+  storeTheme?: Record<string, unknown>;
 };
 
 export type DbSupplier = {
