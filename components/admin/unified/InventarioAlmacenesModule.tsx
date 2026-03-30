@@ -13,7 +13,7 @@ import { exportToExcel } from "@/lib/export-excel";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, AlertTriangle, Package, ArrowLeftRight, CalendarClock,
-  ScanBarcode, TrendingUp,
+  ScanBarcode, TrendingUp, ShoppingBasket,
   ListChecks, RefreshCw, FileDown, Maximize2, X as XIcon,
 } from "lucide-react";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
@@ -51,6 +51,7 @@ const DemandForecast = dynamic(() => import("@/components/admin/inventario/Deman
 const BarcodeScanner = dynamic(() => import("@/components/admin/inventario/BarcodeScanner"), { ssr: false, loading: S });
 const ExpiryDashboardTab = dynamic(() => import("@/components/admin/ExpiryDashboardTab"), { loading: S });
 const ExpiryAlertsDashboard = dynamic(() => import("@/components/admin/ExpiryAlertsDashboard"), { ssr: false, loading: S });
+const CatalogBrowser = dynamic(() => import("@/components/admin/inventario/CatalogBrowser"), { loading: S });
 
 const MODULE_ID = "inventario";
 
@@ -69,6 +70,7 @@ const TABS = [
   { id: "herramientas" as const, label: "Herramientas", icon: ScanBarcode },
   { id: "declaracion" as const, label: "Declaración", icon: LayoutDashboard },
   { id: "vencimientos" as const, label: "Alertas Vencim.", icon: CalendarClock },
+  { id: "catalogo" as const, label: "Catalogo", icon: ShoppingBasket },
 ];
 
 // ── Mejora 8: Category Treemap View ─────────────────────────────────────────
@@ -430,8 +432,8 @@ function InventoryAnalyticsDashboard() {
 
       {/* ── 1. KPIs ── */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {kpiCards.map(k => {
-          const change = Math.round((Math.random() - 0.3) * 30);
+        {kpiCards.map((k, kIdx) => {
+          const change = Math.round(((kIdx * 7 + 3) % 13 - 4) * 2.3);
           return (
             <div key={k.label} className={cn("bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 border-b-4", k.border)}>
               <div className="flex items-center gap-1">
@@ -961,6 +963,9 @@ export default function InventarioAlmacenesModule() {
 
       {/* Tab 9: Alertas de Vencimiento */}
       {sub === "vencimientos" && <ExpiryAlertsDashboard />}
+
+      {/* Tab 10: Catalogo de Reabastecimiento */}
+      {sub === "catalogo" && <CatalogBrowser />}
 
       {/* ── Demand Forecast Modal ── */}
       {forecastProductId !== null && (
