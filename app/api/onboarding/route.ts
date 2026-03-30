@@ -25,7 +25,7 @@ const OnboardingSchema = z.object({
   ownerEmail:    z.string().email(),
   ownerPhone:    z.string().max(20).optional(),
   // Plan
-  plan:          z.enum(["free", "pro", "business"]).default("free"),
+  plan:          z.enum(["free", "pro", "business", "enterprise"]).default("free"),
   // Admin account
   adminName:     z.string().min(2).max(64),
   adminUsername: z.string().min(3).max(32).regex(/^[a-z0-9_.]+$/i, "Solo letras, números, punto o guión bajo"),

@@ -47,6 +47,7 @@ const WeeklyCashFlowTable = dynamic(() => import("@/components/admin/WeeklyCashF
 const HistorialCierresTab = dynamic(() => import("@/components/admin/HistorialCierresTab"), { loading: S });
 const PresupuestoMensualTab = dynamic(() => import("@/components/admin/finanzas/PresupuestoMensualTab"), { loading: S });
 const ReporteMensualTab     = dynamic(() => import("@/components/admin/ReporteMensualTab"),              { loading: S });
+const ComparativeReportsTab = dynamic(() => import("@/components/admin/ComparativeReportsTab"),           { ssr: false, loading: S });
 // DocumentosEmitidosTab → movido a categoría Documentos (no es finanzas)
 
 const MODULE_ID = "plata";
@@ -61,6 +62,7 @@ const TABS = [
   { id: "reporte-mensual" as const,  label: "Reporte Mensual PDF",      icon: FileBarChart },
   { id: "reportes" as const,         label: "Reportes y Exportación",   icon: FileBarChart },
   { id: "historial-cierres" as const, label: "Historial Cierres",       icon: History      },
+  { id: "comparativo" as const,      label: "Comparativo",              icon: BarChart3    },
 ];
 
 // ── Mejora 11: Semáforo de salud financiera ──────────────────────────────────
@@ -1880,6 +1882,7 @@ export default function FinanzasModule() {
         </div>
       )}
       {sub === "historial-cierres" && <HistorialCierresTab />}
+      {sub === "comparativo" && <ComparativeReportsTab />}
     </div>
   );
 }

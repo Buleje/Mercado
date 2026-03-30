@@ -12,12 +12,14 @@ const ReportsTab = dynamic(() => import("@/components/admin/ReportsTab"), { load
 const AutoReportsTab = dynamic(() => import("@/components/admin/AutoReportsTab"), { loading: S });
 const ImportExportTab = dynamic(() => import("@/components/admin/ImportExportTab"), { loading: S });
 const DocumentManagerTab = dynamic(() => import("@/components/admin/DocumentManagerTab"), { loading: S });
+const BulkInvoiceGenerator = dynamic(() => import("@/components/admin/BulkInvoiceGenerator"), { ssr: false, loading: S });
 
 const TABS = [
   { id: "reportes" as const, label: "Reportes" },
   { id: "auto" as const, label: "Automáticos" },
   { id: "importar-exportar" as const, label: "Importar / Exportar" },
   { id: "documentos" as const, label: "Documentos" },
+  { id: "masiva" as const, label: "Facturación Masiva" },
 ];
 
 export default function ReportesDocModule() {
@@ -43,6 +45,7 @@ export default function ReportesDocModule() {
       {sub === "auto" && <AutoReportsTab />}
       {sub === "importar-exportar" && <ImportExportTab />}
       {sub === "documentos" && <DocumentManagerTab />}
+      {sub === "masiva" && <BulkInvoiceGenerator />}
     </div>
   );
 }

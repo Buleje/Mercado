@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { HandCoins, CalendarDays, Calendar } from "lucide-react";
+import { HandCoins, CalendarDays, Calendar, CalendarRange } from "lucide-react";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -18,6 +18,7 @@ const AccountsReceivableTab = dynamic(() => import("@/components/admin/AccountsR
 const PayablesTab = dynamic(() => import("@/components/admin/PayablesTab"), { loading: S });
 const CxPCalendar = dynamic(() => import("@/components/admin/compras/CxPCalendar"), { loading: S });
 const PaymentCalendar = dynamic(() => import("@/components/admin/PaymentCalendar"), { loading: S });
+const PaymentCalendarView = dynamic(() => import("@/components/admin/PaymentCalendarView"), { ssr: false, loading: S });
 
 const TABS = [
   { id: "tesoreria" as const, label: "Tesorería" },
@@ -29,6 +30,7 @@ const TABS = [
   { id: "cuentas-pagar" as const, label: "Cuentas por Pagar", icon: HandCoins },
   { id: "calendario-cxp" as const, label: "Calendario CxP", icon: CalendarDays },
   { id: "pagos" as const, label: "Calendario Pagos", icon: Calendar },
+  { id: "calendario" as const, label: "Calendario Completo", icon: CalendarRange },
 ];
 
 export default function TesoreriaModule() {
@@ -59,6 +61,7 @@ export default function TesoreriaModule() {
       {sub === "cuentas-pagar" && <PayablesTab />}
       {sub === "calendario-cxp" && <CxPCalendar />}
       {sub === "pagos" && <PaymentCalendar />}
+      {sub === "calendario" && <PaymentCalendarView />}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import type { DbOrder } from "@/lib/jsondb";
 import { emitAdminSSE } from "@/lib/sse-emitter";
 import { sendOrderNotification } from "@/lib/mailer";
 import { sendWhatsAppNotification, getWhatsAppLink } from "@/lib/whatsapp";
+import { sendReceiptByWhatsApp } from "@/lib/receipt-whatsapp";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
@@ -354,6 +355,26 @@ export async function POST(req: NextRequest) {
           // API not configured — generate link for manual use (logged but not returned)
           getWhatsAppLink(orderInfo);
         });
+
+        // Enviar recibo por WhatsApp solo si el cliente tiene alertasWhatsapp activo
+        const custWa = await prisma.customer.findUnique({
+          where: { phone: saved.customer.phone },
+          select: { alertasWhatsapp: true },
+        }).catch(() => null);
+        if (custWa?.alertasWhatsapp !== false) {
+          sendReceiptByWhatsApp(
+            {
+              id: saved.id,
+              items: saved.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })),
+              total: saved.total,
+              paymentMethod: saved.paymentMethod,
+              createdAt: saved.createdAt,
+            },
+            saved.customer.phone,
+            saved.customer.name,
+          ).catch(() => {});
+        }
+
         // Push notification for new order
         sendPushToPhone(saved.customer.phone, {
           title: "📋 ¡Pedido recibido!",

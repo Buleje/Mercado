@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, type FormEvent } from 'react';
-import { X, Zap, ClipboardList, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { X, Zap, ClipboardList, ChevronDown, ChevronUp, Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // ── Ubigeo data (principales departamentos de Peru) ─────────────────────────
@@ -193,6 +193,8 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
   const [form, setForm] = useState<CustomerFormData>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [dniLoading, setDniLoading] = useState(false);
+  const [dniMsg, setDniMsg] = useState('');
   const isEdit = !!customer;
 
   // Populate form when editing
@@ -238,6 +240,33 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
   const set = useCallback(<K extends keyof CustomerFormData>(key: K, value: CustomerFormData[K]) => {
     setForm(prev => ({ ...prev, [key]: value }));
   }, []);
+
+  // Buscar nombre en RENIEC por DNI
+  const buscarDni = useCallback(async (dni: string) => {
+    const clean = dni.replace(/\D/g, '');
+    if (clean.length !== 8) {
+      setDniMsg('El DNI debe tener 8 dígitos');
+      return;
+    }
+    setDniLoading(true);
+    setDniMsg('');
+    try {
+      const res = await fetch(`/api/reniec/lookup?dni=${clean}`);
+      const data = await res.json() as { nombreCompleto?: string; error?: string; _mock?: boolean };
+      if (!res.ok || data.error) {
+        setDniMsg(data.error ?? 'No se pudo consultar');
+        return;
+      }
+      if (data.nombreCompleto) {
+        set('name', data.nombreCompleto);
+        setDniMsg(data._mock ? 'Dato de prueba — configura RENIEC_API_URL para datos reales' : 'Nombre completado automaticamente');
+      }
+    } catch {
+      setDniMsg('No se pudo consultar');
+    } finally {
+      setDniLoading(false);
+    }
+  }, [set]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -408,13 +437,36 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className={labelCls}>{form.tipoPersona === 'juridica' ? 'RUC' : 'DNI'}</label>
-                  <input
-                    value={form.documento}
-                    onChange={e => set('documento', e.target.value)}
-                    placeholder={form.tipoPersona === 'juridica' ? '20xxxxxxxxx' : '12345678'}
-                    maxLength={form.tipoPersona === 'juridica' ? 11 : 8}
-                    className={cn(inputCls, "font-mono")}
-                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      value={form.documento}
+                      onChange={e => { set('documento', e.target.value); setDniMsg(''); }}
+                      placeholder={form.tipoPersona === 'juridica' ? '20xxxxxxxxx' : '12345678'}
+                      maxLength={form.tipoPersona === 'juridica' ? 11 : 8}
+                      className={cn(inputCls, "font-mono flex-1")}
+                    />
+                    {form.tipoPersona === 'natural' && form.tipoDocumento !== 'RUC' && (
+                      <button
+                        type="button"
+                        onClick={() => buscarDni(form.documento)}
+                        disabled={dniLoading}
+                        title="Buscar nombre en RENIEC"
+                        className="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
+                      >
+                        {dniLoading ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500 dark:text-muted" />
+                        ) : (
+                          <Search className="h-3.5 w-3.5 text-[#0f766e]" />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  {dniMsg && (
+                    <p className={cn(
+                      "text-xs mt-1",
+                      dniMsg.includes('completado') ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"
+                    )}>{dniMsg}</p>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>Telefono *</label>
@@ -479,7 +531,35 @@ export default function ClienteFormModal({ isOpen, onClose, onSaved, customer, i
                   </div>
                   <div>
                     <label className={labelCls}>Numero documento</label>
-                    <input value={form.documento} onChange={e => set('documento', e.target.value)} placeholder="12345678" className={cn(inputCls, "font-mono")} />
+                    <div className="flex gap-1.5">
+                      <input
+                        value={form.documento}
+                        onChange={e => { set('documento', e.target.value); setDniMsg(''); }}
+                        placeholder="12345678"
+                        className={cn(inputCls, "font-mono flex-1")}
+                      />
+                      {form.tipoDocumento === 'DNI' && (
+                        <button
+                          type="button"
+                          onClick={() => buscarDni(form.documento)}
+                          disabled={dniLoading}
+                          title="Buscar nombre en RENIEC"
+                          className="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface hover:bg-gray-50 dark:hover:bg-accent transition-colors shrink-0 disabled:opacity-50"
+                        >
+                          {dniLoading ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-500 dark:text-muted" />
+                          ) : (
+                            <Search className="h-3.5 w-3.5 text-[#0f766e]" />
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    {dniMsg && (
+                      <p className={cn(
+                        "text-xs mt-1",
+                        dniMsg.includes('completado') ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"
+                      )}>{dniMsg}</p>
+                    )}
                   </div>
                 </div>
                 <div>

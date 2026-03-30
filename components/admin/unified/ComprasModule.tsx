@@ -37,6 +37,7 @@ const PurchaseOrdersTab = dynamic(() => import("@/components/admin/PurchaseOrder
 const SuppliersTab = dynamic(() => import("@/components/admin/SuppliersTab"), { loading: S });
 const ReceivingTab = dynamic(() => import("@/components/admin/ReceivingTab"), { loading: S });
 const PuntoCompraView = dynamic(() => import("@/components/admin/pos/PuntoCompraView"), { loading: S });
+const SupplierComparator = dynamic(() => import("@/components/admin/SupplierComparator"), { ssr: false, loading: S });
 
 const MODULE_ID = "compras";
 
@@ -49,6 +50,7 @@ const TABS: AdminTab[] = [
   { id: "ordenes-compra", label: "Ordenes", icon: ClipboardList },
   { id: "proveedores", label: "Proveedores", icon: Users },
   { id: "recepcion", label: "Recepcion", icon: PackageCheck },
+  { id: "comparador", label: "Comparador", icon: BarChart3 },
 ];
 
 // ── Dashboard de Compras ────────────────────────────────────────────────────
@@ -609,6 +611,7 @@ export default function ComprasModule() {
       {sub === "ordenes-compra" && <PurchaseOrdersTab />}
       {sub === "proveedores" && <SuppliersTab />}
       {sub === "recepcion" && <ReceivingTab />}
+      {sub === "comparador" && <SupplierComparator />}
     </div>
   );
 }

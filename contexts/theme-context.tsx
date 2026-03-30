@@ -10,7 +10,8 @@ import {
   type ReactNode,
 } from "react";
 
-type Theme = "light" | "dark" | "system" | "auto";
+// "auto-schedule": dark después de 18:00 (6pm), light antes de las 18:00
+type Theme = "light" | "dark" | "system" | "auto" | "auto-schedule";
 
 interface ThemeCtx {
   theme: Theme;
@@ -29,11 +30,16 @@ function getSystemTheme(): "light" | "dark" {
     : "light";
 }
 
-// Mejora 5: Determine theme based on time of day
+// Tema por hora (modo "auto"): oscuro desde las 19h hasta las 6am
 function getTimeBasedTheme(): "light" | "dark" {
   const hour = new Date().getHours();
-  // Dark mode from 7pm (19) to 6am (6)
   return hour >= 19 || hour < 6 ? "dark" : "light";
+}
+
+// Tema por horario configurado (modo "auto-schedule"): oscuro desde las 18h (6pm)
+function getScheduleBasedTheme(): "light" | "dark" {
+  const hour = new Date().getHours();
+  return hour >= 18 || hour < 6 ? "dark" : "light";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -43,12 +49,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // Hydrate from localStorage after mount to avoid SSR mismatch
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const t = stored && ["light", "dark", "system", "auto"].includes(stored) ? stored : "light";
+    const t = stored && ["light", "dark", "system", "auto", "auto-schedule"].includes(stored) ? stored : "light";
     startTransition(() => {
       setThemeState(t);
       setResolved(
         t === "system" ? getSystemTheme() :
         t === "auto" ? getTimeBasedTheme() :
+        t === "auto-schedule" ? getScheduleBasedTheme() :
         t
       );
     });
@@ -66,7 +73,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
           ? getSystemTheme()
           : theme === "auto"
             ? getTimeBasedTheme()
-            : theme;
+            : theme === "auto-schedule"
+              ? getScheduleBasedTheme()
+              : theme;
       setResolved(r);
       document.documentElement.classList.toggle("dark", r === "dark");
     };
@@ -92,9 +101,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener("resize", resizeHandler);
 
-    // Mejora 5: Auto-mode timer — check every minute
+    // Auto-mode timers — verificar cada 60 segundos si cambió el horario
     let autoInterval: ReturnType<typeof setInterval> | null = null;
-    if (theme === "auto") {
+    if (theme === "auto" || theme === "auto-schedule") {
       autoInterval = setInterval(apply, 60_000);
     }
 
@@ -111,9 +120,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggle = useCallback(() => {
-    // Cycle: light → dark → auto → light
+    // Ciclo: light → dark → auto-schedule → light
     if (theme === "light") setTheme("dark");
-    else if (theme === "dark") setTheme("auto");
+    else if (theme === "dark") setTheme("auto-schedule");
     else setTheme("light");
   }, [theme, setTheme]);
 

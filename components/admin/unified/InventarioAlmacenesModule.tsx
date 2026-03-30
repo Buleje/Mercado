@@ -50,6 +50,7 @@ const DeclaracionInventarioModule = dynamic(() => import("@/components/admin/Dec
 const DemandForecast = dynamic(() => import("@/components/admin/inventario/DemandForecast"), { loading: S });
 const BarcodeScanner = dynamic(() => import("@/components/admin/inventario/BarcodeScanner"), { ssr: false, loading: S });
 const ExpiryDashboardTab = dynamic(() => import("@/components/admin/ExpiryDashboardTab"), { loading: S });
+const ExpiryAlertsDashboard = dynamic(() => import("@/components/admin/ExpiryAlertsDashboard"), { ssr: false, loading: S });
 
 const MODULE_ID = "inventario";
 
@@ -67,6 +68,7 @@ const TABS = [
   { id: "analisis" as const, label: "Análisis", icon: TrendingUp },
   { id: "herramientas" as const, label: "Herramientas", icon: ScanBarcode },
   { id: "declaracion" as const, label: "Declaración", icon: LayoutDashboard },
+  { id: "vencimientos" as const, label: "Alertas Vencim.", icon: CalendarClock },
 ];
 
 // ── Mejora 8: Category Treemap View ─────────────────────────────────────────
@@ -956,6 +958,9 @@ export default function InventarioAlmacenesModule() {
 
       {/* Tab 8: Declaración */}
       {sub === "declaracion" && <DeclaracionInventarioModule />}
+
+      {/* Tab 9: Alertas de Vencimiento */}
+      {sub === "vencimientos" && <ExpiryAlertsDashboard />}
 
       {/* ── Demand Forecast Modal ── */}
       {forecastProductId !== null && (

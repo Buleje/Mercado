@@ -11,9 +11,11 @@ const S = () => (
 const LoyaltyTab = dynamic(() => import("@/components/admin/LoyaltyTab"), { loading: S });
 const PointsProgramTab = dynamic(() => import("@/components/admin/PointsProgramTab"), { loading: S });
 const WishListAdminTab = dynamic(() => import("@/components/admin/WishListAdminTab"), { loading: S });
+const LoyaltyRedeemTab = dynamic(() => import("@/components/admin/LoyaltyRedeemTab"), { loading: S });
 
 const TABS = [
   { id: "fidelizacion" as const, label: "Fidelización" },
+  { id: "canjear" as const, label: "Canjear Puntos" },
   { id: "puntos" as const, label: "Programa Puntos" },
   { id: "wishlist" as const, label: "Wish Lists" },
 ];
@@ -38,6 +40,7 @@ export default function FidelizacionModule() {
         ))}
       </div>
       {sub === "fidelizacion" && <LoyaltyTab />}
+      {sub === "canjear" && <LoyaltyRedeemTab />}
       {sub === "puntos" && <PointsProgramTab />}
       {sub === "wishlist" && <WishListAdminTab />}
     </div>

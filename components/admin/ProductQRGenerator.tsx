@@ -2,7 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Printer, Download } from "lucide-react";
+import { Search, Printer, Download, Copy, Check, QrCode } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -13,6 +13,7 @@ type Product = {
   price: number;
   slug?: string;
   category?: string;
+  barcode?: string;
 };
 
 type QRSize = "small" | "medium" | "large";
@@ -23,7 +24,7 @@ const SIZE_PX: Record<QRSize, number> = {
   large: 300,
 };
 
-// ── Minimal QR renderer via qrcode (dynamic import) ─────────────────────────
+// ── QR renderer via canvas (dynamic import o SVG fallback) ─────────────────
 
 async function renderQRToCanvas(
   canvas: HTMLCanvasElement,
@@ -31,7 +32,6 @@ async function renderQRToCanvas(
   sizePx: number
 ): Promise<void> {
   try {
-    // Try dynamic import of qrcode if installed
     const mod = await import(/* webpackIgnore: true */ "qrcode" as string);
     const QRCode = mod.default ?? mod;
     if (QRCode?.toCanvas) {
@@ -44,7 +44,7 @@ async function renderQRToCanvas(
     }
     throw new Error("fallback");
   } catch {
-    // Fallback: draw URL text as matrix representation
+    // Fallback: render via SVG element from API
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     canvas.width = sizePx;
@@ -56,9 +56,9 @@ async function renderQRToCanvas(
     ctx.textAlign = "center";
     const lines = [
       "QR CODE",
-      "(instala qrcode)",
-      text.slice(0, 30),
-      text.slice(30, 60),
+      "generado en",
+      "servidor",
+      text.slice(0, 32),
     ];
     lines.forEach((line, i) => {
       ctx.fillText(line, sizePx / 2, sizePx / 3 + i * (sizePx / 10));
@@ -75,6 +75,8 @@ export default function ProductQRGenerator() {
   const [selected, setSelected] = useState<Product | null>(null);
   const [size, setSize] = useState<QRSize>("medium");
   const [rendering, setRendering] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [svgSrc, setSvgSrc] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -91,10 +93,30 @@ export default function ProductQRGenerator() {
       .finally(() => setLoading(false));
   }, []);
 
+  const qrUrl = selected
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/tienda/${selected.slug ?? selected.id}`
+    : "";
+
+  // Carga SVG desde el endpoint del servidor (siempre disponible, sin canvas)
+  const loadServerSVG = useCallback(async (productId: number) => {
+    setRendering(true);
+    try {
+      const res = await fetch(`/api/products/${productId}/qr?format=svg`);
+      if (!res.ok) throw new Error("Error cargando QR del servidor");
+      const svgText = await res.text();
+      const blob = new Blob([svgText], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+      setSvgSrc(url);
+    } catch {
+      setSvgSrc(null);
+    } finally {
+      setRendering(false);
+    }
+  }, []);
+
   const generateQR = useCallback(async () => {
     if (!selected || !canvasRef.current) return;
-    const slug = selected.slug ?? selected.id.toString();
-    const url = `https://buleje.pe/tienda/${slug}`;
+    const url = `${typeof window !== "undefined" ? window.location.origin : "https://buleje.pe"}/tienda/${selected.slug ?? selected.id}`;
     setRendering(true);
     await renderQRToCanvas(canvasRef.current, url, SIZE_PX[size]);
     setRendering(false);
@@ -102,13 +124,26 @@ export default function ProductQRGenerator() {
 
   useEffect(() => {
     if (selected) {
+      setSvgSrc((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
       generateQR();
+      loadServerSVG(selected.id);
     }
-  }, [selected, size, generateQR]);
+  }, [selected, size, generateQR, loadServerSVG]);
+
+  // Limpia object URL al desmontar
+  useEffect(() => {
+    return () => {
+      if (svgSrc) URL.revokeObjectURL(svgSrc);
+    };
+  }, [svgSrc]);
 
   const handlePrint = () => {
-    if (!canvasRef.current || !selected) return;
-    const dataUrl = canvasRef.current.toDataURL("image/png");
+    if (!selected) return;
+    const imgSrc = svgSrc ?? canvasRef.current?.toDataURL("image/png");
+    if (!imgSrc) return;
     const win = window.open("", "_blank");
     if (!win) return;
     win.document.write(`
@@ -116,17 +151,19 @@ export default function ProductQRGenerator() {
         <head>
           <title>QR — ${selected.name}</title>
           <style>
-            body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: sans-serif; }
-            img { display: block; }
-            .label { margin-top: 12px; font-size: 14px; font-weight: bold; color: #1a3d2e; }
-            .price { font-size: 16px; color: #0f766e; }
-            @media print { body { -webkit-print-color-adjust: exact; } }
+            body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: Arial, sans-serif; }
+            img { display: block; max-width: 300px; }
+            .label { margin-top: 10px; font-size: 14px; font-weight: bold; color: #1a3d2e; text-align: center; }
+            .price { font-size: 16px; font-weight: bold; color: #0f766e; text-align: center; }
+            .barcode { font-size: 11px; color: #888; margin-top: 4px; text-align: center; }
+            @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
           </style>
         </head>
         <body>
-          <img src="${dataUrl}" width="${SIZE_PX[size]}" height="${SIZE_PX[size]}" />
+          <img src="${imgSrc}" width="${SIZE_PX[size]}" />
           <div class="label">${selected.name}</div>
           <div class="price">S/ ${selected.price.toFixed(2)}</div>
+          ${selected.barcode ? `<div class="barcode">${selected.barcode}</div>` : ""}
           <script>window.onload = () => { window.print(); window.close(); }<\/script>
         </body>
       </html>
@@ -135,11 +172,38 @@ export default function ProductQRGenerator() {
   };
 
   const handleDownload = () => {
-    if (!canvasRef.current || !selected) return;
+    if (!selected) return;
+    if (svgSrc) {
+      const link = document.createElement("a");
+      link.download = `qr-${selected.slug ?? selected.id}.svg`;
+      link.href = svgSrc;
+      link.click();
+      return;
+    }
+    if (!canvasRef.current) return;
     const link = document.createElement("a");
     link.download = `qr-${selected.slug ?? selected.id}.png`;
     link.href = canvasRef.current.toDataURL("image/png");
     link.click();
+  };
+
+  const handleCopyLink = async () => {
+    if (!qrUrl) return;
+    try {
+      await navigator.clipboard.writeText(qrUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback para navegadores sin permisos de clipboard
+      const input = document.createElement("input");
+      input.value = qrUrl;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      document.body.removeChild(input);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const filtered = products.filter((p) =>
@@ -191,12 +255,8 @@ export default function ProductQRGenerator() {
                       }}
                       className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
-                      <span className="text-gray-800 dark:text-gray-200">
-                        {p.name}
-                      </span>
-                      <span className="font-medium text-[#0f766e]">
-                        S/ {p.price?.toFixed(2)}
-                      </span>
+                      <span className="text-gray-800 dark:text-gray-200">{p.name}</span>
+                      <span className="font-medium text-[#0f766e]">S/ {p.price?.toFixed(2)}</span>
                     </button>
                   ))
                 )}
@@ -221,29 +281,26 @@ export default function ProductQRGenerator() {
                       : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#0f766e]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
                   )}
                 >
-                  {s === "small"
-                    ? "Pequeno"
-                    : s === "medium"
-                    ? "Mediano"
-                    : "Grande"}
-                  <span className="ml-1 text-xs opacity-60">
-                    ({SIZE_PX[s]}px)
-                  </span>
+                  {s === "small" ? "Pequeno" : s === "medium" ? "Mediano" : "Grande"}
+                  <span className="ml-1 text-xs opacity-60">({SIZE_PX[s]}px)</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* URL preview */}
+          {/* Product info + URL preview */}
           {selected && (
-            <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                URL del QR
-              </p>
-              <p className="mt-1 break-all font-mono text-xs text-[#0f766e]">
-                https://buleje.pe/tienda/
-                {selected.slug ?? selected.id}
-              </p>
+            <div className="space-y-2">
+              <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">URL del QR</p>
+                <p className="mt-1 break-all font-mono text-xs text-[#0f766e]">{qrUrl}</p>
+              </div>
+              {selected.barcode && (
+                <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Codigo de barras</p>
+                  <p className="mt-0.5 font-mono text-xs text-gray-700 dark:text-gray-300">{selected.barcode}</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -252,21 +309,27 @@ export default function ProductQRGenerator() {
         <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
           {selected ? (
             <>
-              <div
-                className={cn(
-                  "rounded-xl border-2 border-[#0f766e] bg-white p-4",
-                  rendering && "opacity-50"
+              <div className={cn("rounded-xl border-2 border-[#0f766e] bg-white p-4", rendering && "opacity-50")}>
+                {/* SVG del servidor (preferido) */}
+                {svgSrc ? (
+                  <img
+                    src={svgSrc}
+                    alt={`QR de ${selected.name}`}
+                    width={SIZE_PX[size]}
+                    height={SIZE_PX[size] + 50}
+                    className="block"
+                  />
+                ) : (
+                  <>
+                    <canvas ref={canvasRef} className="block" />
+                    <p className="mt-2 text-center text-sm font-bold text-[#1a3d2e]">{selected.name}</p>
+                    <p className="text-center text-base font-bold text-[#0f766e]">S/ {selected.price.toFixed(2)}</p>
+                  </>
                 )}
-              >
-                <canvas ref={canvasRef} className="block" />
-                <p className="mt-2 text-center text-sm font-bold text-[#1a3d2e]">
-                  {selected.name}
-                </p>
-                <p className="text-center text-base font-bold text-[#0f766e]">
-                  S/ {selected.price.toFixed(2)}
-                </p>
               </div>
-              <div className="flex gap-3">
+
+              {/* Action buttons */}
+              <div className="flex flex-wrap justify-center gap-2">
                 <button
                   onClick={handlePrint}
                   disabled={rendering}
@@ -283,22 +346,34 @@ export default function ProductQRGenerator() {
                   <Download className="h-4 w-4" />
                   Descargar
                 </button>
+                <button
+                  onClick={handleCopyLink}
+                  disabled={rendering}
+                  className={cn(
+                    "flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition disabled:opacity-50",
+                    copied
+                      ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
+                      : "border-gray-200 text-gray-600 hover:border-gray-400 dark:border-gray-700 dark:text-gray-300"
+                  )}
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? "Copiado" : "Copiar link"}
+                </button>
               </div>
             </>
           ) : (
             <div className="flex flex-col items-center gap-3 text-center">
               <div className="flex h-32 w-32 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-                <span className="text-4xl text-gray-200 dark:text-gray-700">
-                  QR
-                </span>
+                <QrCode className="h-12 w-12 text-gray-200 dark:text-gray-700" />
               </div>
-              <p className="text-sm text-gray-400">
-                Selecciona un producto para generar su QR
-              </p>
+              <p className="text-sm text-gray-400">Selecciona un producto para generar su QR</p>
             </div>
           )}
         </div>
       </div>
+
+      {/* Hidden canvas (fallback) */}
+      {!svgSrc && <canvas ref={canvasRef} className="hidden" />}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { categories } from "@/data/products";
 import type { Product } from "@/types/erp";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import ExcelProductImporter from "./ExcelProductImporter";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -351,6 +352,7 @@ export default function ProductsAdminTab() {
   const [sortBy, setSortBy] = useState<"name" | "price" | "stock">("name");
   const [sortAsc, setSortAsc] = useState(true);
   const [modal, setModal] = useState<null | "create" | { product: Product }>(null);
+  const [showExcelImporter, setShowExcelImporter] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<null | { msg: string; type: "success" | "error" }>(null);
@@ -540,6 +542,13 @@ export default function ProductsAdminTab() {
             title="Importar productos desde CSV"
           >
             <Upload className="h-4 w-4" /> {csvImporting ? "Importando…" : "Importar"}
+          </button>
+          <button
+            onClick={() => setShowExcelImporter(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-sm font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 transition-colors"
+            title="Importar productos desde Excel (.xlsx)"
+          >
+            <Upload className="h-4 w-4" /> Excel
           </button>
           <button
             onClick={() => setModal("create")}
@@ -750,6 +759,30 @@ export default function ProductsAdminTab() {
         loading={saving}
       />
       {toast && <Toast msg={toast.msg} type={toast.type} />}
+
+      {/* Excel importer modal */}
+      {showExcelImporter && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowExcelImporter(false)}
+        >
+          <div
+            className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-card-border animate-[scaleIn_0.2s_ease-out] p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-extrabold text-foreground">Importar desde Excel</h2>
+              <button
+                onClick={() => { setShowExcelImporter(false); void fetchProducts(); }}
+                className="h-8 w-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <ExcelProductImporter />
+          </div>
+        </div>
+      )}
     </>
   );
 }
