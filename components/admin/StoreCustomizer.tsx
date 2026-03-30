@@ -102,6 +102,52 @@ const FONT_OPTIONS = [
   { value: "montserrat", label: "Montserrat" },
 ];
 
+// ── Plantillas de tienda ────────────────────────────────────────────────────
+
+type ThemeTemplate = {
+  id: string;
+  name: string;
+  description: string;
+  colors: Pick<StoreTheme, "primaryColor" | "secondaryColor" | "accentColor">;
+  fontFamily: string;
+  darkModeDefault: boolean;
+};
+
+const THEME_TEMPLATES: ThemeTemplate[] = [
+  {
+    id: "clasico",
+    name: "Clásico",
+    description: "Verde bodega + naranja. El look original.",
+    colors: { primaryColor: "#0f766e", secondaryColor: "#f97316", accentColor: "#2d6a4f" },
+    fontFamily: "geist",
+    darkModeDefault: false,
+  },
+  {
+    id: "moderno",
+    name: "Moderno",
+    description: "Azul profesional + violeta. Para tiendas tech.",
+    colors: { primaryColor: "#2563eb", secondaryColor: "#7c3aed", accentColor: "#1d4ed8" },
+    fontFamily: "inter",
+    darkModeDefault: false,
+  },
+  {
+    id: "elegante",
+    name: "Elegante",
+    description: "Gris oscuro + dorado. Estilo premium.",
+    colors: { primaryColor: "#1e293b", secondaryColor: "#d97706", accentColor: "#334155" },
+    fontFamily: "montserrat",
+    darkModeDefault: true,
+  },
+  {
+    id: "fresco",
+    name: "Fresco",
+    description: "Esmeralda + rosa. Colorido y amigable.",
+    colors: { primaryColor: "#059669", secondaryColor: "#e11d48", accentColor: "#10b981" },
+    fontFamily: "poppins",
+    darkModeDefault: false,
+  },
+];
+
 const DAYS = [
   { key: "lunes",     label: "Lun" },
   { key: "martes",    label: "Mar" },
@@ -638,6 +684,45 @@ export default function StoreCustomizer() {
             {/* ── TAB: COLORES ───────────────────────────────────────── */}
             {activeTab === "colores" && (
               <div className="space-y-6">
+                {/* Plantillas rápidas */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Plantillas</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {THEME_TEMPLATES.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          update("primaryColor", t.colors.primaryColor);
+                          update("secondaryColor", t.colors.secondaryColor);
+                          update("accentColor", t.colors.accentColor);
+                          update("fontFamily", t.fontFamily);
+                          update("darkModeDefault", t.darkModeDefault);
+                        }}
+                        className={cn(
+                          "flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all hover:shadow-sm",
+                          theme.primaryColor === t.colors.primaryColor &&
+                          theme.secondaryColor === t.colors.secondaryColor
+                            ? "border-primary bg-primary/5 dark:bg-primary/10"
+                            : "border-gray-200 dark:border-card-border hover:border-gray-300"
+                        )}
+                      >
+                        {/* Color dots */}
+                        <div className="flex -space-x-1 shrink-0">
+                          <div className="w-5 h-5 rounded-full border-2 border-white dark:border-card shadow" style={{ backgroundColor: t.colors.primaryColor }} />
+                          <div className="w-5 h-5 rounded-full border-2 border-white dark:border-card shadow" style={{ backgroundColor: t.colors.secondaryColor }} />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-foreground truncate">{t.name}</p>
+                          <p className="text-[10px] text-muted truncate">{t.description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 dark:border-card-border" />
+
                 <ColorPicker
                   label="Color primario"
                   value={theme.primaryColor}
