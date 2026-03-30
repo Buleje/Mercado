@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     if (from && to) {
       return NextResponse.json(await ExpensesDB.getByDateRange(new Date(from), new Date(to)));
     }
-    return NextResponse.json(await ExpensesDB.getAll());
+    return NextResponse.json(await ExpensesDB.getAll(auth.tenantId));
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
     return NextResponse.json(payload, { status });

@@ -29,11 +29,12 @@ export async function PUT(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
+    const tenantId = req.headers.get("x-tenant-id") ?? "main";
     const body = await req.json() as Partial<DbSettings>;
     if (body.mode && body.mode !== "whatsapp" && body.mode !== "checkout") {
       return NextResponse.json({ error: "mode must be 'whatsapp' or 'checkout'" }, { status: 400 });
     }
-    const current = await SettingsDB.get();
+    const current = await SettingsDB.get(tenantId);
     const updated: DbSettings = {
       ...current,
       ...(body.mode !== undefined && { mode: body.mode }),
@@ -141,7 +142,7 @@ export async function PUT(req: NextRequest) {
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");
     const requestId = req.headers.get("x-request-id") ?? undefined;
     logActivity("Editar", "configuracion", `Configuración actualizada: ${changed || "general"}`, undefined, "admin", requestId).catch(() => {});
-    return NextResponse.json(await SettingsDB.set(updated));
+    return NextResponse.json(await SettingsDB.set(updated, tenantId));
   } catch (e) {
     logger.error("[settings] PUT error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 500 });

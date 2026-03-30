@@ -1,9 +1,12 @@
 export const dynamic = 'force-dynamic'
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { NotificationLogsDB, OrdersDB, SettingsDB } from "@/lib/jsondb";
+import { requireAdmin } from "@/lib/require-admin";
 
-export async function GET() {
-  return NextResponse.json(await NotificationLogsDB.getAll());
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+  return NextResponse.json(await NotificationLogsDB.getAll(auth.tenantId));
 }
 
 export async function POST(req: Request) {

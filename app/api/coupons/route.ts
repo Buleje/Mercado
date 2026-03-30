@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const coupons = await CouponsDB.getAll();
+    const coupons = await CouponsDB.getAll(auth.tenantId);
     logger.info("[coupons] GET", { count: coupons.length, requestId: req.headers.get("x-request-id") ?? undefined });
     return NextResponse.json(coupons);
   } catch (e) {

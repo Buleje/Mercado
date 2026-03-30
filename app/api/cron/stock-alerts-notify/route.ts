@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const result = await withCronRetry("stock-alerts-notify", async () => {
-      const allProducts = await ProductsDB.getAll();
+      const allProducts = await ProductsDB.getAll("main");
 
       const alertas = allProducts
         .filter((p) => {

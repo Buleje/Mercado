@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ orde
 
   try {
     const { orderId } = await params;
-    const orders = await OrdersDB.getAll();
+    const orders = await OrdersDB.getAll(auth.tenantId);
     const order = orders.find(o => o.id === orderId);
     if (!order) {
       return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });

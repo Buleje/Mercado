@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
       const cutoff = new Date(now.getTime() - 16 * 60 * 60 * 1000); // 16 horas atrás
 
       // Obtener todas las cajas abiertas
-      const allRegisters = await CashRegistersDB.getAll();
+      const allRegisters = await CashRegistersDB.getAll("main");
       const staleRegisters = allRegisters.filter((reg) => {
         if (reg.status !== "abierta") return false;
         return new Date(reg.openedAt) <= cutoff;

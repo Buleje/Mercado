@@ -84,7 +84,7 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
 
   // Safety: cannot delete the last remaining warehouse
-  const all = await WarehousesDB.getAll();
+  const all = await WarehousesDB.getAll(auth.tenantId);
   if (all.length <= 1) {
     return NextResponse.json(
       { error: "No se puede eliminar el único almacén activo" },

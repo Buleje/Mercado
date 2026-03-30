@@ -20,26 +20,27 @@ const PromotionSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-  const all = await PromotionsDB.getAll();
+    const auth = await requireAdmin(req, ["admin"]);
+    const tenantId = auth instanceof NextResponse ? "main" : auth.tenantId;
+    const all = await PromotionsDB.getAll(tenantId);
 
-  // Admin sees full data including targetPhones
-  const auth = await requireAdmin(req, ["admin"]);
-  if (!(auth instanceof NextResponse)) {
-    return NextResponse.json(all);
-  }
+    // Admin sees full data including targetPhones
+    if (!(auth instanceof NextResponse)) {
+      return NextResponse.json(all);
+    }
 
-  // Public clients get active promotions with targetPhones stripped (privacy)
-  const now = new Date();
-  const publicPromos = all
-    .filter(p => p.active && (!p.expiresAt || new Date(p.expiresAt) > now))
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    .map(({ targetPhones, ...rest }) => rest);
+    // Public clients get active promotions with targetPhones stripped (privacy)
+    const now = new Date();
+    const publicPromos = all
+      .filter(p => p.active && (!p.expiresAt || new Date(p.expiresAt) > now))
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .map(({ targetPhones, ...rest }) => rest);
 
-  return NextResponse.json(publicPromos, {
-    headers: {
-      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
-    },
-  });
+    return NextResponse.json(publicPromos, {
+      headers: {
+        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+      },
+    });
   } catch (e) {
     logger.error("[promotions] GET error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json([], { status: 200 });

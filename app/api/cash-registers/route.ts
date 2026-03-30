@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(result);
     }
 
-    return NextResponse.json(await CashRegistersDB.getAll());
+    return NextResponse.json(await CashRegistersDB.getAll(auth.tenantId));
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
     return NextResponse.json(payload, { status });

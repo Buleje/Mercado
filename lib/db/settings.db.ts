@@ -166,7 +166,8 @@ export const SettingsDB = {
       return { mode: "whatsapp", adminBypassLogin: false };
     }
   },
-  async set(s: DbSettings): Promise<DbSettings> {
+  async set(s: DbSettings, tenantId?: string): Promise<DbSettings> {
+    const tid = tenantId ?? "main";
     const d: Record<string, unknown> = {
       mode: s.mode, businessName: s.businessName, businessPhone: s.businessPhone,
       businessAddress: s.businessAddress, logoUrl: s.logoUrl, description: s.description,
@@ -282,7 +283,11 @@ export const SettingsDB = {
       ...(s.transferAccountNum !== undefined && { transferAccountNum: s.transferAccountNum }),
       ...(s.transferAccountHolder !== undefined && { transferAccountHolder: s.transferAccountHolder }),
     };
-    const row = await prisma.settings.upsert({ where: { id: 1 }, create: { id: 1, ...d }, update: d });
+    const row = await prisma.settings.upsert({
+      where: { tenantId: tid },
+      create: { tenantId: tid, ...d },
+      update: d,
+    });
     return mapSettings(row);
   },
 };

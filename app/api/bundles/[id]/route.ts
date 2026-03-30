@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
     const activeOnly = searchParams.get("active") === "true";
-    return NextResponse.json(activeOnly ? await BundlesDB.getActive() : await BundlesDB.getAll());
+    return NextResponse.json(activeOnly ? await BundlesDB.getActive() : await BundlesDB.getAll(auth.tenantId));
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
     return NextResponse.json(payload, { status });

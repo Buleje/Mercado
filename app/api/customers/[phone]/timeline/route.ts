@@ -28,7 +28,7 @@ export async function GET(
   const [orders, notifications, reviews, sales, inAppNotifs] = await Promise.all([
     OrdersDB.getByCustomerPhone(normalized),
     NotificationLogsDB.getByRecipient(normalized),
-    ReviewsDB.getAll().then(all => all.filter(r => r.phone === normalized)),
+    ReviewsDB.getAll(auth.tenantId).then(all => all.filter(r => r.phone === normalized)),
     prisma.sale.findMany({
       where: { customerPhone: normalized },
       include: { items: true },

@@ -5,6 +5,7 @@ import StoreProviders from "@/components/StoreProviders";
 import LocalBusinessJsonLd from "@/components/store/LocalBusinessJsonLd";
 import StoreFloatingWidgets from "@/components/store/StoreFloatingWidgets";
 import { SettingsDB } from "@/lib/jsondb";
+import { headers } from "next/headers";
 import {
   GoogleAnalytics,
   GoogleTagManager,
@@ -12,20 +13,23 @@ import {
   MicrosoftClarity,
 } from "@/components/Analytics";
 
-// ISR: re-render at most once per 60s — keeps maintenance check fresh
-// while allowing pages to be cached (was force-dynamic, blocking all caching)
-export const revalidate = 60;
+// force-dynamic: el tenantId viene del header x-tenant-id que varía por request
+export const dynamic = "force-dynamic";
 
 export default async function StoreLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Check maintenance mode
+  // Leer tenantId del header inyectado por proxy.ts (cookie active-tenant → x-tenant-id)
+  const hdrs = await headers();
+  const tenantId = hdrs.get("x-tenant-id") ?? "main";
+
+  // Check maintenance mode para el tenant activo
   let maintenanceMode = false;
   let maintenanceMessage: string | undefined;
   try {
-    const settings = await SettingsDB.get();
+    const settings = await SettingsDB.get(tenantId);
     maintenanceMode = !!settings.maintenanceMode;
     maintenanceMessage = settings.maintenanceMessage;
   } catch { /* continue normally */ }

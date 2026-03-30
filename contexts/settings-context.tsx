@@ -38,6 +38,7 @@ type SettingsCtx = {
   navLinks: NavLinkItem[];
   homepage: HomepageContent;
   deliveryConfig: DeliveryConfig;
+  businessName: string;
   setMode: (m: StoreMode) => Promise<void>;
 };
 
@@ -75,6 +76,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [navLinks, setNavLinks] = useState<NavLinkItem[]>(DEFAULT_NAV_LINKS);
   const [homepage, setHomepage] = useState<HomepageContent>(DEFAULT_HOMEPAGE);
   const [deliveryConfig, setDeliveryConfig] = useState<DeliveryConfig>(DEFAULT_DELIVERY);
+  const [businessName, setBusinessName] = useState<string>("");
 
   useEffect(() => {
     fetch("/api/settings")
@@ -82,6 +84,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       .then((data: Record<string, unknown> | null) => {
         if (data) {
           if (data.mode) setModeState(data.mode as StoreMode);
+          if (data.businessName) setBusinessName(data.businessName as string);
           setYape({
             enabled: !!data.yapeEnabled,
             image: (data.yapeImage as string) || "",
@@ -112,7 +115,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <SettingsContext.Provider value={{ mode, modeLoading, yape, cashEnabled, navLinks, homepage, deliveryConfig, setMode }}>
+    <SettingsContext.Provider value={{ mode, modeLoading, yape, cashEnabled, navLinks, homepage, deliveryConfig, businessName, setMode }}>
       {children}
     </SettingsContext.Provider>
   );

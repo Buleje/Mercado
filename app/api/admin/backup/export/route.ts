@@ -18,8 +18,8 @@ export async function GET(req: Request) {
 
     // 2. Obtener datos en paralelo desde DB classes (nunca Prisma directo)
     const [products, customers, orders, fiados, settings] = await Promise.all([
-      ProductsDB.getAll(),
-      CustomersDB.getAll(),
+      ProductsDB.getAll(auth.tenantId),
+      CustomersDB.getAll(auth.tenantId),
       OrdersDB.getAllFiltered({ since: sinceISO }),
       FiadosDB.list(auth.tenantId),
       SettingsDB.get(),

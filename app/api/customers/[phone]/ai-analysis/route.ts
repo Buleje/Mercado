@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    return NextResponse.json(await CustomersDB.getAll());
+    return NextResponse.json(await CustomersDB.getAll(auth.tenantId));
   } catch (e) {
     console.error("[customers] GET error:", e);
     return NextResponse.json({ error: "Database error" }, { status: 503 });

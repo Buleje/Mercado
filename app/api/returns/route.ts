@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
-  const returns = await ReturnsDB.getAll();
+  const returns = await ReturnsDB.getAll(auth.tenantId);
   return NextResponse.json(returns);
 }
 

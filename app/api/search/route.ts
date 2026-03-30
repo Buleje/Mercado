@@ -16,10 +16,10 @@ export async function GET(req: NextRequest) {
   if (q.length < 2) return NextResponse.json({ results: [] });
 
   const [products, customers, orders, suppliers] = await Promise.all([
-    ProductsDB.getAll().catch(() => []),
-    CustomersDB.getAll().catch(() => []),
-    OrdersDB.getAll().catch(() => []),
-    SuppliersDB.getAll().catch(() => []),
+    ProductsDB.getAll(auth.tenantId).catch(() => []),
+    CustomersDB.getAll(auth.tenantId).catch(() => []),
+    OrdersDB.getAll(auth.tenantId).catch(() => []),
+    SuppliersDB.getAll(auth.tenantId).catch(() => []),
   ]);
 
   type SearchResult = {

@@ -176,7 +176,7 @@ export default function Header() {
   const pathname = usePathname();
   const { count, toggle, addItem } = useCart();
   const { customer, openModal: openCustomerModal, openAccountModal, openOrderStatusModal, clear } = useCustomer();
-  const { navLinks: storedNavLinks } = useSettings();
+  const { navLinks: storedNavLinks, businessName } = useSettings();
   const { resolved: _theme, toggle: _toggleTheme } = useTheme();
   const megaRef = useRef<HTMLDivElement>(null);
   const navLinks = storedNavLinks?.length ? storedNavLinks : DEFAULT_NAV_LINKS;
@@ -805,7 +805,7 @@ export default function Header() {
               <div className="flex items-center gap-1.5">
                 <span className={cn("text-base sm:text-xl font-bold leading-tight transition-colors",
                   scrolled ? "text-primary-dark" : "text-white")}>
-                  San Martín
+                  {businessName || "Mi Bodega"}
                 </span>
                 <span className={cn(
                   "inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold leading-none tracking-wide border",

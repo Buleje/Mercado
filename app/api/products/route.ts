@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const all = await ProductsDB.getAll();
+    const all = await ProductsDB.getAll(auth.tenantId);
     const newId = all.length > 0 ? Math.max(...all.map((p) => p.id)) + 1 : 1;
     const product = await ProductsDB.upsert({
       id: newId,

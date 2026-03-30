@@ -412,9 +412,12 @@ export default function CategoryCatalog({
   );
 
   const allProducts = useMemo(() => {
-    if (apiProducts && Array.isArray(apiProducts) && apiProducts.length > 0)
-      return apiProducts.filter((p) => p.active !== false);
-    return products;
+    // Si la API aún está cargando (apiProducts === undefined), usar datos estáticos como placeholder.
+    // Si la API ya respondió (apiProducts definido), usar SOLO sus datos aunque estén vacíos.
+    // Esto evita mostrar productos del tenant "main" a tenants nuevos sin productos.
+    if (apiProducts === undefined) return products;
+    if (!Array.isArray(apiProducts)) return products;
+    return apiProducts.filter((p) => p.active !== false);
   }, [apiProducts]);
 
   // Only products for this category

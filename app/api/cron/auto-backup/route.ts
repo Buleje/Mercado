@@ -36,9 +36,9 @@ export async function GET(req: NextRequest) {
 
       // Obtener datos en paralelo
       const [allProducts, allCustomers, allSales, todayOrders] = await Promise.all([
-        ProductsDB.getAll(),
-        CustomersDB.getAll(),
-        SalesDB.getAll(),
+        ProductsDB.getAll("main"),
+        CustomersDB.getAll("main"),
+        SalesDB.getAll("main"),
         OrdersDB.getAllFiltered({ since: startOfDayISO }),
       ]);
 

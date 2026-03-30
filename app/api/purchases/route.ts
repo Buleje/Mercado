@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    return NextResponse.json(await PurchasesDB.getAll());
+    return NextResponse.json(await PurchasesDB.getAll(auth.tenantId));
   } catch (e) {
     console.error("[purchases] GET error:", e);
     return NextResponse.json({ error: "Database error" }, { status: 503 });

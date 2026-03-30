@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(movements);
     }
 
-    return NextResponse.json(await InventoryMovementsDB.getAll());
+    return NextResponse.json(await InventoryMovementsDB.getAll(auth.tenantId));
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
     return NextResponse.json(payload, { status });

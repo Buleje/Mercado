@@ -7,17 +7,18 @@ import { requireAdmin } from "@/lib/require-admin";
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
+  const tenantId = auth.tenantId;
   const [products, customers, orders, reviews, settings, suppliers, purchases, sales, promotions, payables] = await Promise.all([
-    ProductsDB.getAll(),
-    CustomersDB.getAll(),
-    OrdersDB.getAll(),
-    ReviewsDB.getAll(),
+    ProductsDB.getAll(tenantId),
+    CustomersDB.getAll(tenantId),
+    OrdersDB.getAll(tenantId),
+    ReviewsDB.getAll(tenantId),
     SettingsDB.get(),
-    SuppliersDB.getAll(),
-    PurchasesDB.getAll(),
-    SalesDB.getAll(),
-    PromotionsDB.getAll(),
-    PayablesDB.getAll(),
+    SuppliersDB.getAll(tenantId),
+    PurchasesDB.getAll(tenantId),
+    SalesDB.getAll(tenantId),
+    PromotionsDB.getAll(tenantId),
+    PayablesDB.getAll(tenantId),
   ]);
 
   const backup = {

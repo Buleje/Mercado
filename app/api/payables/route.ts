@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const supplierId = searchParams.get("supplierId");
     if (supplierId) return NextResponse.json(await PayablesDB.getBySupplierId(supplierId));
-    return NextResponse.json(await PayablesDB.getAll());
+    return NextResponse.json(await PayablesDB.getAll(auth.tenantId));
   } catch (e) {
     console.error("[payables] GET error:", e);
     return NextResponse.json({ error: "Database error" }, { status: 503 });

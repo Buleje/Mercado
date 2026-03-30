@@ -325,17 +325,21 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
   );
 
   // Compute productList from API data.
-  // Images are always taken from static data (authoritative source) so stale DB photo IDs
-  // never cause 404s even when the DB was seeded before a static-data image fix.
+  // - Si la API aún no respondió (undefined): usar initialProducts como placeholder de carga.
+  // - Si la API ya respondió (array): usar SOLO esos datos, aunque estén vacíos.
+  //   Esto evita mostrar productos del tenant "main" a tenants nuevos sin productos.
+  // - Las imágenes se toman del mapa estático cuando coinciden por ID (evita 404s).
   const productList = useMemo(() => {
     let list: LiveProduct[];
-    if (apiProducts && Array.isArray(apiProducts) && apiProducts.length > 0) {
+    if (apiProducts === undefined) {
+      list = initialProducts; // Aún cargando — placeholder estático
+    } else if (Array.isArray(apiProducts) && apiProducts.length > 0) {
       const staticImageMap = new Map(initialProducts.map(p => [p.id, p.image]));
       list = apiProducts
         .filter((p) => p.active !== false)
         .map(p => ({ ...p, image: staticImageMap.get(p.id) ?? p.image }));
     } else {
-      list = initialProducts; // Fallback to static data
+      list = []; // API respondió con 0 productos — tenant sin catálogo aún
     }
     // Merge database ratings into products
     if (ratingsMap && Object.keys(ratingsMap).length > 0) {
@@ -932,6 +936,17 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 )}
               </div>
             )
+          ) : productList.length === 0 ? (
+            // Tenant sin productos aún — empty state informativo
+            <div className="text-center py-20 px-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                <span className="text-3xl" aria-hidden="true">🏪</span>
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">Catálogo en preparación</h3>
+              <p className="text-sm text-muted max-w-xs mx-auto">
+                Esta tienda todavía no tiene productos publicados. Vuelve pronto o contacta al administrador.
+              </p>
+            </div>
           ) : (
             <div className="space-y-10">
               {realCategories.map((cat) => {

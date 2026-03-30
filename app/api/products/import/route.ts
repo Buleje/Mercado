@@ -134,7 +134,7 @@ export async function POST(req: NextRequest) {
     logger.info("[products/import] Procesando filas", { requestId, rows: rawRows.length });
 
     // Obtener el ID más alto actual para asignar IDs secuenciales
-    const existingProducts = await ProductsDB.getAll();
+    const existingProducts = await ProductsDB.getAll(auth.tenantId);
     let nextId = existingProducts.length > 0
       ? Math.max(...existingProducts.map((p) => p.id)) + 1
       : 1;

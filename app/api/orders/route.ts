@@ -243,7 +243,7 @@ export async function POST(req: NextRequest) {
     let promoDiscount = 0;
     let verifiedPromoId: string | undefined;
     if (body.appliedPromoId) {
-      const promo = await PromotionsDB.getAll().then(all => all.find(p => p.id === body.appliedPromoId));
+      const promo = await PromotionsDB.getAll(auth.tenantId).then(all => all.find(p => p.id === body.appliedPromoId));
       const now = new Date();
       const promoValid =
         promo &&

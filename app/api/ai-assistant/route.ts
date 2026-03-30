@@ -10,13 +10,13 @@ import { logger } from "@/lib/logger";
 let cachedSnapshot: { text: string; metrics: Record<string, unknown>; ts: number } | null = null;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-async function getBusinessSnapshot() {
+async function getBusinessSnapshot(tenantId: string) {
   const now = Date.now();
   if (cachedSnapshot && now - cachedSnapshot.ts < CACHE_TTL) return cachedSnapshot;
 
   const [products, orders, customers, sales, payables, purchases, reviews] = await Promise.all([
-    ProductsDB.getAll(), OrdersDB.getAll(), CustomersDB.getAll(),
-    SalesDB.getAll(), PayablesDB.getAll(), PurchasesDB.getAll(), ReviewsDB.getAll(),
+    ProductsDB.getAll(tenantId), OrdersDB.getAll(tenantId), CustomersDB.getAll(tenantId),
+    SalesDB.getAll(tenantId), PayablesDB.getAll(tenantId), PurchasesDB.getAll(tenantId), ReviewsDB.getAll(tenantId),
   ]);
 
   const d = new Date();
@@ -239,7 +239,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ── Build snapshot (cached 5 min) ───────────────────────────────────────────
-  const snapshot = await getBusinessSnapshot();
+  const snapshot = await getBusinessSnapshot(auth.tenantId);
 
   // ── Helper: return rule-based fallback (always 200) ────────────────────────
   const returnRuleBased = () => {

@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const result = await withCronRetry("auto-reorder-check", async () => {
-      const allProducts = await ProductsDB.getAll();
+      const allProducts = await ProductsDB.getAll("main");
 
       // Filtrar productos activos con stock bajo y mínimo definido
       const productosStockBajo = allProducts.filter((p) => {

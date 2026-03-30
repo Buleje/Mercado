@@ -19,8 +19,8 @@ export async function POST(req: NextRequest) {
   const context = body.context || "";
 
   const [customers, orders] = await Promise.all([
-    CustomersDB.getAll(),
-    OrdersDB.getAll(),
+    CustomersDB.getAll(auth.tenantId),
+    OrdersDB.getAll(auth.tenantId),
   ]);
 
   // Aggregate stats
