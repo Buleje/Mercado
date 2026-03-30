@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     const payload = await getOrSet(cacheKey, DASHBOARD_TTL_SEC, async () => {
       const [products, orders, sales, customers, purchases, payables, suppliers, reviews] =
         await Promise.all([
-          ProductsDB.getAll(),
+          ProductsDB.getAll(auth.tenantId),
           OrdersDB.getAll(),
           SalesDB.getAll(),
           CustomersDB.getAll(),

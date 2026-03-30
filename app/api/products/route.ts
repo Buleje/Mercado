@@ -30,7 +30,9 @@ export async function GET(req: NextRequest) {
     const limitParam = searchParams.get("limit");
     const pageParam  = searchParams.get("page");
 
-    let products = await ProductsDB.getAll();
+    // Read tenantId from header (injected by proxy from session or cookie)
+    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    let products = await ProductsDB.getAll(tenantId);
 
     if (category && category !== "todos") {
       products = products.filter(p => p.category === category);

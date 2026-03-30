@@ -72,19 +72,22 @@ function mapBundle(b: PBundle & { items: PBundleItem[] }): DbBundle {
 // ── Products ──────────────────────────────────────────────────────────────────
 
 export const ProductsDB = {
-  async getAll(): Promise<DbProduct[]> {
-    const allRows = await prisma.product.findMany({ orderBy: { id: "asc" } });
+  async getAll(tenantId?: string): Promise<DbProduct[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    const allRows = await prisma.product.findMany({ where, orderBy: { id: "asc" } });
     const rows = allRows.filter(r => (r as Record<string, unknown>).deletedAt == null);
-    if (rows.length === 0) {
+    if (rows.length === 0 && (!tenantId || tenantId === "main")) {
+      // Only auto-seed for the "main" tenant, never for new tenants
       const { products } = await import("@/data/products");
       for (const p of products) {
         await prisma.product.upsert({
           where: { id: p.id },
-          create: { id: p.id, name: p.name, category: p.category, price: p.price, image: p.image, description: p.description ?? null, unit: p.unit, badge: p.badge, active: true },
-          update: { image: p.image, description: p.description ?? null }, // keep image + description in sync
+          create: { id: p.id, name: p.name, category: p.category, price: p.price, image: p.image, description: p.description ?? null, unit: p.unit, badge: p.badge, active: true, tenantId: "main" },
+          update: { image: p.image, description: p.description ?? null },
         });
       }
-      const seeded = await prisma.product.findMany({ orderBy: { id: "asc" } });
+      const seeded = await prisma.product.findMany({ where: { tenantId: "main" }, orderBy: { id: "asc" } });
       return seeded.filter(r => (r as Record<string, unknown>).deletedAt == null).map(mapProduct);
     }
     return rows.map(mapProduct);
