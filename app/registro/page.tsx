@@ -552,9 +552,9 @@ export default function RegistroPage() {
 
             {/* URL card */}
             <div className="bg-gray-50 dark:bg-gray-800/60 rounded-2xl p-4 space-y-1">
-              <p className="text-xs text-muted uppercase tracking-wide font-semibold">Tu subdominio</p>
+              <p className="text-xs text-muted uppercase tracking-wide font-semibold">Tu tienda</p>
               <p className="font-mono font-bold text-primary text-base">
-                {result.tenantSlug}.{ROOT_DOMAIN}
+                {result.tenantSlug}
               </p>
             </div>
 
@@ -568,13 +568,13 @@ export default function RegistroPage() {
                 </a>
               )}
               <a
-                href={`http://${result.tenantSlug}.${ROOT_DOMAIN}/admin`}
+                href={`/t/${result.tenantSlug}/admin`}
                 className="w-full py-3 rounded-2xl bg-primary text-white font-bold text-sm hover:opacity-90 flex items-center justify-center gap-2"
               >
                 Ir al panel de administración <ExternalLink className="w-4 h-4" />
               </a>
               <a
-                href={`http://${result.tenantSlug}.${ROOT_DOMAIN}`}
+                href={`/t/${result.tenantSlug}`}
                 className="w-full py-3 rounded-2xl border border-(--color-card-border) text-sm font-semibold hover:bg-(--color-surface) flex items-center justify-center gap-2"
               >
                 Ver mi tienda <ExternalLink className="w-4 h-4" />

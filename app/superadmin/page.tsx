@@ -892,8 +892,9 @@ export default function SuperAdminPage() {
 
   const handleImpersonate = (slug: string) => {
     localStorage.setItem("superadmin-impersonate-tenant", slug);
+    localStorage.setItem("active-tenant-slug", slug);
     setImpersonating(slug);
-    window.open("/admin", "_blank");
+    window.open(`/t/${slug}`, "_blank");
   };
 
   const clearImpersonation = () => {
