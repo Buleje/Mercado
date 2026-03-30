@@ -23,7 +23,7 @@ import {
   CheckCircle, Bike, UserCheck, SlidersHorizontal, Sparkles,
   Maximize2, Minimize2, Zap, Tag, RefreshCw, CreditCard, Landmark,
   ClipboardList, Power, RotateCcw,
-  Lightbulb, Target,
+  Lightbulb, Target, Palette,
 } from "lucide-react";
 import type { DbOrder, OrderStatus, StoreMode } from "@/lib/jsondb";
 import { googleMapsUrl } from "@/lib/order-utils";
@@ -99,6 +99,7 @@ const PrestamosModule = dynamic(() => import("@/components/admin/PrestamosModule
 const TreasuryDashboard = dynamic(() => import("@/components/admin/TreasuryDashboard"), { loading: TabSpinner });
 const PromocionesModule = dynamic(() => import("@/components/admin/PromocionesModule"), { loading: TabSpinner });
 const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCrediticioTab"), { loading: TabSpinner });
+const StoreCustomizer     = dynamic(() => import("@/components/admin/StoreCustomizer"),     { loading: TabSpinner });
 
 // ── Módulos de documentos ──
 const CotizacionesModule = dynamic(() => import("@/components/admin/CotizacionesModule"), { loading: TabSpinner });
@@ -164,7 +165,8 @@ type Tab =
   | "metas-logros"
   // Módulos de operaciones de marketplace y delivery
   | "marketplace"
-  | "delivery-partners";
+  | "delivery-partners"
+  | "store-customizer";
 
 // Old tab IDs → consolidated module IDs for localStorage migration
 // Maps all legacy tab IDs from previous 14-module and 28-module layouts to new 8-module layout
@@ -403,6 +405,14 @@ const BASIC_MODULES: TabCategory[] = [
   },
 ];
 
+// ── Módulo Mi Tienda (personalización visual) ─────────────────────────────────
+const TIENDA_MODULE: TabCategory = {
+  id: "mi-tienda",
+  label: "Mi Tienda",
+  icon: Palette,
+  tabs: ["store-customizer"],
+};
+
 // ── Módulo Config (siempre visible) ──────────────────────────────────────────
 const CONFIG_MODULE: TabCategory = {
   id: "config",
@@ -416,6 +426,7 @@ const CONFIG_MODULE: TabCategory = {
 // ── TAB_CATEGORIES: todos los módulos ──
 const TAB_CATEGORIES: TabCategory[] = [
   ...BASIC_MODULES,
+  TIENDA_MODULE,
   CONFIG_MODULE,
 ];
 
@@ -2063,7 +2074,7 @@ function NavDefaultTabsConfig() {
 
 function AdminPage() {
   const router = useRouter();
-  const VALID_TABS: Tab[] = ["asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command","fiados","turnos","cotizaciones","guias-remision","notas-credito","contratos","sugerencias-ia","metas-logros","marketplace","delivery-partners"];
+  const VALID_TABS: Tab[] = ["asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command","fiados","turnos","cotizaciones","guias-remision","notas-credito","contratos","sugerencias-ia","metas-logros","marketplace","delivery-partners","store-customizer"];
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window === "undefined") return "asistente-ia";
     // 1. Check URL hash first (e.g. /admin#inventario)
@@ -2626,6 +2637,8 @@ function AdminPage() {
     // — MARKETPLACE & DELIVERY —
     { id: "marketplace" as Tab,        label: "Marketplace",          icon: Store },
     { id: "delivery-partners" as Tab,  label: "Delivery Partners",    icon: Truck },
+    // — MI TIENDA —
+    { id: "store-customizer" as Tab,   label: "Mi Tienda",            icon: Palette },
   ] as const;
 
   // All modules available — no plan gating
@@ -3867,6 +3880,8 @@ function AdminPage() {
             {/* ── Marketplace & Delivery ── */}
             {tab === "marketplace" && <MarketplaceModule />}
             {tab === "delivery-partners" && <DeliveryPartnersModule />}
+
+            {tab === "store-customizer" && <StoreCustomizer />}
           </motion.div>
         </AnimatePresence>
 
@@ -3933,6 +3948,12 @@ function AdminPage() {
               "Configura metas diarias, semanales y mensuales",
               "Desbloquea logros vendiendo más y siendo constante",
               "Mira tu racha de días consecutivos alcanzando la meta",
+            ],
+            "store-customizer": [
+              "Cambia colores, logo y eslogan desde la pestaña Identidad",
+              "Activa o desactiva secciones y reordénalas arrastrando",
+              "El preview de la derecha se actualiza en tiempo real mientras editas",
+              "Guarda al final para que los cambios aparezcan en tu tienda",
             ],
           };
           const tips = AYUDA[tab];
