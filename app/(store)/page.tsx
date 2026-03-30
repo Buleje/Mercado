@@ -66,16 +66,19 @@ async function getVisibleSections(): Promise<Set<SectionKey>> {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const res = await fetch(`${baseUrl}/api/settings`, {
       headers: { "x-tenant-id": tenantId },
-      next: { revalidate: 60 },
+      cache: "no-store",
     });
     if (!res.ok) return new Set<SectionKey>();
     const data = await res.json();
 
     // Prioridad 1: storeTheme.sections (del StoreCustomizer)
+    // Formato: array de strings ["announcement", "hero", ...] = secciones visibles
     if (data?.storeTheme?.sections && Array.isArray(data.storeTheme.sections)) {
-      const visible = data.storeTheme.sections
-        .filter((s: { visible?: boolean }) => s.visible !== false)
-        .map((s: { id: string }) => s.id);
+      const sections = data.storeTheme.sections;
+      // Puede ser strings directos o objetos {id, visible}
+      const visible = sections.map((s: string | { id: string }) =>
+        typeof s === "string" ? s : s.id
+      );
       return new Set(visible as SectionKey[]);
     }
 
