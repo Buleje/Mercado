@@ -98,6 +98,7 @@ export async function GET(req: NextRequest) {
           status: statusFilter ?? undefined,
           since:  sinceParam  ?? undefined,
           phone:  phoneParam  ?? undefined,
+          tenantId: auth.tenantId,
         })
       );
       return NextResponse.json(orders, {
@@ -117,6 +118,7 @@ export async function GET(req: NextRequest) {
         status:  statusFilter  ?? undefined,
         since:   sinceParam    ?? undefined,
         phone:   phoneParam    ?? undefined,
+        tenantId: auth.tenantId,
       })
     );
 

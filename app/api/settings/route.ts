@@ -6,9 +6,10 @@ import { requireAdmin } from "@/lib/require-admin";
 import { hash } from "bcryptjs";
 import { logger } from "@/lib/logger";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const settings = await SettingsDB.get();
+    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    const settings = await SettingsDB.get(tenantId);
     // Never expose credentials or security toggles to public callers
      
     const { adminPassword: _pw, adminBypassLogin: _bypass, ...publicSettings } = settings as DbSettings & { adminPassword?: string; adminBypassLogin?: boolean };

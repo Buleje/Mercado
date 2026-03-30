@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
     const cursorParam = sp.get("cursor");
     const search     = sp.get("q");
 
-    let customers = await CustomersDB.getAll();
+    let customers = await CustomersDB.getAll(auth.tenantId);
 
     if (search) {
       const q = search.toLowerCase();

@@ -153,9 +153,12 @@ function mapSettings(s: PSettings): DbSettings {
 // ── Settings DB ───────────────────────────────────────────────────────────────
 
 export const SettingsDB = {
-  async get(): Promise<DbSettings> {
+  async get(tenantId?: string): Promise<DbSettings> {
     try {
-      const row = await prisma.settings.findUnique({ where: { id: 1 } });
+      const tid = tenantId ?? "main";
+      // Try by tenantId first (multi-tenant), fallback to id:1 (legacy)
+      const row = await prisma.settings.findUnique({ where: { tenantId: tid } })
+        ?? (tid === "main" ? await prisma.settings.findUnique({ where: { id: 1 } }) : null);
       if (!row) return { mode: "whatsapp", adminBypassLogin: false };
       return mapSettings(row);
     } catch (error) {

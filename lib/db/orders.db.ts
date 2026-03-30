@@ -122,8 +122,10 @@ export const OrdersDB = {
     status?: string;
     since?: string;
     phone?: string;
+    tenantId?: string;
   }): Promise<DbOrder[]> {
     const where: Record<string, unknown> = {};
+    if (opts?.tenantId) where.tenantId = opts.tenantId;
     if (opts?.status) {
       const statuses = opts.status.split(",").map((s) => s.trim());
       where.status = { in: statuses };
@@ -154,11 +156,13 @@ export const OrdersDB = {
     status?: string;
     since?: string;
     phone?: string;
+    tenantId?: string;
   }): Promise<{ orders: DbOrder[]; nextCursor: string | null; total: number }> {
     const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
 
     // Build DB-level where clause (pushed to Postgres, no in-memory scan)
     const where: Record<string, unknown> = {};
+    if (opts.tenantId) where.tenantId = opts.tenantId;
     if (opts.status) {
       const statuses = opts.status.split(",").map((s) => s.trim());
       where.status = { in: statuses };
