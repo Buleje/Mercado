@@ -5,21 +5,39 @@ import { useParams } from "next/navigation";
 
 /**
  * Ruta local para acceder al admin de un tenant específico.
- * Guarda el tenantSlug en localStorage y redirige a /admin.
- * El middleware/proxy lee este valor para inyectar x-tenant-id.
+ * Si hay sesión SuperAdmin activa, impersona automáticamente al tenant
+ * y redirige directo al panel admin sin pasar por el login.
+ * Si no hay sesión SuperAdmin, guarda el slug y redirige al login normal.
  */
 export default function TenantAdminRedirect() {
   const { slug } = useParams<{ slug: string }>();
 
   useEffect(() => {
-    if (slug) {
-      // Guardar el tenant activo para que el admin lo use
-      localStorage.setItem("active-tenant-slug", slug);
-      // Marcar impersonación de SuperAdmin para mostrar banner en el panel
-      localStorage.setItem("superadmin-impersonate-tenant", slug);
-      // Redirigir al admin normal
-      window.location.href = "/admin";
-    }
+    if (!slug) return;
+
+    // Siempre guardar el tenant activo para que el admin lo use
+    localStorage.setItem("active-tenant-slug", slug);
+    localStorage.setItem("superadmin-impersonate-tenant", slug);
+
+    // Intentar impersonación SuperAdmin (auto-login sin contraseña)
+    fetch("/api/superadmin/impersonate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug }),
+    })
+      .then((r) => {
+        if (r.ok) {
+          // SuperAdmin autenticado → sesión admin ya seteada → ir directo al panel
+          window.location.href = "/admin";
+        } else {
+          // No es SuperAdmin o token expirado → login normal del tenant
+          window.location.href = "/admin/login";
+        }
+      })
+      .catch(() => {
+        // Error de red → login normal como fallback seguro
+        window.location.href = "/admin/login";
+      });
   }, [slug]);
 
   return (
