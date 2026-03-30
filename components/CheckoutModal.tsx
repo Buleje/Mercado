@@ -67,7 +67,7 @@ function getDeliveryETA(slotId: string): string {
 export default function CheckoutModal() {
   const { items, total, checkoutOpen, closeCheckout, clear, close: closeCart, markOrderPending } = useCart();
   const { customer, register, findByPhone, openOrderStatusModal } = useCustomer();
-  const { yape, cashEnabled } = useSettings();
+  const { yape, cashEnabled, businessName, storeTheme } = useSettings();
   const { getBestPromotion } = usePromotions();
 
   const [step, setStep] = useState<Step>("datos");
@@ -827,12 +827,16 @@ export default function CheckoutModal() {
 
               <div className="flex items-center justify-between px-6 py-5 shrink-0 bg-linear-to-r from-primary to-primary-dark">
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shadow-lg">
-                    <ShoppingCart className="h-6 w-6 text-white" />
+                  <div className="h-12 w-12 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center shadow-lg overflow-hidden">
+                    {storeTheme?.logo ? (
+                      <img src={storeTheme.logo} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <ShoppingCart className="h-6 w-6 text-white" />
+                    )}
                   </div>
                   <div>
                     <h2 className="font-extrabold text-white text-xl leading-tight">Completar pedido</h2>
-                    <p className="text-sm text-white/70">Buleje · {items.length} {items.length === 1 ? "producto" : "productos"}</p>
+                    <p className="text-sm text-white/70">{businessName || "Mi Tienda"} · {items.length} {items.length === 1 ? "producto" : "productos"}</p>
                   </div>
                 </div>
                 <button onClick={closeCheckout} aria-label="Cerrar checkout" className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
