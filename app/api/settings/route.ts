@@ -52,8 +52,9 @@ export async function PUT(req: NextRequest) {
         });
         return NextResponse.json({ ok: true });
       } catch (e) {
-        logger.error("[settings] storeTheme save error", { err: (e as Error).message });
-        return NextResponse.json({ error: "Error guardando tema" }, { status: 500 });
+        const msg = (e as Error).message ?? String(e);
+        logger.error("[settings] storeTheme save error", { err: msg, tenantId });
+        return NextResponse.json({ error: "Error guardando tema", detail: msg }, { status: 500 });
       }
     }
 
