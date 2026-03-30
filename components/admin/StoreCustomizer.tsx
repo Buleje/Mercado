@@ -9,6 +9,7 @@ import {
   ChevronUp, ChevronDown, Sun, Moon, Type, Sliders,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import StorefrontEditor from "./StorefrontEditor";
 import type { SectionKey } from "./StorefrontEditor";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -730,79 +731,19 @@ export default function StoreCustomizer() {
               </div>
             )}
 
-            {/* ── TAB: SECCIONES ─────────────────────────────────────── */}
+            {/* ── TAB: SECCIONES — delegado a StorefrontEditor ──────── */}
             {activeTab === "secciones" && (
-              <div className="space-y-2">
-                <p className="text-xs text-muted">Activa o desactiva secciones. Arrastra para reordenar.</p>
-                {orderedSections.map((section, idx) => {
-                  const enabled = theme.sections.includes(section.key);
-                  return (
-                    <div
-                      key={section.key}
-                      draggable={enabled}
-                      onDragStart={() => setDragIdx(idx)}
-                      onDragEnter={() => { if (dragIdx !== null) handleDragEnd(idx); }}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDragEnd={() => setDragIdx(null)}
-                      className={cn(
-                        "flex items-center gap-3 p-3 rounded-xl border transition-all select-none",
-                        enabled
-                          ? "bg-white dark:bg-card border-gray-200 dark:border-card-border shadow-sm"
-                          : "bg-gray-50 dark:bg-surface border-gray-100 dark:border-card-border opacity-60",
-                        dragIdx === idx && "ring-2 ring-teal-500/40 bg-teal-50 dark:bg-teal-900/10"
-                      )}
-                    >
-                      <GripVertical
-                        className={cn(
-                          "h-4 w-4 shrink-0",
-                          enabled ? "text-gray-300 dark:text-gray-600 cursor-grab active:cursor-grabbing" : "text-gray-200 dark:text-gray-700"
-                        )}
-                      />
-                      <div className="h-7 w-7 rounded-lg bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
-                        {section.icon}
-                      </div>
-                      <span className="flex-1 text-sm font-semibold text-foreground truncate">
-                        {section.label}
-                      </span>
-
-                      {/* Flechas para mobile */}
-                      <div className="flex flex-col gap-0.5 sm:hidden shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => moveSectionUp(idx)}
-                          disabled={idx === 0 || !enabled}
-                          className="h-5 w-5 flex items-center justify-center rounded text-muted hover:text-foreground disabled:opacity-30 transition-colors"
-                          aria-label="Subir"
-                        >
-                          <ChevronUp className="h-3 w-3" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveSectionDown(idx)}
-                          disabled={idx >= theme.sections.length - 1 || !enabled}
-                          className="h-5 w-5 flex items-center justify-center rounded text-muted hover:text-foreground disabled:opacity-30 transition-colors"
-                          aria-label="Bajar"
-                        >
-                          <ChevronDown className="h-3 w-3" />
-                        </button>
-                      </div>
-
-                      {/* Toggle */}
-                      <button
-                        type="button"
-                        onClick={() => toggleSection(section.key)}
-                        className="shrink-0 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-                        aria-label={enabled ? "Desactivar" : "Activar"}
-                      >
-                        {enabled ? (
-                          <ToggleRight className="h-6 w-6 text-teal-600" />
-                        ) : (
-                          <ToggleLeft className="h-6 w-6 text-gray-400" />
-                        )}
-                      </button>
-                    </div>
-                  );
-                })}
+              <div className="space-y-4">
+                <div className="bg-primary/5 dark:bg-primary/10 border border-primary/15 rounded-xl p-4 space-y-3">
+                  <p className="text-sm font-semibold text-foreground">
+                    Editor de secciones
+                  </p>
+                  <p className="text-xs text-muted">
+                    Las secciones de la tienda se gestionan desde el editor dedicado con drag &amp; drop.
+                    Puedes reordenar, activar y desactivar secciones desde ahí.
+                  </p>
+                  <StorefrontEditor />
+                </div>
               </div>
             )}
 

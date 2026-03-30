@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
@@ -57,8 +57,87 @@ const Footer             = dynamic(() => import("@/components/Footer"),         
 
 import HomeClientShell from "@/components/HomeClientShell";
 
-// ── Leer visibleSections desde settings (server-side, con revalidación) ───────
-async function getVisibleSections(): Promise<Set<SectionKey>> {
+// ── Mapa de secciones: key → componente con su fallback ─────────────────────
+
+const SECTION_MAP: Record<SectionKey, () => ReactNode> = {
+  announcement: () => <AnnouncementBar />,
+  hero: () => <Hero />,
+  categories: () => (
+    <Suspense fallback={<LoadingSection />}>
+      <PopularCategories />
+    </Suspense>
+  ),
+  popular: () => (
+    <>
+      <Suspense fallback={<LoadingProducts />}>
+        <ProductsPreview />
+      </Suspense>
+      <RecommendedProducts />
+    </>
+  ),
+  deals: () => (
+    <Suspense fallback={null}>
+      <DailyDeal />
+    </Suspense>
+  ),
+  combos: () => (
+    <Suspense fallback={<LoadingSection />}>
+      <CombosSection />
+    </Suspense>
+  ),
+  recipes: () => (
+    <Suspense fallback={<LoadingSection />}>
+      <RecipeSuggestions />
+    </Suspense>
+  ),
+  testimonials: () => (
+    <Suspense fallback={<LoadingTestimonials />}>
+      <Testimonials />
+    </Suspense>
+  ),
+  faq: () => (
+    <Suspense fallback={<LoadingFAQ />}>
+      <FAQ />
+    </Suspense>
+  ),
+  contact: () => (
+    <Suspense fallback={<LoadingSection />}>
+      <Contact />
+    </Suspense>
+  ),
+  delivery_map: () => (
+    <Suspense fallback={<LoadingSection />}>
+      <section className="py-14 sm:py-20 bg-white dark:bg-card">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-8">
+            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
+              Cobertura
+            </span>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground">
+              Llegamos a tu zona?
+            </h2>
+            <p className="text-muted mt-2 text-sm sm:text-base max-w-lg mx-auto">
+              Revisa nuestra zona de delivery en Pucallpa
+            </p>
+          </div>
+          <DeliveryZoneMap />
+        </div>
+      </section>
+    </Suspense>
+  ),
+};
+
+// Orden por defecto si no hay config guardada
+const DEFAULT_ORDER: SectionKey[] = [
+  "announcement", "hero", "categories", "popular", "deals",
+  "combos", "recipes", "testimonials", "faq", "contact", "delivery_map",
+];
+
+// ── Leer secciones visibles y orden desde settings (server-side) ─────────────
+async function getSectionConfig(): Promise<{
+  visible: Set<SectionKey>;
+  order: SectionKey[];
+}> {
   try {
     const { headers } = await import("next/headers");
     const hdrs = await headers();
@@ -68,154 +147,82 @@ async function getVisibleSections(): Promise<Set<SectionKey>> {
       headers: { "x-tenant-id": tenantId },
       cache: "no-store",
     });
-    if (!res.ok) return new Set<SectionKey>();
+    if (!res.ok) return { visible: new Set(), order: DEFAULT_ORDER };
     const data = await res.json();
 
-    // Prioridad 1: storeTheme.sections (del StoreCustomizer)
-    // Formato: array de strings ["announcement", "hero", ...] = secciones visibles
+    // Leer secciones visibles
+    let visibleKeys: SectionKey[] = [];
     if (data?.storeTheme?.sections && Array.isArray(data.storeTheme.sections)) {
-      const sections = data.storeTheme.sections;
-      // Puede ser strings directos o objetos {id, visible}
-      const visible = sections.map((s: string | { id: string }) =>
+      visibleKeys = data.storeTheme.sections.map((s: string | { id: string }) =>
         typeof s === "string" ? s : s.id
-      );
-      return new Set(visible as SectionKey[]);
+      ) as SectionKey[];
+    } else if (Array.isArray(data?.homepage?.visibleSections)) {
+      visibleKeys = data.homepage.visibleSections as SectionKey[];
     }
 
-    // Prioridad 2: homepage.visibleSections (legacy StorefrontEditor)
-    if (Array.isArray(data?.homepage?.visibleSections)) {
-      return new Set(data.homepage.visibleSections as SectionKey[]);
-    }
+    // Leer orden
+    const orderKeys: SectionKey[] =
+      Array.isArray(data?.storeTheme?.sectionOrder)
+        ? (data.storeTheme.sectionOrder as SectionKey[])
+        : [];
 
-    return new Set<SectionKey>(); // vacío = mostrar todo
+    return {
+      visible: new Set(visibleKeys),
+      order: orderKeys.length > 0 ? orderKeys : DEFAULT_ORDER,
+    };
   } catch {
-    return new Set<SectionKey>();
+    return { visible: new Set(), order: DEFAULT_ORDER };
   }
 }
 
 export default async function Home() {
-  const visible = await getVisibleSections();
-  // Si no hay configuración guardada → mostrar todo (backward compatible)
+  const { visible, order } = await getSectionConfig();
   const showAll = visible.size === 0;
   const show = (key: SectionKey) => showAll || visible.has(key);
 
+  // Renderizar secciones EN EL ORDEN configurado por el admin
+  const orderedSections = order.filter(show);
+
   return (
     <>
-      {show("announcement") && <AnnouncementBar />}
       <Header />
       <main id="main-content">
-        {/* Hero — strong first impression with CTA to /tienda */}
-        {show("hero") && <Hero />}
+        {/* Secciones dinámicas — en el orden del StorefrontEditor */}
+        {orderedSections.map((key) => {
+          const render = SECTION_MAP[key];
+          if (!render) return null;
+          return <div key={key}>{render()}</div>;
+        })}
 
-        {/* Social proof stats — siempre visible, no es una sección configurable */}
+        {/* Secciones siempre visibles (no configurables) */}
         <Suspense fallback={<LoadingStats />}>
           <StatsCounter />
         </Suspense>
 
-        {/* Categorías */}
-        {show("categories") && (
-          <Suspense fallback={<LoadingSection />}>
-            <PopularCategories />
-          </Suspense>
-        )}
-
-        {/* Productos populares */}
-        {show("popular") && (
-          <Suspense fallback={<LoadingProducts />}>
-            <ProductsPreview />
-          </Suspense>
-        )}
-
-        {/* Ofertas del día */}
-        {show("deals") && (
-          <Suspense fallback={null}>
-            <DailyDeal />
-          </Suspense>
-        )}
-
-        {/* Recomendados — ligado a "popular" */}
-        {show("popular") && <RecommendedProducts />}
-
-        {/* Combos */}
-        {show("combos") && (
-          <Suspense fallback={<LoadingSection />}>
-            <CombosSection />
-          </Suspense>
-        )}
-
-        {/* Recetas */}
-        {show("recipes") && (
-          <Suspense fallback={<LoadingSection />}>
-            <RecipeSuggestions />
-          </Suspense>
-        )}
-
-        {/* How it works — 3-step process — siempre visible */}
         <Suspense fallback={<LoadingSection />}>
           <HowItWorks />
         </Suspense>
 
-        {/* Value proposition — siempre visible */}
         <Suspense fallback={<LoadingSection />}>
           <Benefits />
         </Suspense>
 
-        {/* Conversion CTA — siempre visible */}
         <Suspense fallback={<LoadingSection />}>
           <CTABanner />
         </Suspense>
 
-        {/* Testimonios */}
-        {show("testimonials") && (
-          <Suspense fallback={<LoadingTestimonials />}>
-            <Testimonials />
-          </Suspense>
-        )}
         <Suspense fallback={<LoadingSection />}>
           <BrandStory />
         </Suspense>
 
-        {/* Horarios de atención */}
         <Suspense fallback={<LoadingSection />}>
           <StoreHours />
         </Suspense>
 
-        {/* FAQ */}
-        {show("faq") && (
-          <Suspense fallback={<LoadingFAQ />}>
-            <FAQ />
-          </Suspense>
-        )}
-
-        {/* Contacto */}
-        {show("contact") && (
-          <Suspense fallback={<LoadingSection />}>
-            <Contact />
-          </Suspense>
-        )}
-
-        {/* Mapa de delivery */}
-        {show("delivery_map") && (
-          <Suspense fallback={<LoadingSection />}>
-            <section className="py-14 sm:py-20 bg-white dark:bg-card">
-              <div className="max-w-7xl mx-auto px-4">
-                <div className="text-center mb-8">
-                  <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">🗺️ Cobertura</span>
-                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground">¿Llegamos a tu zona?</h2>
-                  <p className="text-muted mt-2 text-sm sm:text-base max-w-lg mx-auto">Revisa nuestra zona de delivery en Pucallpa</p>
-                </div>
-                <DeliveryZoneMap />
-              </div>
-            </section>
-          </Suspense>
-        )}
-
-        {/* PWA install banner */}
         <Suspense fallback={null}>
           <PWAInstallBanner />
         </Suspense>
 
-        {/* Invitar amigos */}
         <Suspense fallback={<LoadingSection />}>
           <ReferralBanner />
         </Suspense>

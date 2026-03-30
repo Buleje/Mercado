@@ -8,6 +8,23 @@ import {
   Phone, Map, ToggleLeft, ToggleRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -115,66 +132,79 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
 
-function buildSectionsFromKeys(visibleKeys: SectionKey[]): StorefrontSection[] {
-  // Si no hay config guardada, todas activas por defecto (backward compatible)
+function buildSectionsFromData(
+  visibleKeys: SectionKey[],
+  orderKeys: SectionKey[],
+): StorefrontSection[] {
   const enabledSet = new Set<SectionKey>(
     visibleKeys.length > 0 ? visibleKeys : SECTION_DEFAULTS.map((s) => s.key)
   );
 
-  // Mantener el orden guardado; los no presentes van al final desactivados
-  const orderedKeys =
-    visibleKeys.length > 0
-      ? [
-          ...visibleKeys,
-          ...SECTION_DEFAULTS.map((s) => s.key).filter((k) => !enabledSet.has(k)),
-        ]
-      : SECTION_DEFAULTS.map((s) => s.key);
+  // Usar el orden guardado si existe; si no, orden por defecto
+  const baseOrder = orderKeys.length > 0 ? orderKeys : SECTION_DEFAULTS.map((s) => s.key);
 
-  return orderedKeys.map((key) => {
-    const def = SECTION_DEFAULTS.find((s) => s.key === key)!;
-    return { ...def, enabled: enabledSet.has(key) };
-  });
+  // Agregar al final cualquier sección que no esté en el orden (ej. nuevas)
+  const allKeys = SECTION_DEFAULTS.map((s) => s.key);
+  const orderedKeys = [...baseOrder, ...allKeys.filter((k) => !baseOrder.includes(k))];
+
+  // Deduplicar
+  const unique = [...new Set(orderedKeys)];
+
+  return unique
+    .filter((key) => SECTION_DEFAULTS.some((s) => s.key === key))
+    .map((key) => {
+      const def = SECTION_DEFAULTS.find((s) => s.key === key)!;
+      return { ...def, enabled: enabledSet.has(key) };
+    });
 }
 
-// ── Componente SectionRow ─────────────────────────────────────────────────────
+// ── Componente SortableRow (dnd-kit) ────────────────────────────────────────
 
-function SectionRow({
+function SortableRow({
   section,
-  index,
-  total,
   onToggle,
-  onMoveUp,
-  onMoveDown,
-  isDragging,
-  onDragStart,
-  onDragEnter,
 }: {
   section: StorefrontSection;
-  index: number;
-  total: number;
   onToggle: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  isDragging: boolean;
-  onDragStart: () => void;
-  onDragEnter: () => void;
 }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: section.key });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.85 : 1,
+  };
+
   return (
     <div
-      draggable
-      onDragStart={onDragStart}
-      onDragEnter={onDragEnter}
-      onDragOver={(e) => e.preventDefault()}
+      ref={setNodeRef}
+      style={style}
       className={cn(
-        "flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-150 cursor-grab active:cursor-grabbing select-none",
+        "flex items-center gap-3 p-3.5 rounded-xl border transition-all duration-150 select-none",
         section.enabled
           ? "bg-white dark:bg-card border-gray-200 dark:border-card-border shadow-sm"
           : "bg-gray-50 dark:bg-surface border-gray-100 dark:border-card-border opacity-60",
-        isDragging && "ring-2 ring-primary/40 bg-primary/5 dark:bg-primary/10"
+        isDragging && "ring-2 ring-primary/40 bg-primary/5 dark:bg-primary/10 shadow-lg"
       )}
     >
       {/* Drag handle */}
-      <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-600 shrink-0" />
+      <button
+        type="button"
+        className="cursor-grab active:cursor-grabbing touch-none p-0.5 -m-0.5"
+        aria-label={`Reordenar ${section.label}`}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-4 w-4 text-gray-300 dark:text-gray-600 shrink-0" />
+      </button>
 
       {/* Icon */}
       <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", section.iconBg)}>
@@ -187,28 +217,6 @@ function SectionRow({
           {section.label}
         </p>
         <p className="text-xs text-muted mt-0.5 truncate">{section.description}</p>
-      </div>
-
-      {/* Move arrows — visible solo en móvil donde no hay drag fácil */}
-      <div className="flex flex-col gap-0.5 sm:hidden shrink-0">
-        <button
-          type="button"
-          onClick={onMoveUp}
-          disabled={index === 0}
-          className="h-5 w-5 flex items-center justify-center rounded text-muted hover:text-foreground disabled:opacity-30 transition-colors"
-          aria-label="Subir sección"
-        >
-          ▲
-        </button>
-        <button
-          type="button"
-          onClick={onMoveDown}
-          disabled={index === total - 1}
-          className="h-5 w-5 flex items-center justify-center rounded text-muted hover:text-foreground disabled:opacity-30 transition-colors"
-          aria-label="Bajar sección"
-        >
-          ▼
-        </button>
       </div>
 
       {/* Toggle */}
@@ -242,7 +250,12 @@ export default function StorefrontEditor() {
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
 
   // Cargar configuración actual
   useEffect(() => {
@@ -250,13 +263,17 @@ export default function StorefrontEditor() {
     fetch("/api/settings")
       .then((r) => (r.ok ? r.json() : null))
       .then((s) => {
-        const visibleKeys: SectionKey[] = Array.isArray(s?.homepage?.visibleSections)
-          ? (s.homepage.visibleSections as SectionKey[])
-          : [];
-        setSections(buildSectionsFromKeys(visibleKeys));
+        // Leer secciones visibles y orden
+        const visibleKeys: SectionKey[] =
+          (s?.storeTheme?.sections as SectionKey[] | undefined) ??
+          (s?.homepage?.visibleSections as SectionKey[] | undefined) ??
+          [];
+        const orderKeys: SectionKey[] =
+          (s?.storeTheme?.sectionOrder as SectionKey[] | undefined) ?? [];
+        setSections(buildSectionsFromData(visibleKeys, orderKeys));
       })
       .catch(() => {
-        setSections(buildSectionsFromKeys([]));
+        setSections(buildSectionsFromData([], []));
       })
       .finally(() => setLoadingSettings(false));
   }, []);
@@ -268,35 +285,32 @@ export default function StorefrontEditor() {
     setSaved(false);
   }, []);
 
-  const moveSection = useCallback((from: number, to: number) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
     setSections((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return next;
+      const oldIndex = prev.findIndex((s) => s.key === active.id);
+      const newIndex = prev.findIndex((s) => s.key === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
     });
     setSaved(false);
   }, []);
 
-  // Drag & drop handlers
-  const handleDragEnter = useCallback(
-    (targetIndex: number) => {
-      if (dragIndex === null || dragIndex === targetIndex) return;
-      moveSection(dragIndex, targetIndex);
-      setDragIndex(targetIndex);
-    },
-    [dragIndex, moveSection]
-  );
-
+  // Guardar: persiste visibilidad + orden en storeTheme
   const handleSave = useCallback(async () => {
     setSaving(true);
     const visibleSections = sections.filter((s) => s.enabled).map((s) => s.key);
+    const sectionOrder = sections.map((s) => s.key);
     try {
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          homepage: { visibleSections },
+          storeTheme: {
+            sections: visibleSections,
+            sectionOrder,
+          },
         }),
       });
       if (res.ok) {
@@ -333,7 +347,6 @@ export default function StorefrontEditor() {
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          {/* Vista previa */}
           <a
             href="/"
             target="_blank"
@@ -344,7 +357,6 @@ export default function StorefrontEditor() {
             <span className="hidden sm:inline">Vista previa</span>
           </a>
 
-          {/* Guardar */}
           <button
             type="button"
             onClick={handleSave}
@@ -376,34 +388,33 @@ export default function StorefrontEditor() {
           <ToggleRight className="h-4 w-4 text-primary" />
         </div>
         <p className="text-xs text-foreground/70">
-          Arrastra las filas para reordenar las secciones. Los cambios se aplican en la tienda al guardar.
-          Si el tenant no tiene productos cargados, las secciones de combos, recetas y populares se ocultan
-          automaticamente aunque esten activas.
+          Arrastra las filas para reordenar las secciones. El orden y visibilidad se aplican en la tienda al guardar.
         </p>
       </div>
 
-      {/* Lista de secciones */}
-      <div
-        className="space-y-2"
-        onDragEnd={() => setDragIndex(null)}
+      {/* Lista de secciones con dnd-kit */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
       >
-        {sections.map((section, i) => (
-          <SectionRow
-            key={section.key}
-            section={section}
-            index={i}
-            total={sections.length}
-            onToggle={() => toggleSection(section.key)}
-            onMoveUp={() => i > 0 && moveSection(i, i - 1)}
-            onMoveDown={() => i < sections.length - 1 && moveSection(i, i + 1)}
-            isDragging={dragIndex === i}
-            onDragStart={() => setDragIndex(i)}
-            onDragEnter={() => handleDragEnter(i)}
-          />
-        ))}
-      </div>
+        <SortableContext
+          items={sections.map((s) => s.key)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-2">
+            {sections.map((section) => (
+              <SortableRow
+                key={section.key}
+                section={section}
+                onToggle={() => toggleSection(section.key)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
-      {/* Footer — acceso rápido para activar/desactivar todo */}
+      {/* Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-card-border">
         <button
           type="button"
