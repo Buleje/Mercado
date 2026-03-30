@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Plus, X, Loader2, AlertTriangle, ChevronLeft, ChevronRight,
   Package, FlaskConical, Layers,
-  BookOpen, BarChart3,
+  BookOpen, BarChart3, ChefHat,
 } from "lucide-react";
+import EmptyState from "@/components/admin/shared/EmptyState";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 
@@ -527,12 +528,12 @@ export default function RecetasModule() {
               <button onClick={fetchRecetas} className="text-xs text-[#0f766e] hover:underline font-semibold">Reintentar</button>
             </div>
           ) : recetas.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <div className="text-6xl mb-4">🍳</div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin recetas</h3>
-              <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Crea recetas con ingredientes de tu bodega</p>
-              <button onClick={() => { setShowNew(true); addIngrediente(); }} className="bg-[#0f766e] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#0d5f58]">Crear primera receta</button>
-            </div>
+            <EmptyState
+              icon={ChefHat}
+              title="Sin recetas"
+              description="Crea tu primera receta para empezar."
+              action={{ label: "Crear primera receta", onClick: () => { setShowNew(true); addIngrediente(); } }}
+            />
           ) : (() => {
             // Mejora 6: Filtrar y ordenar recetas
             let filtered = recetas.filter(r => {

@@ -6,7 +6,9 @@ import {
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
   ScanBarcode, X, Camera, Download, CheckSquare,
   TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
+  Warehouse,
 } from "lucide-react";
+import EmptyState from "@/components/admin/shared/EmptyState";
 import Image from "next/image";
 import { cn, exportToCSV } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
@@ -1092,7 +1094,11 @@ export default function InventoryTab() {
               );
             })}
             {filteredProducts.length === 0 && (
-              <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">No hay productos</div>
+              <EmptyState
+                icon={products.length === 0 ? Warehouse : Package}
+                title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
+                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
+              />
             )}
             <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
           </div>
@@ -1304,7 +1310,11 @@ export default function InventoryTab() {
               </table>
             </div>
             {filteredProducts.length === 0 && (
-              <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">No hay productos</div>
+              <EmptyState
+                icon={products.length === 0 ? Warehouse : Package}
+                title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
+                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
+              />
             )}
             <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
           </div>

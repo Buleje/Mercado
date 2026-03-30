@@ -7,6 +7,7 @@ import {
   ArrowRight, Package, Bell, BellOff, Lock, LayoutList, Columns3, MapPin,
   CheckSquare, DollarSign, Target, AlertTriangle, Maximize2, X as XIcon2,
 } from "lucide-react";
+import EmptyState from "@/components/admin/shared/EmptyState";
 import {
   PieChart, Pie, Cell, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -792,7 +793,13 @@ export default function SalesOrdersTab() {
       })()}
 
       {/* ── Orders list ───────────────────────────────────────────────── */}
-      {viewMode === "list" && filtered.length === 0 ? (
+      {viewMode === "list" && orders.length === 0 ? (
+        <EmptyState
+          icon={Package}
+          title="Sin pedidos"
+          description="Los pedidos de tus clientes aparecerán aquí."
+        />
+      ) : viewMode === "list" && filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-2 text-center">
           <ShoppingBag className="h-10 w-10 text-gray-300 dark:text-muted" />
           <p className="text-sm font-semibold text-gray-500 dark:text-muted">

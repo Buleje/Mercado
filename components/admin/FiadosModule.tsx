@@ -11,6 +11,7 @@ import {
   LayoutList, Columns3, MapPin, TrendingUp, Phone,
   Navigation,
 } from "lucide-react";
+import EmptyState from "@/components/admin/shared/EmptyState";
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Line, ComposedChart, PieChart, Pie, Cell } from "recharts";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
@@ -1321,12 +1322,12 @@ export default function FiadosModule() {
             <button onClick={fetchFiados} className="text-xs text-[#0f766e] hover:underline font-semibold mt-1">Reintentar</button>
           </div>
         ) : fiados.length === 0 ? (
-          <div className="text-center py-16 px-4">
-            <div className="text-6xl mb-4">💰</div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Aún no tienes fiados</h3>
-            <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Registra créditos de confianza a tus clientes</p>
-            <button onClick={() => { setShowNew(true); setCreateError(null); }} className="bg-[#0f766e] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#0d5f58]">Crear primer fiado</button>
-          </div>
+          <EmptyState
+            icon={CreditCard}
+            title="Sin fiados"
+            description="Los créditos a clientes aparecerán aquí."
+            action={{ label: "Crear primer fiado", onClick: () => { setShowNew(true); setCreateError(null); } }}
+          />
         ) : (
           <>
             <div className="max-h-[65vh] overflow-y-auto overflow-x-auto -mx-4 sm:mx-0">

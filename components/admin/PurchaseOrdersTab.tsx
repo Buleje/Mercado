@@ -6,7 +6,7 @@ import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   Trash2, Plus, ChevronDown, ChevronUp, Package,
   X, Truck, FileText, ScanBarcode, History,
-  TrendingUp, BarChart3, Download, PackageCheck, Copy, RotateCcw,
+  TrendingUp, BarChart3, Download, PackageCheck, Copy, RotateCcw, ShoppingBag,
 } from "lucide-react";
 import type { DbPurchaseOrder, DbSupplier, DbProduct, PurchaseStatus } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
@@ -790,9 +790,9 @@ export default function PurchaseOrdersTab() {
         <TableSkeleton rows={4} cols={5} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl" />
       ) : filteredOrders.length === 0 ? (
         <EmptyState
-          icon={Package}
+          icon={ShoppingBag}
           title={selectedSupplierId ? "Sin órdenes para este proveedor" : "Sin órdenes de compra"}
-          description={selectedSupplierId ? "Este proveedor no tiene órdenes registradas." : "No hay órdenes de compra. Crea una desde el Punto de Compra."}
+          description={selectedSupplierId ? "Este proveedor no tiene órdenes registradas." : "Crea órdenes de compra a tus proveedores."}
           className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl"
         />
       ) : (

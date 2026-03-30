@@ -2075,6 +2075,19 @@ export default function SmartDashboardTab({
         )
       )}
 
+      {/* Banner motivacional — tienda nueva sin datos */}
+      {!loading && dashTab === "resumen" && products.length === 0 && orders.length === 0 && sales.length === 0 && (
+        <div className="rounded-xl border border-[#2d6a4f]/20 bg-[#2d6a4f]/5 dark:bg-[#2d6a4f]/10 p-5 flex items-start gap-4">
+          <div className="h-10 w-10 rounded-xl bg-[#2d6a4f] flex items-center justify-center shrink-0">
+            <TrendingUp className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <p className="font-bold text-[#2d6a4f] dark:text-emerald-400 text-sm">Tu tienda está lista.</p>
+            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Agrega productos y empieza a vender. Los datos aparecerán aquí automáticamente.</p>
+          </div>
+        </div>
+      )}
+
       {/* ════════════════════════════════════════════════════════════════════
           SECCION 2: GRAFICO DE VENTAS DEL MES (tipo Alegra)
           ════════════════════════════════════════════════════════════════════ */}

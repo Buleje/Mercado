@@ -7,6 +7,7 @@ import {
   ShoppingCart, TrendingUp, UserCheck,
   ChevronLeft, ChevronRight, BarChart3,
 } from "lucide-react";
+import EmptyState from "@/components/admin/shared/EmptyState";
 import { motion, AnimatePresence } from "framer-motion";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import { cn, exportToCSV } from "@/lib/utils";
@@ -324,6 +325,18 @@ export default function CRMTab() {
         <p className="font-bold text-gray-700 dark:text-foreground">Error al cargar clientes</p>
         <button onClick={load} className="text-sm text-primary hover:underline">Reintentar</button>
       </div>
+    );
+  }
+
+  // ── Empty state — sin clientes ───────────────────────────────────────────
+
+  if (customers.length === 0) {
+    return (
+      <EmptyState
+        icon={Users}
+        title="Sin clientes"
+        description="Tus clientes aparecerán aquí cuando hagan su primera compra."
+      />
     );
   }
 

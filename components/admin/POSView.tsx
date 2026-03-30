@@ -7,8 +7,9 @@ import {
   Receipt, Package, Maximize2, Minimize2,
   Star, Clock, History, Percent, Info, Printer,
   Volume2, VolumeX, MessageCircle, Send, RotateCcw,
-  ChevronDown, ChevronRight,
+  ChevronDown, ChevronRight, ShoppingCart,
 } from "lucide-react";
+import EmptyState from "@/components/admin/shared/EmptyState";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -1933,7 +1934,13 @@ export default function POSView() {
 
           {/* Product grid */}
           <div className="flex-1 overflow-y-auto p-3">
-            {filtered.length === 0 ? (
+            {products.length === 0 ? (
+              <EmptyState
+                icon={ShoppingCart}
+                title="Sin productos"
+                description="Agrega productos desde el módulo de Productos & Precios para empezar a vender."
+              />
+            ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 text-gray-400 dark:text-muted">
                 <Package className="h-6 w-6 mb-2" />
                 <p className="text-sm">No se encontraron productos</p>
