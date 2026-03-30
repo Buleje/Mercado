@@ -1,17 +1,35 @@
 import type { MetadataRoute } from "next";
+import { SettingsDB } from "@/lib/jsondb";
+import { headers } from "next/headers";
 
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  let name = "Mi Tienda - Delivery";
+  let shortName = "Tienda";
+  let description = "Compra online con delivery a domicilio.";
+  let themeColor = "#0f766e";
+
+  try {
+    const hdrs = await headers();
+    const tenantId = hdrs.get("x-tenant-id") ?? "main";
+    const s = await SettingsDB.get(tenantId);
+    if (s.businessName) {
+      name = `${s.businessName} - Delivery`;
+      shortName = s.businessName.slice(0, 12);
+    }
+    if (s.description) description = s.description;
+    if (s.primaryColor) themeColor = s.primaryColor;
+  } catch { /* use defaults */ }
+
   return {
-    name: "Buleje - Abarrotes Delivery Pucallpa",
-    short_name: "BLJ",
-    description:
-      "Compra abarrotes online en Pucallpa: bebidas, golosinas, carnes, pollo, productos de limpieza y más. Delivery rápido, paga con Yape o efectivo.",
-    id: "buleje-pwa",
+    name,
+    short_name: shortName,
+    description,
+    id: "store-pwa",
     start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#0f766e",
+    theme_color: themeColor,
     orientation: "portrait-primary",
     lang: "es",
     dir: "ltr",

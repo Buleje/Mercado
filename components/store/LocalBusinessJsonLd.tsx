@@ -1,29 +1,52 @@
 /**
  * JSON-LD structured data for Local Business SEO.
- * Place in app/(store)/layout.tsx or page.tsx for Google rich results.
+ * Dinámico: lee datos del negocio desde Settings de la DB.
  * Server component — no "use client" needed.
  */
 
-export default function LocalBusinessJsonLd() {
+import { SettingsDB } from "@/lib/jsondb";
+import { headers } from "next/headers";
+
+export default async function LocalBusinessJsonLd() {
+  let name = "Mi Tienda";
+  let description = "Tienda online con delivery a domicilio.";
+  let phone = "";
+  let address = "Pucallpa";
+  let logo = "/logo.png";
+  let lat = -8.3791;
+  let lon = -74.5539;
+
+  try {
+    const hdrs = await headers();
+    const tenantId = hdrs.get("x-tenant-id") ?? "main";
+    const s = await SettingsDB.get(tenantId);
+    name = s.businessName ?? name;
+    description = s.description ?? description;
+    phone = s.businessPhone ?? phone;
+    address = s.businessAddress ?? address;
+    logo = s.logoUrl ?? logo;
+    lat = s.businessLat ?? lat;
+    lon = s.businessLon ?? lon;
+  } catch { /* use defaults */ }
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "GroceryStore",
-    name: "Buleje",
-    alternateName: "Buleje - Abarrotes Delivery Pucallpa",
-    description:
-      "Bodega de abarrotes con delivery en Pucallpa. Arroz, aceite, az\u00facar, fideos, productos de limpieza y m\u00e1s. Pedidos por WhatsApp y web. Pago con Yape, Plin o efectivo.",
-    url: "https://www.buleje.pe",
-    telephone: process.env.NEXT_PUBLIC_WHATSAPP_PHONE
-      ? `+51${process.env.NEXT_PUBLIC_WHATSAPP_PHONE}`
-      : "+51000000000",
-    image: "https://www.buleje.pe/logo.png",
-    logo: "https://www.buleje.pe/logo.png",
+    name,
+    alternateName: `${name} - Abarrotes Delivery Pucallpa`,
+    description,
+    url: baseUrl,
+    telephone: phone ? `+51${phone}` : undefined,
+    image: logo.startsWith("http") ? logo : `${baseUrl}${logo}`,
+    logo: logo.startsWith("http") ? logo : `${baseUrl}${logo}`,
     priceRange: "S/1 - S/200",
     currenciesAccepted: "PEN",
     paymentAccepted: "Efectivo, Yape, Plin",
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Pucallpa",
+      streetAddress: address,
       addressLocality: "Pucallpa",
       addressRegion: "Ucayali",
       postalCode: "25001",
@@ -31,8 +54,8 @@ export default function LocalBusinessJsonLd() {
     },
     geo: {
       "@type": "GeoCoordinates",
-      latitude: -8.3791,
-      longitude: -74.5539,
+      latitude: lat,
+      longitude: lon,
     },
     areaServed: {
       "@type": "City",
@@ -41,14 +64,7 @@ export default function LocalBusinessJsonLd() {
     openingHoursSpecification: [
       {
         "@type": "OpeningHoursSpecification",
-        dayOfWeek: [
-          "Monday",
-          "Tuesday",
-          "Wednesday",
-          "Thursday",
-          "Friday",
-          "Saturday",
-        ],
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
         opens: "07:00",
         closes: "22:00",
       },
@@ -63,18 +79,9 @@ export default function LocalBusinessJsonLd() {
       "@type": "OfferCatalog",
       name: "Productos de bodega",
       itemListElement: [
-        {
-          "@type": "Offer",
-          itemOffered: { "@type": "Product", name: "Abarrotes" },
-        },
-        {
-          "@type": "Offer",
-          itemOffered: { "@type": "Product", name: "Bebidas" },
-        },
-        {
-          "@type": "Offer",
-          itemOffered: { "@type": "Product", name: "Limpieza" },
-        },
+        { "@type": "Offer", itemOffered: { "@type": "Product", name: "Abarrotes" } },
+        { "@type": "Offer", itemOffered: { "@type": "Product", name: "Bebidas" } },
+        { "@type": "Offer", itemOffered: { "@type": "Product", name: "Limpieza" } },
       ],
     },
     sameAs: [],

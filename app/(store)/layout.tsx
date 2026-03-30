@@ -12,6 +12,7 @@ import {
   GoogleTagManager,
   GTMNoScript,
   MicrosoftClarity,
+  MetaPixel,
 } from "@/components/Analytics";
 
 // force-dynamic: el tenantId viene del header x-tenant-id que varía por request
@@ -80,6 +81,7 @@ export default async function StoreLayout({
       <GoogleAnalytics />
       <GoogleTagManager />
       <MicrosoftClarity />
+      <MetaPixel />
       {/* Skip-to-content link for keyboard and screen-reader users */}
       <a
         href="#main-content"
