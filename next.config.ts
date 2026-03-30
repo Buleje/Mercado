@@ -163,7 +163,7 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Stricter CSP for admin/superadmin — NO unsafe-eval
+      // Stricter CSP for admin/superadmin — allows self iframes for preview
       {
         source: "/(admin|superadmin)/:path*",
         headers: [
@@ -177,7 +177,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://images.openfoodfacts.org https://static.openfoodfacts.org https://*.tile.openstreetmap.org",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://images.unsplash.com",
               "worker-src 'self' blob:",
-              "frame-src 'none'",
+              "frame-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",

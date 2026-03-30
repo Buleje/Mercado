@@ -7,6 +7,7 @@ import {
   Megaphone, Grid3x3, ShoppingBag, Tag, Package, BookOpen,
   MessageSquare, HelpCircle, Map, ToggleLeft, ToggleRight,
   ChevronUp, ChevronDown, Sun, Moon, Type, Sliders,
+  Paintbrush, FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StorefrontEditor from "./StorefrontEditor";
@@ -15,7 +16,7 @@ import ImageUpload from "./ImageUpload";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
-type Tab = "identidad" | "colores" | "secciones" | "hero" | "contacto" | "avanzado";
+type Tab = "identidad" | "colores" | "secciones" | "hero" | "contacto" | "estilos" | "contenido" | "avanzado";
 
 interface StoreTheme {
   logo: string;
@@ -280,9 +281,11 @@ const inputCls =
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: "identidad",  label: "Identidad",  icon: <Store className="h-4 w-4" /> },
   { id: "colores",    label: "Colores",    icon: <Palette className="h-4 w-4" /> },
+  { id: "estilos",    label: "Estilos",    icon: <Paintbrush className="h-4 w-4" /> },
   { id: "secciones",  label: "Secciones",  icon: <Layout className="h-4 w-4" /> },
   { id: "hero",       label: "Hero",       icon: <ImageIcon className="h-4 w-4" /> },
   { id: "contacto",   label: "Contacto",   icon: <Phone className="h-4 w-4" /> },
+  { id: "contenido",  label: "Contenido",  icon: <FileText className="h-4 w-4" /> },
   { id: "avanzado",   label: "Avanzado",   icon: <Settings2 className="h-4 w-4" /> },
 ];
 
@@ -976,6 +979,149 @@ export default function StoreCustomizer() {
               </div>
             )}
 
+            {/* ── TAB: ESTILOS ───────────────────────────────────────── */}
+            {activeTab === "estilos" && (
+              <div className="space-y-5">
+                {/* Estilo de cards */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo de productos</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { value: "minimal", label: "Minimal", desc: "Sin bordes ni sombra" },
+                      { value: "shadow", label: "Con sombra", desc: "Sombra suave elegante" },
+                      { value: "border", label: "Con borde", desc: "Borde de color" },
+                      { value: "glass", label: "Glassmorphism", desc: "Efecto cristal blur" },
+                    ] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("cardStyle", s.value)}
+                        className={cn("p-3 rounded-xl border text-left transition-all", theme.cardStyle === s.value ? "border-primary bg-primary/5" : "border-gray-200 dark:border-card-border hover:border-primary/40")}>
+                        <p className="text-xs font-bold text-foreground">{s.label}</p>
+                        <p className="text-[10px] text-muted">{s.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Estilo de botones */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo de botones</p>
+                  <div className="flex gap-2">
+                    {([{ value: "rounded", label: "Redondeado" }, { value: "square", label: "Cuadrado" }, { value: "pill", label: "Pill" }] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("buttonStyle", s.value)}
+                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]", theme.buttonStyle === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Estilo de navbar */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo del navbar</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([{ value: "solid", label: "Solido" }, { value: "transparent", label: "Transparente" }, { value: "blur", label: "Con blur" }, { value: "minimal", label: "Minimalista" }] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("navbarStyle", s.value)}
+                        className={cn("py-2 rounded-xl text-xs font-bold border transition-all", theme.navbarStyle === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Sombras */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Sombras</p>
+                  <div className="flex gap-2">
+                    {([{ value: "none", label: "Sin sombra" }, { value: "soft", label: "Suave" }, { value: "deep", label: "Profunda" }] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("shadowLevel", s.value)}
+                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]", theme.shadowLevel === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Animaciones */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Animaciones</p>
+                  <div className="flex gap-2">
+                    {([{ value: "none", label: "Ninguna" }, { value: "subtle", label: "Suaves" }, { value: "dynamic", label: "Dinamicas" }] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("animations", s.value)}
+                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]", theme.animations === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Fondo */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Fondo de la tienda</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([{ value: "none", label: "Liso" }, { value: "dots", label: "Puntos" }, { value: "waves", label: "Ondas" }, { value: "gradient", label: "Gradiente" }] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("backgroundPattern", s.value)}
+                        className={cn("py-2 rounded-xl text-xs font-bold border transition-all", theme.backgroundPattern === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── TAB: CONTENIDO ────────────────────────────────────── */}
+            {activeTab === "contenido" && (
+              <div className="space-y-5">
+                {/* Mensaje WhatsApp */}
+                <FieldRow label="Mensaje de WhatsApp">
+                  <input type="text" value={theme.whatsappMessage} onChange={(e) => update("whatsappMessage", e.target.value)}
+                    placeholder="Hola! Quiero hacer un pedido" className={inputCls} maxLength={200} />
+                  <p className="text-[10px] text-muted mt-1">Texto predeterminado cuando el cliente toca WhatsApp</p>
+                </FieldRow>
+
+                {/* Hero badge */}
+                <FieldRow label="Badge del Hero">
+                  <input type="text" value={theme.heroBadge} onChange={(e) => update("heroBadge", e.target.value)}
+                    placeholder="Delivery gratis +S/50" className={inputCls} maxLength={50} />
+                </FieldRow>
+
+                {/* Footer text */}
+                <FieldRow label="Texto del footer">
+                  <textarea value={theme.footerText} onChange={(e) => update("footerText", e.target.value)}
+                    placeholder="Tu bodega de confianza desde 2020..." className={cn(inputCls, "resize-none min-h-[72px]")} maxLength={300} />
+                </FieldRow>
+
+                {/* Popup de bienvenida */}
+                <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3 border border-gray-100 dark:border-card-border">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-bold text-foreground">Popup de bienvenida</p>
+                      <p className="text-[10px] text-muted">Se muestra una vez al visitante nuevo</p>
+                    </div>
+                    <button type="button" onClick={() => update("welcomePopupEnabled", !theme.welcomePopupEnabled)}
+                      className="shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">
+                      {theme.welcomePopupEnabled ? <ToggleRight className="h-6 w-6 text-teal-600" /> : <ToggleLeft className="h-6 w-6 text-gray-400" />}
+                    </button>
+                  </div>
+                  {theme.welcomePopupEnabled && (
+                    <div className="space-y-2">
+                      <input type="text" value={theme.welcomePopupTitle} onChange={(e) => update("welcomePopupTitle", e.target.value)} placeholder="Bienvenido!" className={inputCls} />
+                      <input type="text" value={theme.welcomePopupMessage} onChange={(e) => update("welcomePopupMessage", e.target.value)} placeholder="Usa este cupon en tu primera compra" className={inputCls} />
+                      <input type="text" value={theme.welcomePopupCoupon} onChange={(e) => update("welcomePopupCoupon", e.target.value)} placeholder="BIENVENIDO10" className={cn(inputCls, "font-mono uppercase")} />
+                    </div>
+                  )}
+                </div>
+
+                {/* CSS personalizado */}
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-foreground uppercase tracking-wider">CSS personalizado</p>
+                  <p className="text-[10px] text-muted">CSS inyectado directamente en tu tienda. Para usuarios avanzados.</p>
+                  <textarea value={theme.customCSS} onChange={(e) => update("customCSS", e.target.value)}
+                    placeholder=".product-card { border: 2px solid gold; }" rows={4}
+                    className={cn(inputCls, "font-mono text-[11px] resize-y min-h-[80px]")} />
+                </div>
+              </div>
+            )}
+
             {/* ── TAB: AVANZADO ──────────────────────────────────────── */}
             {activeTab === "avanzado" && (
               <div className="space-y-6">
@@ -1035,179 +1181,6 @@ export default function StoreCustomizer() {
                       </button>
                     ))}
                   </div>
-                </div>
-
-                {/* ── ESTILOS VISUALES ────────────────────────── */}
-                <div className="pt-4 border-t border-gray-100 dark:border-card-border">
-                  <p className="text-xs font-bold text-foreground uppercase tracking-wider mb-3">Estilos visuales</p>
-                </div>
-
-                {/* Estilo de cards */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo de productos</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {([
-                      { value: "minimal", label: "Minimal", desc: "Sin bordes ni sombra" },
-                      { value: "shadow", label: "Con sombra", desc: "Sombra suave elegante" },
-                      { value: "border", label: "Con borde", desc: "Borde de color" },
-                      { value: "glass", label: "Glassmorphism", desc: "Efecto cristal blur" },
-                    ] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("cardStyle", s.value)}
-                        className={cn("p-3 rounded-xl border text-left transition-all",
-                          theme.cardStyle === s.value ? "border-primary bg-primary/5" : "border-gray-200 dark:border-card-border hover:border-primary/40")}>
-                        <p className="text-xs font-bold text-foreground">{s.label}</p>
-                        <p className="text-[10px] text-muted">{s.desc}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Estilo de botones */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo de botones</p>
-                  <div className="flex gap-2">
-                    {([
-                      { value: "rounded", label: "Redondeado" },
-                      { value: "square", label: "Cuadrado" },
-                      { value: "pill", label: "Pill" },
-                    ] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("buttonStyle", s.value)}
-                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]",
-                          theme.buttonStyle === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Estilo de navbar */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo del navbar</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {([
-                      { value: "solid", label: "Solido" },
-                      { value: "transparent", label: "Transparente" },
-                      { value: "blur", label: "Con blur" },
-                      { value: "minimal", label: "Minimalista" },
-                    ] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("navbarStyle", s.value)}
-                        className={cn("py-2 rounded-xl text-xs font-bold border transition-all",
-                          theme.navbarStyle === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Nivel de sombras */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Sombras</p>
-                  <div className="flex gap-2">
-                    {([
-                      { value: "none", label: "Sin sombra" },
-                      { value: "soft", label: "Suave" },
-                      { value: "deep", label: "Profunda" },
-                    ] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("shadowLevel", s.value)}
-                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]",
-                          theme.shadowLevel === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Animaciones */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Animaciones</p>
-                  <div className="flex gap-2">
-                    {([
-                      { value: "none", label: "Ninguna" },
-                      { value: "subtle", label: "Suaves" },
-                      { value: "dynamic", label: "Dinamicas" },
-                    ] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("animations", s.value)}
-                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]",
-                          theme.animations === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Patron de fondo */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Fondo de la tienda</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {([
-                      { value: "none", label: "Liso" },
-                      { value: "dots", label: "Puntos" },
-                      { value: "waves", label: "Ondas" },
-                      { value: "gradient", label: "Gradiente" },
-                    ] as const).map((s) => (
-                      <button key={s.value} type="button" onClick={() => update("backgroundPattern", s.value)}
-                        className={cn("py-2 rounded-xl text-xs font-bold border transition-all",
-                          theme.backgroundPattern === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* ── CONTENIDO ────────────────────────────────── */}
-                <div className="pt-4 border-t border-gray-100 dark:border-card-border">
-                  <p className="text-xs font-bold text-foreground uppercase tracking-wider mb-3">Contenido editable</p>
-                </div>
-
-                {/* Mensaje WhatsApp */}
-                <FieldRow label="Mensaje de WhatsApp">
-                  <input type="text" value={theme.whatsappMessage} onChange={(e) => update("whatsappMessage", e.target.value)}
-                    placeholder="Hola! Quiero hacer un pedido" className={inputCls} maxLength={200} />
-                  <p className="text-[10px] text-muted mt-1">Texto que se envia cuando el cliente toca el boton de WhatsApp</p>
-                </FieldRow>
-
-                {/* Hero badge */}
-                <FieldRow label="Badge del Hero">
-                  <input type="text" value={theme.heroBadge} onChange={(e) => update("heroBadge", e.target.value)}
-                    placeholder="Delivery gratis +S/50" className={inputCls} maxLength={50} />
-                </FieldRow>
-
-                {/* Footer text */}
-                <FieldRow label="Texto del footer">
-                  <textarea value={theme.footerText} onChange={(e) => update("footerText", e.target.value)}
-                    placeholder="Tu bodega de confianza desde 2020..." className={cn(inputCls, "resize-none min-h-[72px]")} maxLength={300} />
-                </FieldRow>
-
-                {/* Popup de bienvenida */}
-                <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3 border border-gray-100 dark:border-card-border">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold text-foreground">Popup de bienvenida</p>
-                    <button type="button" onClick={() => update("welcomePopupEnabled", !theme.welcomePopupEnabled)}
-                      className="shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">
-                      {theme.welcomePopupEnabled
-                        ? <ToggleRight className="h-6 w-6 text-teal-600" />
-                        : <ToggleLeft className="h-6 w-6 text-gray-400" />}
-                    </button>
-                  </div>
-                  {theme.welcomePopupEnabled && (
-                    <div className="space-y-2">
-                      <input type="text" value={theme.welcomePopupTitle} onChange={(e) => update("welcomePopupTitle", e.target.value)}
-                        placeholder="Bienvenido!" className={inputCls} />
-                      <input type="text" value={theme.welcomePopupMessage} onChange={(e) => update("welcomePopupMessage", e.target.value)}
-                        placeholder="Usa este cupon en tu primera compra" className={inputCls} />
-                      <input type="text" value={theme.welcomePopupCoupon} onChange={(e) => update("welcomePopupCoupon", e.target.value)}
-                        placeholder="BIENVENIDO10" className={cn(inputCls, "font-mono uppercase")} />
-                    </div>
-                  )}
-                </div>
-
-                {/* ── CSS PERSONALIZADO ───────────────────────── */}
-                <div className="pt-4 border-t border-gray-100 dark:border-card-border">
-                  <p className="text-xs font-bold text-foreground uppercase tracking-wider mb-1">CSS personalizado</p>
-                  <p className="text-[10px] text-muted mb-2">CSS que se inyecta directamente en tu tienda. Para usuarios avanzados.</p>
-                  <textarea value={theme.customCSS} onChange={(e) => update("customCSS", e.target.value)}
-                    placeholder=".product-card { border: 2px solid gold; }" rows={4}
-                    className={cn(inputCls, "font-mono text-[11px] resize-y min-h-[80px]")} />
                 </div>
 
                 {/* Favicon */}
