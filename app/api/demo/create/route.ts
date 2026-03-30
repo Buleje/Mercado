@@ -175,24 +175,25 @@ export async function POST(req: NextRequest) {
       select: { phone: true, name: true },
     });
 
-    // ── Seed 10 pedidos de ejemplo ────────────────────────
+    // ── Seed 15 pedidos variados ────────────────────────
     const products = await prisma.product.findMany({
       where: { tenantId: tenant.id },
       select: { id: true, name: true, price: true },
     });
 
-    for (let i = 0; i < 10; i++) {
+    const orderStatuses = ["entregado", "entregado", "entregado", "entregado", "entregado",
+      "entregado", "entregado", "pendiente", "pendiente", "pendiente",
+      "confirmado", "confirmado", "en_camino", "en_camino", "cancelado"] as const;
+
+    for (let i = 0; i < 15; i++) {
       const customer = customers[i % customers.length];
       const p1 = products[i * 2 % products.length];
       const p2 = products[(i * 2 + 1) % products.length];
+      const p3 = products[(i * 3) % products.length];
       const qty1 = (i % 3) + 1;
       const qty2 = (i % 2) + 1;
-      const total = p1.price * qty1 + p2.price * qty2;
-
-      // OrderStatus enum: pendiente | confirmado | en_camino | entregado | cancelado
-      const statusList = ["entregado", "entregado", "entregado", "entregado",
-                          "entregado", "entregado", "pendiente", "pendiente",
-                          "confirmado", "confirmado"] as const;
+      const qty3 = i % 4 === 0 ? 2 : 0;
+      const total = p1.price * qty1 + p2.price * qty2 + (qty3 > 0 ? p3.price * qty3 : 0);
 
       await prisma.order.create({
         data: {
@@ -200,19 +201,235 @@ export async function POST(req: NextRequest) {
           tenantId: tenant.id,
           customerPhone: customer.phone,
           customerName: customer.name,
-          status: statusList[i],
+          status: orderStatuses[i],
           total,
-          paymentMethod: i % 2 === 0 ? "cash" : "yape",
-          createdAt: new Date(Date.now() - (10 - i) * 60 * 60 * 1000),
+          paymentMethod: ["cash", "yape", "plin", "cash", "yape"][i % 5],
+          location: ["Jr. Ucayali 123", "Av. Centenario 456", "Jr. Tarapaca 789", "Av. Yarinacocha km 3", "Jr. Padre Abad 321"][i % 5],
+          createdAt: new Date(Date.now() - (15 - i) * 3 * 60 * 60 * 1000),
           items: {
             create: [
               { productId: p1.id, name: p1.name, price: p1.price, quantity: qty1, unit: "unidad" },
               { productId: p2.id, name: p2.name, price: p2.price, quantity: qty2, unit: "unidad" },
+              ...(qty3 > 0 ? [{ productId: p3.id, name: p3.name, price: p3.price, quantity: qty3, unit: "unidad" }] : []),
             ],
           },
         },
       });
     }
+
+    // ── Seed 3 proveedores ───────────────────────────────
+    const DEMO_SUPPLIERS = [
+      { id: `sup-${slug}-1`, name: "Distribuidora Lima SAC", ruc: "20512345678", phone: "014567890", email: "ventas@distrilima.pe", address: "Av. Argentina 2145, Lima" },
+      { id: `sup-${slug}-2`, name: "Mayorista Ucayali EIRL", ruc: "20198765432", phone: "061789456", email: "pedidos@mayorucayali.pe", address: "Jr. Inmaculada 890, Pucallpa" },
+      { id: `sup-${slug}-3`, name: "Bebidas del Oriente SA", ruc: "20345678901", phone: "061654321", email: "contacto@bebidasoriente.pe", address: "Av. Centenario km 5, Pucallpa" },
+    ];
+    await prisma.$transaction(
+      DEMO_SUPPLIERS.map((s) => prisma.supplier.create({
+        data: { ...s, tenantId: tenant.id, estado: "activo", tipoPersona: "juridica", tipoDocumento: "RUC", documento: s.ruc },
+      }))
+    );
+
+    // ── Seed 5 ordenes de compra a proveedores ──────────
+    for (let i = 0; i < 5; i++) {
+      const sup = DEMO_SUPPLIERS[i % 3];
+      const p1 = products[i % products.length];
+      const p2 = products[(i + 3) % products.length];
+      const purchaseStatuses = ["recibido", "recibido", "recibido", "pendiente", "enviado"] as const;
+      await prisma.purchaseOrder.create({
+        data: {
+          id: `demo-${slug}-po-${i}`,
+          tenantId: tenant.id,
+          supplierId: sup.id,
+          supplierName: sup.name,
+          total: (p1.price * 50) + (p2.price * 30),
+          status: purchaseStatuses[i],
+          paymentMethod: i % 2 === 0 ? "transferencia" : "efectivo",
+          deliveryDate: new Date(Date.now() + (i - 2) * 24 * 60 * 60 * 1000),
+          createdAt: new Date(Date.now() - (5 - i) * 48 * 60 * 60 * 1000),
+          items: {
+            create: [
+              { productId: p1.id, productName: p1.name, quantity: 50, unitCost: p1.price * 0.7, subtotal: p1.price * 0.7 * 50 },
+              { productId: p2.id, productName: p2.name, quantity: 30, unitCost: p2.price * 0.7, subtotal: p2.price * 0.7 * 30 },
+            ],
+          },
+        },
+      });
+    }
+
+    // ── Seed 8 ventas POS (registros de caja) ───────────
+    for (let i = 0; i < 8; i++) {
+      const p1 = products[i % products.length];
+      const p2 = products[(i + 1) % products.length];
+      const saleTotal = p1.price * 2 + p2.price;
+      await prisma.sale.create({
+        data: {
+          id: `demo-${slug}-sale-${i}`,
+          tenantId: tenant.id,
+          total: saleTotal,
+          totalCogs: saleTotal * 0.65,
+          payment: ["efectivo", "yape", "plin", "efectivo"][i % 4],
+          amountPaid: i % 3 === 0 ? Math.ceil(saleTotal / 10) * 10 : saleTotal,
+          change: i % 3 === 0 ? Math.ceil(saleTotal / 10) * 10 - saleTotal : 0,
+          customerPhone: customers[i % customers.length].phone,
+          cashierId: "demo",
+          comprobanteTipo: i % 3 === 0 ? "boleta" : "ticket",
+          createdAt: new Date(Date.now() - (8 - i) * 2 * 60 * 60 * 1000),
+          items: {
+            create: [
+              { productId: p1.id, productName: p1.name, quantity: 2, unitPrice: p1.price, subtotal: p1.price * 2 },
+              { productId: p2.id, productName: p2.name, quantity: 1, unitPrice: p2.price, subtotal: p2.price },
+            ],
+          },
+        },
+      });
+    }
+
+    // ── Seed 3 fiados ────────────────────────────────────
+    for (let i = 0; i < 3; i++) {
+      const c = customers[i];
+      const montos = [45.50, 82.00, 23.80];
+      const saldos = [45.50, 32.00, 0];
+      const estados = ["ACTIVO", "ACTIVO", "PAGADO"] as const;
+      await prisma.fiado.create({
+        data: {
+          tenantId: tenant.id,
+          customerId: c.phone,
+          total: montos[i],
+          saldo: saldos[i],
+          descripcion: [`Fiado de abarrotes semana`, `Fiado de bebidas y snacks`, `Fiado liquidado completo`][i],
+          status: estados[i],
+          fechaVence: new Date(Date.now() + (i + 1) * 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+    }
+
+    // ── Seed 6 gastos operativos ─────────────────────────
+    const DEMO_EXPENSES = [
+      { category: "alquiler", description: "Alquiler local mes de marzo", amount: 1200 },
+      { category: "servicios", description: "Luz + agua marzo", amount: 350 },
+      { category: "personal", description: "Sueldo cajero quincenal", amount: 600 },
+      { category: "transporte", description: "Flete proveedor Lima", amount: 180 },
+      { category: "limpieza", description: "Productos de limpieza tienda", amount: 85 },
+      { category: "marketing", description: "Publicidad Facebook/Instagram", amount: 150 },
+    ];
+    await prisma.$transaction(
+      DEMO_EXPENSES.map((e, i) => prisma.expense.create({
+        data: {
+          ...e,
+          tenantId: tenant.id,
+          date: new Date(Date.now() - i * 4 * 24 * 60 * 60 * 1000),
+          recurring: i < 3,
+        },
+      }))
+    );
+
+    // ── Seed 4 lotes con fechas de vencimiento ──────────
+    for (let i = 0; i < 4; i++) {
+      const p = products[i];
+      await prisma.batch.create({
+        data: {
+          tenantId: tenant.id,
+          lote: `LOTE-${slug}-${i + 1}`,
+          productName: p.name,
+          productCategory: ["Abarrotes", "Lacteos", "Bebidas", "Snacks"][i],
+          quantity: [100, 50, 80, 60][i],
+          unit: "unidad",
+          entryDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+          expiryDate: new Date(Date.now() + [3, 30, 90, 180][i] * 24 * 60 * 60 * 1000),
+          costUnit: p.price * 0.7,
+          productId: p.id,
+          supplierName: DEMO_SUPPLIERS[i % 3].name,
+          supplierId: DEMO_SUPPLIERS[i % 3].id,
+        },
+      });
+    }
+
+    // ── Seed 2 promociones activas ──────────────────────
+    await prisma.$transaction([
+      prisma.promotion.create({
+        data: {
+          id: `demo-${slug}-promo-1`,
+          tenantId: tenant.id,
+          name: "10% en Abarrotes",
+          description: "Descuento en toda la seccion de abarrotes esta semana",
+          discountPercent: 10,
+          minPurchase: 20,
+          active: true,
+          targetType: "all",
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      }),
+      prisma.promotion.create({
+        data: {
+          id: `demo-${slug}-promo-2`,
+          tenantId: tenant.id,
+          name: "Delivery gratis +S/50",
+          description: "Delivery gratis en pedidos mayores a S/50",
+          discountPercent: 0,
+          minPurchase: 50,
+          message: "Delivery GRATIS en compras mayores a S/50",
+          active: true,
+          targetType: "all",
+          expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        },
+      }),
+    ]);
+
+    // ── Seed 1 caja registradora abierta ────────────────
+    await prisma.cashRegister.create({
+      data: {
+        tenantId: tenant.id,
+        openingAmount: 200,
+        status: "abierta",
+        notes: "Caja demo abierta con S/200 de fondo",
+        movements: {
+          create: [
+            { type: "ingreso", amount: 150, description: "Ventas efectivo manana", createdAt: new Date(Date.now() - 4 * 60 * 60 * 1000) },
+            { type: "ingreso", amount: 85, description: "Ventas efectivo tarde", createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+            { type: "egreso", amount: 50, description: "Pago flete proveedor", createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000) },
+          ],
+        },
+      },
+    });
+
+    // ── Seed 3 reviews de clientes ──────────────────────
+    for (let i = 0; i < 3; i++) {
+      const c = customers[i];
+      await prisma.review.create({
+        data: {
+          tenantId: tenant.id,
+          customerPhone: c.phone,
+          customerName: c.name,
+          rating: [5, 4, 5][i],
+          comment: [
+            "Excelente servicio, el delivery llego rapido y todo completo",
+            "Buenos precios y productos frescos. Recomendado.",
+            "Me encanta poder pedir por Yape. Muy practico!",
+          ][i],
+          productId: products[i].id,
+        },
+      });
+    }
+
+    // ── Seed 5 registros de actividad ───────────────────
+    const DEMO_ACTIVITIES = [
+      { action: "product_created", detail: "Se agrego Arroz Costeno Extra 1kg", username: "demo" },
+      { action: "order_created", detail: "Nuevo pedido #1845 de Rosa Huanca", username: "sistema" },
+      { action: "sale_completed", detail: "Venta POS S/45.80 - Yape", username: "demo" },
+      { action: "settings_updated", detail: "Se actualizo el tema de la tienda", username: "demo" },
+      { action: "stock_alert", detail: "Atun Florida bajo stock (2 unidades)", username: "sistema" },
+    ];
+    await prisma.$transaction(
+      DEMO_ACTIVITIES.map((a, i) => prisma.activityLog.create({
+        data: {
+          tenantId: tenant.id,
+          action: a.action,
+          detail: a.detail,
+          username: a.username,
+          createdAt: new Date(Date.now() - i * 60 * 60 * 1000),
+        },
+      }))
+    );
 
     return NextResponse.json(
       {
