@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
   /** Tenant resolved by edge middleware from the subdomain header. */
   const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-  const tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+  const resolvedSlug = (await resolveTenantSlug(rawTenantId)) ?? "main";
 
   try {
   const body = await req.json() as { username?: string; password?: string };
@@ -61,16 +61,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "password required" }, { status: 400 });
   }
 
-  // â”€â”€ Primary: query AdminUser table in Prisma â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Step 1: Resolve slug → tenant ID
+  let tenantId = resolvedSlug;
+  try {
+    const tenant = await prisma.tenant.findUnique({ where: { slug: resolvedSlug }, select: { id: true } });
+    if (tenant) tenantId = tenant.id;
+  } catch { /* use slug as-is */ }
+
+  // Step 2: Find AdminUser for that tenant
   let dbUsers: { username: string; passwordHash: string; role: string; name: string; onboardingCompletedAt: Date | null }[] = [];
   try {
     dbUsers = await prisma.adminUser.findMany({
       where: { active: true, tenantId, ...(username ? { username } : {}) },
       select: { username: true, passwordHash: true, role: true, name: true, onboardingCompletedAt: true },
     });
-  } catch {
-    // DB unavailable — continue with fallback auth
-  }
+  } catch { /* DB unavailable */ }
 
   for (const u of dbUsers) {
     if (await checkPassword(password, u.passwordHash)) {

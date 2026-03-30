@@ -124,7 +124,10 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ── Tenant injection ── always runs
-  const tenantId = resolveTenantFromHost(request);
+  // If the client already sent x-tenant-id (e.g. from localStorage for multi-tenant login),
+  // use that instead of resolving from hostname
+  const clientTenantId = request.headers.get("x-tenant-id");
+  const tenantId = clientTenantId || resolveTenantFromHost(request);
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-tenant-id", tenantId);
   const withTenant = { request: { headers: requestHeaders } };

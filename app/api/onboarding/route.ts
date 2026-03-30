@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
   await prisma.$transaction([
     prisma.adminUser.create({
       data: {
-        tenantId: slug,
+        tenantId: tenant.id,
         username: adminUsername,
         passwordHash,
         role: "admin",
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
     }),
     prisma.settings.create({
       data: {
-        tenantId: slug,
+        tenantId: tenant.id,
         businessName: storeName,
         mode: "checkout",
         cashEnabled: true,
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
         name: storeName,
         email: ownerEmail,
         phone: ownerPhone ?? null,
-        tenantId: slug,
+        tenantId: tenant.id,
       },
     });
     await prisma.$transaction([
