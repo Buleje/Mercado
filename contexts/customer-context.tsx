@@ -46,7 +46,19 @@ type CustomerCtx = {
 
 const CustomerContext = createContext<CustomerCtx | null>(null);
 
-const STORAGE_KEY = "bsm-customer";
+const BASE_STORAGE_KEY = "bsm-customer";
+
+/** Lee la cookie active-tenant para aislar el customer por tenant. */
+function getTenantSlug(): string {
+  if (typeof document === "undefined") return "main";
+  const match = document.cookie.match(/(?:^|;\s*)active-tenant=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : "main";
+}
+
+function getStorageKey(): string {
+  const slug = getTenantSlug();
+  return slug === "main" ? BASE_STORAGE_KEY : `${BASE_STORAGE_KEY}-${slug}`;
+}
 
 export function CustomerProvider({ children }: { children: ReactNode }) {
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -58,7 +70,8 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   // Hydrate from localStorage after mount — null during SSR and first render to avoid mismatch
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const key = getStorageKey();
+      const saved = localStorage.getItem(key);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.name) startTransition(() => setCustomer(parsed));
@@ -68,7 +81,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
 
   const register = useCallback((data: Customer) => {
     setCustomer(data);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(getStorageKey(), JSON.stringify(data));
     setShowModal(false);
     // Sync to backend if phone is present (fire-and-forget)
     if (data.phone) {
@@ -123,7 +136,7 @@ export function CustomerProvider({ children }: { children: ReactNode }) {
   const closeOrderStatusModal = useCallback(() => setOrderStatusModalOpen(false), []);
   const clear = useCallback(() => {
     setCustomer(null);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(getStorageKey());
   }, []);
 
   return (

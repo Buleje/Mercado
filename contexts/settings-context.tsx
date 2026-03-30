@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { type HomepageContent, DEFAULT_HOMEPAGE } from "@/lib/homepage-content";
+import { type HomepageContent, DEFAULT_HOMEPAGE, NEW_STORE_DEFAULTS } from "@/lib/homepage-content";
 
 export type StoreMode = "whatsapp" | "checkout";
 
@@ -79,6 +79,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [businessName, setBusinessName] = useState<string>("");
 
   useEffect(() => {
+    // Detectar si el tenant activo es "main" leyendo la cookie active-tenant
+    const tenantSlug =
+      typeof document !== "undefined"
+        ? (() => {
+            const m = document.cookie.match(/(?:^|;\s*)active-tenant=([^;]+)/);
+            return m ? decodeURIComponent(m[1]) : "main";
+          })()
+        : "main";
+    const isMainTenant = tenantSlug === "main";
+
     fetch("/api/settings")
       .then((r) => (r.ok ? r.json() : null))
       .then((data: Record<string, unknown> | null) => {
@@ -94,7 +104,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           if (data.cashEnabled !== undefined) setCashEnabled(!!data.cashEnabled);
           if (Array.isArray(data.navLinks) && data.navLinks.length > 0) setNavLinks(data.navLinks as NavLinkItem[]);
           if (data.homepageContent && typeof data.homepageContent === "object") {
-            setHomepage({ ...DEFAULT_HOMEPAGE, ...(data.homepageContent as Partial<HomepageContent>) });
+            // Para el tenant "main" usar DEFAULT_HOMEPAGE como base; para otros usar NEW_STORE_DEFAULTS
+            const base = isMainTenant ? DEFAULT_HOMEPAGE : NEW_STORE_DEFAULTS;
+            setHomepage({ ...base, ...(data.homepageContent as Partial<HomepageContent>) });
+          } else if (!isMainTenant) {
+            // Tienda nueva sin homepage configurada → usar defaults genéricos
+            setHomepage(NEW_STORE_DEFAULTS);
           }
           if (data.deliveryConfig && typeof data.deliveryConfig === "object") {
             setDeliveryConfig({ ...DEFAULT_DELIVERY, ...(data.deliveryConfig as Partial<DeliveryConfig>) });

@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, startTransition } from "react";
+import { useEffect, useState, startTransition, useMemo } from "react";
 import Link from "next/link";
 import { ShoppingCart, MessageCircle, ArrowRight, Truck, Star, Zap, Package, Clock } from "lucide-react";
 import { trackCTAClick, trackWhatsAppClick } from "@/lib/analytics";
 import { useSettings } from "@/contexts/settings-context";
+import { useStoreProducts } from "@/hooks/use-store-products";
 
 function computeGreeting() {
   const h = new Date().getHours();
@@ -15,13 +16,46 @@ function computeGreeting() {
   return `Buenas noches${seasonal}`;
 }
 
+/** Mapa de emojis y colores para categorías conocidas (fallback a genérico). */
+const CATEGORY_STYLE: Record<string, { emoji: string; color: string; bg: string }> = {
+  carnes:     { emoji: "🥩", color: "#fca5a5", bg: "rgba(252,165,165,0.08)" },
+  verduras:   { emoji: "🥦", color: "#86efac", bg: "rgba(134,239,172,0.08)" },
+  frutas:     { emoji: "🍎", color: "#fcd34d", bg: "rgba(252,211,77,0.08)"  },
+  lácteos:    { emoji: "🥛", color: "#93c5fd", bg: "rgba(147,197,253,0.08)" },
+  lacteos:    { emoji: "🥛", color: "#93c5fd", bg: "rgba(147,197,253,0.08)" },
+  panadería:  { emoji: "🍞", color: "#fdba74", bg: "rgba(253,186,116,0.08)" },
+  panaderia:  { emoji: "🍞", color: "#fdba74", bg: "rgba(253,186,116,0.08)" },
+  bebidas:    { emoji: "🧃", color: "#a5f3fc", bg: "rgba(165,243,252,0.08)" },
+  limpieza:   { emoji: "🧹", color: "#c4b5fd", bg: "rgba(196,181,253,0.08)" },
+  snacks:     { emoji: "🍿", color: "#fda4af", bg: "rgba(253,164,175,0.08)" },
+  huevos:     { emoji: "🥚", color: "#fde68a", bg: "rgba(253,230,138,0.08)" },
+  abarrotes:  { emoji: "🛒", color: "#86efac", bg: "rgba(134,239,172,0.08)" },
+  embutidos:  { emoji: "🌭", color: "#fca5a5", bg: "rgba(252,165,165,0.08)" },
+  congelados: { emoji: "🧊", color: "#93c5fd", bg: "rgba(147,197,253,0.08)" },
+  higiene:    { emoji: "🧴", color: "#c4b5fd", bg: "rgba(196,181,253,0.08)" },
+  mascotas:   { emoji: "🐾", color: "#fcd34d", bg: "rgba(252,211,77,0.08)"  },
+};
+
+function getCategoryStyle(label: string) {
+  const key = label.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return CATEGORY_STYLE[key] ?? { emoji: "📦", color: "#86efac", bg: "rgba(134,239,172,0.08)" };
+}
+
 export default function Hero() {
   const { homepage: hp, deliveryConfig } = useSettings();
+  const { categories } = useStoreProducts();
   const [greeting, setGreeting] = useState("");
 
   useEffect(() => {
     startTransition(() => setGreeting(computeGreeting()));
   }, []);
+
+  // Categorías reales del tenant (excluir "todos"), máx 9 para mantener la grid 3×3
+  const displayCategories = useMemo(
+    () => categories.filter((c) => c.id !== "todos").slice(0, 9),
+    [categories]
+  );
+  const hasCategories = displayCategories.length > 0;
 
   const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const [mounted, setMounted] = useState(false);
@@ -304,39 +338,34 @@ export default function Hero() {
           </div>
 
           {/* ── MOBILE: Category carousel (visible < lg) ── */}
-          <div className="lg:hidden animate-[fadeDown_0.5s_ease-out_0.5s_both]" style={{ marginTop: "1.5rem" }}>
-            <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-2 -mx-2 px-2" style={{ scrollSnapType: "x mandatory" }}>
-              {([
-                { emoji: "🥩", name: "Carnes", color: "#fca5a5" },
-                { emoji: "🥦", name: "Verduras", color: "#86efac" },
-                { emoji: "🍎", name: "Frutas", color: "#fcd34d" },
-                { emoji: "🥛", name: "Lácteos", color: "#93c5fd" },
-                { emoji: "🍞", name: "Panadería", color: "#fdba74" },
-                { emoji: "🧃", name: "Bebidas", color: "#a5f3fc" },
-                { emoji: "🧹", name: "Limpieza", color: "#c4b5fd" },
-                { emoji: "🍿", name: "Snacks", color: "#fda4af" },
-                { emoji: "🥚", name: "Huevos", color: "#fde68a" },
-              ] as const).map(({ emoji, name, color }) => (
-                <Link key={name} href={`/tienda?category=${name.toLowerCase()}`}
-                  className="cat-card shrink-0"
-                  style={{
-                    scrollSnapAlign: "start",
-                    background: "rgba(45,106,79,0.06)",
-                    backdropFilter: "blur(12px)",
-                    border: "1px solid rgba(45,106,79,0.15)",
-                    borderRadius: "0.9rem",
-                    padding: "0.75rem 1rem",
-                    display: "flex", alignItems: "center", gap: "0.5rem",
-                    textDecoration: "none",
-                    transition: "all 0.2s cubic-bezier(0.4,0,0.2,1)",
-                  }}
-                >
-                  <span style={{ fontSize: "1.3rem", lineHeight: 1 }}>{emoji}</span>
-                  <span style={{ color, fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{name}</span>
-                </Link>
-              ))}
+          {hasCategories && (
+            <div className="lg:hidden animate-[fadeDown_0.5s_ease-out_0.5s_both]" style={{ marginTop: "1.5rem" }}>
+              <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-2 -mx-2 px-2" style={{ scrollSnapType: "x mandatory" }}>
+                {displayCategories.map(({ id, label }) => {
+                  const style = getCategoryStyle(label);
+                  return (
+                    <Link key={id} href={`/tienda?category=${id}`}
+                      className="cat-card shrink-0"
+                      style={{
+                        scrollSnapAlign: "start",
+                        background: "rgba(45,106,79,0.06)",
+                        backdropFilter: "blur(12px)",
+                        border: "1px solid rgba(45,106,79,0.15)",
+                        borderRadius: "0.9rem",
+                        padding: "0.75rem 1rem",
+                        display: "flex", alignItems: "center", gap: "0.5rem",
+                        textDecoration: "none",
+                        transition: "all 0.2s cubic-bezier(0.4,0,0.2,1)",
+                      }}
+                    >
+                      <span style={{ fontSize: "1.3rem", lineHeight: 1 }}>{style.emoji}</span>
+                      <span style={{ color: style.color, fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.04em", textTransform: "uppercase", whiteSpace: "nowrap" }}>{label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ── RIGHT: Category showcase ── */}
           <div className="hidden lg:flex flex-col items-center justify-center relative" style={{ minHeight: 520 }}>
@@ -348,35 +377,30 @@ export default function Hero() {
               filter: "blur(40px)",
             }} aria-hidden="true" />
 
-            {/* Category grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.8rem", width: 380, position: "relative", zIndex: 2 }}>
-              {([
-                { emoji: "🥩", name: "Carnes",    color: "#fca5a5", bg: "rgba(252,165,165,0.08)" },
-                { emoji: "🥦", name: "Verduras",  color: "#86efac", bg: "rgba(134,239,172,0.08)" },
-                { emoji: "🍎", name: "Frutas",    color: "#fcd34d", bg: "rgba(252,211,77,0.08)"  },
-                { emoji: "🥛", name: "Lácteos",   color: "#93c5fd", bg: "rgba(147,197,253,0.08)" },
-                { emoji: "🍞", name: "Panadería", color: "#fdba74", bg: "rgba(253,186,116,0.08)" },
-                { emoji: "🧃", name: "Bebidas",   color: "#a5f3fc", bg: "rgba(165,243,252,0.08)" },
-                { emoji: "🧹", name: "Limpieza",  color: "#c4b5fd", bg: "rgba(196,181,253,0.08)" },
-                { emoji: "🍿", name: "Snacks",    color: "#fda4af", bg: "rgba(253,164,175,0.08)" },
-                { emoji: "🥚", name: "Huevos",    color: "#fde68a", bg: "rgba(253,230,138,0.08)" },
-              ] as const).map(({ emoji, name, color, bg }, i) => (
-                <div key={name} className="cat-card" style={{
-                  background: bg,
-                  backdropFilter: "blur(12px)",
-                  border: "1px solid rgba(45,106,79,0.15)",
-                  borderRadius: "1.1rem",
-                  padding: "1.2rem 0.5rem",
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: "0.45rem",
-                  userSelect: "none", cursor: "default",
-                  transition: "all 0.2s cubic-bezier(0.4,0,0.2,1)",
-                  animationDelay: `${i * 0.05}s`,
-                }}>
-                  <span style={{ fontSize: "2rem", lineHeight: 1 }}>{emoji}</span>
-                  <span style={{ color, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>{name}</span>
-                </div>
-              ))}
-            </div>
+            {/* Category grid — solo si hay categorías reales */}
+            {hasCategories && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0.8rem", width: 380, position: "relative", zIndex: 2 }}>
+                {displayCategories.map(({ id, label }, i) => {
+                  const style = getCategoryStyle(label);
+                  return (
+                    <div key={id} className="cat-card" style={{
+                      background: style.bg,
+                      backdropFilter: "blur(12px)",
+                      border: "1px solid rgba(45,106,79,0.15)",
+                      borderRadius: "1.1rem",
+                      padding: "1.2rem 0.5rem",
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: "0.45rem",
+                      userSelect: "none", cursor: "default",
+                      transition: "all 0.2s cubic-bezier(0.4,0,0.2,1)",
+                      animationDelay: `${i * 0.05}s`,
+                    }}>
+                      <span style={{ fontSize: "2rem", lineHeight: 1 }}>{style.emoji}</span>
+                      <span style={{ color: style.color, fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase" }}>{label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Floating delivery badge */}
             <div className="absolute top-6 right-0" style={{
