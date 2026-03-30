@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import {
   Store, ShieldCheck, LayoutDashboard, Users, ShoppingCart,
-  Settings, FileText, Truck, CreditCard, BarChart3,
-  Globe, BookOpen, Megaphone, Package, UserPlus,
-  Map, Receipt, Smartphone, Code, HelpCircle,
+  FileText, Truck, CreditCard, BarChart3,
+  Globe, Package, UserPlus,
+  Map, Receipt, Smartphone, Code,
   Crown, Palette, Boxes, MessageSquare, Zap,
-  ExternalLink, Search, Tag, Heart, ChefHat,
+  ExternalLink, Search, Heart, ChefHat,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -138,8 +138,8 @@ function LinkCard({ item }: { item: LinkItem }) {
   return (
     <a
       href={item.href}
-      target={item.external ? "_blank" : undefined}
-      rel={item.external ? "noopener noreferrer" : undefined}
+      target="_blank"
+      rel="noopener noreferrer"
       className="group flex items-start gap-3 p-3.5 rounded-xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-white dark:hover:bg-gray-800/60 transition-all duration-150"
     >
       <div className="h-9 w-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 group-hover:bg-primary/10 group-hover:text-primary transition-colors text-gray-500 dark:text-gray-400">
@@ -232,6 +232,8 @@ export default function PanelPage() {
             <a
               key={q.href}
               href={q.href}
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-primary hover:text-primary transition-colors shadow-sm"
             >
               {q.icon}

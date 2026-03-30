@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import SaasNavbar from "@/components/saas/SaasNavbar";
 import SaasHero from "@/components/saas/SaasHero";
 import SaasFooter from "@/components/saas/SaasFooter";
+import SaasInteractiveDemo from "@/components/saas/SaasInteractiveDemo";
 
 export const metadata: Metadata = {
   title:
@@ -133,6 +134,10 @@ export default function SaasPage() {
 
         <section id="caracteristicas">
           <SaasCaracteristicas />
+        </section>
+
+        <section id="demo">
+          <SaasInteractiveDemo />
         </section>
 
         <section id="como-funciona">
