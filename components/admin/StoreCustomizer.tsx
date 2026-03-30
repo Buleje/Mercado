@@ -458,7 +458,7 @@ export default function StoreCustomizer() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(true);
+  const [showPreview, setShowPreview] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
   const [previewWidth, setPreviewWidth] = useState(0); // 0 = full width (desktop)
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -632,11 +632,11 @@ export default function StoreCustomizer() {
         </div>
         <button
           type="button"
-          onClick={() => setShowPreview((p) => !p)}
-          className="lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 dark:bg-surface text-xs font-semibold text-muted hover:text-foreground transition-colors min-h-[44px]"
+          onClick={() => setShowPreview(true)}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors min-h-[44px]"
         >
-          {showPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          {showPreview ? "Ocultar preview" : "Ver preview"}
+          <Eye className="h-4 w-4" />
+          Vista previa
         </button>
       </div>
 
@@ -671,46 +671,45 @@ export default function StoreCustomizer() {
 
             {/* ── TAB: IDENTIDAD ─────────────────────────────────────── */}
             {activeTab === "identidad" && (
-              <div className="space-y-5">
-                {/* Logo */}
-                <FieldRow label="Logo">
-                  <ImageUpload
-                    value={theme.logo}
-                    onChange={(url) => update("logo", url)}
-                    onClear={() => update("logo", "")}
-                    folder="branding"
-                    label=""
-                    aspectRatio="square"
-                    hint="Se muestra en el navbar y favicon de la tienda"
-                  />
-                </FieldRow>
-
-                {/* Nombre */}
-                <FieldRow label="Nombre de la tienda">
-                  <input
-                    type="text"
-                    value={theme.storeName}
-                    onChange={(e) => update("storeName", e.target.value)}
-                    placeholder="Bodega San Martín"
-                    className={inputCls}
-                    maxLength={60}
-                  />
-                </FieldRow>
-
-                {/* Eslogan */}
-                <FieldRow label={`Eslogan (${theme.slogan.length}/100)`}>
-                  <input
-                    type="text"
-                    value={theme.slogan}
-                    onChange={(e) => update("slogan", e.target.value.slice(0, 100))}
-                    placeholder="Tu bodega de confianza..."
-                    className={inputCls}
-                    maxLength={100}
-                  />
-                </FieldRow>
+              <div className="space-y-4">
+                {/* Logo + Nombre en fila */}
+                <div className="flex items-start gap-4">
+                  <div className="shrink-0 w-20">
+                    <p className="text-[10px] font-semibold text-muted uppercase tracking-wide mb-1.5">Logo</p>
+                    <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-colors relative group">
+                      {theme.logo ? (
+                        <>
+                          <img src={theme.logo} alt="Logo" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <button type="button" onClick={() => update("logo", "")} className="text-[9px] font-bold text-white bg-red-500/80 px-2 py-0.5 rounded">Quitar</button>
+                          </div>
+                        </>
+                      ) : (
+                        <ImageUpload
+                          value=""
+                          onChange={(url) => update("logo", url)}
+                          folder="branding"
+                          label=""
+                          aspectRatio="square"
+                          className="w-full h-full"
+                        />
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-3">
+                    <FieldRow label="Nombre de la tienda">
+                      <input type="text" value={theme.storeName} onChange={(e) => update("storeName", e.target.value)}
+                        placeholder="Mi Bodega" className={inputCls} maxLength={60} />
+                    </FieldRow>
+                    <FieldRow label={`Eslogan (${theme.slogan.length}/100)`}>
+                      <input type="text" value={theme.slogan} onChange={(e) => update("slogan", e.target.value.slice(0, 100))}
+                        placeholder="Tu bodega de confianza..." className={inputCls} maxLength={100} />
+                    </FieldRow>
+                  </div>
+                </div>
 
                 {/* Descripción */}
-                <FieldRow label={`Descripción corta (${theme.description.length}/200)`}>
+                <FieldRow label={`Descripcion (${theme.description.length}/200)`}>
                   <textarea
                     value={theme.description}
                     onChange={(e) => update("description", e.target.value.slice(0, 200))}
@@ -1299,62 +1298,54 @@ export default function StoreCustomizer() {
           </div>
         </div>
 
-        {/* ── Preview abajo con toggle responsive ──────────────────── */}
-        {showPreview && (
-          <div className="w-full shrink-0">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <p className="text-xs font-bold text-muted uppercase tracking-wider">Vista previa en vivo</p>
-                {/* Toggle responsive */}
-                <div className="flex gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-                  {([
-                    { mode: "mobile" as const, label: "Movil", w: 375 },
-                    { mode: "tablet" as const, label: "Tablet", w: 768 },
-                    { mode: "desktop" as const, label: "Desktop", w: 0 },
-                  ]).map((v) => (
-                    <button
-                      key={v.mode}
-                      type="button"
-                      onClick={() => setPreviewWidth(v.w)}
-                      className={cn(
-                        "px-2.5 py-1 rounded-md text-[10px] font-bold transition-all",
-                        previewWidth === v.w ? "bg-white dark:bg-card text-foreground shadow-sm" : "text-muted hover:text-foreground"
-                      )}
-                    >
-                      {v.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button type="button" onClick={() => setPreviewKey((k) => k + 1)} className="text-[10px] text-primary font-semibold hover:underline">
-                  Recargar
-                </button>
-                <a href="/" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted hover:text-foreground">
-                  Abrir en nueva pestaña
-                </a>
-              </div>
-            </div>
-            <div className="flex justify-center bg-gray-100 dark:bg-gray-800 rounded-2xl p-4">
-              <div
-                className="relative overflow-hidden rounded-xl border border-gray-200 dark:border-card-border bg-white transition-all duration-300"
-                style={{ width: previewWidth > 0 ? `${previewWidth}px` : "100%", maxWidth: "100%" }}
-              >
-                <iframe
-                  key={previewKey}
-                  src="/"
-                  title="Vista previa de la tienda"
-                  className="w-full border-0"
-                  style={{ height: 600 }}
-                />
-              </div>
-            </div>
-            <p className="text-[10px] text-muted text-center mt-2">
-              Guarda los cambios y toca &quot;Recargar&quot; para verlos. Toggle mobile/tablet/desktop arriba.
-            </p>
-          </div>
-        )}
       </div>
+
+      {/* ── Modal fullscreen de preview ──────────────────────────── */}
+      {showPreview && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
+          {/* Header del modal */}
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-900 shrink-0">
+            <div className="flex items-center gap-3">
+              <p className="text-sm font-bold text-white">Vista previa en vivo</p>
+              {/* Toggle responsive */}
+              <div className="flex gap-0.5 bg-gray-800 rounded-lg p-0.5">
+                {([
+                  { label: "Movil", w: 375 },
+                  { label: "Tablet", w: 768 },
+                  { label: "Desktop", w: 0 },
+                ]).map((v) => (
+                  <button key={v.label} type="button" onClick={() => setPreviewWidth(v.w)}
+                    className={cn("px-3 py-1.5 rounded-md text-xs font-bold transition-all",
+                      previewWidth === v.w ? "bg-white text-gray-900 shadow" : "text-gray-400 hover:text-white")}>
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} className="text-xs text-teal-400 font-semibold hover:text-teal-300">
+                Recargar
+              </button>
+              <a href="/" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-white">
+                Abrir en nueva pestaña
+              </a>
+              <button type="button" onClick={() => setShowPreview(false)}
+                className="h-8 w-8 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center text-white transition-colors">
+                <EyeOff className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          {/* Iframe */}
+          <div className="flex-1 flex justify-center items-start p-4 overflow-auto bg-gray-100 dark:bg-gray-900">
+            <div
+              className="bg-white rounded-xl overflow-hidden shadow-2xl transition-all duration-300"
+              style={{ width: previewWidth > 0 ? `${previewWidth}px` : "100%", maxWidth: "100%", height: "calc(100vh - 80px)" }}
+            >
+              <iframe key={previewKey} src="/" title="Vista previa" className="w-full h-full border-0" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
