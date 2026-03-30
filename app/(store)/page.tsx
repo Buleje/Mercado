@@ -60,18 +60,33 @@ import HomeClientShell from "@/components/HomeClientShell";
 // ── Leer visibleSections desde settings (server-side, con revalidación) ───────
 async function getVisibleSections(): Promise<Set<SectionKey>> {
   try {
+    const { headers } = await import("next/headers");
+    const hdrs = await headers();
+    const tenantId = hdrs.get("x-tenant-id") ?? "main";
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const res = await fetch(`${baseUrl}/api/settings`, {
+      headers: { "x-tenant-id": tenantId },
       next: { revalidate: 60 },
     });
-    if (!res.ok) return new Set<SectionKey>(); // vacío = mostrar todo (backward compatible)
+    if (!res.ok) return new Set<SectionKey>();
     const data = await res.json();
-    const keys: SectionKey[] = Array.isArray(data?.homepage?.visibleSections)
-      ? data.homepage.visibleSections
-      : [];
-    return new Set(keys);
-  } catch {
+
+    // Prioridad 1: storeTheme.sections (del StoreCustomizer)
+    if (data?.storeTheme?.sections && Array.isArray(data.storeTheme.sections)) {
+      const visible = data.storeTheme.sections
+        .filter((s: { visible?: boolean }) => s.visible !== false)
+        .map((s: { id: string }) => s.id);
+      return new Set(visible as SectionKey[]);
+    }
+
+    // Prioridad 2: homepage.visibleSections (legacy StorefrontEditor)
+    if (Array.isArray(data?.homepage?.visibleSections)) {
+      return new Set(data.homepage.visibleSections as SectionKey[]);
+    }
+
     return new Set<SectionKey>(); // vacío = mostrar todo
+  } catch {
+    return new Set<SectionKey>();
   }
 }
 
