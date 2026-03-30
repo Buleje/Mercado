@@ -16,12 +16,28 @@ export async function sendOrderNotification(order: {
   total: number;
   paymentMethod?: string;
   items: { name: string; quantity: number; price: number; unit: string }[];
+  tenantId?: string;
 }): Promise<void> {
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
   if (!smtpUser || !smtpPass) return; // silently skip if not configured
 
-  const notifyEmail = process.env.NOTIFY_EMAIL || smtpUser;
+  // Buscar email del dueño del tenant (si existe)
+  let tenantEmail: string | null = null;
+  let tenantName = "Mi Tienda";
+  if (order.tenantId) {
+    try {
+      const { prisma } = await import("@/lib/prisma");
+      const tenant = await prisma.tenant.findUnique({
+        where: { slug: order.tenantId },
+        select: { ownerEmail: true, name: true },
+      });
+      tenantEmail = tenant?.ownerEmail ?? null;
+      tenantName = tenant?.name ?? tenantName;
+    } catch { /* fallback a NOTIFY_EMAIL */ }
+  }
+
+  const notifyEmail = tenantEmail || process.env.NOTIFY_EMAIL || smtpUser;
 
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
@@ -44,7 +60,7 @@ export async function sendOrderNotification(order: {
     order.paymentMethod === "yape" ? "Yape" : order.paymentMethod === "efectivo" ? "Efectivo" : order.paymentMethod ?? "—";
 
   await transporter.sendMail({
-    from: `"Buleje" <${smtpUser}>`,
+    from: `"${tenantName}" <${smtpUser}>`,
     to: notifyEmail,
     subject: `🛒 Nuevo pedido — ${order.customerName} — S/${order.total.toFixed(2)}`,
     html: `
@@ -122,7 +138,7 @@ export async function sendCashSummaryEmail(summary: {
   };
 
   await transporter.sendMail({
-    from: `"Buleje" <${smtpUser}>`,
+    from: `"${tenantName}" <${smtpUser}>`,
     to: notifyEmail,
     subject: `🏦 Cierre de caja — ${fmtDate(summary.closedAt)} — ${fmt(summary.closingAmount)}`,
     html: `

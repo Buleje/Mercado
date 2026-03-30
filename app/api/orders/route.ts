@@ -332,6 +332,7 @@ export async function POST(req: NextRequest) {
       total: saved.total,
       paymentMethod: saved.paymentMethod,
       items: saved.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })),
+      tenantId,
     }).catch(() => {});
 
     // Auto-send WhatsApp order received notification (fire-and-forget)

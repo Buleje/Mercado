@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { sendWelcomeEmail } from "@/lib/mailer-onboarding";
 import { getTemplateCategories } from "@/lib/store-templates";
+import { createSessionToken, SESSION } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -182,7 +183,10 @@ export async function POST(req: NextRequest) {
     storeName, slug, ownerEmail, adminName, adminUsername, plan, trialEndsAt,
   });
 
-  return NextResponse.json(
+  // ── Auto-login: generar sesión para que el usuario no tenga que hacer login manual ──
+  const sessionToken = await createSessionToken("admin", adminUsername, tenant.slug, adminName);
+
+  const response = NextResponse.json(
     {
       message: "Cuenta creada exitosamente",
       tenantSlug: tenant.slug,
@@ -193,6 +197,25 @@ export async function POST(req: NextRequest) {
     },
     { status: 201 }
   );
+
+  // Setear cookie de sesión admin (misma que /api/auth/login)
+  response.cookies.set(SESSION.COOKIE_NAME, sessionToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: SESSION.MAX_AGE,
+  });
+
+  // Setear cookie de tenant activo (para que proxy.ts resuelva el tenant)
+  response.cookies.set("active-tenant", tenant.slug, {
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60,
+    sameSite: "lax",
+    httpOnly: false,
+  });
+
+  return response;
 }
 
 // Fire-and-forget: canjear código de referido entre tiendas

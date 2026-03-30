@@ -617,10 +617,10 @@ export default function RegistroPage() {
                 </a>
               )}
               <a
-                href={`/t/${result.tenantSlug}/admin`}
+                href="/onboarding"
                 className="w-full py-3 rounded-2xl bg-primary text-white font-bold text-sm hover:opacity-90 flex items-center justify-center gap-2"
               >
-                Ir al panel de administración <ExternalLink className="w-4 h-4" />
+                Configurar mi tienda <ExternalLink className="w-4 h-4" />
               </a>
               <a
                 href={`/t/${result.tenantSlug}`}
