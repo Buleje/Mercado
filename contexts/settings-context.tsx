@@ -44,15 +44,35 @@ export type StoreTheme = {
   heroSubtitle?: string;
   heroCTA?: string;
   heroLink?: string;
+  heroBadge?: string;
   fontFamily?: string;
   borderRadius?: number;
   spacing?: string;
   whatsapp?: string;
+  whatsappMessage?: string;
   email?: string;
   phone?: string;
   address?: string;
   logo?: string;
   visibleSections?: string[];
+  // Estilos visuales avanzados
+  cardStyle?: "minimal" | "shadow" | "border" | "glass";
+  cartStyle?: "sidebar" | "modal" | "drawer";
+  buttonStyle?: "rounded" | "square" | "pill";
+  navbarStyle?: "solid" | "transparent" | "blur" | "minimal";
+  shadowLevel?: "none" | "soft" | "deep";
+  animations?: "none" | "subtle" | "dynamic";
+  backgroundPattern?: "none" | "dots" | "waves" | "gradient";
+  // Contenido editable
+  footerText?: string;
+  footerLinks?: { label: string; href: string }[];
+  socialLinks?: { facebook?: string; instagram?: string; tiktok?: string; youtube?: string };
+  welcomePopupEnabled?: boolean;
+  welcomePopupTitle?: string;
+  welcomePopupMessage?: string;
+  welcomePopupCoupon?: string;
+  // CSS personalizado
+  customCSS?: string;
 };
 
 type SettingsCtx = {

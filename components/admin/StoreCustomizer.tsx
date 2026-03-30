@@ -30,11 +30,13 @@ interface StoreTheme {
   heroSubtitle: string;
   heroCTA: string;
   heroLink: string;
+  heroBadge: string;
   heroImage: string;
   fontFamily: string;
   borderRadius: number;
   spacing: "compact" | "normal" | "spacious";
   whatsapp: string;
+  whatsappMessage: string;
   email: string;
   phone: string;
   address: string;
@@ -43,11 +45,26 @@ interface StoreTheme {
   pixelId: string;
   favicon: string;
   sections: SectionKey[];
+  // Estilos avanzados
+  cardStyle: "minimal" | "shadow" | "border" | "glass";
+  cartStyle: "sidebar" | "modal" | "drawer";
+  buttonStyle: "rounded" | "square" | "pill";
+  navbarStyle: "solid" | "transparent" | "blur" | "minimal";
+  shadowLevel: "none" | "soft" | "deep";
+  animations: "none" | "subtle" | "dynamic";
+  backgroundPattern: "none" | "dots" | "waves" | "gradient";
+  // Contenido
+  footerText: string;
+  welcomePopupEnabled: boolean;
+  welcomePopupTitle: string;
+  welcomePopupMessage: string;
+  welcomePopupCoupon: string;
+  customCSS: string;
 }
 
 const DEFAULT_THEME: StoreTheme = {
   logo: "",
-  storeName: "Bodega San Martín",
+  storeName: "Bodega San Martin",
   slogan: "Tu bodega de confianza en Pucallpa",
   description: "Abarrotes, bebidas y productos de primera necesidad con delivery a domicilio.",
   primaryColor: "#0f766e",
@@ -55,14 +72,16 @@ const DEFAULT_THEME: StoreTheme = {
   accentColor: "#2d6a4f",
   darkModeDefault: false,
   heroTitle: "Todo lo que necesitas, en tu puerta",
-  heroSubtitle: "Delivery rápido en Pucallpa. Paga con Yape o efectivo.",
+  heroSubtitle: "Delivery rapido en Pucallpa. Paga con Yape o efectivo.",
   heroCTA: "Ver productos",
   heroLink: "tienda",
+  heroBadge: "Delivery gratis +S/50",
   heroImage: "",
   fontFamily: "sistema",
   borderRadius: 12,
   spacing: "normal",
   whatsapp: "",
+  whatsappMessage: "Hola! Quiero hacer un pedido",
   email: "",
   phone: "",
   address: "",
@@ -79,6 +98,19 @@ const DEFAULT_THEME: StoreTheme = {
   pixelId: "",
   favicon: "",
   sections: ["announcement", "hero", "categories", "popular", "deals", "combos", "recipes", "testimonials", "faq", "contact", "delivery_map"],
+  cardStyle: "shadow",
+  cartStyle: "sidebar",
+  buttonStyle: "rounded",
+  navbarStyle: "solid",
+  shadowLevel: "soft",
+  animations: "subtle",
+  backgroundPattern: "none",
+  footerText: "",
+  welcomePopupEnabled: false,
+  welcomePopupTitle: "Bienvenido a nuestra tienda!",
+  welcomePopupMessage: "Usa este cupon en tu primera compra",
+  welcomePopupCoupon: "BIENVENIDO10",
+  customCSS: "",
 };
 
 // ── Paleta de colores predefinidos ────────────────────────────────────────────
@@ -100,6 +132,11 @@ const FONT_OPTIONS = [
   { value: "inter",   label: "Inter" },
   { value: "poppins", label: "Poppins" },
   { value: "montserrat", label: "Montserrat" },
+  { value: "raleway", label: "Raleway" },
+  { value: "nunito",  label: "Nunito" },
+  { value: "lato",    label: "Lato" },
+  { value: "roboto",  label: "Roboto" },
+  { value: "opensans", label: "Open Sans" },
 ];
 
 // ── Plantillas de tienda ────────────────────────────────────────────────────
@@ -1000,6 +1037,179 @@ export default function StoreCustomizer() {
                   </div>
                 </div>
 
+                {/* ── ESTILOS VISUALES ────────────────────────── */}
+                <div className="pt-4 border-t border-gray-100 dark:border-card-border">
+                  <p className="text-xs font-bold text-foreground uppercase tracking-wider mb-3">Estilos visuales</p>
+                </div>
+
+                {/* Estilo de cards */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo de productos</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { value: "minimal", label: "Minimal", desc: "Sin bordes ni sombra" },
+                      { value: "shadow", label: "Con sombra", desc: "Sombra suave elegante" },
+                      { value: "border", label: "Con borde", desc: "Borde de color" },
+                      { value: "glass", label: "Glassmorphism", desc: "Efecto cristal blur" },
+                    ] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("cardStyle", s.value)}
+                        className={cn("p-3 rounded-xl border text-left transition-all",
+                          theme.cardStyle === s.value ? "border-primary bg-primary/5" : "border-gray-200 dark:border-card-border hover:border-primary/40")}>
+                        <p className="text-xs font-bold text-foreground">{s.label}</p>
+                        <p className="text-[10px] text-muted">{s.desc}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Estilo de botones */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo de botones</p>
+                  <div className="flex gap-2">
+                    {([
+                      { value: "rounded", label: "Redondeado" },
+                      { value: "square", label: "Cuadrado" },
+                      { value: "pill", label: "Pill" },
+                    ] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("buttonStyle", s.value)}
+                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]",
+                          theme.buttonStyle === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Estilo de navbar */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Estilo del navbar</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { value: "solid", label: "Solido" },
+                      { value: "transparent", label: "Transparente" },
+                      { value: "blur", label: "Con blur" },
+                      { value: "minimal", label: "Minimalista" },
+                    ] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("navbarStyle", s.value)}
+                        className={cn("py-2 rounded-xl text-xs font-bold border transition-all",
+                          theme.navbarStyle === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Nivel de sombras */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Sombras</p>
+                  <div className="flex gap-2">
+                    {([
+                      { value: "none", label: "Sin sombra" },
+                      { value: "soft", label: "Suave" },
+                      { value: "deep", label: "Profunda" },
+                    ] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("shadowLevel", s.value)}
+                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]",
+                          theme.shadowLevel === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Animaciones */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Animaciones</p>
+                  <div className="flex gap-2">
+                    {([
+                      { value: "none", label: "Ninguna" },
+                      { value: "subtle", label: "Suaves" },
+                      { value: "dynamic", label: "Dinamicas" },
+                    ] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("animations", s.value)}
+                        className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all min-h-[44px]",
+                          theme.animations === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Patron de fondo */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted uppercase tracking-wide">Fondo de la tienda</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {([
+                      { value: "none", label: "Liso" },
+                      { value: "dots", label: "Puntos" },
+                      { value: "waves", label: "Ondas" },
+                      { value: "gradient", label: "Gradiente" },
+                    ] as const).map((s) => (
+                      <button key={s.value} type="button" onClick={() => update("backgroundPattern", s.value)}
+                        className={cn("py-2 rounded-xl text-xs font-bold border transition-all",
+                          theme.backgroundPattern === s.value ? "bg-primary text-white border-primary" : "border-gray-200 dark:border-card-border text-muted hover:border-primary")}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── CONTENIDO ────────────────────────────────── */}
+                <div className="pt-4 border-t border-gray-100 dark:border-card-border">
+                  <p className="text-xs font-bold text-foreground uppercase tracking-wider mb-3">Contenido editable</p>
+                </div>
+
+                {/* Mensaje WhatsApp */}
+                <FieldRow label="Mensaje de WhatsApp">
+                  <input type="text" value={theme.whatsappMessage} onChange={(e) => update("whatsappMessage", e.target.value)}
+                    placeholder="Hola! Quiero hacer un pedido" className={inputCls} maxLength={200} />
+                  <p className="text-[10px] text-muted mt-1">Texto que se envia cuando el cliente toca el boton de WhatsApp</p>
+                </FieldRow>
+
+                {/* Hero badge */}
+                <FieldRow label="Badge del Hero">
+                  <input type="text" value={theme.heroBadge} onChange={(e) => update("heroBadge", e.target.value)}
+                    placeholder="Delivery gratis +S/50" className={inputCls} maxLength={50} />
+                </FieldRow>
+
+                {/* Footer text */}
+                <FieldRow label="Texto del footer">
+                  <textarea value={theme.footerText} onChange={(e) => update("footerText", e.target.value)}
+                    placeholder="Tu bodega de confianza desde 2020..." className={cn(inputCls, "resize-none min-h-[72px]")} maxLength={300} />
+                </FieldRow>
+
+                {/* Popup de bienvenida */}
+                <div className="bg-gray-50 dark:bg-surface rounded-xl p-4 space-y-3 border border-gray-100 dark:border-card-border">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-foreground">Popup de bienvenida</p>
+                    <button type="button" onClick={() => update("welcomePopupEnabled", !theme.welcomePopupEnabled)}
+                      className="shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center">
+                      {theme.welcomePopupEnabled
+                        ? <ToggleRight className="h-6 w-6 text-teal-600" />
+                        : <ToggleLeft className="h-6 w-6 text-gray-400" />}
+                    </button>
+                  </div>
+                  {theme.welcomePopupEnabled && (
+                    <div className="space-y-2">
+                      <input type="text" value={theme.welcomePopupTitle} onChange={(e) => update("welcomePopupTitle", e.target.value)}
+                        placeholder="Bienvenido!" className={inputCls} />
+                      <input type="text" value={theme.welcomePopupMessage} onChange={(e) => update("welcomePopupMessage", e.target.value)}
+                        placeholder="Usa este cupon en tu primera compra" className={inputCls} />
+                      <input type="text" value={theme.welcomePopupCoupon} onChange={(e) => update("welcomePopupCoupon", e.target.value)}
+                        placeholder="BIENVENIDO10" className={cn(inputCls, "font-mono uppercase")} />
+                    </div>
+                  )}
+                </div>
+
+                {/* ── CSS PERSONALIZADO ───────────────────────── */}
+                <div className="pt-4 border-t border-gray-100 dark:border-card-border">
+                  <p className="text-xs font-bold text-foreground uppercase tracking-wider mb-1">CSS personalizado</p>
+                  <p className="text-[10px] text-muted mb-2">CSS que se inyecta directamente en tu tienda. Para usuarios avanzados.</p>
+                  <textarea value={theme.customCSS} onChange={(e) => update("customCSS", e.target.value)}
+                    placeholder=".product-card { border: 2px solid gold; }" rows={4}
+                    className={cn(inputCls, "font-mono text-[11px] resize-y min-h-[80px]")} />
+                </div>
+
                 {/* Favicon */}
                 <FieldRow label="Favicon">
                   <ImageUpload
@@ -1009,7 +1219,7 @@ export default function StoreCustomizer() {
                     folder="branding"
                     label=""
                     aspectRatio="square"
-                    hint="Icono de la pestaña del navegador. Se recomienda 32x32px o 180x180px."
+                    hint="Icono de la pestana del navegador. Se recomienda 32x32px o 180x180px."
                   />
                 </FieldRow>
 
