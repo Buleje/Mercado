@@ -7,7 +7,7 @@ import {
   CheckCircle2, XCircle, Crown, Zap, ShoppingBag, Loader2,
   TrendingUp, AlertTriangle, Search, ChevronDown, Mail, Copy, X,
   BarChart3, Activity, DollarSign, Clock,
-  Globe, Package,
+  Globe, Package, Eye, EyeOff, KeyRound, RotateCcw,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -36,13 +36,26 @@ interface TenantRow {
   limits?: { maxProducts: number; maxUsers: number; maxOrdersPerMonth: number };
 }
 
+interface CommissionRow {
+  id: string;
+  orderId: string;
+  storeId: string | null;
+  partnerId: string | null;
+  type: string;
+  amount: number;
+  rate: number;
+  status: string;
+  settledAt: string | null;
+  createdAt: string;
+}
+
 // ─── Plan config ──────────────────────────────────────────────────────────────
 
 const PLAN_LABELS: Record<PlanId, { label: string; color: string; icon: React.ReactNode }> = {
-  free:     { label: "Free",     color: "bg-gray-800 text-gray-300",   icon: <ShoppingBag className="w-3 h-3" /> },
-  pro:      { label: "Pro",      color: "bg-indigo-900 text-indigo-300", icon: <Zap className="w-3 h-3" /> },
-  business: { label: "Business", color: "bg-amber-900 text-amber-300", icon: <Crown className="w-3 h-3" /> },
-  enterprise: { label: "Enterprise", color: "bg-violet-900 text-violet-300", icon: <Crown className="w-3 h-3" /> },
+  free:       { label: "Free",       color: "bg-gray-800 text-gray-300",    icon: <ShoppingBag className="w-3 h-3" /> },
+  pro:        { label: "Pro",        color: "bg-teal-900 text-teal-300",    icon: <Zap className="w-3 h-3" /> },
+  business:   { label: "Business",   color: "bg-violet-900 text-violet-300", icon: <Crown className="w-3 h-3" /> },
+  enterprise: { label: "Enterprise", color: "bg-amber-900 text-amber-300",  icon: <Crown className="w-3 h-3" /> },
 };
 
 // ─── Helper components ────────────────────────────────────────────────────────
@@ -56,9 +69,20 @@ function PlanBadge({ plan }: { plan: PlanId }) {
   );
 }
 
-function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: number | string; sub?: string }) {
+function StatCard({
+  icon, label, value, sub, accent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  sub?: string;
+  accent?: string;
+}) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+    <div className="relative bg-gray-900 border border-gray-800 rounded-2xl p-5 overflow-hidden">
+      {accent && (
+        <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: accent }} />
+      )}
       <div className="flex items-center gap-2 text-gray-400 text-sm mb-3">{icon}{label}</div>
       <div className="text-3xl font-bold text-white">{value}</div>
       {sub && <div className="text-gray-500 text-xs mt-1">{sub}</div>}
@@ -69,7 +93,7 @@ function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: s
 function MiniUsageBar({ used, max, label }: { used: number; max: number; label: string }) {
   const unlimited = max === -1;
   const pct = unlimited ? 0 : Math.min(100, Math.round((used / max) * 100));
-  const color = unlimited ? "bg-gray-600" : pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-400" : "bg-indigo-500";
+  const color = unlimited ? "bg-gray-600" : pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-400" : "bg-teal-500";
   return (
     <div className="space-y-0.5">
       <div className="flex justify-between text-[10px] text-gray-500">
@@ -86,17 +110,11 @@ function MiniUsageBar({ used, max, label }: { used: number; max: number; label: 
   );
 }
 
-// ─── Invite Modal ────────────────────────────────────────────────────────────────
+// ─── Invite Modal ─────────────────────────────────────────────────────────────
 
 function InviteModal({
-  tenantSlug,
-  tenantName,
-  onClose,
-}: {
-  tenantSlug: string;
-  tenantName: string;
-  onClose: () => void;
-}) {
+  tenantSlug, tenantName, onClose,
+}: { tenantSlug: string; tenantName: string; onClose: () => void }) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "editor" | "viewer">("editor");
   const [sending, setSending] = useState(false);
@@ -131,12 +149,9 @@ function InviteModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" onClick={onClose}>
       <div
-        className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md space-y-5 shadow-2xl"
+        className="bg-gray-900 border border-teal-800/30 rounded-2xl p-6 w-full max-w-md space-y-5 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -147,7 +162,7 @@ function InviteModal({
               <span className="font-mono">({tenantSlug})</span>
             </p>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-800 text-gray-400">
+          <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-gray-800 text-gray-400">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -161,7 +176,7 @@ function InviteModal({
                   type="email" value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="usuario@empresa.com"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
                 />
               </div>
               <div>
@@ -169,7 +184,7 @@ function InviteModal({
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value as typeof role)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
                 >
                   <option value="admin">Administrador</option>
                   <option value="editor">Editor</option>
@@ -179,8 +194,10 @@ function InviteModal({
             </div>
             {error && <p className="text-red-400 text-xs">{error}</p>}
             <button
+              type="button"
               onClick={handleSend} disabled={sending}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm font-semibold transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl disabled:opacity-50 text-white text-sm font-semibold transition-opacity"
+              style={{ background: "linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)" }}
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
               Generar enlace de invitación
@@ -196,6 +213,7 @@ function InviteModal({
               {inviteUrl}
             </div>
             <button
+              type="button"
               onClick={handleCopy}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold transition-colors"
             >
@@ -216,21 +234,52 @@ function TenantDetailModal({ tenant, onClose }: { tenant: TenantRow; onClose: ()
   const t = tenant;
   const unlimited = (v: number) => v === -1 ? "∞" : v.toLocaleString("es-PE");
   const pct = (u: number, m: number) => m === -1 ? 0 : Math.min(100, Math.round((u / m) * 100));
+  const [showPassInfo, setShowPassInfo] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetResult, setResetResult] = useState<string | null>(null);
+  const [credCopied, setCredCopied] = useState(false);
 
   const fmtD = (d: string | null) =>
     d ? new Date(d).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
+  const handleCopyCredentials = () => {
+    const text = [
+      `Tenant: ${t.name} (${t.slug})`,
+      `Email dueño: ${t.ownerEmail ?? "—"}`,
+      `Plan: ${t.plan}`,
+      `Estado: ${t.active ? "Activa" : "Suspendida"}`,
+    ].join("\n");
+    void navigator.clipboard.writeText(text);
+    setCredCopied(true);
+    setTimeout(() => setCredCopied(false), 2000);
+  };
+
+  const handleResetPassword = async () => {
+    setResetLoading(true);
+    setResetResult(null);
+    try {
+      const res = await fetch(`/api/superadmin/tenants/${t.slug}/reset-password`, { method: "POST" });
+      const data = await res.json() as { tempPassword?: string; error?: string };
+      if (!res.ok) { setResetResult(`Error: ${data.error ?? "No se pudo resetear"}`); return; }
+      setResetResult(data.tempPassword ? `Contraseña temporal: ${data.tempPassword}` : "Correo de reset enviado al dueño.");
+    } catch {
+      setResetResult("Error de red al intentar reset.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4" onClick={onClose}>
       <div
-        className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl"
+        className="bg-gray-900 border border-teal-800/30 rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-indigo-400" />
+              <Building2 className="w-5 h-5 text-teal-400" />
               {t.name}
             </h2>
             <p className="text-gray-500 text-xs mt-1 font-mono">{t.slug}</p>
@@ -247,7 +296,7 @@ function TenantDetailModal({ tenant, onClose }: { tenant: TenantRow; onClose: ()
                 <XCircle className="w-4 h-4" /> Suspendida
               </span>
             )}
-            <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 ml-2">
+            <button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 ml-2">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -270,6 +319,71 @@ function TenantDetailModal({ tenant, onClose }: { tenant: TenantRow; onClose: ()
           <div className="bg-gray-800/50 rounded-xl p-3 text-center">
             <div className="text-lg font-bold text-white">{fmtD(t.createdAt)}</div>
             <div className="text-gray-500 text-[10px] mt-0.5">Creada</div>
+          </div>
+        </div>
+
+        {/* ── Credenciales ── */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-gray-400 flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-teal-400" /> Credenciales
+          </h3>
+          <div className="bg-gray-800/60 border border-gray-700/60 rounded-xl p-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div>
+                <span className="text-gray-500 uppercase tracking-wider text-[10px]">Email del dueño</span>
+                <p className="text-gray-200 mt-0.5">{t.ownerEmail ?? "—"}</p>
+              </div>
+              <div>
+                <span className="text-gray-500 uppercase tracking-wider text-[10px]">Slug / tenant ID</span>
+                <p className="text-gray-200 mt-0.5 font-mono">{t.slug}</p>
+              </div>
+              <div>
+                <span className="text-gray-500 uppercase tracking-wider text-[10px]">Contraseña admin</span>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-gray-400">{showPassInfo ? "Contraseña encriptada — usar reset" : "••••••••"}</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowPassInfo((v) => !v)}
+                    className="text-gray-500 hover:text-teal-400 transition-colors"
+                    title={showPassInfo ? "Ocultar" : "Revelar"}
+                  >
+                    {showPassInfo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              {t.stripeCustomerId && (
+                <div>
+                  <span className="text-gray-500 uppercase tracking-wider text-[10px]">API / Stripe ID</span>
+                  <p className="text-gray-200 mt-0.5 font-mono truncate">{t.stripeCustomerId}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleCopyCredentials}
+                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold transition-colors"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                {credCopied ? "¡Copiado!" : "Copiar credenciales"}
+              </button>
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={resetLoading}
+                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg bg-amber-900/40 hover:bg-amber-900/70 border border-amber-700/40 text-amber-300 text-xs font-semibold transition-colors disabled:opacity-50"
+              >
+                {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+                Resetear contraseña
+              </button>
+            </div>
+
+            {resetResult && (
+              <div className="text-xs bg-teal-950/50 border border-teal-700/40 text-teal-300 rounded-lg px-3 py-2 font-mono">
+                {resetResult}
+              </div>
+            )}
           </div>
         </div>
 
@@ -298,7 +412,7 @@ function TenantDetailModal({ tenant, onClose }: { tenant: TenantRow; onClose: ()
                       <div className="h-full bg-gray-600/30 rounded-full w-full" />
                     ) : (
                       <div
-                        className={`h-full rounded-full transition-all ${full ? "bg-red-500" : warn ? "bg-amber-400" : "bg-indigo-500"}`}
+                        className={`h-full rounded-full transition-all ${full ? "bg-red-500" : warn ? "bg-amber-400" : "bg-teal-500"}`}
                         style={{ width: `${p}%` }}
                       />
                     )}
@@ -377,6 +491,10 @@ export default function SuperAdminPage() {
   const [activityAction, setActivityAction] = useState("");
   const [activityTenant, setActivityTenant] = useState("");
 
+  // Commissions state
+  const [commissions, setCommissions] = useState<CommissionRow[]>([]);
+  const [commLoading, setCommLoading] = useState(false);
+
   const showToast = useCallback((msg: string, ok = true) => {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 3000);
@@ -425,6 +543,22 @@ export default function SuperAdminPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, activityAction, activityTenant]);
 
+  const loadCommissions = useCallback(async () => {
+    setCommLoading(true);
+    try {
+      const res = await fetch("/api/superadmin/commissions?limit=20");
+      if (!res.ok) return;
+      const data = await res.json() as { commissions: CommissionRow[] };
+      setCommissions(data.commissions ?? []);
+    } finally {
+      setCommLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "analytics") loadCommissions();
+  }, [activeTab, loadCommissions]);
+
   const handleLogout = async () => {
     await fetch("/api/superadmin/auth", { method: "DELETE" });
     router.replace("/superadmin/login");
@@ -468,6 +602,11 @@ export default function SuperAdminPage() {
   const paying = tenants.filter((t) => t.plan !== "free").length;
   const trial = tenants.filter((t) => t.trialEndsAt && new Date(t.trialEndsAt) > new Date()).length;
 
+  // ── Commission stats ──
+  const commThisMonth = commissions.filter((c) => c.status !== "paid").reduce((s, c) => s + c.amount, 0);
+  const commPaid = commissions.filter((c) => c.status === "paid").reduce((s, c) => s + c.amount, 0);
+  const commPending = commissions.filter((c) => c.status === "pending").reduce((s, c) => s + c.amount, 0);
+
   // ── Filtering ──
   const filtered = tenants.filter((t) => {
     if (search && !t.slug.includes(search) && !t.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -480,23 +619,30 @@ export default function SuperAdminPage() {
   const fmtDate = (d: string | null) =>
     d ? new Date(d).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "2-digit" }) : "—";
 
+  const fmtAmount = (n: number) =>
+    new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(n);
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
       <header className="border-b border-gray-800 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg"
+              style={{ background: "linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)" }}
+            >
               <ShieldCheck className="w-5 h-5 text-white" />
             </div>
             <div>
-              <span className="font-bold text-white">Platform Admin</span>
-              <span className="text-gray-500 text-xs ml-2">Buleje SaaS</span>
+              <span className="font-bold text-white">Buleje Platform</span>
+              <span className="text-gray-500 text-xs ml-2">SuperAdmin</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-gray-400 text-sm hidden sm:block">{username}</span>
             <button
+              type="button"
               onClick={() => loadTenants()}
               disabled={loading}
               className="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
@@ -505,6 +651,7 @@ export default function SuperAdminPage() {
               <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
             </button>
             <button
+              type="button"
               onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm transition-colors"
             >
@@ -517,27 +664,49 @@ export default function SuperAdminPage() {
       <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
         {/* KPI cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard icon={<Building2 className="w-4 h-4" />} label="Tiendas" value={total} />
-          <StatCard icon={<CheckCircle2 className="w-4 h-4 text-green-400" />} label="Activas" value={active} sub={`${total - active} suspendidas`} />
-          <StatCard icon={<TrendingUp className="w-4 h-4 text-indigo-400" />} label="De pago" value={paying} sub={`${total - paying} en free`} />
-          <StatCard icon={<AlertTriangle className="w-4 h-4 text-amber-400" />} label="En trial" value={trial} />
+          <StatCard
+            icon={<Building2 className="w-4 h-4" />}
+            label="Tiendas" value={total}
+            accent="linear-gradient(90deg,#0f766e,#14b8a6)"
+          />
+          <StatCard
+            icon={<CheckCircle2 className="w-4 h-4 text-green-400" />}
+            label="Activas" value={active}
+            sub={`${total - active} suspendidas`}
+            accent="#22c55e"
+          />
+          <StatCard
+            icon={<TrendingUp className="w-4 h-4 text-teal-400" />}
+            label="De pago" value={paying}
+            sub={`${total - paying} en free`}
+            accent="linear-gradient(90deg,#0f766e,#14b8a6)"
+          />
+          <StatCard
+            icon={<AlertTriangle className="w-4 h-4 text-amber-400" />}
+            label="En trial" value={trial}
+            accent="#f59e0b"
+          />
         </div>
 
-        {/* Tab navigation */}
+        {/* Tab navigation — pill style */}
         <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-xl p-1">
           {([
-            { id: "tenants", label: "Tiendas", icon: <Building2 className="w-4 h-4" /> },
+            { id: "tenants",   label: "Tiendas",            icon: <Building2 className="w-4 h-4" /> },
             { id: "analytics", label: "Analytics & Revenue", icon: <BarChart3 className="w-4 h-4" /> },
-            { id: "activity", label: "Actividad", icon: <Activity className="w-4 h-4" /> },
+            { id: "activity",  label: "Actividad",           icon: <Activity className="w-4 h-4" /> },
           ] as const).map(tab => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${
                 activeTab === tab.id
-                  ? "bg-indigo-600 text-white shadow-lg"
+                  ? "text-white shadow-lg"
                   : "text-gray-400 hover:text-white hover:bg-gray-800"
               }`}
+              style={activeTab === tab.id
+                ? { background: "linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)" }
+                : {}}
             >
               {tab.icon} {tab.label}
             </button>
@@ -547,10 +716,103 @@ export default function SuperAdminPage() {
         {/* ═══════ ANALYTICS TAB ═══════ */}
         {activeTab === "analytics" && (
           <div className="space-y-6">
-            {/* Recharts-powered analytics from API (MRR, ARR, ARPU, growth, revenue trend, signups, plan distribution) */}
+            {/* Recharts-powered analytics (MRR, ARR, ARPU, growth, revenue trend, signups, plan distribution) */}
             <RevenueCharts />
 
-            {/* Usage summary (from tenant data) */}
+            {/* ── Sección de Comisiones ── */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-teal-400" /> Comisiones
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="relative bg-gray-900 border border-gray-800 rounded-2xl p-5 overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl" style={{ background: "linear-gradient(90deg,#0f766e,#14b8a6)" }} />
+                  <div className="text-gray-400 text-xs mb-2 flex items-center gap-1.5"><DollarSign className="w-3.5 h-3.5" /> Comisiones del mes</div>
+                  {commLoading ? (
+                    <div className="h-8 w-24 bg-gray-800 animate-pulse rounded" />
+                  ) : (
+                    <div className="text-2xl font-bold text-white font-mono">{fmtAmount(commThisMonth)}</div>
+                  )}
+                  <div className="text-gray-600 text-xs mt-1">No liquidadas aún</div>
+                </div>
+                <div className="relative bg-gray-900 border border-gray-800 rounded-2xl p-5 overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl bg-green-500" />
+                  <div className="text-gray-400 text-xs mb-2 flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-green-400" /> Comisiones pagadas</div>
+                  {commLoading ? (
+                    <div className="h-8 w-24 bg-gray-800 animate-pulse rounded" />
+                  ) : (
+                    <div className="text-2xl font-bold text-white font-mono">{fmtAmount(commPaid)}</div>
+                  )}
+                  <div className="text-gray-600 text-xs mt-1">Status: paid</div>
+                </div>
+                <div className="relative bg-gray-900 border border-gray-800 rounded-2xl p-5 overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl bg-amber-500" />
+                  <div className="text-gray-400 text-xs mb-2 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-amber-400" /> Pendiente de liquidar</div>
+                  {commLoading ? (
+                    <div className="h-8 w-24 bg-gray-800 animate-pulse rounded" />
+                  ) : (
+                    <div className="text-2xl font-bold text-white font-mono">{fmtAmount(commPending)}</div>
+                  )}
+                  <div className="text-gray-600 text-xs mt-1">Status: pending</div>
+                </div>
+              </div>
+
+              {/* Tabla de comisiones recientes */}
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-white">Comisiones recientes</span>
+                  <span className="text-xs text-gray-500">Últimas 20</span>
+                </div>
+                {commLoading ? (
+                  <div className="flex items-center justify-center gap-3 py-12 text-gray-500">
+                    <Loader2 className="w-5 h-5 animate-spin" /> Cargando…
+                  </div>
+                ) : commissions.length === 0 ? (
+                  <div className="text-center py-12 text-gray-600 text-sm">Sin registros de comisiones</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-800 text-gray-500 text-xs uppercase tracking-wider">
+                          <th className="text-left px-5 py-3">Orden</th>
+                          <th className="text-left px-4 py-3">Tienda</th>
+                          <th className="text-left px-4 py-3">Tipo</th>
+                          <th className="text-right px-4 py-3">Monto</th>
+                          <th className="text-right px-4 py-3">Tasa</th>
+                          <th className="text-left px-4 py-3">Estado</th>
+                          <th className="text-left px-4 py-3">Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-800/50">
+                        {commissions.map((c) => (
+                          <tr key={c.id} className="hover:bg-teal-950/20 transition-colors">
+                            <td className="px-5 py-3 text-xs font-mono text-gray-400 truncate max-w-32">{c.orderId}</td>
+                            <td className="px-4 py-3 text-xs font-mono text-gray-400">{c.storeId ?? "—"}</td>
+                            <td className="px-4 py-3 text-xs text-gray-300">{c.type}</td>
+                            <td className="px-4 py-3 text-right font-semibold text-white font-mono">{fmtAmount(c.amount)}</td>
+                            <td className="px-4 py-3 text-right text-xs text-gray-400">{(c.rate * 100).toFixed(1)}%</td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                c.status === "paid"
+                                  ? "bg-green-900 text-green-300"
+                                  : c.status === "pending"
+                                    ? "bg-amber-900 text-amber-300"
+                                    : "bg-gray-800 text-gray-300"
+                              }`}>
+                                {c.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-gray-500">{fmtDate(c.createdAt)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Usage summary */}
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Package className="w-5 h-5 text-emerald-400" /> Resumen de Uso Agregado
@@ -580,7 +842,7 @@ export default function SuperAdminPage() {
             {/* Top tenants by usage */}
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-blue-400" /> Top Tiendas por Actividad
+                <TrendingUp className="w-5 h-5 text-teal-400" /> Top Tiendas por Actividad
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -599,7 +861,7 @@ export default function SuperAdminPage() {
                       .sort((a, b) => (b.usage?.ordersThisMonth ?? 0) - (a.usage?.ordersThisMonth ?? 0))
                       .slice(0, 10)
                       .map((t, i) => (
-                        <tr key={t.id} className="hover:bg-gray-800/30 transition-colors">
+                        <tr key={t.id} className="hover:bg-teal-950/20 transition-colors">
                           <td className="px-4 py-3 text-gray-500">{i + 1}</td>
                           <td className="px-4 py-3">
                             <div className="font-semibold text-white">{t.name}</div>
@@ -649,7 +911,7 @@ export default function SuperAdminPage() {
                     </div>
                   ))}
                 {tenants.filter(t => t.cancelAtPeriodEnd || !t.active || (t.trialEndsAt && new Date(t.trialEndsAt) < new Date())).length === 0 && (
-                  <p className="text-gray-600 text-sm text-center py-6">No hay tiendas en riesgo 🎉</p>
+                  <p className="text-gray-600 text-sm text-center py-6">No hay tiendas en riesgo</p>
                 )}
               </div>
             </div>
@@ -667,14 +929,14 @@ export default function SuperAdminPage() {
                   value={activityTenant}
                   onChange={(e) => setActivityTenant(e.target.value)}
                   placeholder="Filtrar por tenant ID…"
-                  className="w-full bg-gray-900 border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-gray-900 border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
                 />
               </div>
               <div className="relative">
                 <select
                   value={activityAction}
                   onChange={(e) => setActivityAction(e.target.value)}
-                  className="appearance-none bg-gray-900 border border-gray-800 text-gray-300 rounded-xl px-4 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                  className="appearance-none bg-gray-900 border border-gray-800 text-gray-300 rounded-xl px-4 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40 cursor-pointer"
                 >
                   <option value="">Todas las acciones</option>
                   <option value="create">Create</option>
@@ -705,7 +967,7 @@ export default function SuperAdminPage() {
                 <div className="divide-y divide-gray-800/50">
                   {activityLogs.map((log) => (
                     <div key={log.id} className="flex items-start gap-3 px-5 py-4 hover:bg-gray-800/40 transition-colors">
-                      <div className="w-8 h-8 rounded-lg bg-indigo-600/20 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5">
+                      <div className="w-8 h-8 rounded-lg bg-teal-600/20 flex items-center justify-center text-teal-400 shrink-0 mt-0.5">
                         <Activity className="w-4 h-4" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -734,6 +996,7 @@ export default function SuperAdminPage() {
             {activityPages > 1 && (
               <div className="flex items-center justify-center gap-3">
                 <button
+                  type="button"
                   onClick={() => loadActivity(activityPage - 1)}
                   disabled={activityPage <= 1 || activityLoading}
                   className="px-4 py-2 rounded-xl bg-gray-800 text-gray-300 text-sm disabled:opacity-40 hover:bg-gray-700 transition-colors"
@@ -744,6 +1007,7 @@ export default function SuperAdminPage() {
                   Página {activityPage} de {activityPages}
                 </span>
                 <button
+                  type="button"
                   onClick={() => loadActivity(activityPage + 1)}
                   disabled={activityPage >= activityPages || activityLoading}
                   className="px-4 py-2 rounded-xl bg-gray-800 text-gray-300 text-sm disabled:opacity-40 hover:bg-gray-700 transition-colors"
@@ -753,32 +1017,31 @@ export default function SuperAdminPage() {
               </div>
             )}
 
-            {/* Still show domains & Stripe sections from tenant data */}
+            {/* Custom domains */}
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <Globe className="w-5 h-5 text-emerald-400" /> Dominios Personalizados
               </h3>
               <div className="space-y-2">
-                {tenants
-                  .filter(t => t.customDomain)
-                  .map(t => (
-                    <div key={t.id} className="flex items-center justify-between bg-gray-800/50 rounded-xl px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <Globe className="w-4 h-4 text-emerald-400" />
-                        <div>
-                          <span className="text-white font-semibold text-sm">{t.customDomain}</span>
-                          <span className="text-gray-500 text-xs ml-3">{t.name}</span>
-                        </div>
+                {tenants.filter(t => t.customDomain).map(t => (
+                  <div key={t.id} className="flex items-center justify-between bg-gray-800/50 rounded-xl px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <Globe className="w-4 h-4 text-emerald-400" />
+                      <div>
+                        <span className="text-white font-semibold text-sm">{t.customDomain}</span>
+                        <span className="text-gray-500 text-xs ml-3">{t.name}</span>
                       </div>
-                      <PlanBadge plan={t.plan} />
                     </div>
-                  ))}
+                    <PlanBadge plan={t.plan} />
+                  </div>
+                ))}
                 {tenants.filter(t => t.customDomain).length === 0 && (
                   <p className="text-gray-600 text-sm text-center py-6">Ninguna tienda tiene dominio personalizado</p>
                 )}
               </div>
             </div>
 
+            {/* Stripe subscriptions */}
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
               <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-emerald-400" /> Suscripciones Stripe Activas
@@ -795,26 +1058,24 @@ export default function SuperAdminPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-800/50">
-                    {tenants
-                      .filter(t => t.stripeCustomerId)
-                      .map(t => (
-                        <tr key={t.id} className="hover:bg-gray-800/30 transition-colors">
-                          <td className="px-4 py-3">
-                            <span className="text-white font-semibold">{t.name}</span>
-                            <span className="text-gray-500 text-xs ml-2 font-mono">{t.slug}</span>
-                          </td>
-                          <td className="px-4 py-3"><PlanBadge plan={t.plan} /></td>
-                          <td className="px-4 py-3 text-xs font-mono text-gray-400">{t.stripeCustomerId}</td>
-                          <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(t.stripeCurrentPeriodEnd)}</td>
-                          <td className="px-4 py-3">
-                            {t.cancelAtPeriodEnd ? (
-                              <span className="text-orange-400 text-xs flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Cancela</span>
-                            ) : (
-                              <span className="text-emerald-400 text-xs flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Activa</span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                    {tenants.filter(t => t.stripeCustomerId).map(t => (
+                      <tr key={t.id} className="hover:bg-teal-950/20 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className="text-white font-semibold">{t.name}</span>
+                          <span className="text-gray-500 text-xs ml-2 font-mono">{t.slug}</span>
+                        </td>
+                        <td className="px-4 py-3"><PlanBadge plan={t.plan} /></td>
+                        <td className="px-4 py-3 text-xs font-mono text-gray-400">{t.stripeCustomerId}</td>
+                        <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(t.stripeCurrentPeriodEnd)}</td>
+                        <td className="px-4 py-3">
+                          {t.cancelAtPeriodEnd ? (
+                            <span className="text-orange-400 text-xs flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Cancela</span>
+                          ) : (
+                            <span className="text-emerald-400 text-xs flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Activa</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
                 {tenants.filter(t => t.stripeCustomerId).length === 0 && (
@@ -827,228 +1088,228 @@ export default function SuperAdminPage() {
 
         {/* ═══════ TENANTS TAB ═══════ */}
         {activeTab === "tenants" && (<>
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por slug o nombre…"
-              className="w-full bg-gray-900 border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por slug o nombre…"
+                className="w-full bg-gray-900 border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-teal-500/40"
+              />
+            </div>
+            <div className="relative">
+              <select
+                value={filterPlan}
+                onChange={(e) => setFilterPlan(e.target.value as typeof filterPlan)}
+                className="appearance-none bg-gray-900 border border-gray-800 text-gray-300 rounded-xl px-4 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40 cursor-pointer"
+              >
+                <option value="all">Todos los planes</option>
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+                <option value="business">Business</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+            </div>
+            <div className="relative">
+              <select
+                value={filterActive}
+                onChange={(e) => setFilterActive(e.target.value as typeof filterActive)}
+                className="appearance-none bg-gray-900 border border-gray-800 text-gray-300 rounded-xl px-4 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/40 cursor-pointer"
+              >
+                <option value="all">Todos los estados</option>
+                <option value="active">Activas</option>
+                <option value="inactive">Suspendidas</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+            </div>
           </div>
-          <div className="relative">
-            <select
-              value={filterPlan}
-              onChange={(e) => setFilterPlan(e.target.value as typeof filterPlan)}
-              className="appearance-none bg-gray-900 border border-gray-800 text-gray-300 rounded-xl px-4 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="all">Todos los planes</option>
-              <option value="free">Free</option>
-              <option value="pro">Pro</option>
-              <option value="business">Business</option>
-              <option value="enterprise">Enterprise</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-          </div>
-          <div className="relative">
-            <select
-              value={filterActive}
-              onChange={(e) => setFilterActive(e.target.value as typeof filterActive)}
-              className="appearance-none bg-gray-900 border border-gray-800 text-gray-300 rounded-xl px-4 py-2.5 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="active">Activas</option>
-              <option value="inactive">Suspendidas</option>
-            </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-          </div>
-        </div>
 
-        {/* Tenant table */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-          {loading ? (
-            <div className="animate-pulse">
-              {/* Skeleton table header */}
-              <div className="border-b border-gray-800 px-5 py-3.5 flex gap-4">
-                {[120, 60, 60, 80, 50, 80, 70, 80].map((w, i) => (
-                  <div key={i} className="h-3 bg-gray-800 rounded" style={{ width: w }} />
+          {/* Tenant table */}
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+            {loading ? (
+              <div className="animate-pulse">
+                <div className="border-b border-gray-800 px-5 py-3.5 flex gap-4">
+                  {[120, 60, 60, 80, 50, 80, 70, 80].map((w, i) => (
+                    <div key={i} className="h-3 bg-gray-800 rounded" style={{ width: w }} />
+                  ))}
+                </div>
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-gray-800/50">
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-32 bg-gray-800 rounded" />
+                      <div className="h-3 w-20 bg-gray-800/60 rounded" />
+                    </div>
+                    <div className="h-5 w-14 bg-gray-800 rounded-full" />
+                    <div className="h-4 w-16 bg-gray-800 rounded" />
+                    <div className="h-4 w-20 bg-gray-800 rounded hidden md:block" />
+                    <div className="h-4 w-10 bg-gray-800 rounded hidden lg:block" />
+                    <div className="h-4 w-20 bg-gray-800 rounded hidden lg:block" />
+                    <div className="h-7 w-20 bg-gray-800 rounded-lg" />
+                  </div>
                 ))}
               </div>
-              {/* Skeleton rows */}
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="flex items-center gap-4 px-5 py-4 border-b border-gray-800/50">
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 w-32 bg-gray-800 rounded" />
-                    <div className="h-3 w-20 bg-gray-800/60 rounded" />
-                  </div>
-                  <div className="h-5 w-14 bg-gray-800 rounded-full" />
-                  <div className="h-4 w-16 bg-gray-800 rounded" />
-                  <div className="h-4 w-20 bg-gray-800 rounded hidden md:block" />
-                  <div className="h-4 w-10 bg-gray-800 rounded hidden lg:block" />
-                  <div className="h-4 w-20 bg-gray-800 rounded hidden lg:block" />
-                  <div className="h-7 w-20 bg-gray-800 rounded-lg" />
-                </div>
-              ))}
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-20 text-gray-500">
-              <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              No hay tiendas con ese filtro
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-800 text-gray-400 text-xs uppercase tracking-wider">
-                    <th className="text-left px-5 py-3.5">Tienda</th>
-                    <th className="text-left px-4 py-3.5">Plan</th>
-                    <th className="text-left px-4 py-3.5">Estado</th>
-                    <th className="text-left px-4 py-3.5 hidden md:table-cell">Trial / Vence</th>
-                    <th className="text-left px-4 py-3.5 hidden lg:table-cell">Usuarios</th>
-                    <th className="text-left px-4 py-3.5 hidden xl:table-cell">Uso del plan</th>
-                    <th className="text-left px-4 py-3.5 hidden lg:table-cell">Creada</th>
-                    <th className="text-left px-4 py-3.5">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800/50">
-                  {filtered.map((t) => (
-                    <tr key={t.id} className="hover:bg-gray-800/40 transition-colors">
-                      {/* Name / slug */}
-                      <td className="px-5 py-4 cursor-pointer" onClick={() => setDetailTarget(t)}>
-                        <div className="font-semibold text-white hover:text-indigo-400 transition-colors">{t.name}</div>
-                        <div className="text-gray-500 text-xs mt-0.5 font-mono">{t.slug}</div>
-                        {t.ownerEmail && (
-                          <div className="text-gray-600 text-xs mt-0.5 truncate max-w-45">{t.ownerEmail}</div>
-                        )}
-                        {t.cancelAtPeriodEnd && (
-                          <span className="inline-flex items-center gap-1 mt-1 text-xs text-orange-400">
-                            <AlertTriangle className="w-3 h-3" /> Cancela al vencer
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Plan */}
-                      <td className="px-4 py-4">
-                        <PlanBadge plan={t.plan} />
-                      </td>
-
-                      {/* Active */}
-                      <td className="px-4 py-4">
-                        {t.active ? (
-                          <span className="inline-flex items-center gap-1 text-green-400 text-xs font-medium">
-                            <CheckCircle2 className="w-4 h-4" /> Activa
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-red-400 text-xs font-medium">
-                            <XCircle className="w-4 h-4" /> Suspendida
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Trial / period end */}
-                      <td className="px-4 py-4 hidden md:table-cell text-gray-400 text-xs">
-                        {t.stripeCurrentPeriodEnd
-                          ? <span title="Vence suscripción Stripe">🔄 {fmtDate(t.stripeCurrentPeriodEnd)}</span>
-                          : t.trialEndsAt
-                            ? <span title="Fin de trial">⏳ {fmtDate(t.trialEndsAt)}</span>
-                            : <span className="text-gray-600">—</span>
-                        }
-                      </td>
-
-                      {/* User count */}
-                      <td className="px-4 py-4 hidden lg:table-cell">
-                        <span className="inline-flex items-center gap-1 text-gray-400 text-xs">
-                          <Users className="w-4 h-4" /> {t._count.AdminUser}
-                        </span>
-                      </td>
-
-                      {/* Usage bars */}
-                      <td className="px-4 py-4 hidden xl:table-cell">
-                        {t.usage && t.limits ? (
-                          <div className="space-y-1.5">
-                            <MiniUsageBar used={t.usage.products} max={t.limits.maxProducts} label="Prod" />
-                            <MiniUsageBar used={t.usage.users} max={t.limits.maxUsers} label="Users" />
-                            <MiniUsageBar used={t.usage.ordersThisMonth} max={t.limits.maxOrdersPerMonth} label="Pedidos" />
-                          </div>
-                        ) : (
-                          <span className="text-gray-600 text-xs">—</span>
-                        )}
-                      </td>
-
-                      {/* Created */}
-                      <td className="px-4 py-4 hidden lg:table-cell text-gray-500 text-xs">
-                        {fmtDate(t.createdAt)}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2">
-                          {/* Plan selector */}
-                          <div className="relative">
-                            <select
-                              value={t.plan}
-                              onChange={(e) => handlePlanChange(t.slug, e.target.value as PlanId)}
-                              disabled={actionLoading === `${t.slug}-plan`}
-                              className="appearance-none bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-1.5 pr-7 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer disabled:opacity-50"
-                            >
-                              <option value="free">Free</option>
-                              <option value="pro">Pro</option>
-                              <option value="business">Business</option>
-                              <option value="enterprise">Enterprise</option>
-                            </select>
-                            {actionLoading === `${t.slug}-plan` ? (
-                              <Loader2 className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400 pointer-events-none" />
-                            ) : (
-                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 pointer-events-none" />
-                            )}
-                          </div>
-
-                          {/* Suspend / activate */}
-                          <button
-                            onClick={() => handleToggleActive(t.slug, t.active)}
-                            disabled={actionLoading === `${t.slug}-active`}
-                            title={t.active ? "Suspender" : "Activar"}
-                            className={`p-1.5 rounded-lg border text-xs transition-colors disabled:opacity-50 ${
-                              t.active
-                                ? "border-red-800 text-red-400 hover:bg-red-950"
-                                : "border-green-800 text-green-400 hover:bg-green-950"
-                            }`}
-                          >
-                            {actionLoading === `${t.slug}-active` ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : t.active ? (
-                              <XCircle className="w-4 h-4" />
-                            ) : (
-                              <CheckCircle2 className="w-4 h-4" />
-                            )}
-                          </button>
-
-                          {/* Invite user */}
-                          <button
-                            onClick={() => setInviteTarget({ slug: t.slug, name: t.name })}
-                            title="Invitar usuario"
-                            className="p-1.5 rounded-lg border border-indigo-800 text-indigo-400 hover:bg-indigo-950 transition-colors"
-                          >
-                            <Mail className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
+            ) : filtered.length === 0 ? (
+              <div className="text-center py-20 text-gray-500">
+                <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                No hay tiendas con ese filtro
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-800 text-gray-400 text-xs uppercase tracking-wider">
+                      <th className="text-left px-5 py-3.5">Tienda</th>
+                      <th className="text-left px-4 py-3.5">Plan</th>
+                      <th className="text-left px-4 py-3.5">Estado</th>
+                      <th className="text-left px-4 py-3.5 hidden md:table-cell">Trial / Vence</th>
+                      <th className="text-left px-4 py-3.5 hidden lg:table-cell">Usuarios</th>
+                      <th className="text-left px-4 py-3.5 hidden xl:table-cell">Uso del plan</th>
+                      <th className="text-left px-4 py-3.5 hidden lg:table-cell">Creada</th>
+                      <th className="text-left px-4 py-3.5">Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/50">
+                    {filtered.map((t) => (
+                      <tr key={t.id} className="hover:bg-teal-950/30 transition-colors">
+                        {/* Name / slug */}
+                        <td className="px-5 py-4 cursor-pointer" onClick={() => setDetailTarget(t)}>
+                          <div className="font-semibold text-white hover:text-teal-400 transition-colors">{t.name}</div>
+                          <div className="text-gray-500 text-xs mt-0.5 font-mono">{t.slug}</div>
+                          {t.ownerEmail && (
+                            <div className="text-gray-600 text-xs mt-0.5 truncate max-w-45">{t.ownerEmail}</div>
+                          )}
+                          {t.cancelAtPeriodEnd && (
+                            <span className="inline-flex items-center gap-1 mt-1 text-xs text-orange-400">
+                              <AlertTriangle className="w-3 h-3" /> Cancela al vencer
+                            </span>
+                          )}
+                        </td>
 
-          {/* Table footer */}
-          {!loading && filtered.length > 0 && (
-            <div className="px-5 py-3 border-t border-gray-800 text-gray-500 text-xs">
-              {filtered.length} de {total} tiendas
-            </div>
-          )}
-        </div>
+                        {/* Plan */}
+                        <td className="px-4 py-4">
+                          <PlanBadge plan={t.plan} />
+                        </td>
+
+                        {/* Active */}
+                        <td className="px-4 py-4">
+                          {t.active ? (
+                            <span className="inline-flex items-center gap-1 text-green-400 text-xs font-medium">
+                              <CheckCircle2 className="w-4 h-4" /> Activa
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-red-400 text-xs font-medium">
+                              <XCircle className="w-4 h-4" /> Suspendida
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Trial / period end */}
+                        <td className="px-4 py-4 hidden md:table-cell text-gray-400 text-xs">
+                          {t.stripeCurrentPeriodEnd
+                            ? <span title="Vence suscripción Stripe">🔄 {fmtDate(t.stripeCurrentPeriodEnd)}</span>
+                            : t.trialEndsAt
+                              ? <span title="Fin de trial">⏳ {fmtDate(t.trialEndsAt)}</span>
+                              : <span className="text-gray-600">—</span>
+                          }
+                        </td>
+
+                        {/* User count */}
+                        <td className="px-4 py-4 hidden lg:table-cell">
+                          <span className="inline-flex items-center gap-1 text-gray-400 text-xs">
+                            <Users className="w-4 h-4" /> {t._count.AdminUser}
+                          </span>
+                        </td>
+
+                        {/* Usage bars */}
+                        <td className="px-4 py-4 hidden xl:table-cell">
+                          {t.usage && t.limits ? (
+                            <div className="space-y-1.5">
+                              <MiniUsageBar used={t.usage.products} max={t.limits.maxProducts} label="Prod" />
+                              <MiniUsageBar used={t.usage.users} max={t.limits.maxUsers} label="Users" />
+                              <MiniUsageBar used={t.usage.ordersThisMonth} max={t.limits.maxOrdersPerMonth} label="Pedidos" />
+                            </div>
+                          ) : (
+                            <span className="text-gray-600 text-xs">—</span>
+                          )}
+                        </td>
+
+                        {/* Created */}
+                        <td className="px-4 py-4 hidden lg:table-cell text-gray-500 text-xs">
+                          {fmtDate(t.createdAt)}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            {/* Plan selector */}
+                            <div className="relative">
+                              <select
+                                value={t.plan}
+                                onChange={(e) => handlePlanChange(t.slug, e.target.value as PlanId)}
+                                disabled={actionLoading === `${t.slug}-plan`}
+                                className="appearance-none bg-gray-800 border border-gray-700 text-gray-300 rounded-lg px-3 py-1.5 pr-7 text-xs focus:outline-none focus:ring-1 focus:ring-teal-500/40 cursor-pointer disabled:opacity-50"
+                              >
+                                <option value="free">Free</option>
+                                <option value="pro">Pro</option>
+                                <option value="business">Business</option>
+                                <option value="enterprise">Enterprise</option>
+                              </select>
+                              {actionLoading === `${t.slug}-plan` ? (
+                                <Loader2 className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 animate-spin text-gray-400 pointer-events-none" />
+                              ) : (
+                                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 pointer-events-none" />
+                              )}
+                            </div>
+
+                            {/* Suspend / activate */}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(t.slug, t.active)}
+                              disabled={actionLoading === `${t.slug}-active`}
+                              title={t.active ? "Suspender" : "Activar"}
+                              className={`p-1.5 rounded-lg border text-xs transition-colors disabled:opacity-50 ${
+                                t.active
+                                  ? "border-red-800 text-red-400 hover:bg-red-950"
+                                  : "border-green-800 text-green-400 hover:bg-green-950"
+                              }`}
+                            >
+                              {actionLoading === `${t.slug}-active` ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : t.active ? (
+                                <XCircle className="w-4 h-4" />
+                              ) : (
+                                <CheckCircle2 className="w-4 h-4" />
+                              )}
+                            </button>
+
+                            {/* Invite user */}
+                            <button
+                              type="button"
+                              onClick={() => setInviteTarget({ slug: t.slug, name: t.name })}
+                              title="Invitar usuario"
+                              className="p-1.5 rounded-lg border border-teal-800 text-teal-400 hover:bg-teal-950 transition-colors"
+                            >
+                              <Mail className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Table footer */}
+            {!loading && filtered.length > 0 && (
+              <div className="px-5 py-3 border-t border-gray-800 text-gray-500 text-xs">
+                {filtered.length} de {total} tiendas
+              </div>
+            )}
+          </div>
         </>)}
       </main>
 
