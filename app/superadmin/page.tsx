@@ -1004,6 +1004,28 @@ export default function SuperAdminPage() {
     }
   };
 
+  const handleDeleteTenant = async (slug: string, name: string) => {
+    const confirmed = window.confirm(
+      `¿Eliminar permanentemente la tienda "${name}" (${slug})?\n\nEsta acción borrará TODOS sus datos: productos, pedidos, clientes, ventas, configuración y usuarios. No se puede deshacer.`
+    );
+    if (!confirmed) return;
+    setActionLoading(`${slug}-delete`);
+    try {
+      const res = await fetch(`/api/superadmin/tenants/${slug}/delete`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Error desconocido" }));
+        showToast(err.error ?? "Error al eliminar la tienda", false);
+        return;
+      }
+      setTenants((prev) => prev.filter((t) => t.slug !== slug));
+      showToast(`Tienda "${name}" eliminada permanentemente`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // ── Stats ──
   const total = tenants.length;
   const active = tenants.filter((t) => t.active).length;
@@ -1780,6 +1802,21 @@ export default function SuperAdminPage() {
                                     className="p-1.5 rounded-lg border border-teal-200 dark:border-teal-800 text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950 transition-colors"
                                   >
                                     <Mail className="w-4 h-4" />
+                                  </button>
+
+                                  {/* Eliminar tienda */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteTenant(t.slug, t.name)}
+                                    disabled={actionLoading === `${t.slug}-delete`}
+                                    title="Eliminar tienda permanentemente"
+                                    className="p-1.5 rounded-lg border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900 transition-colors disabled:opacity-50"
+                                  >
+                                    {actionLoading === `${t.slug}-delete` ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <X className="w-4 h-4" />
+                                    )}
                                   </button>
                                 </div>
                               </td>

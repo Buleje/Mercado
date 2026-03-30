@@ -29,7 +29,13 @@ export async function PUT(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    // Si el SuperAdmin impersona una tienda, el header x-tenant-id puede diferir
+    // del tenantId del token. Damos prioridad al header explícito.
+    const headerTenantId = req.headers.get("x-tenant-id");
+    const effectiveTenantId = (headerTenantId && headerTenantId !== "main")
+      ? headerTenantId
+      : auth.tenantId;
+    const tenantId = effectiveTenantId;
     const body = await req.json() as Partial<DbSettings>;
     if (body.mode && body.mode !== "whatsapp" && body.mode !== "checkout") {
       return NextResponse.json({ error: "mode must be 'whatsapp' or 'checkout'" }, { status: 400 });

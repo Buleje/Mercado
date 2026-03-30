@@ -9,7 +9,10 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(await NotificationLogsDB.getAll(auth.tenantId));
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+
   const body = await req.json();
   if (!body.phone || !body.orderId) {
     return NextResponse.json({ error: "phone and orderId required" }, { status: 400 });
@@ -18,7 +21,7 @@ export async function POST(req: Request) {
   const order = await OrdersDB.getById(body.orderId);
   if (!order) return NextResponse.json({ error: "order not found" }, { status: 404 });
 
-  const settings = await SettingsDB.get();
+  const settings = await SettingsDB.get(auth.tenantId);
   const storeName = settings?.businessName ?? "Buleje";
 
   const STATUS_MSGS: Record<string, string> = {
