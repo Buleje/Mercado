@@ -81,8 +81,10 @@ export async function POST(req: Request) {
     if (await checkPassword(password, u.passwordHash)) {
       const token = await createSessionToken(u.role as AdminRole, u.username, tenantId, u.name);
       const onboardingPending = !u.onboardingCompletedAt;
-      const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending });
+      const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending, tenantId });
       response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
+      // Also set active-tenant cookie for storefront isolation
+      response.cookies.set("active-tenant", tenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
       return response;
     }
   }

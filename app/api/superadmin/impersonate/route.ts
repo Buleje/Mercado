@@ -85,5 +85,13 @@ export async function POST(req: NextRequest) {
     maxAge: SESSION.MAX_AGE,
   });
 
+  // Set active-tenant cookie for storefront isolation
+  response.cookies.set("active-tenant", tenant.id, {
+    path: "/",
+    maxAge: SESSION.MAX_AGE,
+    sameSite: "lax",
+    httpOnly: false,
+  });
+
   return response;
 }

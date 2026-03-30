@@ -128,20 +128,30 @@ export async function proxy(request: NextRequest) {
   const clientTenantId = request.headers.get("x-tenant-id");
   let tenantId = clientTenantId || resolveTenantFromHost(request);
 
-  // If tenant is "main" (default from localhost), check if the session token has a specific tenantId
+  // If tenant is "main" (default from localhost), check multiple sources for the real tenantId
   if (tenantId === "main") {
-    const sessionCookie = request.cookies.get("bsm-admin-sess")?.value;
-    if (sessionCookie) {
-      try {
-        const dotIdx = sessionCookie.lastIndexOf(".");
-        if (dotIdx > 0) {
-          const encoded = sessionCookie.slice(0, dotIdx);
-          const decoded = JSON.parse(Buffer.from(encoded, "base64").toString()) as { tenantId?: string };
-          if (decoded.tenantId && decoded.tenantId !== "main") {
-            tenantId = decoded.tenantId;
+    // Source 1: active-tenant cookie (set by /t/[slug]/ routes for storefront)
+    const activeTenantCookie = request.cookies.get("active-tenant")?.value;
+    if (activeTenantCookie && activeTenantCookie !== "main") {
+      // Resolve slug to tenant ID
+      tenantId = activeTenantCookie;
+    }
+
+    // Source 2: admin session token (has tenantId in payload)
+    if (tenantId === "main" || tenantId === activeTenantCookie) {
+      const sessionCookie = request.cookies.get("bsm-admin-sess")?.value;
+      if (sessionCookie) {
+        try {
+          const dotIdx = sessionCookie.lastIndexOf(".");
+          if (dotIdx > 0) {
+            const encoded = sessionCookie.slice(0, dotIdx);
+            const decoded = JSON.parse(Buffer.from(encoded, "base64").toString()) as { tenantId?: string };
+            if (decoded.tenantId && decoded.tenantId !== "main") {
+              tenantId = decoded.tenantId;
+            }
           }
-        }
-      } catch { /* ignore parse errors */ }
+        } catch { /* ignore parse errors */ }
+      }
     }
   }
 

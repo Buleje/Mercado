@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import { useParams } from "next/navigation";
 
 /**
- * Ruta local para ver la tienda online de un tenant.
- * Guarda el tenantSlug y redirige a la tienda principal.
+ * Ruta local para ver la tienda online de un tenant específico.
+ * Guarda el tenant slug en localStorage Y en una cookie para que el proxy lo lea.
  */
 export default function TenantStoreRedirect() {
   const { slug } = useParams<{ slug: string }>();
@@ -13,7 +13,9 @@ export default function TenantStoreRedirect() {
   useEffect(() => {
     if (slug) {
       localStorage.setItem("active-tenant-slug", slug);
-      window.location.href = "/tienda";
+      // Set a cookie that the proxy can read for storefront routes
+      document.cookie = `active-tenant=${slug};path=/;max-age=${7 * 24 * 60 * 60};samesite=lax`;
+      window.location.href = "/";
     }
   }, [slug]);
 
