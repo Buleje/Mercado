@@ -78,11 +78,12 @@ export async function POST(req: NextRequest) {
     const tenant = await prisma.tenant.create({
       data: {
         slug,
-        name: "Bodega Demo",
-        plan: "free",
+        name: "Bodega Demo Enterprise",
+        plan: "enterprise",
         type: "store",
         active: true,
         ownerEmail: `demo-${slug}@demo.internal`,
+        ownerPhone: "999888777",
         trialEndsAt,
       },
     });
@@ -103,18 +104,40 @@ export async function POST(req: NextRequest) {
       prisma.settings.create({
         data: {
           tenantId: tenant.id,
-          businessName: "Bodega Demo",
+          businessName: "Bodega Demo Enterprise",
           mode: "checkout",
           cashEnabled: true,
-          yapeEnabled: false,
+          yapeEnabled: true,
+          businessPhone: "999888777",
+          businessAddress: "Jr. Ucayali 456, Pucallpa",
+          primaryColor: "#0f766e",
+          secondaryColor: "#f97316",
+          slogan: "Tu bodega digital de confianza",
+          storeThemeJson: JSON.stringify({
+            primaryColor: "#0f766e",
+            secondaryColor: "#f97316",
+            accentColor: "#2d6a4f",
+            name: "Bodega Demo Enterprise",
+            slogan: "Tu bodega digital de confianza",
+            description: "Tienda demo con todos los modulos activos. Explora el sistema completo.",
+            heroTitle: "Todo lo que necesitas, en tu puerta",
+            heroSubtitle: "Delivery rapido en Pucallpa. Paga con Yape o efectivo.",
+            heroCTA: "Ver productos",
+            whatsapp: "999888777",
+            phone: "999888777",
+            address: "Jr. Ucayali 456, Pucallpa",
+            fontFamily: "inter",
+            sections: ["announcement", "hero", "categories", "popular", "deals", "combos", "recipes", "testimonials", "faq", "contact", "delivery_map"],
+            sectionOrder: ["announcement", "hero", "categories", "popular", "deals", "combos", "recipes", "testimonials", "faq", "contact", "delivery_map"],
+          }),
         },
       }),
       prisma.store.create({
         data: {
           tenantId: tenant.id,
           slug,
-          name: "Bodega Demo",
-          isPublished: false,
+          name: "Bodega Demo Enterprise",
+          isPublished: true,
         },
       }),
     ]);
@@ -198,6 +221,7 @@ export async function POST(req: NextRequest) {
         password: "demo1234",
         expiresIn: "24 horas",
         adminUrl: `/t/${slug}/admin`,
+        storeUrl: `/t/${slug}`,
         trialEndsAt: trialEndsAt.toISOString(),
       },
       { status: 201 }

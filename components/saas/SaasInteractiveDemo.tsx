@@ -218,7 +218,7 @@ function ReportsMiniApp() {
         <div className="flex items-end gap-1 h-24">
           {data.map((val, i) => (
             <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-              <div className="w-full rounded-t bg-gradient-to-t from-violet-500 to-violet-400 transition-all duration-500 hover:from-violet-600 hover:to-violet-500 cursor-pointer relative group" style={{ height: `${(val / maxVal) * 100}%` }}>
+              <div className="w-full rounded-t bg-gradient-to-t from-violet-500 to-violet-400 transition-all duration-500 hover:from-violet-600 hover:to-violet-500 cursor-pointer relative group" style={{ height: `${Math.max(8, (val / maxVal) * 100)}%` }}>
                 <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-violet-600 opacity-0 group-hover:opacity-100 transition-opacity">
                   {val}
                 </span>

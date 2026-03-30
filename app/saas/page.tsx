@@ -10,6 +10,7 @@ import SaasPlanQuiz from "@/components/saas/SaasPlanQuiz";
 import SaasSavingsCalculator from "@/components/saas/SaasSavingsCalculator";
 import SaasDashboardDemo from "@/components/saas/SaasDashboardDemo";
 import SaasStorePreview from "@/components/saas/SaasStorePreview";
+import SaasDemoLauncher from "@/components/saas/SaasDemoLauncher";
 
 export const metadata: Metadata = {
   title: "Buleje ERP — Sistema de Gestion para Bodegas y Minimarkets",
@@ -64,7 +65,12 @@ export default function SaasPage() {
           <SaasStorePreview />
         </section>
 
-        {/* 7. Planes y precios */}
+        {/* 7. Demo en vivo — crear tienda ficticia con datos reales */}
+        <section id="demo-live">
+          <SaasDemoLauncher />
+        </section>
+
+        {/* 8. Planes y precios */}
         <section id="planes">
           <SaasPlanes />
         </section>
