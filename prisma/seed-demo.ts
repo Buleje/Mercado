@@ -212,10 +212,11 @@ async function main() {
       await prisma.order.create({
         data: {
           id: `demo-ord-${String(i).padStart(3, "0")}`,
-          tenantId: tenant.id, customerPhone: c.phone, customerName: c.name,
+          tenantId: tenant.id, customerName: c.name,
+          customer: { connect: { phone: c.phone } },
           status: ORDER_STATUSES[i], total,
           paymentMethod: PAYMENT_METHODS[i % PAYMENT_METHODS.length],
-          location: LOCATIONS[i % LOCATIONS.length],
+          customerLocation: LOCATIONS[i % LOCATIONS.length],
           createdAt: new Date(Date.now() - (25 - i) * 3 * 60 * 60 * 1000),
           items: {
             create: [
@@ -240,14 +241,14 @@ async function main() {
           tenantId: tenant.id, total, totalCogs: total * 0.65,
           payment: PAYMENT_METHODS[i % PAYMENT_METHODS.length],
           amountPaid: Math.ceil(total / 5) * 5, change: Math.ceil(total / 5) * 5 - total,
-          customerPhone: CUSTOMERS[i % CUSTOMERS.length].phone,
+          customer: { connect: { phone: CUSTOMERS[i % CUSTOMERS.length].phone } },
           cashierId: i % 3 === 0 ? "cajero" : "demo",
           comprobanteTipo: i % 4 === 0 ? "boleta" : "ticket",
           createdAt: new Date(Date.now() - (15 - i) * 2 * 60 * 60 * 1000),
           items: {
             create: [
-              { productId: p1.id, productName: p1.name, quantity: 2, unitPrice: p1.price, subtotal: p1.price * 2 },
-              { productId: p2.id, productName: p2.name, quantity: 3, unitPrice: p2.price, subtotal: p2.price * 3 },
+              { productId: p1.id, name: p1.name, price: p1.price, quantity: 2, unit: "unidad" },
+              { productId: p2.id, name: p2.name, price: p2.price, quantity: 3, unit: "unidad" },
             ],
           },
         },
@@ -256,7 +257,7 @@ async function main() {
     console.log("✅ 15 ventas POS creadas");
 
     // ── 6 Ordenes de Compra ─────────────────────────────────
-    const PO_STATUSES = ["recibido","recibido","recibido","pendiente","enviado","pendiente"] as const;
+    const PO_STATUSES = ["recibido","recibido","recibido","pendiente","parcial","pendiente"] as const;
     for (let i = 0; i < 6; i++) {
       const sup = SUPPLIERS[i % SUPPLIERS.length];
       const p1 = products[i * 2 % products.length];
@@ -271,8 +272,8 @@ async function main() {
           createdAt: new Date(Date.now() - (6 - i) * 72 * 60 * 60 * 1000),
           items: {
             create: [
-              { productId: p1.id, productName: p1.name, quantity: 100, unitCost: p1.price * 0.7, subtotal: p1.price * 0.7 * 100 },
-              { productId: p2.id, productName: p2.name, quantity: 50, unitCost: p2.price * 0.7, subtotal: p2.price * 0.7 * 50 },
+              { productId: p1.id, name: p1.name, quantity: 100, unitCost: p1.price * 0.7, unit: "unidad" },
+              { productId: p2.id, name: p2.name, quantity: 50, unitCost: p2.price * 0.7, unit: "unidad" },
             ],
           },
         },
@@ -381,27 +382,27 @@ async function main() {
     for (let i = 0; i < REVIEWS.length; i++) {
       const r = REVIEWS[i];
       await prisma.review.create({
-        data: { tenantId: tenant.id, customerPhone: r.phone, customerName: r.name, rating: r.rating, comment: r.comment, productId: products[i * 3 % products.length].id },
+        data: { id: `demo-rev-${i}`, tenantId: tenant.id, phone: r.phone, name: r.name, rating: r.rating, text: r.comment, productId: products[i * 3 % products.length].id },
       });
     }
     console.log("✅ 6 reviews creadas");
 
     // ── 10 Registros de actividad ───────────────────────────
     const ACTIVITIES = [
-      { action: "sale_completed", detail: "Venta POS S/45.80 — Yape — Maria Cajera", username: "cajero" },
-      { action: "order_created", detail: "Nuevo pedido #demo-ord-024 de Rosa Huanca — S/32.50", username: "sistema" },
-      { action: "stock_alert", detail: "ALERTA: Atun Florida bajo stock (5 unidades, minimo 15)", username: "sistema" },
-      { action: "product_created", detail: "Nuevo producto: Papa Blanca x kg — S/3.00", username: "demo" },
-      { action: "purchase_received", detail: "Orden de compra OC-001 recibida de Distribuidora Lima SAC", username: "demo" },
-      { action: "fiado_created", detail: "Nuevo fiado S/85.50 para Rosa Huanca — vence en 30 dias", username: "demo" },
-      { action: "settings_updated", detail: "Tema de la tienda actualizado (colores + fuente Inter)", username: "demo" },
-      { action: "batch_expiring", detail: "LOTE-ATU-001 vence en 3 dias (5 unidades de Atun Florida)", username: "sistema" },
-      { action: "promotion_created", detail: "Nueva promo: 2x1 en Snacks — activa por 3 dias", username: "demo" },
-      { action: "cash_movement", detail: "Ingreso caja: S/320 — Ventas efectivo manana", username: "cajero" },
+      { action: "create", entity: "sale", detail: "Venta POS S/45.80 — Yape — Maria Cajera", user: "cajero" },
+      { action: "create", entity: "order", detail: "Nuevo pedido #demo-ord-024 de Rosa Huanca — S/32.50", user: "sistema" },
+      { action: "update", entity: "product", detail: "ALERTA: Atun Florida bajo stock (5 unidades, minimo 15)", user: "sistema" },
+      { action: "create", entity: "product", detail: "Nuevo producto: Papa Blanca x kg — S/3.00", user: "demo" },
+      { action: "update", entity: "purchase", detail: "Orden de compra OC-001 recibida de Distribuidora Lima SAC", user: "demo" },
+      { action: "create", entity: "fiado", detail: "Nuevo fiado S/85.50 para Rosa Huanca — vence en 30 dias", user: "demo" },
+      { action: "update", entity: "settings", detail: "Tema de la tienda actualizado (colores + fuente Inter)", user: "demo" },
+      { action: "update", entity: "batch", detail: "LOTE-ATU-001 vence en 3 dias (5 unidades de Atun Florida)", user: "sistema" },
+      { action: "create", entity: "promotion", detail: "Nueva promo: 2x1 en Snacks — activa por 3 dias", user: "demo" },
+      { action: "create", entity: "cash", detail: "Ingreso caja: S/320 — Ventas efectivo manana", user: "cajero" },
     ];
     await prisma.$transaction(
       ACTIVITIES.map((a, i) => prisma.activityLog.create({
-        data: { tenantId: tenant.id, action: a.action, detail: a.detail, username: a.username, createdAt: new Date(Date.now() - i * 45 * 60 * 1000) },
+        data: { tenantId: tenant.id, action: a.action, entity: a.entity, detail: a.detail, user: a.user, createdAt: new Date(Date.now() - i * 45 * 60 * 1000) },
       }))
     );
     console.log("✅ 10 registros de actividad");

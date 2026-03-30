@@ -42,6 +42,8 @@ const SECTIONS: Section[] = [
     bgColor: "bg-teal-50 dark:bg-teal-950/30 border-teal-200 dark:border-teal-800/40",
     links: [
       { label: "Landing SaaS", href: "/saas", description: "Pagina de marketing del servicio", icon: <Globe className="h-4 w-4" /> },
+      { label: "Demo Enterprise", href: "/t/demo/admin", description: "Tienda demo con 100+ datos reales (demo/demo1234)", icon: <LayoutDashboard className="h-4 w-4" />, badge: "Demo" },
+      { label: "Tienda Demo", href: "/t/demo", description: "Storefront de la tienda demo con productos", icon: <Store className="h-4 w-4" />, badge: "Demo" },
       { label: "Registro", href: "/registro", description: "Crear nueva tienda", icon: <UserPlus className="h-4 w-4" /> },
       { label: "Precios", href: "/pricing", description: "Planes y precios del servicio", icon: <CreditCard className="h-4 w-4" /> },
       { label: "Marketplace", href: "/marketplace", description: "Directorio de tiendas activas", icon: <Boxes className="h-4 w-4" /> },
