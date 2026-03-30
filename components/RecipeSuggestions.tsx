@@ -71,7 +71,7 @@ export default function RecipeSuggestions() {
   /* V4: Portion multipliers per recipe */
   const [portions, setPortions] = useState<Record<string, number>>({});
 
-  if (isLoading) return null;
+  if (isLoading || products.length === 0) return null;
 
   const addAllIngredients = (ingredientNames: string[], multiplier: number) => {
     const matched = findProducts(ingredientNames, products);

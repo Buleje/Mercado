@@ -3,7 +3,21 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useCustomer } from "@/contexts/customer-context";
 import { usePathname } from "next/navigation";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
-import { products, getProductSlug } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
+
+function getProductSlug(product: { name: string; id: number }): string {
+  return product.name
+    .toLowerCase()
+    .replace(/[áàä]/g, "a")
+    .replace(/[éèë]/g, "e")
+    .replace(/[íìï]/g, "i")
+    .replace(/[óòö]/g, "o")
+    .replace(/[úùü]/g, "u")
+    .replace(/ñ/g, "n")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    + `-${product.id}`;
+}
 
 type Msg = { id: string; sender: "customer" | "admin"; message: string; createdAt: string };
 
@@ -12,6 +26,7 @@ export default function LiveChatWidget() {
   const phone = customer?.phone;
   const customerName = customer?.name;
   const pathname = usePathname();
+  const { products } = useStoreProducts();
 
   // Detect current product page for context-aware chip
   const contextProduct = useMemo(() => {
@@ -19,7 +34,7 @@ export default function LiveChatWidget() {
     if (!match) return null;
     const slug = match[1];
     return products.find(p => getProductSlug(p) === slug) ?? null;
-  }, [pathname]);
+  }, [pathname, products]);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");

@@ -4,7 +4,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import { Truck, ShoppingCart, Sparkles, Plus } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useSettings } from "@/contexts/settings-context";
-import { products } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
 
 function MiniSparkles() {
@@ -25,6 +25,7 @@ function MiniSparkles() {
 export default function FreeDeliveryProgress() {
   const { total, count, items, addItem } = useCart();
   const { deliveryConfig } = useSettings();
+  const { products } = useStoreProducts();
   const FREE_DELIVERY_MIN = deliveryConfig.freeDeliveryMin;
   const isClient = useSyncExternalStore(() => () => {}, () => true, () => false);
 
@@ -45,7 +46,7 @@ export default function FreeDeliveryProgress() {
       return fallback.reduce((a, b) => (a.price < b.price ? a : b));
     }
     return null;
-  }, [remaining, items]);
+  }, [remaining, items, products]);
 
   if (!isClient || count === 0) return null;
 

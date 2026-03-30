@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });
+const StorefrontEditor = dynamic(() => import("@/components/admin/StorefrontEditor"), { ssr: false });
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type NavLinkItem = { id: string; visible: boolean };
@@ -28,7 +29,7 @@ type SettingsData = Record<string, unknown>;
 
 type SectionId = "business" | "security" | "system" | "sales" | "inventory"
   | "cash" | "delivery" | "notifications" | "integrations" | "appearance"
-  | "audit" | "backup" | "subscription";
+  | "audit" | "backup" | "subscription" | "storefront";
 
 const NAV_LABEL: Record<string, string> = {
   inicio: "Inicio", productos: "Productos", beneficios: "Beneficios", contacto: "Contacto",
@@ -49,6 +50,7 @@ const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc:
   { id: "notifications", icon: <Bell className="h-5 w-5" />, title: "Notificaciones", desc: "Email, WhatsApp, push", color: "text-violet-500 bg-violet-50 dark:bg-violet-950/30" },
   { id: "integrations", icon: <Zap className="h-5 w-5" />, title: "Integraciones", desc: "Yape, Plin, SUNAT, analytics", color: "text-amber-500 bg-amber-50 dark:bg-amber-950/30" },
   { id: "appearance", icon: <Palette className="h-5 w-5" />, title: "Apariencia", desc: "Colores, slogan, tema", color: "text-pink-500 bg-pink-50 dark:bg-pink-950/30" },
+  { id: "storefront", icon: <Monitor className="h-5 w-5" />, title: "Mi Tienda Web", desc: "Secciones visibles y orden del home", color: "text-primary bg-primary/10 dark:bg-primary/20" },
   { id: "audit", icon: <Activity className="h-5 w-5" />, title: "Auditoría y Control", desc: "Logs, retención, alertas", color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" },
   { id: "backup", icon: <HardDrive className="h-5 w-5" />, title: "Respaldo y Mantenimiento", desc: "Backups, estado, limpieza", color: "text-teal-500 bg-teal-50 dark:bg-teal-950/30" },
   { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Suscripción", desc: "Plan, límites, módulos", color: "text-yellow-500 bg-yellow-50 dark:bg-yellow-950/30" },
@@ -556,6 +558,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       audit: check([String(logRetentionDays)]),
       backup: check([backupSchedule !== "none" ? "yes" : "", lastBackupAt]),
       subscription: check([planName]),
+      storefront: 100,
     } as Record<SectionId, number>;
   }, [businessName, businessPhone, businessAddress, razonSocial, ruc, businessEmail, logoUrl, description, hours, storedAdminPw, dateFormat, timeFormat, taxRate, sunatRuc, sunatDenominacion, sunatDireccion, invoiceFooterText, defaultUnit, globalMinStock, fefoEnabled, cashEnabled, yapeEnabled, deliveryZones.length, smtpHost, smtpUser, whatsappApiToken, sunatProvider, googleAnalyticsId, primaryColor, secondaryColor, slogan, logRetentionDays, backupSchedule, lastBackupAt, planName]);
 
@@ -1434,6 +1437,7 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       case "audit": return renderAudit();
       case "backup": return renderBackup();
       case "subscription": return renderSubscription();
+      case "storefront": return <StorefrontEditor />;
     }
   };
 

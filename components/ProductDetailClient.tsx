@@ -13,11 +13,25 @@ import { useToast } from "@/contexts/toast-context";
 import { useFavorites } from "@/contexts/favorites-context";
 import { useCompare } from "@/contexts/compare-context";
 import { useCachedData } from "@/hooks/use-cached-data";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
-import { products, categories, getProductSlug } from "@/data/products";
 import type { Product } from "@/data/products";
 import ProductGallery from "@/components/ProductGallery";
 import ProductReviewsSection from "@/components/ProductReviewsSection";
+
+function getProductSlug(product: { name: string; id: number }): string {
+  return product.name
+    .toLowerCase()
+    .replace(/[áàä]/g, "a")
+    .replace(/[éèë]/g, "e")
+    .replace(/[íìï]/g, "i")
+    .replace(/[óòö]/g, "o")
+    .replace(/[úùü]/g, "u")
+    .replace(/ñ/g, "n")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    + `-${product.id}`;
+}
 
 type LiveProduct = Product & { stock?: number; stockMin?: number };
 
@@ -30,6 +44,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const { showToast } = useToast();
   const { isFavorite, toggle: toggleFav } = useFavorites();
   const { add: addCompare, isIn: isCompare, remove: removeCompare } = useCompare();
+  const { products, categories } = useStoreProducts();
 
   const cartItem = items.find((i) => i.id === product.id);
   const qty = cartItem?.quantity ?? 0;

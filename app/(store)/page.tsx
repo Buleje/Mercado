@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import { AnnouncementBar, StatsCounter, Benefits, CTABanner, RecommendedProducts } from "@/components/ClientSections";
+import type { SectionKey } from "@/components/admin/StorefrontEditor";
 
 export const metadata: Metadata = {
   title: "Buleje — Abarrotes con Delivery en Pucallpa | Yape y Efectivo",
@@ -41,6 +42,8 @@ import {
 const ProductsPreview     = dynamic(() => import("@/components/ProductsPreview"),    { ssr: true });
 const PopularCategories  = dynamic(() => import("@/components/PopularCategories"));
 const DailyDeal          = dynamic(() => import("@/components/DailyDeal"));
+const CombosSection      = dynamic(() => import("@/components/CombosSection"));
+const RecipeSuggestions  = dynamic(() => import("@/components/RecipeSuggestions"));
 const HowItWorks         = dynamic(() => import("@/components/HowItWorks"),         { ssr: true });
 const Testimonials       = dynamic(() => import("@/components/Testimonials"),       { ssr: true });
 const BrandStory         = dynamic(() => import("@/components/BrandStory"),         { ssr: true });
@@ -54,57 +57,102 @@ const Footer             = dynamic(() => import("@/components/Footer"),         
 
 import HomeClientShell from "@/components/HomeClientShell";
 
-export default function Home() {
+// ── Leer visibleSections desde settings (server-side, con revalidación) ───────
+async function getVisibleSections(): Promise<Set<SectionKey>> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const res = await fetch(`${baseUrl}/api/settings`, {
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return new Set<SectionKey>(); // vacío = mostrar todo (backward compatible)
+    const data = await res.json();
+    const keys: SectionKey[] = Array.isArray(data?.homepage?.visibleSections)
+      ? data.homepage.visibleSections
+      : [];
+    return new Set(keys);
+  } catch {
+    return new Set<SectionKey>(); // vacío = mostrar todo
+  }
+}
+
+export default async function Home() {
+  const visible = await getVisibleSections();
+  // Si no hay configuración guardada → mostrar todo (backward compatible)
+  const showAll = visible.size === 0;
+  const show = (key: SectionKey) => showAll || visible.has(key);
+
   return (
     <>
-      <AnnouncementBar />
+      {show("announcement") && <AnnouncementBar />}
       <Header />
       <main id="main-content">
         {/* Hero — strong first impression with CTA to /tienda */}
-        <Hero />
+        {show("hero") && <Hero />}
 
-        {/* Social proof stats */}
+        {/* Social proof stats — siempre visible, no es una sección configurable */}
         <Suspense fallback={<LoadingStats />}>
           <StatsCounter />
         </Suspense>
 
-        {/* Mejora 11: Popular categories grid */}
-        <Suspense fallback={<LoadingSection />}>
-          <PopularCategories />
-        </Suspense>
+        {/* Categorías */}
+        {show("categories") && (
+          <Suspense fallback={<LoadingSection />}>
+            <PopularCategories />
+          </Suspense>
+        )}
 
-        {/* Product preview — showcase + CTA to full catalog */}
-        <Suspense fallback={<LoadingProducts />}>
-          <ProductsPreview />
-        </Suspense>
+        {/* Productos populares */}
+        {show("popular") && (
+          <Suspense fallback={<LoadingProducts />}>
+            <ProductsPreview />
+          </Suspense>
+        )}
 
-        {/* Mejora 13: Daily deal with countdown */}
-        <Suspense fallback={null}>
-          <DailyDeal />
-        </Suspense>
+        {/* Ofertas del día */}
+        {show("deals") && (
+          <Suspense fallback={null}>
+            <DailyDeal />
+          </Suspense>
+        )}
 
-        {/* Personalized recommendations / best-sellers */}
-        <RecommendedProducts />
+        {/* Recomendados — ligado a "popular" */}
+        {show("popular") && <RecommendedProducts />}
 
-        {/* How it works — 3-step process */}
+        {/* Combos */}
+        {show("combos") && (
+          <Suspense fallback={<LoadingSection />}>
+            <CombosSection />
+          </Suspense>
+        )}
+
+        {/* Recetas */}
+        {show("recipes") && (
+          <Suspense fallback={<LoadingSection />}>
+            <RecipeSuggestions />
+          </Suspense>
+        )}
+
+        {/* How it works — 3-step process — siempre visible */}
         <Suspense fallback={<LoadingSection />}>
           <HowItWorks />
         </Suspense>
 
-        {/* Value proposition */}
+        {/* Value proposition — siempre visible */}
         <Suspense fallback={<LoadingSection />}>
           <Benefits />
         </Suspense>
 
-        {/* Conversion CTA — urgency + link to /tienda */}
+        {/* Conversion CTA — siempre visible */}
         <Suspense fallback={<LoadingSection />}>
           <CTABanner />
         </Suspense>
 
-        {/* Social proof & brand */}
-        <Suspense fallback={<LoadingTestimonials />}>
-          <Testimonials />
-        </Suspense>
+        {/* Testimonios */}
+        {show("testimonials") && (
+          <Suspense fallback={<LoadingTestimonials />}>
+            <Testimonials />
+          </Suspense>
+        )}
         <Suspense fallback={<LoadingSection />}>
           <BrandStory />
         </Suspense>
@@ -114,34 +162,42 @@ export default function Home() {
           <StoreHours />
         </Suspense>
 
-        {/* Support */}
-        <Suspense fallback={<LoadingFAQ />}>
-          <FAQ />
-        </Suspense>
-        <Suspense fallback={<LoadingSection />}>
-          <Contact />
-        </Suspense>
+        {/* FAQ */}
+        {show("faq") && (
+          <Suspense fallback={<LoadingFAQ />}>
+            <FAQ />
+          </Suspense>
+        )}
 
-        {/* Zona de delivery — movido desde /tienda */}
-        <Suspense fallback={<LoadingSection />}>
-          <section className="py-14 sm:py-20 bg-white dark:bg-card">
-            <div className="max-w-7xl mx-auto px-4">
-              <div className="text-center mb-8">
-                <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">🗺️ Cobertura</span>
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground">¿Llegamos a tu zona?</h2>
-                <p className="text-muted mt-2 text-sm sm:text-base max-w-lg mx-auto">Revisa nuestra zona de delivery en Pucallpa</p>
+        {/* Contacto */}
+        {show("contact") && (
+          <Suspense fallback={<LoadingSection />}>
+            <Contact />
+          </Suspense>
+        )}
+
+        {/* Mapa de delivery */}
+        {show("delivery_map") && (
+          <Suspense fallback={<LoadingSection />}>
+            <section className="py-14 sm:py-20 bg-white dark:bg-card">
+              <div className="max-w-7xl mx-auto px-4">
+                <div className="text-center mb-8">
+                  <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">🗺️ Cobertura</span>
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground">¿Llegamos a tu zona?</h2>
+                  <p className="text-muted mt-2 text-sm sm:text-base max-w-lg mx-auto">Revisa nuestra zona de delivery en Pucallpa</p>
+                </div>
+                <DeliveryZoneMap />
               </div>
-              <DeliveryZoneMap />
-            </div>
-          </section>
-        </Suspense>
+            </section>
+          </Suspense>
+        )}
 
-        {/* Mejora 12: PWA install banner */}
+        {/* PWA install banner */}
         <Suspense fallback={null}>
           <PWAInstallBanner />
         </Suspense>
 
-        {/* Invitar amigos — movido desde /tienda */}
+        {/* Invitar amigos */}
         <Suspense fallback={<LoadingSection />}>
           <ReferralBanner />
         </Suspense>

@@ -104,7 +104,7 @@ export default function SocialProofToast() {
     };
   }, [hasFirstOrder, products]);
 
-  if (!notification || dismissed) return null;
+  if (products.length === 0 || !notification || dismissed) return null;
 
   return (
     <div
