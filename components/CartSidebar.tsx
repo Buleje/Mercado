@@ -10,7 +10,7 @@ import { useCustomer } from "@/contexts/customer-context";
 import { useSettings } from "@/contexts/settings-context";
 import { usePromotions } from "@/contexts/promotions-context";
 import { sendOrder, type SendResult } from "@/lib/order-utils";
-import { products as allProducts } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import CartUpsellSection from "@/components/CartUpsellSection";
 
 /** Renders a cart item image with graceful error fallback */
@@ -41,6 +41,7 @@ export default function CartSidebar() {
   const { customer } = useCustomer();
   const { mode } = useSettings();
   const { getBestPromotion, promotions } = usePromotions();
+  const { products: allProducts } = useStoreProducts();
   const panelRef = useRef<HTMLDivElement>(null);
   const [sendResult, setSendResult] = useState<SendResult | null>(null);
   const [sending, setSending] = useState(false);

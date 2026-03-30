@@ -6,7 +6,7 @@ import { Flame, ShoppingCart, Package, Zap, Minus, Plus } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useSettings } from "@/contexts/settings-context";
-import { products } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import type { Product } from "@/data/products";
 
 // compute flash deal defaults – daily deals that reset every day at midnight
@@ -29,8 +29,8 @@ function pad(n: number) {
 }
 
 // Pick 4 random products as daily "flash deals" with fake discounts
-function pickDeals(discount: number): Array<Product & { originalPrice: number; discount: number }> {
-  const shuffled = [...products].filter((p) => !(p.stock != null && p.stock <= 0)).sort(() => Math.random() - 0.5);
+function pickDeals(allProducts: Product[], discount: number): Array<Product & { originalPrice: number; discount: number }> {
+  const shuffled = [...allProducts].filter((p) => !(p.stock != null && p.stock <= 0)).sort(() => Math.random() - 0.5);
   return shuffled.slice(0, 6).map((p) => ({
     ...p,
     originalPrice: +(p.price / (1 - discount / 100)).toFixed(2),
@@ -39,9 +39,9 @@ function pickDeals(discount: number): Array<Product & { originalPrice: number; d
 }
 
 // Build deals from admin-selected IDs, or fall back to random
-function buildAdminDeals(ids: number[], discount: number): Array<Product & { originalPrice: number; discount: number }> {
+function buildAdminDeals(allProducts: Product[], ids: number[], discount: number): Array<Product & { originalPrice: number; discount: number }> {
   const selected = ids
-    .map(id => products.find(p => p.id === id))
+    .map(id => allProducts.find(p => p.id === id))
     .filter((p): p is Product => Boolean(p) && !(p!.stock != null && p!.stock <= 0));
   if (selected.length === 0) return [];
   return selected.slice(0, 8).map(p => ({
@@ -54,8 +54,8 @@ function buildAdminDeals(ids: number[], discount: number): Array<Product & { ori
 const DEALS_KEY = "bsm-flash-deals";
 const DEALS_DATE_KEY = "bsm-flash-deals-date";
 
-function loadOrCreateDeals(discount: number) {
-  if (typeof window === "undefined") return pickDeals(discount);
+function loadOrCreateDeals(allProducts: Product[], discount: number) {
+  if (typeof window === "undefined") return pickDeals(allProducts, discount);
   const today = new Date().toDateString();
   const savedDate = localStorage.getItem(DEALS_DATE_KEY);
   if (savedDate === today) {
@@ -64,7 +64,7 @@ function loadOrCreateDeals(discount: number) {
       if (saved.length > 0) return saved;
     } catch {}
   }
-  const deals = pickDeals(discount);
+  const deals = pickDeals(allProducts, discount);
   localStorage.setItem(DEALS_KEY, JSON.stringify(deals));
   localStorage.setItem(DEALS_DATE_KEY, today);
   return deals;
@@ -77,19 +77,54 @@ export default function FlashDeals() {
   const [time, setTime] = useState(getTimeLeft(endTime));
   const { addItem, items, updateQty } = useCart();
   const { showToast } = useToast();
+  const { products, isLoading } = useStoreProducts();
   const discount = hp.flashDealDiscount ?? 20;
 
   useEffect(() => {
+    // Solo construir deals cuando los productos ya cargaron
+    if (isLoading || products.length === 0) return;
     // Prefer admin-selected deals, fall back to random daily picks
     const adminIds = hp.flashDealIds ?? [];
-    const adminDeals = adminIds.length > 0 ? buildAdminDeals(adminIds, discount) : [];
-    startTransition(() => setDeals(adminDeals.length > 0 ? adminDeals : loadOrCreateDeals(discount)));
-  }, [hp.flashDealIds, discount]);
+    const adminDeals = adminIds.length > 0 ? buildAdminDeals(products, adminIds, discount) : [];
+    startTransition(() => setDeals(adminDeals.length > 0 ? adminDeals : loadOrCreateDeals(products, discount)));
+  }, [products, isLoading, hp.flashDealIds, discount]);
 
   useEffect(() => {
     const t = setInterval(() => setTime(getTimeLeft(endTime)), 1000);
     return () => clearInterval(t);
   }, [endTime]);
+
+  // Skeleton mientras carga
+  if (isLoading) {
+    return (
+      <section className="py-10 sm:py-14 bg-orange-50/70 dark:bg-surface">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+            <div className="space-y-2">
+              <div className="h-9 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+              <div className="h-4 w-64 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+            </div>
+            <div className="flex gap-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-12 w-12 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border animate-pulse">
+                <div className="aspect-square bg-gray-200 dark:bg-gray-700" />
+                <div className="p-3 space-y-2">
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (deals.length === 0) return null;
 

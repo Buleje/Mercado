@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useFavorites } from "@/contexts/favorites-context";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
-import { products } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import Image from "next/image";
 import { Heart, ShoppingCart, Plus, Minus, Package, Trash2, ClipboardList, MessageCircle, Share2 } from "lucide-react";
 
@@ -12,12 +12,14 @@ export default function FavoritesSection() {
   const { favorites, toggle } = useFavorites();
   const { addItem, items: cartItems, updateQty } = useCart();
   const { showToast } = useToast();
+  const { products, isLoading } = useStoreProducts();
 
   const sectionRef = useRef<HTMLElement>(null);
 
   /* Y2: Export favorites as text list */
   const [copied, setCopied] = useState(false);
 
+  if (isLoading) return null;
   const favProducts = products.filter((p) => favorites.has(String(p.id)));
   if (favProducts.length === 0) return null;
 

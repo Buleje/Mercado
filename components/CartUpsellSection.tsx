@@ -4,8 +4,9 @@ import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Plus, Sparkles, TrendingUp, Zap, Package } from "lucide-react";
-import { products as allProducts, getProductSlug } from "@/data/products";
+import { getProductSlug } from "@/data/products";
 import type { Product } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 
 type CartItem = Product & { quantity: number };
 type CoPurchased = { id: number; name: string; image: string; price: number; unit: string };
@@ -32,6 +33,7 @@ export default function CartUpsellSection({
   coPurchased,
   onAddItem,
 }: CartUpsellSectionProps) {
+  const { products: allProducts, isLoading } = useStoreProducts();
   const cartIds = useMemo(() => new Set(items.map((i) => i.id)), [items]);
   const remaining = FREE_DELIVERY_THRESHOLD - cartTotal;
   const needsThresholdPush = remaining > 0 && remaining < 30;
@@ -94,7 +96,7 @@ export default function CartUpsellSection({
   })();
 
   const hasContent = thresholdProducts.length > 0 || suggestions.length > 0 || combo;
-  if (!hasContent) return null;
+  if (isLoading || !hasContent) return null;
 
   return (
     <div className="space-y-3">

@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, startTransition } from "react";
 import Image from "next/image";
 import { ShoppingBag, X, Star } from "lucide-react";
 import { useHasCompletedFirstOrder } from "@/hooks/use-first-order";
-import { products } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
+import type { Product } from "@/data/products";
 import { cn } from "@/lib/utils";
 
 const NAMES = [
@@ -26,7 +27,7 @@ type Notification = {
   id: number;
   name: string;
   zone: string;
-  product: typeof products[number];
+  product: Product;
   minutesAgo: number;
   type: MessageType;
 };
@@ -35,7 +36,8 @@ function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function generateNotification(id: number): Notification {
+function generateNotification(id: number, products: Product[]): Notification | null {
+  if (products.length === 0) return null;
   return {
     id,
     name: pickRandom(NAMES),
@@ -48,6 +50,7 @@ function generateNotification(id: number): Notification {
 
 export default function SocialProofToast() {
   const hasFirstOrder = useHasCompletedFirstOrder();
+  const { products } = useStoreProducts();
   const [notification, setNotification] = useState<Notification | null>(null);
   const [visible, setVisible] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -74,7 +77,9 @@ export default function SocialProofToast() {
         if (userDismissedRef.current) return;
         counterRef.current += 1;
         startTransition(() => {
-          setNotification(generateNotification(counterRef.current));
+          const n = generateNotification(counterRef.current, products);
+          if (!n) return;
+          setNotification(n);
           setVisible(true);
           setDismissed(false);
         });
@@ -97,7 +102,7 @@ export default function SocialProofToast() {
       clearTimeout(initialDelay);
       clearTimeout(timerRef.current!);
     };
-  }, [hasFirstOrder]);
+  }, [hasFirstOrder, products]);
 
   if (!notification || dismissed) return null;
 

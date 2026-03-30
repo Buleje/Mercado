@@ -5,7 +5,7 @@ import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import Image from "next/image";
 import { X, GitCompareArrows, Plus, Package, Trash2, Star } from "lucide-react";
-import { categories } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 
 export default function CompareBar() {
   const { items, remove, clear, open, setOpen } = useCompare();
@@ -58,6 +58,7 @@ function CompareModal() {
   const { items, clear, setOpen } = useCompare();
   const { addItem } = useCart();
   const { showToast } = useToast();
+  const { categories } = useStoreProducts();
 
   const catLabel = (cat: string) => categories.find(c => c.id === cat)?.label ?? cat;
 

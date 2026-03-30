@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import { X, Minus, Plus, RotateCcw, ShoppingCart, Package, TrendingUp, TrendingDown, AlertCircle } from "lucide-react";
-import { products as allProducts } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
 
 interface OrderItem {
@@ -30,6 +30,8 @@ export default function QuickReorderModal({
   onClose,
   onConfirm,
 }: QuickReorderModalProps) {
+  const { products: allProducts, isLoading } = useStoreProducts();
+
   // Build selectable items with current catalog price comparison
   const selectableItems = useMemo(() => {
     return items.map((item) => {
@@ -50,7 +52,7 @@ export default function QuickReorderModal({
         available: !!catalogMatch,
       };
     });
-  }, [items]);
+  }, [items, allProducts]);
 
   // Selection state: { itemIndex → quantity }
   const [selected, setSelected] = useState<Record<number, number>>(() => {
@@ -62,6 +64,8 @@ export default function QuickReorderModal({
     });
     return initial;
   });
+
+  if (isLoading) return null;
 
   const toggleItem = (idx: number) => {
     setSelected((prev) => {

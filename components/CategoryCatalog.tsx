@@ -25,14 +25,14 @@ import {
   Heart,
   ExternalLink,
 } from "lucide-react";
-import { products, categories, getProductSlug } from "@/data/products";
+import { getProductSlug } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useFavorites } from "@/contexts/favorites-context";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/data/products";
 import { ProductCard } from "./ProductCard";
-import { useCachedData } from "@/hooks/use-cached-data";
 import { levenshteinDistance } from "@/hooks/use-advanced-search";
 
 type LiveProduct = Product & { stock?: number; stockMin?: number };
@@ -372,6 +372,7 @@ export default function CategoryCatalog({
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const { products, categories, isLoading: isStoreLoading } = useStoreProducts();
 
   // Read initial state from URL
   const initialSearch = searchParams.get("q") ?? "";
@@ -395,35 +396,15 @@ export default function CategoryCatalog({
     );
   });
 
-  // Fetch live products from API
-  const {
-    data: apiProducts,
-    isLoading,
-    isError,
-    refetch,
-  } = useCachedData<Array<LiveProduct & { active?: boolean }>>(
-    "products",
-    async () => {
-      const response = await fetch("/api/products");
-      if (!response.ok) return [];
-      return response.json();
-    },
-    { staleTime: 2 * 60 * 1000, refetchOnFocus: true, refetchInterval: 30 * 1000 }
-  );
+  // useStoreProducts NUNCA cae en fallback a data/products
+  // Si el tenant no tiene productos, retorna [] — empty state correcto
+  const isLoading = isStoreLoading;
+  const isError = false;
 
-  const allProducts = useMemo(() => {
-    // Si la API aún está cargando (apiProducts === undefined), usar datos estáticos como placeholder.
-    // Si la API ya respondió (apiProducts definido), usar SOLO sus datos aunque estén vacíos.
-    // Esto evita mostrar productos del tenant "main" a tenants nuevos sin productos.
-    if (apiProducts === undefined) return products;
-    if (!Array.isArray(apiProducts)) return products;
-    return apiProducts.filter((p) => p.active !== false);
-  }, [apiProducts]);
-
-  // Only products for this category
+  // Only products for this category (solo productos reales del tenant)
   const categoryProducts = useMemo(
-    () => allProducts.filter((p) => p.category === categoryId),
-    [allProducts, categoryId]
+    () => (products as LiveProduct[]).filter((p) => p.category === categoryId),
+    [products, categoryId]
   );
 
   const maxPrice = useMemo(
@@ -669,21 +650,7 @@ export default function CategoryCatalog({
           </div>
         )}
 
-        {/* API error notice */}
-        {isError && (
-          <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-700/40 text-xs text-amber-700 dark:text-amber-400 mb-6">
-            <span>
-              ⚠️ No se pudo cargar el catálogo actualizado. Mostrando datos de
-              muestra.
-            </span>
-            <button
-              onClick={refetch}
-              className="shrink-0 font-bold underline hover:no-underline transition-all"
-            >
-              Reintentar
-            </button>
-          </div>
-        )}
+        {/* El error notice fue eliminado — useStoreProducts maneja el estado internamente */}
 
         {/* Product Grid */}
         {loading ? (
@@ -704,6 +671,13 @@ export default function CategoryCatalog({
                 </div>
               </div>
             ))}
+          </div>
+        ) : categoryProducts.length === 0 ? (
+          // Tenant sin productos en esta categoría — empty state informativo (NO fallback a data/products)
+          <div className="text-center py-16 space-y-4">
+            <Package className="h-16 w-16 mx-auto text-gray-300 dark:text-gray-600" />
+            <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400">Tu catálogo está en preparación</h3>
+            <p className="text-sm text-gray-400 dark:text-gray-500">Agrega productos desde tu panel de administración para empezar a vender.</p>
           </div>
         ) : filteredProducts.length === 0 ? (
           (() => {

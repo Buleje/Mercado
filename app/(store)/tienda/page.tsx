@@ -7,7 +7,7 @@ import AnnouncementBar from "@/components/AnnouncementBar";
 import FreeDeliveryProgress from "@/components/FreeDeliveryProgress";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 import TiendaClientShell from "@/components/TiendaClientShell";
-import { categories, products } from "@/data/products";
+import { categories } from "@/data/products";
 import {
   ProductGridSkeleton,
   CategorySectionSkeleton,
@@ -121,7 +121,7 @@ export default function TiendaPage() {
           <CombosSection />
         </Suspense>
         <Suspense fallback={<CatalogLoadingSkeleton />}>
-          <ProductCatalog initialProducts={products} />
+          <ProductCatalog initialProducts={[]} />
         </Suspense>
         {/* Below-fold sections + modals (client-only shell with ssr:false) */}
         <TiendaClientShell />

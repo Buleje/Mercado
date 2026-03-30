@@ -12,7 +12,6 @@ import {
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { Plus, Minus, Package, Search, X, ArrowUpDown, SlidersHorizontal, Clock, LayoutGrid, List } from "lucide-react";
-import { categories } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
@@ -28,8 +27,7 @@ const QuickViewModal = dynamic(() => import("@/components/QuickViewModal"), { ss
 
 type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number };
 
-// Only real categories (not "todos")
-const realCategories = categories.filter((c) => c.id !== "todos");
+// realCategories se deriva dinámicamente de productList en el componente
 
 type SortKey = "relevancia" | "precio-asc" | "precio-desc" | "nombre";
 const SORT_OPTIONS: { id: SortKey; label: string }[] = [
@@ -350,6 +348,16 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
     }
     return list;
   }, [apiProducts, initialProducts, ratingsMap]);
+
+  // Deriva las categorías reales del tenant a partir de sus productos (NUNCA de data/products)
+  const realCategories = useMemo(() => {
+    const catIds = [...new Set(productList.map(p => p.category).filter(Boolean))];
+    return catIds.map(id => ({
+      id,
+      label: id.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
+      emoji: "📦",
+    }));
+  }, [productList]);
 
   // Compute maxPrice from productList
   const maxPrice = useMemo(() => {

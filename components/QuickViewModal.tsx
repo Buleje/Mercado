@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Plus, Minus, ShoppingCart, Package, X, Heart, Star, ExternalLink } from "lucide-react";
-import { products, categories, getProductSlug } from "@/data/products";
+import { getProductSlug } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useFavorites } from "@/contexts/favorites-context";
@@ -18,6 +19,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
   const { items, addItem, updateQty } = useCart();
   const { showToast } = useToast();
   const { isFavorite, toggle: toggleFav } = useFavorites();
+  const { products, categories, isLoading } = useStoreProducts();
   const cartItem = items.find((i) => i.id === product.id);
   const qty = cartItem?.quantity ?? 0;
   const isOutOfStock = product.stock != null && product.stock <= 0;
@@ -109,6 +111,8 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
     addItem(product);
     showToast(product.name, product.image);
   };
+
+  if (isLoading) return null;
 
   const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
   const avgRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0;

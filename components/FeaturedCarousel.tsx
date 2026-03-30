@@ -1,21 +1,26 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useMemo } from "react";
 import Image from "next/image";
 import { Star, Package, ShoppingCart, Minus, Plus } from "lucide-react";
-import { products } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { cn } from "@/lib/utils";
 
-const FEATURED = products.filter(p => p.badge === "Popular" || p.badge === "Oferta").slice(0, 6);
-
 export default function FeaturedCarousel() {
+  const { products, isLoading } = useStoreProducts();
   const { addItem, items, updateQty } = useCart();
   const { showToast } = useToast();
   const lastClickRef = useRef(0);
 
-  if (FEATURED.length === 0) return null;
+  const featured = useMemo(
+    () => products.filter(p => p.badge === "Popular" || p.badge === "Oferta").slice(0, 6),
+    [products]
+  );
+
+  // No mostrar el carrusel mientras carga o si el tenant no tiene productos destacados
+  if (isLoading || featured.length === 0) return null;
 
   return (
     <section className="py-6 sm:py-8" style={{ background: "linear-gradient(to bottom, rgba(45,106,79,0.05), transparent)" }}>
@@ -26,7 +31,7 @@ export default function FeaturedCarousel() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-          {FEATURED.map(product => (
+          {featured.map(product => (
             <div key={product.id} className="group bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
               <div className="relative aspect-square bg-gray-50 dark:bg-surface overflow-hidden">
                 {product.image ? (

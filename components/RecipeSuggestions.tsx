@@ -4,9 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, Clock, Users, Sparkles, Package, Minus, Plus, ArrowRight } from "lucide-react";
-import { products, type Product } from "@/data/products";
+import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
+import { useStoreProducts } from "@/hooks/use-store-products";
 
 type Recipe = {
   name: string;
@@ -52,7 +53,7 @@ const RECIPES: Recipe[] = [
   },
 ];
 
-function findProducts(ingredientNames: string[]): Product[] {
+function findProducts(ingredientNames: string[], products: Product[]): Product[] {
   const found: Product[] = [];
   for (const name of ingredientNames) {
     const match = products.find((p) =>
@@ -65,12 +66,15 @@ function findProducts(ingredientNames: string[]): Product[] {
 
 export default function RecipeSuggestions() {
   const { addItem } = useCart();
+  const { products, isLoading } = useStoreProducts();
   const [ref, inView] = useInView({ threshold: 0.1 });
   /* V4: Portion multipliers per recipe */
   const [portions, setPortions] = useState<Record<string, number>>({});
 
+  if (isLoading) return null;
+
   const addAllIngredients = (ingredientNames: string[], multiplier: number) => {
-    const matched = findProducts(ingredientNames);
+    const matched = findProducts(ingredientNames, products);
     matched.forEach((p) => {
       for (let i = 0; i < Math.ceil(multiplier); i++) addItem(p);
     });
@@ -102,7 +106,7 @@ export default function RecipeSuggestions() {
         {/* Recipe cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
           {RECIPES.map((recipe, i) => {
-            const matched = findProducts(recipe.ingredients);
+            const matched = findProducts(recipe.ingredients, products);
             const multiplier = (portions[recipe.name] ?? recipe.servings) / recipe.servings;
             const currentServings = portions[recipe.name] ?? recipe.servings;
             const totalPrice = matched.reduce((sum, p) => sum + p.price * multiplier, 0);
