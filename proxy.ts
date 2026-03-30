@@ -124,10 +124,27 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ── Tenant injection ── always runs
-  // If the client already sent x-tenant-id (e.g. from localStorage for multi-tenant login),
-  // use that instead of resolving from hostname
+  // Priority: 1) client header, 2) session token tenantId, 3) hostname resolution
   const clientTenantId = request.headers.get("x-tenant-id");
-  const tenantId = clientTenantId || resolveTenantFromHost(request);
+  let tenantId = clientTenantId || resolveTenantFromHost(request);
+
+  // If tenant is "main" (default from localhost), check if the session token has a specific tenantId
+  if (tenantId === "main") {
+    const sessionCookie = request.cookies.get("bsm-admin-sess")?.value;
+    if (sessionCookie) {
+      try {
+        const dotIdx = sessionCookie.lastIndexOf(".");
+        if (dotIdx > 0) {
+          const encoded = sessionCookie.slice(0, dotIdx);
+          const decoded = JSON.parse(Buffer.from(encoded, "base64").toString()) as { tenantId?: string };
+          if (decoded.tenantId && decoded.tenantId !== "main") {
+            tenantId = decoded.tenantId;
+          }
+        }
+      } catch { /* ignore parse errors */ }
+    }
+  }
+
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-tenant-id", tenantId);
   const withTenant = { request: { headers: requestHeaders } };
