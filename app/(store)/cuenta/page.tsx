@@ -26,6 +26,7 @@ import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
 const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
+const CustomerMetricsPanel = dynamic(() => import("@/components/store/CustomerMetricsPanel"));
 
 /* ── Types ───────────────────────────────────────────────────────── */
 
@@ -75,6 +76,7 @@ function fmtDate(iso: string) {
 
 const TABS = [
   { id: "pedidos",     label: "Pedidos",   icon: Receipt      },
+  { id: "metricas",   label: "Metricas",  icon: TrendingUp   },
   { id: "favoritos",  label: "Favoritos",  icon: Heart        },
   { id: "listas",     label: "Listas",    icon: ListChecks   },
   { id: "puntos",     label: "Puntos",    icon: Award        },
@@ -327,6 +329,7 @@ export default function CuentaPage() {
               {activeTab === "pedidos" && (
                 <PedidosTab orders={orders ?? []} activeOrders={activeOrders} onReorder={handleReorder} />
               )}
+              {activeTab === "metricas" && <CustomerMetricsPanel phone={phone} />}
               {activeTab === "favoritos" && <FavoritosTab />}
               {activeTab === "listas" && <ListasTab phone={phone} />}
               {activeTab === "puntos" && <PuntosTab loyalty={loyalty} orders={orders ?? []} />}

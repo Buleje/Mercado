@@ -28,6 +28,7 @@ const BasketAnalysisTab = dynamic(() => import("@/components/admin/BasketAnalysi
 const CustomKPITab = dynamic(() => import("@/components/admin/CustomKPITab"), { loading: S });
 const PeakHoursTab = dynamic(() => import("@/components/admin/PeakHoursTab"), { loading: S });
 const CompetitorPriceTracker = dynamic(() => import("@/components/admin/CompetitorPriceTracker"), { loading: S });
+const PredictiveAnalyticsTab = dynamic(() => import("@/components/admin/PredictiveAnalyticsTab"), { loading: S });
 
 // ── New Analytics PRO components (React.lazy) ────────────────────────────────
 const AnalyticsKPIBarV2 = lazy(() => import("@/components/admin/analytics/AnalyticsKPIBarV2"));
@@ -42,7 +43,7 @@ const RFMSegmentationPanel = lazy(() => import("@/components/admin/analytics/RFM
 // ── Types ────────────────────────────────────────────────────────────────────
 export type AnalyticsPeriod = "1d" | "7d" | "30d" | "90d" | "1y";
 
-type SectionId = "resumen" | "ventas" | "productos" | "clientes" | "finanzas";
+type SectionId = "resumen" | "ventas" | "productos" | "clientes" | "finanzas" | "predicciones";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const PERIODS: { key: AnalyticsPeriod; label: string }[] = [
@@ -66,7 +67,8 @@ const SECTIONS: { id: SectionId; label: string; icon: typeof LayoutDashboard; de
   { id: "ventas",    label: "Ventas",    icon: TrendingUp,      description: "Tendencias, horarios y patrones de venta" },
   { id: "productos", label: "Productos", icon: Package,         description: "Clasificacion ABC, BCG y margenes" },
   { id: "clientes",  label: "Clientes",  icon: Users,           description: "Segmentación RFM (Recencia, Frecuencia, Monetario — clasifica clientes por comportamiento de compra), ranking y fidelidad" },
-  { id: "finanzas",  label: "Finanzas",  icon: DollarSign,      description: "Flujo de caja, rentabilidad y KPIs" },
+  { id: "finanzas",     label: "Finanzas",     icon: DollarSign,      description: "Flujo de caja, rentabilidad y KPIs" },
+  { id: "predicciones", label: "Predicciones", icon: Target,          description: "Pronosticos y alertas basados en historial" },
 ];
 
 // ── AnalyticsCard — wrapper profesional para cada grafico ────────────────────
@@ -687,6 +689,20 @@ export default function AnalyticsBIModule() {
             >
               <CompetitorPriceTracker />
             </AnalyticsCard>
+          </div>
+        );
+
+      // ────────────────────────────────────────────────────────────────────────
+      // SECCION 6: PREDICCIONES
+      // ────────────────────────────────────────────────────────────────────────
+      case "predicciones":
+        return (
+          <div className="flex flex-col gap-6 max-w-3xl mx-auto" key={`pred-${refreshKey}`}>
+            <SectionHeader
+              title="Predicciones"
+              description="Pronosticos simples basados en promedios historicos de 28 dias"
+            />
+            <PredictiveAnalyticsTab />
           </div>
         );
 
