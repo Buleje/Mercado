@@ -64,14 +64,12 @@ const porQueElegirnos = [
 ];
 
 export default async function AboutPage() {
-  // Fetch store settings for dynamic data (address, phone, etc.)
+  // Fetch store settings directly from DB (no circular fetch)
   let settings: Record<string, string | number | null> = {};
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/settings`, {
-      cache: "no-store",
-    });
-    if (res.ok) settings = await res.json();
+    const { SettingsDB } = await import("@/lib/db/settings.db");
+    const data = await SettingsDB.get();
+    settings = data as unknown as Record<string, string | number | null>;
   } catch {
     // Settings unavailable — use defaults
   }

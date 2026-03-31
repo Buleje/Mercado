@@ -73,6 +73,9 @@ export default function RecentPurchases() {
 
     async function load() {
       try {
+        // Check for admin session cookie before fetching — endpoint requires auth.
+        // Without this check, the 401 response pollutes the browser console.
+        if (!document.cookie.includes("admin-session")) return;
         const res = await fetch("/api/orders?limit=5&status=entregado");
         if (!res.ok) return;
         const data = await res.json();

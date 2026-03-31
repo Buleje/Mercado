@@ -13,6 +13,8 @@ import { ToastContainer } from "@/components/ToastContainer";
 import { ThemeProvider } from "@/contexts/theme-context";
 import CommandPalette from "@/components/CommandPalette";
 import ClientEffects from "@/components/ui/ClientEffects";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.buleje.pe"),
@@ -215,6 +217,8 @@ export default async function RootLayout({
         <CommandPalette />
         {children}
         <ToastContainer position="bottom-right" />
+        <SpeedInsights />
+        <Analytics />
         </ErrorBoundary>
         </ThemeProvider>
       </body>

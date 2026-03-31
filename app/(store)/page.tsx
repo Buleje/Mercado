@@ -133,7 +133,7 @@ const DEFAULT_ORDER: SectionKey[] = [
   "combos", "recipes", "testimonials", "faq", "contact", "delivery_map",
 ];
 
-// ── Leer secciones visibles y orden desde settings (server-side) ─────────────
+// ── Leer secciones visibles y orden desde settings (server-side, DB directo) ─
 async function getSectionConfig(): Promise<{
   visible: Set<SectionKey>;
   order: SectionKey[];
@@ -142,28 +142,22 @@ async function getSectionConfig(): Promise<{
     const { headers } = await import("next/headers");
     const hdrs = await headers();
     const tenantId = hdrs.get("x-tenant-id") ?? "main";
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/settings`, {
-      headers: { "x-tenant-id": tenantId },
-      cache: "no-store",
-    });
-    if (!res.ok) return { visible: new Set(), order: DEFAULT_ORDER };
-    const data = await res.json();
+    const { SettingsDB } = await import("@/lib/db/settings.db");
+    const data = await SettingsDB.get(tenantId);
 
     // Leer secciones visibles
     let visibleKeys: SectionKey[] = [];
-    if (data?.storeTheme?.sections && Array.isArray(data.storeTheme.sections)) {
-      visibleKeys = data.storeTheme.sections.map((s: string | { id: string }) =>
+    const storeTheme = data?.storeTheme as Record<string, unknown> | undefined;
+    if (storeTheme?.sections && Array.isArray(storeTheme.sections)) {
+      visibleKeys = (storeTheme.sections as Array<string | { id: string }>).map((s) =>
         typeof s === "string" ? s : s.id
       ) as SectionKey[];
-    } else if (Array.isArray(data?.homepage?.visibleSections)) {
-      visibleKeys = data.homepage.visibleSections as SectionKey[];
     }
 
     // Leer orden
     const orderKeys: SectionKey[] =
-      Array.isArray(data?.storeTheme?.sectionOrder)
-        ? (data.storeTheme.sectionOrder as SectionKey[])
+      Array.isArray(storeTheme?.sectionOrder)
+        ? (storeTheme.sectionOrder as SectionKey[])
         : [];
 
     return {

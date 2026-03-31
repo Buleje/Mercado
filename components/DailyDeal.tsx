@@ -53,7 +53,7 @@ export default function DailyDeal() {
   useEffect(() => {
     async function fetchDeal() {
       try {
-        const res = await fetch("/api/products/frecuentes?limit=1");
+        const res = await fetch("/api/products?limit=1&sort=popular");
         if (res.ok) {
           const data = await res.json();
           const items = Array.isArray(data) ? data : data.products || [];

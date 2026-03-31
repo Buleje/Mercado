@@ -5,7 +5,7 @@ import StoreClientShell from "@/components/StoreClientShell";
 import StoreProviders from "@/components/StoreProviders";
 import LocalBusinessJsonLd from "@/components/store/LocalBusinessJsonLd";
 import StoreFloatingWidgets from "@/components/store/StoreFloatingWidgets";
-import { SettingsDB } from "@/lib/jsondb";
+import { SettingsDB } from "@/lib/db/settings.db";
 import { headers } from "next/headers";
 import {
   GoogleAnalytics,
