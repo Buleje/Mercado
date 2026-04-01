@@ -1,14 +1,18 @@
 import type { ReactNode } from "react";
+import { requirePlatformPage } from "@/lib/superadmin-auth";
+import SuperAdminShell from "@/components/superadmin/SuperAdminShell";
 
 export const metadata = {
   title: "Platform Admin — Buleje SaaS",
   robots: "noindex, nofollow",
 };
 
-export default function SuperAdminLayout({ children }: { children: ReactNode }) {
+export default async function SuperAdminLayout({ children }: { children: ReactNode }) {
+  const { username } = await requirePlatformPage();
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-white antialiased">
+    <SuperAdminShell username={username}>
       {children}
-    </div>
+    </SuperAdminShell>
   );
 }
