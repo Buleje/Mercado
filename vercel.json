@@ -74,7 +74,7 @@
     },
     {
       "path": "/api/cron/stock-alerts-notify",
-      "schedule": "0 7 * * *"
+      "schedule": "0 8,14,20 * * *"
     },
     {
       "path": "/api/cron/auto-reorder-check",
@@ -119,6 +119,62 @@
     {
       "path": "/api/cron/cleanup-demos",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/reorder-reminders",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/ai-history-cleanup",
+      "schedule": "0 3 * * 0"
+    },
+    {
+      "path": "/api/cron/marketplace-daily-summary",
+      "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/cron/marketplace-abandoned-carts",
+      "schedule": "0 */3 * * *"
+    },
+    {
+      "path": "/api/cron/dead-stock-report",
+      "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/cron/daily-deal-bundle",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/price-drop-alerts",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/category-margins-report",
+      "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/supplier-scoring",
+      "schedule": "0 8 1 * *"
+    },
+    {
+      "path": "/api/cron/marketplace-weekly-report",
+      "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/zone-offers-push",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/inactive-customers",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/isolation-monitor",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/churn-score",
+      "schedule": "0 2 * * *"
     }
   ]
 }

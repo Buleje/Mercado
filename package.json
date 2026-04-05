@@ -59,6 +59,7 @@
     "leaflet": "^1.9.4",
     "leaflet.heat": "^0.2.0",
     "lucide-react": "^0.577.0",
+    "mercadopago": "^2.12.0",
     "next": "16.1.6",
     "next-sitemap": "^4.2.3",
     "nodemailer": "^8.0.1",
@@ -78,6 +79,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@next/bundle-analyzer": "^16.1.6",
     "@playwright/mcp": "^0.0.68",
     "@playwright/test": "^1.58.2",

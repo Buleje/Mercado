@@ -5,9 +5,9 @@
 
 /* ── Variables de marca (aliases para uso futuro en componentes) ─────────── */
 :root {
-  --brand-primary: #0f766e;
-  --brand-primary-light: #14b8a6;
-  --brand-primary-bg: rgba(15, 118, 110, 0.05);
+  --brand-primary: #00B4A6;
+  --brand-primary-light: #33C4B8;
+  --brand-primary-bg: rgba(0, 180, 166, 0.05);
   --brand-secondary: #f97316;
   --brand-danger: #ef4444;
   --brand-info: #0ea5e9;
@@ -17,12 +17,12 @@
 @theme inline {
   --color-background: #ffffff;
   --color-foreground: #111827;
-  --color-primary: #0f766e;        /* Teal 700 - Brand Primary */
-  --color-primary-dark: #0d5f58;   /* Teal 800 */
-  --color-primary-light: #0d9488;  /* Teal 600 */
+  --color-primary: #00B4A6;        /* Alegra Teal - Brand Primary */
+  --color-primary-dark: #009690;   /* Darker teal for hover/active */
+  --color-primary-light: #33C4B8;  /* Lighter teal variant */
   --color-secondary: #f97316;      /* Orange 500 - Brand Secondary */
   --color-secondary-dark: #ea580c; /* Orange 600 */
-  --color-accent: #14b8a6;         /* Teal 500 - Interactive */
+  --color-accent: #00D4C8;         /* Bright teal - Interactive */
   --color-danger: #ef4444;          /* Red 500 - Errors & alerts */
   --color-success: #10b981;         /* Emerald 500 - Confirmations */
   --color-warning: #f59e0b;         /* Amber 500 - Warnings */
@@ -36,7 +36,7 @@
   --color-popover-foreground: #111827;
   --color-border: #e5e7eb;
   --color-input: #e5e7eb;
-  --color-ring: #0f766e;
+  --color-ring: #00B4A6;
   --color-destructive: #ef4444;
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
@@ -47,9 +47,9 @@
   color-scheme: dark;
   --color-background: #0a0f0e;
   --color-foreground: #e5e7eb;
-  --color-primary: #14b8a6;        /* Teal 500 — legible sobre fondo oscuro */
-  --color-primary-dark: #0f766e;   /* Teal 700 */
-  --color-primary-light: #2dd4bf;  /* Teal 400 */
+  --color-primary: #2dd4bf;        /* Bright teal — legible on dark bg */
+  --color-primary-dark: #00B4A6;   /* Alegra Teal */
+  --color-primary-light: #5eead4;  /* Teal 300 */
   --color-secondary: #fb923c;      /* Orange 400 */
   --color-secondary-dark: #f97316; /* Orange 500 */
   --color-surface: #111c1a;
@@ -58,7 +58,7 @@
   --color-card: #152220;
   --color-card-foreground: #e5e7eb;
   --color-card-border: #1e3a36;
-  --color-accent: #14b8a6;
+  --color-accent: #2dd4bf;
   --color-danger: #ef4444;
   --color-success: #10b981;
   --color-warning: #f59e0b;
@@ -66,7 +66,7 @@
   --color-popover-foreground: #e5e7eb;
   --color-border: #1e3a36;
   --color-input: #1e3a36;
-  --color-ring: #14b8a6;
+  --color-ring: #2dd4bf;
   --color-destructive: #ef4444;
 }
 
@@ -234,6 +234,11 @@ body {
   40% { transform: rotate(-4deg); }
   50% { transform: rotate(10deg); }
   60%, 100% { transform: rotate(0deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fadeUp {
