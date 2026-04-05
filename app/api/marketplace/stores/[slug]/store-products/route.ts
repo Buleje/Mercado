@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/marketplace.db";
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 const AddProductSchema = z.object({
   productId:          z.number().int().positive(),
@@ -20,11 +21,15 @@ const AddProductSchema = z.object({
   ).optional(),
 });
 
+const DeleteSchema = z.object({
+  productId: z.number().int().positive(),
+});
+
 const QuerySchema = z.object({
   category: z.string().optional(),
   search:   z.string().max(100).optional(),
   sort:     z.enum(["price_asc", "price_desc"]).optional(),
-  limit:    z.coerce.number().int().min(1).max(200).default(50),
+  limit:    z.coerce.number().int().min(1).max(100).default(50),
 });
 
 // ─── GET — listar productos de la tienda ──────────────────────────────────────
@@ -58,8 +63,10 @@ export async function GET(
       limit:    parsed.data.limit,
     });
 
+    logger.info("[marketplace/store-products] GET", { traceId, slug, count: products.length });
     return NextResponse.json({ data: products, total: products.length });
   } catch (err) {
+    logger.error("[marketplace/store-products] GET error", { traceId, err });
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
   }
@@ -74,12 +81,11 @@ export async function POST(
 ) {
   const traceId = newTraceId();
   try {
-    const auth = await requireAdmin(req, ["admin", "owner"]);
+    const auth = await requireAdmin(req, ["admin", "tienda_owner"]);
     if (auth instanceof NextResponse) return auth;
 
     const { slug } = await params;
 
-    // Solo el dueño de la tienda o un admin puede agregar productos
     const store = await MarketplaceStoresDB.getBySlug(slug);
     if (!store) throw new NotFoundError("Tienda");
 
@@ -116,15 +122,16 @@ export async function POST(
       auth.username,
     ).catch(() => {});
 
+    logger.info("[marketplace/store-products] POST", { traceId, slug, productId: parsed.data.productId });
     return NextResponse.json({ data: storeProduct }, { status: 201 });
   } catch (err) {
+    logger.error("[marketplace/store-products] POST error", { traceId, err });
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
   }
 }
 
 // ─── DELETE — desactivar producto de la tienda ────────────────────────────────
-// Recibe productId en el body.
 
 export async function DELETE(
   req: NextRequest,
@@ -132,7 +139,7 @@ export async function DELETE(
 ) {
   const traceId = newTraceId();
   try {
-    const auth = await requireAdmin(req, ["admin", "owner"]);
+    const auth = await requireAdmin(req, ["admin", "tienda_owner"]);
     if (auth instanceof NextResponse) return auth;
 
     const { slug } = await params;
@@ -147,23 +154,25 @@ export async function DELETE(
     }
 
     const body = await req.json().catch(() => ({}));
-    const productId = Number(body?.productId);
-    if (!productId || isNaN(productId)) {
+    const parsed = DeleteSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json({ error: "productId inválido" }, { status: 400 });
     }
 
-    await MarketplaceStoreProductsDB.deactivate(store.id, productId);
+    await MarketplaceStoreProductsDB.deactivate(store.id, parsed.data.productId);
 
     logActivity(
       "Desactivar",
       "marketplace_store_product",
-      `Producto #${productId} desactivado de tienda "${store.name}"`,
+      `Producto #${parsed.data.productId} desactivado de tienda "${store.name}"`,
       store.id,
       auth.username,
     ).catch(() => {});
 
+    logger.info("[marketplace/store-products] DELETE", { traceId, slug, productId: parsed.data.productId });
     return NextResponse.json({ success: true });
   } catch (err) {
+    logger.error("[marketplace/store-products] DELETE error", { traceId, err });
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
   }

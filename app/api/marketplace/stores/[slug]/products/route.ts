@@ -4,12 +4,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
+import { logger } from "@/lib/logger";
 
 const QuerySchema = z.object({
   category: z.string().optional(),
   search:   z.string().optional(),
   sort:     z.enum(["price_asc", "price_desc"]).optional(),
-  limit:    z.coerce.number().int().min(1).max(200).default(50),
+  limit:    z.coerce.number().int().min(1).max(100).default(50),
 });
 
 export async function GET(
@@ -40,25 +41,27 @@ export async function GET(
       throw new NotFoundError("Tienda");
     }
 
-    const orderBy = sort === "price_asc"
-      ? { retailPrice: "asc" as const }
-      : sort === "price_desc"
+    const orderBy = sort === "price_desc"
       ? { retailPrice: "desc" as const }
       : { retailPrice: "asc" as const };
+
+    // Merge category + search into one Product filter object — spreading two
+    // separate `{ Product: ... }` keys causes the second to silently overwrite the first.
+    const productFilter = {
+      ...(category && { category }),
+      ...(search   && { name: { contains: search, mode: "insensitive" as const } }),
+    };
 
     const raw = await prisma.storeProduct.findMany({
       where: {
         storeId:  store.id,
         isActive: true,
-        ...(category && { Product: { category } }),
-        ...(search   && { Product: { name: { contains: search, mode: "insensitive" } } }),
+        ...(Object.keys(productFilter).length > 0 && { Product: productFilter }),
       },
       select: {
-        id:            true,
-        retailPrice:   true,
-        wholesalePrice: true,
-        minOrderQty:   true,
-        isActive:      true,
+        id:          true,
+        retailPrice: true,
+        minOrderQty: true,
         Product: {
           select: {
             id:       true,
@@ -74,13 +77,11 @@ export async function GET(
       take: limit,
     });
 
-    // Flatten para que el frontend reciba { id, name, price, stock, storeProductId, ... }
     const products = raw.map((sp) => ({
       id:             sp.Product.id,
       storeProductId: sp.id,
       name:           sp.Product.name,
       price:          sp.retailPrice,
-      wholesalePrice: sp.wholesalePrice,
       minOrderQty:    sp.minOrderQty,
       image:          sp.Product.image,
       category:       sp.Product.category,
@@ -88,8 +89,10 @@ export async function GET(
       stock:          sp.Product.stock ?? 0,
     }));
 
+    logger.info("[marketplace/products] GET", { traceId, slug, count: products.length });
     return NextResponse.json({ data: products, total: products.length });
   } catch (err) {
+    logger.error("[marketplace/products] GET error", { traceId, err });
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
   }
