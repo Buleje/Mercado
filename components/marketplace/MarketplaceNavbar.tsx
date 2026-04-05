@@ -32,6 +32,12 @@ export default function MarketplaceNavbar() {
             <div className="flex items-center gap-1">
               <CartBadge onClick={() => setCartOpen(true)} />
               <Link
+                href="/marketplace/registrar"
+                className="hidden sm:inline-flex rounded-lg px-3 py-1.5 text-sm font-semibold text-white/90 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                Abre tu tienda
+              </Link>
+              <Link
                 href="/registro"
                 className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
               >

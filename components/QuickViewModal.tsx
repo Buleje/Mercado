@@ -23,7 +23,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
   const cartItem = items.find((i) => i.id === product.id);
   const qty = cartItem?.quantity ?? 0;
   const isOutOfStock = product.stock != null && product.stock <= 0;
-  const [tab, setTab] = useState<"info" | "reviews" | "related">("info");
+  const [tab, setTab] = useState<"info" | "reviews" | "alsoBought" | "related">("info");
   const fav = isFavorite(String(product.id));
 
   // Review form state
@@ -85,6 +85,17 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
       return Array.isArray(data) ? data.slice(-10) : [];
     },
     { staleTime: 30 * 60 * 1000, refetchOnFocus: false }
+  );
+
+  const { data: coPurchased = [] } = useCachedData<Array<{ id: number; name: string; price: number; image: string | null; unit: string }>>(
+    `co-purchased-${product.id}`,
+    async () => {
+      const res = await fetch(`/api/products/co-purchased?ids=${product.id}&limit=4`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data.slice(0, 4) : [];
+    },
+    { staleTime: 10 * 60 * 1000, refetchOnFocus: false }
   );
 
   const stableOnClose = useCallback(() => onClose(), [onClose]);
@@ -223,7 +234,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
 
           {/* Tabs */}
           <div className="flex border-b border-gray-100 dark:border-card-border shrink-0">
-            {([["info", "Detalles"], ["reviews", "Reseñas"], ["related", "Relacionados"]] as const).map(([key, label]) => (
+            {([["info", "Detalles"], ["reviews", "Reseñas"], ["alsoBought", "Compran juntos"], ["related", "Relacionados"]] as const).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => setTab(key)}
@@ -273,7 +284,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
 
                 <div className="bg-primary/5 dark:bg-primary/10 rounded-xl p-4 border border-primary/10">
                   <p className="text-sm text-foreground font-medium">
-                    🚚 <strong>Delivery gratis</strong> en Pucallpa. Paga con <strong>Yape</strong> o <strong>efectivo</strong> contra entrega.
+                    🚚 <strong>Delivery gratis</strong>. Paga con <strong>Yape</strong> o <strong>efectivo</strong> contra entrega.
                   </p>
                 </div>
 
@@ -291,14 +302,14 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                         <svg viewBox={`0 0 ${W || 1} 55`} className="w-full h-full" preserveAspectRatio="none">
                           <defs>
                             <linearGradient id="phGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#0f766e" stopOpacity="0.25" />
-                              <stop offset="100%" stopColor="#0f766e" stopOpacity="0.02" />
+                              <stop offset="0%" stopColor="#00B4A6" stopOpacity="0.25" />
+                              <stop offset="100%" stopColor="#00B4A6" stopOpacity="0.02" />
                             </linearGradient>
                           </defs>
                           <path d={`${points.split(" ").map((p, i) => i === 0 ? `M${p}` : `L${p}`).join(" ")} L${W},55 L0,55 Z`} fill="url(#phGrad)" />
-                          <polyline points={points} fill="none" stroke="#0f766e" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                          <polyline points={points} fill="none" stroke="#00B4A6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                           {prices.map((p, i) => (
-                            <circle key={i} cx={i * 40} cy={50 - ((p - min) / range) * 42} r="3" fill={i === prices.length - 1 ? "#0f766e" : "#14b8a6"} stroke="white" strokeWidth="1.5" />
+                            <circle key={i} cx={i * 40} cy={50 - ((p - min) / range) * 42} r="3" fill={i === prices.length - 1 ? "#00B4A6" : "#2dd4bf"} stroke="white" strokeWidth="1.5" />
                           ))}
                         </svg>
                       </div>
@@ -369,6 +380,38 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                       </div>
                       <p className="text-sm text-muted">{r.text}</p>
                       <p className="text-[10px] text-muted mt-1">{new Date(r.date).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {tab === "alsoBought" && (
+              <div className="grid grid-cols-2 gap-3 animate-[fadeUp_0.2s_ease-out]">
+                {coPurchased.length === 0 ? (
+                  <div className="col-span-2 text-center py-8">
+                    <ShoppingCart className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-muted text-sm">Aún no hay datos de compras frecuentes</p>
+                  </div>
+                ) : (
+                  coPurchased.map((cp) => (
+                    <div key={cp.id} className="bg-surface dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border overflow-hidden">
+                      <div className="relative aspect-square bg-gray-50 dark:bg-card">
+                        {cp.image && <Image src={cp.image} alt={cp.name} fill className="object-cover" sizes="200px" loading="lazy" />}
+                      </div>
+                      <div className="p-3">
+                        <p className="text-sm font-semibold text-foreground line-clamp-1">{cp.name}</p>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <span className="font-extrabold text-primary text-sm">S/{cp.price.toFixed(2)}</span>
+                          <button
+                            onClick={() => { addItem({ ...cp, category: "", unit: cp.unit } as LiveProduct); showToast(cp.name, cp.image); }}
+                            className="h-7 w-7 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all"
+                            aria-label={`Agregar ${cp.name}`}
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))
                 )}

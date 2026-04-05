@@ -20,7 +20,7 @@ export default async function TrackingPage({ params }: Props) {
       <div className="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
         <div className="mx-auto max-w-lg px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f766e]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#00B4A6]">
               <span className="text-base">🏍️</span>
             </div>
             <div>

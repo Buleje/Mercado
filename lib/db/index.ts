@@ -18,3 +18,6 @@ export * from "./prestamos.db";
 export * from "./cotizaciones.db";
 export * from "./guias-remision.db";
 export * from "./notas-credito.db";
+export * from "./supplier-portal.db";
+export * from "./forecasting.db";
+export * from "./credit.db";

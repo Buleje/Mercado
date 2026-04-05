@@ -50,6 +50,13 @@ function formatHour(h: number): string {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
+type HeatmapPeriod = "30d" | "60d" | "90d";
+const HEATMAP_PILLS: { key: HeatmapPeriod; label: string; days: number }[] = [
+  { key: "30d", label: "30D", days: 30 },
+  { key: "60d", label: "60D", days: 60 },
+  { key: "90d", label: "90D", days: 90 },
+];
+
 export default function VentasHeatmap() {
   const [v2Data, setV2Data] = useState<HeatmapV2Response | null>(null);
   const [v1Cells, setV1Cells] = useState<HeatCellV1[]>([]);
@@ -57,12 +64,15 @@ export default function VentasHeatmap() {
   const [insight, setInsight] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [heatPeriod, setHeatPeriod] = useState<HeatmapPeriod>("60d");
+  const [hoveredCell, setHoveredCell] = useState<{ dow: number; hour: number; x: number; y: number } | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (days: number) => {
     try {
       setError(false);
+      setLoading(true);
       // Try new heatmap endpoint first
-      const res = await fetch("/api/analytics/ventas-heatmap?days=60", { credentials: "include" });
+      const res = await fetch(`/api/analytics/ventas-heatmap?days=${days}`, { credentials: "include" });
 
       if (res.ok) {
         const json: HeatmapV2Response = await res.json();
@@ -73,7 +83,7 @@ export default function VentasHeatmap() {
       }
 
       // Fallback to old heatmap endpoint
-      const fallbackRes = await fetch("/api/analytics/heatmap?period=90d", { credentials: "include" });
+      const fallbackRes = await fetch(`/api/analytics/heatmap?period=${days >= 90 ? "90d" : "30d"}`, { credentials: "include" });
       if (!fallbackRes.ok) throw new Error("fetch failed");
       const json = await fallbackRes.json();
       setV1Cells(json.cells ?? []);
@@ -86,8 +96,9 @@ export default function VentasHeatmap() {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    const days = HEATMAP_PILLS.find(p => p.key === heatPeriod)?.days ?? 60;
+    fetchData(days);
+  }, [heatPeriod, fetchData]);
 
   // Build unified grid from either response shape
   const { grid, maxValue, peakDow, peakHour } = useMemo(() => {
@@ -159,7 +170,7 @@ export default function VentasHeatmap() {
       <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-6 flex flex-col items-center justify-center h-64">
         <p className="text-sm text-red-600 dark:text-red-400 mb-3">No se pudo cargar el mapa de calor</p>
         <button
-          onClick={() => { setLoading(true); fetchData(); }}
+          onClick={() => { const days = HEATMAP_PILLS.find(p => p.key === heatPeriod)?.days ?? 60; fetchData(days); }}
           className="text-xs px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
@@ -182,12 +193,31 @@ export default function VentasHeatmap() {
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-        Mapa de Calor de Ventas
-      </h3>
+      {/* Header + period pills */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+          Mapa de Calor de Ventas
+        </h3>
+        <div className="flex items-center gap-1">
+          {HEATMAP_PILLS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setHeatPeriod(p.key)}
+              className={cn(
+                "px-3 py-1 rounded-full text-xs font-medium transition-colors",
+                heatPeriod === p.key
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Grid */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto relative">
         <div className="inline-block min-w-fit">
           {/* X-axis labels */}
           <div className="flex ml-12 mb-1.5 gap-1">
@@ -215,16 +245,45 @@ export default function VentasHeatmap() {
                   <div
                     key={hour}
                     className={cn(
-                      "w-9 h-9 rounded-md transition-all cursor-default hover:ring-2 hover:ring-[#0f766e] hover:shadow-md",
+                      "w-9 h-9 rounded-md transition-all cursor-default hover:ring-2 hover:ring-[#00B4A6] hover:shadow-md",
                       getColor(avgTotal, maxValue)
                     )}
-                    title={`${DOW_LABELS[dow]} ${formatHour(hour)}\nS/ ${avgTotal.toFixed(0)} promedio\n${count} ventas`}
+                    onMouseEnter={(e) => {
+                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                      setHoveredCell({ dow, hour, x: rect.left + rect.width / 2, y: rect.top });
+                    }}
+                    onMouseLeave={() => setHoveredCell(null)}
                   />
                 );
               })}
             </div>
           ))}
         </div>
+
+        {/* Custom tooltip */}
+        {hoveredCell && (() => {
+          const cell = grid.get(`${hoveredCell.dow}::${hoveredCell.hour}`);
+          return (
+            <div
+              className="fixed z-50 pointer-events-none"
+              style={{ left: hoveredCell.x, top: hoveredCell.y - 8, transform: "translate(-50%, -100%)" }}
+            >
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-3 min-w-[160px]">
+                <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">
+                  {DOW_LABELS[hoveredCell.dow]} {formatHour(hoveredCell.hour)}
+                </p>
+                <p className="text-xs text-gray-500 flex justify-between gap-4">
+                  <span>Promedio</span>
+                  <span className="font-mono font-medium text-[#00B4A6]">S/ {(cell?.avgTotal ?? 0).toFixed(0)}</span>
+                </p>
+                <p className="text-xs text-gray-500 flex justify-between gap-4">
+                  <span>Ventas</span>
+                  <span className="font-mono font-medium text-gray-700 dark:text-gray-300">{cell?.count ?? 0}</span>
+                </p>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Legend */}

@@ -268,7 +268,7 @@ export default function PaymentCalendar() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Esta semana", amount: thisWeekTotal, color: "text-[#0f766e] dark:text-emerald-400" },
+          { label: "Esta semana", amount: thisWeekTotal, color: "text-[#00B4A6] dark:text-emerald-400" },
           { label: "Proxima semana", amount: nextWeekTotal, color: "text-blue-600 dark:text-blue-400" },
           { label: "Vencido", amount: overdueTotal, color: overdueTotal > 0 ? "text-red-500" : "text-gray-400 dark:text-gray-500" },
         ].map(({ label, amount, color }) => (
@@ -337,8 +337,8 @@ export default function PaymentCalendar() {
                   className={cn(
                     "relative min-h-[64px] p-1.5 text-left border-b border-r border-gray-100 dark:border-gray-800 transition-colors",
                     !day.isCurrentMonth && "opacity-35",
-                    day.isToday && "bg-[#0f766e]/5 dark:bg-[#0f766e]/10",
-                    isSelected && "bg-[#0f766e]/10 dark:bg-[#0f766e]/20",
+                    day.isToday && "bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10",
+                    isSelected && "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20",
                     day.payables.length > 0 && "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   )}
                 >
@@ -346,7 +346,7 @@ export default function PaymentCalendar() {
                     className={cn(
                       "text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full",
                       day.isToday
-                        ? "bg-[#0f766e] text-white"
+                        ? "bg-[#00B4A6] text-white"
                         : "text-gray-700 dark:text-gray-300"
                     )}
                   >
@@ -383,7 +383,7 @@ export default function PaymentCalendar() {
         <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <DollarSign size={15} className="text-[#0f766e]" />
+              <DollarSign size={15} className="text-[#00B4A6]" />
               <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
                 Pagos del {selectedDay.date.toLocaleDateString("es-PE", { day: "2-digit", month: "long" })}
               </h4>

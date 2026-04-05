@@ -174,7 +174,7 @@ export default function MassMessageSender() {
       {/* Segment selector */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
         <div className="mb-3 flex items-center gap-2">
-          <Filter className="h-4 w-4 text-[#0f766e]" />
+          <Filter className="h-4 w-4 text-[#00B4A6]" />
           <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
             Segmento de clientes
           </h3>
@@ -188,8 +188,8 @@ export default function MassMessageSender() {
               className={cn(
                 "rounded-lg border px-3 py-2 text-left text-xs font-medium transition",
                 segment === s
-                  ? "border-[#0f766e] bg-[#0f766e] text-white"
-                  : "border-gray-200 text-gray-600 hover:border-[#0f766e]/40 dark:border-gray-600 dark:text-gray-300"
+                  ? "border-[#00B4A6] bg-[#00B4A6] text-white"
+                  : "border-gray-200 text-gray-600 hover:border-[#00B4A6]/40 dark:border-gray-600 dark:text-gray-300"
               )}
             >
               {SEGMENT_LABELS[s]}
@@ -206,7 +206,7 @@ export default function MassMessageSender() {
             placeholder="Buscar en el segmento..."
             className={cn(
               "w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm",
-              "text-gray-800 placeholder-gray-400 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
+              "text-gray-800 placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
               "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
             )}
           />
@@ -218,7 +218,7 @@ export default function MassMessageSender() {
             <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
           ) : (
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              <strong className="text-[#0f766e]">{filtered.length}</strong> destinatario
+              <strong className="text-[#00B4A6]">{filtered.length}</strong> destinatario
               {filtered.length !== 1 ? "s" : ""}
             </span>
           )}
@@ -229,7 +229,7 @@ export default function MassMessageSender() {
         {/* Template editor */}
         <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
           <div className="mb-3 flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-[#0f766e]" />
+            <MessageSquare className="h-4 w-4 text-[#00B4A6]" />
             <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
               Mensaje
             </h3>
@@ -244,8 +244,8 @@ export default function MassMessageSender() {
                 className={cn(
                   "rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize transition",
                   selectedTemplateKey === key
-                    ? "border-[#0f766e] bg-[#0f766e] text-white"
-                    : "border-gray-200 text-gray-500 hover:border-[#0f766e]/40 dark:border-gray-600"
+                    ? "border-[#00B4A6] bg-[#00B4A6] text-white"
+                    : "border-gray-200 text-gray-500 hover:border-[#00B4A6]/40 dark:border-gray-600"
                 )}
               >
                 {key}
@@ -259,7 +259,7 @@ export default function MassMessageSender() {
             rows={5}
             className={cn(
               "w-full rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm leading-relaxed",
-              "text-gray-800 placeholder-gray-400 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
+              "text-gray-800 placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
               "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500",
               "resize-none"
             )}
@@ -295,7 +295,7 @@ export default function MassMessageSender() {
                       filtered.find((c) => c.id === Number(e.target.value)) ?? null
                     )
                   }
-                  className="appearance-none rounded-lg border border-gray-200 bg-gray-50 py-1 pl-2 pr-6 text-xs text-gray-700 focus:border-[#0f766e] focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                  className="appearance-none rounded-lg border border-gray-200 bg-gray-50 py-1 pl-2 pr-6 text-xs text-gray-700 focus:border-[#00B4A6] focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
                 >
                   {filtered.slice(0, 10).map((c, idx) => (
                     <option key={c.id ?? idx} value={c.id}>
@@ -309,7 +309,7 @@ export default function MassMessageSender() {
           </div>
 
           {/* WhatsApp-style bubble */}
-          <div className="rounded-xl bg-[#e8f5e9] p-4 dark:bg-[#1b4332]">
+          <div className="rounded-xl bg-[#e8f5e9] p-4 dark:bg-[#007A72]">
             <div className="inline-block max-w-[85%] rounded-2xl rounded-tl-none bg-white px-4 py-3 shadow-sm dark:bg-gray-800">
               <p className="text-sm leading-relaxed text-gray-800 dark:text-gray-100">
                 {previewCustomer ? previewText : template}
@@ -350,7 +350,7 @@ export default function MassMessageSender() {
             disabled={filtered.length === 0 || !template.trim()}
             className={cn(
               "flex-1 flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white transition",
-              copied ? "bg-green-600" : "bg-[#0f766e] hover:bg-[#245a40]",
+              copied ? "bg-green-600" : "bg-[#00B4A6] hover:bg-[#245a40]",
               "disabled:opacity-40"
             )}
           >

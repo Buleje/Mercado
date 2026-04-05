@@ -14,7 +14,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   const max = Math.max(...data, 1); const min = Math.min(...data, 0); const range = max - min || 1;
   const points = data.map((val, i) => { const x = (i / (data.length - 1)) * 80; const y = 24 - ((val - min) / range) * 20; return `${x},${y}`; }).join(" ");
   const colorMap: Record<string, string> = { "emerald-500":"#10b981","blue-500":"#3b82f6","violet-500":"#8b5cf6","red-500":"#ef4444","amber-500":"#f59e0b" };
-  return <svg width="80" height="24" className="opacity-60"><polyline points={points} fill="none" stroke={colorMap[color]||"#0f766e"} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
+  return <svg width="80" height="24" className="opacity-60"><polyline points={points} fill="none" stroke={colorMap[color]||"#00B4A6"} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }
 function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTrend }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null; sparklineData?: number[]; invertTrend?: boolean }) {
   const isPositive = delta != null ? (invertTrend ? delta <= 0 : delta >= 0) : false;

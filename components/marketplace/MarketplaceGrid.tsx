@@ -24,7 +24,7 @@ interface Store {
 
 const ZONES = [
   { value: "",              label: "Todas las zonas" },
-  { value: "pucallpa-centro", label: "Pucallpa Centro" },
+  { value: "pucallpa-centro", label: "Centro" },
   { value: "yarinacocha",   label: "Yarinacocha" },
   { value: "calleria",      label: "Callería" },
   { value: "manantay",      label: "Manantay" },
@@ -67,7 +67,7 @@ function StoreInitials({ name }: { name: string }) {
   return (
     <div
       className="flex h-full w-full items-center justify-center text-2xl font-black text-white"
-      style={{ background: "linear-gradient(135deg, #0f766e 0%, #134e4a 100%)" }}
+      style={{ background: "linear-gradient(135deg, #00B4A6 0%, #134e4a 100%)" }}
     >
       {initials}
     </div>
@@ -154,7 +154,7 @@ function StoreCard({ store }: { store: Store }) {
           href={`/marketplace/${store.slug}`}
           className="mt-auto pt-4 block w-full min-h-[44px] rounded-xl text-center text-sm font-bold text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
           style={{
-            background: "linear-gradient(135deg, #0f766e 0%, #0d6560 100%)",
+            background: "linear-gradient(135deg, #00B4A6 0%, #0d6560 100%)",
             boxShadow: "0 4px 14px -2px rgba(15,118,110,0.35)",
             paddingTop: "0.625rem",
             paddingBottom: "0.625rem",
@@ -212,7 +212,7 @@ export default function MarketplaceGrid() {
           Encuentra tu bodega
         </h1>
         <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
-          Todas las bodegas, minimarkets y distribuidores de Pucallpa en un solo lugar
+          Todas las bodegas, minimarkets y distribuidores en un solo lugar
         </p>
       </div>
 

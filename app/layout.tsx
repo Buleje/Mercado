@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import { Geist } from "next/font/google";
+
+const GeistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+});
 import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import { prisma } from "@/lib/prisma";
@@ -116,7 +122,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f766e",
+  themeColor: "#00B4A6",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -155,7 +161,7 @@ export default async function RootLayout({
   const nonce = reqHeaders.get("x-nonce") ?? undefined;
 
   return (
-    <html lang="es-PE" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang="es-PE" className={`${GeistSans.variable} ${GeistSans.className}`} suppressHydrationWarning data-scroll-behavior="smooth">
       <head suppressHydrationWarning>
         {requestId && <meta name="x-request-id" content={requestId} />}
         <SchemaMarkup ratingValue={ratingValue} ratingCount={ratingCount} />
@@ -188,6 +194,7 @@ export default async function RootLayout({
         {/* Filtrar TODOS los errores de extensiones - Ejecutar PRIMERO */}
         <script
           nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `!function(){"use strict";var e=console.error;console.error=function(){for(var o=[],r=0;r<arguments.length;r++)o[r]=arguments[r];var n=o.join(" ");n.includes("bootstrap-autofill")||n.includes("extension")||n.includes("chrome-extension")||n.includes("Cache")||e.apply(console,o)};var o=function(e){if(!e)return!1;var o=e.toString?e.toString():"",r=e.filename||"",n=e.stack||"",t=e.message||"";return r.includes("extension")||r.includes("bootstrap-autofill")||r.includes("chrome-extension")||r.includes("moz-extension")||o.includes("extension")||o.includes("Cache")||n.includes("extension")||n.includes("bootstrap-autofill")||n.includes("chrome-extension")||n.includes("Cache")||t.includes("extension")||t.includes("Cache")};window.addEventListener("error",(function(e){if(o(e))return e.preventDefault(),e.stopImmediatePropagation(),!0}),!0),window.addEventListener("unhandledrejection",(function(e){if(o(e.reason))return e.preventDefault(),e.stopImmediatePropagation(),console.log("[Filtrado] Error de extensión bloqueado"),!0}),!0)}();`,
           }}
@@ -195,12 +202,13 @@ export default async function RootLayout({
         {/* Evitar flash de tema incorrecto */}
         <script
           nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `(function(){try{if(window.innerWidth<640)return;var t=localStorage.getItem("bsm-theme");var d=t==="dark"||(t!=="light"&&matchMedia("(prefers-color-scheme:dark)").matches);if(d)document.documentElement.classList.add("dark")}catch(e){}})()`,
           }}
         />
       </head>
-      <body className="antialiased">
+      <body className={`antialiased ${GeistSans.className}`}>
         <ThemeProvider>
         <ErrorBoundary>
         {/* Global interactive UX layer */}

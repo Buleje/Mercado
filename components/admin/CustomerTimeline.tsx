@@ -73,9 +73,9 @@ const EVENT_CONFIG: Record<
 > = {
   order: {
     icon: ShoppingCart,
-    color: "text-[#0f766e]",
-    bg: "bg-[#0f766e]/10 dark:bg-[#0f766e]/20",
-    dot: "bg-[#0f766e]",
+    color: "text-[#00B4A6]",
+    bg: "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20",
+    dot: "bg-[#00B4A6]",
   },
   review: {
     icon: Star,
@@ -192,7 +192,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0f766e] text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00B4A6] text-white">
           <User className="h-5 w-5" />
         </div>
         <div>
@@ -208,7 +208,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-lg font-bold text-[#0f766e]">
+          <p className="text-lg font-bold text-[#00B4A6]">
             {fmt(summary.totalSpent)}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -216,13 +216,13 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
           </p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-lg font-bold text-[#0f766e]">
+          <p className="text-lg font-bold text-[#00B4A6]">
             {summary.orderCount}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">Compras</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-lg font-bold text-[#0f766e]">
+          <p className="text-lg font-bold text-[#00B4A6]">
             {summary.firstOrderDate
               ? `${daysSince(summary.firstOrderDate)}d`
               : "—"}
@@ -233,7 +233,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
           <p
-            className="truncate text-sm font-bold text-[#0f766e]"
+            className="truncate text-sm font-bold text-[#00B4A6]"
             title={summary.topProduct ?? "—"}
           >
             {summary.topProduct ?? "—"}
@@ -247,7 +247,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
       {/* Timeline */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-7 w-7 animate-spin text-[#0f766e]" />
+          <Loader2 className="h-7 w-7 animate-spin text-[#00B4A6]" />
         </div>
       ) : error ? (
         <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-900/10">
@@ -294,7 +294,7 @@ export default function CustomerTimeline({ customerPhone, customerName }: Props)
                       </div>
                       <div className="shrink-0 text-right">
                         {ev.amount !== undefined && (
-                          <p className="font-semibold text-[#0f766e]">
+                          <p className="font-semibold text-[#00B4A6]">
                             {fmt(ev.amount)}
                           </p>
                         )}

@@ -220,12 +220,12 @@ export default function WhatsAppInbox() {
         {/* Header lista */}
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-gray-700">
           <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-[#2d6a4f]" />
+            <MessageSquare className="h-5 w-5 text-[#00B4A6]" />
             <span className="font-semibold text-gray-800 dark:text-gray-100">
               WhatsApp
             </span>
             {conversations.reduce((s, c) => s + c.unread, 0) > 0 && (
-              <span className="rounded-full bg-[#2d6a4f] px-2 py-0.5 text-xs font-bold text-white">
+              <span className="rounded-full bg-[#00B4A6] px-2 py-0.5 text-xs font-bold text-white">
                 {conversations.reduce((s, c) => s + c.unread, 0)}
               </span>
             )}
@@ -257,14 +257,14 @@ export default function WhatsAppInbox() {
         <div className="flex-1 overflow-y-auto">
           {loadingConvs ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-[#2d6a4f]" />
+              <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
             </div>
           ) : errorConvs ? (
             <div className="px-4 py-8 text-center">
               <p className="text-sm text-red-500">Error al cargar conversaciones</p>
               <button
                 onClick={fetchConversations}
-                className="mt-2 text-xs text-[#2d6a4f] underline"
+                className="mt-2 text-xs text-[#00B4A6] underline"
               >
                 Reintentar
               </button>
@@ -286,7 +286,7 @@ export default function WhatsAppInbox() {
                 )}
               >
                 {/* Avatar */}
-                <div className="flex h-11 w-11 min-w-[44px] items-center justify-center rounded-full bg-[#2d6a4f] text-sm font-bold text-white">
+                <div className="flex h-11 w-11 min-w-[44px] items-center justify-center rounded-full bg-[#00B4A6] text-sm font-bold text-white">
                   {getInitials(conv.name)}
                 </div>
 
@@ -305,7 +305,7 @@ export default function WhatsAppInbox() {
                       {conv.lastMessage}
                     </span>
                     {conv.unread > 0 && (
-                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#2d6a4f] px-1 text-[11px] font-bold text-white">
+                      <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#00B4A6] px-1 text-[11px] font-bold text-white">
                         {conv.unread > 99 ? "99+" : conv.unread}
                       </span>
                     )}
@@ -344,7 +344,7 @@ export default function WhatsAppInbox() {
                 <ArrowLeft className="h-5 w-5" />
               </button>
 
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#2d6a4f] text-sm font-bold text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00B4A6] text-sm font-bold text-white">
                 {getInitials(selectedName)}
               </div>
 
@@ -377,7 +377,7 @@ export default function WhatsAppInbox() {
             <div className="flex-1 overflow-y-auto px-4 py-4">
               {loadingMsgs ? (
                 <div className="flex justify-center py-10">
-                  <Loader2 className="h-6 w-6 animate-spin text-[#2d6a4f]" />
+                  <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
                 </div>
               ) : messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-400">
@@ -400,7 +400,7 @@ export default function WhatsAppInbox() {
                           className={cn(
                             "max-w-[75%] rounded-2xl px-4 py-2 text-sm shadow-sm",
                             isAdmin
-                              ? "rounded-br-sm bg-[#2d6a4f] text-white"
+                              ? "rounded-br-sm bg-[#00B4A6] text-white"
                               : "rounded-bl-sm bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100",
                           )}
                         >
@@ -434,13 +434,13 @@ export default function WhatsAppInbox() {
                   placeholder="Escribe un mensaje… (Enter para enviar)"
                   rows={1}
                   maxLength={500}
-                  className="min-h-[44px] flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                  className="min-h-[44px] flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-800 outline-none transition focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
                   style={{ maxHeight: "120px", overflowY: "auto" }}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!inputMsg.trim() || sending}
-                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[#2d6a4f] text-white transition hover:bg-[#245a42] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[#00B4A6] text-white transition hover:bg-[#009690] disabled:cursor-not-allowed disabled:opacity-50"
                   aria-label="Enviar mensaje"
                 >
                   {sending ? (

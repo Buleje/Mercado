@@ -152,7 +152,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://images.openfoodfacts.org https://static.openfoodfacts.org https://www.google-analytics.com https://*.tile.openstreetmap.org https://unpkg.com",
-              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms wss://*.supabase.co https://nominatim.openstreetmap.org https://images.unsplash.com https://va.vercel-scripts.com",
+              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms wss://*.supabase.co https://nominatim.openstreetmap.org https://images.unsplash.com https://va.vercel-scripts.com https://api.apis.net.pe https://eldni.com",
               "worker-src 'self' blob:",
               "frame-src 'none'",
               "object-src 'none'",
@@ -212,6 +212,17 @@ const nextConfig: NextConfig = {
             ].join("; "),
           },
         ],
+      },
+    ];
+  },
+
+  // Redirect root to marketplace (main landing page)
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/marketplace",
+        permanent: false, // 307 — keep as temporary so we can change later
       },
     ];
   },

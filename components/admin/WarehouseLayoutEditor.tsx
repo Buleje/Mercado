@@ -151,7 +151,7 @@ export default function WarehouseLayoutEditor() {
             onClick={handleSave}
             className={cn(
               "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-white transition",
-              saved ? "bg-emerald-600" : "bg-[#0f766e] hover:bg-[#0d5f58]"
+              saved ? "bg-emerald-600" : "bg-[#00B4A6] hover:bg-[#009690]"
             )}
           >
             <Save className="h-4 w-4" />
@@ -172,12 +172,12 @@ export default function WarehouseLayoutEditor() {
             }}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             placeholder="Buscar categoria (ej: Bebidas)..."
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           />
         </div>
         <button
           onClick={handleSearch}
-          className="rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0d5f58]"
+          className="rounded-lg bg-[#00B4A6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#009690]"
         >
           Buscar
         </button>
@@ -192,9 +192,9 @@ export default function WarehouseLayoutEditor() {
       </div>
 
       {highlight && (
-        <div className="flex items-center gap-2 rounded-lg bg-[#0f766e]/10 px-4 py-2.5 dark:bg-[#0f766e]/20">
-          <Grid3X3 className="h-4 w-4 text-[#0f766e]" />
-          <p className="text-sm font-medium text-[#0f766e] dark:text-emerald-400">
+        <div className="flex items-center gap-2 rounded-lg bg-[#00B4A6]/10 px-4 py-2.5 dark:bg-[#00B4A6]/20">
+          <Grid3X3 className="h-4 w-4 text-[#00B4A6]" />
+          <p className="text-sm font-medium text-[#00B4A6] dark:text-emerald-400">
             Las celdas resaltadas contienen: {highlight}
           </p>
         </div>
@@ -226,7 +226,7 @@ export default function WarehouseLayoutEditor() {
               className={cn(
                 "rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                 selectedCat === cat.name
-                  ? "ring-2 ring-[#0f766e] ring-offset-1"
+                  ? "ring-2 ring-[#00B4A6] ring-offset-1"
                   : "hover:opacity-80",
                 cat.color,
                 "border-transparent"
@@ -294,7 +294,7 @@ export default function WarehouseLayoutEditor() {
               setRows(r);
               setCells((prev) => buildGrid(r, cols, prev));
             }}
-            className="w-16 rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            className="w-16 rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -309,7 +309,7 @@ export default function WarehouseLayoutEditor() {
               setCols(c);
               setCells((prev) => buildGrid(rows, c, prev));
             }}
-            className="w-16 rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            className="w-16 rounded border border-gray-200 bg-white px-2 py-1 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
           />
         </div>
       </div>

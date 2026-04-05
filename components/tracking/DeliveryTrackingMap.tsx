@@ -40,7 +40,7 @@ interface Props {
 
 // ── Constantes ───────────────────────────────────────────────────────────────
 
-const PUCALLPA_CENTER: [number, number] = [-8.3791, -74.5539];
+const STORE_CENTER: [number, number] = [-8.3791, -74.5539];
 const POLL_INTERVAL_MS = 15_000;
 
 // ── Status config ────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ const STATUS_CONFIG: Record<
 > = {
   assigned:  { label: "Asignado",  color: "text-amber-600 dark:text-amber-400",   icon: Clock,        step: 1 },
   picked_up: { label: "Recogido",  color: "text-blue-600 dark:text-blue-400",     icon: Package,      step: 2 },
-  en_camino: { label: "En camino", color: "text-[#0f766e] dark:text-teal-400",    icon: Navigation,   step: 3 },
+  en_camino: { label: "En camino", color: "text-[#00B4A6] dark:text-teal-400",    icon: Navigation,   step: 3 },
   delivered: { label: "Entregado", color: "text-emerald-600 dark:text-emerald-400", icon: CheckCircle, step: 4 },
 };
 
@@ -144,7 +144,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
       shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
     });
 
-    const map = L.map(containerRef.current!).setView(PUCALLPA_CENTER, 14);
+    const map = L.map(containerRef.current!).setView(STORE_CENTER, 14);
     mapRef.current = map;
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -198,7 +198,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
         const riderIcon = L.divIcon({
           className: "delivery-rider-marker",
           html: `<div style="
-            background:#0f766e;color:white;
+            background:#00B4A6;color:white;
             width:40px;height:40px;border-radius:50%;
             display:flex;align-items:center;justify-content:center;
             font-size:18px;border:3px solid white;
@@ -231,8 +231,8 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
       }
 
       // ── Marker de destino (casa del cliente) ────────────────────
-      const dLat = destLat ?? PUCALLPA_CENTER[0];
-      const dLng = destLng ?? PUCALLPA_CENTER[1];
+      const dLat = destLat ?? STORE_CENTER[0];
+      const dLng = destLng ?? STORE_CENTER[1];
 
       if (!destMarkerRef.current) {
         const destIcon = L.divIcon({
@@ -261,7 +261,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
         }
         polylineRef.current = L.polyline(
           [[riderLat, riderLng], [dLat, dLng]],
-          { color: "#0f766e", weight: 2, opacity: 0.6, dashArray: "8 6" }
+          { color: "#00B4A6", weight: 2, opacity: 0.6, dashArray: "8 6" }
         ).addTo(map);
 
         // Ajustar vista para mostrar ambos marcadores
@@ -301,14 +301,14 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
       {/* Status badge + info del repartidor */}
       <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0f766e]/10 dark:bg-[#0f766e]/20">
-            <Bike className="h-5 w-5 text-[#0f766e]" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20">
+            <Bike className="h-5 w-5 text-[#00B4A6]" />
           </div>
           <div>
             <p className="font-bold text-gray-900 dark:text-white">{data.partnerName}</p>
             <a
               href={`tel:${data.partnerPhone}`}
-              className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#0f766e] dark:text-gray-400"
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#00B4A6] dark:text-gray-400"
             >
               <Phone className="h-3.5 w-3.5" />
               {data.partnerPhone}
@@ -338,15 +338,15 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
                 <div className={cn(
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors",
                   isActive
-                    ? "bg-[#0f766e] text-white"
+                    ? "bg-[#00B4A6] text-white"
                     : "bg-gray-200 text-gray-400 dark:bg-gray-700",
-                  isCurrent && "ring-2 ring-[#0f766e] ring-offset-2 dark:ring-offset-gray-900",
+                  isCurrent && "ring-2 ring-[#00B4A6] ring-offset-2 dark:ring-offset-gray-900",
                 )}>
                   <StepIcon className="h-3.5 w-3.5" />
                 </div>
                 <span className={cn(
                   "whitespace-nowrap text-[10px] font-medium",
-                  isActive ? "text-[#0f766e]" : "text-gray-400 dark:text-gray-600",
+                  isActive ? "text-[#00B4A6]" : "text-gray-400 dark:text-gray-600",
                 )}>
                   {cfg.label}
                 </span>
@@ -355,7 +355,7 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
                 <div className={cn(
                   "mx-1 h-0.5 flex-1 rounded-full transition-colors",
                   cfg.step < statusCfg.step
-                    ? "bg-[#0f766e]"
+                    ? "bg-[#00B4A6]"
                     : "bg-gray-200 dark:bg-gray-700",
                 )} />
               )}

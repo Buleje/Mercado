@@ -13,14 +13,14 @@ export const FAQBlockSchema = z.object({
   badge: z.string().default("Ayuda"),
   title: z.string().default("Preguntas frecuentes"),
   titleAccent: z.string().default("frecuentes"),
-  subtitle: z.string().default("Todo lo que necesitas saber sobre nuestra tienda y delivery en Pucallpa."),
+  subtitle: z.string().default("Todo lo que necesitas saber sobre nuestra tienda y delivery."),
   faqs: z.array(z.object({
     question: z.string(),
     answer: z.string(),
   })).default([
     {
-      question: "¿Hacen delivery de abarrotes en todo Pucallpa?",
-      answer: "Sí, realizamos delivery de abarrotes en toda la zona urbana de Pucallpa. Nuestro servicio de entrega a domicilio cubre la mayoría de barrios y urbanizaciones.",
+      question: "¿Hacen delivery de abarrotes en toda la zona?",
+      answer: "Sí, realizamos delivery de abarrotes en toda la zona urbana. Nuestro servicio de entrega a domicilio cubre la mayoría de barrios y urbanizaciones.",
     },
     {
       question: "¿Se puede pagar con Yape?",

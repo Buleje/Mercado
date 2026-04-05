@@ -66,6 +66,11 @@ export async function GET(req: NextRequest) {
     select: { id: true, date: true, rating: true, text: true },
   });
 
+  let savedCartItems: unknown = null;
+  if (customer.savedCart) {
+    try { savedCartItems = JSON.parse(customer.savedCart.itemsJson); } catch { /* corrupted data */ }
+  }
+
   const exportBundle = {
     exportedAt: new Date().toISOString(),
     requestedBy: auth.username,
@@ -89,9 +94,7 @@ export async function GET(req: NextRequest) {
       referredBy: customer.referredBy,
     },
     savedLocations: customer.locations,
-    savedCart: customer.savedCart
-      ? JSON.parse(customer.savedCart.itemsJson)
-      : null,
+    savedCart: savedCartItems,
     orders: customer.orders,
     reviews,
   };

@@ -87,7 +87,7 @@ export default function PrivacidadPage() {
           </p>
           <ul className="list-disc pl-5 space-y-1">
             <li>WhatsApp: 916 409 675</li>
-            <li>Dirección: Jr. Ucayali 450, Pucallpa, Ucayali, Perú</li>
+            <li>Dirección: Jr. Ucayali 450, Ucayali, Perú</li>
           </ul>
         </section>
       </div>

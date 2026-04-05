@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
 import dynamic from "next/dynamic";
@@ -53,12 +53,12 @@ function OCProgressBar({ status }: { status: string }) {
             <div key={step} className="flex items-center" style={{ flex: idx < 3 ? 1 : 0 }}>
               <div className={cn(
                 "w-3.5 h-3.5 rounded-full shrink-0 transition-colors",
-                isCancelled ? "bg-red-400" : completed ? "bg-[#0f766e]" : "bg-gray-300 dark:bg-gray-600"
+                isCancelled ? "bg-red-400" : completed ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
               )} />
               {idx < 3 && (
                 <div className={cn(
                   "h-1 flex-1 transition-colors",
-                  isCancelled ? "bg-red-300" : (!isCancelled && step < currentStep) ? "bg-[#0f766e]" : "bg-gray-300 dark:bg-gray-600"
+                  isCancelled ? "bg-red-300" : (!isCancelled && step < currentStep) ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
                 )} />
               )}
             </div>
@@ -67,7 +67,7 @@ function OCProgressBar({ status }: { status: string }) {
       </div>
       <div className="flex justify-between px-0">
         {labels.map((label, idx) => (
-          <span key={idx} className={cn("text-[8px] font-medium", !isCancelled && (idx + 1) <= currentStep ? "text-[#0f766e] dark:text-emerald-400" : "text-gray-400")} style={{ width: idx < 3 ? undefined : "auto" }}>
+          <span key={idx} className={cn("text-[8px] font-medium", !isCancelled && (idx + 1) <= currentStep ? "text-[#00B4A6] dark:text-emerald-400" : "text-gray-400")} style={{ width: idx < 3 ? undefined : "auto" }}>
             {label}
           </span>
         ))}
@@ -182,9 +182,9 @@ export default function PurchaseOrdersTab() {
         fetch("/api/suppliers"),
         fetch("/api/products"),
       ]);
-      if (poRes.ok) setOrders(await poRes.json());
-      if (supRes.ok) setSuppliers(await supRes.json());
-      if (prodRes.ok) setProducts((await prodRes.json()).filter((p: DbProduct) => p.active));
+      if (poRes.ok) { const d = await poRes.json(); setOrders(Array.isArray(d) ? d : d?.purchases ?? []); }
+      if (supRes.ok) { const d = await supRes.json(); setSuppliers(Array.isArray(d) ? d : d?.suppliers ?? []); }
+      if (prodRes.ok) { const d = await prodRes.json(); setProducts((Array.isArray(d) ? d : []).filter((p: DbProduct) => p.active)); }
     } catch {}
     setLoading(false);
   }, []);
@@ -272,7 +272,7 @@ export default function PurchaseOrdersTab() {
     await updateStatus(id, "recibido");
     const po = orders.find(o => o.id === id);
     if (po) {
-      const freshProds: DbProduct[] = await fetch("/api/products").then(r => r.json());
+      const freshProds: DbProduct[] = await fetch("/api/products").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) ? d : []);
       for (const item of po.items) {
         const prod = freshProds.find(p => p.id === item.productId);
         if (prod) {

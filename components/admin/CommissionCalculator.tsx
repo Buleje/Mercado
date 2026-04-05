@@ -145,7 +145,7 @@ export default function CommissionCalculator() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <DollarSign className="w-5 h-5 text-[#0f766e]" />
+          <DollarSign className="w-5 h-5 text-[#00B4A6]" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Calculadora de Comisiones
           </h2>
@@ -165,7 +165,7 @@ export default function CommissionCalculator() {
             className={cn(
               "p-1.5 rounded-lg border transition-colors",
               showSettings
-                ? "border-[#0f766e] bg-[#0f766e]/10 text-[#0f766e]"
+                ? "border-[#00B4A6] bg-[#00B4A6]/10 text-[#00B4A6]"
                 : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750"
             )}
           >
@@ -199,7 +199,7 @@ export default function CommissionCalculator() {
                 step={0.5}
                 value={defaultRate}
                 onChange={(e) => setDefaultRate(Number(e.target.value))}
-                className="w-20 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-center text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
+                className="w-20 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-center text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
               />
               <span className="text-sm text-gray-500">%</span>
             </div>
@@ -228,7 +228,7 @@ export default function CommissionCalculator() {
                           [s.cashierId]: Number(e.target.value),
                         }))
                       }
-                      className="w-20 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-center text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
+                      className="w-20 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2 py-1 text-sm text-center text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                     />
                     <span className="text-sm text-gray-500">%</span>
                   </div>
@@ -260,7 +260,7 @@ export default function CommissionCalculator() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
             <div className="flex items-center gap-2 mb-1">
-              <Users className="w-4 h-4 text-[#0f766e]" />
+              <Users className="w-4 h-4 text-[#00B4A6]" />
               <p className="text-xs text-gray-500 dark:text-gray-400">Cajeros activos</p>
             </div>
             <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
@@ -269,7 +269,7 @@ export default function CommissionCalculator() {
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ventas totales</p>
-            <p className="text-2xl font-bold text-[#0f766e] dark:text-[#14b8a6]">
+            <p className="text-2xl font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
               {fmt(summaries.reduce((s, c) => s + c.totalSales, 0))}
             </p>
           </div>
@@ -291,7 +291,7 @@ export default function CommissionCalculator() {
             </p>
             <button
               onClick={handleExport}
-              className="flex items-center gap-1.5 text-xs text-[#0f766e] dark:text-[#14b8a6] hover:underline"
+              className="flex items-center gap-1.5 text-xs text-[#00B4A6] dark:text-[#2dd4bf] hover:underline"
             >
               <Download className="w-3.5 h-3.5" />
               Exportar CSV

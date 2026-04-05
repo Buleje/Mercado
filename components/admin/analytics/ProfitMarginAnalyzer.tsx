@@ -32,7 +32,7 @@ function fmtPct(n: number) {
 }
 
 const QUADRANT_META = {
-  star:     { label: "Alto volumen + Alto margen",  color: "#0f766e", bg: "bg-green-100 dark:bg-green-900/30",  text: "text-green-800 dark:text-green-300" },
+  star:     { label: "Alto volumen + Alto margen",  color: "#00B4A6", bg: "bg-green-100 dark:bg-green-900/30",  text: "text-green-800 dark:text-green-300" },
   cash:     { label: "Alto volumen + Bajo margen",  color: "#f97316", bg: "bg-amber-100 dark:bg-amber-900/30",  text: "text-amber-800 dark:text-amber-300" },
   question: { label: "Bajo volumen + Alto margen",  color: "#3b82f6", bg: "bg-blue-100 dark:bg-blue-900/30",    text: "text-blue-800 dark:text-blue-300" },
   dog:      { label: "Bajo volumen + Bajo margen",  color: "#ef4444", bg: "bg-red-100 dark:bg-red-900/30",      text: "text-red-800 dark:text-red-300" },
@@ -149,9 +149,9 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
     <div className="flex flex-col gap-4 text-sm">
       {/* Summary row */}
       <div className="flex gap-2">
-        <div className="flex-1 rounded-lg bg-[#0f766e]/10 dark:bg-[#0f766e]/20 border border-[#0f766e]/30 p-2 text-center">
+        <div className="flex-1 rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border border-[#00B4A6]/30 p-2 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">Margen prom. ponderado</p>
-          <p className="text-base font-bold text-[#0f766e] dark:text-[#14b8a6]">{fmtPct(avgWeightedMargin)}</p>
+          <p className="text-base font-bold text-[#00B4A6] dark:text-[#2dd4bf]">{fmtPct(avgWeightedMargin)}</p>
         </div>
         <div className="flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">Productos analizados</p>
@@ -210,7 +210,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
             className={cn(
               "px-2 py-0.5 rounded text-xs border transition-colors",
               showTop === "best"
-                ? "bg-[#0f766e] text-white border-[#0f766e]"
+                ? "bg-[#00B4A6] text-white border-[#00B4A6]"
                 : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700"
             )}
           >
@@ -244,7 +244,7 @@ export default function ProfitMarginAnalyzer({ products, sales }: ProfitMarginAn
                   className={cn(
                     "text-sm font-bold",
                     p.margin >= 30
-                      ? "text-[#0f766e] dark:text-[#14b8a6]"
+                      ? "text-[#00B4A6] dark:text-[#2dd4bf]"
                       : p.margin >= 15
                       ? "text-amber-600 dark:text-amber-400"
                       : "text-red-600 dark:text-red-400"

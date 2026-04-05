@@ -9,7 +9,7 @@ export async function generateNotifications(tenantId: string): Promise<number> {
   try {
     const fiadosVencidos = await prisma.fiado.findMany({
       where: { tenantId, status: "ACTIVO", fechaVence: { lt: new Date() } },
-      include: { customer: { select: { name: true } } },
+      include: { Customer: { select: { name: true } } },
       take: 10,
     });
     for (const f of fiadosVencidos) {
@@ -17,7 +17,7 @@ export async function generateNotifications(tenantId: string): Promise<number> {
         tenantId,
         type: "FIADO_VENCIDO",
         severity: "HIGH",
-        title: `Fiado vencido: ${f.customer?.name || f.customerId}`,
+        title: `Fiado vencido: ${f.Customer?.name || f.customerId}`,
         body: `Deuda de S/${Number(f.saldo).toFixed(2)} está vencida`,
         actionUrl: "/admin?tab=fiados",
         actionLabel: "Ver fiado",
@@ -257,9 +257,9 @@ export async function generateNotifications(tenantId: string): Promise<number> {
     const priceDrops = await prisma.priceHistory.findMany({
       where: {
         changedAt: { gte: oneDayAgo },
-        product: { tenantId, active: true, deletedAt: null },
+        Product: { tenantId, active: true, deletedAt: null },
       },
-      include: { product: { select: { name: true, id: true } } },
+      include: { Product: { select: { name: true, id: true } } },
       take: 20,
     });
     for (const ph of priceDrops) {
@@ -268,11 +268,11 @@ export async function generateNotifications(tenantId: string): Promise<number> {
           tenantId,
           type: "PRECIO_BAJO",
           severity: "LOW",
-          title: `\u{1F4C9} ${ph.product.name} bajó de precio`,
+          title: `\u{1F4C9} ${ph.Product.name} bajó de precio`,
           body: `De S/${ph.oldPrice.toFixed(2)} a S/${ph.newPrice.toFixed(2)}. ¡Buen momento para comprar stock!`,
           actionUrl: "/admin?tab=productos",
           actionLabel: "Ver producto",
-          entityId: String(ph.product.id),
+          entityId: String(ph.Product.id),
         });
         count++;
       }
@@ -349,18 +349,18 @@ export async function generateNotifications(tenantId: string): Promise<number> {
       where: {
         pagadoEn: null,
         fechaVence: { gte: hoy, lte: twoDaysFromNow },
-        prestamo: { tenantId, status: "ACTIVO" },
+        Prestamo: { tenantId, status: "ACTIVO" },
       },
       include: {
-        prestamo: {
-          include: { customer: { select: { name: true, phone: true } } },
+        Prestamo: {
+          include: { Customer: { select: { name: true, phone: true } } },
         },
       },
       take: 15,
     });
 
     for (const cuota of cuotasProximas) {
-      const customerName = cuota.prestamo?.customer?.name || cuota.prestamo?.customerId || "Cliente";
+      const customerName = cuota.Prestamo?.Customer?.name || cuota.Prestamo?.customerId || "Cliente";
       const monto = Number(cuota.monto).toFixed(2);
       const fecha = cuota.fechaVence.toLocaleDateString("es-PE", { day: "2-digit", month: "short" });
 

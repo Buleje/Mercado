@@ -134,7 +134,7 @@ export default function InactivityLock({
       {locked && (
         <div className="fixed inset-0 z-50 bg-gray-950/80 backdrop-blur-md flex flex-col items-center justify-center gap-4">
           <div className="flex flex-col items-center gap-2 text-white mb-2">
-            <Clock size={40} className="text-[#0f766e]" />
+            <Clock size={40} className="text-[#00B4A6]" />
             <h2 className="text-2xl font-bold">Sesion bloqueada</h2>
             <p className="text-gray-400 text-sm">Ingresa tu PIN para continuar</p>
           </div>

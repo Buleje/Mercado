@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState, useEffect } from "react";
 import { Package, DollarSign, Users, Settings, Shield, X, AlertTriangle } from "lucide-react";
@@ -551,7 +551,7 @@ export default function AIRiskRadar({ data, compact = false }: Props) {
                   {!compact && (
                     <div className="flex items-center gap-1 mt-1">
                       <CatIcon className="w-3 h-3 text-gray-400" />
-                      <p className="text-xs text-[#0f766e] dark:text-[#14b8a6] font-medium">{risk.action}</p>
+                      <p className="text-xs text-[#00B4A6] dark:text-[#2dd4bf] font-medium">{risk.action}</p>
                     </div>
                   )}
                 </div>

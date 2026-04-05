@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo, useEffect, useRef, startTransition } from "react";
 import { MapPin, Clock, Navigation, ChevronDown, ChevronUp, Download, RefreshCw, Users, Map as MapIcon } from "lucide-react";
@@ -20,7 +20,7 @@ export type DeliveryGPSZone = {
 };
 
 const GPS_ZONES: DeliveryGPSZone[] = [
-  { name: "Centro",           maxKm: 1.5, fee: 0,  color: "#0f766e", available: true  },
+  { name: "Centro",           maxKm: 1.5, fee: 0,  color: "#00B4A6", available: true  },
   { name: "Zona urbana",      maxKm: 3,   fee: 3,  color: "#f97316", available: true  },
   { name: "Zona extendida",   maxKm: 5,   fee: 5,  color: "#ef4444", available: true  },
   { name: "Fuera de cobertura", maxKm: Infinity, fee: 0, color: "#6b7280", available: false },
@@ -105,7 +105,7 @@ function DeliveryMap({ routes, onStatusChange }: DeliveryMapProps) {
         marker.bindPopup(
           `<div style="min-width:160px;font-family:sans-serif;font-size:13px">
             <strong>${route.name}</strong><br/>
-            ${route.customerName ? `<span style="color:#0f766e">${route.customerName}</span><br/>` : ""}
+            ${route.customerName ? `<span style="color:#00B4A6">${route.customerName}</span><br/>` : ""}
             <span style="color:#6b7280">${route.zone}</span><br/>
             Hora: ${horaTexto}<br/>
             <button onclick="window._deliveryMarkEnRoute?.('${route.id}')" style="margin-top:6px;padding:3px 8px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">En camino</button>

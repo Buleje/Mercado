@@ -9,6 +9,7 @@ import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
 import { useSettings } from "@/contexts/settings-context";
 import { usePromotions } from "@/contexts/promotions-context";
+import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
 import { sendOrder, type SendResult } from "@/lib/order-utils";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import CartUpsellSection from "@/components/CartUpsellSection";
@@ -163,7 +164,8 @@ export default function CartSidebar() {
 
   /* AB2: Cart reservation timer (30 min from first item add) */
   const [reserveTime, setReserveTime] = useState("");
-  const CART_RESERVE_KEY = "bsm-cart-reserve-start";
+  const slug = useTenantSlug();
+  const CART_RESERVE_KEY = tenantKey(slug, "cart-reserve-start");
   useEffect(() => {
     if (items.length === 0) { setReserveTime(""); try { localStorage.removeItem(CART_RESERVE_KEY); } catch {} return; }
     let start = Number(localStorage.getItem(CART_RESERVE_KEY));
@@ -265,7 +267,7 @@ export default function CartSidebar() {
     const sender = customer ?? {
       name: "Cliente",
       phone: "",
-      location: "Pucallpa, Ucayali",
+      location: "Ucayali",
       reference: "",
       savedLocations: [],
     };

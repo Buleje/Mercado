@@ -51,10 +51,13 @@ export default function DailyDeal() {
   const countdown = useCountdown();
 
   useEffect(() => {
+    let cancelled = false;
+    // Timeout: collapse loading skeleton after 4s if fetch is slow
+    const timeout = setTimeout(() => { if (!cancelled) setLoading(false); }, 4000);
     async function fetchDeal() {
       try {
         const res = await fetch("/api/products?limit=1&sort=popular");
-        if (res.ok) {
+        if (res.ok && !cancelled) {
           const data = await res.json();
           const items = Array.isArray(data) ? data : data.products || [];
           if (items.length > 0) {
@@ -64,10 +67,11 @@ export default function DailyDeal() {
       } catch {
         // No deal available
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     fetchDeal();
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, []);
 
   const handleAdd = useCallback(() => {
@@ -76,12 +80,32 @@ export default function DailyDeal() {
     showToast(product.name, product.image || "");
   }, [product, addItem, showToast]);
 
-  if (loading || !product) return null;
+  if (loading) {
+    return (
+      <section className="py-10 sm:py-16 bg-white dark:bg-card">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rounded-3xl border-2 border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface p-6 sm:p-10 animate-pulse">
+            <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
+              <div className="w-40 h-40 sm:w-56 sm:h-56 rounded-2xl bg-gray-200 dark:bg-gray-700 shrink-0" />
+              <div className="flex-1 space-y-4 w-full">
+                <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg w-3/4 mx-auto sm:mx-0" />
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto sm:mx-0" />
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-32 mx-auto sm:mx-0" />
+                <div className="h-12 bg-gray-200 dark:bg-gray-700 rounded-xl w-48 mx-auto sm:mx-0" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!product) return null;
 
   return (
     <section className="py-10 sm:py-16 bg-white dark:bg-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl border-2 border-secondary/30 bg-gradient-to-br from-secondary/5 via-white to-primary/5 dark:from-secondary/10 dark:via-card dark:to-primary/10 p-6 sm:p-10">
+        <div className="relative overflow-hidden rounded-3xl border-2 border-secondary/30 bg-gradient-to-br from-secondary/8 via-white to-primary/8 dark:from-secondary/15 dark:via-card dark:to-primary/15 p-6 sm:p-10 shadow-lg shadow-secondary/5">
           {/* Badge */}
           <div className="absolute top-4 left-4 sm:top-6 sm:left-6">
             <span className="inline-flex items-center gap-1.5 bg-secondary text-white text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full shadow-md">

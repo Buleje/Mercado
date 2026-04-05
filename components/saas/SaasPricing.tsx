@@ -55,7 +55,7 @@ const CARD_DEFS: CardDef[] = [
   {
     id: "pro",
     icon: Crown,
-    iconColor: "#0f766e",
+    iconColor: "#00B4A6",
     priceMonthly: PLANS.pro.priceMonthly,
     priceYearly: Math.round(PLANS.pro.priceYearly / 12),
     priceSuffix: "/mes",
@@ -156,7 +156,7 @@ function PillSwitch({
       <div className="relative flex">
         <button
           onClick={() => onToggle(false)}
-          className="relative z-10 px-5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 min-h-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+          className="relative z-10 px-5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 min-h-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
           style={{
             color: !isAnnual ? "#fff" : "#6b7280",
           }}
@@ -166,7 +166,7 @@ function PillSwitch({
               layoutId="pill-bg"
               className="absolute inset-0 rounded-full"
               style={{
-                background: "linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%)",
+                background: "linear-gradient(135deg, #00B4A6 0%, #33C4B8 50%, #2dd4bf 100%)",
                 boxShadow: "0 2px 12px rgba(15,118,110,0.35)",
               }}
               transition={{ type: "spring", stiffness: 400, damping: 35 }}
@@ -177,7 +177,7 @@ function PillSwitch({
 
         <button
           onClick={() => onToggle(true)}
-          className="relative z-10 px-5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 min-h-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] flex items-center gap-2"
+          className="relative z-10 px-5 py-2 rounded-full text-sm font-semibold transition-colors duration-200 min-h-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] flex items-center gap-2"
           style={{
             color: isAnnual ? "#fff" : "#6b7280",
           }}
@@ -187,7 +187,7 @@ function PillSwitch({
               layoutId="pill-bg"
               className="absolute inset-0 rounded-full"
               style={{
-                background: "linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #14b8a6 100%)",
+                background: "linear-gradient(135deg, #00B4A6 0%, #33C4B8 50%, #2dd4bf 100%)",
                 boxShadow: "0 2px 12px rgba(15,118,110,0.35)",
               }}
               transition={{ type: "spring", stiffness: 400, damping: 35 }}
@@ -198,7 +198,7 @@ function PillSwitch({
             className="relative text-xs font-bold px-2 py-0.5 rounded-full"
             style={{
               background: isAnnual ? "rgba(255,255,255,0.22)" : "rgba(15,118,110,0.12)",
-              color: isAnnual ? "#fff" : "#0f766e",
+              color: isAnnual ? "#fff" : "#00B4A6",
             }}
           >
             Ahorra 20%
@@ -394,7 +394,7 @@ function RoiCalculator({
                 className="text-sm font-bold px-2.5 py-0.5 rounded-full"
                 style={{
                   background: "rgba(15,118,110,0.12)",
-                  color: "#0f766e",
+                  color: "#00B4A6",
                 }}
               >
                 S/ {ventas.toLocaleString("es-PE")}
@@ -409,9 +409,9 @@ function RoiCalculator({
                 step={1000}
                 value={ventas}
                 onChange={(e) => setVentas(Number(e.target.value))}
-                className="roi-slider w-full h-2 rounded-full appearance-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f766e]"
+                className="roi-slider w-full h-2 rounded-full appearance-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#00B4A6]"
                 style={{
-                  background: `linear-gradient(to right, #0f766e ${((ventas - 5000) / 95000) * 100}%, rgba(15,118,110,0.18) ${((ventas - 5000) / 95000) * 100}%)`,
+                  background: `linear-gradient(to right, #00B4A6 ${((ventas - 5000) / 95000) * 100}%, rgba(15,118,110,0.18) ${((ventas - 5000) / 95000) * 100}%)`,
                   // thumb styles via global CSS
                 }}
                 aria-label="Ventas mensuales en soles"
@@ -436,7 +436,7 @@ function RoiCalculator({
                 className="text-sm font-bold px-2.5 py-0.5 rounded-full"
                 style={{
                   background: "rgba(15,118,110,0.12)",
-                  color: "#0f766e",
+                  color: "#00B4A6",
                 }}
               >
                 {clientesFiado} {clientesFiado === 1 ? "cliente" : "clientes"}
@@ -451,9 +451,9 @@ function RoiCalculator({
                 step={1}
                 value={clientesFiado}
                 onChange={(e) => setClientesFiado(Number(e.target.value))}
-                className="roi-slider w-full h-2 rounded-full appearance-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f766e]"
+                className="roi-slider w-full h-2 rounded-full appearance-none cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#00B4A6]"
                 style={{
-                  background: `linear-gradient(to right, #0f766e ${(clientesFiado / 50) * 100}%, rgba(15,118,110,0.18) ${(clientesFiado / 50) * 100}%)`,
+                  background: `linear-gradient(to right, #00B4A6 ${(clientesFiado / 50) * 100}%, rgba(15,118,110,0.18) ${(clientesFiado / 50) * 100}%)`,
                 }}
                 aria-label="Número de clientes que compran fiado"
               />
@@ -508,7 +508,7 @@ function RoiCalculator({
                 : (
                   <>
                     Se paga solo en{" "}
-                    <span className="font-bold text-[#0f766e]">
+                    <span className="font-bold text-[#00B4A6]">
                       {animatedDias} días
                     </span>
                   </>
@@ -529,7 +529,7 @@ function RoiCalculator({
           className="relative px-5 py-1.5 text-sm font-bold rounded-full z-10"
           style={{
             background: "rgba(15,118,110,0.1)",
-            color: "#0f766e",
+            color: "#00B4A6",
             border: "1px solid rgba(15,118,110,0.25)",
           }}
         >
@@ -668,7 +668,7 @@ export default function SaasPricing() {
                     className="absolute inset-0 rounded-2xl pointer-events-none"
                     style={{
                       padding: "1.5px",
-                      background: "linear-gradient(135deg, #0f766e, #14b8a6, #0d9488)",
+                      background: "linear-gradient(135deg, #00B4A6, #2dd4bf, #33C4B8)",
                       WebkitMask:
                         "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
                       WebkitMaskComposite: "xor",
@@ -686,7 +686,7 @@ export default function SaasPricing() {
                       transition={{ delay: 0.3, type: "spring", stiffness: 300, damping: 20 }}
                       className="relative inline-flex items-center text-white text-xs font-bold px-3 py-1 rounded-full overflow-hidden shadow-lg"
                       style={{
-                        background: "linear-gradient(90deg, #0f766e, #14b8a6, #0f766e)",
+                        background: "linear-gradient(90deg, #00B4A6, #2dd4bf, #00B4A6)",
                         backgroundSize: "200% 100%",
                       }}
                     >
@@ -753,7 +753,7 @@ export default function SaasPricing() {
                   {card.priceMonthly !== null &&
                     card.priceMonthly > 0 &&
                     isAnnual && (
-                      <p className="text-xs text-[#0f766e] font-medium mt-1">
+                      <p className="text-xs text-[#00B4A6] font-medium mt-1">
                         Facturado anualmente
                       </p>
                     )}
@@ -764,7 +764,7 @@ export default function SaasPricing() {
                   {card.features.map((feat) => (
                     <li key={feat} className="flex items-center gap-2 text-sm">
                       <Check
-                        className="w-4 h-4 text-[#0f766e] shrink-0"
+                        className="w-4 h-4 text-[#00B4A6] shrink-0"
                         aria-hidden="true"
                       />
                       <span className="text-gray-600 dark:text-[rgba(240,244,241,0.75)]">
@@ -779,16 +779,16 @@ export default function SaasPricing() {
                   href={card.ctaHref}
                   target={card.id === "enterprise" ? "_blank" : undefined}
                   rel={card.id === "enterprise" ? "noopener noreferrer" : undefined}
-                  className={`block w-full text-center py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 min-h-[44px] flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] ${
+                  className={`block w-full text-center py-3 px-4 rounded-xl font-bold text-sm transition-all duration-200 min-h-[44px] flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] ${
                     card.ctaVariant === "filled"
                       ? "text-white hover:opacity-90"
-                      : "border-2 border-gray-300 dark:border-[rgba(45,106,79,0.3)] text-gray-700 dark:text-[rgba(240,244,241,0.8)] hover:border-[#0f766e] dark:hover:border-[#0f766e] hover:text-[#0f766e]"
+                      : "border-2 border-gray-300 dark:border-[rgba(45,106,79,0.3)] text-gray-700 dark:text-[rgba(240,244,241,0.8)] hover:border-[#00B4A6] dark:hover:border-[#00B4A6] hover:text-[#00B4A6]"
                   }`}
                   style={
                     card.ctaVariant === "filled"
                       ? {
                           background:
-                            "linear-gradient(135deg, #0f766e 0%, #0d9488 100%)",
+                            "linear-gradient(135deg, #00B4A6 0%, #33C4B8 100%)",
                           boxShadow: "0 4px 16px -4px rgba(15,118,110,0.4)",
                         }
                       : undefined

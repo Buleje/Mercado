@@ -259,7 +259,7 @@ export default function TreasuryDashboard() {
         title="Tesorería"
         description="Flujo de caja, vencimientos y cobranzas"
         icon={DollarSign}
-        iconColor="#0f766e"
+        iconColor="#00B4A6"
       >
         <button
           onClick={() => setRefreshKey(k => k + 1)}
@@ -268,7 +268,7 @@ export default function TreasuryDashboard() {
           className={cn(
             "h-9 w-9 rounded-xl flex items-center justify-center transition-all",
             "bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
             loading && "animate-spin opacity-60",
           )}
         >
@@ -296,7 +296,7 @@ export default function TreasuryDashboard() {
               label="Saldo del mes"
               value={fmt(kpis.saldoActual)}
               icon={kpis.saldoActual >= 0 ? TrendingUp : TrendingDown}
-              color={kpis.saldoActual >= 0 ? "#0f766e" : "#e63946"}
+              color={kpis.saldoActual >= 0 ? "#00B4A6" : "#e63946"}
               alert={kpis.saldoActual < 0}
               subtitle={`Ingresos ${fmt(kpis.ingresosMes)} − Gastos ${fmt(kpis.gastosMes)}`}
             />
@@ -319,7 +319,7 @@ export default function TreasuryDashboard() {
               label="Flujo neto proyectado"
               value={fmt(kpis.flujoProyectado)}
               icon={kpis.flujoProyectado >= 0 ? TrendingUp : TrendingDown}
-              color={kpis.flujoProyectado >= 0 ? "#0f766e" : "#e63946"}
+              color={kpis.flujoProyectado >= 0 ? "#00B4A6" : "#e63946"}
               alert={kpis.flujoProyectado < 0}
               subtitle="Saldo + cobrar − pagar"
             />
@@ -336,7 +336,7 @@ export default function TreasuryDashboard() {
           </div>
           <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
             <span className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-[#0f766e]" />
+              <span className="h-2 w-2 rounded-full bg-[#00B4A6]" />
               Ingresos
             </span>
             <span className="flex items-center gap-1">
@@ -352,8 +352,8 @@ export default function TreasuryDashboard() {
             <AreaChart data={flowData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="ingGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0f766e" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#0f766e" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#00B4A6" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="gasGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#f97316" stopOpacity={0.25} />
@@ -376,7 +376,7 @@ export default function TreasuryDashboard() {
                 width={56}
               />
               <Tooltip content={<FlowTooltip />} />
-              <Area type="monotone" dataKey="ingresos" name="ingresos" stroke="#0f766e" strokeWidth={2} fill="url(#ingGrad)" dot={false} />
+              <Area type="monotone" dataKey="ingresos" name="ingresos" stroke="#00B4A6" strokeWidth={2} fill="url(#ingGrad)" dot={false} />
               <Area type="monotone" dataKey="gastos" name="gastos" stroke="#f97316" strokeWidth={2} fill="url(#gasGrad)" dot={false} />
             </AreaChart>
           </ResponsiveContainer>
@@ -441,7 +441,7 @@ export default function TreasuryDashboard() {
         {/* Tabla de cobranzas */}
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <DollarSign className="h-4 w-4 text-[#0f766e]" />
+            <DollarSign className="h-4 w-4 text-[#00B4A6]" />
             <h2 className="text-sm font-semibold text-gray-800 dark:text-white">Cobranzas pendientes (fiados)</h2>
             <span className="ml-auto text-xs text-gray-400">{pendingFiados.length} clientes</span>
           </div>

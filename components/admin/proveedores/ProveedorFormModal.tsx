@@ -280,7 +280,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
               format === 'simple'
-                ? "bg-[#0f766e] text-white"
+                ? "bg-[#00B4A6] text-white"
                 : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
             )}
           >
@@ -292,7 +292,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             className={cn(
               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold transition-colors",
               format === 'completo'
-                ? "bg-[#0f766e] text-white"
+                ? "bg-[#00B4A6] text-white"
                 : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
             )}
           >
@@ -316,7 +316,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                       className={cn(
                         "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
                         form.tipoPersona === t
-                          ? "bg-[#0f766e] text-white border-[#0f766e]"
+                          ? "bg-[#00B4A6] text-white border-[#00B4A6]"
                           : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                       )}
                     >
@@ -392,7 +392,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
                         className={cn(
                           "flex-1 py-2 rounded-lg text-sm font-bold border transition-colors",
                           form.tipoPersona === t
-                            ? "bg-[#0f766e] text-white border-[#0f766e]"
+                            ? "bg-[#00B4A6] text-white border-[#00B4A6]"
                             : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
                         )}
                       >
@@ -603,7 +603,7 @@ export default function ProveedorFormModal({ isOpen, onClose, onSaved, supplier,
             <button
               type="submit"
               disabled={saving}
-              className="flex-1 py-2.5 rounded-xl bg-[#0f766e] text-white text-sm font-bold hover:bg-[#0d5f58] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#009690] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {saving ? 'Guardando...' : isEdit ? 'Guardar proveedor' : format === 'simple' ? 'Crear proveedor' : 'Guardar proveedor'}

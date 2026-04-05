@@ -41,7 +41,7 @@ type TItem = {
 };
 
 function locationLabel(loc: string) {
-  if (loc.startsWith("GPS:")) return "Pucallpa";
+  if (loc.startsWith("GPS:")) return "Zona local";
   const short = loc.split(",")[0].trim();
   return short.length > 30 ? short.slice(0, 28) + "…" : short;
 }
@@ -120,7 +120,7 @@ function TestiCard({ item, position }: { item: TItem; position: "left" | "center
           >
             {item.name}
           </p>
-          <p className="text-xs text-muted">{item.location}, Pucallpa</p>
+          <p className="text-xs text-muted">{item.location}</p>
         </div>
       </div>
     </div>
@@ -245,7 +245,7 @@ export default function Testimonials() {
             </span>
           </h2>
           <p className="mt-5 text-base text-muted max-w-xl mx-auto">
-            Miles de familias en Pucallpa confían en nuestra bodega cada semana.
+            Miles de familias confían en nuestra bodega cada semana.
           </p>
           {/* Rating summary */}
           <div className="mt-6 inline-flex items-center gap-3 bg-surface rounded-2xl border border-gray-100 px-5 py-3">

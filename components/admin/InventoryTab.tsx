@@ -1,4 +1,4 @@
-﻿﻿"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } from "react";
 import {
@@ -159,6 +159,8 @@ export default function InventoryTab() {
   const [bulkField, setBulkField] = useState<"active" | "category" | "priceAdjust" | "pricePercent" | "stock">("active");
   const [bulkValue, setBulkValue] = useState("");
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Stocktaking
   const [stockCounts, setStockCounts] = useState<Record<number, string>>({});
@@ -190,7 +192,7 @@ export default function InventoryTab() {
   const [csvResult, setCsvResult] = useState<{ created: number; errors: string[] } | null>(null);
   const [kardexProduct, setKardexProduct] = useState<{ id: number; name: string } | null>(null);
 
-  useScrollLock(!!(showAdd || editModalProduct || showScanner || bulkModal));
+  useScrollLock(!!(showAdd || editModalProduct || showScanner || bulkModal || bulkDeleteConfirm));
 
   const handleDbSearch = async () => {
     if (!dbQuery.trim()) return;
@@ -402,6 +404,23 @@ export default function InventoryTab() {
     } catch { /* ignore */ }
     setBulkSaving(false);
     setBulkModal(false);
+    clearSelection();
+    load();
+  };
+
+  const executeBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkDeleting(true);
+    try {
+      const ids = Array.from(selectedIds);
+      await fetch("/api/products/bulk", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+    } catch { /* ignore */ }
+    setBulkDeleting(false);
+    setBulkDeleteConfirm(false);
     clearSelection();
     load();
   };
@@ -2213,10 +2232,53 @@ export default function InventoryTab() {
           >
             <EyeOff className="h-3 w-3" /> Desactivar
           </button>
+          <button
+            onClick={() => setBulkDeleteConfirm(true)}
+            className="px-3 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-xs font-semibold transition-colors flex items-center gap-1"
+          >
+            <Trash2 className="h-3 w-3" /> Eliminar
+          </button>
           <button onClick={clearSelection}
             className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold transition-colors">
             Limpiar
           </button>
+        </div>
+      )}
+
+      {/* Bulk delete confirmation modal */}
+      {bulkDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/30">
+                  <Trash2 className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">Eliminar productos</h3>
+                  <p className="text-sm text-muted">Esta acción no se puede deshacer</p>
+                </div>
+              </div>
+              <p className="text-sm text-foreground">
+                ¿Estás seguro de eliminar <strong>{selectedIds.size}</strong> producto{selectedIds.size > 1 ? "s" : ""}? Se quitarán del catálogo y ya no aparecerán en la tienda.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setBulkDeleteConfirm(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={executeBulkDelete}
+                  disabled={bulkDeleting}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {bulkDeleting ? "Eliminando…" : `Sí, eliminar ${selectedIds.size}`}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -2321,7 +2383,7 @@ export default function InventoryTab() {
                   onClick={() => {
                     const w = window.open("", "_blank");
                     if (w) {
-                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}" /><p style="font-size:24px;font-weight:bold;color:#0f766e">S/${showQRProduct.price.toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
+                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}" /><p style="font-size:24px;font-weight:bold;color:#00B4A6">S/${showQRProduct.price.toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
                       w.document.close();
                     }
                   }}

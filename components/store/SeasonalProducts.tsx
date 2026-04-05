@@ -186,18 +186,18 @@ export default function SeasonalProducts() {
                   <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">{p.name}</h4>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{p.unit}</p>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm font-extrabold text-[#0f766e] dark:text-[#14b8a6]">
+                    <span className="text-sm font-extrabold text-[#00B4A6] dark:text-[#2dd4bf]">
                       S/ {p.price.toFixed(2)}
                     </span>
                     <button
                       onClick={() => handleAdd(p)}
                       className={cn(
-                        "h-8 w-8 rounded-lg flex items-center justify-center transition-all",
-                        "bg-[#0f766e] hover:bg-[#0d5f58] text-white shadow-md active:scale-95"
+                        "h-10 w-10 rounded-2xl flex items-center justify-center transition-all",
+                        "bg-[#00B4A6] hover:bg-[#009690] text-white shadow-md active:scale-95"
                       )}
                       aria-label={`Agregar ${p.name}`}
                     >
-                      <ShoppingCart className="h-3.5 w-3.5" />
+                      <ShoppingCart className="h-5 w-5" />
                     </button>
                   </div>
                 </div>

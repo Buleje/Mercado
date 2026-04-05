@@ -31,17 +31,17 @@ const PAYMENT_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_COLORS = [
-  "#0f766e", "#f97316", "#3b82f6", "#8b5cf6",
-  "#ec4899", "#14b8a6", "#f59e0b", "#6366f1",
+  "#00B4A6", "#f97316", "#3b82f6", "#8b5cf6",
+  "#ec4899", "#2dd4bf", "#f59e0b", "#6366f1",
   "#10b981", "#ef4444",
 ];
 
 const PAYMENT_COLORS: Record<string, string> = {
-  efectivo: "#0f766e",
+  efectivo: "#00B4A6",
   yape: "#3b82f6",
   plin: "#8b5cf6",
   tarjeta: "#f97316",
-  transferencia: "#14b8a6",
+  transferencia: "#2dd4bf",
 };
 
 const HOUR_LABELS = Array.from({ length: 17 }, (_, i) => `${i + 6}h`);
@@ -198,7 +198,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
             className={cn(
               "flex-1 text-xs py-1 rounded-md font-medium transition-colors",
               view === key
-                ? "bg-white dark:bg-gray-600 text-[#0f766e] dark:text-[#14b8a6] shadow-sm"
+                ? "bg-white dark:bg-gray-600 text-[#00B4A6] dark:text-[#2dd4bf] shadow-sm"
                 : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             )}
           >
@@ -210,7 +210,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
       {/* Total */}
       <div className="text-center">
         <p className="text-xs text-gray-500 dark:text-gray-400">Total del periodo</p>
-        <p className="text-lg font-bold text-[#0f766e] dark:text-[#14b8a6]">{fmt(totalRevenue)}</p>
+        <p className="text-lg font-bold text-[#00B4A6] dark:text-[#2dd4bf]">{fmt(totalRevenue)}</p>
       </div>
 
       {/* Category view */}
@@ -294,7 +294,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
                   style={{
                     height: `${(val / maxHour) * 100}%`,
                     minHeight: val > 0 ? "2px" : "0px",
-                    backgroundColor: "#0f766e",
+                    backgroundColor: "#00B4A6",
                     opacity: val > 0 ? 1 : 0.15,
                   }}
                 />
@@ -310,7 +310,7 @@ export default function RevenueBreakdownChart({ sales, products }: RevenueBreakd
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
             Hora pico:{" "}
-            <span className="font-medium text-[#0f766e] dark:text-[#14b8a6]">
+            <span className="font-medium text-[#00B4A6] dark:text-[#2dd4bf]">
               {HOUR_LABELS[byHour.indexOf(Math.max(...byHour))]}
             </span>
           </p>

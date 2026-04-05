@@ -26,12 +26,16 @@ import {
   ClipboardList,
   BarChart3,
   ArrowUpDown,
+  Gauge,
+  Search,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
 import ModuleTooltip, { useModuleTooltip } from "@/components/admin/ModuleTooltip";
 import { MODULE_DESCRIPTIONS } from "@/lib/module-descriptions";
+import TierSelector from "@/components/admin/TierSelector";
+import { useModuleTiers } from "@/hooks/useModuleTiers";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -257,6 +261,19 @@ export const BASIC_SIDEBAR_MODULES: SidebarModule[] = [
       { id: "declaracion-inventario", label: "Declaración Inventario" },
     ],
   },
+  // ── Rendimiento (técnico) ──
+  {
+    id: "rendimiento",
+    label: "Rendimiento",
+    icon: Gauge,
+    group: "config",
+    tabs: [
+      { id: "web-vitals", label: "Velocidad Web" },
+      { id: "salud", label: "Salud del Sistema" },
+      { id: "navegador", label: "Mi Navegador" },
+      { id: "almacenamiento", label: "Almacenamiento" },
+    ],
+  },
 ];
 
 // ─── Modulo de configuracion (siempre al fondo) ───────────────────────────────
@@ -342,21 +359,21 @@ function ModuleItem({
         className={cn(
           "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
           isActive
-            ? "bg-[#0f766e]/10 dark:bg-[#0f766e]/20 text-[#0f766e] dark:text-emerald-400"
+            ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400"
             : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
         )}
       >
         {/* Active indicator bar */}
         {isActive && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#0f766e] rounded-r-full" />
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#00B4A6] rounded-r-full" />
         )}
 
         <Icon
           className={cn(
             "shrink-0 transition-colors",
-            collapsed ? "h-5 w-5" : "h-[18px] w-[18px]",
+            collapsed ? "h-5 w-5" : "h-4.5 w-4.5",
             isActive
-              ? "text-[#0f766e] dark:text-emerald-400"
+              ? "text-[#00B4A6] dark:text-emerald-400"
               : "text-gray-500 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
           )}
         />
@@ -390,7 +407,7 @@ function ModuleItem({
                   className={cn(
                     "p-0.5 rounded transition-colors",
                     canMoveUp
-                      ? "text-gray-500 hover:text-[#0f766e] hover:bg-[#0f766e]/10"
+                      ? "text-gray-500 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10"
                       : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
                   )}
                   title="Subir"
@@ -403,7 +420,7 @@ function ModuleItem({
                   className={cn(
                     "p-0.5 rounded transition-colors",
                     canMoveDown
-                      ? "text-gray-500 hover:text-[#0f766e] hover:bg-[#0f766e]/10"
+                      ? "text-gray-500 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10"
                       : "text-gray-300 dark:text-gray-600 cursor-not-allowed"
                   )}
                   title="Bajar"
@@ -446,7 +463,7 @@ function ModuleItem({
                       className={cn(
                         "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-all duration-150",
                         isTabActive
-                          ? "bg-[#0f766e]/10 dark:bg-[#0f766e]/20 text-[#0f766e] dark:text-emerald-400 font-semibold"
+                          ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400 font-semibold"
                           : "text-gray-500 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
                       )}
                     >
@@ -454,7 +471,7 @@ function ModuleItem({
                         className={cn(
                           "shrink-0 h-1.5 w-1.5 rounded-full",
                           isTabActive
-                            ? "bg-[#0f766e] dark:bg-emerald-400"
+                            ? "bg-[#00B4A6] dark:bg-emerald-400"
                             : "bg-gray-300 dark:bg-gray-600"
                         )}
                       />
@@ -503,7 +520,7 @@ function FlyoutPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -10 }}
       transition={{ duration: 0.16 }}
-      className="fixed z-[300] bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl overflow-hidden"
+      className="fixed z-300 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl overflow-hidden"
       style={{ left: sidebarWidth + 8, top, width: 240 }}
       onMouseEnter={onHoverStart}
       onMouseLeave={onHoverEnd}
@@ -530,7 +547,7 @@ function FlyoutPanel({
               className={cn(
                 "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm transition-all",
                 isActive
-                  ? "bg-[#0f766e]/10 dark:bg-[#0f766e]/20 text-[#0f766e] dark:text-emerald-400 font-semibold"
+                  ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400 font-semibold"
                   : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
               )}
             >
@@ -541,7 +558,7 @@ function FlyoutPanel({
                   {badge > 99 ? "99+" : badge}
                 </span>
               )}
-              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#0f766e] dark:bg-emerald-400 shrink-0" />}
+              {isActive && <span className="w-1.5 h-1.5 rounded-full bg-[#00B4A6] dark:bg-emerald-400 shrink-0" />}
             </button>
           );
         })}
@@ -598,7 +615,7 @@ function CategorySection({
           className={cn(
             "w-full flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all group",
             isAnyActive
-              ? "bg-[#0f766e]/10 dark:bg-[#0f766e]/20"
+              ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20"
               : "hover:bg-gray-50 dark:hover:bg-white/5"
           )}
         >
@@ -619,7 +636,7 @@ function CategorySection({
                 <span className={cn(
                   "text-xs font-bold uppercase tracking-wide block",
                   isAnyActive
-                    ? "text-[#0f766e] dark:text-emerald-400"
+                    ? "text-[#00B4A6] dark:text-emerald-400"
                     : "text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300"
                 )}>
                   {GROUP_LABELS[group]}
@@ -697,9 +714,11 @@ export default function AdminSidebar({
   // Si el padre pasa modulos propios, los usa; si no, usa los defaults
   const rawModules = modules ?? BASIC_SIDEBAR_MODULES;
   const { theme } = useTheme();
+  const { tier, setTier, isModuleVisible, stats: tierStats, overrides, setModuleTier, resetOverrides } = useModuleTiers();
   const [mobileOpen, setMobileOpen] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const [editMode, setEditMode] = useState(false);
+  const [search, setSearch] = useState("");
 
   // Categorías abiertas (acordeón)
   const [openCategories, setOpenCategories] = useState<Set<ModuleGroup>>(() => {
@@ -739,8 +758,9 @@ export default function AdminSidebar({
     for (const mod of moduleMap.values()) {
       ordered.push(mod);
     }
-    return ordered;
-  }, [rawModules, moduleOrder]);
+    // Filter by tier visibility
+    return ordered.filter(m => isModuleVisible(m.id));
+  }, [rawModules, moduleOrder, isModuleVisible]);
 
   const moveModule = (index: number, direction: "up" | "down") => {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
@@ -846,6 +866,22 @@ export default function AdminSidebar({
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
+  // Filtered modules for search
+  const searchResults = React.useMemo(() => {
+    if (!search.trim()) return null;
+    const q = search.toLowerCase();
+    const results: Array<{ module: SidebarModule; matchedTabs: typeof basicModules[0]["tabs"] }> = [];
+    for (const mod of basicModules) {
+      if (mod.id === CONFIG_SIDEBAR_MODULE.id) continue;
+      const modMatches = mod.label.toLowerCase().includes(q);
+      const matchedTabs = mod.tabs.filter(t => t.label.toLowerCase().includes(q));
+      if (modMatches || matchedTabs.length > 0) {
+        results.push({ module: mod, matchedTabs: modMatches ? mod.tabs : matchedTabs });
+      }
+    }
+    return results;
+  }, [search, basicModules]);
+
   function handleTabChange(tabId: string) {
     onTabChange(tabId);
     setMobileOpen(false);
@@ -870,7 +906,7 @@ export default function AdminSidebar({
         className={cn(
           "flex flex-col h-full bg-white dark:bg-card border-r border-gray-200 dark:border-card-border",
           "transition-all duration-300",
-          isMobile ? "w-72" : isCollapsed ? "w-16" : "w-[280px]"
+          isMobile ? "w-72" : isCollapsed ? "w-16" : "w-70"
         )}
       >
         {/* Header: toggle + logo */}
@@ -900,7 +936,7 @@ export default function AdminSidebar({
               transition={{ duration: 0.18 }}
               className="flex items-center gap-2 min-w-0"
             >
-              <div className="h-7 w-7 rounded-lg bg-[#0f766e] flex items-center justify-center shrink-0">
+              <div className="h-7 w-7 rounded-lg bg-[#00B4A6] flex items-center justify-center shrink-0">
                 <span className="text-white text-xs font-bold">B</span>
               </div>
               <div className="min-w-0">
@@ -922,7 +958,7 @@ export default function AdminSidebar({
             isCollapsed ? "justify-center" : "gap-3"
           )}
         >
-          <div className="h-8 w-8 rounded-full bg-[#f97316] flex items-center justify-center shrink-0">
+          <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center shrink-0">
             <User className="h-4 w-4 text-white" />
           </div>
           {!isCollapsed && (
@@ -941,6 +977,24 @@ export default function AdminSidebar({
           )}
         </div>
 
+        {/* Tier Selector */}
+        {!isCollapsed ? (
+          <div className="px-3 pt-2 shrink-0">
+            <TierSelector
+              tier={tier}
+              onTierChange={setTier}
+              stats={{ visible: tierStats.visible, total: tierStats.total }}
+              overrides={overrides}
+              onModuleTierChange={setModuleTier}
+              onResetOverrides={resetOverrides}
+            />
+          </div>
+        ) : (
+          <div className="px-2 pt-2 shrink-0">
+            <TierSelector tier={tier} onTierChange={setTier} collapsed overrides={overrides} onModuleTierChange={setModuleTier} onResetOverrides={resetOverrides} />
+          </div>
+        )}
+
         {/* Ordenar button */}
         {!isCollapsed && (
           <div className="px-3 pt-2 shrink-0">
@@ -949,7 +1003,7 @@ export default function AdminSidebar({
               className={cn(
                 "w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                 editMode
-                  ? "bg-[#0f766e] text-white"
+                  ? "bg-[#00B4A6] text-white"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 border border-gray-200 dark:border-card-border"
               )}
             >
@@ -959,9 +1013,57 @@ export default function AdminSidebar({
           </div>
         )}
 
+        {/* Search input */}
+        {!isCollapsed && (
+          <div className="px-3 pb-1 shrink-0">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+              <input
+                type="search"
+                placeholder="Buscar módulo..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full h-8 pl-8 pr-8 text-xs rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 focus:outline-none focus:ring-1 focus:ring-[#00B4A6] focus:border-[#00B4A6] placeholder:text-gray-400 dark:placeholder:text-gray-500 text-gray-700 dark:text-gray-200"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  aria-label="Limpiar búsqueda"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Navigation con categorías */}
         <nav className="flex-1 overflow-y-auto px-2 py-3 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-white/10">
-          {editMode ? (
+          {searchResults !== null ? (
+            /* Resultados de búsqueda */
+            <div className="space-y-0.5">
+              {searchResults.length === 0 ? (
+                <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-6">
+                  Sin resultados para &ldquo;{search}&rdquo;
+                </p>
+              ) : (
+                searchResults.map(({ module, matchedTabs }) => (
+                  <ModuleItem
+                    key={module.id}
+                    module={{ ...module, tabs: matchedTabs }}
+                    isActive={activeModule === module.id}
+                    activeTab={activeTab}
+                    collapsed={false}
+                    onModuleChange={handleModuleChange}
+                    onTabChange={isMobile ? handleTabChange : onTabChange}
+                    badgeCount={docBadges[module.id]}
+                    editMode={false}
+                  />
+                ))
+              )}
+            </div>
+          ) : editMode ? (
             /* Modo edición: lista plana con botones de reordenamiento */
             <div className="space-y-0.5">
               {basicModules.map((module, idx) => (
@@ -1009,7 +1111,7 @@ export default function AdminSidebar({
                       className={cn(
                         "w-full flex items-center justify-center p-2 rounded-xl transition-all",
                         isAnyActive
-                          ? "bg-[#0f766e]/10 dark:bg-[#0f766e]/20"
+                          ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20"
                           : "hover:bg-gray-100 dark:hover:bg-white/5"
                       )}
                     >
@@ -1078,7 +1180,7 @@ export default function AdminSidebar({
               )}
               title={isCollapsed ? "Cerrar sesion" : undefined}
             >
-              <LogOut className="h-[18px] w-[18px] shrink-0" />
+              <LogOut className="h-4.5 w-4.5 shrink-0" />
               {!isCollapsed && (
                 <span className="text-sm font-medium">Cerrar sesion</span>
               )}

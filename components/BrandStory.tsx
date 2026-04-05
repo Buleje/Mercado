@@ -28,7 +28,7 @@ const MILESTONES = [
   {
     year: "2024",
     title: "Tienda online",
-    desc: "Lanzamos nuestra plataforma digital para que pidas desde cualquier lugar de Pucallpa.",
+    desc: "Lanzamos nuestra plataforma digital para que pidas desde cualquier lugar.",
     icon: Star,
     color: "bg-amber-500",
   },
@@ -47,7 +47,7 @@ export default function BrandStory() {
             De la esquina del barrio a tu puerta
           </h2>
           <p className="text-sm text-muted mt-2 max-w-lg mx-auto">
-            Más de 9 años llevando productos frescos y de calidad a las familias de Pucallpa
+            Más de 9 años llevando productos frescos y de calidad a tu familia
           </p>
         </div>
 

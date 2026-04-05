@@ -105,7 +105,7 @@ function FlashSalePreview({ product, salePrice, duration, endIso }: PreviewProps
       <div className="p-3">
         <p className="text-sm font-semibold text-gray-900 dark:text-white line-clamp-1">{product.name}</p>
         <div className="mt-1.5 flex items-baseline gap-2">
-          <span className="text-xl font-bold text-[#0f766e] dark:text-[#3a8a65]">{fmtPrice(salePrice)}</span>
+          <span className="text-xl font-bold text-[#00B4A6] dark:text-[#3a8a65]">{fmtPrice(salePrice)}</span>
           <span className="text-sm text-gray-400 line-through">{fmtPrice(product.price)}</span>
           {pct > 0 && (
             <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-600 dark:bg-red-900/30 dark:text-red-400">
@@ -269,8 +269,8 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                 "bg-white dark:bg-gray-800",
                 "border-gray-300 dark:border-gray-600",
                 "text-gray-900 dark:text-white placeholder-gray-400",
-                "focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent",
-                selected && "border-[#0f766e] dark:border-[#3a8a65]"
+                "focus:outline-none focus:ring-2 focus:ring-[#00B4A6] focus:border-transparent",
+                selected && "border-[#00B4A6] dark:border-[#3a8a65]"
               )}
             />
             {(searching) && (
@@ -370,10 +370,10 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                 onClick={() => setDuration(d)}
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f766e]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]",
                   duration.hours === d.hours
-                    ? "border-[#0f766e] bg-[#0f766e] text-white dark:bg-[#0f766e]"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-[#0f766e]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                    ? "border-[#00B4A6] bg-[#00B4A6] text-white dark:bg-[#00B4A6]"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-[#00B4A6]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400"
                 )}
               >
                 <Clock className="h-3 w-3" aria-hidden="true" />
@@ -434,7 +434,7 @@ export function FlashSaleCreator({ className }: { className?: string }) {
                 "border-gray-300 dark:border-gray-600",
                 "text-gray-600 dark:text-gray-400",
                 "hover:bg-gray-50 dark:hover:bg-gray-800",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f766e]"
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]"
               )}
               aria-pressed={showPreview}
               aria-label={showPreview ? "Ocultar preview" : "Ver preview"}

@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { withDbRetry } from "@/lib/db-retry";
 
 const CreateFiadoSchema = z.object({
   customerId: z.string().min(1).max(100),
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
 
     let fiados: any[] = [];
     try {
-      fiados = await FiadosDB.list(auth.tenantId, { status, customerId });
+      fiados = await withDbRetry(() => FiadosDB.list(auth.tenantId, { status, customerId }));
     } catch (dbErr) {
       // Fallback: query directa sin relaciones si FiadosDB falla
       logger.error("[fiados] FiadosDB.list failed, using direct query", { err: dbErr instanceof Error ? dbErr.message : String(dbErr) });

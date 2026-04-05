@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { MessageSquare, Send, Loader2, Users, ArrowLeft } from "lucide-react";
+import { MessageSquare, Send, Loader2, Users, ArrowLeft, Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Message = { id: string; sender: string; message: string; createdAt: string };
@@ -10,6 +10,7 @@ type ChatMsg = { id: string; sender: "customer" | "admin"; message: string; crea
 
 export default function AdminChatTab() {
   const [tab, setTab] = useState<"internal" | "customers">("internal");
+  const [expanded, setExpanded] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
@@ -96,7 +97,17 @@ export default function AdminChatTab() {
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-280px)] min-h-100">
+    <div className={cn("flex flex-col min-h-100", expanded ? "fixed inset-0 z-50 bg-white dark:bg-card p-4" : "h-[calc(100vh-280px)]")}>
+      {expanded && (
+        <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200 dark:border-card-border">
+          <h2 className="text-lg font-extrabold text-gray-900 dark:text-foreground flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-primary" /> Chat expandido
+          </h2>
+          <button onClick={() => setExpanded(false)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-surface transition-colors">
+            <Minimize2 className="h-5 w-5 text-gray-500" />
+          </button>
+        </div>
+      )}
       {/* Tabs */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><MessageSquare className="h-6 w-6 text-primary" />Chat</h2>
@@ -109,6 +120,13 @@ export default function AdminChatTab() {
             {totalUnread > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-1">{totalUnread}</span>}
           </button>
         </div>
+        <button
+          onClick={() => setExpanded(e => !e)}
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-surface transition-colors text-gray-500 hover:text-primary"
+          title={expanded ? "Minimizar" : "Expandir chat"}
+        >
+          {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </button>
       </div>
 
       {/* Internal Chat */}

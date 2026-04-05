@@ -174,7 +174,7 @@ export default function OrderTimeline({
           <button
             onClick={() => onChangeStatus(nextAction)}
             disabled={updating}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0f766e] text-white text-xs font-bold hover:bg-[#0d5f58] disabled:opacity-50 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#009690] disabled:opacity-50 transition-colors"
           >
             {updating ? (
               <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin" />

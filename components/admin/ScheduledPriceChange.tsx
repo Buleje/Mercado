@@ -146,7 +146,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
   const isIncrease = priceDiff !== null && parseFloat(priceDiff) > 0;
 
   return (
-    <div className="rounded-xl border border-[#0f766e]/30 bg-[#0f766e]/5 dark:bg-[#0f766e]/10 dark:border-[#0f766e]/40 p-5 space-y-4">
+    <div className="rounded-xl border border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 dark:border-[#00B4A6]/40 p-5 space-y-4">
       <h4 className="text-sm font-semibold text-gray-800 dark:text-white">Nuevo cambio programado</h4>
 
       {/* Product search */}
@@ -162,10 +162,10 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
             }}
             onFocus={() => search.length >= 2 && setShowDropdown(true)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           {searching && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border border-[#0f766e] border-t-transparent rounded-full animate-spin" />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
           )}
         </div>
         {showDropdown && products.length > 0 && !selected && (
@@ -202,7 +202,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
             Precio nuevo
             {priceDiff !== null && (
-              <span className={cn("ml-2 font-semibold", isIncrease ? "text-red-500" : "text-[#0f766e]")}>
+              <span className={cn("ml-2 font-semibold", isIncrease ? "text-red-500" : "text-[#00B4A6]")}>
                 {isIncrease ? "+" : ""}{priceDiff}%
               </span>
             )}
@@ -216,7 +216,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
               value={newPrice}
               onChange={(e) => setNewPrice(e.target.value)}
               placeholder="0.00"
-              className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+              className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
             />
           </div>
         </div>
@@ -230,7 +230,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
             type="datetime-local"
             value={startAt}
             onChange={(e) => setStartAt(e.target.value)}
-            className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+            className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
         <div>
@@ -241,7 +241,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
             type="datetime-local"
             value={endAt}
             onChange={(e) => setEndAt(e.target.value)}
-            className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+            className="w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
       </div>
@@ -254,7 +254,7 @@ function AddForm({ onAdd, onCancel }: AddFormProps) {
         <button
           onClick={handleSubmit}
           disabled={!selected || !newPrice || !startAt}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-[#0f766e] hover:bg-[#235c42] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-[#00B4A6] hover:bg-[#235c42] text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Check size={14} />
           Programar cambio
@@ -323,7 +323,7 @@ export default function ScheduledPriceChange() {
         </div>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-[#0f766e] hover:bg-[#235c42] text-white transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg bg-[#00B4A6] hover:bg-[#235c42] text-white transition-colors"
         >
           <Plus size={14} />
           Programar
@@ -362,7 +362,7 @@ export default function ScheduledPriceChange() {
                     <span className="text-sm font-medium text-gray-800 dark:text-white truncate">
                       {event.productName}
                     </span>
-                    <span className={cn("text-xs font-semibold", isIncrease ? "text-red-500" : "text-[#0f766e]")}>
+                    <span className={cn("text-xs font-semibold", isIncrease ? "text-red-500" : "text-[#00B4A6]")}>
                       {isIncrease ? "sube" : "baja"} {Math.abs(parseFloat(diff))}%
                     </span>
                   </div>

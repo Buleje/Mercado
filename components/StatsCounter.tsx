@@ -14,7 +14,7 @@ function parseStatValue(str: string): { value: number; suffix: string; decimals?
 }
 
 const statMeta = [
-  { icon: ShoppingBag, label: "Productos disponibles", accent: "#0f766e", accentGradient: "linear-gradient(to bottom, rgba(45,106,79,0.12), transparent)" },
+  { icon: ShoppingBag, label: "Productos disponibles", accent: "#00B4A6", accentGradient: "linear-gradient(to bottom, rgba(45,106,79,0.12), transparent)" },
   { icon: Users, label: "Clientes satisfechos", accent: "#f97316", accentGradient: "linear-gradient(to bottom, rgba(244,162,97,0.12), transparent)" },
   { icon: Truck, label: "Pedidos entregados", accent: "#60a5fa", accentGradient: "linear-gradient(to bottom, rgba(96,165,250,0.12), transparent)" },
   { icon: Star, label: "Calificación promedio", accent: "#fbbf24", accentGradient: "linear-gradient(to bottom, rgba(251,191,36,0.12), transparent)" },
@@ -65,9 +65,14 @@ export default function StatsCounter() {
     { ...statMeta[3], ...parseStatValue(hp.statRating) },
   ];
 
+  // Don't render if no stats are configured
+  const hasAnyStats = hp.statProducts || hp.statClients || hp.statOrders || hp.statRating;
+
   useEffect(() => {
     if (inView && !started) startTransition(() => setStarted(true));
   }, [inView, started]);
+
+  if (!hasAnyStats) return null;
 
   return (
     <section className="relative py-16 sm:py-24 overflow-hidden bg-surface" ref={ref}>
@@ -92,7 +97,7 @@ export default function StatsCounter() {
             Nuestros números
           </span>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
-            La confianza de Pucallpa en{" "}
+            La confianza de nuestros clientes en{" "}
             <span className="text-primary relative">
               números
               <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/30" viewBox="0 0 100 12" preserveAspectRatio="none">

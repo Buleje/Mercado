@@ -81,7 +81,7 @@ function CotizacionPreview({ cotizacion }: { cotizacion: Cotizacion }) {
       </div>
       <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-white/5">
         <span className="text-xs text-gray-500">{formatDate(cotizacion.createdAt)}</span>
-        <span className="font-bold text-sm text-[#0f766e]">{formatCurrency(cotizacion.total)}</span>
+        <span className="font-bold text-sm text-[#00B4A6]">{formatCurrency(cotizacion.total)}</span>
       </div>
     </div>
   );
@@ -204,7 +204,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
           { label: "Emitidas mes", value: String(emitidasMes), border: "border-b-4 border-blue-500" },
           { label: "Convertidas", value: String(convertidas), border: "border-b-4 border-purple-500" },
           { label: "Tasa conversion", value: `${tasaConversion.toFixed(1)}%`, border: tasaConversion > 30 ? "border-b-4 border-emerald-500" : "border-b-4 border-amber-500" },
-          { label: "Monto cotizado", value: formatCurrency(montoCotizado), border: "border-b-4 border-[#0f766e]" },
+          { label: "Monto cotizado", value: formatCurrency(montoCotizado), border: "border-b-4 border-[#00B4A6]" },
         ].map(k => (
           <div key={k.label} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 shadow-sm", k.border)}>
             <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
@@ -272,7 +272,7 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
                 <XAxis type="number" tickFormatter={(v: number) => `S/${v}`} tick={{ fontSize: 11 }} />
                 <YAxis dataKey="name" type="category" width={110} tick={{ fontSize: 10 }} />
                 <Tooltip formatter={((v: number) => [formatCurrency(Number(v)), "Cotizado"]) as any} contentStyle={{ borderRadius: "12px", border: "1px solid #e5e7eb", fontSize: "12px" }} />
-                <Bar dataKey="monto" fill="#0f766e" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="monto" fill="#00B4A6" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : emptyCot("Sin datos de clientes")}
@@ -578,7 +578,7 @@ export default function CotizacionesModule() {
       {/* Header — Mejora 20 */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-[#0f766e] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
             <FileText className="h-5 w-5" />
           </div>
           <div>
@@ -606,7 +606,7 @@ export default function CotizacionesModule() {
             className={cn(
               "px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5",
               activeTab === id
-                ? "bg-white dark:bg-card text-[#0f766e] shadow-sm"
+                ? "bg-white dark:bg-card text-[#00B4A6] shadow-sm"
                 : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             )}
           >
@@ -676,7 +676,7 @@ export default function CotizacionesModule() {
                 </div>
                 <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
                   <p className="text-[10px] uppercase font-bold text-gray-400">Monto cotizado</p>
-                  <p className="text-lg font-extrabold text-[#0f766e]">{formatCurrency(montoTotal)}</p>
+                  <p className="text-lg font-extrabold text-[#00B4A6]">{formatCurrency(montoTotal)}</p>
                 </div>
               </div>
             );
@@ -729,13 +729,13 @@ export default function CotizacionesModule() {
                   aria-label="Buscar cotizaciones"
                   value={search}
                   onChange={e => setSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                 />
               </div>
               <button
                 type="button"
                 onClick={() => setShowQuickClient(true)}
-                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#0f766e] hover:text-white hover:border-[#0f766e] text-gray-500 transition-colors"
+                className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#00B4A6] hover:text-white hover:border-[#00B4A6] text-gray-500 transition-colors"
                 title="Crear cliente rapido"
               >
                 <Plus className="h-4 w-4" />
@@ -749,7 +749,7 @@ export default function CotizacionesModule() {
                   className={cn(
                     "shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-colors",
                     statusFilter === s
-                      ? "bg-[#0f766e] text-white"
+                      ? "bg-[#00B4A6] text-white"
                       : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10"
                   )}
                 >
@@ -824,29 +824,29 @@ export default function CotizacionesModule() {
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
+                <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
               </div>
             ) : error ? (
               <div className="flex flex-col items-center justify-center py-12 gap-2">
                 <AlertTriangle className="h-8 w-8 text-red-400" />
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-                <button onClick={fetchCotizaciones} className="text-xs text-[#0f766e] hover:underline font-semibold mt-1">Reintentar</button>
+                <button onClick={fetchCotizaciones} className="text-xs text-[#00B4A6] hover:underline font-semibold mt-1">Reintentar</button>
               </div>
             ) : cotizaciones.length === 0 ? (
               <div className="text-center py-16 px-4">
                 <div className="text-6xl mb-4">📋</div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin cotizaciones</h3>
                 <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Envía presupuestos profesionales a tus clientes</p>
-                <button onClick={() => setActiveTab("nueva")} className="bg-[#0f766e] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#0d5f58]">Nueva cotización</button>
+                <button onClick={() => setActiveTab("nueva")} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Nueva cotización</button>
               </div>
             ) : (
               <>
                 {/* Mejora 13 (R3): Toggle Lista/Cards */}
                 <div className="flex items-center gap-1 px-4 pt-2">
-                  <button onClick={() => setCotViewMode("lista")} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", cotViewMode === "lista" ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400")}>
+                  <button onClick={() => setCotViewMode("lista")} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", cotViewMode === "lista" ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400")}>
                     <List className="h-3.5 w-3.5 inline mr-1" />Lista
                   </button>
-                  <button onClick={() => setCotViewMode("cards")} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", cotViewMode === "cards" ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400")}>
+                  <button onClick={() => setCotViewMode("cards")} className={cn("px-2.5 py-1 rounded-lg text-xs font-bold transition-colors", cotViewMode === "cards" ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400")}>
                     <Bookmark className="h-3.5 w-3.5 inline mr-1" />Cards
                   </button>
                 </div>
@@ -865,13 +865,13 @@ export default function CotizacionesModule() {
                             <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold", meta.bg, meta.color)}>{meta.label}</span>
                           </div>
                           <div className="p-4 space-y-2">
-                            <p className="font-bold text-gray-900 dark:text-white truncate group-hover:text-[#0f766e] transition-colors">{c.clienteNombre}</p>
+                            <p className="font-bold text-gray-900 dark:text-white truncate group-hover:text-[#00B4A6] transition-colors">{c.clienteNombre}</p>
                             <div className="flex items-center justify-between">
-                              <span className="text-lg font-extrabold text-[#0f766e]">{formatCurrency(c.total)}</span>
+                              <span className="text-lg font-extrabold text-[#00B4A6]">{formatCurrency(c.total)}</span>
                               <span className="text-[10px] text-gray-400">{formatDate(c.createdAt)} · {diasValidez > 0 ? `${diasValidez}d válido` : "Vencida"}</span>
                             </div>
                             <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-white/5">
-                              <button onClick={(e) => { e.stopPropagation(); openDetail(c); }} className="flex-1 text-xs font-bold text-[#0f766e] bg-[#0f766e]/10 hover:bg-[#0f766e]/20 py-1.5 rounded-lg transition-colors">Ver</button>
+                              <button onClick={(e) => { e.stopPropagation(); openDetail(c); }} className="flex-1 text-xs font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 py-1.5 rounded-lg transition-colors">Ver</button>
                               <button onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/?text=${encodeURIComponent(`Cotización COT-${String(c.numero).padStart(4, "0")} por ${formatCurrency(c.total)}`)}`, "_blank"); }} className="flex-1 text-xs font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 py-1.5 rounded-lg transition-colors">WhatsApp</button>
                             </div>
                           </div>
@@ -961,11 +961,11 @@ export default function CotizacionesModule() {
               <div key={s} className="flex items-center gap-2">
                 <div className={cn(
                   "h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
-                  step >= s ? "bg-[#0f766e] text-white" : "bg-gray-200 dark:bg-white/10 text-gray-500"
+                  step >= s ? "bg-[#00B4A6] text-white" : "bg-gray-200 dark:bg-white/10 text-gray-500"
                 )}>
                   {s}
                 </div>
-                {s < 3 && <div className={cn("w-8 h-0.5", step > s ? "bg-[#0f766e]" : "bg-gray-200 dark:bg-white/10")} />}
+                {s < 3 && <div className={cn("w-8 h-0.5", step > s ? "bg-[#00B4A6]" : "bg-gray-200 dark:bg-white/10")} />}
               </div>
             ))}
             <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
@@ -985,7 +985,7 @@ export default function CotizacionesModule() {
                     value={clienteNombre}
                     onChange={e => setClienteNombre(e.target.value)}
                     placeholder="Nombre o razón social"
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                   />
                 </div>
               </div>
@@ -999,14 +999,14 @@ export default function CotizacionesModule() {
                     onChange={e => setClienteRuc(e.target.value)}
                     placeholder="20XXXXXXXXX"
                     maxLength={20}
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                   />
                 </div>
               </div>
               <div className="flex justify-end pt-2">
                 <button
                   onClick={() => { if (clienteNombre.trim()) setStep(2); else setCreateError("Nombre del cliente requerido"); }}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
                 >
                   Siguiente
                 </button>
@@ -1022,7 +1022,7 @@ export default function CotizacionesModule() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowTemplateModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#0f766e] bg-[#0f766e]/10 hover:bg-[#0f766e]/20 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors"
                   >
                     <Copy className="h-3.5 w-3.5" /> Desde plantilla
                   </button>
@@ -1061,7 +1061,7 @@ export default function CotizacionesModule() {
                               onChange={e => { updateItem(idx, "descripcion", e.target.value); setProductSearch(e.target.value); setActiveItemIdx(idx); }}
                               onFocus={() => setActiveItemIdx(idx)}
                               placeholder="Buscar producto o escribir..."
-                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30"
+                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
                             />
                             {activeItemIdx === idx && productResults.length > 0 && (
                               <div className="absolute top-full left-0 right-0 z-10 mt-1 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-lg max-h-40 overflow-y-auto">
@@ -1080,16 +1080,16 @@ export default function CotizacionesModule() {
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="1" step="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)}
-                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30 text-center" />
+                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30 text-center" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" step="0.01" value={item.precioUnit} onChange={e => updateItem(idx, "precioUnit", e.target.value)}
                               placeholder="0.00"
-                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30 text-right" />
+                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30 text-right" />
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" min="0" max="100" step="1" value={item.descuento} onChange={e => updateItem(idx, "descuento", e.target.value)}
-                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30 text-center" />
+                              className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30 text-center" />
                           </td>
                           <td className="py-2 text-right font-medium text-gray-900 dark:text-white">{formatCurrency(sub)}</td>
                           <td className="py-2 pl-1">
@@ -1105,7 +1105,7 @@ export default function CotizacionesModule() {
                   </tbody>
                 </table>
               </div>
-              <button onClick={addItem} className="flex items-center gap-1 text-xs font-bold text-[#0f766e] hover:underline">
+              <button onClick={addItem} className="flex items-center gap-1 text-xs font-bold text-[#00B4A6] hover:underline">
                 <Plus className="h-3.5 w-3.5" /> Agregar item
               </button>
 
@@ -1126,7 +1126,7 @@ export default function CotizacionesModule() {
                 <button onClick={() => setStep(1)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
                   Atrás
                 </button>
-                <button onClick={() => setStep(3)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors">
+                <button onClick={() => setStep(3)} className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors">
                   Siguiente
                 </button>
               </div>
@@ -1139,7 +1139,7 @@ export default function CotizacionesModule() {
               <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 space-y-2">
                 <p className="text-sm"><span className="font-bold text-gray-700 dark:text-gray-300">Cliente:</span> {clienteNombre} {clienteRuc ? `(RUC: ${clienteRuc})` : ""}</p>
                 <p className="text-sm"><span className="font-bold text-gray-700 dark:text-gray-300">Items:</span> {items.filter(i => i.descripcion.trim()).length}</p>
-                <p className="text-sm"><span className="font-bold text-gray-700 dark:text-gray-300">Total:</span> <span className="font-bold text-[#0f766e]">{formatCurrency(computedTotal)}</span></p>
+                <p className="text-sm"><span className="font-bold text-gray-700 dark:text-gray-300">Total:</span> <span className="font-bold text-[#00B4A6]">{formatCurrency(computedTotal)}</span></p>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Válido hasta</label>
@@ -1149,7 +1149,7 @@ export default function CotizacionesModule() {
                     type="date"
                     value={validoHasta}
                     onChange={e => setValidoHasta(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                   />
                 </div>
               </div>
@@ -1160,7 +1160,7 @@ export default function CotizacionesModule() {
                   onChange={e => setNotas(e.target.value)}
                   placeholder="Condiciones, observaciones..."
                   rows={2}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30 resize-none"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
                 />
               </div>
 
@@ -1173,7 +1173,7 @@ export default function CotizacionesModule() {
                 <button
                   onClick={handleCreate}
                   disabled={creating}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-50 shadow-sm transition-colors"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
                 >
                   {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                   Crear Cotización
@@ -1229,7 +1229,7 @@ export default function CotizacionesModule() {
                   <div className="grid grid-cols-3 gap-3 pt-2 border-t border-gray-200 dark:border-white/10">
                     <div><p className="text-[10px] uppercase font-bold text-gray-400">Subtotal</p><p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(selected.subtotal)}</p></div>
                     <div><p className="text-[10px] uppercase font-bold text-gray-400">IGV</p><p className="text-sm font-bold text-gray-900 dark:text-white">{formatCurrency(selected.igv)}</p></div>
-                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Total</p><p className="text-sm font-bold text-[#0f766e]">{formatCurrency(selected.total)}</p></div>
+                    <div><p className="text-[10px] uppercase font-bold text-gray-400">Total</p><p className="text-sm font-bold text-[#00B4A6]">{formatCurrency(selected.total)}</p></div>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                     <Calendar className="h-3.5 w-3.5" />
@@ -1239,7 +1239,7 @@ export default function CotizacionesModule() {
 
                 {/* Items */}
                 {detailLoading ? (
-                  <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-[#0f766e]" /></div>
+                  <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-[#00B4A6]" /></div>
                 ) : (
                   <div>
                     <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Items</h4>
@@ -1418,7 +1418,7 @@ export default function CotizacionesModule() {
                   </button>
                   <button
                     onClick={() => { setShowSaveTemplate(true); setTemplateName(""); }}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[#0f766e] bg-[#0f766e]/10 hover:bg-[#0f766e]/20 transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors"
                   >
                     <Bookmark className="h-4 w-4" /> Guardar como plantilla
                   </button>
@@ -1426,7 +1426,7 @@ export default function CotizacionesModule() {
 
                 {/* Save as template mini-modal */}
                 {showSaveTemplate && (
-                  <div className="bg-[#0f766e]/5 dark:bg-[#0f766e]/10 border border-[#0f766e]/20 rounded-xl p-4 space-y-3">
+                  <div className="bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/20 rounded-xl p-4 space-y-3">
                     <p className="text-sm font-bold text-gray-900 dark:text-white">Guardar como plantilla</p>
                     <input
                       type="text"
@@ -1434,7 +1434,7 @@ export default function CotizacionesModule() {
                       onChange={e => setTemplateName(e.target.value)}
                       placeholder="Nombre de la plantilla..."
                       maxLength={60}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                       onKeyDown={e => e.key === "Enter" && handleSaveTemplate()}
                     />
                     <div className="flex gap-2">
@@ -1447,7 +1447,7 @@ export default function CotizacionesModule() {
                       <button
                         onClick={handleSaveTemplate}
                         disabled={!templateName.trim()}
-                        className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-50 transition-colors"
+                        className="flex-1 px-3 py-2 rounded-xl text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 transition-colors"
                       >
                         Guardar
                       </button>
@@ -1495,11 +1495,11 @@ export default function CotizacionesModule() {
                       <button
                         key={tpl.id}
                         onClick={() => handleLoadTemplate(tpl)}
-                        className="w-full text-left p-3 bg-gray-50 dark:bg-white/5 rounded-xl hover:bg-[#0f766e]/5 dark:hover:bg-[#0f766e]/10 hover:border-[#0f766e]/20 border border-transparent transition-all"
+                        className="w-full text-left p-3 bg-gray-50 dark:bg-white/5 rounded-xl hover:bg-[#00B4A6]/5 dark:hover:bg-[#00B4A6]/10 hover:border-[#00B4A6]/20 border border-transparent transition-all"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-lg bg-[#0f766e]/10 flex items-center justify-center shrink-0">
-                            <Bookmark className="h-4 w-4 text-[#0f766e]" />
+                          <div className="h-8 w-8 rounded-lg bg-[#00B4A6]/10 flex items-center justify-center shrink-0">
+                            <Bookmark className="h-4 w-4 text-[#00B4A6]" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{tpl.nombre}</p>
@@ -1555,8 +1555,8 @@ export default function CotizacionesModule() {
                         key={tpl.id}
                         className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-white/5 rounded-xl"
                       >
-                        <div className="h-8 w-8 rounded-lg bg-[#0f766e]/10 flex items-center justify-center shrink-0">
-                          <Bookmark className="h-4 w-4 text-[#0f766e]" />
+                        <div className="h-8 w-8 rounded-lg bg-[#00B4A6]/10 flex items-center justify-center shrink-0">
+                          <Bookmark className="h-4 w-4 text-[#00B4A6]" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{tpl.nombre}</p>
@@ -1566,7 +1566,7 @@ export default function CotizacionesModule() {
                         </div>
                         <button
                           onClick={() => handleLoadTemplate(tpl)}
-                          className="px-2 py-1 rounded-lg text-[10px] font-bold text-[#0f766e] bg-[#0f766e]/10 hover:bg-[#0f766e]/20 transition-colors shrink-0"
+                          className="px-2 py-1 rounded-lg text-[10px] font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors shrink-0"
                         >
                           Usar
                         </button>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
 import {
@@ -529,7 +529,7 @@ export default function AIDailyBriefing({ data }: Props) {
                 "shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold transition-colors",
                 isSpeaking
                   ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                  : "bg-[#0f766e]/10 dark:bg-[#0f766e]/20 text-[#0f766e] dark:text-emerald-400 hover:bg-[#0f766e]/20"
+                  : "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400 hover:bg-[#00B4A6]/20"
               )}
             >
               {isSpeaking ? (
@@ -685,7 +685,7 @@ export default function AIDailyBriefing({ data }: Props) {
         <ol className="flex flex-col gap-1.5">
           {analysis.tasks.map((task, i) => (
             <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-              <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-[#0f766e]/10 dark:bg-[#0f766e]/20 text-[#0f766e] dark:text-[#14b8a6] text-xs font-bold flex items-center justify-center">
+              <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-[#2dd4bf] text-xs font-bold flex items-center justify-center">
                 {i + 1}
               </span>
               {task}
@@ -1090,7 +1090,7 @@ function BriefingCard({ children }: { children: React.ReactNode }) {
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-4">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#0f766e] dark:text-[#14b8a6] mb-1.5">{label}</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#00B4A6] dark:text-[#2dd4bf] mb-1.5">{label}</h3>
       {children}
     </div>
   );
@@ -1119,7 +1119,7 @@ function CollapsibleSection({
         className="w-full flex items-center justify-between group mb-1.5"
       >
         <div className="flex items-center gap-2">
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#0f766e] dark:text-[#14b8a6]">{label}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-[#00B4A6] dark:text-[#2dd4bf]">{label}</h3>
           {badge && (
             <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded-full", colors[badgeColor ?? "green"])}>
               {badge}

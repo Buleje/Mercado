@@ -146,7 +146,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
     >
       {/* Titulo */}
       <div className="mb-3 flex items-center gap-2">
-        <Clock className="h-5 w-5 text-[#0f766e] dark:text-[#3a8a65]" aria-hidden="true" />
+        <Clock className="h-5 w-5 text-[#00B4A6] dark:text-[#3a8a65]" aria-hidden="true" />
         <h2 className="text-base font-semibold text-gray-900 dark:text-white">Reloj de Turno</h2>
       </div>
 
@@ -166,7 +166,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
 
       {/* Estado actual */}
       {todayEntry && (
-        <div className="mb-3 rounded-lg bg-[#0f766e]/10 dark:bg-[#0f766e]/20 px-3 py-2 text-sm">
+        <div className="mb-3 rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 px-3 py-2 text-sm">
           <p className="text-gray-700 dark:text-gray-200">
             Entrada: <span className="font-semibold">{todayEntry.entry}</span>
             {todayEntry.exit && (
@@ -188,10 +188,10 @@ export function ShiftClockWidget({ className }: { className?: string }) {
           className={cn(
             "flex flex-1 items-center justify-center gap-2 rounded-lg py-3 text-sm font-semibold",
             "transition-colors duration-150",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f766e]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]",
             hasEntry
               ? "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600"
-              : "bg-[#0f766e] text-white hover:bg-[#235c42] dark:bg-[#0f766e] dark:hover:bg-[#3a8a65]"
+              : "bg-[#00B4A6] text-white hover:bg-[#235c42] dark:bg-[#00B4A6] dark:hover:bg-[#3a8a65]"
           )}
           aria-label="Marcar entrada"
         >
@@ -236,7 +236,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {week.map((entry) => (
-                  <tr key={entry.date} className={entry.date === today ? "bg-[#0f766e]/5 dark:bg-[#0f766e]/10" : ""}>
+                  <tr key={entry.date} className={entry.date === today ? "bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10" : ""}>
                     <td className="px-2 py-1.5 text-gray-700 dark:text-gray-300">{dayLabel(entry.date)}</td>
                     <td className="px-2 py-1.5 text-center font-mono text-gray-700 dark:text-gray-300">{entry.entry}</td>
                     <td className="px-2 py-1.5 text-center font-mono text-gray-700 dark:text-gray-300">{entry.exit ?? "—"}</td>
@@ -249,7 +249,7 @@ export function ShiftClockWidget({ className }: { className?: string }) {
                   <td colSpan={3} className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600 dark:text-gray-400">
                     Total semanal
                   </td>
-                  <td className="px-2 py-1.5 text-right font-mono text-xs font-bold text-[#0f766e] dark:text-[#3a8a65]">
+                  <td className="px-2 py-1.5 text-right font-mono text-xs font-bold text-[#00B4A6] dark:text-[#3a8a65]">
                     {fmtHours(totalWeekHours)}
                   </td>
                 </tr>

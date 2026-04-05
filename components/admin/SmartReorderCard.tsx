@@ -152,7 +152,7 @@ export default function SmartReorderCard({ className }: Props) {
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-[#0f766e]" />
+          <Loader2 className="w-6 h-6 animate-spin text-[#00B4A6]" />
         </div>
       )}
 
@@ -199,7 +199,7 @@ export default function SmartReorderCard({ className }: Props) {
                 className={cn(
                   "w-full flex sm:grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-2 items-start sm:items-center p-3 rounded-xl border transition-colors text-left",
                   isSelected
-                    ? "border-[#0f766e]/40 bg-[#0f766e]/5 dark:border-[#0f766e]/30 dark:bg-[#0f766e]/10"
+                    ? "border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:border-[#00B4A6]/30 dark:bg-[#00B4A6]/10"
                     : "border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-card",
                 )}
               >
@@ -207,7 +207,7 @@ export default function SmartReorderCard({ className }: Props) {
                 <div className="flex items-start gap-2 min-w-0">
                   <div className="shrink-0 mt-0.5">
                     {isSelected
-                      ? <CheckSquare className="w-4 h-4 text-[#0f766e]" />
+                      ? <CheckSquare className="w-4 h-4 text-[#00B4A6]" />
                       : <Square className="w-4 h-4 text-gray-300 dark:text-muted" />
                     }
                   </div>
@@ -261,7 +261,7 @@ export default function SmartReorderCard({ className }: Props) {
               {selected.size > 0 && (
                 <p className="text-xs text-gray-500 dark:text-muted">
                   <span className="font-bold text-gray-800 dark:text-foreground">{selected.size}</span> producto{selected.size > 1 ? "s" : ""} seleccionado{selected.size > 1 ? "s" : ""} —{" "}
-                  <span className="font-bold text-[#0f766e] dark:text-emerald-400">{formatCurrency(totalSelected)}</span>
+                  <span className="font-bold text-[#00B4A6] dark:text-emerald-400">{formatCurrency(totalSelected)}</span>
                 </p>
               )}
             </div>
@@ -274,7 +274,7 @@ export default function SmartReorderCard({ className }: Props) {
                   ? "bg-emerald-500 text-white"
                   : selected.size === 0
                     ? "bg-gray-100 dark:bg-surface text-gray-400 dark:text-muted cursor-not-allowed"
-                    : "bg-[#0f766e] hover:bg-[#0d5f58] text-white",
+                    : "bg-[#00B4A6] hover:bg-[#009690] text-white",
               )}
             >
               {creating ? (

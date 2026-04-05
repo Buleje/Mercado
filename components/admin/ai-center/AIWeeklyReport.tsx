@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo, useCallback } from "react";
 import { Download, FileText, Clock, ChevronDown, ChevronUp, MessageCircle, TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle2, BarChart3, Star } from "lucide-react";
@@ -498,7 +498,7 @@ export default function AIWeeklyReport({ data }: Props) {
               </button>
             </>
           )}
-          <button onClick={handleGenerate} disabled={!data} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors", "bg-[#0f766e] text-white hover:bg-[#0d5f58]", !data && "opacity-40 cursor-not-allowed")}>
+          <button onClick={handleGenerate} disabled={!data} className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors", "bg-[#00B4A6] text-white hover:bg-[#009690]", !data && "opacity-40 cursor-not-allowed")}>
             <FileText className="w-3.5 h-3.5" />
             {report ? "Regenerar" : "Generar reporte"}
           </button>
@@ -592,13 +592,13 @@ export default function AIWeeklyReport({ data }: Props) {
           </div>
 
           {/* Recommendations */}
-          <div className="rounded-lg bg-[#0f766e]/5 dark:bg-[#0f766e]/10 border border-[#0f766e]/15 p-4">
+          <div className="rounded-lg bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/15 p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-[#0f766e] dark:text-[#14b8a6] uppercase tracking-wide">
+              <h3 className="text-xs font-semibold text-[#00B4A6] dark:text-[#2dd4bf] uppercase tracking-wide">
                 Recomendaciones ({report.recommendations.length})
               </h3>
               {report.recommendations.length > 3 && (
-                <button onClick={() => setShowAllRecs(!showAllRecs)} className="text-[10px] text-[#0f766e] dark:text-[#14b8a6] hover:underline">
+                <button onClick={() => setShowAllRecs(!showAllRecs)} className="text-[10px] text-[#00B4A6] dark:text-[#2dd4bf] hover:underline">
                   {showAllRecs ? "Ver menos" : "Ver todas"}
                 </button>
               )}
@@ -612,7 +612,7 @@ export default function AIWeeklyReport({ data }: Props) {
                       "mt-0.5 flex-shrink-0 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center",
                       rec.priority === "critica" ? "bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-400" :
                       rec.priority === "importante" ? "bg-amber-100 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400" :
-                      "bg-[#0f766e]/20 text-[#0f766e] dark:text-[#14b8a6]"
+                      "bg-[#00B4A6]/20 text-[#00B4A6] dark:text-[#2dd4bf]"
                     )}>
                       {rec.priority === "critica" ? "!" : rec.priority === "importante" ? "•" : String(i + 1)}
                     </span>

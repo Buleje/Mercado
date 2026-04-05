@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import type { Product } from "@/data/products";
 import ProductGallery from "@/components/ProductGallery";
 import ProductReviewsSection from "@/components/ProductReviewsSection";
+import AlsoBoughtSection from "@/components/AlsoBoughtSection";
+import PriceComparisonBadge from "@/components/PriceComparisonBadge";
 
 function getProductSlug(product: { name: string; id: number }): string {
   return product.name
@@ -121,6 +123,20 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
       return Array.isArray(data) ? data.slice(-10) : [];
     },
     { staleTime: 30 * 60 * 1000, refetchOnFocus: false },
+  );
+
+  // Fetch volume pricing tiers
+  const { data: volumeTiers = [] } = useCachedData<Array<{ minQty: number; discount: number }>>(
+    `volume-tiers-${product.id}`,
+    async () => {
+      try {
+        const res = await fetch(`/api/wholesale/pricing?productId=${product.id}`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data?.tiers) ? data.tiers : [];
+      } catch { return []; }
+    },
+    { staleTime: 10 * 60 * 1000, refetchOnFocus: false },
   );
 
   const avgRating =
@@ -290,6 +306,9 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       : `${stock} en stock`}
                 </span>
               )}
+              <div className="mt-3">
+                <PriceComparisonBadge productId={product.id} />
+              </div>
             </div>
 
             {/* Restock notification — shown when product is out of stock */}
@@ -362,6 +381,37 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                 </div>
               );
             })()}
+
+            {/* Volume discount tiers */}
+            {volumeTiers.length > 0 && (
+              <div className="bg-linear-to-r from-amber-50 to-orange-50 dark:from-amber-900/15 dark:to-orange-900/15 border border-amber-200 dark:border-amber-700/40 rounded-2xl p-4">
+                <p className="text-sm font-bold text-amber-700 dark:text-amber-300 mb-2.5 flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Comprá más, pagá menos
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[...volumeTiers].sort((a, b) => a.minQty - b.minQty).map((tier) => {
+                    const discountedPrice = product.price * (1 - tier.discount / 100);
+                    const isActive = qty >= tier.minQty;
+                    return (
+                      <div
+                        key={tier.minQty}
+                        className={cn(
+                          "text-center rounded-xl p-2.5 border transition-all",
+                          isActive
+                            ? "bg-primary/10 border-primary/40 ring-1 ring-primary/20"
+                            : "bg-white dark:bg-surface border-gray-200 dark:border-card-border"
+                        )}
+                      >
+                        <p className="text-xs font-bold text-muted">{tier.minQty}+ unidades</p>
+                        <p className="text-lg font-extrabold text-primary">-{tier.discount}%</p>
+                        <p className="text-xs text-muted">S/{discountedPrice.toFixed(2)} c/u</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Add to cart */}
             <div className="flex items-center gap-3">
@@ -441,7 +491,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
             {/* Benefits */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                { icon: Truck, text: "Delivery gratis en Pucallpa", color: "text-emerald-500" },
+                { icon: Truck, text: "Delivery gratis a domicilio", color: "text-emerald-500" },
                 { icon: Clock, text: "Entrega en 30-60 minutos", color: "text-blue-500" },
                 { icon: Shield, text: "Pago seguro: Yape o efectivo", color: "text-violet-500" },
                 { icon: Package, text: "Productos frescos garantizados", color: "text-amber-500" },
@@ -488,8 +538,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     >
                       <defs>
                         <linearGradient id="pdGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#0f766e" stopOpacity="0.25" />
-                          <stop offset="100%" stopColor="#0f766e" stopOpacity="0.02" />
+                          <stop offset="0%" stopColor="#00B4A6" stopOpacity="0.25" />
+                          <stop offset="100%" stopColor="#00B4A6" stopOpacity="0.02" />
                         </linearGradient>
                       </defs>
                       <path
@@ -502,7 +552,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                       <polyline
                         points={points}
                         fill="none"
-                        stroke="#0f766e"
+                        stroke="#00B4A6"
                         strokeWidth="2"
                         strokeLinejoin="round"
                         strokeLinecap="round"
@@ -513,7 +563,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                             cx={i * 40}
                             cy={50 - ((p - min) / range) * 42}
                             r="3"
-                            fill={i === prices.length - 1 ? "#0f766e" : "#14b8a6"}
+                            fill={i === prices.length - 1 ? "#00B4A6" : "#2dd4bf"}
                             stroke="white"
                             strokeWidth="1.5"
                           />
@@ -542,7 +592,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   </div>
                   {/* Price range summary */}
                   <div className="mt-2 flex items-center gap-3 text-[10px] text-gray-400">
-                    <span>Más bajo: <strong className="text-[#0f766e]">S/{min.toFixed(2)}</strong></span>
+                    <span>Más bajo: <strong className="text-[#00B4A6]">S/{min.toFixed(2)}</strong></span>
                     <span className="text-gray-200 dark:text-gray-700">|</span>
                     <span>Más alto: <strong className="text-red-400">S/{max.toFixed(2)}</strong></span>
                     {prices.length >= 2 && (
@@ -571,6 +621,9 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         <div className="mt-12 lg:mt-16">
           <ProductReviewsSection productId={product.id} productName={product.name} />
         </div>
+
+        {/* Also bought — cross-sell */}
+        <AlsoBoughtSection productId={product.id} productName={product.name} />
 
         {/* Related products */}
         {relatedProducts.length > 0 && (

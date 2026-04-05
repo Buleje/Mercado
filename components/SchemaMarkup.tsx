@@ -4,14 +4,14 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     "@type": "GroceryStore",
     "@id": "https://www.buleje.pe/#grocery-store",
     name: "Buleje",
-    alternateName: "Buleje - Tienda Virtual de Abarrotes en Pucallpa",
+    alternateName: "Buleje - Tienda Virtual de Abarrotes",
     description:
-      "Tienda virtual de abarrotes en Pucallpa. Venta online de bebidas, golosinas, carne, pollo, productos de limpieza y artículos de consumo diario. Delivery rápido. Pago con Yape o efectivo.",
+      "Tienda virtual de abarrotes. Venta online de bebidas, golosinas, carne, pollo, productos de limpieza y artículos de consumo diario. Delivery rápido. Pago con Yape o efectivo.",
     url: "https://www.buleje.pe",
     telephone: "+51916409675",
     email: "contacto@buleje.pe",
     foundingDate: "2011",
-    slogan: "Tu bodega de confianza en Pucallpa — delivery rápido, pago fácil",
+    slogan: "Tu bodega de confianza — delivery rápido, pago fácil",
     knowsLanguage: "es",
     address: {
       "@type": "PostalAddress",
@@ -109,10 +109,10 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     makesOffer: {
       "@type": "Offer",
       name: "Delivery gratis en compras desde S/50",
-      description: "Entrega gratuita a domicilio en toda Pucallpa para pedidos desde S/50.",
+      description: "Entrega gratuita a domicilio para pedidos desde S/50.",
       eligibleRegion: {
         "@type": "Place",
-        name: "Pucallpa, Ucayali, Perú",
+        name: "Ucayali, Perú",
       },
     },
     contactPoint: {
@@ -132,7 +132,7 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     url: "https://www.buleje.pe",
     logo: "https://www.buleje.pe/og-image.jpg",
     description:
-      "Tienda virtual de abarrotes en Pucallpa con delivery rápido. Bebidas, golosinas, carne, pollo, limpieza y más. Pago con Yape o efectivo.",
+      "Tienda virtual de abarrotes con delivery rápido. Bebidas, golosinas, carne, pollo, limpieza y más. Pago con Yape o efectivo.",
     telephone: "+51916409675",
     address: {
       "@type": "PostalAddress",
@@ -159,7 +159,7 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "Buleje",
-    alternateName: "Tienda Virtual de Abarrotes en Pucallpa",
+    alternateName: "Tienda Virtual de Abarrotes",
     url: "https://www.buleje.pe",
     potentialAction: {
       "@type": "SearchAction",

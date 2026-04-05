@@ -76,8 +76,22 @@ export default function ProductsPreview() {
     );
   }
 
-  // Empty state — no renderizar la sección si no hay productos
-  if (featured.length === 0) return null;
+  // Empty state — mostrar invitación a explorar en vez de blanco
+  if (featured.length === 0) {
+    return (
+      <section className="py-20 sm:py-28 bg-surface relative overflow-hidden">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <Package className="h-16 w-16 text-primary/20 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Cargando productos...</h2>
+          <p className="text-muted text-sm mb-6">Estamos preparando nuestro catálogo para ti</p>
+          <Link href="/tienda" className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm rounded-xl px-6 py-3 hover:bg-primary-dark transition-colors">
+            <ShoppingCart className="h-5 w-5" />
+            Ir a la tienda
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section ref={ref} className="py-20 sm:py-28 bg-surface relative overflow-hidden">
@@ -154,7 +168,7 @@ export default function ProductsPreview() {
                 {/* Hover overlay — "Ver en tienda" */}
                 <div className="absolute inset-0 bg-primary/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <span className="text-white text-sm font-bold flex items-center gap-1.5">
-                    <ShoppingCart className="h-4 w-4" />
+                    <ShoppingCart className="h-5 w-5" />
                     Ver en tienda
                   </span>
                 </div>

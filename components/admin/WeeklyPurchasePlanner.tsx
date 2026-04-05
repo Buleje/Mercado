@@ -185,8 +185,8 @@ export default function WeeklyPurchasePlanner() {
       <div className="p-5 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#0f766e]/10">
-              <ShoppingBag className="w-5 h-5 text-[#0f766e]" />
+            <div className="p-2 rounded-xl bg-[#00B4A6]/10">
+              <ShoppingBag className="w-5 h-5 text-[#00B4A6]" />
             </div>
             <div>
               <h2 className="font-bold text-gray-900 dark:text-white">
@@ -235,9 +235,9 @@ export default function WeeklyPurchasePlanner() {
                 {plan.filter((i) => i.urgency === "high").length} urgentes
               </span>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0f766e]/10 border border-[#0f766e]/20 ml-auto">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#0f766e]" />
-              <span className="text-xs font-semibold text-[#0f766e] dark:text-[#14b8a6]">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#00B4A6]/10 border border-[#00B4A6]/20 ml-auto">
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#00B4A6]" />
+              <span className="text-xs font-semibold text-[#00B4A6] dark:text-[#2dd4bf]">
                 Costo estimado: {fmt(totalCost)}
               </span>
             </div>
@@ -256,7 +256,7 @@ export default function WeeklyPurchasePlanner() {
           ))
         ) : plan.length === 0 ? (
           <div className="p-8 text-center">
-            <CheckCircle2 className="w-10 h-10 text-[#0f766e] mx-auto mb-3" />
+            <CheckCircle2 className="w-10 h-10 text-[#00B4A6] mx-auto mb-3" />
             <p className="font-semibold text-gray-900 dark:text-white">
               Todo en orden
             </p>
@@ -297,7 +297,7 @@ export default function WeeklyPurchasePlanner() {
                     <p className="font-bold text-gray-900 dark:text-white text-sm">
                       {item.suggestedQty} {item.product.unit ?? "u"}
                     </p>
-                    <p className="text-xs text-[#0f766e] dark:text-[#14b8a6]">
+                    <p className="text-xs text-[#00B4A6] dark:text-[#2dd4bf]">
                       {fmt(item.estimatedCost)}
                     </p>
                   </div>

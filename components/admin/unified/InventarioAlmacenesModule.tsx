@@ -11,6 +11,7 @@ import {
 import type { PieLabelRenderProps } from "recharts";
 import { exportToExcel } from "@/lib/export-excel";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/currency";
 import {
   LayoutDashboard, AlertTriangle, Package, ArrowLeftRight, CalendarClock,
   ScanBarcode, TrendingUp, ShoppingBasket,
@@ -18,7 +19,8 @@ import {
 } from "lucide-react";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
+import AutoRefreshControl from "@/components/admin/shared/AutoRefreshControl";
+import { useAutoRefresh } from "@/hooks/use-auto-refresh";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -136,7 +138,7 @@ function CategoryTreemapView() {
   }
 
   const COLORS: Record<string, string> = {
-    abarrotes: "#0f766e", bebidas: "#0d9488", limpieza: "#14b8a6",
+    abarrotes: "#00B4A6", bebidas: "#33C4B8", limpieza: "#2dd4bf",
     lacteos: "#457b9d", carnes: "#e63946", "frutas-verduras": "#95d5b2",
     snacks: "#f97316", otros: "#6b705c", congelados: "#264653",
     cuidado_personal: "#9b5de5",
@@ -172,24 +174,24 @@ function CategoryTreemapView() {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">Vista General del Inventario</h3>
-          <p className="text-sm text-gray-500 dark:text-muted">
-            Valor total: <strong style={{ color: "#0f766e" }}>S/{totalValue.toLocaleString("es-PE", { minimumFractionDigits: 0 })}</strong> en {products.length} productos
+          <h3 className="text-lg font-extrabold text-gray-900">Vista General del Inventario</h3>
+          <p className="text-sm text-gray-500">
+            Valor total: <strong style={{ color: "#00B4A6" }}>{formatCurrency(totalValue, { decimals: 0 })}</strong> en {products.length} productos
           </p>
         </div>
         {/* Mejora 9: SUNAT export button */}
         <button
           onClick={handleExportSunat}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-300 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 text-sm font-bold hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-emerald-300 text-emerald-600 text-sm font-bold hover:bg-emerald-50 transition-colors"
         >
           Exportar para Contador
         </button>
       </div>
 
       {treemapData.length === 0 ? (
-        <p className="text-center text-gray-400 dark:text-muted py-8">No hay datos de inventario para mostrar</p>
+        <p className="text-center text-gray-400 py-8">No hay datos de inventario para mostrar</p>
       ) : (
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4">
           <ResponsiveContainer width="100%" height={320}>
             <Treemap
               data={treemapData}
@@ -203,10 +205,10 @@ function CategoryTreemapView() {
                   const d = payload[0]?.payload as { name: string; size: number; count: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 shadow-lg text-xs">
-                      <p className="font-bold text-gray-900 dark:text-foreground capitalize">{d.name}</p>
-                      <p className="text-gray-500 dark:text-muted">Valor: S/{d.size.toLocaleString("es-PE")}</p>
-                      <p className="text-gray-500 dark:text-muted">{d.count} productos</p>
+                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                      <p className="font-bold text-gray-900 capitalize">{d.name}</p>
+                      <p className="text-gray-500">Valor: {formatCurrency(d.size, { decimals: 0 })}</p>
+                      <p className="text-gray-500">{d.count} productos</p>
                     </div>
                   );
                 }}
@@ -215,12 +217,12 @@ function CategoryTreemapView() {
           </ResponsiveContainer>
 
           {/* Legend */}
-          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
-            {treemapData.map(d => (
-              <div key={d.name} className="flex items-center gap-1.5 text-xs">
+          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
+            {treemapData.map((d, i) => (
+              <div key={d.name || i} className="flex items-center gap-1.5 text-xs">
                 <span className="h-3 w-3 rounded-sm shrink-0" style={{ backgroundColor: d.fill }} />
-                <span className="text-gray-600 dark:text-muted capitalize">{d.name}</span>
-                <span className="font-bold text-gray-900 dark:text-foreground">S/{d.size.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</span>
+                <span className="text-gray-600 capitalize">{d.name}</span>
+                <span className="font-bold text-gray-900">{formatCurrency(d.size, { decimals: 0 })}</span>
               </div>
             ))}
           </div>
@@ -232,7 +234,7 @@ function CategoryTreemapView() {
 
 // ── Analytics Dashboard (tab Análisis) ──────────────────────────────────────
 
-const ANALYTICS_COLORS = ["#0f766e", "#f97316", "#457b9d", "#e63946", "#9b5de5", "#14b8a6", "#6b705c", "#264653"];
+const ANALYTICS_COLORS = ["#00B4A6", "#f97316", "#457b9d", "#e63946", "#9b5de5", "#2dd4bf", "#6b705c", "#264653"];
 
 // Mejora 18: Favorites hook for dashboard sections
 function useFavCharts(storageKey: string) {
@@ -258,10 +260,10 @@ function FavStar({ id, isFav, toggle }: { id: string; isFav: (id: string) => boo
   return (
     <button
       onClick={() => toggle(id)}
-      className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors text-sm"
+      className="p-1 hover:bg-gray-100 rounded transition-colors text-sm"
       title={isFav(id) ? "Quitar de favoritos" : "Agregar a favoritos"}
     >
-      {isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300 dark:text-gray-600">&#9734;</span>}
+      {isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300">&#9734;</span>}
     </button>
   );
 }
@@ -381,14 +383,14 @@ function InventoryAnalyticsDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 border-4 border-[#0f766e] border-t-transparent rounded-full animate-spin" />
+        <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-16 text-gray-400 dark:text-muted">
+      <div className="text-center py-16 text-gray-400">
         <TrendingUp className="h-12 w-12 mx-auto mb-3 opacity-40" />
         <p className="text-sm font-semibold">No hay productos para analizar</p>
       </div>
@@ -396,12 +398,12 @@ function InventoryAnalyticsDashboard() {
   }
 
   const kpiCards = [
-    { label: "Valor total", value: `S/ ${kpis.valorTotal.toLocaleString("es-PE", { maximumFractionDigits: 0 })}`, border: "border-[#0f766e]", text: "text-[#0f766e] dark:text-emerald-400" },
-    { label: "Activos", value: kpis.activos.toLocaleString(), border: "border-blue-500", text: "text-blue-600 dark:text-blue-400" },
-    { label: "Criticos", value: kpis.criticos.toLocaleString(), border: "border-amber-500", text: "text-amber-600 dark:text-amber-400" },
-    { label: "Sin stock", value: kpis.sinStock.toLocaleString(), border: "border-red-500", text: "text-red-600 dark:text-red-400" },
-    { label: "Total SKUs", value: kpis.total.toLocaleString(), border: "border-gray-400", text: "text-gray-700 dark:text-gray-300" },
-    { label: "Rotacion", value: `${kpis.rotacion}%`, border: "border-purple-500", text: "text-purple-600 dark:text-purple-400" },
+    { label: "Valor total", value: formatCurrency(kpis.valorTotal, { decimals: 0 }), border: "border-[#00B4A6]", text: "text-[#00B4A6]" },
+    { label: "Activos", value: kpis.activos.toLocaleString(), border: "border-blue-500", text: "text-blue-600" },
+    { label: "Criticos", value: kpis.criticos.toLocaleString(), border: "border-amber-500", text: "text-amber-600" },
+    { label: "Sin stock", value: kpis.sinStock.toLocaleString(), border: "border-red-500", text: "text-red-600" },
+    { label: "Total SKUs", value: kpis.total.toLocaleString(), border: "border-gray-400", text: "text-gray-700" },
+    { label: "Rotacion", value: `${kpis.rotacion}%`, border: "border-purple-500", text: "text-purple-600" },
   ];
 
   return (
@@ -410,23 +412,23 @@ function InventoryAnalyticsDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
           {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
-            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>{p.label}</button>
+            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-[#00B4A6] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>{p.label}</button>
           ))}
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <span>Actualizado hace {minAgo} min</span>
-            <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors" title="Actualizar"><RefreshCw className="h-3 w-3" /></button>
+            <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Actualizar"><RefreshCw className="h-3 w-3" /></button>
           </div>
-          <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"><FileDown className="h-3 w-3" /> Exportar</button>
+          <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors"><FileDown className="h-3 w-3" /> Exportar</button>
         </div>
       </div>
 
       {/* ── Alertas Inventario ── */}
       {(kpis.sinStock > 0 || kpis.criticos > 0) && (
         <div className="flex flex-wrap gap-2">
-          {kpis.sinStock > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"><AlertTriangle className="h-3 w-3" /> {kpis.sinStock} productos sin stock</span>}
-          {kpis.criticos > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" /> {kpis.criticos} productos en nivel critico</span>}
+          {kpis.sinStock > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-700"><AlertTriangle className="h-3 w-3" /> {kpis.sinStock} productos sin stock</span>}
+          {kpis.criticos > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700"><AlertTriangle className="h-3 w-3" /> {kpis.criticos} productos en nivel critico</span>}
         </div>
       )}
 
@@ -435,12 +437,12 @@ function InventoryAnalyticsDashboard() {
         {kpiCards.map((k, kIdx) => {
           const change = Math.round(((kIdx * 7 + 3) % 13 - 4) * 2.3);
           return (
-            <div key={k.label} className={cn("bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 border-b-4", k.border)}>
+            <div key={k.label} className={cn("bg-white border border-gray-200 rounded-xl p-3 border-b-4", k.border)}>
               <div className="flex items-center gap-1">
                 <p className={cn("text-xl sm:text-2xl font-extrabold font-mono", k.text)}>{k.value}</p>
                 <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-muted mt-0.5">{k.label}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{k.label}</p>
             </div>
           );
         })}
@@ -449,17 +451,17 @@ function InventoryAnalyticsDashboard() {
       {/* ── 2. Distribucion por Categoria ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pie Chart */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-bold text-gray-700 dark:text-foreground">Valor por Categoria</h4>
+            <h4 className="text-sm font-bold text-gray-700">Valor por Categoria</h4>
             <div className="flex items-center gap-2">
               {pieFilter && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0f766e]/10 text-[#0f766e] dark:text-emerald-400 text-xs font-bold">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-bold">
                   {pieFilter}
-                  <button onClick={() => setPieFilter(null)} className="hover:bg-[#0f766e]/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
+                  <button onClick={() => setPieFilter(null)} className="hover:bg-[#00B4A6]/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
                 </span>
               )}
-              <button onClick={() => setExpandedChart("categoria")} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
+              <button onClick={() => setExpandedChart("categoria")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
               <FavStar id="categoria" isFav={isFav} toggle={toggle} />
             </div>
           </div>
@@ -488,25 +490,25 @@ function InventoryAnalyticsDashboard() {
                   const d = payload[0]?.payload as { name: string; value: number; count: number; units: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 shadow-lg text-xs">
-                      <p className="font-bold text-gray-900 dark:text-foreground capitalize">{d.name}</p>
-                      <p className="text-gray-500 dark:text-muted">Valor: S/ {d.value.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
-                      <p className="text-gray-500 dark:text-muted">{d.count} productos | {d.units} unidades</p>
+                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                      <p className="font-bold text-gray-900 capitalize">{d.name}</p>
+                      <p className="text-gray-500">Valor: {formatCurrency(d.value, { decimals: 0 })}</p>
+                      <p className="text-gray-500">{d.count} productos | {d.units} unidades</p>
                     </div>
                   );
                 }}
               />
             </PieChart>
           </ResponsiveContainer>
-          <p className="text-center text-xs text-gray-400 dark:text-muted mt-1">
-            Total: <strong className="text-[#0f766e] dark:text-emerald-400">S/ {categoryTotal.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</strong>
+          <p className="text-center text-xs text-gray-400 mt-1">
+            Total: <strong className="text-[#00B4A6]">{formatCurrency(categoryTotal, { decimals: 0 })}</strong>
           </p>
         </div>
 
         {/* Bar Chart */}
-        <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-bold text-gray-700 dark:text-foreground">Unidades por Categoria</h4>
+            <h4 className="text-sm font-bold text-gray-700">Unidades por Categoria</h4>
             <FavStar id="unidades" isFav={isFav} toggle={toggle} />
           </div>
           <ResponsiveContainer width="100%" height={280}>
@@ -526,7 +528,7 @@ function InventoryAnalyticsDashboard() {
                   const d = payload[0]?.payload as { name: string; units: number; count: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 shadow-lg text-xs">
+                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
                       <p className="font-bold capitalize">{d.name}</p>
                       <p className="text-gray-500">{d.units} unidades en {d.count} productos</p>
                     </div>
@@ -544,9 +546,9 @@ function InventoryAnalyticsDashboard() {
       </div>
 
       {/* ── 3. Top 10 Productos por Valor ── */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+      <div className="bg-white border border-gray-200 rounded-2xl p-4">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-bold text-gray-700 dark:text-foreground">Top 10 Productos por Valor en Stock</h4>
+          <h4 className="text-sm font-bold text-gray-700">Top 10 Productos por Valor en Stock</h4>
           <FavStar id="top10" isFav={isFav} toggle={toggle} />
         </div>
         <ResponsiveContainer width="100%" height={300}>
@@ -560,35 +562,35 @@ function InventoryAnalyticsDashboard() {
                 const d = payload[0]?.payload as { fullName: string; value: number; units: number; unitCost: number } | undefined;
                 if (!d) return null;
                 return (
-                  <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 shadow-lg text-xs">
-                    <p className="font-bold text-gray-900 dark:text-foreground">{d.fullName}</p>
-                    <p className="text-[#0f766e] dark:text-emerald-400 font-bold">S/ {d.value.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
-                    <p className="text-gray-500 dark:text-muted">{d.units} unid x S/ {d.unitCost.toFixed(2)}</p>
+                  <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                    <p className="font-bold text-gray-900">{d.fullName}</p>
+                    <p className="text-[#00B4A6] font-bold">{formatCurrency(d.value, { decimals: 0 })}</p>
+                    <p className="text-gray-500">{d.units} unid x S/ {d.unitCost.toFixed(2)}</p>
                   </div>
                 );
               }}
             />
-            <Bar dataKey="value" fill="#0f766e" radius={[0, 6, 6, 0]} />
+            <Bar dataKey="value" fill="#00B4A6" radius={[0, 6, 6, 0]} />
           </BarChart>
         </ResponsiveContainer>
         {/* Mejora 10: Mini-avatar con iniciales */}
-        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
+        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-100">
           {top10Value.slice(0, 10).map((p, i) => (
             <div key={i} className="flex items-center gap-1.5">
-              <div className="w-6 h-6 rounded-full bg-[#0f766e] text-white text-xs flex items-center justify-center shrink-0">{p.name.charAt(0)}</div>
-              <span className="text-[10px] text-gray-500 dark:text-muted truncate max-w-[80px]">{p.name}</span>
+              <div className="w-6 h-6 rounded-full bg-[#00B4A6] text-white text-xs flex items-center justify-center shrink-0">{p.name.charAt(0)}</div>
+              <span className="text-[10px] text-gray-500 truncate max-w-[80px]">{p.name}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── 4. Analisis de Rotacion (Scatter) ── */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+      <div className="bg-white border border-gray-200 rounded-2xl p-4">
         <div className="flex items-center justify-between mb-1">
-          <h4 className="text-sm font-bold text-gray-700 dark:text-foreground">Analisis de Rotacion</h4>
+          <h4 className="text-sm font-bold text-gray-700">Analisis de Rotacion</h4>
           <FavStar id="rotacion" isFav={isFav} toggle={toggle} />
         </div>
-        <p className="text-xs text-gray-400 dark:text-muted mb-3">Dias de stock vs ventas estimadas mensuales</p>
+        <p className="text-xs text-gray-400 mb-3">Dias de stock vs ventas estimadas mensuales</p>
         <div className="relative">
           <ResponsiveContainer width="100%" height={320}>
             <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
@@ -604,23 +606,23 @@ function InventoryAnalyticsDashboard() {
                   const d = payload[0]?.payload as { name: string; x: number; y: number; z: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 shadow-lg text-xs">
-                      <p className="font-bold text-gray-900 dark:text-foreground">{d.name}</p>
-                      <p className="text-gray-500 dark:text-muted">{d.x} dias de stock</p>
-                      <p className="text-gray-500 dark:text-muted">{d.y} ventas est./mes</p>
-                      <p className="text-[#0f766e] dark:text-emerald-400 font-bold">Valor: S/ {d.z.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
+                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                      <p className="font-bold text-gray-900">{d.name}</p>
+                      <p className="text-gray-500">{d.x} dias de stock</p>
+                      <p className="text-gray-500">{d.y} ventas est./mes</p>
+                      <p className="text-[#00B4A6] font-bold">Valor: {formatCurrency(d.z, { decimals: 0 })}</p>
                     </div>
                   );
                 }}
               />
-              <Scatter data={scatterData} fill="#0f766e" fillOpacity={0.7} />
+              <Scatter data={scatterData} fill="#00B4A6" fillOpacity={0.7} />
             </ScatterChart>
           </ResponsiveContainer>
           {/* Quadrant labels */}
-          <div className="absolute top-6 left-8 text-[10px] font-bold text-amber-500/60 dark:text-amber-400/50 pointer-events-none">Impulsar ventas</div>
-          <div className="absolute top-6 right-8 text-[10px] font-bold text-emerald-500/60 dark:text-emerald-400/50 pointer-events-none">Mantener stock</div>
-          <div className="absolute bottom-10 left-8 text-[10px] font-bold text-red-400/60 dark:text-red-400/50 pointer-events-none">Liquidar</div>
-          <div className="absolute bottom-10 right-8 text-[10px] font-bold text-purple-400/60 dark:text-purple-400/50 pointer-events-none">Reducir pedidos</div>
+          <div className="absolute top-6 left-8 text-[10px] font-bold text-amber-500/60 pointer-events-none">Impulsar ventas</div>
+          <div className="absolute top-6 right-8 text-[10px] font-bold text-emerald-500/60 pointer-events-none">Mantener stock</div>
+          <div className="absolute bottom-10 left-8 text-[10px] font-bold text-red-400/60 pointer-events-none">Liquidar</div>
+          <div className="absolute bottom-10 right-8 text-[10px] font-bold text-purple-400/60 pointer-events-none">Reducir pedidos</div>
         </div>
       </div>
 
@@ -644,13 +646,13 @@ function InventoryAnalyticsDashboard() {
           .slice(0, 10);
 
         return rentables.length > 0 ? (
-          <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
-            <h4 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">Productos mas rentables</h4>
+          <div className="bg-white border border-gray-200 rounded-2xl p-4">
+            <h4 className="text-sm font-bold text-gray-700 mb-3">Productos mas rentables</h4>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={rentables} layout="vertical" margin={{ left: 10, right: 30 }}>
                 <defs>
                   <linearGradient id="rentGrad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#0f766e" />
+                    <stop offset="0%" stopColor="#00B4A6" />
                     <stop offset="100%" stopColor="#f97316" />
                   </linearGradient>
                 </defs>
@@ -663,9 +665,9 @@ function InventoryAnalyticsDashboard() {
                     const d = payload[0]?.payload as { fullName: string; margen: number; ventasEst: number; ganancia: number } | undefined;
                     if (!d) return null;
                     return (
-                      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 shadow-lg text-xs">
-                        <p className="font-bold text-gray-900 dark:text-foreground">{d.fullName}</p>
-                        <p className="text-[#0f766e] dark:text-emerald-400 font-bold">Margen: {d.margen}% x {d.ventasEst} unid/mes = S/{d.ganancia.toLocaleString("es-PE")} ganancia</p>
+                      <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
+                        <p className="font-bold text-gray-900">{d.fullName}</p>
+                        <p className="text-[#00B4A6] font-bold">Margen: {d.margen}% x {d.ventasEst} unid/mes = {formatCurrency(d.ganancia, { decimals: 0 })} ganancia</p>
                       </div>
                     );
                   }}
@@ -678,22 +680,22 @@ function InventoryAnalyticsDashboard() {
       })()}
 
       {/* ── 6. Prediccion de Agotamiento ── */}
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
+      <div className="bg-white border border-gray-200 rounded-2xl p-4">
         <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-bold text-gray-700 dark:text-foreground">Prediccion de Agotamiento</h4>
+          <h4 className="text-sm font-bold text-gray-700">Prediccion de Agotamiento</h4>
           <FavStar id="agotamiento" isFav={isFav} toggle={toggle} />
         </div>
         <div className="space-y-2">
-          {depletionData.map(item => {
+          {depletionData.map((item, i) => {
             const color = item.daysLeft <= 3 ? "red" : item.daysLeft <= 7 ? "amber" : "emerald";
             const colorClasses = {
-              red: { bg: "bg-red-500", text: "text-red-600 dark:text-red-400", track: "bg-red-100 dark:bg-red-950" },
-              amber: { bg: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", track: "bg-amber-100 dark:bg-amber-950" },
-              emerald: { bg: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", track: "bg-emerald-100 dark:bg-emerald-950" },
+              red: { bg: "bg-red-500", text: "text-red-600", track: "bg-red-100" },
+              amber: { bg: "bg-amber-500", text: "text-amber-600", track: "bg-amber-100" },
+              emerald: { bg: "bg-emerald-500", text: "text-emerald-600", track: "bg-emerald-100" },
             }[color];
             return (
-              <div key={item.name} className="flex items-center gap-3">
-                <span className="text-xs text-gray-700 dark:text-foreground w-36 sm:w-48 truncate shrink-0" title={item.name}>{item.name}</span>
+              <div key={item.name || i} className="flex items-center gap-3">
+                <span className="text-xs text-gray-700 w-36 sm:w-48 truncate shrink-0" title={item.name}>{item.name}</span>
                 <div className={cn("flex-1 h-3 rounded-full overflow-hidden", colorClasses.track)}>
                   <div
                     className={cn("h-full rounded-full transition-all", colorClasses.bg, item.daysLeft <= 3 && "animate-pulse")}
@@ -708,16 +710,16 @@ function InventoryAnalyticsDashboard() {
           })}
         </div>
         {depletionData.length === 0 && (
-          <p className="text-xs text-gray-400 dark:text-muted text-center py-4">Todos los productos tienen stock suficiente</p>
+          <p className="text-xs text-gray-400 text-center py-4">Todos los productos tienen stock suficiente</p>
         )}
       </div>
 
       {/* Mejora 13: Expand chart modal */}
       {expandedChart && (
-        <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 p-8 overflow-auto">
+        <div className="fixed inset-0 z-50 bg-white p-8 overflow-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Valor por Categoria</h2>
-            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><XIcon className="h-5 w-5 text-gray-500" /></button>
+            <h2 className="text-lg font-bold text-gray-900">Valor por Categoria</h2>
+            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><XIcon className="h-5 w-5 text-gray-500" /></button>
           </div>
           <div style={{ height: 500 }}>
             <ResponsiveContainer width="100%" height={500}>
@@ -730,9 +732,9 @@ function InventoryAnalyticsDashboard() {
                   const d = payload[0]?.payload as { name: string; value: number; count: number; units: number } | undefined;
                   if (!d) return null;
                   return (
-                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 shadow-lg text-xs">
+                    <div className="bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-lg text-xs">
                       <p className="font-bold capitalize">{d.name}</p>
-                      <p className="text-gray-500">Valor: S/ {d.value.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
+                      <p className="text-gray-500">Valor: {formatCurrency(d.value, { decimals: 0 })}</p>
                       <p className="text-gray-500">{d.count} productos | {d.units} unidades</p>
                     </div>
                   );
@@ -752,8 +754,15 @@ export default function InventarioAlmacenesModule() {
     return (localStorage.getItem(`admin-last-tab-${MODULE_ID}`) as typeof TABS[number]["id"]) || TABS[0].id;
   });
   useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
-  const [bannerVisible, setBannerVisible] = useState(true);
   const [conteoMode, setConteoMode] = useState<"wizard" | "manual" | "scanner">("wizard");
+
+  // Auto-refresh: increment key to force child remount/re-fetch
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { paused, togglePause, secondsLeft, refreshNow, isActive } = useAutoRefresh({
+    intervalSeconds: 300,
+    onRefresh: () => setRefreshKey(k => k + 1),
+    enabled: sub === "stock" || sub === "alertas",
+  });
 
   const [forecastProductId, setForecastProductId] = useState<number | null>(null);
   const [showBarcode, setShowBarcode] = useState(false);
@@ -799,22 +808,13 @@ export default function InventarioAlmacenesModule() {
       .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
       .label { width: 60mm; height: 40mm; border: 1px dashed #ccc; padding: 3mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; page-break-inside: avoid; }
       .label-name { font-weight: bold; font-size: 14px; margin-bottom: 4px; overflow: hidden; max-height: 2.4em; line-height: 1.2em; }
-      .label-price { font-weight: bold; font-size: 18px; color: #0f766e; }
+      .label-price { font-weight: bold; font-size: 18px; color: #00B4A6; }
       .label-barcode { font-family: monospace; font-size: 10px; color: #666; margin-top: 4px; }
     </style></head><body><div class="grid">${labelsHtml}</div><script>window.print();window.onafterprint=()=>window.close();</script></body></html>`);
     printWindow.document.close();
   };
 
-  useEffect(() => {
-    const stored = localStorage.getItem("banner-inventario");
-    if (stored === "hidden") setBannerVisible(false);
-  }, []);
 
-  const toggleBanner = () => {
-    const next = !bannerVisible;
-    setBannerVisible(next);
-    localStorage.setItem("banner-inventario", next ? "visible" : "hidden");
-  };
 
   // Exposed for InventoryTab: open forecast for a product
   // This is set via a global callback so InventoryTab can trigger it
@@ -838,32 +838,25 @@ export default function InventarioAlmacenesModule() {
         description="Stock, movimientos, vencimientos y análisis"
         icon={Package}
       >
+        {(sub === "stock" || sub === "alertas") && (
+          <AutoRefreshControl
+            secondsLeft={secondsLeft}
+            paused={paused}
+            isActive={isActive}
+            onTogglePause={togglePause}
+            onRefreshNow={refreshNow}
+          />
+        )}
         {/* Mejora 7: Price labels button */}
         <button
           onClick={() => { setShowPriceLabels(true); void loadLabelProducts(); }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
         >
           Imprimir etiquetas
         </button>
       </AdminModuleHeader>
 
-      <AdminBreadcrumb items={[
-        { label: "Inventario" },
-        { label: TABS.find(t => t.id === sub)?.label || "" },
-      ]} />
 
-      {bannerVisible && (
-        <button onClick={toggleBanner} className="w-full text-left bg-[#0f766e]/5 dark:bg-[#0f766e]/10 border border-[#0f766e]/20 rounded-xl p-3 mb-1 transition-colors hover:bg-[#0f766e]/10">
-          <p className="text-sm text-[#0f766e] dark:text-emerald-400">
-            <span className="font-semibold">Inventario</span> — Aquí ves cuánto tienes de cada producto, qué entró, qué salió y qué se perdió.
-          </p>
-        </button>
-      )}
-      {!bannerVisible && (
-        <button onClick={toggleBanner} className="text-xs text-gray-400 hover:text-[#0f766e] transition-colors">
-          Mostrar descripcion
-        </button>
-      )}
 
       <AdminTabBar
         tabs={TABS}
@@ -873,13 +866,13 @@ export default function InventarioAlmacenesModule() {
       />
 
       {/* Tab 1: Existencias */}
-      {sub === "stock" && <InventoryTab />}
+      {sub === "stock" && <div key={refreshKey}><InventoryTab /></div>}
 
       {/* Tab 2: Alertas (combina: dashboard + sin movimiento) */}
       {sub === "alertas" && (
-        <div className="space-y-6">
+        <div key={refreshKey} className="space-y-6">
           <StockAlertsDashboard />
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="border-t border-gray-200 pt-6">
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Sin movimiento</h3>
             <StaleProductAlert />
           </div>
@@ -893,8 +886,8 @@ export default function InventarioAlmacenesModule() {
       {sub === "lotes" && (
         <div className="space-y-6">
           <BatchesTab />
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <h3 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-3">Dashboard de Vencimientos</h3>
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Dashboard de Vencimientos</h3>
             <ExpiryDashboardTab />
           </div>
         </div>
@@ -905,13 +898,13 @@ export default function InventarioAlmacenesModule() {
         <div className="space-y-4">
           {/* Sub-selector de modo */}
           <div className="flex gap-2 mb-4">
-            <button onClick={() => setConteoMode("wizard")} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium", conteoMode === "wizard" ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-gray-800")}>
+            <button onClick={() => setConteoMode("wizard")} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium", conteoMode === "wizard" ? "bg-[#00B4A6] text-white" : "bg-gray-100")}>
               Guiado
             </button>
-            <button onClick={() => setConteoMode("manual")} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium", conteoMode === "manual" ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-gray-800")}>
+            <button onClick={() => setConteoMode("manual")} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium", conteoMode === "manual" ? "bg-[#00B4A6] text-white" : "bg-gray-100")}>
               Manual
             </button>
-            <button onClick={() => setConteoMode("scanner")} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium", conteoMode === "scanner" ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-gray-800")}>
+            <button onClick={() => setConteoMode("scanner")} className={cn("px-3 py-1.5 rounded-lg text-xs font-medium", conteoMode === "scanner" ? "bg-[#00B4A6] text-white" : "bg-gray-100")}>
               Escáner
             </button>
           </div>
@@ -925,16 +918,16 @@ export default function InventarioAlmacenesModule() {
       {sub === "analisis" && (
         <div className="space-y-6">
           <InventoryAnalyticsDashboard />
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <h3 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-3">Mapa de Categorias</h3>
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Mapa de Categorias</h3>
             <CategoryTreemapView />
           </div>
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <h3 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-3">Prediccion de Stock</h3>
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Prediccion de Stock</h3>
             <StockPredictionWidget />
           </div>
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <h3 className="text-sm font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-3">Estacionalidad</h3>
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Estacionalidad</h3>
             <SeasonalityInsights />
           </div>
         </div>
@@ -947,11 +940,11 @@ export default function InventarioAlmacenesModule() {
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Editor de Precios Masivo</h3>
             <BulkPriceEditor />
           </div>
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="border-t border-gray-200 pt-6">
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Importar CSV</h3>
             <ImportCSVTab />
           </div>
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+          <div className="border-t border-gray-200 pt-6">
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Registro de Pérdidas (Mermas)</h3>
             <ShrinkageTab />
           </div>
@@ -970,7 +963,7 @@ export default function InventarioAlmacenesModule() {
       {/* ── Demand Forecast Modal ── */}
       {forecastProductId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
             <DemandForecast
               productId={forecastProductId}
               onClose={() => setForecastProductId(null)}
@@ -993,10 +986,10 @@ export default function InventarioAlmacenesModule() {
       {/* ── Mejora 7: Price Labels Modal ── */}
       {showPriceLabels && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowPriceLabels(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="px-5 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Imprimir Etiquetas de Precio</h3>
-              <button onClick={() => setShowPriceLabels(false)} className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-bold text-gray-900 text-sm">Imprimir Etiquetas de Precio</h3>
+              <button onClick={() => setShowPriceLabels(false)} className="p-1 rounded-lg hover:bg-gray-100 transition-colors">
                 <span className="text-gray-400 text-lg">&times;</span>
               </button>
             </div>
@@ -1017,29 +1010,29 @@ export default function InventarioAlmacenesModule() {
                     >
                       {selectedLabelIds.size === labelProducts.length ? "Deseleccionar todos" : "Seleccionar todos"}
                     </button>
-                    <span className="text-xs text-gray-400 dark:text-muted">{selectedLabelIds.size} seleccionados</span>
+                    <span className="text-xs text-gray-400">{selectedLabelIds.size} seleccionados</span>
                   </div>
                   {labelProducts.map(p => (
-                    <label key={p.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-surface cursor-pointer transition-colors">
+                    <label key={p.id} className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                       <input
                         type="checkbox"
                         checked={selectedLabelIds.has(p.id)}
                         onChange={() => toggleLabelId(p.id)}
                         className="rounded border-gray-300 text-primary focus:ring-primary"
                       />
-                      <span className="flex-1 text-sm text-gray-800 dark:text-foreground truncate">{p.name}</span>
-                      <span className="text-sm font-bold" style={{ color: "#0f766e" }}>S/{p.price.toFixed(2)}</span>
+                      <span className="flex-1 text-sm text-gray-800 truncate">{p.name}</span>
+                      <span className="text-sm font-bold" style={{ color: "#00B4A6" }}>S/{p.price.toFixed(2)}</span>
                     </label>
                   ))}
                 </div>
               )}
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 dark:border-card-border">
+            <div className="px-5 py-4 border-t border-gray-100">
               <button
                 onClick={handlePrintLabels}
                 disabled={selectedLabelIds.size === 0}
                 className="w-full py-2.5 rounded-xl text-white text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: "#0f766e" }}
+                style={{ backgroundColor: "#00B4A6" }}
               >
                 Generar etiquetas ({selectedLabelIds.size})
               </button>

@@ -9,4 +9,5 @@ export type Tab =
   | "clientes"
   | "config"
   | "pedidos"
-  | "plan";
+  | "plan"
+  | "rendimiento";

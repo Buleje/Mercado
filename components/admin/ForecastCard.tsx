@@ -87,7 +87,7 @@ export default function ForecastCard({ className }: Props) {
       {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-[#0f766e]" />
+          <Loader2 className="w-6 h-6 animate-spin text-[#00B4A6]" />
         </div>
       )}
 
@@ -128,7 +128,7 @@ export default function ForecastCard({ className }: Props) {
                   <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
                     <div className="w-full relative" style={{ height: "48px" }}>
                       <div
-                        className="absolute bottom-0 left-0 right-0 rounded-t-sm bg-[#0f766e]/70 dark:bg-emerald-600/70 transition-all duration-500"
+                        className="absolute bottom-0 left-0 right-0 rounded-t-sm bg-[#00B4A6]/70 dark:bg-emerald-600/70 transition-all duration-500"
                         style={{ height: `${Math.max(pct, 4)}%` }}
                       />
                     </div>

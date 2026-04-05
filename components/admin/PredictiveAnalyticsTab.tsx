@@ -96,8 +96,8 @@ function ClockVisual({ hour }: { hour: number }) {
           );
         })}
         <line x1={50} y1={50} x2={x} y2={y}
-          stroke="#2d6a4f" strokeWidth={3} strokeLinecap="round" />
-        <circle cx={50} cy={50} r={3} fill="#2d6a4f" />
+          stroke="#00B4A6" strokeWidth={3} strokeLinecap="round" />
+        <circle cx={50} cy={50} r={3} fill="#00B4A6" />
       </svg>
       <div>
         <p className="text-3xl font-extrabold text-gray-900 dark:text-white">{h12}:00 {ampm}</p>

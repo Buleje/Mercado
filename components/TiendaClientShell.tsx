@@ -55,27 +55,41 @@ function useDeferredMount(delay = 2000) {
  * Client-only shell for /tienda — below-fold sections + modals/overlays.
  * Modals are deferred until after hydration + idle to reduce TBT.
  */
-export default function TiendaClientShell() {
+export default function TiendaClientShell({
+  showRecipes = true,
+  showFavorites = true,
+  showRecentlyViewed = true,
+}: {
+  showRecipes?: boolean;
+  showFavorites?: boolean;
+  showRecentlyViewed?: boolean;
+}) {
   const modalsReady = useDeferredMount(2000);
 
   return (
     <>
       {/* Below-fold: deferred until scrolled near */}
-      <LazyLoad fallback={<SectionLoadingSkeleton />}>
-        <Suspense fallback={<SectionLoadingSkeleton />}>
-          <RecentlyViewed />
-        </Suspense>
-      </LazyLoad>
-      <LazyLoad fallback={<SectionLoadingSkeleton />}>
-        <Suspense fallback={<SectionLoadingSkeleton />}>
-          <FavoritesSection />
-        </Suspense>
-      </LazyLoad>
-      <LazyLoad fallback={<SectionLoadingSkeleton />}>
-        <Suspense fallback={<SectionLoadingSkeleton />}>
-          <RecipeSuggestions />
-        </Suspense>
-      </LazyLoad>
+      {showRecentlyViewed && (
+        <LazyLoad fallback={<SectionLoadingSkeleton />}>
+          <Suspense fallback={<SectionLoadingSkeleton />}>
+            <RecentlyViewed />
+          </Suspense>
+        </LazyLoad>
+      )}
+      {showFavorites && (
+        <LazyLoad fallback={<SectionLoadingSkeleton />}>
+          <Suspense fallback={<SectionLoadingSkeleton />}>
+            <FavoritesSection />
+          </Suspense>
+        </LazyLoad>
+      )}
+      {showRecipes && (
+        <LazyLoad fallback={<SectionLoadingSkeleton />}>
+          <Suspense fallback={<SectionLoadingSkeleton />}>
+            <RecipeSuggestions />
+          </Suspense>
+        </LazyLoad>
+      )}
 
 
       {/* Modals & overlays — deferred until idle to reduce initial TBT */}

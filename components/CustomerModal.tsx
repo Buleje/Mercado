@@ -58,7 +58,7 @@ function FullMapModal({
             <div className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary" />
               <span className="font-bold text-foreground text-sm sm:text-base">
-                {onPick ? "Toca el mapa para seleccionar tu ubicación" : "Mapa completo — Pucallpa"}
+                {onPick ? "Toca el mapa para seleccionar tu ubicación" : "Mapa completo"}
               </span>
             </div>
             <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -110,12 +110,12 @@ function LocationForm({
       (pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
-        setLocation(`Pucallpa — GPS: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+        setLocation(`GPS: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
         setMapCoords({ lat, lon });
         setLoadingGeo(false);
       },
       () => {
-        setLocation("Pucallpa, Ucayali");
+        setLocation("Ucayali");
         setLoadingGeo(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -157,7 +157,7 @@ function LocationForm({
               required
               value={location}
               onChange={(e) => handleLocationChange(e.target.value)}
-              placeholder="Ej: Jr. Ucayali 450, Pucallpa"
+              placeholder="Ej: Jr. Ucayali 450"
               className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 bg-white text-foreground placeholder:text-muted/50 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
             />
           </div>

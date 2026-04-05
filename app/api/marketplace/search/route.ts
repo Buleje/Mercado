@@ -9,6 +9,9 @@ const QuerySchema = z.object({
   q:        z.string().min(1).max(100),
   zone:     z.string().optional(),
   category: z.string().optional(),
+  minPrice: z.coerce.number().min(0).optional(),
+  maxPrice: z.coerce.number().min(0).optional(),
+  sort:     z.enum(["price_asc", "price_desc", "name"]).optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -23,16 +26,24 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const { q, zone, category } = parsed.data;
+    const { q, zone, category, minPrice, maxPrice, sort } = parsed.data;
 
     const results = await prisma.storeProduct.findMany({
       where: {
         isActive: true,
-        store: {
+        ...(minPrice !== undefined || maxPrice !== undefined
+          ? {
+              retailPrice: {
+                ...(minPrice !== undefined && { gte: minPrice }),
+                ...(maxPrice !== undefined && { lte: maxPrice }),
+              },
+            }
+          : {}),
+        Store: {
           isPublished: true,
           ...(zone && { zone }),
         },
-        product: {
+        Product: {
           name: { contains: q, mode: "insensitive" },
           ...(category && { category }),
         },
@@ -41,7 +52,7 @@ export async function GET(req: NextRequest) {
         id:          true,
         retailPrice: true,
         minOrderQty: true,
-        product: {
+        Product: {
           select: {
             id:       true,
             name:     true,
@@ -50,7 +61,7 @@ export async function GET(req: NextRequest) {
             unit:     true,
           },
         },
-        store: {
+        Store: {
           select: {
             id:   true,
             name: true,
@@ -60,7 +71,11 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-      orderBy: { retailPrice: "asc" },
+      orderBy: sort === "price_desc"
+        ? { retailPrice: "desc" }
+        : sort === "name"
+          ? { Product: { name: "asc" } }
+          : { retailPrice: "asc" },
       take:    50,
     });
 

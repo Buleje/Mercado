@@ -18,6 +18,11 @@ export default function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
+    // Never show install prompt inside admin/superadmin panel — it blocks navigation
+    if (window.location.pathname.startsWith("/admin") || window.location.pathname.startsWith("/superadmin")) {
+      return;
+    }
+
     // Check if user already dismissed the prompt
     const dismissed = localStorage.getItem("bsm-install-dismissed");
     if (dismissed === "1") {

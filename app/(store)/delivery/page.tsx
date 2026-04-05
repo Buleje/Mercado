@@ -125,7 +125,7 @@ export default function DeliveryPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg w-full max-w-sm p-6 space-y-5">
           <div className="text-center">
-            <div className="h-16 w-16 rounded-2xl bg-[#0f766e] flex items-center justify-center mx-auto mb-3">
+            <div className="h-16 w-16 rounded-2xl bg-[#00B4A6] flex items-center justify-center mx-auto mb-3">
               <span className="text-2xl">🚚</span>
             </div>
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-100">Repartidor</h1>
@@ -139,7 +139,7 @@ export default function DeliveryPage() {
               onChange={e => { setPhone(e.target.value); setError(""); }}
               onKeyDown={e => e.key === "Enter" && handleLogin()}
               placeholder="Ej: 961234567"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-base font-semibold text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#0f766e]/30 focus:border-[#0f766e] transition-all"
+              className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-base font-semibold text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
               autoFocus
             />
           </div>
@@ -147,7 +147,7 @@ export default function DeliveryPage() {
           <button
             onClick={handleLogin}
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-[#0f766e] text-white text-base font-bold hover:bg-[#0d5f58] transition-colors disabled:opacity-50 shadow-lg shadow-[#0f766e]/20"
+            className="w-full py-3.5 rounded-xl bg-[#00B4A6] text-white text-base font-bold hover:bg-[#009690] transition-colors disabled:opacity-50 shadow-lg shadow-[#00B4A6]/20"
           >
             {loading ? "Verificando..." : "Entrar"}
           </button>
@@ -160,7 +160,7 @@ export default function DeliveryPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
-      <div className="bg-[#0f766e] text-white px-4 py-4 flex items-center justify-between sticky top-0 z-10">
+      <div className="bg-[#00B4A6] text-white px-4 py-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <span className="text-xl">🚚</span>
           <div>
@@ -217,7 +217,7 @@ export default function DeliveryPage() {
                       {order.customerPhone && (
                         <a
                           href={`tel:${order.customerPhone}`}
-                          className="inline-flex items-center gap-1.5 text-sm text-[#0f766e] font-semibold mt-0.5"
+                          className="inline-flex items-center gap-1.5 text-sm text-[#00B4A6] font-semibold mt-0.5"
                         >
                           📞 {order.customerPhone}
                         </a>
@@ -281,7 +281,7 @@ export default function DeliveryPage() {
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
                       isSuccess
                         ? "bg-emerald-500 text-white"
-                        : "bg-[#0f766e] text-white hover:bg-[#0d5f58] shadow-lg shadow-[#0f766e]/20"
+                        : "bg-[#00B4A6] text-white hover:bg-[#009690] shadow-lg shadow-[#00B4A6]/20"
                     } disabled:opacity-60`}
                   >
                     {isUpdating ? "Marcando..." : isSuccess ? "Entregado ✓" : "✅ Marcar Entregado"}

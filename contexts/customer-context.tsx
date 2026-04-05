@@ -9,6 +9,7 @@ import {
   startTransition,
   type ReactNode,
 } from "react";
+import { tenantKey } from "@/contexts/tenant-context";
 
 export type SavedLocation = {
   id: string;
@@ -46,8 +47,6 @@ type CustomerCtx = {
 
 const CustomerContext = createContext<CustomerCtx | null>(null);
 
-const BASE_STORAGE_KEY = "bsm-customer";
-
 /** Lee la cookie active-tenant para aislar el customer por tenant. */
 function getTenantSlug(): string {
   if (typeof document === "undefined") return "main";
@@ -56,8 +55,7 @@ function getTenantSlug(): string {
 }
 
 function getStorageKey(): string {
-  const slug = getTenantSlug();
-  return slug === "main" ? BASE_STORAGE_KEY : `${BASE_STORAGE_KEY}-${slug}`;
+  return tenantKey(getTenantSlug(), "customer");
 }
 
 export function CustomerProvider({ children }: { children: ReactNode }) {

@@ -142,7 +142,7 @@ export default function PWAShortcuts() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Smartphone className="w-5 h-5 text-[#0f766e]" />
+          <Smartphone className="w-5 h-5 text-[#00B4A6]" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Shortcuts PWA
           </h2>
@@ -169,7 +169,7 @@ export default function PWAShortcuts() {
             className={cn(
               "flex-1 py-1.5 rounded-md text-sm font-medium transition-colors",
               activeTab === tab
-                ? "bg-[#0f766e] text-white"
+                ? "bg-[#00B4A6] text-white"
                 : "text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
             )}
           >
@@ -191,7 +191,7 @@ export default function PWAShortcuts() {
               className={cn(
                 "rounded-xl border p-4 cursor-pointer flex items-center gap-4 transition-all select-none",
                 s.enabled
-                  ? "border-[#0f766e] bg-[#0f766e]/5 dark:bg-[#0f766e]/10"
+                  ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
                   : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750"
               )}
             >
@@ -200,7 +200,7 @@ export default function PWAShortcuts() {
                 className={cn(
                   "w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors",
                   s.enabled
-                    ? "border-[#0f766e] bg-[#0f766e]"
+                    ? "border-[#00B4A6] bg-[#00B4A6]"
                     : "border-gray-300 dark:border-gray-600"
                 )}
               >
@@ -220,7 +220,7 @@ export default function PWAShortcuts() {
               </div>
 
               {s.enabled && activeShortcuts.indexOf(s) < 4 && (
-                <span className="shrink-0 text-xs font-medium text-[#0f766e] dark:text-[#14b8a6] bg-[#0f766e]/10 px-2 py-0.5 rounded-full">
+                <span className="shrink-0 text-xs font-medium text-[#00B4A6] dark:text-[#2dd4bf] bg-[#00B4A6]/10 px-2 py-0.5 rounded-full">
                   #{activeShortcuts.indexOf(s) + 1}
                 </span>
               )}
@@ -239,7 +239,7 @@ export default function PWAShortcuts() {
           {/* Simulacion de menu de celular */}
           <div className="mx-auto w-64 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl overflow-hidden">
             <div className="bg-gray-100 dark:bg-gray-700 px-4 py-3 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#0f766e] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-[#00B4A6] flex items-center justify-center">
                 <Smartphone className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -257,8 +257,8 @@ export default function PWAShortcuts() {
               ) : (
                 activeShortcuts.map((s) => (
                   <div key={s.id} className="px-4 py-3 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#0f766e]/10 flex items-center justify-center shrink-0">
-                      <Smartphone className="w-4 h-4 text-[#0f766e]" />
+                    <div className="w-8 h-8 rounded-lg bg-[#00B4A6]/10 flex items-center justify-center shrink-0">
+                      <Smartphone className="w-4 h-4 text-[#00B4A6]" />
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -282,7 +282,7 @@ export default function PWAShortcuts() {
               </span>
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 text-xs text-[#0f766e] dark:text-[#14b8a6] hover:underline"
+                className="flex items-center gap-1.5 text-xs text-[#00B4A6] dark:text-[#2dd4bf] hover:underline"
               >
                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? "Copiado" : "Copiar"}
@@ -351,7 +351,7 @@ export default function PWAShortcuts() {
                 <ol className="space-y-1.5">
                   {steps.map((step, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
-                      <span className="shrink-0 w-5 h-5 rounded-full bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6] text-xs font-bold flex items-center justify-center mt-0.5">
+                      <span className="shrink-0 w-5 h-5 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf] text-xs font-bold flex items-center justify-center mt-0.5">
                         {i + 1}
                       </span>
                       {step}

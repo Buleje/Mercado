@@ -267,7 +267,7 @@ function qrToSVG(matrix: boolean[][], productName: string, productPrice: number)
     `<text x="${totalW / 2}" y="${labelY + 20}" font-family="Arial,sans-serif" font-size="13" font-weight="bold" fill="#1a3d2e" text-anchor="middle">${truncated}</text>`
   );
   rects.push(
-    `<text x="${totalW / 2}" y="${labelY + 40}" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#0f766e" text-anchor="middle">S/ ${productPrice.toFixed(2)}</text>`
+    `<text x="${totalW / 2}" y="${labelY + 40}" font-family="Arial,sans-serif" font-size="14" font-weight="bold" fill="#00B4A6" text-anchor="middle">S/ ${productPrice.toFixed(2)}</text>`
   );
 
   return `<?xml version="1.0" encoding="UTF-8"?>

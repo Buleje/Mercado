@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -15,15 +15,15 @@ import {
   Users, Star, LogOut, ShoppingBasket, ShoppingCart,
   Loader2, Truck, FileText, Settings, Menu, Store,
   MapPin, Clock, Phone, ExternalLink, Search,
-  Eye, EyeOff, ChevronRight, Activity,
+  Eye, EyeOff, Activity,
   Brain,
   Package, Printer, FlaskConical,
   DollarSign, Layers, Sun, Moon, Download,
-  Cake, Shield, ChevronDown, ChevronUp,
+  Shield, ChevronDown, ChevronUp,
   CheckCircle, Bike, UserCheck, SlidersHorizontal, Sparkles,
   Maximize2, Minimize2, Zap, Tag, RefreshCw, CreditCard, Landmark,
   ClipboardList, Power, RotateCcw,
-  Lightbulb, Target, Palette,
+  Palette, CircleUser, ArrowUpDown, Globe, Pencil, Plus,
 } from "lucide-react";
 import type { DbOrder, OrderStatus, StoreMode } from "@/lib/jsondb";
 import { googleMapsUrl } from "@/lib/order-utils";
@@ -38,6 +38,7 @@ import {
   getOrderTimeline,
 } from "@/lib/admin-helpers";
 import { AdminStatsMobile, AdminStatsDesktop } from "@/components/admin/AdminStats";
+import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import { ShortcutsModal, ClearDataModal } from "@/components/admin/AdminModals";
 
 // Lazy-load heavy admin tabs for better initial load performance
@@ -88,6 +89,7 @@ const SugerenciasIAModule = dynamic(() => import("@/components/admin/unified/Sug
 const MetasLogrosModule = dynamic(() => import("@/components/admin/unified/MetasLogrosModule"), { loading: TabSpinner });
 const MarketplaceModule = dynamic(() => import("@/components/admin/unified/MarketplaceModule"), { loading: TabSpinner });
 const DeliveryPartnersModule = dynamic(() => import("@/components/admin/unified/DeliveryPartnersModule"), { loading: TabSpinner });
+const RendimientoModule = dynamic(() => import("@/components/admin/unified/RendimientoModule"), { loading: TabSpinner });
 
 // ── Módulos adicionales ──
 const AuditTrailModule = dynamic(() => import("@/components/admin/AuditTrailModule"), { loading: TabSpinner });
@@ -100,6 +102,7 @@ const TreasuryDashboard = dynamic(() => import("@/components/admin/TreasuryDashb
 const PromocionesModule = dynamic(() => import("@/components/admin/PromocionesModule"), { loading: TabSpinner });
 const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCrediticioTab"), { loading: TabSpinner });
 const StoreCustomizer     = dynamic(() => import("@/components/admin/StoreCustomizer"),     { loading: TabSpinner });
+const MiPerfilTab         = dynamic(() => import("@/components/admin/MiPerfilTab"),         { loading: TabSpinner });
 
 // ── Módulos de documentos ──
 const CotizacionesModule = dynamic(() => import("@/components/admin/CotizacionesModule"), { loading: TabSpinner });
@@ -111,6 +114,8 @@ const ContratosModule = dynamic(() => import("@/components/admin/ContratosModule
 import SSEListener from "@/components/admin/SSEListener";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import AdminCommandPalette from "@/components/admin/shared/AdminCommandPalette";
+import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
+import SidebarReorderPanel from "@/components/admin/SidebarReorderPanel";
 
 // Changelog + Export
 const ChangelogModal = dynamic(() => import("@/components/admin/ChangelogModal"), { ssr: false });
@@ -121,13 +126,10 @@ const SettingsModule = dynamic(() => import("@/components/admin/SettingsModule")
 
 // Utility components (not tab modules)
 const GlobalSearch = dynamic(() => import("@/components/admin/GlobalSearch"), { ssr: false });
-const AlertCenter = dynamic(() => import("@/components/admin/AlertCenter"), { ssr: false });
-const AIFloatingButton = dynamic(() => import("@/components/admin/AIFloatingButton"), { ssr: false });
-// LeafletMap moved to SettingsModule
 const CierreDiarioModal = dynamic(() => import("@/components/cierre-diario/CierreDiarioModal"), { ssr: false });
 const MorningSummaryModal = dynamic(() => import("@/components/admin/MorningSummaryModal"), { ssr: false });
 const OnboardingWizard = dynamic(() => import("@/components/admin/OnboardingWizard"), { ssr: false });
-const LiveNotificationBell = dynamic(() => import("@/components/admin/LiveNotificationBell"), { ssr: false });
+const ResumenGlobal = dynamic(() => import("@/components/admin/ResumenGlobal"), { ssr: false });
 
 // ── 8 módulos consolidados + pedidos + plan ──
 type Tab =
@@ -166,7 +168,10 @@ type Tab =
   // Módulos de operaciones de marketplace y delivery
   | "marketplace"
   | "delivery-partners"
-  | "store-customizer";
+  | "store-customizer"
+  | "mi-perfil"
+  // Módulo rendimiento técnico
+  | "rendimiento";
 
 // Old tab IDs → consolidated module IDs for localStorage migration
 // Maps all legacy tab IDs from previous 14-module and 28-module layouts to new 8-module layout
@@ -215,7 +220,7 @@ const TAB_MIGRATION: Record<string, Tab> = {
   fidelizacion: "clientes", "programa-puntos": "clientes", "wish-lists": "clientes",
   "encuestas-soporte": "clientes", nps: "clientes", encuestas: "clientes",
   soporte: "clientes", resenas: "clientes",
-  delivery: "clientes", logistica: "clientes",
+  logistica: "clientes",
   entregas: "clientes", "rutas-delivery": "clientes", "delivery-horarios": "clientes",
   "seguimiento-envios": "clientes", "costos-envio": "clientes", flota: "clientes",
   "logistica-devoluciones": "clientes", "devoluciones-calidad": "clientes",
@@ -229,7 +234,7 @@ const TAB_MIGRATION: Record<string, Tab> = {
   comunicaciones: "config", "hub-comunicaciones": "config",
   chat: "config", "plantillas-mensaje": "config", notificaciones: "config",
   proyectos: "config", tareas: "config", kanban: "config",
-  metas: "config", "tablero-metas": "config", "proyectos-tareas": "config",
+  "tablero-metas": "config", "proyectos-tareas": "config",
   "alertas-automatizacion": "config", "alertas-automaticas": "config",
   recordatorios: "config", flujos: "config", "reglas-negocio": "config",
   "agenda-utilidades": "config", calendario: "config",
@@ -239,8 +244,6 @@ const TAB_MIGRATION: Record<string, Tab> = {
   pedidos: "pedidos",
   plan: "plan",
   // Módulos nuevos
-  sugerencias: "sugerencias-ia",
-  metas: "metas-logros",
   auditoria: "auditoria",
   "devoluciones-proveedor": "devoluciones-proveedor",
   scoring: "scoring",
@@ -254,6 +257,10 @@ const TAB_MIGRATION: Record<string, Tab> = {
   "delivery-partners": "delivery-partners",
   repartidores: "delivery-partners",
   asignaciones: "delivery-partners",
+  // Rendimiento técnico
+  rendimiento: "rendimiento",
+  "web-vitals": "rendimiento",
+  "salud-sistema-tech": "rendimiento",
   // Módulos adicionales
   fiados: "fiados",
   turnos: "turnos",
@@ -282,8 +289,6 @@ const MODULE_INFO: Partial<Record<Tab, { emoji: string; priority: "core" | "high
   "turnos":        { emoji: "⏱️", priority: "high",   desc: "Apertura y cierre de turnos con conteo de efectivo.",                   tip: "Control de caja por turno para saber exactamente cuánto entró." },
   "recetas":       { emoji: "🍳", priority: "medium", desc: "Recetas de producción con ingredientes y control de lotes.",            tip: "Calcula costos de producción y descuenta stock automáticamente." },
   "prestamos":     { emoji: "🏦", priority: "medium", desc: "Préstamos a clientes con cuotas, interés y tabla de amortización.",     tip: "Gestiona préstamos con calculadora integrada y seguimiento de pagos." },
-  "sugerencias-ia": { emoji: "💡", priority: "high" as const,   desc: "Combos, cross-sell y recomendaciones personalizadas por cliente.", tip: "La IA analiza tus ventas y te dice qué ofrecer." },
-  "metas-logros":   { emoji: "🏆", priority: "medium" as const, desc: "Metas de ventas, clientes y logros desbloqueados.", tip: "Configura tus objetivos y celebra cada logro." },
 };
 
 type TabCategory = {
@@ -299,7 +304,7 @@ const BASIC_MODULES: TabCategory[] = [
     id: "asistente-ia",
     label: "IA & Analítica",
     icon: Brain,
-    tabs: ["asistente-ia", "analytics-pro", "ai-command", "sugerencias-ia", "metas-logros"],
+    tabs: ["asistente-ia", "analytics-pro"],
   },
   {
     id: "ventas-caja",
@@ -423,11 +428,10 @@ const CONFIG_MODULE: TabCategory = {
 
 // No PRO modules — all modules available to all plans
 
-// ── TAB_CATEGORIES: todos los módulos ──
+// ── TAB_CATEGORIES: todos los módulos (Config y Plan accesibles desde dropdown de usuario) ──
 const TAB_CATEGORIES: TabCategory[] = [
   ...BASIC_MODULES,
   TIENDA_MODULE,
-  CONFIG_MODULE,
 ];
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -455,6 +459,7 @@ function OrdersTab() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [storeLat, setStoreLat] = useState<number | null>(null);
   const [storeLon, setStoreLon] = useState<number | null>(null);
+  const [storeName, setStoreName] = useState("Mi Bodega");
 
   // Detail modal
   const [detailOrder, setDetailOrder] = useState<DbOrder | null>(null);
@@ -533,8 +538,18 @@ function OrdersTab() {
     fetch("/api/settings").then(r => r.ok ? r.json() : null).then(d => {
       if (d?.businessLat) setStoreLat(d.businessLat);
       if (d?.businessLon) setStoreLon(d.businessLon);
+      if (d?.businessName) setStoreName(d.businessName);
     }).catch(() => {});
   }, []);
+
+  // Valid order status transitions — mirrors server-side VALID_TRANSITIONS
+  const VALID_TRANSITIONS: Record<string, OrderStatus[]> = {
+    pendiente: ["confirmado", "cancelado"],
+    confirmado: ["en_camino", "cancelado"],
+    en_camino: ["entregado", "cancelado"],
+    entregado: [],
+    cancelado: [],
+  };
 
   const updateStatus = async (id: string, status: OrderStatus) => {
     const res = await fetch(`/api/orders/${id}`, {
@@ -542,13 +557,16 @@ function OrdersTab() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: "Error al actualizar" }));
+      alert(err.error ?? "No se pudo cambiar el estado");
+      return;
+    }
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
     // Open WhatsApp notification link only if not auto-sent
-    if (res.ok) {
-      const data = await res.json();
-      if (data.whatsappLink && !data.whatsappSent) {
-        window.open(data.whatsappLink, "_blank", "noopener,noreferrer");
-      }
+    const data = await res.json().catch(() => null);
+    if (data?.whatsappLink && !data.whatsappSent) {
+      window.open(data.whatsappLink, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -573,7 +591,7 @@ function OrdersTab() {
   };
 
   const driverColor = (name: string): string => {
-    const colors = ["#ef4444", "#f97316", "#f59e0b", "#65a30d", "#14b8a6", "#0ea5e9", "#3b82f6", "#8b5cf6", "#ec4899"];
+    const colors = ["#ef4444", "#f97316", "#f59e0b", "#65a30d", "#2dd4bf", "#0ea5e9", "#3b82f6", "#8b5cf6", "#ec4899"];
     let h = 0;
     for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
     return colors[Math.abs(h) % colors.length];
@@ -965,8 +983,10 @@ function OrdersTab() {
                     value={o.status}
                     onChange={(e) => updateStatus(o.id, e.target.value as OrderStatus)}
                     className="text-xs font-semibold rounded-lg border border-gray-200 dark:border-card-border px-2 py-2 outline-none focus:border-primary text-gray-700 dark:text-foreground bg-white dark:bg-card"
+                    disabled={!VALID_TRANSITIONS[o.status]?.length}
                   >
-                    {(Object.keys(STATUS_LABELS) as OrderStatus[]).map(s => (
+                    <option value={o.status}>{STATUS_LABELS[o.status]}</option>
+                    {(VALID_TRANSITIONS[o.status] ?? []).map(s => (
                       <option key={s} value={s}>{STATUS_LABELS[s]}</option>
                     ))}
                   </select>
@@ -1757,7 +1777,7 @@ function OrdersTab() {
                         <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-full flex items-center justify-center">
                           <Store className="h-8 w-8 text-primary" />
                         </div>
-                        <h2 className="text-lg font-extrabold text-gray-900">Buleje</h2>
+                        <h2 className="text-lg font-extrabold text-gray-900">{storeName || "Mi Bodega"}</h2>
                         <p className="text-xs text-gray-500 mt-0.5">Ticket de Delivery</p>
                       </div>
 
@@ -2046,7 +2066,7 @@ function NavDefaultTabsConfig() {
             <select
               value={defaults[mod.id] ?? mod.tabs[0].id}
               onChange={(e) => handleChange(mod.id, e.target.value)}
-              className="text-xs border border-gray-200 dark:border-card-border bg-white dark:bg-card rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-foreground focus:ring-2 focus:ring-[#0f766e]/30 focus:border-[#0f766e] outline-none transition-all"
+              className="text-xs border border-gray-200 dark:border-card-border bg-white dark:bg-card rounded-lg px-2.5 py-1.5 text-gray-700 dark:text-foreground focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none transition-all"
             >
               {mod.tabs.map((t) => (
                 <option key={t.id} value={t.id}>{t.label}</option>
@@ -2074,10 +2094,27 @@ function NavDefaultTabsConfig() {
 
 function AdminPage() {
   const router = useRouter();
+
+  // Detect tenant prefix from URL (e.g. /t/luis/admin → "/t/luis")
+  // so client-side navigations preserve the tenant slug
+  const tenantPrefix = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const match = window.location.pathname.match(/^(\/t\/[^/]+)\/admin/);
+    return match ? match[1] : "";
+  }, []);
+  const adminPath = (path: string) => `${tenantPrefix}${path}`;
+
   const VALID_TABS: Tab[] = ["asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command","fiados","turnos","cotizaciones","guias-remision","notas-credito","contratos","sugerencias-ia","metas-logros","marketplace","delivery-partners","store-customizer"];
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window === "undefined") return "asistente-ia";
-    // 1. Check URL hash first (e.g. /admin#inventario)
+    // 0. Check URL search param first (e.g. /admin?tab=inventario)
+    const urlTab = new URLSearchParams(window.location.search).get("tab");
+    if (urlTab) {
+      const migrated = TAB_MIGRATION[urlTab];
+      if (migrated) return migrated;
+      if (VALID_TABS.includes(urlTab as Tab)) return urlTab as Tab;
+    }
+    // 1. Check URL hash (e.g. /admin#inventario)
     const hash = window.location.hash.slice(1); // remove #
     if (hash) {
       const migrated = TAB_MIGRATION[hash];
@@ -2152,70 +2189,18 @@ function AdminPage() {
     try { const s = localStorage.getItem("admin_demo_cleared"); return s ? new Set<Tab>(JSON.parse(s)) : new Set<Tab>(); } catch { return new Set<Tab>(); }
   });
   const [showModuleManager, setShowModuleManager] = useState(false);
+  // Sidebar category ordering — persisted in localStorage
+  const [categoryOrder, setCategoryOrder] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { const s = localStorage.getItem("admin_category_order"); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
+  const saveCategoryOrder = useCallback((order: string[]) => {
+    setCategoryOrder(order);
+    try { localStorage.setItem("admin_category_order", JSON.stringify(order)); } catch {}
+  }, []);
   const [showCierreDiario, setShowCierreDiario] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-
-  // IDEA 7: Feria Mode — Modo especial para ferias y eventos
-  const [feriaMode, setFeriaMode] = useState<{
-    active: boolean;
-    name: string;
-    discount: number;
-    startTime: number;
-    salesCount: number;
-    salesTotal: number;
-  }>(() => {
-    if (typeof window === "undefined") return { active: false, name: "", discount: 0, startTime: 0, salesCount: 0, salesTotal: 0 };
-    try {
-      const raw = localStorage.getItem("feria-mode");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.active) return parsed;
-      }
-    } catch {}
-    return { active: false, name: "", discount: 0, startTime: 0, salesCount: 0, salesTotal: 0 };
-  });
-  const [showFeriaSetup, setShowFeriaSetup] = useState(false);
-  const [feriaName, setFeriaName] = useState("");
-  const [feriaDiscount, setFeriaDiscount] = useState("10");
-
-  const toggleFeriaMode = () => {
-    if (feriaMode.active) {
-      // Desactivar: guardar en historial
-      try {
-        const history = JSON.parse(localStorage.getItem("feria-history") || "[]");
-        history.unshift({
-          nombre: feriaMode.name,
-          fecha: new Date().toISOString(),
-          ventas: feriaMode.salesTotal,
-          clientes: feriaMode.salesCount,
-          duracion: Math.round((Date.now() - feriaMode.startTime) / 60000),
-        });
-        localStorage.setItem("feria-history", JSON.stringify(history.slice(0, 10)));
-      } catch {}
-      const next = { active: false, name: "", discount: 0, startTime: 0, salesCount: 0, salesTotal: 0 };
-      setFeriaMode(next);
-      localStorage.removeItem("feria-mode");
-    } else {
-      setShowFeriaSetup(true);
-    }
-  };
-
-  const startFeria = () => {
-    const next = {
-      active: true,
-      name: feriaName.trim() || "Feria Especial",
-      discount: Number(feriaDiscount) || 10,
-      startTime: Date.now(),
-      salesCount: 0,
-      salesTotal: 0,
-    };
-    setFeriaMode(next);
-    localStorage.setItem("feria-mode", JSON.stringify(next));
-    setShowFeriaSetup(false);
-    setFeriaName("");
-    setFeriaDiscount("10");
-  };
 
   // Changelog badge — check if user has seen the latest version
   const [changelogHasNew, setChangelogHasNew] = useState(false);
@@ -2226,9 +2211,18 @@ function AdminPage() {
     } catch {}
   }, []);
 
-  // ── Onboarding wizard: show on first visit ────────────────────────────────
+  // ── Open module manager from Settings via custom event ──────────────────
+  useEffect(() => {
+    const handler = () => setShowModuleManager(true);
+    window.addEventListener("open-module-manager", handler);
+    return () => window.removeEventListener("open-module-manager", handler);
+  }, []);
+
+  // ── Onboarding wizard: show on first visit (skip when SuperAdmin is impersonating) ─
   useEffect(() => {
     try {
+      // Never show onboarding to SuperAdmin impersonating a tenant — it blocks the whole UI
+      if (localStorage.getItem("superadmin-impersonate-tenant")) return;
       const slug = localStorage.getItem("active-tenant-slug") ?? "main";
       const key = `onboarding-completed-${slug}`;
       if (!localStorage.getItem(key)) {
@@ -2267,6 +2261,7 @@ function AdminPage() {
   const [activeTenantName, setActiveTenantName] = useState<string | null>(null);
   const [activeTenantSlug, setActiveTenantSlug] = useState<string | null>(null);
   const [activeTenantType, setActiveTenantType] = useState<"tienda" | "proveedor" | "delivery">("tienda");
+  const [activeTenantLogo, setActiveTenantLogo] = useState<string | null>(null);
 
   useEffect(() => {
     // Detectar impersonación de SuperAdmin
@@ -2276,11 +2271,13 @@ function AdminPage() {
     if (impersonateSlug) setIsSuperAdminImpersonating(true);
     if (slug && slug !== "main") {
       setActiveTenantSlug(slug);
-      // Fetch del nombre de la tienda con el tenant activo
-      fetch("/api/settings", { headers: { "x-tenant-id": slug } })
+      // Fetch del nombre de la tienda — no enviar x-tenant-id header,
+      // el proxy resuelve el tenant desde la cookie de sesión (canonical ID)
+      fetch("/api/settings")
         .then(r => r.ok ? r.json() : null)
         .then(d => {
           if (d?.businessName) setActiveTenantName(d.businessName);
+          if (d?.logoUrl) setActiveTenantLogo(d.logoUrl);
           // Detectar tipo de tenant por storeMode o flag
           if (d?.storeType === "proveedor" || d?.mode === "proveedor") setActiveTenantType("proveedor");
           else if (d?.storeType === "delivery" || d?.mode === "delivery") setActiveTenantType("delivery");
@@ -2299,7 +2296,19 @@ function AdminPage() {
 
   // Plan del tenant — loaded on mount (unused variable kept for future plan gating)
   useScrollLock(mobileNavOpen);
-  const { resolved: theme, toggle: toggleTheme } = useTheme();
+
+  // Close mobile nav on Escape key or resize to desktop — prevents stuck dark overlay
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMobileNavOpen(false); };
+    const handleResize = () => { if (window.innerWidth >= 640) setMobileNavOpen(false); };
+    window.addEventListener("keydown", handleKey);
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+  const { toggle: toggleTheme } = useTheme();
   const { permission, requestPermission, sendNotification, hasAsked } = useNotifications();
 
   useEffect(() => {
@@ -2328,7 +2337,7 @@ function AdminPage() {
             }
             throw new Error("no bypass");
           })
-          .catch(() => { router.push("/admin/login"); });
+          .catch(() => { router.push(adminPath("/admin/login")); });
       });
   }, [router]);
 
@@ -2416,14 +2425,31 @@ function AdminPage() {
     setTab(id);
     setShowModuleHelp(false);
     try { localStorage.setItem("admin_active_tab", id); } catch {}
-    // Persist active tab in URL hash so reloading restores the same tab
-    try { window.history.replaceState(null, "", `#${id}`); } catch {}
+    // Persist active tab in URL hash + search param so deep-linking and reloading works
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", id);
+      url.hash = id;
+      window.history.replaceState(null, "", url.toString());
+    } catch {}
     setRecentTabs(prev => {
       const next = [id, ...prev.filter(t => t !== id)].slice(0, 5);
       localStorage.setItem("admin_recent_tabs", JSON.stringify(next));
       return next;
     });
   }, []);
+
+  // ── Navigate from notification hub alerts ──
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { moduleId, tabId } = (e as CustomEvent).detail || {};
+      if (moduleId) {
+        navigateTab(tabId || moduleId);
+      }
+    };
+    window.addEventListener("admin:navigate", handler);
+    return () => window.removeEventListener("admin:navigate", handler);
+  }, [navigateTab]);
 
   // ── Mejora 13: Scroll to top al cambiar módulo ──
   useEffect(() => {
@@ -2445,7 +2471,6 @@ function AdminPage() {
       "prestamos": "Préstamos",
       "pedidos": "Pedidos",
       "analytics-pro": "Analytics",
-      "ai-command": "AI Center",
       "config": "Configuración",
       "asistente-ia": "Asistente IA",
       "cotizaciones": "Cotizaciones",
@@ -2454,7 +2479,7 @@ function AdminPage() {
       "contratos": "Contratos",
       "plan": "Plan",
     };
-    document.title = `${labels[tab] || "Panel"} — Buleje`;
+    document.title = `${labels[tab] || "Panel"} — ${activeTenantName || "Mi Bodega"}`;
   }, [tab]);
 
   // ── Mejora 16: Swipe para navegar tabs en mobile ──
@@ -2483,6 +2508,8 @@ function AdminPage() {
 
   // ── Auto-start onboarding tour for first-time visitors ──────────────
   useEffect(() => {
+    // Never auto-start the tour when SuperAdmin is impersonating — it blocks all navigation
+    try { if (localStorage.getItem("superadmin-impersonate-tenant")) return; } catch {}
     if (onboarding.isFirstVisit && !onboarding.isTourActive) {
       // Small delay so the sidebar renders first
       const t = setTimeout(() => onboarding.startTour(), 800);
@@ -2527,13 +2554,30 @@ function AdminPage() {
     const interval = setInterval(fetchAlerts, 60_000);
     return () => { clearTimeout(t); clearInterval(interval); };
   }, [fetchAlerts]);
-  // SSE: instant update when a new order arrives — no more 60s wait
+  // SSE: instant update when a new order arrives — with auto-disable after repeated failures
+  // (Cloudflare tunnels and some proxies kill long-lived SSE connections)
   useEffect(() => {
     if (!authReady) return;
-    const es = new EventSource("/api/admin/sse");
-    es.addEventListener("new_order", () => fetchAlerts());
-    es.onerror = () => { /* reconnect is automatic */ };
-    return () => es.close();
+    let failCount = 0;
+    let es: EventSource | null = null;
+    let stopped = false;
+
+    function connect() {
+      if (stopped || failCount >= 3) return; // Give up after 3 failures, rely on 60s polling
+      es = new EventSource("/api/admin/sse");
+      es.addEventListener("new_order", () => { failCount = 0; fetchAlerts(); });
+      es.addEventListener("open", () => { failCount = 0; });
+      es.onerror = () => {
+        failCount++;
+        es?.close();
+        if (!stopped && failCount < 3) {
+          setTimeout(connect, 5000 * failCount); // Back off: 5s, 10s, then give up
+        }
+      };
+    }
+
+    connect();
+    return () => { stopped = true; es?.close(); };
   }, [authReady, fetchAlerts]);
 
   // Push notifications for new orders
@@ -2603,7 +2647,7 @@ function AdminPage() {
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-    router.push("/admin/login");
+    router.push(adminPath("/admin/login"));
   };
 
   // ── 8 módulos consolidados + especiales ──────────────────────────────────────
@@ -2620,9 +2664,6 @@ function AdminPage() {
     { id: "pedidos" as Tab,        label: "Pedidos",                icon: ShoppingBasket },
     // — INTELIGENCIA —
     { id: "analytics-pro" as Tab,  label: "Analytics Pro",          icon: Activity },
-    { id: "ai-command" as Tab,     label: "AI Command Center",      icon: Brain },
-    { id: "sugerencias-ia" as Tab, label: "Sugerencias IA",          icon: Lightbulb },
-    { id: "metas-logros" as Tab,   label: "Metas y Logros",          icon: Target },
     // — FINANZAS EXTRA —
     { id: "prestamos" as Tab,      label: "Préstamos",              icon: Landmark },
     { id: "plan" as Tab,           label: "Plan & Límites",         icon: Zap },
@@ -2639,10 +2680,23 @@ function AdminPage() {
     { id: "delivery-partners" as Tab,  label: "Delivery Partners",    icon: Truck },
     // — MI TIENDA —
     { id: "store-customizer" as Tab,   label: "Mi Tienda",            icon: Palette },
+    { id: "mi-perfil" as Tab,          label: "Mi Perfil",            icon: CircleUser },
   ] as const;
 
-  // All modules available — no plan gating
-  const visibleCategories: TabCategory[] = TAB_CATEGORIES;
+  // All modules available — sorted by user's custom category order
+  const visibleCategories: TabCategory[] = useMemo(() => {
+    if (categoryOrder.length === 0) return TAB_CATEGORIES;
+    const ordered: TabCategory[] = [];
+    for (const id of categoryOrder) {
+      const cat = TAB_CATEGORIES.find(c => c.id === id);
+      if (cat) ordered.push(cat);
+    }
+    // Append any new categories not yet in the saved order
+    for (const cat of TAB_CATEGORIES) {
+      if (!categoryOrder.includes(cat.id)) ordered.push(cat);
+    }
+    return ordered;
+  }, [categoryOrder]);
 
   // Role-based tab filtering — populated from lib/module-permissions.ts
   const DEFAULT_ROLE_TABS: Record<string, Tab[]> = {
@@ -2673,13 +2727,98 @@ function AdminPage() {
 
   // Favorite & recent subsets for sidebar sections
   const favoriteTabItems = ALL_TABS.filter(t => favoriteTabs.has(t.id) && allowedTabs.includes(t.id));
+
+  // Custom shortcuts from SettingsModule
+  const [customShortcutsVersion, setCustomShortcutsVersion] = useState(0);
+  useEffect(() => {
+    const handler = () => setCustomShortcutsVersion(v => v + 1);
+    window.addEventListener("storage", handler);
+    // Also listen for custom event from same tab
+    window.addEventListener("admin-shortcuts-changed", handler);
+    return () => { window.removeEventListener("storage", handler); window.removeEventListener("admin-shortcuts-changed", handler); };
+  }, []);
+  const customShortcutItems = useMemo(() => {
+    try {
+      const saved = localStorage.getItem("admin_custom_shortcuts");
+      if (!saved) return [];
+      const shortcuts: Array<{ id: string; label: string; tabId: string }> = JSON.parse(saved);
+      return shortcuts
+        .filter(s => ALL_TABS.some(t => t.id === s.tabId))
+        .map(s => {
+          const match = ALL_TABS.find(t => t.id === s.tabId);
+          return match ? { id: s.tabId as Tab, label: s.label, icon: match.icon } : null;
+        })
+        .filter(Boolean) as Array<{ id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }>;
+    } catch { return []; }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customShortcutsVersion]);
+
   const recentTabItems = recentTabs
     .filter(id => id !== tab && !favoriteTabs.has(id) && allowedTabs.includes(id))
     .map(id => ALL_TABS.find(t => t.id === id)!)
     .filter(Boolean)
     .slice(0, 5);
-  
 
+  // ── Editable sidebar shortcuts ──────────────────────────────────────────────
+  const DEFAULT_SHORTCUTS: Array<{ id: string; label: string }> = [
+    { id: "asistente-ia", label: "Dashboard" },
+    { id: "inventario", label: "Stock" },
+    { id: "pedidos", label: "Pedidos" },
+    { id: "ventas-caja", label: "Caja POS" },
+  ];
+  const [sidebarShortcuts, setSidebarShortcuts] = useState<Array<{ id: string; label: string }>>(() => {
+    try {
+      const saved = localStorage.getItem("admin_sidebar_shortcuts");
+      if (saved) {
+        const parsed = JSON.parse(saved) as Array<{ id: string; label: string }>;
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch { /* use default */ }
+    return DEFAULT_SHORTCUTS;
+  });
+  const [editingShortcuts, setEditingShortcuts] = useState(false);
+  const [showAddShortcut, setShowAddShortcut] = useState(false);
+
+  const saveSidebarShortcuts = useCallback((next: Array<{ id: string; label: string }>) => {
+    setSidebarShortcuts(next);
+    localStorage.setItem("admin_sidebar_shortcuts", JSON.stringify(next));
+  }, []);
+
+  const removeShortcut = useCallback((id: string) => {
+    saveSidebarShortcuts(sidebarShortcuts.filter(s => s.id !== id));
+  }, [sidebarShortcuts, saveSidebarShortcuts]);
+
+  const addShortcut = useCallback((tabId: string) => {
+    const match = ALL_TABS.find(t => t.id === tabId);
+    if (match && !sidebarShortcuts.some(s => s.id === tabId)) {
+      saveSidebarShortcuts([...sidebarShortcuts, { id: tabId, label: match.label }]);
+    }
+    setShowAddShortcut(false);
+  }, [sidebarShortcuts, saveSidebarShortcuts, ALL_TABS]);
+
+  const moveShortcut = useCallback((idx: number, dir: -1 | 1) => {
+    const next = [...sidebarShortcuts];
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= next.length) return;
+    [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
+    saveSidebarShortcuts(next);
+  }, [sidebarShortcuts, saveSidebarShortcuts]);
+
+  const resolvedShortcuts = useMemo(() =>
+    sidebarShortcuts
+      .map(s => {
+        const match = ALL_TABS.find(t => t.id === s.id);
+        return match ? { ...s, icon: match.icon } : null;
+      })
+      .filter(Boolean) as Array<{ id: string; label: string; icon: React.ComponentType<{ className?: string }> }>,
+    [sidebarShortcuts, ALL_TABS]
+  );
+
+  const availableForShortcut = useMemo(() =>
+    ALL_TABS.filter(t => allowedTabs.includes(t.id) && !sidebarShortcuts.some(s => s.id === t.id)),
+    [ALL_TABS, allowedTabs, sidebarShortcuts]
+  );
+  // ────────────────────────────────────────────────────────────────────────────
 
   const currentTab = filteredTabs.find(t => t.id === tab) ?? filteredTabs[0];
 
@@ -2695,7 +2834,6 @@ function AdminPage() {
       { id: "plata",          label: "Mi Plata (Finanzas)",     icon: "💵", category: "Módulo" },
       { id: "clientes",       label: "Mis Clientes (CRM)",      icon: "👥", category: "Módulo" },
       { id: "analytics-pro",  label: "Analytics Pro",           icon: "📊", category: "Módulo" },
-      { id: "ai-command",     label: "Comandos IA",             icon: "🤖", category: "Módulo" },
       { id: "fiados",         label: "Fiados",                  icon: "💰", category: "Módulo" },
       { id: "turnos",         label: "Turnos de Caja",          icon: "⏱️", category: "Módulo" },
       { id: "recetas",        label: "Recetas & Producción",    icon: "🍳", category: "Módulo" },
@@ -2771,7 +2909,7 @@ function AdminPage() {
             <div className="h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center">
               <ShoppingBasket className="h-4 w-4" />
             </div>
-            <span className="font-extrabold text-gray-900 dark:text-foreground text-sm">Buleje</span>
+            <span className="font-extrabold text-gray-900 dark:text-foreground text-sm">{activeTenantName || "Mi Bodega"}</span>
           </div>
           <button onClick={() => setMobileNavOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
             <X className="h-5 w-5 text-gray-500 dark:text-muted" />
@@ -2842,20 +2980,8 @@ function AdminPage() {
         </div>
         
         <nav className="flex-1 overflow-y-auto py-3 px-3">
-          {/* Sidebar search */}
-          <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
-            <input
-              type="text"
-              placeholder="Filtrar módulos…"
-              value={sidebarSearch}
-              onChange={e => setSidebarSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-lg bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted outline-none focus:ring-1 focus:ring-primary/40"
-            />
-          </div>
-
           {/* Favorite tabs section */}
-          {!sidebarSearch && favoriteTabItems.length > 0 && (
+          {(favoriteTabItems.length > 0 || customShortcutItems.length > 0) && (
             <div className="mb-2">
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1"><Star className="h-3 w-3" /> Favoritos</p>
               {favoriteTabItems.map(({ id, label, icon: Icon }) => (
@@ -2871,12 +2997,25 @@ function AdminPage() {
                   <span className="truncate">{label}</span>
                 </button>
               ))}
+              {customShortcutItems.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={`sc-${id}-${label}`}
+                  onClick={() => { navigateTab(id); setMobileNavOpen(false); }}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
+                    tab === id ? "bg-primary text-white shadow-sm" : "text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-accent"
+                  )}
+                >
+                  <Zap className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
+                  <span className="truncate">{label}</span>
+                </button>
+              ))}
               <div className="h-px bg-gray-100 dark:bg-card-border mx-2 my-1.5" />
             </div>
           )}
 
           {/* Recent tabs section */}
-          {!sidebarSearch && recentTabItems.length > 0 && (
+          {recentTabItems.length > 0 && (
             <div className="mb-2">
               <button onClick={() => setRecentCollapsed(c => !c)} className="w-full text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1 hover:text-gray-600 dark:hover:text-foreground transition-colors">
                 <Clock className="h-3 w-3" /> Recientes
@@ -2926,96 +3065,103 @@ function AdminPage() {
           ))}
         </nav>
         <div className="px-3 py-4 border-t border-gray-200 dark:border-card-border space-y-1">
-          <Link href="/" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-all">
-            <Store className="h-5 w-5" /> Ver tienda
-          </Link>
-          {userRole === "admin" && (
-            <Link href="/admin/webhook-queue" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-all">
-              <Activity className="h-5 w-5" /> Cola Stripe
-              {webhookPendingCount > 0 && (
-                <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">{webhookPendingCount}</span>
-              )}
+          {/* Quick access shortcuts — mobile */}
+          <div className="mb-2 space-y-0.5">
+            <div className="flex items-center justify-between px-4 mb-1">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Accesos rápidos</p>
+              <button onClick={() => setEditingShortcuts(e => !e)} className="text-gray-400 hover:text-primary transition-colors" title="Editar accesos rápidos">
+                <Pencil className="h-3 w-3" />
+              </button>
+            </div>
+            {resolvedShortcuts.map((s, idx) => (
+              <div key={s.id} className="flex items-center gap-1">
+                {editingShortcuts && (
+                  <div className="flex flex-col -mr-1">
+                    <button onClick={() => moveShortcut(idx, -1)} disabled={idx === 0} className="text-gray-400 hover:text-primary disabled:opacity-20 p-0 leading-none"><ChevronUp className="h-3 w-3" /></button>
+                    <button onClick={() => moveShortcut(idx, 1)} disabled={idx === resolvedShortcuts.length - 1} className="text-gray-400 hover:text-primary disabled:opacity-20 p-0 leading-none"><ChevronDown className="h-3 w-3" /></button>
+                  </div>
+                )}
+                <button
+                  onClick={() => { if (!editingShortcuts) { navigateTab(s.id as Tab); setMobileNavOpen(false); } }}
+                  className={cn(
+                    "flex-1 flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                    tab === s.id ? "bg-primary/10 text-primary" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                  )}
+                >
+                  <s.icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{s.label}</span>
+                  {!editingShortcuts && alerts[s.id] && <span className="ml-auto text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center bg-red-500 text-white">{alerts[s.id]}</span>}
+                </button>
+                {editingShortcuts && (
+                  <button onClick={() => removeShortcut(s.id)} className="p-1 text-red-400 hover:text-red-600 transition-colors" title="Quitar"><X className="h-3.5 w-3.5" /></button>
+                )}
+              </div>
+            ))}
+            {editingShortcuts && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowAddShortcut(v => !v)}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium text-primary/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
+                >
+                  <Plus className="h-4 w-4" /> Agregar acceso
+                </button>
+                {showAddShortcut && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                    {availableForShortcut.map(t => (
+                      <button key={t.id} onClick={() => addShortcut(t.id)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                        <t.icon className="h-4 w-4 shrink-0" /> {t.label}
+                      </button>
+                    ))}
+                    {availableForShortcut.length === 0 && <p className="px-3 py-2 text-xs text-gray-400">Ya están todos agregados</p>}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <Link href="/marketplace" target="_blank" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all">
+              <Globe className="h-5 w-5" /> Marketplace
             </Link>
-          )}
+          <Link href="/" target="_blank" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-all">
+              <Store className="h-5 w-5" /> Tienda
+            </Link>
           <button
             onClick={() => { setShowCierreDiario(true); setMobileNavOpen(false); }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-all"
           >
             <Power className="h-5 w-5" /> Cerrar d&iacute;a
           </button>
-          {userRole === "admin" && (
-            <button
-              onClick={() => { setClearConfirmStep(1); setClearConfirmText(""); setShowClearConfirm(true); setMobileNavOpen(false); }}
-              disabled={clearingData}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-all"
-            >
-              {clearingData ? <Loader2 className="h-5 w-5 animate-spin" /> : <Trash2 className="h-5 w-5" />}
-              Borrar datos
-            </button>
-          )}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-all"
-          >
-            <LogOut className="h-5 w-5" /> Cerrar sesi&oacute;n
-          </button>
         </div>
       </aside>
 
       {/* Desktop permanent sidebar */}
       <aside className={cn(
-        "hidden sm:flex fixed top-0 left-0 bottom-0 z-40 bg-white dark:bg-card border-r border-gray-200 dark:border-card-border flex-col transition-all duration-300 overflow-hidden",
+        "hidden sm:flex fixed left-0 bottom-0 z-40 bg-white dark:bg-card border-r border-gray-200 dark:border-card-border flex-col transition-all duration-300 overflow-hidden",
         focusMode ? "w-16" : "w-64",
-        presentationMode && "!hidden"
+        presentationMode && "hidden!",
+        isSuperAdminImpersonating ? "top-10" : "top-0"
       )}>
         <div className={cn("flex items-center gap-3 py-5 border-b border-gray-200 dark:border-card-border bg-primary/5 transition-all duration-300", focusMode ? "px-3 justify-center" : "px-5")}>
-          <div className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm shrink-0">
-            <ShoppingBasket className="h-5 w-5" />
-          </div>
+          {activeTenantLogo ? (
+            <img src={activeTenantLogo} alt={activeTenantName || "Logo"} className="h-9 w-9 rounded-xl object-cover shadow-sm shrink-0" />
+          ) : (
+            <div className="h-9 w-9 rounded-xl bg-primary text-white flex items-center justify-center shadow-sm shrink-0">
+              <ShoppingBasket className="h-5 w-5" />
+            </div>
+          )}
           {!focusMode && (
             <>
               <div className="flex-1 min-w-0">
-                <p className="font-extrabold text-gray-900 dark:text-foreground text-sm leading-tight">Buleje</p>
+                <p className="font-extrabold text-gray-900 dark:text-foreground text-sm leading-tight">{activeTenantName || "Mi Bodega"}</p>
                 <p className="text-xs text-gray-400 dark:text-muted"><span className="capitalize">{userName}</span> · <span className="uppercase text-[10px] font-bold text-primary">{userRole}</span></p>
               </div>
-              <button
-                onClick={() => setShowModuleManager(true)}
-                title="Gestionar módulos"
-                className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-primary hover:bg-primary/10 transition-colors"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-              </button>
-              {userRole === "admin" && (
-                <button
-                  onClick={() => { setClearConfirmStep(1); setClearConfirmText(""); setShowClearConfirm(true); }}
-                  disabled={clearingData}
-                  title="Borrar todos los datos"
-                  className="shrink-0 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                >
-                  {clearingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                </button>
-              )}
+
             </>
           )}
         </div>
         
         <nav className={cn("flex-1 overflow-y-auto py-3 transition-all duration-300", focusMode ? "px-1" : "px-3")}>
-          {/* Sidebar search — hidden in focus mode */}
-          {!focusMode && (
-            <div className="relative mb-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-muted" />
-              <input
-                type="text"
-                placeholder="Filtrar módulos…"
-                value={sidebarSearch}
-                onChange={e => setSidebarSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-lg bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted outline-none focus:ring-1 focus:ring-primary/40"
-              />
-            </div>
-          )}
-
           {/* Favorite tabs section — hidden in focus mode */}
-          {!focusMode && !sidebarSearch && favoriteTabItems.length > 0 && (
+          {!focusMode && (favoriteTabItems.length > 0 || customShortcutItems.length > 0) && (
             <div className="mb-2">
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1"><Star className="h-3 w-3" /> Favoritos</p>
               {favoriteTabItems.map(({ id, label, icon: Icon }) => (
@@ -3031,12 +3177,25 @@ function AdminPage() {
                   <span className="truncate">{label}</span>
                 </button>
               ))}
+              {customShortcutItems.map(({ id, label }) => (
+                <button
+                  key={`sc-${id}-${label}`}
+                  onClick={() => navigateTab(id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
+                    tab === id ? "bg-primary text-white shadow-sm" : "text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-accent"
+                  )}
+                >
+                  <Zap className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
+                  <span className="truncate">{label}</span>
+                </button>
+              ))}
               <div className="h-px bg-gray-100 dark:bg-card-border mx-2 my-1.5" />
             </div>
           )}
 
           {/* Recent tabs section — hidden in focus mode */}
-          {!focusMode && !sidebarSearch && recentTabItems.length > 0 && (
+          {!focusMode && recentTabItems.length > 0 && (
             <div className="mb-2">
               <button onClick={() => setRecentCollapsed(c => !c)} className="w-full text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1 hover:text-gray-600 dark:hover:text-foreground transition-colors">
                 <Clock className="h-3 w-3" /> Recientes
@@ -3060,35 +3219,48 @@ function AdminPage() {
           )}
 
           {/* Category accordion — normal mode, no search */}
-          {!focusMode && !sidebarSearch && visibleCategories.map(category => {
+          {!focusMode && visibleCategories.map(category => {
             const catTabs = category.tabs.filter(t => allowedTabs.includes(t) && !hiddenTabs.has(t as Tab));
             if (catTabs.length === 0) return null;
             const CategoryIcon = category.icon;
+            const isSingleTab = catTabs.length === 1;
             const isOpen = openAccordionCategories.has(category.id);
+            const isActive = isSingleTab ? tab === catTabs[0] : isOpen;
             return (
               <div key={category.id} className="mb-0.5">
                 <button
-                  onClick={() => setOpenAccordionCategories(prev =>
-                    prev.has(category.id) ? new Set() : new Set([category.id])
-                  )}
+                  onClick={() => {
+                    if (isSingleTab) {
+                      navigateTab(catTabs[0] as Tab);
+                    } else {
+                      setOpenAccordionCategories(prev =>
+                        prev.has(category.id) ? new Set() : new Set([category.id])
+                      );
+                    }
+                  }}
                   onMouseEnter={(e) => {
+                    if (isSingleTab) return;
                     if (flyoutTimerRef2.current) clearTimeout(flyoutTimerRef2.current);
                     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                     setSidebarFlyout({ categoryId: category.id, top: rect.top });
                   }}
-                  onMouseLeave={() => { flyoutTimerRef2.current = setTimeout(() => setSidebarFlyout(null), 150); }}
+                  onMouseLeave={() => { if (!isSingleTab) flyoutTimerRef2.current = setTimeout(() => setSidebarFlyout(null), 150); }}
                   className={cn(
                     "w-full flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all",
-                    isOpen ? "bg-primary/10 text-primary" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                    isActive ? "bg-primary/10 text-primary" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
                   )}
                 >
                   <CategoryIcon className="h-4 w-4 shrink-0" />
                   <span className="truncate flex-1 text-left">{category.label}</span>
-                  <span className="text-[10px] font-bold text-gray-400 dark:text-muted tabular-nums">{catTabs.length}</span>
-                  <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-gray-400", isOpen && "rotate-180")} />
+                  {!isSingleTab && (
+                    <>
+                      <span className="text-[10px] font-bold text-gray-400 dark:text-muted tabular-nums">{catTabs.length}</span>
+                      <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform duration-200 text-gray-400", isOpen && "rotate-180")} />
+                    </>
+                  )}
                 </button>
                 <AnimatePresence initial={false}>
-                  {isOpen && (
+                  {isOpen && !isSingleTab && (
                     <motion.div
                       key="content"
                       initial={{ height: 0, opacity: 0 }}
@@ -3168,35 +3340,93 @@ function AdminPage() {
           ))}
         </nav>
         <div className={cn("py-4 border-t border-gray-200 dark:border-card-border space-y-1 transition-all duration-300", focusMode ? "px-1" : "px-3")}>
-          <Link href="/" title={focusMode ? "Ver tienda" : undefined} className={cn("flex items-center rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-all", focusMode ? "justify-center px-0 py-2.5" : "gap-3 px-4 py-3")}>
-            <Store className="h-5 w-5" /> {!focusMode && "Ver tienda"}
-          </Link>
-          {userRole === "admin" && (
-            <Link href="/admin/webhook-queue" title={focusMode ? "Cola Stripe" : undefined} className={cn("flex items-center rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent transition-all", focusMode ? "justify-center px-0 py-2.5" : "gap-3 px-4 py-3")}>
-              <Activity className="h-5 w-5" /> {!focusMode && "Cola Stripe"}
-              {!focusMode && webhookPendingCount > 0 && (
-                <span className="ml-auto inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">{webhookPendingCount}</span>
+          {/* Quick access shortcuts */}
+          {!focusMode && (
+            <div className="mb-2 space-y-0.5">
+              <div className="flex items-center justify-between px-4 mb-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Accesos rápidos</p>
+                <button onClick={() => setEditingShortcuts(e => !e)} className="text-gray-400 hover:text-primary transition-colors" title="Editar accesos rápidos">
+                  {editingShortcuts ? <Check className="h-3 w-3 text-primary" /> : <Pencil className="h-3 w-3" />}
+                </button>
+              </div>
+              {resolvedShortcuts.map((s, idx) => (
+                <div key={s.id} className="flex items-center gap-1">
+                  {editingShortcuts && (
+                    <div className="flex flex-col -mr-1">
+                      <button onClick={() => moveShortcut(idx, -1)} disabled={idx === 0} className="text-gray-400 hover:text-primary disabled:opacity-20 p-0 leading-none"><ChevronUp className="h-3 w-3" /></button>
+                      <button onClick={() => moveShortcut(idx, 1)} disabled={idx === resolvedShortcuts.length - 1} className="text-gray-400 hover:text-primary disabled:opacity-20 p-0 leading-none"><ChevronDown className="h-3 w-3" /></button>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => { if (!editingShortcuts) navigateTab(s.id as Tab); }}
+                    className={cn(
+                      "flex-1 flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                      tab === s.id ? "bg-primary/10 text-primary" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                    )}
+                  >
+                    <s.icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{s.label}</span>
+                    {!editingShortcuts && alerts[s.id] && <span className="ml-auto text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center bg-red-500 text-white">{alerts[s.id]}</span>}
+                  </button>
+                  {editingShortcuts && (
+                    <button onClick={() => removeShortcut(s.id)} className="p-1 text-red-400 hover:text-red-600 transition-colors" title="Quitar"><X className="h-3.5 w-3.5" /></button>
+                  )}
+                </div>
+              ))}
+              {editingShortcuts && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowAddShortcut(v => !v)}
+                    className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium text-primary/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
+                  >
+                    <Plus className="h-4 w-4" /> Agregar acceso
+                  </button>
+                  {showAddShortcut && (
+                    <div className="absolute left-0 right-0 bottom-full mb-1 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                      {availableForShortcut.map(t => (
+                        <button key={t.id} onClick={() => addShortcut(t.id)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                          <t.icon className="h-4 w-4 shrink-0" /> {t.label}
+                        </button>
+                      ))}
+                      {availableForShortcut.length === 0 && <p className="px-3 py-2 text-xs text-gray-400">Ya están todos agregados</p>}
+                    </div>
+                  )}
+                </div>
               )}
-              {focusMode && webhookPendingCount > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[8px] font-bold flex items-center justify-center">{webhookPendingCount}</span>
-              )}
-            </Link>
+            </div>
           )}
-          <button
-            onClick={handleLogout}
-            title={focusMode ? "Cerrar sesión" : undefined}
-            className={cn("w-full flex items-center rounded-xl text-sm font-semibold text-gray-500 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-all", focusMode ? "justify-center px-0 py-2.5" : "gap-3 px-4 py-3")}
-          >
-            <LogOut className="h-5 w-5" /> {!focusMode && "Cerrar sesión"}
-          </button>
+          {focusMode && (
+            <div className="mb-2 space-y-0.5">
+              {resolvedShortcuts.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => navigateTab(s.id as Tab)}
+                  title={s.label}
+                  className={cn(
+                    "w-full flex items-center justify-center rounded-xl text-sm font-semibold transition-all px-0 py-2",
+                    tab === s.id ? "bg-primary text-white shadow-sm" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
+                  )}
+                >
+                  <s.icon className="h-4.5 w-4.5 shrink-0" />
+                </button>
+              ))}
+            </div>
+          )}
+          <Link href="/marketplace" target="_blank" title={focusMode ? "Marketplace" : undefined} className={cn("flex items-center rounded-xl text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all", focusMode ? "justify-center px-0 py-2.5" : "gap-3 px-4 py-3")}>
+            <Globe className="h-5 w-5" /> {!focusMode && "Marketplace"}
+          </Link>
+          <Link href="/tienda" target="_blank" title={focusMode ? "Tienda" : undefined} className={cn("flex items-center rounded-xl text-sm font-semibold text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-all", focusMode ? "justify-center px-0 py-2.5" : "gap-3 px-4 py-3")}>
+            <Store className="h-5 w-5" /> {!focusMode && "Tienda"}
+          </Link>
         </div>
       </aside>
 
-      {/* Sidebar category flyout panel */}
+      {/* Sidebar category flyout panel — only for multi-tab categories */}
       {!focusMode && sidebarFlyout && (() => {
         const cat = visibleCategories.find(c => c.id === sidebarFlyout.categoryId);
         if (!cat) return null;
         const catTabs = cat.tabs.filter(t => allowedTabs.includes(t));
+        if (catTabs.length <= 1) return null;
         const FlyoutCatIcon = cat.icon;
         return (
           <motion.div
@@ -3209,11 +3439,6 @@ function AdminPage() {
             onMouseLeave={() => { flyoutTimerRef2.current = setTimeout(() => setSidebarFlyout(null), 150); }}
             className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-2xl py-2 w-60 max-h-[80vh] overflow-y-auto"
           >
-            <div className="flex items-center gap-2 px-3 pb-2 mb-1 border-b border-gray-100 dark:border-card-border">
-              <FlyoutCatIcon className="h-4 w-4 text-primary shrink-0" />
-              <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-muted truncate">{cat.label}</p>
-              <span className="ml-auto text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-surface rounded-full px-1.5 py-0.5 shrink-0">{catTabs.length}</span>
-            </div>
             {catTabs.map(tabId => {
               const tabInfo = ALL_TABS.find(t => t.id === tabId);
               if (!tabInfo) return null;
@@ -3243,98 +3468,36 @@ function AdminPage() {
       <div className={cn("flex flex-col min-h-screen transition-[margin] duration-300", presentationMode ? "sm:ml-0" : focusMode ? "sm:ml-16" : "sm:ml-64")}>
       {/* Top bar */}
       <header className={cn(
-        "bg-white dark:bg-card border-b border-gray-200 dark:border-card-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3 sticky z-40",
-        presentationMode && "!hidden",
+        "bg-white dark:bg-card border-b border-gray-200 dark:border-card-border px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2 sticky z-40",
+        presentationMode && "hidden!",
         isSuperAdminImpersonating ? "top-10" : "top-0"
       )}>
-        <div className="flex items-center gap-3">
-          {/* Mobile hamburger */}
+        {/* Left: hamburger (mobile) + search */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
           <button
             onClick={() => setMobileNavOpen(true)}
-            className="sm:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors"
+            className="sm:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors shrink-0"
             aria-label="Menú"
           >
             <Menu className="h-5 w-5 text-gray-600 dark:text-muted" />
           </button>
-          <div className="h-9 w-9 rounded-xl bg-primary text-white items-center justify-center shadow-sm shrink-0 hidden sm:flex">
-            <ShoppingBasket className="h-5 w-5" />
-          </div>
-          <div>
-            {/* Mobile: show current tab name */}
-            <h1 className="font-extrabold text-gray-900 dark:text-foreground text-base leading-tight sm:hidden truncate max-w-[40vw]">{currentTab.label}</h1>
-            {/* Desktop: mostrar nombre de tienda activa o título genérico */}
-            {activeTenantName ? (
-              <div className="hidden sm:flex items-center gap-2">
-                <h1 className="font-extrabold text-gray-900 dark:text-foreground text-lg leading-tight">{activeTenantName}</h1>
-                <span className={cn(
-                  "text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0",
-                  activeTenantType === "proveedor" && "bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300",
-                  activeTenantType === "delivery" && "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
-                  activeTenantType === "tienda" && "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300"
-                )}>
-                  {activeTenantType === "proveedor" ? "Proveedor" : activeTenantType === "delivery" ? "Delivery" : "Tienda"}
-                </span>
-              </div>
-            ) : (
-              <h1 className="font-extrabold text-gray-900 dark:text-foreground text-base leading-tight hidden sm:block">Panel de administración</h1>
-            )}
-            <p className="text-xs text-gray-400 dark:text-muted hidden sm:block">
-              {activeTenantSlug ?? "Buleje"}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {/* Grupo 1 - Busqueda (siempre visible) */}
+          {/* Search bar — centered and prominent */}
           <button
             onClick={() => setSearchOpen(true)}
             title="Busqueda global (Ctrl+K)"
-            className="hidden sm:flex items-center gap-1.5 px-3 h-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors text-xs font-semibold border border-gray-200 dark:border-card-border"
+            className="flex items-center gap-2.5 px-4 h-10 rounded-2xl text-gray-400 dark:text-muted bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-all text-sm font-medium border border-gray-200 dark:border-card-border flex-1 max-w-xl group cursor-pointer"
           >
-            <Search className="h-4 w-4" />
-            <span>Buscar</span>
-            <kbd className="ml-1 text-xs bg-gray-100 dark:bg-surface px-1 rounded opacity-70">Ctrl+K</kbd>
+            <Search className="h-4.5 w-4.5 shrink-0 group-hover:text-primary transition-colors" />
+            <span className="flex-1 text-left text-gray-400 dark:text-muted truncate">Buscar módulos, productos, clientes...</span>
+            <kbd className="text-[10px] bg-white dark:bg-card px-2 py-0.5 rounded-lg font-mono text-gray-400 border border-gray-200 dark:border-card-border hidden sm:inline">⌘K</kbd>
           </button>
-          {/* Mobile search icon */}
-          <button
-            onClick={() => setSearchOpen(true)}
-            title="Buscar"
-            className="sm:hidden flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
-          >
-            <Search className="h-4 w-4" />
-          </button>
+        </div>
 
-          {/* Separador 1 */}
-          <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden sm:block" />
-
-          {/* Grupo 2 - Notificaciones y Acciones (visible desde tablet) */}
+        {/* Right: actions */}
+        <div className="flex items-center gap-1 shrink-0">
           <div className="hidden sm:block">
             <NotificationBell />
           </div>
-          <div className="hidden sm:block">
-            <LiveNotificationBell />
-          </div>
-          <AlertCenter
-            pendingOrders={quickStats?.pendingOrders ?? 0}
-            lowStock={quickStats?.lowStockProducts ?? 0}
-            todayRevenue={quickStats?.todayRevenue ?? 0}
-            overduePayables={quickStats?.overduePayables ?? 0}
-            oldPendingOrders={quickStats?.oldPendingOrders ?? 0}
-            onNavigate={(t) => navigateTab(t as Tab)}
-          />
-          {/* IDEA 7: Feria Mode toggle */}
-          <button
-            onClick={toggleFeriaMode}
-            title={feriaMode.active ? `Feria activa: ${feriaMode.name}` : "Activar Modo Feria"}
-            className={cn(
-              "hidden md:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold transition-colors border",
-              feriaMode.active
-                ? "bg-gradient-to-r from-[#f97316]/20 to-amber-100 dark:from-[#f97316]/20 dark:to-amber-900/30 text-[#f97316] border-[#f97316]/40 animate-pulse"
-                : "text-gray-500 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent border-gray-200 dark:border-gray-700"
-            )}
-          >
-            <Cake className="h-4 w-4" />
-            <span>{feriaMode.active ? "Feria" : "Feria"}</span>
-          </button>
           <button
             onClick={() => setShowCierreDiario(true)}
             title="Cerrar dia (Ctrl+Shift+C)"
@@ -3342,23 +3505,6 @@ function AdminPage() {
           >
             <Power className="h-4 w-4" />
             <span>Cerrar dia</span>
-          </button>
-
-          {/* Separador 2 */}
-          <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden lg:block" />
-
-          {/* Grupo 3 - Vista (solo desktop lg+) */}
-          <button
-            onClick={toggleTheme}
-            title={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
-            className="hidden md:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
-          >
-            <motion.div
-              animate={{ rotate: theme === "dark" ? 180 : 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </motion.div>
           </button>
           <button
             onClick={toggleFocusMode}
@@ -3374,81 +3520,12 @@ function AdminPage() {
           >
             <Eye className="h-4 w-4" />
           </button>
-          <button
-            onClick={toggleCompact}
-            title={compactMode ? "Modo normal" : "Modo compacto"}
-            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
-          >
-            <SlidersHorizontal className={cn("h-4 w-4", compactMode && "text-primary")} />
-          </button>
-          <button
-            onClick={() => setShowShortcuts(v => !v)}
-            title="Atajos de teclado (Alt+?)"
-            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors text-xs font-bold"
-          >
-            ⌨
-          </button>
-          <button
-            onClick={() => window.print()}
-            title="Exportar a PDF"
-            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
-          >
-            <Download className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => { setShowChangelog(true); setChangelogHasNew(false); localStorage.setItem("changelog-last-seen", "2.5"); }}
-            title="Novedades del sistema"
-            className="hidden lg:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-gray-400 dark:text-muted hover:bg-primary/10 hover:text-primary transition-colors border border-gray-200 dark:border-card-border relative"
-          >
-            <Sparkles className="h-4 w-4" />
-            <span>Novedades</span>
-            {changelogHasNew && (
-              <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-card" />
-            )}
-          </button>
-
-          {/* Separador 3 */}
-          <div className="w-px h-6 bg-gray-200 dark:bg-gray-700 mx-0.5 hidden lg:block" />
-
-          {/* Grupo 4 - Links y salir */}
-          <Link href="/" className="text-xs sm:text-sm font-semibold text-gray-400 dark:text-muted hover:text-primary transition-colors hidden lg:block">Ver tienda</Link>
-          {userRole === "admin" && (
-            <>
-              <button
-                onClick={() => {
-                  if (seedingData) return;
-                  setSeedingData(true);
-                  fetch("/api/admin/seed-data", { method: "POST" })
-                    .then(r => r.json())
-                    .then(d => { if (d.success) window.location.reload(); else alert(d.error || "Error al generar datos"); })
-                    .catch(() => alert("Error de conexion"))
-                    .finally(() => setSeedingData(false));
-                }}
-                disabled={seedingData}
-                title="Generar datos de simulacion"
-                className="hidden lg:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-gray-400 dark:text-muted hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 transition-colors border border-gray-200 dark:border-card-border"
-              >
-                {seedingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <FlaskConical className="h-4 w-4" />}
-                <span>Simulacion</span>
-              </button>
-              <button
-                onClick={() => { setClearConfirmStep(1); setClearConfirmText(""); setShowClearConfirm(true); }}
-                disabled={clearingData}
-                title="Borrar todos los datos"
-                className="hidden lg:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-gray-400 dark:text-muted hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-colors border border-gray-200 dark:border-card-border"
-              >
-                {clearingData ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                <span>Borrar datos</span>
-              </button>
-            </>
-          )}
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 text-sm font-semibold text-gray-500 dark:text-muted hover:text-red-500 transition-colors"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Salir</span>
-          </button>
+          <AdminUserDropdown
+            userName={userName}
+            userRole={userRole}
+            onNavigate={(t) => navigateTab(t as Tab)}
+            onLogout={handleLogout}
+          />
         </div>
       </header>
 
@@ -3476,69 +3553,6 @@ function AdminPage() {
         onClose={() => setSearchOpen(false)}
         onNavigate={(t) => navigateTab(t as Tab)}
       />
-
-      {tab !== "asistente-ia" && <AIFloatingButton moduleContext={tab} />}
-
-      {/* ── IDEA 7: Feria Mode Banner & Setup Modal ── */}
-      {feriaMode.active && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-[#f97316] to-amber-500 text-white px-4 py-2 flex items-center justify-between shadow-lg">
-          <div className="flex items-center gap-3">
-            <Cake className="h-5 w-5 animate-bounce" />
-            <span className="font-bold text-sm">{feriaMode.name}</span>
-            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{feriaMode.discount}% dcto</span>
-          </div>
-          <div className="flex items-center gap-4 text-xs">
-            <span>{feriaMode.salesCount} ventas</span>
-            <span>S/{feriaMode.salesTotal.toFixed(0)}</span>
-            <span>
-              {(() => {
-                const mins = Math.round((Date.now() - feriaMode.startTime) / 60000);
-                const h = Math.floor(mins / 60);
-                const m = mins % 60;
-                return h > 0 ? `${h}h ${m}m` : `${m}m`;
-              })()}
-            </span>
-            <button onClick={toggleFeriaMode} className="px-3 py-1 rounded-lg bg-white/20 hover:bg-white/30 font-bold text-xs transition-colors">
-              Terminar feria
-            </button>
-          </div>
-        </div>
-      )}
-      {showFeriaSetup && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowFeriaSetup(false)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-5 space-y-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-2">
-              <Cake className="h-6 w-6 text-[#f97316]" />
-              <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Activar Modo Feria</h3>
-            </div>
-            <input
-              type="text"
-              placeholder="Nombre del evento (ej: San Juan 2026)"
-              value={feriaName}
-              onChange={e => setFeriaName(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
-              autoFocus
-            />
-            <div>
-              <label className="text-xs font-bold text-gray-600 mb-1 block">Descuento global (%)</label>
-              <input
-                type="number"
-                min="0"
-                max="50"
-                value={feriaDiscount}
-                onChange={e => setFeriaDiscount(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm focus:outline-none focus:ring-2 focus:ring-[#f97316]/40"
-              />
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button onClick={() => setShowFeriaSetup(false)} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-bold text-gray-600">Cancelar</button>
-              <button onClick={startFeria} className="flex-1 py-2.5 rounded-xl bg-[#f97316] text-white text-sm font-bold hover:bg-[#e8934e] transition-colors">
-                Iniciar Feria
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Cierre Diario Modal ── */}
       <CierreDiarioModal open={showCierreDiario} onClose={() => setShowCierreDiario(false)} />
@@ -3701,78 +3715,23 @@ function AdminPage() {
         </div>
       )}
 
-      {/* Breadcrumb — enhanced with clickable category navigation */}
-      <nav aria-label="Breadcrumb" className={cn("hidden sm:flex items-center gap-1.5 px-6 py-2 text-xs text-gray-400 dark:text-muted bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border", presentationMode && "!hidden")}>
-        <button onClick={() => navigateTab("asistente-ia")} className="hover:text-primary transition-colors">
-          Panel
-        </button>
-        {(() => {
-          const cat = TAB_CATEGORIES.find(c => (c.tabs as readonly string[]).includes(tab));
-          if (cat && tab !== "asistente-ia") return (
-            <>
-              <ChevronRight className="h-3 w-3" />
-              <button onClick={() => setSelectedCategory(cat.id)} className="hover:text-primary transition-colors">
-                {cat.label}
-              </button>
-            </>
-          );
-          return null;
-        })()}
-        <ChevronRight className="h-3 w-3" />
-        <span className="text-gray-700 dark:text-foreground font-semibold">{currentTab.label}</span>
-      </nav>
-
-      {/* Mejora 4: Recent tabs as quick-access chips */}
-      {(() => {
-        const chips = recentTabs
-          .filter(id => id !== tab)
-          .map(id => ALL_TABS.find(t => t.id === id))
-          .filter(Boolean)
-          .slice(0, 4);
-        if (chips.length < 2 || presentationMode) return null;
-        return (
-          <div className="hidden sm:flex gap-2 px-6 py-1.5 border-b border-gray-100 dark:border-gray-800 overflow-x-auto bg-gray-50/50 dark:bg-surface/50">
-            <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 self-center mr-1">Recientes:</span>
-            {chips.map(t => t && (
-              <button
-                key={t.id}
-                onClick={() => navigateTab(t.id)}
-                className="px-3 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-[#0f766e] hover:text-white transition-all whitespace-nowrap font-medium"
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        );
-      })()}
-
-      {/* Quick stats bars (mobile + desktop) — extracted to AdminStats */}
-      {quickStats && <AdminStatsMobile quickStats={quickStats} navigateTab={navigateTab} />}
-      {quickStats && <AdminStatsDesktop quickStats={quickStats} navigateTab={navigateTab} />}
-
       {/* Body */}
       <main
         className={cn("flex-1 mx-auto w-full pb-24 sm:pb-8", presentationMode ? "max-w-full px-4 py-4" : "max-w-7xl", compactMode && !presentationMode ? "px-2 sm:px-3 py-2 sm:py-4" : !presentationMode ? "px-3 sm:px-6 py-4 sm:py-8" : "")}
         {...swipeHandlers}
       >
-        {/* Breadcrumb navigation */}
-        {tab !== "asistente-ia" && (
-          <nav className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-muted mb-3 overflow-x-auto" aria-label="Breadcrumb">
-            <button onClick={() => navigateTab("asistente-ia")} className="hover:text-primary transition-colors shrink-0">Inicio</button>
-            {(() => {
-              const cat = TAB_CATEGORIES.find(c => (c.tabs as readonly string[]).includes(tab));
-              if (cat) return (
-                <>
-                  <ChevronRight className="h-3 w-3 shrink-0" />
-                  <button onClick={() => setSelectedCategory(cat.id)} className="hover:text-primary transition-colors shrink-0">{cat.label}</button>
-                </>
-              );
-              return null;
-            })()}
-            <ChevronRight className="h-3 w-3 shrink-0" />
-            <span className="font-semibold text-gray-700 dark:text-foreground shrink-0">{ALL_TABS.find(t => t.id === tab)?.label ?? tab}</span>
-          </nav>
-        )}
+        {/* ── Breadcrumb de navegación ── */}
+        {(() => {
+          const cat = TAB_CATEGORIES.find(c => c.tabs.includes(tab));
+          const modInfo = MODULE_INFO[tab];
+          const items = [];
+          if (cat && cat.tabs.length > 1) {
+            items.push({ label: cat.label, onClick: () => navigateTab(cat.tabs[0]) });
+          }
+          items.push({ label: modInfo?.emoji ? `${modInfo.emoji} ${modInfo?.desc?.split(".")[0] || tab}` : (cat?.label || tab) });
+          return <AdminBreadcrumb items={items} />;
+        })()}
+
         {/* ── Mejora 12: Transición suave al cambiar módulo ── */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -3783,7 +3742,9 @@ function AdminPage() {
             transition={{ duration: 0.15 }}
           >
             {/* ── 1. Asistente IA ── */}
-            {tab === "asistente-ia" && <AsistenteIAModule />}
+            {tab === "asistente-ia" && (
+              <AsistenteIAModule />
+            )}
             {/* ── 2. Ventas & Caja ── */}
             {tab === "ventas-caja" && <POSCajaModule />}
             {/* ── 3. Inventario ── */}
@@ -3843,6 +3804,22 @@ function AdminPage() {
                   </div>
                   <NavDefaultTabsConfig />
                 </div>
+                {/* ── Reordenar barra lateral ── */}
+                <div className="pt-8 border-t border-gray-200 dark:border-card-border">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center shrink-0">
+                      <ArrowUpDown className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-foreground">Reordenar barra lateral</h3>
+                      <p className="text-xs text-gray-500 dark:text-muted">Cambia el orden de las secciones en tu menú lateral</p>
+                    </div>
+                  </div>
+                  <SidebarReorderPanel
+                    categories={visibleCategories.map(c => ({ id: c.id, label: c.label }))}
+                    onSave={saveCategoryOrder}
+                  />
+                </div>
                 {/* ── Repetir tutorial ── */}
                 <div className="pt-8 border-t border-gray-200 dark:border-card-border">
                   <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4">
@@ -3860,7 +3837,7 @@ function AdminPage() {
                         onboarding.resetTour();
                         setTab("asistente-ia");
                       }}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors shrink-0"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-primary-dark shadow-sm transition-colors shrink-0"
                     >
                       <RefreshCw className="h-4 w-4" />
                       Repetir tutorial de bienvenida
@@ -3880,137 +3857,14 @@ function AdminPage() {
             {/* ── Marketplace & Delivery ── */}
             {tab === "marketplace" && <MarketplaceModule />}
             {tab === "delivery-partners" && <DeliveryPartnersModule />}
+            {/* ── Rendimiento técnico ── */}
+            {tab === "rendimiento" && <RendimientoModule />}
 
             {tab === "store-customizer" && <StoreCustomizer />}
+            {tab === "mi-perfil" && <MiPerfilTab />}
           </motion.div>
         </AnimatePresence>
 
-        {/* ── Mejora 10: Botón de ayuda rápida por módulo ── */}
-        {(() => {
-          const AYUDA: Partial<Record<Tab, string[]>> = {
-            "ventas-caja": [
-              "Busca productos por nombre o escanea el código de barras",
-              "Usa F1 para buscar, F2 para cobrar rápido",
-              "Puedes combinar efectivo + Yape en el mismo pago",
-              "Pulsa 'Historial' para ver las ventas del día",
-            ],
-            "inventario": [
-              "El semáforo te muestra el estado del stock de cada producto",
-              "Usa 'Conteo Físico' para hacer inventario guiado con escáner",
-              "Exporta tu inventario para el contador con 'Descargar para mi Contador'",
-            ],
-            "fiados": [
-              "La 'Libreta' simula tu cuaderno de fiados de papel",
-              "El score de estrellas te dice qué tan puntual es el cliente",
-              "Usa 'Lista de cobro' para imprimir y salir a cobrar",
-            ],
-            "plata": [
-              "El semáforo financiero te dice si tu negocio va bien de un vistazo",
-              "Usa 'Presupuesto' para controlar gastos por categoría",
-              "El reporte bancario genera un PDF para pedir crédito",
-            ],
-            "productos": [
-              "Crea categorías y organiza tu catálogo para que los clientes encuentren todo rápido",
-              "Usa el historial de precios para ver cómo han cambiado los costos",
-              "Los cupones y promociones se activan desde esta sección",
-            ],
-            "compras": [
-              "Registra tus proveedores y evalúa su desempeño con el Scorecard",
-              "Usa el plan de compras para saber qué necesitas pedir esta semana",
-              "La recepción verifica cantidades y detecta faltantes automáticamente",
-            ],
-            "clientes": [
-              "El CRM 360 muestra todo el historial de cada cliente en una sola vista",
-              "El programa de puntos fideliza a tus mejores compradores",
-              "Gestiona delivery, rutas y horarios de entrega desde aquí",
-            ],
-            "pedidos": [
-              "Centraliza pedidos de WhatsApp, tienda online y mostrador",
-              "Cambia el estado del pedido y el cliente recibe notificación automática",
-              "Filtra por estado, fecha o monto para encontrar pedidos rápido",
-            ],
-            "config": [
-              "Configura los datos de tu negocio: nombre, dirección y horarios",
-              "Gestiona usuarios y permisos del equipo",
-              "Personaliza la apariencia de tu tienda online",
-            ],
-            "asistente-ia": [
-              "El asistente IA te da un resumen diario del negocio cada mañana",
-              "Pregunta lo que necesites: ventas, stock, clientes, tendencias",
-              "Las alertas inteligentes te avisan de oportunidades y riesgos",
-            ],
-            "sugerencias-ia": [
-              "Revisa combos sugeridos según lo que tus clientes compran juntos",
-              "Busca un cliente y ve qué productos recomendarle",
-              "La IA te dice qué productos comprar para tu stock",
-            ],
-            "metas-logros": [
-              "Configura metas diarias, semanales y mensuales",
-              "Desbloquea logros vendiendo más y siendo constante",
-              "Mira tu racha de días consecutivos alcanzando la meta",
-            ],
-            "store-customizer": [
-              "Cambia colores, logo y eslogan desde la pestaña Identidad",
-              "Activa o desactiva secciones y reordénalas arrastrando",
-              "El preview de la derecha se actualiza en tiempo real mientras editas",
-              "Guarda al final para que los cambios aparezcan en tu tienda",
-            ],
-          };
-          const tips = AYUDA[tab];
-          if (!tips) return null;
-          const tabLabel = ALL_TABS.find(t => t.id === tab)?.label ?? tab;
-          return (
-            <>
-              <button
-                onClick={() => setShowModuleHelp(true)}
-                className="fixed bottom-20 right-6 z-40 h-10 w-10 rounded-full bg-primary text-white shadow-lg flex items-center justify-center hover:bg-primary/90 transition-all text-lg font-bold"
-                title={`Ayuda — ${tabLabel}`}
-              >
-                ?
-              </button>
-              <AnimatePresence>
-                {showModuleHelp && (
-                  <motion.div
-                    className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={() => setShowModuleHelp(false)}
-                    onKeyDown={(e) => { if (e.key === "Escape") setShowModuleHelp(false); }}
-                  >
-                    <motion.div
-                      className="bg-white dark:bg-card rounded-2xl shadow-xl max-w-md w-full p-6"
-                      initial={{ scale: 0.95, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.95, opacity: 0 }}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <h3 className="text-lg font-extrabold text-foreground mb-4">
-                        Ayuda — {tabLabel}
-                      </h3>
-                      <ul className="space-y-3">
-                        {tips.map((tip, i) => (
-                          <li key={i} className="flex items-start gap-2.5 text-sm text-muted">
-                            <span className="mt-0.5 h-5 w-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">
-                              {i + 1}
-                            </span>
-                            {tip}
-                          </li>
-                        ))}
-                      </ul>
-                      <button
-                        onClick={() => setShowModuleHelp(false)}
-                        className="mt-6 w-full py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors"
-                      >
-                        Entendido
-                      </button>
-                    </motion.div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </>
-          );
-        })()}
       </main>
 
       {/* Focus mode floating expand toggle — only on desktop */}

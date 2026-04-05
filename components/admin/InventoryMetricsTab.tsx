@@ -85,7 +85,7 @@ function formatDate(dateStr: string): string {
   })
 }
 
-const CHART_COLORS = ['#0f766e', '#f97316', '#e76f51', '#264653', '#2a9d8f', '#e9c46a']
+const CHART_COLORS = ['#00B4A6', '#f97316', '#e76f51', '#264653', '#2a9d8f', '#e9c46a']
 
 const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   ENTRY: 'Entrada',
@@ -369,7 +369,7 @@ export default function InventoryMetricsTab() {
                     fontSize: '13px',
                   }}
                 />
-                <Bar dataKey="cantidad" fill="#0f766e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="cantidad" fill="#00B4A6" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

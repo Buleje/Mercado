@@ -23,11 +23,11 @@ interface MiniFeature {
   cat: Cat; border: string;
 }
 
-const C_BORDER: Record<Cat, string> = { Ventas: "#0f766e", IA: "#2563eb", Stock: "#d97706" };
+const C_BORDER: Record<Cat, string> = { Ventas: "#00B4A6", IA: "#2563eb", Stock: "#d97706" };
 const C_BG:     Record<Cat, string> = { Ventas: "rgba(15,118,110,0.12)", IA: "rgba(37,99,235,0.12)", Stock: "rgba(217,119,6,0.12)" };
-const C_TEXT:   Record<Cat, string> = { Ventas: "#14b8a6", IA: "#60a5fa", Stock: "#fbbf24" };
+const C_TEXT:   Record<Cat, string> = { Ventas: "#2dd4bf", IA: "#60a5fa", Stock: "#fbbf24" };
 const C_ICON:   Record<Cat, string> = {
-  Ventas: "linear-gradient(135deg,#0f766e,#14b8a6)",
+  Ventas: "linear-gradient(135deg,#00B4A6,#2dd4bf)",
   IA:     "linear-gradient(135deg,#1d4ed8,#3b82f6)",
   Stock:  "linear-gradient(135deg,#b45309,#f59e0b)",
 };
@@ -136,7 +136,7 @@ function AccordionItem({ f, isOpen, onToggle, index }: { f: StarFeature; isOpen:
       <button
         onClick={onToggle}
         aria-expanded={isOpen}
-        className="w-full flex items-center justify-between gap-3 px-4 py-4 sm:px-5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2d6a4f] min-h-[56px]"
+        className="w-full flex items-center justify-between gap-3 px-4 py-4 sm:px-5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] min-h-[56px]"
       >
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: C_ICON[f.category] }} aria-hidden="true">
@@ -241,7 +241,7 @@ export default function SaasFeatures() {
             Herramientas que transforman tu bodega
           </h2>
           <p className="text-gray-500 dark:text-[rgba(240,244,241,0.6)] text-base sm:text-lg max-w-xl mx-auto">
-            <span className="font-black tabular-nums" style={{ color: "#0f766e" }}>
+            <span className="font-black tabular-nums" style={{ color: "#00B4A6" }}>
               <SectionCounter target={8} />
             </span>{" "}
             funciones estrella —{" "}
@@ -258,9 +258,9 @@ export default function SaasFeatures() {
                 key={key}
                 onClick={() => changePill(key)}
                 aria-pressed={active}
-                className="shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] whitespace-nowrap min-h-[44px]"
+                className="shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] whitespace-nowrap min-h-[44px]"
                 style={active
-                  ? { background: "linear-gradient(135deg,#0f766e,#14b8a6)", color: "#fff", boxShadow: "0 4px 14px -4px rgba(15,118,110,0.45)" }
+                  ? { background: "linear-gradient(135deg,#00B4A6,#2dd4bf)", color: "#fff", boxShadow: "0 4px 14px -4px rgba(15,118,110,0.45)" }
                   : { background: "transparent", color: "inherit", border: "1px solid rgba(15,118,110,0.22)" }
                 }
               >
@@ -290,8 +290,8 @@ export default function SaasFeatures() {
             <button
               onClick={() => setShowAll((v) => !v)}
               aria-expanded={showAll}
-              className="inline-flex items-center gap-2 text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] min-h-[44px] px-4"
-              style={{ color: "#0f766e" }}
+              className="inline-flex items-center gap-2 text-sm font-semibold transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] min-h-[44px] px-4"
+              style={{ color: "#00B4A6" }}
             >
               {showAll ? "Ocultar funciones ↑" : "Ver las 20 funciones →"}
             </button>

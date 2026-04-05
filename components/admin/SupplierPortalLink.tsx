@@ -129,8 +129,8 @@ export default function SupplierPortalLink() {
       {/* Header */}
       <div className="p-5 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-[#0f766e]/10">
-            <Link className="w-5 h-5 text-[#0f766e]" />
+          <div className="p-2 rounded-xl bg-[#00B4A6]/10">
+            <Link className="w-5 h-5 text-[#00B4A6]" />
           </div>
           <div>
             <h2 className="font-bold text-gray-900 dark:text-white">
@@ -154,7 +154,7 @@ export default function SupplierPortalLink() {
               value={supplierName}
               onChange={(e) => setSupplierName(e.target.value)}
               placeholder="Ej: Distribuidora Hernandez SAC"
-              className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#0f766e]"
+              className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-[#00B4A6]"
               onKeyDown={(e) => {
                 if (e.key === "Enter") generateLink();
               }}
@@ -162,7 +162,7 @@ export default function SupplierPortalLink() {
             <button
               onClick={generateLink}
               disabled={!supplierName.trim() || generating}
-              className="px-4 py-2.5 rounded-xl bg-[#0f766e] text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+              className="px-4 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-semibold disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
             >
               {generating ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -177,7 +177,7 @@ export default function SupplierPortalLink() {
         {/* Preview toggle */}
         <button
           onClick={() => setShowPreview((v) => !v)}
-          className="flex items-center gap-2 text-sm font-medium text-[#0f766e] dark:text-[#14b8a6] hover:underline"
+          className="flex items-center gap-2 text-sm font-medium text-[#00B4A6] dark:text-[#2dd4bf] hover:underline"
         >
           <Eye className="w-4 h-4" />
           {showPreview ? "Ocultar preview del portal" : "Ver preview del portal"}
@@ -185,8 +185,8 @@ export default function SupplierPortalLink() {
 
         {/* Preview */}
         {showPreview && (
-          <div className="rounded-2xl border-2 border-dashed border-[#0f766e]/30 p-4 bg-[#0f766e]/5 dark:bg-[#0f766e]/10">
-            <p className="text-xs font-bold text-[#0f766e] dark:text-[#14b8a6] uppercase tracking-wider mb-3">
+          <div className="rounded-2xl border-2 border-dashed border-[#00B4A6]/30 p-4 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10">
+            <p className="text-xs font-bold text-[#00B4A6] dark:text-[#2dd4bf] uppercase tracking-wider mb-3">
               Vista del proveedor
             </p>
             <p className="text-sm font-bold text-gray-900 dark:text-white mb-2">
@@ -208,7 +208,7 @@ export default function SupplierPortalLink() {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-gray-500">Pedido sugerido</p>
-                    <p className="font-bold text-[#0f766e] dark:text-[#14b8a6] text-sm">
+                    <p className="font-bold text-[#00B4A6] dark:text-[#2dd4bf] text-sm">
                       {item.suggestedOrder} {item.unit}
                     </p>
                   </div>
@@ -264,8 +264,8 @@ export default function SupplierPortalLink() {
                         className={cn(
                           "flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold border transition-colors",
                           copiedToken === config.token
-                            ? "bg-[#0f766e] text-white border-[#0f766e]"
-                            : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#0f766e] hover:text-[#0f766e]"
+                            ? "bg-[#00B4A6] text-white border-[#00B4A6]"
+                            : "border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#00B4A6] hover:text-[#00B4A6]"
                         )}
                       >
                         {copiedToken === config.token ? (

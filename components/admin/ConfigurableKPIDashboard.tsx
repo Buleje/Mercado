@@ -175,7 +175,7 @@ function GaugeArc({ pct }: { pct: number }) {
         strokeLinecap="round"
         strokeDasharray={`${dash} ${half}`}
         className={cn(
-          clamped >= 100 ? "stroke-[#0f766e]" : clamped >= 70 ? "stroke-[#14b8a6]" : clamped >= 40 ? "stroke-amber-400" : "stroke-red-400"
+          clamped >= 100 ? "stroke-[#00B4A6]" : clamped >= 70 ? "stroke-[#2dd4bf]" : clamped >= 40 ? "stroke-amber-400" : "stroke-red-400"
         )}
       />
     </svg>
@@ -263,7 +263,7 @@ function KpiCard({
           <div
             className={cn(
               "h-full rounded-full transition-all duration-700",
-              pct >= 100 ? "bg-[#0f766e]" : pct >= 70 ? "bg-[#14b8a6]" : pct >= 40 ? "bg-amber-400" : "bg-red-400"
+              pct >= 100 ? "bg-[#00B4A6]" : pct >= 70 ? "bg-[#2dd4bf]" : pct >= 40 ? "bg-amber-400" : "bg-red-400"
             )}
             style={{ width: `${Math.min(pct, 100)}%` }}
           />
@@ -281,15 +281,15 @@ function KpiCard({
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
-              className="flex-1 rounded border border-[#0f766e] px-2 py-0.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none"
+              className="flex-1 rounded border border-[#00B4A6] px-2 py-0.5 text-xs text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800 focus:outline-none"
             />
-            <button onClick={save} className="text-[#0f766e]"><Check className="h-3.5 w-3.5" /></button>
+            <button onClick={save} className="text-[#00B4A6]"><Check className="h-3.5 w-3.5" /></button>
             <button onClick={() => setEditing(false)} className="text-gray-400"><X className="h-3.5 w-3.5" /></button>
           </div>
         ) : (
           <button
             onClick={() => { setDraft(String(goal)); setEditing(true); }}
-            className="text-xs font-medium text-[#0f766e] dark:text-green-400 hover:underline"
+            className="text-xs font-medium text-[#00B4A6] dark:text-green-400 hover:underline"
           >
             {fmtValue(goal, def.unit)}
           </button>

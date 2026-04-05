@@ -167,7 +167,7 @@ export default function LoyaltyRedeemTab() {
           className={cn(
             "fixed right-4 top-4 z-50 flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium shadow-lg transition",
             toast.type === "ok"
-              ? "bg-[#2d6a4f] text-white"
+              ? "bg-[#00B4A6] text-white"
               : "bg-red-600 text-white",
           )}
         >
@@ -183,7 +183,7 @@ export default function LoyaltyRedeemTab() {
       {/* Buscador de cliente */}
       <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
         <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-800 dark:text-gray-100">
-          <Search className="h-5 w-5 text-[#2d6a4f]" />
+          <Search className="h-5 w-5 text-[#00B4A6]" />
           Buscar cliente
         </h3>
         <div className="flex gap-2">
@@ -194,12 +194,12 @@ export default function LoyaltyRedeemTab() {
             onChange={(e) => setPhone(e.target.value)}
             onKeyDown={handleKeyDown}
             maxLength={12}
-            className="min-h-[44px] flex-1 rounded-xl border border-gray-200 px-4 text-sm text-gray-800 outline-none transition focus:border-[#2d6a4f] focus:ring-1 focus:ring-[#2d6a4f] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+            className="min-h-[44px] flex-1 rounded-xl border border-gray-200 px-4 text-sm text-gray-800 outline-none transition focus:border-[#00B4A6] focus:ring-1 focus:ring-[#00B4A6] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
           <button
             onClick={searchCustomer}
             disabled={searching || phone.replace(/\D/g, "").length < 9}
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[#2d6a4f] px-4 text-sm font-medium text-white transition hover:bg-[#245a42] disabled:opacity-50"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl bg-[#00B4A6] px-4 text-sm font-medium text-white transition hover:bg-[#009690] disabled:opacity-50"
           >
             {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Buscar"}
           </button>
@@ -211,7 +211,7 @@ export default function LoyaltyRedeemTab() {
         )}
         {customer && (
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-gray-50 p-4 dark:bg-gray-800">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2d6a4f] text-base font-bold text-white">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00B4A6] text-base font-bold text-white">
               {customer.name
                 .split(" ")
                 .slice(0, 2)
@@ -227,7 +227,7 @@ export default function LoyaltyRedeemTab() {
             <div className="ml-auto flex flex-col items-end gap-1">
               <div className="flex items-center gap-1.5">
                 <Star className="h-4 w-4 text-yellow-500" />
-                <span className="text-lg font-bold text-[#2d6a4f]">
+                <span className="text-lg font-bold text-[#00B4A6]">
                   {customer.loyaltyPoints.toLocaleString()} pts
                 </span>
               </div>
@@ -253,7 +253,7 @@ export default function LoyaltyRedeemTab() {
 
         {loadingRewards ? (
           <div className="flex justify-center py-10">
-            <Loader2 className="h-7 w-7 animate-spin text-[#2d6a4f]" />
+            <Loader2 className="h-7 w-7 animate-spin text-[#00B4A6]" />
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -268,7 +268,7 @@ export default function LoyaltyRedeemTab() {
                   className={cn(
                     "flex flex-col gap-3 rounded-xl border p-5 transition",
                     hasEnough
-                      ? "border-[#2d6a4f]/30 bg-green-50 dark:border-[#2d6a4f]/40 dark:bg-green-900/10"
+                      ? "border-[#00B4A6]/30 bg-green-50 dark:border-[#00B4A6]/40 dark:bg-green-900/10"
                       : "border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900",
                   )}
                 >
@@ -282,7 +282,7 @@ export default function LoyaltyRedeemTab() {
                     </p>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-[#2d6a4f]/10 px-3 py-1 text-sm font-bold text-[#2d6a4f] dark:bg-[#2d6a4f]/20">
+                    <span className="rounded-full bg-[#00B4A6]/10 px-3 py-1 text-sm font-bold text-[#00B4A6] dark:bg-[#00B4A6]/20">
                       {reward.pointsCost.toLocaleString()} pts
                     </span>
                     <button
@@ -291,7 +291,7 @@ export default function LoyaltyRedeemTab() {
                       className={cn(
                         "flex min-h-[44px] items-center gap-1.5 rounded-xl px-4 text-sm font-medium transition",
                         hasEnough && customer
-                          ? "bg-[#2d6a4f] text-white hover:bg-[#245a42]"
+                          ? "bg-[#00B4A6] text-white hover:bg-[#009690]"
                           : "cursor-not-allowed bg-gray-100 text-gray-400 dark:bg-gray-800",
                       )}
                     >
@@ -319,7 +319,7 @@ export default function LoyaltyRedeemTab() {
       {history.length > 0 && (
         <div>
           <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800 dark:text-gray-100">
-            <Award className="h-5 w-5 text-[#2d6a4f]" />
+            <Award className="h-5 w-5 text-[#00B4A6]" />
             Canjes recientes (esta sesión)
           </h3>
           <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 dark:divide-gray-700 dark:border-gray-700">
@@ -336,7 +336,7 @@ export default function LoyaltyRedeemTab() {
                   <p className="text-xs text-gray-500">{h.rewardName}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold text-[#2d6a4f]">
+                  <p className="text-sm font-bold text-[#00B4A6]">
                     -{h.pointsCost.toLocaleString()} pts
                   </p>
                   <p className="text-xs text-gray-400">

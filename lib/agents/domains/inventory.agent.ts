@@ -40,6 +40,33 @@ async function checkStock(
 
   const outOfStock = withStock.filter((p) => p.stock! <= 0);
 
+  // ── Subtask delegation: alert notifications agent if stock is critical ───
+  const subtasks: AgentResult["subtasks"] = [];
+  if (outOfStock.length > 0) {
+    subtasks.push({
+      domain: "notifications",
+      action: "send-stock-alert",
+      payload: {
+        type: "out-of-stock",
+        count: outOfStock.length,
+        products: outOfStock.slice(0, 10).map((p) => p.name),
+      },
+      priority: "high",
+    });
+  }
+  if (lowStock.length >= 5) {
+    subtasks.push({
+      domain: "notifications",
+      action: "send-stock-alert",
+      payload: {
+        type: "low-stock-batch",
+        count: lowStock.length,
+        products: lowStock.slice(0, 10).map((p) => ({ name: p.name, stock: p.stock })),
+      },
+      priority: "medium",
+    });
+  }
+
   return {
     success: true,
     data: {
@@ -60,6 +87,7 @@ async function checkStock(
       })),
     },
     metadata: { cachedProducts: true },
+    ...(subtasks.length > 0 && { subtasks }),
   };
 }
 
@@ -101,6 +129,37 @@ async function fefoAudit(
   );
   const expiringLater = batches.filter((b) => b.daysUntilExpiry > 7);
 
+  // ── Subtask delegation: notify about expired/expiring batches ─────────
+  const subtasks: AgentResult["subtasks"] = [];
+  if (expired.length > 0) {
+    subtasks.push({
+      domain: "notifications",
+      action: "send-expiry-warning",
+      payload: {
+        type: "expired",
+        count: expired.length,
+        products: expired.slice(0, 10).map((b) => b.productName),
+      },
+      priority: "high",
+    });
+  }
+  if (expiringSoon.length > 0) {
+    subtasks.push({
+      domain: "notifications",
+      action: "send-expiry-warning",
+      payload: {
+        type: "expiring-soon",
+        count: expiringSoon.length,
+        daysAhead: 7,
+        products: expiringSoon.slice(0, 10).map((b) => ({
+          name: b.productName,
+          daysLeft: b.daysUntilExpiry,
+        })),
+      },
+      priority: "medium",
+    });
+  }
+
   return {
     success: true,
     data: {
@@ -110,6 +169,7 @@ async function fefoAudit(
       expiringSoon: { count: expiringSoon.length, items: expiringSoon },
       expiringLater: { count: expiringLater.length, items: expiringLater },
     },
+    ...(subtasks.length > 0 && { subtasks }),
   };
 }
 

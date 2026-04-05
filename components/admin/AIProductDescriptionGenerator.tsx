@@ -46,7 +46,7 @@ function buildFallbackDescription(name: string, category?: string): string {
   return (
     `${name} ${freshness}, disponible en Buleje. ` +
     `${benefit} ` +
-    `Delivery disponible en Pucallpa. Consulta precio y stock con tu bodeguero de confianza.`
+    `Delivery disponible. Consulta precio y stock con tu bodeguero de confianza.`
   );
 }
 
@@ -72,7 +72,7 @@ export default function AIProductDescriptionGenerator({
     const prompt =
       `Genera una descripción de producto breve (2-3 oraciones) para una bodega peruana. ` +
       `Producto: "${productName}"${category ? `, categoría: "${category}"` : ""}. ` +
-      `Tono: amigable, informativo. Sin emojis. Sin precios. Incluye que hay delivery en Pucallpa.`;
+      `Tono: amigable, informativo. Sin emojis. Sin precios. Incluye que hay delivery a domicilio.`;
 
     try {
       const res = await fetch("/api/ai-assistant", {
@@ -108,7 +108,7 @@ export default function AIProductDescriptionGenerator({
   return (
     <div className="rounded-lg border border-border bg-card dark:bg-card p-4 space-y-3">
       <div className="flex items-center gap-2">
-        <Sparkles className="h-4 w-4 text-[#0f766e]" />
+        <Sparkles className="h-4 w-4 text-[#00B4A6]" />
         <span className="text-sm font-medium text-foreground dark:text-foreground">
           Generador de descripcion con IA
         </span>
@@ -135,7 +135,7 @@ export default function AIProductDescriptionGenerator({
           disabled={loading || !productName.trim()}
           className={cn(
             "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-            "bg-[#0f766e] text-white hover:bg-[#0d5f58] disabled:opacity-50 disabled:cursor-not-allowed"
+            "bg-[#00B4A6] text-white hover:bg-[#009690] disabled:opacity-50 disabled:cursor-not-allowed"
           )}
         >
           {loading ? (
@@ -160,7 +160,7 @@ export default function AIProductDescriptionGenerator({
               "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               used
                 ? "bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400 cursor-default"
-                : "border border-[#0f766e] text-[#0f766e] hover:bg-[#0f766e]/10 dark:hover:bg-[#0f766e]/20"
+                : "border border-[#00B4A6] text-[#00B4A6] hover:bg-[#00B4A6]/10 dark:hover:bg-[#00B4A6]/20"
             )}
           >
             <Check className="h-3.5 w-3.5" />

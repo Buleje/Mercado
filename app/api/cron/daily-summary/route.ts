@@ -8,6 +8,9 @@ import { OrdersDB } from "@/lib/db/orders.db";
 import { ProductsDB } from "@/lib/db/products.db";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { sendWhatsAppText } from "@/lib/whatsapp";
+import { sendPushToPhone } from "@/lib/push-sender";
+import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/cron/daily-summary
@@ -29,147 +32,178 @@ export async function GET(req: NextRequest) {
 
   try {
     const result = await withCronRetry("daily-summary", async () => {
-      const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const startOfDayISO = startOfDay.toISOString();
-
-      // Recopilar datos en paralelo
-      const [allSales, todayOrders, allProducts, openCash] = await Promise.all([
-        SalesDB.getAll("main"),
-        OrdersDB.getAllFiltered({ since: startOfDayISO }),
-        ProductsDB.getAll("main"),
-        CashRegistersDB.getOpen(),
-      ]);
-
-      // Ventas POS del día
-      const todaySales = allSales.filter(
-        (s) => new Date(s.createdAt) >= startOfDay
-      );
-
-      // Pedidos activos del día (no cancelados)
-      const activeOrders = todayOrders.filter((o) => {
-        const status = (o.status ?? "").toLowerCase();
-        return status !== "cancelado" && status !== "cancelled";
+      // Multi-tenant: process all active tenants
+      const tenants = await prisma.tenant.findMany({
+        where: { active: true },
+        select: { id: true, slug: true, name: true },
       });
 
-      // Totales
-      const salesTotal = todaySales.reduce((sum, s) => sum + (s.total ?? 0), 0);
-      const ordersTotal = activeOrders.reduce((sum, o) => sum + (o.total ?? 0), 0);
-      const totalVentas = salesTotal + ordersTotal;
-      const totalPedidos = todaySales.length + activeOrders.length;
+      const summaries: Array<{ tenant: string; totalVentas: number; totalPedidos: number }> = [];
 
-      // Top 5 productos vendidos (por cantidad)
-      const productMap: Record<string, { nombre: string; cantidad: number; ingresos: number }> = {};
-      for (const sale of todaySales) {
-        for (const item of sale.items ?? []) {
-          const key = String(item.productId);
-          if (!productMap[key]) productMap[key] = { nombre: item.name, cantidad: 0, ingresos: 0 };
-          productMap[key].cantidad += item.quantity ?? 0;
-          productMap[key].ingresos += (item.price ?? 0) * (item.quantity ?? 0);
+      for (const tenant of tenants) {
+        const tenantIds = tenant.id === tenant.slug ? [tenant.id] : [tenant.id, tenant.slug];
+        const tenantId = tenant.id;
+
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfDayISO = startOfDay.toISOString();
+
+        // Recopilar datos en paralelo
+        const [allSales, todayOrders, allProducts, openCash] = await Promise.all([
+          SalesDB.getAll(tenantId),
+          OrdersDB.getAllFiltered({ since: startOfDayISO }),
+          ProductsDB.getAll(tenantId),
+          CashRegistersDB.getOpen(),
+        ]);
+
+        // Ventas POS del día
+        const todaySales = allSales.filter(
+          (s) => new Date(s.createdAt) >= startOfDay
+        );
+
+        // Pedidos activos del día (no cancelados)
+        const activeOrders = todayOrders.filter((o) => {
+          const status = (o.status ?? "").toLowerCase();
+          return status !== "cancelado" && status !== "cancelled";
+        });
+
+        // Totales
+        const salesTotal = todaySales.reduce((sum, s) => sum + (s.total ?? 0), 0);
+        const ordersTotal = activeOrders.reduce((sum, o) => sum + (o.total ?? 0), 0);
+        const totalVentas = salesTotal + ordersTotal;
+        const totalPedidos = todaySales.length + activeOrders.length;
+
+        // Top 5 productos vendidos
+        const productMap: Record<string, { nombre: string; cantidad: number; ingresos: number }> = {};
+        for (const sale of todaySales) {
+          for (const item of sale.items ?? []) {
+            const key = String(item.productId);
+            if (!productMap[key]) productMap[key] = { nombre: item.name, cantidad: 0, ingresos: 0 };
+            productMap[key].cantidad += item.quantity ?? 0;
+            productMap[key].ingresos += (item.price ?? 0) * (item.quantity ?? 0);
+          }
         }
-      }
-      for (const order of activeOrders) {
-        for (const item of order.items ?? []) {
-          const key = String(item.id);
-          if (!productMap[key]) productMap[key] = { nombre: item.name, cantidad: 0, ingresos: 0 };
-          productMap[key].cantidad += item.quantity ?? 0;
-          productMap[key].ingresos += (item.price ?? 0) * (item.quantity ?? 0);
+        for (const order of activeOrders) {
+          for (const item of order.items ?? []) {
+            const key = String(item.id);
+            if (!productMap[key]) productMap[key] = { nombre: item.name, cantidad: 0, ingresos: 0 };
+            productMap[key].cantidad += item.quantity ?? 0;
+            productMap[key].ingresos += (item.price ?? 0) * (item.quantity ?? 0);
+          }
         }
+        const top5Productos = Object.values(productMap)
+          .sort((a, b) => b.cantidad - a.cantidad)
+          .slice(0, 5);
+
+        // Productos con stock bajo
+        const productosStockBajo = allProducts.filter((p) => {
+          if (!p.active) return false;
+          if (p.stock == null) return false;
+          const min = p.stockMin ?? 5;
+          return p.stock <= min;
+        });
+
+        // Diferencia de caja
+        let diferenciaCaja: number | null = null;
+        if (openCash) {
+          const totalIngresos = openCash.movements
+            .filter((m) => m.type === "venta" || m.type === "ingreso")
+            .reduce((sum, m) => sum + m.amount, 0);
+          const totalEgresos = openCash.movements
+            .filter((m) => m.type === "egreso")
+            .reduce((sum, m) => sum + m.amount, 0);
+          const esperado = openCash.openingAmount + totalIngresos - totalEgresos;
+          diferenciaCaja = openCash.closingAmount != null
+            ? openCash.closingAmount - esperado
+            : null;
+        }
+
+        const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
+        const fechaTexto = new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
+
+        // Auto-save DailySummary record
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        await prisma.dailySummary.upsert({
+          where: { tenantId_fecha: { tenantId, fecha: today } },
+          update: {
+            totalVentas,
+            cantidadVentas: totalPedidos,
+            ticketPromedio,
+            diferenciaCaja,
+            stockAlertas: productosStockBajo.length,
+            productoTop: top5Productos[0]?.nombre ?? null,
+            mejorHora: null,
+          },
+          create: {
+            tenantId,
+            fecha: today,
+            totalVentas,
+            cantidadVentas: totalPedidos,
+            ticketPromedio,
+            diferenciaCaja,
+            stockAlertas: productosStockBajo.length,
+            productoTop: top5Productos[0]?.nombre ?? null,
+            creadoPor: "cron",
+          },
+        }).catch(e => logger.warn("[daily-summary] Error saving DailySummary", { error: String(e) }));
+
+        const whatsappText = [
+          `📊 *Resumen del día — ${tenant.name}*`,
+          `📅 ${fechaTexto}`,
+          ``,
+          `💰 Ventas: S/ ${totalVentas.toFixed(2)} (${totalPedidos} transacciones)`,
+          `🧾 Ticket promedio: S/ ${ticketPromedio.toFixed(2)}`,
+          `📦 Stock bajo: ${productosStockBajo.length} productos`,
+          diferenciaCaja !== null ? `💵 Diferencia caja: S/ ${diferenciaCaja.toFixed(2)}` : null,
+          ``,
+          top5Productos.length > 0 ? `🏆 *Top productos:*` : null,
+          ...top5Productos.slice(0, 3).map((p, i) => `  ${i + 1}. ${p.nombre} (${p.cantidad} uds)`),
+          ``,
+          productosStockBajo.length > 0 ? `⚠ *Alertas stock:*` : null,
+          ...productosStockBajo.slice(0, 3).map(p => `  - ${p.name}: ${p.stock} uds (mín: ${p.stockMin ?? 5})`),
+          ``,
+          `─────`,
+          `${tenant.name} 🏪`,
+        ].filter((line): line is string => line !== null).join("\n");
+
+        // Send WhatsApp + Push to store owner
+        (async () => {
+          try {
+            const settings = await prisma.settings.findFirst({
+              where: { tenantId: { in: tenantIds } },
+              select: { ownerPhone: true },
+            });
+            const ownerPhone = settings?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
+            if (ownerPhone) {
+              sendWhatsAppText(ownerPhone, whatsappText).catch(() => {});
+              sendPushToPhone(ownerPhone, {
+                title: `📊 Resumen del día — ${tenant.name}`,
+                body: `S/ ${totalVentas.toFixed(2)} en ventas · ${totalPedidos} pedidos · ${productosStockBajo.length} alertas`,
+                url: "/admin?module=panel-principal",
+              }).catch(() => {});
+            }
+          } catch { /* silencioso */ }
+        })();
+
+        summaries.push({ tenant: tenant.name, totalVentas, totalPedidos });
+
+        logActivity(
+          "daily-summary",
+          "Report",
+          `[${tenant.name}] Resumen: S/ ${totalVentas.toFixed(2)} en ventas, ${totalPedidos} pedidos`,
+          undefined,
+          "cron"
+        ).catch(() => {});
       }
-      const top5Productos = Object.values(productMap)
-        .sort((a, b) => b.cantidad - a.cantidad)
-        .slice(0, 5);
 
-      // Productos con stock bajo
-      const productosStockBajo = allProducts.filter((p) => {
-        if (!p.active) return false;
-        if (p.stock == null) return false;
-        const min = p.stockMin ?? 5;
-        return p.stock <= min;
-      });
+      logger.info("[cron/daily-summary] Completado", { tenants: summaries.length });
 
-      // Diferencia de caja
-      let diferenciaCaja: number | null = null;
-      if (openCash) {
-        const totalIngresos = openCash.movements
-          .filter((m) => m.type === "venta" || m.type === "ingreso")
-          .reduce((sum, m) => sum + m.amount, 0);
-        const totalEgresos = openCash.movements
-          .filter((m) => m.type === "egreso")
-          .reduce((sum, m) => sum + m.amount, 0);
-        const esperado = openCash.openingAmount + totalIngresos - totalEgresos;
-        diferenciaCaja = openCash.closingAmount != null
-          ? openCash.closingAmount - esperado
-          : null;
-      }
-
-      // Mejora 18: Texto formateado para WhatsApp
-      const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
-      const fechaTexto = now.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
-
-      const whatsappText = [
-        `📊 *Resumen del día — ${fechaTexto}*`,
-        ``,
-        `💰 Ventas: S/ ${totalVentas.toFixed(2)} (${totalPedidos} transacciones)`,
-        `🧾 Ticket promedio: S/ ${ticketPromedio.toFixed(2)}`,
-        `📦 Stock bajo: ${productosStockBajo.length} productos`,
-        diferenciaCaja !== null ? `💵 Diferencia caja: S/ ${diferenciaCaja.toFixed(2)}` : null,
-        ``,
-        top5Productos.length > 0 ? `🏆 *Top productos:*` : null,
-        ...top5Productos.slice(0, 3).map((p, i) => `  ${i + 1}. ${p.nombre} (${p.cantidad} uds)`),
-        ``,
-        productosStockBajo.length > 0 ? `⚠ *Alertas stock:*` : null,
-        ...productosStockBajo.slice(0, 3).map(p => `  - ${p.name}: ${p.stock} uds (mín: ${p.stockMin ?? 5})`),
-        ``,
-        `─────`,
-        `Buleje 🏪`,
-      ].filter((line): line is string => line !== null).join("\n");
-
-      // Build WhatsApp URL for the owner
-      const businessPhone = process.env.BUSINESS_PHONE || "";
-      const waUrl = businessPhone
-        ? `https://wa.me/${businessPhone.replace(/\D/g, "")}?text=${encodeURIComponent(whatsappText)}`
-        : null;
-
-      const summary = {
+      return {
         ok: true,
-        fecha: now.toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" }),
-        generadoA: now.toISOString(),
-        totalVentas,
-        totalPedidos,
-        ticketPromedio,
-        stockBajo: {
-          cantidad: productosStockBajo.length,
-          productos: productosStockBajo.slice(0, 10).map((p) => ({
-            nombre: p.name,
-            stock: p.stock,
-            minimo: p.stockMin ?? 5,
-          })),
-        },
-        top5Productos,
-        caja: {
-          abierta: openCash !== null,
-          diferencia: diferenciaCaja,
-        },
-        whatsappText,
-        whatsappUrl: waUrl,
+        tenants: summaries,
+        generadoA: new Date().toISOString(),
       };
-
-      logger.info("[cron/daily-summary] Resumen diario generado", {
-        totalVentas,
-        totalPedidos,
-        stockBajoCount: productosStockBajo.length,
-      });
-
-      logActivity(
-        "daily-summary",
-        "Report",
-        `Resumen diario generado: S/ ${totalVentas.toFixed(2)} en ventas, ${totalPedidos} pedidos`,
-        undefined,
-        "cron"
-      ).catch(() => {});
-
-      return summary;
     });
 
     return NextResponse.json(result);

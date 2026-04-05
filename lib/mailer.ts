@@ -65,7 +65,7 @@ export async function sendOrderNotification(order: {
     subject: `🛒 Nuevo pedido — ${order.customerName} — S/${order.total.toFixed(2)}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">
-        <div style="background:#0f766e;padding:20px 24px;">
+        <div style="background:#00B4A6;padding:20px 24px;">
           <h2 style="color:#fff;margin:0;font-size:18px;">🛒 Nuevo pedido recibido</h2>
           <p style="color:#a8d5ba;margin:4px 0 0;font-size:13px;">ID: ${order.id}</p>
         </div>
@@ -81,15 +81,15 @@ export async function sendOrderNotification(order: {
           <table style="width:100%;border-collapse:collapse;font-size:13px;">
             <thead>
               <tr style="background:#f0fdf4;">
-                <th style="text-align:left;padding:6px 8px;color:#0f766e;">Producto</th>
-                <th style="text-align:right;padding:6px 8px;color:#0f766e;">Subtotal</th>
+                <th style="text-align:left;padding:6px 8px;color:#00B4A6;">Producto</th>
+                <th style="text-align:right;padding:6px 8px;color:#00B4A6;">Subtotal</th>
               </tr>
             </thead>
             <tbody>${itemsHtml}</tbody>
             <tfoot>
               <tr style="background:#f0fdf4;">
                 <td style="padding:8px;font-weight:bold;color:#111;">Total</td>
-                <td style="padding:8px;text-align:right;font-weight:bold;color:#0f766e;font-size:16px;">S/${order.total.toFixed(2)}</td>
+                <td style="padding:8px;text-align:right;font-weight:bold;color:#00B4A6;font-size:16px;">S/${order.total.toFixed(2)}</td>
               </tr>
             </tfoot>
           </table>
@@ -169,7 +169,7 @@ export async function sendCashSummaryEmail(summary: {
             ${summary.totalOut > 0 ? `<tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:8px 4px;color:#475569;">Egresos</td><td style="padding:8px 4px;text-align:right;color:#dc2626;">−${fmt(summary.totalOut)}</td></tr>` : ""}
             <tr style="border-bottom:2px solid #cbd5e1;background:#f1f5f9;">
               <td style="padding:10px 4px;font-weight:700;color:#0a0f0d;">Efectivo esperado</td>
-              <td style="padding:10px 4px;text-align:right;font-weight:700;color:#0f766e;">${fmt(summary.expectedAmount)}</td>
+              <td style="padding:10px 4px;text-align:right;font-weight:700;color:#00B4A6;">${fmt(summary.expectedAmount)}</td>
             </tr>
             <tr style="border-bottom:1px solid #e2e8f0;">
               <td style="padding:8px 4px;color:#475569;">Efectivo contado</td>

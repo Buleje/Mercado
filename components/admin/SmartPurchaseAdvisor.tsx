@@ -240,8 +240,8 @@ export default function SmartPurchaseAdvisor() {
       <div className="p-5 border-b border-gray-100 dark:border-gray-800">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#0f766e]/10">
-              <Brain className="w-5 h-5 text-[#0f766e]" />
+            <div className="p-2 rounded-xl bg-[#00B4A6]/10">
+              <Brain className="w-5 h-5 text-[#00B4A6]" />
             </div>
             <div>
               <h2 className="font-bold text-gray-900 dark:text-white">
@@ -293,11 +293,11 @@ export default function SmartPurchaseAdvisor() {
               </p>
               <p className="text-xs text-[#f97316] font-semibold">Urgentes</p>
             </div>
-            <div className="text-center p-3 rounded-xl bg-[#0f766e]/5 border border-[#0f766e]/20">
-              <p className="text-xl font-black text-[#0f766e] dark:text-[#14b8a6]">
+            <div className="text-center p-3 rounded-xl bg-[#00B4A6]/5 border border-[#00B4A6]/20">
+              <p className="text-xl font-black text-[#00B4A6] dark:text-[#2dd4bf]">
                 {fmt(totalEstimated)}
               </p>
-              <p className="text-xs text-[#0f766e] dark:text-[#14b8a6] font-semibold">
+              <p className="text-xs text-[#00B4A6] dark:text-[#2dd4bf] font-semibold">
                 Costo estimado
               </p>
             </div>
@@ -319,7 +319,7 @@ export default function SmartPurchaseAdvisor() {
           ))
         ) : advised.length === 0 ? (
           <div className="p-8 text-center">
-            <Package className="w-10 h-10 text-[#0f766e] mx-auto mb-3" />
+            <Package className="w-10 h-10 text-[#00B4A6] mx-auto mb-3" />
             <p className="font-semibold text-gray-900 dark:text-white">
               Stock en buen estado
             </p>
@@ -367,7 +367,7 @@ export default function SmartPurchaseAdvisor() {
                         : ` ${item.daysUntilOut} dias restantes`}
                     </p>
                     {item.bestSupplier && (
-                      <p className="text-xs text-[#0f766e] dark:text-[#14b8a6] mt-0.5 flex items-center gap-1">
+                      <p className="text-xs text-[#00B4A6] dark:text-[#2dd4bf] mt-0.5 flex items-center gap-1">
                         <Star className="w-3 h-3" />
                         Mejor proveedor: {item.bestSupplier} — {fmt(item.bestCost ?? 0)}/u
                       </p>
@@ -379,7 +379,7 @@ export default function SmartPurchaseAdvisor() {
                       <p className="font-black text-gray-900 dark:text-white">
                         {item.suggestedQty} {item.product.unit ?? "u"}
                       </p>
-                      <p className="text-xs text-[#0f766e] dark:text-[#14b8a6] font-semibold">
+                      <p className="text-xs text-[#00B4A6] dark:text-[#2dd4bf] font-semibold">
                         {fmt(item.estimatedTotal)}
                       </p>
                     </div>
@@ -413,7 +413,7 @@ export default function SmartPurchaseAdvisor() {
                       </div>
                       <div className="p-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800">
                         <p className="text-xs text-gray-400 mb-1">Orden sugerida</p>
-                        <p className="text-sm font-bold text-[#0f766e] dark:text-[#14b8a6]">
+                        <p className="text-sm font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
                           {item.suggestedQty} {item.product.unit ?? "u"}
                         </p>
                         <p className="text-xs text-gray-500 mt-0.5">

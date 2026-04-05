@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -163,7 +163,7 @@ function StatusTimeline({ nc }: { nc: NotaCredito }) {
       {steps.map((step, i) => (
         <div key={i} className="relative flex items-start gap-3">
           <div className={cn("absolute -left-3.25 w-4 h-4 rounded-full border-2 flex items-center justify-center",
-            step.done ? "bg-[#0f766e] border-[#0f766e]" : "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600")}>
+            step.done ? "bg-[#00B4A6] border-[#00B4A6]" : "bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600")}>
             {step.done && <span className="text-white text-[8px]">{"\u2713"}</span>}
           </div>
           <div>
@@ -184,11 +184,11 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
   return (
     <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
       className={cn("bg-white dark:bg-card border rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md",
-        selected ? "border-[#0f766e] ring-2 ring-[#0f766e]/20" : "border-gray-200 dark:border-card-border")}>
+        selected ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/20" : "border-gray-200 dark:border-card-border")}>
       <div className="flex items-start gap-3">
         <button onClick={(e) => { e.stopPropagation(); onToggle(); }}
           className={cn("w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors",
-            selected ? "bg-[#0f766e] border-[#0f766e] text-white" : "border-gray-300 dark:border-gray-600")}>
+            selected ? "bg-[#00B4A6] border-[#00B4A6] text-white" : "border-gray-300 dark:border-gray-600")}>
           {selected && <span className="text-[10px]">{"\u2713"}</span>}
         </button>
         <div className="flex-1 min-w-0" onClick={onSelect}>
@@ -245,15 +245,15 @@ function WizardProgress({ step }: { step: number }) {
       {WIZARD_STEPS.map((label, i) => (
         <div key={i} className="flex items-center gap-2 flex-1">
           <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300",
-            i < step ? "bg-[#0f766e] text-white shadow-sm" :
-            i === step ? "bg-[#0f766e]/10 text-[#0f766e] border-2 border-[#0f766e]" :
+            i < step ? "bg-[#00B4A6] text-white shadow-sm" :
+            i === step ? "bg-[#00B4A6]/10 text-[#00B4A6] border-2 border-[#00B4A6]" :
             "bg-gray-100 dark:bg-gray-800 text-gray-400")}>
             {i < step ? "\u2713" : i + 1}
           </div>
           <span className={cn("text-xs font-semibold hidden sm:block", i <= step ? "text-gray-900 dark:text-white" : "text-gray-400")}>{label}</span>
           {i < WIZARD_STEPS.length - 1 && (
             <div className="flex-1 h-0.5 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700">
-              <motion.div className="h-full bg-[#0f766e]" initial={{ width: "0%" }} animate={{ width: i < step ? "100%" : "0%" }} transition={{ duration: 0.4 }} />
+              <motion.div className="h-full bg-[#00B4A6]" initial={{ width: "0%" }} animate={{ width: i < step ? "100%" : "0%" }} transition={{ duration: 0.4 }} />
             </div>
           )}
         </div>
@@ -273,16 +273,16 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
       className={cn(
         "w-full text-left rounded-2xl border-2 p-4 transition-all duration-200 relative overflow-hidden",
         isSelected
-          ? "border-[#0f766e] ring-2 ring-[#0f766e]/20 bg-[#0f766e]/5"
+          ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/20 bg-[#00B4A6]/5"
           : cn(style.bg, style.border, "hover:shadow-lg")
       )}>
       {/* Color accent strip */}
-      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-[#0f766e]" :
+      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-[#00B4A6]" :
         doc.comprobanteTipo === "factura" ? "bg-blue-500" : doc.comprobanteTipo === "boleta" ? "bg-emerald-500" : "bg-amber-500"
       )} />
       <div className="flex items-start gap-3 pl-2">
         <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0 shadow-sm",
-          isSelected ? "bg-[#0f766e]/10" : style.badge)}>
+          isSelected ? "bg-[#00B4A6]/10" : style.badge)}>
           {style.icon}
         </div>
         <div className="flex-1 min-w-0">
@@ -306,7 +306,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
               <Package className="h-3 w-3" />
               {doc.items.length} item{doc.items.length !== 1 ? "s" : ""}
             </span>
-            <span className={cn("text-base font-extrabold", isSelected ? "text-[#0f766e]" : "text-gray-900 dark:text-white")}>
+            <span className={cn("text-base font-extrabold", isSelected ? "text-[#00B4A6]" : "text-gray-900 dark:text-white")}>
               {formatCurrency(doc.total)}
             </span>
           </div>
@@ -324,7 +324,7 @@ function SaleDocCard({ doc, isSelected, onSelect }: { doc: SaleDoc; isSelected: 
         </div>
         {isSelected && (
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            className="w-7 h-7 rounded-full bg-[#0f766e] text-white flex items-center justify-center shrink-0 shadow-sm">
+            className="w-7 h-7 rounded-full bg-[#00B4A6] text-white flex items-center justify-center shrink-0 shadow-sm">
             <span className="text-xs font-bold">{"\u2713"}</span>
           </motion.div>
         )}
@@ -341,15 +341,15 @@ function MotivoCard({ motivo, selected, onClick }: { motivo: typeof MOTIVOS_SUNA
       className={cn(
         "text-left p-3 rounded-xl border-2 transition-all duration-200",
         selected
-          ? "border-[#0f766e] bg-[#0f766e]/5 ring-1 ring-[#0f766e]/20 shadow-sm"
+          ? "border-[#00B4A6] bg-[#00B4A6]/5 ring-1 ring-[#00B4A6]/20 shadow-sm"
           : "border-gray-200 dark:border-white/10 hover:border-gray-300 hover:bg-gray-50 dark:hover:bg-white/5"
       )}>
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">{motivo.icon}</span>
         <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded",
-          selected ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500")}>{motivo.code}</span>
+          selected ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-500")}>{motivo.code}</span>
       </div>
-      <p className={cn("text-xs font-semibold mb-0.5", selected ? "text-[#0f766e] dark:text-emerald-400" : "text-gray-700 dark:text-gray-300")}>{motivo.label}</p>
+      <p className={cn("text-xs font-semibold mb-0.5", selected ? "text-[#00B4A6] dark:text-emerald-400" : "text-gray-700 dark:text-gray-300")}>{motivo.label}</p>
       <p className="text-[10px] text-gray-400 leading-tight">{motivo.desc}</p>
     </button>
   );
@@ -595,7 +595,7 @@ export default function NotasCreditoModule() {
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown className="h-3 w-3 text-gray-300" />;
-    return sortDir === "asc" ? <ArrowUp className="h-3 w-3 text-[#0f766e]" /> : <ArrowDown className="h-3 w-3 text-[#0f766e]" />;
+    return sortDir === "asc" ? <ArrowUp className="h-3 w-3 text-[#00B4A6]" /> : <ArrowDown className="h-3 w-3 text-[#00B4A6]" />;
   };
 
   // ── Bulk operations ───────────────────────────────────────────────────────
@@ -845,7 +845,7 @@ export default function NotasCreditoModule() {
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-[#0f766e] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
             <FileX className="h-5 w-5" />
           </div>
           <div>
@@ -858,7 +858,7 @@ export default function NotasCreditoModule() {
             <Keyboard className="h-4 w-4" />
           </button>
           <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); setPickerSearch(""); setPickerDocType("all"); }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors shrink-0">
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors shrink-0">
             <Plus className="h-4 w-4" />
             Nueva NC
           </button>
@@ -933,7 +933,7 @@ export default function NotasCreditoModule() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis dataKey="week" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-                <Line type="monotone" dataKey="count" stroke="#0f766e" strokeWidth={2} dot={{ r: 3, fill: "#0f766e" }} />
+                <Line type="monotone" dataKey="count" stroke="#00B4A6" strokeWidth={2} dot={{ r: 3, fill: "#00B4A6" }} />
                 <RechartsTooltip />
               </LineChart>
             </ResponsiveContainer>
@@ -967,7 +967,7 @@ export default function NotasCreditoModule() {
                 <BarChart data={weekdayData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 9 }} />
                   <YAxis tick={{ fontSize: 9 }} allowDecimals={false} />
-                  <Bar dataKey="count" fill="#0f766e" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="count" fill="#00B4A6" radius={[3, 3, 0, 0]} />
                   <RechartsTooltip />
                 </BarChart>
               </ResponsiveContainer>
@@ -984,7 +984,7 @@ export default function NotasCreditoModule() {
             return (
               <button key={dt.id} onClick={() => setDocTypeFilter(dt.id)}
                 className={cn("flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap",
-                  docTypeFilter === dt.id ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>
+                  docTypeFilter === dt.id ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>
                 <Icon className="h-3.5 w-3.5" />
                 {dt.label}
               </button>
@@ -997,7 +997,7 @@ export default function NotasCreditoModule() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input ref={searchRef} type="text" placeholder="Buscar por n\u00famero, cliente, RUC/DNI..."
               aria-label="Buscar documentos" value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
           </div>
           <div className="flex gap-1 items-center">
             {(["", "BORRADOR", "EMITIDA", "ANULADA"] as const).map(s => {
@@ -1005,14 +1005,14 @@ export default function NotasCreditoModule() {
               return (
                 <button key={s} onClick={() => setStatusFilter(s)}
                   className={cn("shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-colors inline-flex items-center gap-1.5",
-                    statusFilter === s ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>
+                    statusFilter === s ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>
                   {s === "" ? "Todos" : STATUS_META[s].label}
                   {count > 0 && <span className={cn("px-1.5 py-0.5 rounded-full text-[9px] font-bold min-w-4.5 text-center", statusFilter === s ? "bg-white/20" : "bg-gray-200 dark:bg-gray-700")}>{count}</span>}
                 </button>
               );
             })}
             <button onClick={() => setShowAdvFilters(s => !s)}
-              className={cn("p-2 rounded-xl transition-colors relative", showAdvFilters ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200")}>
+              className={cn("p-2 rounded-xl transition-colors relative", showAdvFilters ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200")}>
               <Filter className="h-4 w-4" />
               {activeFilterCount > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">{activeFilterCount}</span>}
             </button>
@@ -1020,7 +1020,7 @@ export default function NotasCreditoModule() {
               {([["table", LayoutList], ["cards", LayoutGrid], ["kanban", Kanban]] as const).map(([mode, Icon]) => (
                 <button key={mode} onClick={() => setViewMode(mode)}
                   title={mode === "table" ? "Tabla" : mode === "cards" ? "Tarjetas" : "Kanban"}
-                  className={cn("p-1.5 rounded-lg transition-colors", viewMode === mode ? "bg-white dark:bg-gray-700 text-[#0f766e] shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300")}>
+                  className={cn("p-1.5 rounded-lg transition-colors", viewMode === mode ? "bg-white dark:bg-gray-700 text-[#00B4A6] shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300")}>
                   <Icon className="h-3.5 w-3.5" />
                 </button>
               ))}
@@ -1062,9 +1062,9 @@ export default function NotasCreditoModule() {
       <AnimatePresence>
         {someChecked && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
-            <div className="flex items-center gap-3 px-4 py-3 bg-[#0f766e]/5 border border-[#0f766e]/20 rounded-xl">
-              <CheckSquare className="h-4 w-4 text-[#0f766e]" />
-              <span className="text-sm font-bold text-[#0f766e]">{checkedIds.size} seleccionado{checkedIds.size !== 1 ? "s" : ""}</span>
+            <div className="flex items-center gap-3 px-4 py-3 bg-[#00B4A6]/5 border border-[#00B4A6]/20 rounded-xl">
+              <CheckSquare className="h-4 w-4 text-[#00B4A6]" />
+              <span className="text-sm font-bold text-[#00B4A6]">{checkedIds.size} seleccionado{checkedIds.size !== 1 ? "s" : ""}</span>
               <div className="flex-1" />
               {filteredNotas.filter(nc => checkedIds.has(nc.id) && nc.status === "BORRADOR").length > 0 && (
                 <button onClick={handleBulkEmit} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
@@ -1102,7 +1102,7 @@ export default function NotasCreditoModule() {
                   ) : col.map(nc => (
                     <motion.div key={nc.id} layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
                       onClick={() => setSelected(nc)}
-                      className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 cursor-pointer hover:shadow-sm hover:border-[#0f766e]/40 transition-all">
+                      className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3 cursor-pointer hover:shadow-sm hover:border-[#00B4A6]/40 transition-all">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="font-mono text-[10px] font-bold text-gray-500">{nc.numero}</span>
                         <span className="text-sm font-extrabold text-gray-900 dark:text-white">{formatCurrency(nc.total)}</span>
@@ -1137,19 +1137,19 @@ export default function NotasCreditoModule() {
       {viewMode !== "kanban" && (
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
         {loading ? (
-          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" /></div>
+          <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" /></div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <AlertTriangle className="h-8 w-8 text-red-400" />
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            <button onClick={fetchNotas} className="text-xs text-[#0f766e] hover:underline font-semibold mt-1">Reintentar</button>
+            <button onClick={fetchNotas} className="text-xs text-[#00B4A6] hover:underline font-semibold mt-1">Reintentar</button>
           </div>
         ) : filteredNotas.length === 0 ? (
           <div className="text-center py-16 px-4">
             <div className="text-6xl mb-4">{"\u{1F4C4}"}</div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin notas de cr{"\u00e9"}dito</h3>
             <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Las notas de cr{"\u00e9"}dito se crean al hacer devoluciones, anulaciones o ajustes a documentos existentes</p>
-            <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); }} className="bg-[#0f766e] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#0d5f58]">Crear NC</button>
+            <button onClick={() => { setShowNew(true); setCreateError(null); setWizardStep(0); }} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Crear NC</button>
           </div>
         ) : viewMode === "cards" ? (
           <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1167,7 +1167,7 @@ export default function NotasCreditoModule() {
                   <tr className="border-b border-gray-100 dark:border-white/5 text-left">
                     <th className="px-3 py-3 w-10">
                       <button onClick={toggleAll} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
-                        allChecked ? "bg-[#0f766e] border-[#0f766e] text-white" : "border-gray-300 dark:border-gray-600")}>
+                        allChecked ? "bg-[#00B4A6] border-[#00B4A6] text-white" : "border-gray-300 dark:border-gray-600")}>
                         {allChecked && <span className="text-[10px]">{"\u2713"}</span>}
                       </button>
                     </th>
@@ -1195,7 +1195,7 @@ export default function NotasCreditoModule() {
                       <tr key={nc.id} className="border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
                         <td className="px-3 py-3">
                           <button onClick={() => toggleCheck(nc.id)} className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
-                            checkedIds.has(nc.id) ? "bg-[#0f766e] border-[#0f766e] text-white" : "border-gray-300 dark:border-gray-600")}>
+                            checkedIds.has(nc.id) ? "bg-[#00B4A6] border-[#00B4A6] text-white" : "border-gray-300 dark:border-gray-600")}>
                             {checkedIds.has(nc.id) && <span className="text-[10px]">{"\u2713"}</span>}
                           </button>
                         </td>
@@ -1413,8 +1413,8 @@ export default function NotasCreditoModule() {
                 <div className="px-5 pt-5 pb-0">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-[#0f766e]/10 flex items-center justify-center">
-                        <CreditCard className="h-4 w-4 text-[#0f766e]" />
+                      <div className="w-8 h-8 rounded-lg bg-[#00B4A6]/10 flex items-center justify-center">
+                        <CreditCard className="h-4 w-4 text-[#00B4A6]" />
                       </div>
                       Nueva Nota de Cr{"\u00e9"}dito
                     </h3>
@@ -1446,7 +1446,7 @@ export default function NotasCreditoModule() {
                             <span>{tab.icon}</span>
                             <span>{tab.label}</span>
                             <span className={cn("px-1.5 py-0.5 rounded-full text-[9px] font-bold",
-                              pickerDocType === tab.id ? "bg-[#0f766e] text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500")}>
+                              pickerDocType === tab.id ? "bg-[#00B4A6] text-white" : "bg-gray-200 dark:bg-gray-700 text-gray-500")}>
                               {pickerCounts[tab.id]}
                             </span>
                           </button>
@@ -1458,7 +1458,7 @@ export default function NotasCreditoModule() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input type="text" value={pickerSearch} onChange={e => setPickerSearch(e.target.value)}
                           placeholder="Buscar por n\u00famero, cliente, RUC/DNI..."
-                          className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                         {pickerLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />}
                       </div>
 
@@ -1466,14 +1466,14 @@ export default function NotasCreditoModule() {
                       <AnimatePresence>
                         {selectedVenta && (
                           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                            <div className="bg-[#0f766e]/5 border-2 border-[#0f766e]/30 rounded-xl p-4">
+                            <div className="bg-[#00B4A6]/5 border-2 border-[#00B4A6]/30 rounded-xl p-4">
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
                                   <span className="text-xl">{(DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).icon}</span>
                                   <span className={cn("px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase", (DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).badge)}>
                                     {(DOC_STYLE[selectedVenta.comprobanteTipo] || DOC_STYLE.ticket).label}
                                   </span>
-                                  <span className="font-mono text-sm font-bold text-[#0f766e]">
+                                  <span className="font-mono text-sm font-bold text-[#00B4A6]">
                                     {selectedVenta.comprobanteNumero || `#${selectedVenta.numero}`}
                                   </span>
                                   <span className="text-xs text-gray-400">{"\u00b7"} {selectedVenta.clienteNombre}</span>
@@ -1494,7 +1494,7 @@ export default function NotasCreditoModule() {
                       {/* Document Cards Grid */}
                       {pickerLoading && pickerDocs.length === 0 ? (
                         <div className="flex items-center justify-center py-12">
-                          <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
+                          <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
                           <span className="ml-2 text-sm text-gray-500">Cargando documentos...</span>
                         </div>
                       ) : filteredPickerDocs.length === 0 ? (
@@ -1524,7 +1524,7 @@ export default function NotasCreditoModule() {
                         <button onClick={() => setWizardStep(1)} disabled={!selectedVenta}
                           className={cn("px-6 py-2.5 rounded-xl text-sm font-bold transition-all",
                             selectedVenta
-                              ? "text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm"
+                              ? "text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm"
                               : "text-gray-400 bg-gray-100 dark:bg-gray-800 cursor-not-allowed")}>
                           Siguiente {"\u2192"}
                         </button>
@@ -1591,7 +1591,7 @@ export default function NotasCreditoModule() {
                       <div>
                         <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Descripci{"\u00f3"}n del motivo</label>
                         <textarea value={form.descripcionMotivo} onChange={e => setForm(p => ({ ...p, descripcionMotivo: e.target.value }))} placeholder="Detalle del motivo..." rows={2}
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30 resize-none" />
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none" />
                       </div>
 
                       {/* Item Quantity Picker (if linked to a sale) */}
@@ -1602,10 +1602,10 @@ export default function NotasCreditoModule() {
                           </label>
                           <div className="border border-gray-200 dark:border-white/10 rounded-xl divide-y divide-gray-100 dark:divide-white/5 overflow-hidden">
                             {selectedVenta.items.map((item, idx) => (
-                              <div key={idx} className={cn("flex items-center gap-3 p-3 transition-colors", item.selected ? "bg-[#0f766e]/5" : "hover:bg-gray-50 dark:hover:bg-white/5")}>
+                              <div key={idx} className={cn("flex items-center gap-3 p-3 transition-colors", item.selected ? "bg-[#00B4A6]/5" : "hover:bg-gray-50 dark:hover:bg-white/5")}>
                                 <button type="button" onClick={() => handleItemToggle(idx)}
                                   className={cn("w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0",
-                                    item.selected ? "bg-[#0f766e] border-[#0f766e] text-white" : "border-gray-300 dark:border-gray-600")}>
+                                    item.selected ? "bg-[#00B4A6] border-[#00B4A6] text-white" : "border-gray-300 dark:border-gray-600")}>
                                   {item.selected && <span className="text-[10px]">{"\u2713"}</span>}
                                 </button>
                                 <div className="flex-1 min-w-0">
@@ -1633,7 +1633,7 @@ export default function NotasCreditoModule() {
                           </div>
                           <div className="mt-2 flex justify-between text-xs px-1">
                             <span className="text-gray-400">{selectedVenta.items.filter(it => it.selected).length} de {selectedVenta.items.length} items seleccionados</span>
-                            <span className="font-bold text-[#0f766e]">Subtotal: {formatCurrency(autoMonto)}</span>
+                            <span className="font-bold text-[#00B4A6]">Subtotal: {formatCurrency(autoMonto)}</span>
                           </div>
                         </div>
                       )}
@@ -1645,7 +1645,7 @@ export default function NotasCreditoModule() {
                           <div className="relative">
                             <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <input type="number" step="0.01" min="0.01" value={form.monto} onChange={e => setForm(p => ({ ...p, monto: e.target.value }))} placeholder="0.00"
-                              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                           </div>
                         </div>
                       )}
@@ -1659,7 +1659,7 @@ export default function NotasCreditoModule() {
                       <div>
                         <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Notas internas (opcional)</label>
                         <input type="text" value={form.notasText} onChange={e => setForm(p => ({ ...p, notasText: e.target.value }))} placeholder="Observaciones..."
-                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                          className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                       </div>
 
                       {/* Return stock toggle */}
@@ -1668,7 +1668,7 @@ export default function NotasCreditoModule() {
                           <div className="flex items-center gap-3">
                             <button type="button" onClick={() => setDevolverStock(!devolverStock)}
                               className={cn("relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
-                                devolverStock ? "bg-[#0f766e]" : "bg-gray-300 dark:bg-gray-600")}>
+                                devolverStock ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600")}>
                               <span className={cn("inline-block h-4 w-4 rounded-full bg-white transition-transform", devolverStock ? "translate-x-4" : "translate-x-0")} />
                             </button>
                             <span className="text-xs font-bold text-amber-800 dark:text-amber-300">{"\u{1F4E6}"} Devolver items al stock</span>
@@ -1688,7 +1688,7 @@ export default function NotasCreditoModule() {
                           if (!form.descripcionMotivo.trim()) { setCreateError("Completa la descripci\u00f3n"); return; }
                           if (montoNum <= 0) { setCreateError("El monto debe ser mayor a 0"); return; }
                           setCreateError(null); setWizardStep(2);
-                        }} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors">
+                        }} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors">
                           Siguiente {"\u2192"}
                         </button>
                       </div>
@@ -1760,7 +1760,7 @@ export default function NotasCreditoModule() {
                           {"\u2190"} Atr{"\u00e1"}s
                         </button>
                         <button onClick={handleCreate} disabled={creating}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-50 shadow-sm transition-all">
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-all">
                           {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                           Crear Nota de Cr{"\u00e9"}dito
                         </button>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -529,11 +529,11 @@ function BarChart({ results }: { results: ScenarioResult[] }) {
               <span className="text-[10px] text-gray-400 w-12 text-right">{r.before > 0 ? "Después" : "Resultado"}</span>
               <div className="flex-1 h-3.5 bg-gray-100 dark:bg-gray-800 rounded overflow-hidden">
                 <div
-                  className={cn("h-full rounded transition-all duration-600", r.positive ? "bg-[#0f766e]" : "bg-red-400 dark:bg-red-600")}
+                  className={cn("h-full rounded transition-all duration-600", r.positive ? "bg-[#00B4A6]" : "bg-red-400 dark:bg-red-600")}
                   style={{ width: `${afterPct}%` }}
                 />
               </div>
-              <span className={cn("text-[10px] font-semibold w-24 text-right", r.positive ? "text-[#0f766e] dark:text-[#14b8a6]" : "text-red-600 dark:text-red-400")}>
+              <span className={cn("text-[10px] font-semibold w-24 text-right", r.positive ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-red-600 dark:text-red-400")}>
                 {fmt(r.after)}
               </span>
             </div>
@@ -682,7 +682,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
                   <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
                     {sc?.emoji ?? ""} {s.scenarioTitle}
                   </p>
-                  <p className={cn("text-sm font-bold mt-0.5", s.beneficioNeto >= 0 ? "text-[#0f766e] dark:text-[#14b8a6]" : "text-red-600 dark:text-red-400")}>
+                  <p className={cn("text-sm font-bold mt-0.5", s.beneficioNeto >= 0 ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-red-600 dark:text-red-400")}>
                     {s.beneficioNeto >= 0 ? "+" : ""}S/{Math.round(s.beneficioNeto).toLocaleString("es-PE")}
                   </p>
                   <p className="text-[10px] text-gray-400 mt-0.5">{new Date(s.savedAt).toLocaleDateString("es-PE")}</p>
@@ -713,16 +713,16 @@ export default function AIWhatIfSimulator({ data }: Props) {
                 </thead>
                 <tbody>
                   {(() => {
-                    const allLabels = Array.from(new Set(compareIds.flatMap((cid) => savedScenarios.find((sc) => sc.id === cid)?.results.map((r) => r.label) ?? [])));
+                    const allLabels = Array.from(new Set(compareIds.flatMap((cid) => savedScenarios.find((sc) => sc.id === cid)?.results.map((r) => r.label) ?? []))).filter(Boolean);
                     return allLabels.map((label, idx) => (
-                      <tr key={label} className={cn("border-t border-gray-100 dark:border-gray-800", idx % 2 === 0 ? "" : "bg-gray-50/50 dark:bg-gray-800/30")}>
+                      <tr key={`metric-${idx}`} className={cn("border-t border-gray-100 dark:border-gray-800", idx % 2 === 0 ? "" : "bg-gray-50/50 dark:bg-gray-800/30")}>
                         <td className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300">{label}</td>
                         {compareIds.map((cid) => {
                           const s = savedScenarios.find((sc) => sc.id === cid);
                           const r = s?.results.find((res) => res.label === label);
                           if (!r) return <td key={cid} className="px-3 py-2 text-xs text-gray-400 text-right">—</td>;
                           const fmt = (v: number) => r.unit === "S/" ? `S/${Math.round(v).toLocaleString("es-PE")}` : r.unit === "%" ? `${v.toFixed(1)}%` : `${Math.round(v)} ${r.unit}`;
-                          return <td key={cid} className={cn("px-3 py-2 text-xs font-semibold text-right", r.positive ? "text-[#0f766e] dark:text-[#14b8a6]" : "text-red-600 dark:text-red-400")}>{fmt(r.after)}</td>;
+                          return <td key={cid} className={cn("px-3 py-2 text-xs font-semibold text-right", r.positive ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-red-600 dark:text-red-400")}>{fmt(r.after)}</td>;
                         })}
                       </tr>
                     ));
@@ -762,8 +762,8 @@ export default function AIWhatIfSimulator({ data }: Props) {
               className={cn(
                 "p-2.5 rounded-lg border text-xs font-medium text-left transition-all",
                 activeScenario === s.id
-                  ? "bg-[#0f766e] text-white border-[#0f766e] shadow-sm"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-[#0f766e]/50"
+                  ? "bg-[#00B4A6] text-white border-[#00B4A6] shadow-sm"
+                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]/50"
               )}
             >
               <span className="text-base mr-1">{s.emoji}</span> {s.title}
@@ -811,7 +811,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
                   <div key={p.id}>
                     <div className="flex items-center justify-between mb-1.5">
                       <label className="text-sm text-gray-700 dark:text-gray-300 font-medium">{p.label}</label>
-                      <span className="text-sm font-bold text-[#0f766e] dark:text-[#14b8a6]">
+                      <span className="text-sm font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
                         {p.unit === "S/" ? `S/ ${val}` : `${val} ${p.unit}`}
                       </span>
                     </div>
@@ -822,7 +822,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
                       step={p.step}
                       value={val}
                       onChange={(e) => setParam(p.id, Number(e.target.value))}
-                      className="w-full h-2 rounded-full appearance-none bg-gray-200 dark:bg-gray-700 accent-[#0f766e] cursor-pointer"
+                      className="w-full h-2 rounded-full appearance-none bg-gray-200 dark:bg-gray-700 accent-[#00B4A6] cursor-pointer"
                     />
                     <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
                       <span>{p.unit === "S/" ? `S/ ${p.min}` : `${p.min} ${p.unit}`}</span>
@@ -875,7 +875,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
                       <tr key={r.label} className={cn("border-t border-gray-50 dark:border-gray-800", i % 2 === 0 ? "" : "bg-gray-50/50 dark:bg-gray-800/30")}>
                         <td className="px-3 py-2 text-xs text-gray-700 dark:text-gray-300">{r.label}</td>
                         <td className="px-3 py-2 text-xs text-gray-500 text-right">{r.before > 0 ? fmt(r.before) : "—"}</td>
-                        <td className={cn("px-3 py-2 text-xs font-semibold text-right", r.positive ? "text-[#0f766e] dark:text-[#14b8a6]" : "text-red-600 dark:text-red-400")}>
+                        <td className={cn("px-3 py-2 text-xs font-semibold text-right", r.positive ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-red-600 dark:text-red-400")}>
                           {fmt(r.after)}
                         </td>
                         <td className={cn("px-3 py-2 text-xs font-medium text-right", diff >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
@@ -898,7 +898,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
                   "px-4 py-2 rounded-lg text-xs font-medium transition-colors",
                   savedScenarios.length >= MAX_SAVED
                     ? "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
-                    : "bg-[#0f766e] text-white hover:bg-[#0d5f58]"
+                    : "bg-[#00B4A6] text-white hover:bg-[#009690]"
                 )}
               >
                 {savedScenarios.length >= MAX_SAVED ? `Máximo ${MAX_SAVED}` : "💾 Guardar"}

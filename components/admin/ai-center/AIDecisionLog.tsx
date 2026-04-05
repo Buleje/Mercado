@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -273,7 +273,7 @@ export default function AIDecisionLog() {
             className={cn("px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
               showForm
                 ? "bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
-                : "bg-[#0f766e] border-[#0f766e] text-white hover:bg-[#0d5f58]"
+                : "bg-[#00B4A6] border-[#00B4A6] text-white hover:bg-[#009690]"
             )}
           >
             {showForm ? "Cancelar" : "Nueva Decision"}
@@ -283,7 +283,7 @@ export default function AIDecisionLog() {
 
       {/* Form */}
       {showForm && (
-        <div className="mb-5 p-4 rounded-lg border border-[#0f766e]/30 bg-[#0f766e]/5 dark:bg-[#0f766e]/10">
+        <div className="mb-5 p-4 rounded-lg border border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10">
           <div className="space-y-3">
             <div>
               <label className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1 block">Decision</label>
@@ -292,7 +292,7 @@ export default function AIDecisionLog() {
                 onChange={(e) => setFormText(e.target.value)}
                 placeholder={`Ej: "Subi el precio del arroz de S/4 a S/4.50"`}
                 rows={2}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-[#0f766e]/30 focus:border-[#0f766e] outline-none resize-none"
+                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] outline-none resize-none"
               />
             </div>
             <div className="flex items-end gap-3 flex-wrap">
@@ -322,7 +322,7 @@ export default function AIDecisionLog() {
                 onClick={handleAdd}
                 disabled={!formText.trim()}
                 className={cn("px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                  formText.trim() ? "bg-[#0f766e] text-white hover:bg-[#0d5f58]" : "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
+                  formText.trim() ? "bg-[#00B4A6] text-white hover:bg-[#009690]" : "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
                 )}
               >
                 Guardar
@@ -400,7 +400,7 @@ export default function AIDecisionLog() {
             <button
               onClick={() => setFilterCat("all")}
               className={cn("text-[10px] px-2 py-0.5 rounded-full border transition-colors",
-                filterCat === "all" ? "bg-[#0f766e] text-white border-[#0f766e]" : "border-gray-200 dark:border-gray-700 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                filterCat === "all" ? "bg-[#00B4A6] text-white border-[#00B4A6]" : "border-gray-200 dark:border-gray-700 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
               )}
             >
               Todas
@@ -410,7 +410,7 @@ export default function AIDecisionLog() {
                 key={cat}
                 onClick={() => setFilterCat(filterCat === cat ? "all" : cat)}
                 className={cn("text-[10px] px-2 py-0.5 rounded-full border transition-colors",
-                  filterCat === cat ? "bg-[#0f766e] text-white border-[#0f766e]" : "border-gray-200 dark:border-gray-700 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  filterCat === cat ? "bg-[#00B4A6] text-white border-[#00B4A6]" : "border-gray-200 dark:border-gray-700 text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                 )}
               >
                 {cat}
@@ -483,7 +483,7 @@ export default function AIDecisionLog() {
                 {canRecordImpact && impactTarget !== d.id && (
                   <button
                     onClick={() => setImpactTarget(d.id)}
-                    className="mt-2 text-xs text-[#0f766e] dark:text-[#14b8a6] font-medium hover:underline"
+                    className="mt-2 text-xs text-[#00B4A6] dark:text-[#2dd4bf] font-medium hover:underline"
                   >
                     Registrar Impacto ({days} dias despues)
                   </button>
@@ -512,7 +512,7 @@ export default function AIDecisionLog() {
                         onClick={() => handleImpact(d.id)}
                         disabled={!impactText.trim()}
                         className={cn("px-3 py-1 rounded-lg text-xs font-medium transition-colors",
-                          impactText.trim() ? "bg-[#0f766e] text-white hover:bg-[#0d5f58]" : "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
+                          impactText.trim() ? "bg-[#00B4A6] text-white hover:bg-[#009690]" : "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
                         )}
                       >
                         Guardar

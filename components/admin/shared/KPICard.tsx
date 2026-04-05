@@ -7,7 +7,7 @@ interface KPICardProps {
   label: string;
   value: string | number;
   icon: LucideIcon;
-  color: string; // hex color eg "#0f766e"
+  color: string; // hex color eg "#00B4A6"
   change?: number; // percentage change eg 12.5 or -3.2
   subtitle?: string;
   alert?: boolean; // red styling when true

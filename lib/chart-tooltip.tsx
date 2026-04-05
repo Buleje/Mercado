@@ -23,7 +23,7 @@ export function ChartTooltip({ active, payload, label, totalValue, previousValue
           <div key={i} className="text-xs flex justify-between gap-4 items-baseline">
             <span className="text-gray-500 dark:text-gray-400">{p.name || p.dataKey}</span>
             <span className="flex items-center gap-1.5">
-              <span className="font-mono font-medium" style={{ color: p.color || '#0f766e' }}>
+              <span className="font-mono font-medium" style={{ color: p.color || '#00B4A6' }}>
                 {typeof p.value === 'number' ? formatted : p.value}
               </span>
               {pct !== null && (

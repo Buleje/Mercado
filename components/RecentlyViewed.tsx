@@ -32,9 +32,29 @@ export default function RecentlyViewed() {
   const { showToast } = useToast();
 
   useEffect(() => {
-    startTransition(() => setItems(getRecent()));
+    // Load from localStorage, then validate against the DB
+    const stored = getRecent();
+    startTransition(() => setItems(stored));
     // Fade-in after mount
     requestAnimationFrame(() => setMounted(true));
+
+    // Validate that recently-viewed products still exist in DB
+    if (stored.length > 0) {
+      fetch("/api/products?ids=" + stored.map(p => p.id).join(","))
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (!data) return;
+          const products: { id: number }[] = Array.isArray(data) ? data : (data.data ?? data.products ?? []);
+          const validIds = new Set(products.map((p: { id: number }) => p.id));
+          const cleaned = stored.filter(p => validIds.has(p.id));
+          if (cleaned.length !== stored.length) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+            startTransition(() => setItems(cleaned));
+          }
+        })
+        .catch(() => { /* silently ignore validation errors */ });
+    }
+
     // Re-check when product is viewed (custom event)
     const handler = () => startTransition(() => setItems(getRecent()));
     window.addEventListener("bsm:productViewed", handler);
@@ -147,10 +167,10 @@ export default function RecentlyViewed() {
                       ) : (
                         <button
                           onClick={() => { addItem(product); showToast(product.name, product.image); }}
-                          className="flex items-center justify-center h-9 w-9 rounded-full bg-primary text-white hover:bg-primary-dark active:scale-95 shrink-0"
+                          className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-primary text-white hover:bg-primary-dark active:scale-95 shrink-0"
                           aria-label={`Agregar ${product.name}`}
                         >
-                          <ShoppingCart className="h-4 w-4" />
+                          <ShoppingCart className="h-5 w-5" />
                         </button>
                       ); })()}
                     </div>

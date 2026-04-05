@@ -4,6 +4,7 @@ import { z } from "zod";
 import { PromotionsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { withDbRetry } from "@/lib/db-retry";
 
 const PromotionSchema = z.object({
   name: z.string().min(1, "name required").max(200),
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
   try {
     const auth = await requireAdmin(req, ["admin"]);
     const tenantId = auth instanceof NextResponse ? "main" : auth.tenantId;
-    const all = await PromotionsDB.getAll(tenantId);
+    const all = await withDbRetry(() => PromotionsDB.getAll(tenantId));
 
     // Admin sees full data including targetPhones
     if (!(auth instanceof NextResponse)) {

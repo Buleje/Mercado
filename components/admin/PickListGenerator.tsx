@@ -142,7 +142,7 @@ export default function PickListGenerator() {
           {generated && (
             <button
               onClick={handlePrint}
-              className="flex items-center gap-2 rounded-lg bg-[#0f766e] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#0d5f58] print:hidden"
+              className="flex items-center gap-2 rounded-lg bg-[#00B4A6] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#009690] print:hidden"
             >
               <Printer className="h-4 w-4" />
               Imprimir
@@ -154,7 +154,7 @@ export default function PickListGenerator() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 print:hidden">
         <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-2xl font-bold text-[#0f766e]">
+          <p className="text-2xl font-bold text-[#00B4A6]">
             {loading ? "—" : orders.length}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -162,7 +162,7 @@ export default function PickListGenerator() {
           </p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-2xl font-bold text-[#0f766e]">{totalCount}</p>
+          <p className="text-2xl font-bold text-[#00B4A6]">{totalCount}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Productos a recoger
           </p>
@@ -177,7 +177,7 @@ export default function PickListGenerator() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0f766e]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
         </div>
       ) : error ? (
         <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-900/10">
@@ -198,7 +198,7 @@ export default function PickListGenerator() {
           <button
             onClick={generatePickList}
             disabled={orders.length === 0}
-            className="rounded-lg bg-[#0f766e] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d5f58] disabled:opacity-50"
+            className="rounded-lg bg-[#00B4A6] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#009690] disabled:opacity-50"
           >
             Generar Pick List
           </button>
@@ -214,7 +214,7 @@ export default function PickListGenerator() {
               <span
                 className={cn(
                   "font-semibold",
-                  allDone ? "text-emerald-600" : "text-[#0f766e]"
+                  allDone ? "text-emerald-600" : "text-[#00B4A6]"
                 )}
               >
                 {checkedCount}/{totalCount}
@@ -224,7 +224,7 @@ export default function PickListGenerator() {
               <div
                 className={cn(
                   "h-full transition-all duration-300",
-                  allDone ? "bg-emerald-500" : "bg-[#0f766e]"
+                  allDone ? "bg-emerald-500" : "bg-[#00B4A6]"
                 )}
                 style={{
                   width: `${totalCount > 0 ? (checkedCount / totalCount) * 100 : 0}%`,
@@ -285,7 +285,7 @@ export default function PickListGenerator() {
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <span className="text-lg font-bold text-[#0f766e]">
+                    <span className="text-lg font-bold text-[#00B4A6]">
                       {item.totalQty}
                     </span>
                     <span className="ml-1 text-sm text-gray-500">

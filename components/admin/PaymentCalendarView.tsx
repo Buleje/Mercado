@@ -198,7 +198,7 @@ export default function PaymentCalendarView() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 border-4 border-[#2d6a4f] border-t-transparent rounded-full animate-spin" />
+        <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -209,7 +209,7 @@ export default function PaymentCalendarView() {
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <AlertTriangle className="h-8 w-8 text-red-500" />
         <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
-        <button onClick={fetchData} className="text-xs text-[#2d6a4f] hover:underline">Reintentar</button>
+        <button onClick={fetchData} className="text-xs text-[#00B4A6] hover:underline">Reintentar</button>
       </div>
     );
   }
@@ -254,7 +254,7 @@ export default function PaymentCalendarView() {
               <ChevronLeft className="h-4 w-4 text-gray-500" />
             </button>
             <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 text-[#2d6a4f]" />
+              <CalendarDays className="h-4 w-4 text-[#00B4A6]" />
               <h3 className="font-bold text-gray-900 dark:text-white text-sm">
                 {MONTHS_ES[month]} {year}
               </h3>
@@ -307,15 +307,15 @@ export default function PaymentCalendarView() {
                   className={cn(
                     "relative min-h-[56px] p-1.5 border-b border-r border-gray-100 dark:border-card-border/50 text-left transition-colors",
                     inMonth ? "hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer" : "opacity-30 cursor-default",
-                    isToday && "bg-[#2d6a4f]/5 dark:bg-[#2d6a4f]/10",
-                    isSelected && "bg-[#2d6a4f]/10 dark:bg-[#2d6a4f]/20 ring-1 ring-inset ring-[#2d6a4f]",
+                    isToday && "bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10",
+                    isSelected && "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 ring-1 ring-inset ring-[#00B4A6]",
                     idx % 7 === 6 && "border-r-0",
                   )}
                 >
                   <span className={cn(
                     "text-xs font-bold inline-flex h-5 w-5 items-center justify-center rounded-full",
                     isToday
-                      ? "bg-[#2d6a4f] text-white"
+                      ? "bg-[#00B4A6] text-white"
                       : "text-gray-700 dark:text-gray-300",
                   )}>
                     {day.getDate()}

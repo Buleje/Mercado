@@ -295,7 +295,7 @@ export default function AgentsDashboardTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-            <Activity className="h-6 w-6 text-[#0f766e]" />
+            <Activity className="h-6 w-6 text-[#00B4A6]" />
             Dashboard de Agentes
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">
@@ -392,7 +392,7 @@ export default function AgentsDashboardTab() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Server className="h-4 w-4 text-[#0f766e]" />
+                        <Server className="h-4 w-4 text-[#00B4A6]" />
                         <span className="font-bold text-gray-900 dark:text-foreground text-sm">
                           {DOMAIN_LABELS[agent.domain]}
                         </span>
@@ -481,7 +481,7 @@ export default function AgentsDashboardTab() {
                 disabled={executing}
                 className={cn(
                   "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white transition-colors disabled:opacity-50",
-                  "bg-[#0f766e] hover:bg-[#0d5f58] dark:bg-[#0f766e] dark:hover:bg-[#3a7d5e]"
+                  "bg-[#00B4A6] hover:bg-[#009690] dark:bg-[#00B4A6] dark:hover:bg-[#3a7d5e]"
                 )}
               >
                 {executing ? (

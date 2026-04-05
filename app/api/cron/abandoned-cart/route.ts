@@ -6,6 +6,7 @@ import { withCronRetry } from "@/lib/cron-retry";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/create-notification";
+import { sendWhatsAppText } from "@/lib/whatsapp";
 
 /**
  * GET /api/cron/abandoned-cart
@@ -133,7 +134,7 @@ export async function GET(req: NextRequest) {
         ];
       });
 
-      // Crear notificaciones admin para cada carrito abandonado
+      // Crear notificaciones admin + push al cliente para cada carrito abandonado
       for (const cart of abandonados) {
         const displayName = cart.customerName || cart.customerPhone;
         const valorStr = `S/${cart.estimatedValue.toFixed(2)}`;
@@ -147,6 +148,21 @@ export async function GET(req: NextRequest) {
           actionLabel: "Contactar por WhatsApp",
           entityId: `abandoned-${cart.customerPhone}`,
         }).catch(() => {});
+
+        // Push notification al cliente para que vuelva a completar su pedido
+        import("@/lib/push-sender")
+          .then(({ sendPushToPhone }) =>
+            sendPushToPhone(cart.customerPhone, {
+              title: "🛒 ¡Tu carrito te espera!",
+              body: `Tienes ${cart.totalItems} producto${cart.totalItems !== 1 ? "s" : ""} por ${valorStr}. ¡Completa tu pedido!`,
+              url: "/tienda?checkout=resume",
+            }),
+          )
+          .catch(() => {});
+
+        // WhatsApp recovery message al cliente
+        sendWhatsAppText(cart.customerPhone, cart.whatsappText).catch(() => {});
+
         notificationsCreated++;
       }
 

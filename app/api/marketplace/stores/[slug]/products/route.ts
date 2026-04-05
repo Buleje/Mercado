@@ -46,12 +46,12 @@ export async function GET(
       ? { retailPrice: "desc" as const }
       : { retailPrice: "asc" as const };
 
-    const products = await prisma.storeProduct.findMany({
+    const raw = await prisma.storeProduct.findMany({
       where: {
         storeId:  store.id,
         isActive: true,
-        ...(category && { product: { category } }),
-        ...(search   && { product: { name: { contains: search, mode: "insensitive" } } }),
+        ...(category && { Product: { category } }),
+        ...(search   && { Product: { name: { contains: search, mode: "insensitive" } } }),
       },
       select: {
         id:            true,
@@ -59,19 +59,34 @@ export async function GET(
         wholesalePrice: true,
         minOrderQty:   true,
         isActive:      true,
-        product: {
+        Product: {
           select: {
             id:       true,
             name:     true,
             image:    true,
             category: true,
             unit:     true,
+            stock:    true,
           },
         },
       },
       orderBy,
       take: limit,
     });
+
+    // Flatten para que el frontend reciba { id, name, price, stock, storeProductId, ... }
+    const products = raw.map((sp) => ({
+      id:             sp.Product.id,
+      storeProductId: sp.id,
+      name:           sp.Product.name,
+      price:          sp.retailPrice,
+      wholesalePrice: sp.wholesalePrice,
+      minOrderQty:    sp.minOrderQty,
+      image:          sp.Product.image,
+      category:       sp.Product.category,
+      unit:           sp.Product.unit,
+      stock:          sp.Product.stock ?? 0,
+    }));
 
     return NextResponse.json({ data: products, total: products.length });
   } catch (err) {

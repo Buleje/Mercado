@@ -535,7 +535,7 @@ export default function PuntoCompraView() {
       <div className="flex items-center gap-3 mb-4">
         <div
           aria-hidden="true"
-          className="h-10 w-10 rounded-xl bg-[#0f766e] text-white flex items-center justify-center shrink-0"
+          className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shrink-0"
         >
           <ShoppingBasket className="h-5 w-5" />
         </div>
@@ -576,7 +576,7 @@ export default function PuntoCompraView() {
           }}
           disabled={processing}
           aria-label="Seleccionar proveedor"
-          className="px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <option value="">Todos los proveedores</option>
           {suppliers.map((s) => (
@@ -592,7 +592,7 @@ export default function PuntoCompraView() {
           onClick={() => setSoloReponer((v) => !v)}
           aria-pressed={soloReponer}
           className={cn(
-            "px-3 py-1.5 rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]",
+            "px-3 py-1.5 rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
             soloReponer
               ? "bg-red-500 text-white"
               : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
@@ -608,14 +608,14 @@ export default function PuntoCompraView() {
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar producto..."
           aria-label="Buscar producto por nombre o código"
-          className="flex-1 min-w-36 px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+          className="flex-1 min-w-36 px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
         />
 
         {/* Botón escáner de código de barras */}
         <button
           type="button"
           onClick={() => setShowScanner(!showScanner)}
-          className={cn("flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors", showScanner ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400")}
+          className={cn("flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium transition-colors", showScanner ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400")}
           title="Buscar por código de barras (F2)"
         >
           <ScanLine className="h-3.5 w-3.5 shrink-0" /> Código
@@ -636,7 +636,7 @@ export default function PuntoCompraView() {
           type="button"
           onClick={() => setViewMode((v) => (v === "grid" ? "list" : "grid"))}
           aria-label={viewMode === "grid" ? "Cambiar a vista lista" : "Cambiar a vista cuadrícula"}
-          className="p-1.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+          className="p-1.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
         >
           {viewMode === "grid" ? (
             <List className="h-4 w-4" />
@@ -650,7 +650,7 @@ export default function PuntoCompraView() {
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortBy)}
           aria-label="Ordenar por"
-          className="px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+          className="px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
         >
           <option value="stock">Stock ↑</option>
           <option value="price">Precio</option>
@@ -674,9 +674,9 @@ export default function PuntoCompraView() {
               aria-selected={category === cat}
               onClick={() => setCategory(cat)}
               className={cn(
-                "shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]",
+                "shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
                 category === cat
-                  ? "bg-[#0f766e] text-white"
+                  ? "bg-[#00B4A6] text-white"
                   : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
               )}
             >
@@ -707,7 +707,7 @@ export default function PuntoCompraView() {
             }}
             placeholder="Escanea o escribe el código de barras..."
             autoFocus
-            className="flex-1 px-3 py-2 border border-[#0f766e] rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#0f766e]"
+            className="flex-1 px-3 py-2 border border-[#00B4A6] rounded-xl text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#00B4A6]"
           />
           <button
             type="button"
@@ -811,7 +811,7 @@ export default function PuntoCompraView() {
                     key={p.id}
                     className={cn(
                       "rounded-2xl transition-all",
-                      inCartQty > 0 && "ring-2 ring-[#0f766e] ring-offset-1 dark:ring-offset-gray-900",
+                      inCartQty > 0 && "ring-2 ring-[#00B4A6] ring-offset-1 dark:ring-offset-gray-900",
                     )}
                   >
                     <PuntoCompraProductCard
@@ -882,7 +882,7 @@ export default function PuntoCompraView() {
                             type="button"
                             onClick={() => addToCart(p, sug)}
                             aria-label={`Agregar ${p.name}`}
-                            className="px-3 py-1 bg-[#0f766e] text-white rounded-lg text-xs hover:bg-[#0d5f58] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                            className="px-3 py-1 bg-[#00B4A6] text-white rounded-lg text-xs hover:bg-[#009690] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
                           >
                             + Agregar
                           </button>
@@ -935,7 +935,7 @@ export default function PuntoCompraView() {
         <button
           type="button"
           onClick={() => setShowScanner(s => !s)}
-          className="fixed bottom-20 right-4 lg:hidden z-40 h-12 w-12 rounded-full bg-[#0f766e] text-white shadow-lg flex items-center justify-center hover:bg-[#0d5f58] transition-colors"
+          className="fixed bottom-20 right-4 lg:hidden z-40 h-12 w-12 rounded-full bg-[#00B4A6] text-white shadow-lg flex items-center justify-center hover:bg-[#009690] transition-colors"
           aria-label="Escanear código de barras"
         >
           <ScanLine className="h-5 w-5" />
@@ -946,7 +946,7 @@ export default function PuntoCompraView() {
           <button
             type="button"
             onClick={() => document.getElementById("poc-cart")?.scrollIntoView({ behavior: "smooth" })}
-            className="fixed bottom-20 left-4 lg:hidden z-40 h-12 px-4 rounded-full bg-[#0f766e] text-white shadow-lg flex items-center gap-2 hover:bg-[#0d5f58] transition-colors"
+            className="fixed bottom-20 left-4 lg:hidden z-40 h-12 px-4 rounded-full bg-[#00B4A6] text-white shadow-lg flex items-center gap-2 hover:bg-[#009690] transition-colors"
             aria-label="Ver carrito"
           >
             <ShoppingBasket className="h-4 w-4" />
@@ -967,7 +967,7 @@ export default function PuntoCompraView() {
               <div className="flex items-center gap-2">
                 <ShoppingBasket
                   aria-hidden="true"
-                  className="h-4 w-4 text-[#0f766e]"
+                  className="h-4 w-4 text-[#00B4A6]"
                 />
                 <span className="font-semibold text-sm text-gray-900 dark:text-white">
                   Canasta
@@ -980,7 +980,7 @@ export default function PuntoCompraView() {
                 {cart.length > 0 && (
                   <span
                     aria-label={`${cartTotalQty} unidades en canasta`}
-                    className="h-5 w-5 rounded-full bg-[#0f766e] text-white text-xs flex items-center justify-center font-bold"
+                    className="h-5 w-5 rounded-full bg-[#00B4A6] text-white text-xs flex items-center justify-center font-bold"
                   >
                     {cartTotalQty > 99 ? "99+" : cartTotalQty}
                   </span>
@@ -991,7 +991,7 @@ export default function PuntoCompraView() {
                   type="button"
                   onClick={clearCart}
                   disabled={processing}
-                  className="text-xs text-gray-400 hover:text-red-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-xs text-gray-400 hover:text-red-500 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] rounded disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Limpiar
                 </button>
@@ -1014,7 +1014,7 @@ export default function PuntoCompraView() {
                   className={cn(
                     "flex-1 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors",
                     cartTab === tab.key
-                      ? "text-[#0f766e] border-b-2 border-[#0f766e]"
+                      ? "text-[#00B4A6] border-b-2 border-[#00B4A6]"
                       : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300",
                   )}
                 >
@@ -1087,7 +1087,7 @@ export default function PuntoCompraView() {
                     {/* Miniatura */}
                     <div
                       aria-hidden="true"
-                      className="h-8 w-8 rounded-lg bg-[#0f766e]/10 flex items-center justify-center shrink-0 text-[#0f766e] font-bold text-sm overflow-hidden relative"
+                      className="h-8 w-8 rounded-lg bg-[#00B4A6]/10 flex items-center justify-center shrink-0 text-[#00B4A6] font-bold text-sm overflow-hidden relative"
                     >
                       <span className="absolute inset-0 flex items-center justify-center">
                         {(item.product.name || "?")[0].toUpperCase()}
@@ -1143,7 +1143,7 @@ export default function PuntoCompraView() {
                         onClick={() => updateQty(item.product.id, -1)}
                         disabled={processing}
                         aria-label={`Reducir cantidad de ${item.product.name}`}
-                        className="h-6 w-6 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-6 w-6 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         -
                       </button>
@@ -1158,7 +1158,7 @@ export default function PuntoCompraView() {
                         onClick={() => updateQty(item.product.id, 1)}
                         disabled={processing}
                         aria-label={`Aumentar cantidad de ${item.product.name}`}
-                        className="h-6 w-6 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="h-6 w-6 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         +
                       </button>
@@ -1188,7 +1188,7 @@ export default function PuntoCompraView() {
                       onClick={() => removeItem(item.product.id)}
                       disabled={processing}
                       aria-label={`Eliminar ${item.product.name} de la canasta`}
-                      className="h-5 w-5 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-5 w-5 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       ✕
                     </button>
@@ -1221,7 +1221,7 @@ export default function PuntoCompraView() {
                         Math.min(100, Math.max(0, Number(e.target.value))),
                       )
                     }
-                    className="flex-1 px-2 py-1 border border-gray-200 dark:border-card-border rounded-lg text-xs text-right bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                    className="flex-1 px-2 py-1 border border-gray-200 dark:border-card-border rounded-lg text-xs text-right bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
                   />
                 </div>
 
@@ -1244,7 +1244,7 @@ export default function PuntoCompraView() {
                       type="button"
                       onClick={() => setShowIGV((v) => !v)}
                       aria-pressed={showIGV}
-                      className="text-[10px] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] rounded"
+                      className="text-[10px] underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] rounded"
                     >
                       IGV 18%
                     </button>
@@ -1256,7 +1256,7 @@ export default function PuntoCompraView() {
                   </div>
                   <div className="flex justify-between font-bold text-base text-gray-900 dark:text-white pt-1 border-t border-gray-100 dark:border-card-border">
                     <span>TOTAL</span>
-                    <span className="font-mono text-[#0f766e]">
+                    <span className="font-mono text-[#00B4A6]">
                       S/{displayTotal.toFixed(2)}
                     </span>
                   </div>
@@ -1267,7 +1267,7 @@ export default function PuntoCompraView() {
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
                   aria-label="Método de pago"
-                  className="w-full px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                  className="w-full px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
                 >
                   <option value="contado">Contado</option>
                   <option value="credito_7">Crédito 7 días</option>
@@ -1287,7 +1287,7 @@ export default function PuntoCompraView() {
                     value={deliveryDate}
                     onChange={(e) => setDeliveryDate(e.target.value)}
                     min={todayStr}
-                    className="w-full px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                    className="w-full px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
                   />
                 </div>
 
@@ -1303,7 +1303,7 @@ export default function PuntoCompraView() {
                     disabled={processing}
                     rows={2}
                     placeholder="Notas al proveedor..."
-                    className="w-full px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 resize-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-1.5 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 resize-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
 
@@ -1330,7 +1330,7 @@ export default function PuntoCompraView() {
                   <div className="flex items-center justify-between">
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Plantillas</p>
                     {cart.length > 0 && (
-                      <button type="button" onClick={saveAsTemplate} disabled={processing} className="text-[10px] text-[#0f766e] hover:underline font-medium">
+                      <button type="button" onClick={saveAsTemplate} disabled={processing} className="text-[10px] text-[#00B4A6] hover:underline font-medium">
                         + Guardar actual
                       </button>
                     )}
@@ -1339,7 +1339,7 @@ export default function PuntoCompraView() {
                     <div className="flex flex-wrap gap-1">
                       {savedTemplates.map((tpl, idx) => (
                         <div key={idx} className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg px-2 py-1">
-                          <button type="button" onClick={() => loadTemplate(tpl)} className="text-[10px] font-medium text-gray-700 dark:text-gray-300 hover:text-[#0f766e]">
+                          <button type="button" onClick={() => loadTemplate(tpl)} className="text-[10px] font-medium text-gray-700 dark:text-gray-300 hover:text-[#00B4A6]">
                             {tpl.name}
                           </button>
                           <button type="button" onClick={() => deleteTemplate(idx)} className="text-[9px] text-gray-400 hover:text-red-500 ml-0.5">✕</button>
@@ -1367,7 +1367,7 @@ export default function PuntoCompraView() {
                     type="button"
                     onClick={() => setShowPrintPreview(true)}
                     disabled={processing}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
                   >
                     <FileDown aria-hidden="true" className="h-3.5 w-3.5" />
                     PDF
@@ -1377,7 +1377,7 @@ export default function PuntoCompraView() {
                     type="button"
                     onClick={handleSaveDraft}
                     disabled={processing}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 rounded-xl text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
                   >
                     <BookmarkIcon aria-hidden="true" className="h-3.5 w-3.5" />
                     Borrador
@@ -1397,7 +1397,7 @@ export default function PuntoCompraView() {
                     type="button"
                     onClick={confirmarOC}
                     disabled={processing || cart.length === 0}
-                    className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                    className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
                   >
                     {processing ? (
                       <Loader2

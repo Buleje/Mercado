@@ -37,10 +37,10 @@ const DEFAULTS: Record<FeatureFlag, boolean> = {
   customer_portal: false,
   demand_prediction: false,
   whatsapp_integration: false,
-  back_in_stock_alerts: false,
+  back_in_stock_alerts: true,
   product_comparisons: false,
   exit_intent_modal: true,
-  abandoned_cart_recovery: false,
+  abandoned_cart_recovery: true,
 };
 
 // ── Internal helpers ──────────────────────────────────────────────────────────

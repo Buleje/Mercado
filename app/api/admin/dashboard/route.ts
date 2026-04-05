@@ -7,6 +7,7 @@ import {
 import { requireAdmin } from "@/lib/require-admin";
 import { getOrSet } from "@/lib/cache";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { withDbRetry } from "@/lib/db-retry";
 
 const DASHBOARD_TTL_SEC = 15; // Cached for 15 s — keeps polling cheap
 
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
 
     const payload = await getOrSet(cacheKey, DASHBOARD_TTL_SEC, async () => {
       const [products, orders, sales, customers, purchases, payables, suppliers, reviews] =
-        await Promise.all([
+        await withDbRetry(() => Promise.all([
           ProductsDB.getAll(auth.tenantId),
           OrdersDB.getAll(auth.tenantId),
           SalesDB.getAll(auth.tenantId),
@@ -30,7 +31,7 @@ export async function GET(req: NextRequest) {
           PayablesDB.getAll(auth.tenantId),
           SuppliersDB.getAll(auth.tenantId),
           ReviewsDB.getAll(auth.tenantId),
-        ]);
+        ]));
 
       const lowStock = products.filter(
         (p) => typeof p.stock === "number" && typeof p.stockMin === "number" && p.stock <= p.stockMin

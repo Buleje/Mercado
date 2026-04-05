@@ -92,16 +92,38 @@ export const InventoryMovementsDB = {
     const prevStock = product?.stock ?? 0;
     const isIncrease = ["compra", "devolucion", "ajuste_positivo"].includes(data.type);
     const newStock = isIncrease ? prevStock + data.quantity : prevStock - data.quantity;
-    await prisma.product.update({ where: { id: data.productId }, data: { stock: Math.max(0, newStock) } });
+    const clampedNewStock = Math.max(0, newStock);
+    await prisma.product.update({ where: { id: data.productId }, data: { stock: clampedNewStock } });
     const row = await prisma.inventoryMovement.create({
       data: {
         productId: data.productId, type: data.type, lossType: data.lossType, quantity: data.quantity,
-        previousStock: prevStock, newStock: Math.max(0, newStock),
+        previousStock: prevStock, newStock: clampedNewStock,
         reference: data.reference, notes: data.notes,
         ...(data.warehouseId ? { warehouseId: data.warehouseId } : {}),
         ...(data.createdBy ? { createdBy: data.createdBy } : {}),
       },
     });
+
+    // Fire-and-forget: push notification when stock drops below minimum
+    const stockMin = (product as unknown as { stockMin?: number | null })?.stockMin;
+    if (
+      !isIncrease &&
+      stockMin != null &&
+      prevStock > stockMin &&
+      clampedNewStock <= stockMin &&
+      product
+    ) {
+      import("@/lib/push-sender").then(({ broadcastPush }) =>
+        broadcastPush({
+          title: `⚠️ Stock bajo: ${product.name}`,
+          body: clampedNewStock === 0
+            ? `Se agotó "${product.name}". Reabastece cuanto antes.`
+            : `Solo quedan ${clampedNewStock} unidad(es) de "${product.name}" (mínimo: ${stockMin}).`,
+          url: "/admin?tab=inventario",
+        })
+      ).catch(() => {});
+    }
+
     return mapInventoryMovement(row);
   },
   /**

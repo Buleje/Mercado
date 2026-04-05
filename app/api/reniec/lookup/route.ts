@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { lookupDniInReniec, ReniecConfigError } from "@/lib/reniec";
+import { lookupDniInReniec } from "@/lib/reniec";
 
 const querySchema = z.object({
   dni: z
@@ -29,28 +29,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // 3. Consultar RENIEC vía lib/reniec.ts
+    // 3. Consultar DNI vía lib/reniec.ts (fallback chain: configured → apis.net.pe → dniperu)
     const person = await lookupDniInReniec(parsed.data.dni);
     return NextResponse.json(person);
   } catch (error) {
-    if (error instanceof ReniecConfigError) {
-      // API no configurada — retornar mock de prueba para desarrollo
-      const dni = parsed.data.dni;
-      return NextResponse.json(
-        {
-          dni,
-          nombres: "USUARIO",
-          apellidoPaterno: "DEMO",
-          apellidoMaterno: "PRUEBA",
-          nombreCompleto: "USUARIO DEMO PRUEBA",
-          _mock: true,
-          _note: "Configura RENIEC_API_URL en .env para datos reales",
-        },
-        { status: 200 }
-      );
-    }
-
-    const message = error instanceof Error ? error.message : "No se pudo consultar RENIEC.";
-    return NextResponse.json({ error: message }, { status: 503 });
+    const message = error instanceof Error ? error.message : "No se pudo consultar el DNI.";
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 }

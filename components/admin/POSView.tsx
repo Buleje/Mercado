@@ -303,7 +303,7 @@ function SaleHistoryItem({ sale }: { sale: SaleRecord }) {
 // ── Confetti animation for sale complete ──────────────────────────────────────
 
 function SaleConfetti() {
-  const colors = ["#0f766e", "#f97316", "#14b8a6", "#e63946"];
+  const colors = ["#00B4A6", "#f97316", "#2dd4bf", "#e63946"];
   // Pre-compute random values to avoid impure function calls during render
   const pieces = useState(() =>
     Array.from({ length: 20 }).map((_, i) => ({
@@ -562,7 +562,7 @@ function SaleCompleteModal({
           transition={{ delay: 0.3 }}
           className="text-xs text-gray-500 dark:text-muted mb-3 space-y-0.5"
         >
-          <p className="font-extrabold text-gray-900 dark:text-foreground text-xl" style={{ color: "#0f766e" }}>
+          <p className="font-extrabold text-gray-900 dark:text-foreground text-xl" style={{ color: "#00B4A6" }}>
             {fmt(animatedTotal)}
           </p>
           {lastSaleDetails && (
@@ -767,7 +767,7 @@ function ShiftSummaryWidget() {
     >
       <div className="px-4 py-2 flex items-center gap-3 text-xs">
         <span className="text-gray-500 dark:text-muted">&#9201; {timeStr}</span>
-        <span className="font-bold" style={{ color: "#0f766e" }}>S/{(data.totalVentas ?? 0).toFixed(0)}</span>
+        <span className="font-bold" style={{ color: "#00B4A6" }}>S/{(data.totalVentas ?? 0).toFixed(0)}</span>
         <span className="text-gray-500 dark:text-muted">&#128203; {data.cantidadVentas ?? 0}</span>
       </div>
       {expanded && (
@@ -2259,7 +2259,7 @@ export default function POSView() {
               <span className="text-sm font-medium text-gray-700 dark:text-foreground">{cartCount} items</span>
               <span className="text-lg font-bold font-mono ml-2 text-gray-900 dark:text-foreground">S/ {cartTotal.toFixed(2)}</span>
             </div>
-            <button onClick={() => setShowPayment(true)} className="bg-[#0f766e] text-white px-6 py-2.5 rounded-xl font-semibold text-sm">
+            <button onClick={() => setShowPayment(true)} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-semibold text-sm">
               Cobrar
             </button>
           </div>
@@ -2300,7 +2300,7 @@ export default function POSView() {
                           <span className="text-emerald-600 font-bold text-xs shrink-0">x{item.qty}</span>
                           <span className="text-sm font-medium text-gray-800 dark:text-foreground truncate">{(item.selected || item.matches[0]).name}</span>
                         </div>
-                        <span className="text-sm font-bold text-[#0f766e] shrink-0">S/{((item.selected || item.matches[0]).price * item.qty).toFixed(2)}</span>
+                        <span className="text-sm font-bold text-[#00B4A6] shrink-0">S/{((item.selected || item.matches[0]).price * item.qty).toFixed(2)}</span>
                       </div>
                     ) : item.matches.length > 1 ? (
                       <div>
@@ -2312,7 +2312,7 @@ export default function POSView() {
                               onClick={() => {
                                 setWaParsedItems(prev => prev.map((p, i) => i === idx ? { ...p, selected: m } : p));
                               }}
-                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-gray-200 hover:border-[#0f766e] hover:text-[#0f766e] transition-colors"
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-card border border-gray-200 hover:border-[#00B4A6] hover:text-[#00B4A6] transition-colors"
                             >
                               {m.name} · S/{m.price.toFixed(2)}
                             </button>
@@ -2331,7 +2331,7 @@ export default function POSView() {
                   return (
                     <div className="pt-3 border-t border-gray-100 dark:border-card-border">
                       <div className="flex justify-between items-center mb-3">
-                        <span className="text-sm font-bold text-gray-700">Total estimado: <span className="text-[#0f766e]">S/{total.toFixed(2)}</span></span>
+                        <span className="text-sm font-bold text-gray-700">Total estimado: <span className="text-[#00B4A6]">S/{total.toFixed(2)}</span></span>
                         <span className="text-[10px] text-gray-400">{resolved.length}/{waParsedItems.length} items</span>
                       </div>
                       <button
@@ -2347,7 +2347,7 @@ export default function POSView() {
                           setWaParsedItems([]);
                         }}
                         disabled={resolved.length === 0}
-                        className="w-full py-3 rounded-xl bg-[#0f766e] text-white text-sm font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full py-3 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                       >
                         <ShoppingBasket className="h-4 w-4" /> Agregar todo al carrito
                       </button>

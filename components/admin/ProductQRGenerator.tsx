@@ -154,7 +154,7 @@ export default function ProductQRGenerator() {
             body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; font-family: Arial, sans-serif; }
             img { display: block; max-width: 300px; }
             .label { margin-top: 10px; font-size: 14px; font-weight: bold; color: #1a3d2e; text-align: center; }
-            .price { font-size: 16px; font-weight: bold; color: #0f766e; text-align: center; }
+            .price { font-size: 16px; font-weight: bold; color: #00B4A6; text-align: center; }
             .barcode { font-size: 11px; color: #888; margin-top: 4px; text-align: center; }
             @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
           </style>
@@ -236,7 +236,7 @@ export default function ProductQRGenerator() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Escribe el nombre del producto..."
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </div>
             {search && (
@@ -256,7 +256,7 @@ export default function ProductQRGenerator() {
                       className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
                       <span className="text-gray-800 dark:text-gray-200">{p.name}</span>
-                      <span className="font-medium text-[#0f766e]">S/ {p.price?.toFixed(2)}</span>
+                      <span className="font-medium text-[#00B4A6]">S/ {p.price?.toFixed(2)}</span>
                     </button>
                   ))
                 )}
@@ -277,8 +277,8 @@ export default function ProductQRGenerator() {
                   className={cn(
                     "flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition",
                     size === s
-                      ? "border-[#0f766e] bg-[#0f766e] text-white"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#0f766e]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                      ? "border-[#00B4A6] bg-[#00B4A6] text-white"
+                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#00B4A6]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
                   )}
                 >
                   {s === "small" ? "Pequeno" : s === "medium" ? "Mediano" : "Grande"}
@@ -293,7 +293,7 @@ export default function ProductQRGenerator() {
             <div className="space-y-2">
               <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
                 <p className="text-xs font-medium text-gray-500 dark:text-gray-400">URL del QR</p>
-                <p className="mt-1 break-all font-mono text-xs text-[#0f766e]">{qrUrl}</p>
+                <p className="mt-1 break-all font-mono text-xs text-[#00B4A6]">{qrUrl}</p>
               </div>
               {selected.barcode && (
                 <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
@@ -309,7 +309,7 @@ export default function ProductQRGenerator() {
         <div className="flex flex-col items-center justify-center gap-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
           {selected ? (
             <>
-              <div className={cn("rounded-xl border-2 border-[#0f766e] bg-white p-4", rendering && "opacity-50")}>
+              <div className={cn("rounded-xl border-2 border-[#00B4A6] bg-white p-4", rendering && "opacity-50")}>
                 {/* SVG del servidor (preferido) */}
                 {svgSrc ? (
                   <img
@@ -323,7 +323,7 @@ export default function ProductQRGenerator() {
                   <>
                     <canvas ref={canvasRef} className="block" />
                     <p className="mt-2 text-center text-sm font-bold text-[#1a3d2e]">{selected.name}</p>
-                    <p className="text-center text-base font-bold text-[#0f766e]">S/ {selected.price.toFixed(2)}</p>
+                    <p className="text-center text-base font-bold text-[#00B4A6]">S/ {selected.price.toFixed(2)}</p>
                   </>
                 )}
               </div>
@@ -333,7 +333,7 @@ export default function ProductQRGenerator() {
                 <button
                   onClick={handlePrint}
                   disabled={rendering}
-                  className="flex items-center gap-2 rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0d5f58] disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg bg-[#00B4A6] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#009690] disabled:opacity-50"
                 >
                   <Printer className="h-4 w-4" />
                   Imprimir
@@ -341,7 +341,7 @@ export default function ProductQRGenerator() {
                 <button
                   onClick={handleDownload}
                   disabled={rendering}
-                  className="flex items-center gap-2 rounded-lg border border-[#0f766e] px-4 py-2 text-sm font-semibold text-[#0f766e] transition hover:bg-[#0f766e]/5 disabled:opacity-50 dark:text-emerald-400"
+                  className="flex items-center gap-2 rounded-lg border border-[#00B4A6] px-4 py-2 text-sm font-semibold text-[#00B4A6] transition hover:bg-[#00B4A6]/5 disabled:opacity-50 dark:text-emerald-400"
                 >
                   <Download className="h-4 w-4" />
                   Descargar

@@ -1,6 +1,9 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { Building2, BookOpen, Globe, Star, ShieldCheck, Wallet } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -14,33 +17,33 @@ const SupplierEvaluationsTab = dynamic(() => import("@/components/admin/Supplier
 const SupplierQualityTab = dynamic(() => import("@/components/admin/SupplierQualityTab"), { loading: S });
 const SupplierPaymentsTab = dynamic(() => import("@/components/admin/SupplierPaymentsTab"), { loading: S });
 
+const MODULE_ID = "proveedores";
+
 const TABS = [
-  { id: "directorio" as const, label: "Directorio" },
-  { id: "portal" as const, label: "Portal" },
-  { id: "evaluaciones" as const, label: "Evaluaciones" },
-  { id: "calidad" as const, label: "Calidad" },
-  { id: "pagos" as const, label: "Pagos" },
+  { id: "directorio", label: "Directorio", icon: BookOpen },
+  { id: "portal", label: "Portal", icon: Globe },
+  { id: "evaluaciones", label: "Evaluaciones", icon: Star },
+  { id: "calidad", label: "Calidad", icon: ShieldCheck },
+  { id: "pagos", label: "Pagos", icon: Wallet },
 ];
 
 export default function ProveedoresModule() {
   const [sub, setSub] = useState(TABS[0].id);
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none border-b border-gray-200 dark:border-card-border -mx-1 px-1">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSub(t.id)}
-            className={`shrink-0 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${
-              sub === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Proveedores"
+        description="Directorio, portal, evaluaciones, calidad y pagos de proveedores"
+        icon={Building2}
+      />
+
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId={MODULE_ID}
+      />
+
       {sub === "directorio" && <SuppliersTab />}
       {sub === "portal" && <SupplierPortalTab />}
       {sub === "evaluaciones" && <SupplierEvaluationsTab />}

@@ -5,7 +5,7 @@ import { Store, ShoppingCart, Search, Star, ChevronRight, Sparkles, Package } fr
 import { cn } from "@/lib/utils";
 
 const COLOR_PRESETS = [
-  { name: "Teal", primary: "#0f766e", secondary: "#f97316" },
+  { name: "Teal", primary: "#00B4A6", secondary: "#f97316" },
   { name: "Azul", primary: "#2563eb", secondary: "#7c3aed" },
   { name: "Rosa", primary: "#e11d48", secondary: "#f59e0b" },
   { name: "Verde", primary: "#16a34a", secondary: "#0ea5e9" },

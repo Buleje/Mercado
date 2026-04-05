@@ -132,10 +132,10 @@ function ProductSearchInput({
           value={query}
           onChange={e => handleChange(e.target.value)}
           placeholder="Buscar producto..."
-          className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+          className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
         />
         {loading && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#0f766e] border-t-transparent rounded-full animate-spin" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
         )}
       </div>
 
@@ -236,7 +236,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             onChange={e => setForm(f => ({ ...f, newPrice: e.target.value }))}
             placeholder="0.00"
             className={cn(
-              "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40",
+              "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
               errors.newPrice ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
             )}
           />
@@ -265,7 +265,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             value={form.startDate}
             onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
             className={cn(
-              "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40",
+              "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
               errors.startDate ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
             )}
           />
@@ -278,7 +278,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
             value={form.endDate}
             onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
             className={cn(
-              "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40",
+              "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
               errors.endDate ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
             )}
           />
@@ -295,7 +295,7 @@ function AddForm({ onSave, onCancel }: { onSave: (s: PriceSchedule) => void; onC
         </button>
         <button
           onClick={handleSave}
-          className="px-4 py-2 rounded-xl text-sm font-medium bg-[#0f766e] text-white hover:bg-[#245a41] transition-colors"
+          className="px-4 py-2 rounded-xl text-sm font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors"
         >
           Programar cambio
         </button>
@@ -354,7 +354,7 @@ export default function PriceScheduler() {
             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
             showForm
               ? "bg-gray-100 text-gray-400 dark:bg-gray-800 cursor-not-allowed"
-              : "bg-[#0f766e] text-white hover:bg-[#245a41]"
+              : "bg-[#00B4A6] text-white hover:bg-[#245a41]"
           )}
         >
           <Plus className="w-4 h-4" />
@@ -373,7 +373,7 @@ export default function PriceScheduler() {
               className={cn(
                 "bg-white dark:bg-card border rounded-xl p-3 text-left transition-colors",
                 filter === st
-                  ? "border-[#0f766e] ring-2 ring-[#0f766e]/20"
+                  ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/20"
                   : "border-gray-200 dark:border-card-border hover:border-gray-300 dark:hover:border-gray-600"
               )}
             >

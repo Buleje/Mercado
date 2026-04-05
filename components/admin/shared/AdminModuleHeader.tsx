@@ -2,12 +2,21 @@
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * AdminModuleHeader — Encabezado estándar para TODOS los módulos admin.
+ *
+ * Tipografía fija (NO cambiar sin actualizar todos los módulos):
+ *   - Título (h1): text-xl / font-bold / text-gray-900
+ *   - Descripción: text-xs / text-gray-500
+ *   - Icono: 40×40 rounded-xl, fondo teal (#00B4A6)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
 interface AdminModuleHeaderProps {
   title: string;
   description?: string;
   icon: LucideIcon;
   iconColor?: string;
-  children?: React.ReactNode; // Para acciones adicionales (botones export, refresh, etc.)
+  children?: React.ReactNode;
   className?: string;
 }
 
@@ -15,14 +24,14 @@ export default function AdminModuleHeader({
   title,
   description,
   icon: Icon,
-  iconColor = "#0f766e",
+  iconColor = "#00B4A6",
   children,
   className,
 }: AdminModuleHeaderProps) {
   return (
     <div
       className={cn(
-        "sticky top-0 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm pb-3 -mx-1 px-1",
+        "sticky top-0 z-20 bg-white/95 backdrop-blur-sm pb-3 -mx-1 px-1",
         className,
       )}
     >
@@ -35,11 +44,11 @@ export default function AdminModuleHeader({
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">
+            <h1 className="text-xl font-bold text-gray-900 truncate">
               {title}
             </h1>
             {description && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              <p className="text-xs text-gray-500 truncate">
                 {description}
               </p>
             )}

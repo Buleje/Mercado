@@ -11,7 +11,7 @@ const SEGMENTS = [
   { label: "10% OFF", color: "#8b5cf6", value: 10 },
   { label: "S/2 OFF", color: "#3b82f6", value: 2 },
   { label: "S/5 OFF", color: "#ec4899", value: 5 },
-  { label: "Sorpresa 🎁", color: "#0d9488", value: 0 },
+  { label: "Sorpresa 🎁", color: "#33C4B8", value: 0 },
 ];
 
 const STORAGE_KEY = "bsm-spin-played";

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const db = prismaForTenant(tenantId);
 
   // Fetch tenant metadata
-  const tenant = await prisma.tenant.findFirst({ where: { slug: tenantId } });
+  const tenant = await prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] } });
   const plan = tenant?.plan ?? "free";
   const planDef = getPlanDef(plan);
   const limits = getPlanLimits(plan);

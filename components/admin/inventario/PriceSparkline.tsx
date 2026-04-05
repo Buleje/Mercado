@@ -41,14 +41,14 @@ export default function PriceSparkline({ productId }: { productId: number }) {
         <AreaChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id={`sparkGrad-${productId}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#0f766e" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#0f766e" stopOpacity={0} />
+              <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.3} />
+              <stop offset="95%" stopColor="#00B4A6" stopOpacity={0} />
             </linearGradient>
           </defs>
           <Area
             type="monotone"
             dataKey="price"
-            stroke="#0f766e"
+            stroke="#00B4A6"
             strokeWidth={1.5}
             fill={`url(#sparkGrad-${productId})`}
             dot={false}

@@ -279,8 +279,8 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
 
         {/* Header */}
         <div className="flex flex-col items-center gap-3 mb-6">
-          <div className="w-14 h-14 rounded-full bg-[#0f766e]/10 flex items-center justify-center">
-            <Lock size={26} className="text-[#0f766e]" />
+          <div className="w-14 h-14 rounded-full bg-[#00B4A6]/10 flex items-center justify-center">
+            <Lock size={26} className="text-[#00B4A6]" />
           </div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white text-center">{title}</h2>
         </div>
@@ -316,9 +316,9 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                     "w-14 h-14 rounded-xl border-2 text-center text-2xl font-bold outline-none transition-all duration-150",
                     "bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white",
                     digit
-                      ? "border-[#0f766e] bg-[#0f766e]/5 dark:bg-[#0f766e]/10"
+                      ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
                       : "border-gray-300 dark:border-gray-600",
-                    "focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
+                    "focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                     "disabled:opacity-60"
                   )}
                 />
@@ -358,7 +358,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
                       ? "invisible"
                       : key === "⌫"
                       ? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white hover:bg-[#0f766e]/10 hover:text-[#0f766e] dark:hover:bg-[#0f766e]/20 active:scale-95",
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-white hover:bg-[#00B4A6]/10 hover:text-[#00B4A6] dark:hover:bg-[#00B4A6]/20 active:scale-95",
                     "disabled:opacity-40 disabled:cursor-not-allowed"
                   )}
                 >
@@ -373,7 +373,7 @@ export default function PinLoginModal({ onSuccess, onClose, title = "Ingresa tu 
               disabled={digits.some((d) => !d) || loading}
               className={cn(
                 "mt-4 w-full h-12 rounded-xl font-semibold text-white transition-all duration-150",
-                "bg-[#0f766e] hover:bg-[#235c42] active:scale-[0.98]",
+                "bg-[#00B4A6] hover:bg-[#235c42] active:scale-[0.98]",
                 "disabled:opacity-40 disabled:cursor-not-allowed"
               )}
             >

@@ -38,7 +38,7 @@ export default function VolumeDiscount() {
   return (
     <>
       {/* ── Mobile: compact dismissible pill ─────────────────────────────── */}
-      <div className="sm:hidden fixed bottom-24 left-4 z-30 animate-[fadeUp_0.4s_ease-out] max-w-[calc(100vw-7rem)]">
+      <div className="sm:hidden fixed bottom-24 left-4 z-40 animate-[fadeUp_0.4s_ease-out] max-w-[calc(100vw-7rem)]">
         <div className="flex items-center gap-2 bg-white dark:bg-card rounded-full shadow-lg border border-gray-100 dark:border-card-border pl-2.5 pr-1.5 py-1.5">
           <span className="flex items-center justify-center h-6 w-6 rounded-full bg-primary/10 shrink-0">
             <Percent className="h-3.5 w-3.5 text-primary" />
@@ -61,7 +61,7 @@ export default function VolumeDiscount() {
       </div>
 
       {/* ── Desktop: full card ────────────────────────────────────────────── */}
-      <div className="hidden sm:block fixed bottom-24 right-4 w-80 z-30 animate-[fadeUp_0.4s_ease-out] lg:bottom-4">
+      <div className="hidden sm:block fixed bottom-24 right-4 w-80 z-40 animate-[fadeUp_0.4s_ease-out]">
         <div className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border p-4 relative">
           <button
             onClick={() => { setDismissed(true); sessionStorage.setItem("bsm-vd-dismissed", "1"); }}

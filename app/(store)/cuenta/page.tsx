@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
+import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
 import { useFavorites } from "@/contexts/favorites-context";
 import { usePromotions } from "@/contexts/promotions-context";
 import { cn } from "@/lib/utils";
@@ -92,6 +93,7 @@ type TabId = (typeof TABS)[number]["id"];
 export default function CuentaPage() {
   const router = useRouter();
   const { customer, openModal: openCustomerModal } = useCustomer();
+  const slug = useTenantSlug();
 
   const [phone, setPhone] = useState("");
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -154,10 +156,10 @@ export default function CuentaPage() {
       id: i.productId!, name: i.name, price: i.price, image: i.image, unit: i.unit, category: "", quantity: i.quantity,
     }));
     if (reorderItems.length === 0) return;
-    localStorage.setItem("bsm-reorder", JSON.stringify(reorderItems));
+    localStorage.setItem(tenantKey(slug, "reorder"), JSON.stringify(reorderItems));
     setReorderMsg(`${reorderItems.length} productos agregados al carrito`);
     setTimeout(() => router.push("/"), 800);
-  }, [router]);
+  }, [router, slug]);
 
   const totalSpent = orders?.filter(o => o.status !== "cancelado").reduce((a, o) => a + (o.total ?? 0), 0) ?? 0;
   const orderCount = orders?.filter(o => o.status !== "cancelado").length ?? 0;
@@ -179,7 +181,7 @@ export default function CuentaPage() {
       {/* ── Hero header — matches site gradient ──────────────────── */}
       <div
         className="pt-32 sm:pt-36 pb-10 sm:pb-14"
-        style={{ background: "linear-gradient(135deg, #0d5f58 0%, #0f766e 50%, #0d9488 100%)" }}
+        style={{ background: "linear-gradient(135deg, #009690 0%, #00B4A6 50%, #33C4B8 100%)" }}
       >
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-3 mb-6">
@@ -191,7 +193,7 @@ export default function CuentaPage() {
             </Link>
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">Mi Panel</h1>
-              <p className="text-xs text-white/60 mt-0.5">Buleje · Pucallpa</p>
+              <p className="text-xs text-white/60 mt-0.5">Buleje</p>
             </div>
             {identified && loyalty && (
               <div className="shrink-0 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/15 flex items-center gap-1.5">
@@ -470,7 +472,7 @@ function CreditScoreCard({ phone }: { phone: string }) {
         {scoreData.pagosTotal > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border grid grid-cols-3 gap-2 text-center">
             <div>
-              <p className="text-lg font-bold text-[#0f766e]">{scoreData.pagosATiempo}</p>
+              <p className="text-lg font-bold text-[#00B4A6]">{scoreData.pagosATiempo}</p>
               <p className="text-[10px] text-gray-400">A tiempo</p>
             </div>
             <div>
@@ -1480,7 +1482,7 @@ function ResenasTab({ phone, orders }: { phone: string; orders: Order[] }) {
     const body = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: customer?.name ?? "Cliente",
-      location: customer?.location ?? "Pucallpa",
+      location: customer?.location ?? "",
       text: text.trim(),
       rating,
       phone: clean,
@@ -1556,7 +1558,7 @@ function ResenasTab({ phone, orders }: { phone: string; orders: Order[] }) {
             className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border dark:bg-background dark:text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
           <div className="flex items-center justify-between text-xs text-gray-400">
             <span>{text.length}/500</span>
-            <span>{customer?.name ?? "Cliente"} &middot; {customer?.location ?? "Pucallpa"}</span>
+            <span>{customer?.name ?? "Cliente"} &middot; {customer?.location ?? ""}</span>
           </div>
           <div className="flex gap-2">
             <button onClick={() => { setWriting(false); setText(""); setRating(5); }}

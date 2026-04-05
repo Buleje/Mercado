@@ -224,7 +224,7 @@ export default function MarketplaceChat({
           onClick={() => setIsOpen((v) => !v)}
           aria-label={isOpen ? "Cerrar chat" : `Chatear con ${storeName}`}
           className="relative flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
-          style={{ background: "linear-gradient(135deg,#0f766e,#134e4a)" }}
+          style={{ background: "linear-gradient(135deg,#00B4A6,#134e4a)" }}
         >
           <AnimatePresence mode="wait">
             {isOpen ? (
@@ -293,7 +293,7 @@ export default function MarketplaceChat({
             {/* header */}
             <div
               className="flex items-center gap-3 px-4 py-3"
-              style={{ background: "linear-gradient(135deg,#0f766e,#134e4a)" }}
+              style={{ background: "linear-gradient(135deg,#00B4A6,#134e4a)" }}
             >
               {/* avatar tienda */}
               <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/30 bg-white/10">

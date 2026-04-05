@@ -287,7 +287,7 @@ export default function DevolucionesProveedorModule() {
           </button>
           <button
             onClick={() => { setMostrarFormulario(true); resetFormulario(); }}
-            className="flex items-center gap-2 px-4 py-2 bg-[#0f766e] hover:bg-[#0d5f58] text-white rounded-xl text-sm font-medium transition-colors min-h-[44px]"
+            className="flex items-center gap-2 px-4 py-2 bg-[#00B4A6] hover:bg-[#009690] text-white rounded-xl text-sm font-medium transition-colors min-h-[44px]"
           >
             <Plus className="h-4 w-4" />
             Nueva devolución
@@ -304,7 +304,7 @@ export default function DevolucionesProveedorModule() {
             className={cn(
               "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors min-h-[36px]",
               filtroEstado === estado
-                ? "bg-[#0f766e] text-white border-[#0f766e]"
+                ? "bg-[#00B4A6] text-white border-[#00B4A6]"
                 : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-card-border hover:bg-gray-50 dark:hover:bg-gray-800"
             )}
           >
@@ -363,7 +363,7 @@ export default function DevolucionesProveedorModule() {
               <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Items a devolver *</label>
               <button
                 onClick={agregarItem}
-                className="flex items-center gap-1 text-xs text-[#0f766e] hover:text-[#0d5f58] font-medium"
+                className="flex items-center gap-1 text-xs text-[#00B4A6] hover:text-[#009690] font-medium"
               >
                 <Plus className="h-3.5 w-3.5" /> Agregar
               </button>
@@ -442,7 +442,7 @@ export default function DevolucionesProveedorModule() {
       {/* Lista de devoluciones */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
+          <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
         </div>
       ) : (
         <div className="space-y-2">
@@ -455,7 +455,7 @@ export default function DevolucionesProveedorModule() {
               {!filtroEstado && (
                 <button
                   onClick={() => { setMostrarFormulario(true); resetFormulario(); }}
-                  className="mt-3 text-sm text-[#0f766e] font-medium hover:underline"
+                  className="mt-3 text-sm text-[#00B4A6] font-medium hover:underline"
                 >
                   Registrar la primera devolución
                 </button>
@@ -496,7 +496,7 @@ export default function DevolucionesProveedorModule() {
                       <button
                         onClick={() => avanzarEstado(dev.id)}
                         disabled={actionId === dev.id}
-                        className="text-xs px-2.5 py-1.5 bg-[#0f766e]/10 text-[#0f766e] dark:bg-[#0f766e]/20 dark:text-emerald-400 rounded-lg hover:bg-[#0f766e]/20 transition-colors font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 flex items-center gap-1"
+                        className="text-xs px-2.5 py-1.5 bg-[#00B4A6]/10 text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-emerald-400 rounded-lg hover:bg-[#00B4A6]/20 transition-colors font-medium min-h-[36px] whitespace-nowrap disabled:opacity-50 flex items-center gap-1"
                       >
                         {actionId === dev.id && <Loader2 className="h-3 w-3 animate-spin" />}
                         {ESTADO_LABEL_SIGUIENTE[dev.estado]}
@@ -569,11 +569,11 @@ export default function DevolucionesProveedorModule() {
           className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <BarChart2 className="h-4 w-4 text-[#0f766e]" />
+            <BarChart2 className="h-4 w-4 text-[#00B4A6]" />
             <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
               Reportes de Devoluciones
             </span>
-            <span className="text-xs bg-[#0f766e]/10 text-[#0f766e] px-2 py-0.5 rounded-full">
+            <span className="text-xs bg-[#00B4A6]/10 text-[#00B4A6] px-2 py-0.5 rounded-full">
               {devoluciones.length} registros
             </span>
           </div>
@@ -581,7 +581,7 @@ export default function DevolucionesProveedorModule() {
             <button
               type="button"
               onClick={e => { e.stopPropagation(); exportarCSV(); }}
-              className="flex items-center gap-1 px-3 py-1.5 bg-[#0f766e] text-white text-xs rounded-lg hover:bg-[#0d5f58] transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 bg-[#00B4A6] text-white text-xs rounded-lg hover:bg-[#009690] transition-colors"
               title="Exportar CSV"
             >
               <Download className="h-3.5 w-3.5" /> CSV
@@ -622,7 +622,7 @@ export default function DevolucionesProveedorModule() {
                       formatter={(val: number) => [`${val} devoluci${val === 1 ? "ón" : "ones"}`, ""]}
                       contentStyle={{ fontSize: 12, borderRadius: 8 }}
                     />
-                    <Bar dataKey="total" fill="#0f766e" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="total" fill="#00B4A6" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -672,7 +672,7 @@ export default function DevolucionesProveedorModule() {
                           </div>
                           <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                             <div
-                              className="h-full bg-[#0f766e] rounded-full transition-all"
+                              className="h-full bg-[#00B4A6] rounded-full transition-all"
                               style={{ width: `${(total / max) * 100}%` }}
                             />
                           </div>

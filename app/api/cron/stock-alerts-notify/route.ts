@@ -5,6 +5,9 @@ import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { ProductsDB } from "@/lib/db/products.db";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
+import { sendPushToPhone } from "@/lib/push-sender";
+import { sendWhatsAppText } from "@/lib/whatsapp";
+import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 
@@ -27,60 +30,144 @@ export async function GET(req: NextRequest) {
 
   try {
     const result = await withCronRetry("stock-alerts-notify", async () => {
-      const allProducts = await ProductsDB.getAll("main");
+      // Multi-tenant: process all active tenants
+      const tenants = await prisma.tenant.findMany({
+        where: { active: true },
+        select: { id: true, slug: true, name: true },
+      });
 
-      const alertas = allProducts
-        .filter((p) => {
-          if (!p.active) return false;
-          if (p.stock == null) return false;
-          const minimo = p.stockMin ?? 5;
-          return p.stock < minimo;
-        })
-        .map((p) => ({
-          id: p.id,
-          nombre: p.name,
-          categoria: p.category,
-          unidad: p.unit,
-          stockActual: p.stock as number,
-          minimo: p.stockMin ?? 5,
-          deficit: (p.stockMin ?? 5) - (p.stock as number),
-        }));
+      const allResults: Array<{ tenant: string; total: number; agotados: number; bajos: number }> = [];
 
-      if (alertas.length === 0) {
-        logger.info("[cron/stock-alerts-notify] Sin alertas de stock");
-        return { ok: true, alertas: [], total: 0, processedAt: new Date().toISOString() };
+      for (const tenant of tenants) {
+        // Query products for this tenant (check both slug and id for compatibility)
+        const tenantIds = tenant.id === tenant.slug ? [tenant.id] : [tenant.id, tenant.slug];
+        const allProducts = await prisma.product.findMany({
+          where: {
+            tenantId: { in: tenantIds },
+            active: true,
+            stock: { not: null },
+          },
+          select: { id: true, name: true, category: true, unit: true, stock: true, stockMin: true },
+        });
+
+        const alertas = allProducts
+          .filter((p) => {
+            const minimo = p.stockMin ?? 5;
+            return (p.stock as number) < minimo;
+          })
+          .map((p) => ({
+            id: p.id,
+            nombre: p.name,
+            categoria: p.category,
+            unidad: p.unit,
+            stockActual: p.stock as number,
+            minimo: p.stockMin ?? 5,
+            deficit: (p.stockMin ?? 5) - (p.stock as number),
+          }));
+
+        if (alertas.length === 0) continue;
+
+        // Deduplication: check if we already sent alert for these products today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const recentLog = await prisma.notificationLog.findFirst({
+          where: {
+            type: "low_stock_cron",
+            recipient: `admin-${tenant.slug}`,
+            createdAt: { gte: today },
+          },
+        }).catch(() => null);
+
+        // Skip if already notified today with same count (avoid duplicate WhatsApp spam)
+        const alreadyNotified = recentLog?.message?.includes(`${alertas.length} producto(s)`);
+        if (alreadyNotified) {
+          allResults.push({ tenant: tenant.name, total: alertas.length, agotados: 0, bajos: alertas.length });
+          continue;
+        }
+
+        // Register notification log
+        const nombresAlerta = alertas
+          .slice(0, 5)
+          .map((a) => `${a.nombre} (${a.stockActual}/${a.minimo})`)
+          .join(", ");
+        const sufijo = alertas.length > 5 ? ` y ${alertas.length - 5} más` : "";
+
+        await NotificationLogsDB.add({
+          type: "low_stock_cron",
+          recipient: `admin-${tenant.slug}`,
+          message: `${alertas.length} producto(s) con stock bajo: ${nombresAlerta}${sufijo}`,
+          status: "pending",
+        });
+
+        // Send push + WhatsApp to store owner
+        (async () => {
+          try {
+            const settings = await prisma.settings.findFirst({
+              where: { tenantId: { in: tenantIds } },
+              select: { ownerPhone: true },
+            });
+            const ownerPhone = settings?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
+            if (!ownerPhone) return;
+
+            const pushBody = alertas.slice(0, 3).map(a => `${a.nombre}: ${a.stockActual}/${a.minimo}`).join(", ");
+            const extra = alertas.length > 3 ? ` y ${alertas.length - 3} más` : "";
+
+            sendPushToPhone(ownerPhone, {
+              title: `⚠️ ${alertas.length} producto(s) con stock bajo`,
+              body: pushBody + extra,
+              url: "/admin?module=inventario&tab=stock",
+            }).catch(() => {});
+
+            // WhatsApp alert for ALL low stock products (not just agotados)
+            const agotados = alertas.filter(a => a.stockActual <= 0);
+            const bajos = alertas.filter(a => a.stockActual > 0);
+
+            const lines: string[] = [
+              `🚨 *Alerta de Stock — ${tenant.name}*`,
+              ``,
+            ];
+
+            if (agotados.length > 0) {
+              lines.push(`❌ *${agotados.length} AGOTADOS:*`);
+              agotados.slice(0, 5).forEach(a => lines.push(`  • ${a.nombre}`));
+              if (agotados.length > 5) lines.push(`  ...y ${agotados.length - 5} más`);
+              lines.push(``);
+            }
+
+            if (bajos.length > 0) {
+              lines.push(`⚠️ *${bajos.length} con stock bajo:*`);
+              bajos.slice(0, 5).forEach(a => lines.push(`  • ${a.nombre}: quedan ${a.stockActual} (mín. ${a.minimo})`));
+              if (bajos.length > 5) lines.push(`  ...y ${bajos.length - 5} más`);
+              lines.push(``);
+            }
+
+            lines.push(`📱 Revisa tu panel → Inventario`);
+
+            sendWhatsAppText(ownerPhone, lines.join("\n")).catch(() => {});
+
+            allResults.push({
+              tenant: tenant.name,
+              total: alertas.length,
+              agotados: agotados.length,
+              bajos: bajos.length,
+            });
+          } catch { /* silencioso */ }
+        })();
+
+        logActivity(
+          "stock-alert",
+          "Product",
+          `[${tenant.name}] ${alertas.length} producto(s) con stock bajo detectados por cron`,
+          undefined,
+          "cron"
+        ).catch(() => {});
       }
 
-      // Registrar notificación en log
-      const nombresAlerta = alertas
-        .slice(0, 5)
-        .map((a) => `${a.nombre} (${a.stockActual}/${a.minimo})`)
-        .join(", ");
-      const sufijo = alertas.length > 5 ? ` y ${alertas.length - 5} más` : "";
-
-      await NotificationLogsDB.add({
-        type: "low_stock_cron",
-        recipient: "admin",
-        message: `${alertas.length} producto(s) con stock bajo: ${nombresAlerta}${sufijo}`,
-        status: "pending",
-      });
-
-      logger.info("[cron/stock-alerts-notify] Alertas de stock registradas", {
-        total: alertas.length,
-      });
-
-      logActivity(
-        "stock-alert",
-        "Product",
-        `${alertas.length} producto(s) con stock bajo detectados por cron`,
-        undefined,
-        "cron"
-      ).catch(() => {});
+      logger.info("[cron/stock-alerts-notify] Completado", { tenants: allResults.length });
 
       return {
         ok: true,
-        total: alertas.length,
-        alertas,
+        tenants: allResults,
         processedAt: new Date().toISOString(),
       };
     });

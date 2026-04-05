@@ -315,7 +315,7 @@ function FiadoTendenciaCobro() {
           <Legend formatter={(value: unknown) => { const v = String(value); return v === "cobrados" ? "Cobrados" : v === "nuevos" ? "Nuevos" : "Neto"; }} />
           <Bar dataKey="cobrados" fill="#22c55e" radius={[4, 4, 0, 0]} />
           <Bar dataKey="nuevos" fill="#ef4444" radius={[4, 4, 0, 0]} />
-          <Line type="monotone" dataKey="neto" stroke="#0f766e" strokeWidth={2} dot={{ r: 3 }} />
+          <Line type="monotone" dataKey="neto" stroke="#00B4A6" strokeWidth={2} dot={{ r: 3 }} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>
@@ -912,7 +912,7 @@ export default function FiadosModule() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="h-10 w-10 rounded-xl bg-[#0f766e] text-white flex items-center justify-center shadow-sm shrink-0">
+            <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
               <CreditCard className="h-5 w-5" />
             </div>
             <div>
@@ -1062,7 +1062,7 @@ export default function FiadosModule() {
           </button>
           <button
             onClick={() => setShowNew(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
           >
             <Plus className="h-4 w-4" />
             Nuevo Fíado
@@ -1084,7 +1084,7 @@ export default function FiadosModule() {
             <p className="text-xs font-bold text-amber-800 dark:text-amber-400 italic">Libreta de fiados — como la de toda la vida</p>
             <button
               onClick={() => setShowQuickFiado(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-[#0f766e] hover:bg-[#245a41] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#245a41] transition-colors"
             >
               <Plus className="h-3.5 w-3.5" /> Anotar fiado
             </button>
@@ -1166,7 +1166,7 @@ export default function FiadosModule() {
                   placeholder="Nombre del cliente"
                   value={quickFiadoForm.nombre}
                   onChange={e => setQuickFiadoForm({ ...quickFiadoForm, nombre: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-amber-300 dark:border-card-border bg-white dark:bg-surface text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+                  className="w-full px-3 py-2.5 rounded-xl border border-amber-300 dark:border-card-border bg-white dark:bg-surface text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
                   autoFocus
                 />
                 <input
@@ -1174,7 +1174,7 @@ export default function FiadosModule() {
                   placeholder="Producto (ej: arroz 5kg, leche)"
                   value={quickFiadoForm.producto}
                   onChange={e => setQuickFiadoForm({ ...quickFiadoForm, producto: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-amber-300 dark:border-card-border bg-white dark:bg-surface text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+                  className="w-full px-3 py-2.5 rounded-xl border border-amber-300 dark:border-card-border bg-white dark:bg-surface text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
                 />
                 <input
                   type="number"
@@ -1182,11 +1182,11 @@ export default function FiadosModule() {
                   value={quickFiadoForm.monto}
                   onChange={e => setQuickFiadoForm({ ...quickFiadoForm, monto: e.target.value })}
                   step="0.50"
-                  className="w-full px-3 py-2.5 rounded-xl border border-amber-300 dark:border-card-border bg-white dark:bg-surface text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+                  className="w-full px-3 py-2.5 rounded-xl border border-amber-300 dark:border-card-border bg-white dark:bg-surface text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
                 />
                 <div className="flex gap-2 pt-2">
                   <button onClick={() => setShowQuickFiado(false)} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">Cancelar</button>
-                  <button onClick={handleQuickFiado} disabled={quickFiadoCreating || !quickFiadoForm.nombre.trim() || !quickFiadoForm.monto} className="flex-1 py-2.5 rounded-xl bg-[#0f766e] text-white text-sm font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50">
+                  <button onClick={handleQuickFiado} disabled={quickFiadoCreating || !quickFiadoForm.nombre.trim() || !quickFiadoForm.monto} className="flex-1 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50">
                     {quickFiadoCreating ? "Anotando..." : "Anotar"}
                   </button>
                 </div>
@@ -1259,14 +1259,14 @@ export default function FiadosModule() {
                     return (
                       <div key={f.id} className="bg-white dark:bg-card rounded-lg border border-gray-200 dark:border-card-border p-2.5 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => openDetail(f)}>
                         <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{f.customerName || f.customerId}</p>
-                        <p className={cn("text-sm font-extrabold font-mono mt-0.5", col.key === "vencido" || col.key === "bloqueado" ? "text-red-600" : col.key === "porvencer" ? "text-amber-600" : "text-[#0f766e]")}>{formatCurrency(f.saldo)}</p>
+                        <p className={cn("text-sm font-extrabold font-mono mt-0.5", col.key === "vencido" || col.key === "bloqueado" ? "text-red-600" : col.key === "porvencer" ? "text-amber-600" : "text-[#00B4A6]")}>{formatCurrency(f.saldo)}</p>
                         <p className="text-[10px] text-gray-400 dark:text-muted mt-0.5">
                           {diasVence !== null ? (diasVence > 0 ? `vence en ${diasVence}d` : `vencido hace ${Math.abs(diasVence)}d`) : `hace ${diasCreado} dias`}
                         </p>
                         <div className="flex gap-1.5 mt-2">
                           <button
                             onClick={e => { e.stopPropagation(); openDetail(f); }}
-                            className="flex-1 text-[10px] font-bold text-center py-1 rounded-lg bg-[#0f766e]/10 text-[#0f766e] hover:bg-[#0f766e]/20 transition-colors"
+                            className="flex-1 text-[10px] font-bold text-center py-1 rounded-lg bg-[#00B4A6]/10 text-[#00B4A6] hover:bg-[#00B4A6]/20 transition-colors"
                           >
                             Cobrar
                           </button>
@@ -1302,7 +1302,7 @@ export default function FiadosModule() {
           <button
             key={d}
             onClick={() => { setTableDensity(d); try { localStorage.setItem("table-density", d); } catch {} }}
-            className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors", tableDensity === d ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200")}
+            className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors", tableDensity === d ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200")}
           >
             {d === "compact" ? "Compacta" : d === "normal" ? "Normal" : "Amplia"}
           </button>
@@ -1313,13 +1313,13 @@ export default function FiadosModule() {
       {fiadosViewMode === "list" && <div className={cn("bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm", tableDensity === "compact" ? "table-compact" : tableDensity === "wide" ? "table-wide" : "")}>
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
+            <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <AlertTriangle className="h-8 w-8 text-red-400" />
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            <button onClick={fetchFiados} className="text-xs text-[#0f766e] hover:underline font-semibold mt-1">Reintentar</button>
+            <button onClick={fetchFiados} className="text-xs text-[#00B4A6] hover:underline font-semibold mt-1">Reintentar</button>
           </div>
         ) : fiados.length === 0 ? (
           <EmptyState
@@ -1367,7 +1367,7 @@ export default function FiadosModule() {
                               type="checkbox"
                               checked={selectedIds.has(f.id)}
                               onChange={() => toggleSelect(f.id)}
-                              className="h-4 w-4 rounded border-gray-300 text-[#0f766e] focus:ring-[#0f766e]"
+                              className="h-4 w-4 rounded border-gray-300 text-[#00B4A6] focus:ring-[#00B4A6]"
                             />
                           )}
                         </td>
@@ -1375,7 +1375,7 @@ export default function FiadosModule() {
                           <div className="flex items-center gap-2">
                             {(() => {
                               const name = f.customerName || f.customerId;
-                              const avatarColors = ['#0f766e','#f97316','#e63946','#457b9d','#6b705c','#9b5de5'];
+                              const avatarColors = ['#00B4A6','#f97316','#e63946','#457b9d','#6b705c','#9b5de5'];
                               let h = 0; for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
                               const color = avatarColors[Math.abs(h) % avatarColors.length];
                               const initials = name.split(' ').map((w: string) => w[0]).join('').substring(0, 2).toUpperCase();
@@ -1506,7 +1506,7 @@ export default function FiadosModule() {
                   {(["Detalle", "Pagos", "Acciones"] as const).map(t => (
                     <button key={t} onClick={() => setPanelTab(t)} className={cn(
                       "px-3 py-2 text-xs font-medium border-b-2 transition-colors",
-                      panelTab === t ? "border-[#0f766e] text-[#0f766e]" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                      panelTab === t ? "border-[#00B4A6] text-[#00B4A6]" : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                     )}>{t}</button>
                   ))}
                 </div>
@@ -1566,7 +1566,7 @@ export default function FiadosModule() {
                   <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Historial de pagos</h4>
                   {detailLoading ? (
                     <div className="flex justify-center py-6">
-                      <Loader2 className="h-5 w-5 animate-spin text-[#0f766e]" />
+                      <Loader2 className="h-5 w-5 animate-spin text-[#00B4A6]" />
                     </div>
                   ) : selected.cuotas.length === 0 ? (
                     <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">Aun no se ha registrado ningun pago</p>
@@ -1612,7 +1612,7 @@ export default function FiadosModule() {
                       <>
                         <button
                           onClick={() => { setShowPago(true); setPagoError(null); }}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
                         >
                           <DollarSign className="h-4 w-4" />
                           Registrar Pago
@@ -1624,7 +1624,7 @@ export default function FiadosModule() {
                             const d = new Date(); d.setDate(d.getDate() + 7);
                             setCompromisoFecha(d.toISOString().slice(0, 10));
                           }}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-bold text-[#0f766e] border-2 border-[#0f766e] hover:bg-[#0f766e] hover:text-white transition-colors"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-bold text-[#00B4A6] border-2 border-[#00B4A6] hover:bg-[#00B4A6] hover:text-white transition-colors"
                         >
                           <PenTool className="h-4 w-4" />
                           Compromiso de Pago

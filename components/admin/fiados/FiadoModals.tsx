@@ -59,7 +59,7 @@ export default function FiadoModals({
                       value={pagoMonto}
                       onChange={e => setPagoMonto(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                     />
                   </div>
                   <div>
@@ -69,7 +69,7 @@ export default function FiadoModals({
                       value={pagoNotas}
                       onChange={e => setPagoNotas(e.target.value)}
                       placeholder="Ej: Pagó con Yape"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                     />
                   </div>
                 </div>
@@ -88,7 +88,7 @@ export default function FiadoModals({
                   <button
                     onClick={handlePago}
                     disabled={paying}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-50 shadow-sm transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
                   >
                     {paying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Pagar
@@ -108,7 +108,7 @@ export default function FiadoModals({
               <span className="text-sm font-bold text-gray-900 dark:text-foreground">
                 {selectedFiados.length} fiado{selectedFiados.length !== 1 ? "s" : ""} seleccionado{selectedFiados.length !== 1 ? "s" : ""}
               </span>
-              <span className="text-sm font-extrabold text-[#0f766e]">
+              <span className="text-sm font-extrabold text-[#00B4A6]">
                 Total: {formatCurrency(selectedTotal)}
               </span>
             </div>
@@ -121,7 +121,7 @@ export default function FiadoModals({
               </button>
               <button
                 onClick={() => { setCobroError(null); setCobroMonto(selectedTotal.toFixed(2)); setShowCobroMasivo(true); }}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] transition-colors"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] transition-colors"
               >
                 Cobrar seleccionados
               </button>
@@ -159,7 +159,7 @@ export default function FiadoModals({
                 </div>
 
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {selectedFiados.length} fiado{selectedFiados.length !== 1 ? "s" : ""} — Total: <span className="font-bold text-[#0f766e]">{formatCurrency(selectedTotal)}</span>
+                  {selectedFiados.length} fiado{selectedFiados.length !== 1 ? "s" : ""} — Total: <span className="font-bold text-[#00B4A6]">{formatCurrency(selectedTotal)}</span>
                 </p>
 
                 {/* Fiados list */}
@@ -182,13 +182,13 @@ export default function FiadoModals({
                     value={cobroMonto}
                     onChange={e => setCobroMonto(e.target.value)}
                     placeholder="0.00"
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                   />
                 </div>
 
                 {/* Distribution preview */}
                 {cobroMonto && parseFloat(cobroMonto) > 0 && (
-                  <div className="bg-[#0f766e]/5 rounded-xl p-3 space-y-1.5">
+                  <div className="bg-[#00B4A6]/5 rounded-xl p-3 space-y-1.5">
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Distribucion (antiguo primero)</p>
                     {computeDistribution(parseFloat(cobroMonto)).map((d, i) => (
                       <div key={i} className="flex items-center justify-between text-xs">
@@ -216,7 +216,7 @@ export default function FiadoModals({
                   <button
                     onClick={handleCobroMasivo}
                     disabled={cobroPaying || !cobroMonto || parseFloat(cobroMonto) <= 0}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-50 shadow-sm transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
                   >
                     {cobroPaying ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                     Confirmar cobro
@@ -357,7 +357,7 @@ export default function FiadoModals({
               <div id="compromiso-printable" className="w-full max-w-md bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto print:shadow-none print:border print:max-h-none">
                 <div className="flex items-center justify-between print:hidden">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <PenTool className="h-5 w-5 text-[#0f766e]" /> Compromiso de Pago
+                    <PenTool className="h-5 w-5 text-[#00B4A6]" /> Compromiso de Pago
                   </h3>
                   <button onClick={() => setShowCompromiso(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5">
                     <X className="h-4 w-4 text-gray-500" />
@@ -373,7 +373,7 @@ export default function FiadoModals({
                       step="0.01"
                       value={compromisoMonto}
                       onChange={e => setCompromisoMonto(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                     />
                   </div>
                   <div>
@@ -382,7 +382,7 @@ export default function FiadoModals({
                       type="date"
                       value={compromisoFecha}
                       onChange={e => setCompromisoFecha(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                     />
                   </div>
                   <div>
@@ -520,7 +520,7 @@ export default function FiadoModals({
                       } catch { /* ignore */ }
                       window.print();
                     }}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] transition-colors"
                   >
                     <Printer className="h-4 w-4" />
                     Confirmar e Imprimir
@@ -555,7 +555,7 @@ export default function FiadoModals({
               <div className="w-full max-w-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
                 <div className="px-5 py-4 border-b border-gray-200 dark:border-card-border flex items-center justify-between">
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-[#0f766e]" /> Mapa de deudores
+                    <MapPin className="h-5 w-5 text-[#00B4A6]" /> Mapa de deudores
                   </h3>
                   <div className="flex items-center gap-2">
                     <button
@@ -603,7 +603,7 @@ export default function FiadoModals({
                           setTimeout(() => printWin.print(), 300);
                         }
                       }}
-                      className="text-xs font-bold text-[#0f766e] hover:underline flex items-center gap-1"
+                      className="text-xs font-bold text-[#00B4A6] hover:underline flex items-center gap-1"
                     >
                       <Printer className="h-3.5 w-3.5" /> Imprimir ruta
                     </button>
@@ -654,7 +654,7 @@ export default function FiadoModals({
                           return (
                             <div key={zone}>
                               <div className="flex items-center gap-2 mb-2">
-                                <MapPin className="h-4 w-4 text-[#0f766e]" />
+                                <MapPin className="h-4 w-4 text-[#00B4A6]" />
                                 <span className="text-sm font-bold text-gray-800 dark:text-white">{zone}</span>
                                 <span className="text-xs text-gray-400">— {items.length} deudor{items.length !== 1 ? "es" : ""} ({formatCurrency(zoneTotal)})</span>
                               </div>

@@ -26,6 +26,7 @@ export default function StoreHours() {
   }, []);
 
   if (!now) return null;
+  if (!deliveryConfig.hours || deliveryConfig.hours.length === 0) return null;
 
   const jsDay = now.getDay();
   const currentHour = now.getHours() + now.getMinutes() / 60;
@@ -150,7 +151,7 @@ export default function StoreHours() {
               <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/15">
                 <MapPin className="w-4 h-4 text-primary" />
               </div>
-              <p className="text-sm text-muted">Jr. Ucayali 450, Pucallpa, Ucayali — Perú</p>
+              <p className="text-sm text-muted">Jr. Ucayali 450, Ucayali — Perú</p>
             </div>
             <a
               href="tel:+51916409675"

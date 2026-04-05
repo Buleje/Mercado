@@ -30,8 +30,8 @@ export async function GET(req: NextRequest) {
     });
 
     // Mi propio tenant para ver mi código de referido
-    const me = await prisma.tenant.findUnique({
-      where: { slug: auth.tenantId },
+    const me = await prisma.tenant.findFirst({
+      where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
       select: { referralCode: true, slug: true, name: true },
     });
 
@@ -71,8 +71,8 @@ export async function POST(req: NextRequest) {
 
   try {
     // Verificar si ya tiene código
-    const me = await prisma.tenant.findUnique({
-      where: { slug: auth.tenantId },
+    const me = await prisma.tenant.findFirst({
+      where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
       select: { referralCode: true },
     });
 
@@ -92,14 +92,14 @@ export async function POST(req: NextRequest) {
       // Si hay colisión (extremadamente raro), agregar un char más
       const fallback = `BLJ-${slugPart}-${randomPart}X`;
       await prisma.tenant.update({
-        where: { slug: auth.tenantId },
+        where: { id: auth.tenantId },
         data: { referralCode: fallback },
       });
       return NextResponse.json({ referralCode: fallback, created: true });
     }
 
     await prisma.tenant.update({
-      where: { slug: auth.tenantId },
+      where: { id: auth.tenantId },
       data: { referralCode },
     });
 

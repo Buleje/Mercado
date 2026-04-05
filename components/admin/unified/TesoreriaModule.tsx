@@ -1,7 +1,11 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { HandCoins, CalendarDays, Calendar, CalendarRange } from "lucide-react";
+import { Landmark, HandCoins, CalendarDays, Calendar, CalendarRange, Wallet, Receipt, FileCheck, CreditCard, DollarSign } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import AdminDateFilter from "@/components/admin/shared/AdminDateFilter";
+import type { DatePreset } from "@/components/admin/shared/AdminDateFilter";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -20,38 +24,41 @@ const CxPCalendar = dynamic(() => import("@/components/admin/compras/CxPCalendar
 const PaymentCalendar = dynamic(() => import("@/components/admin/PaymentCalendar"), { loading: S });
 const PaymentCalendarView = dynamic(() => import("@/components/admin/PaymentCalendarView"), { ssr: false, loading: S });
 
+const MODULE_ID = "tesoreria";
+
 const TABS = [
-  { id: "tesoreria" as const, label: "Tesorería" },
-  { id: "liquidez" as const, label: "Proyección Liquidez" },
-  { id: "cheques" as const, label: "Cheques" },
-  { id: "conciliacion" as const, label: "Conciliación" },
-  { id: "cobros" as const, label: "Centro Cobros" },
-  { id: "cxc" as const, label: "Cuentas x Cobrar" },
-  { id: "cuentas-pagar" as const, label: "Cuentas por Pagar", icon: HandCoins },
-  { id: "calendario-cxp" as const, label: "Calendario CxP", icon: CalendarDays },
-  { id: "pagos" as const, label: "Calendario Pagos", icon: Calendar },
-  { id: "calendario" as const, label: "Calendario Completo", icon: CalendarRange },
+  { id: "tesoreria", label: "Tesorería", icon: Landmark },
+  { id: "liquidez", label: "Proyección Liquidez", icon: Wallet },
+  { id: "cheques", label: "Cheques", icon: Receipt },
+  { id: "conciliacion", label: "Conciliación", icon: FileCheck },
+  { id: "cobros", label: "Centro Cobros", icon: DollarSign },
+  { id: "cxc", label: "Cuentas x Cobrar", icon: CreditCard },
+  { id: "cuentas-pagar", label: "Cuentas por Pagar", icon: HandCoins },
+  { id: "calendario-cxp", label: "Calendario CxP", icon: CalendarDays },
+  { id: "pagos", label: "Calendario Pagos", icon: Calendar },
+  { id: "calendario", label: "Calendario Completo", icon: CalendarRange },
 ];
 
 export default function TesoreriaModule() {
   const [sub, setSub] = useState(TABS[0].id);
+  const [datePreset, setDatePreset] = useState<DatePreset>("month");
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none border-b border-gray-200 dark:border-card-border -mx-1 px-1">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSub(t.id)}
-            className={`shrink-0 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${
-              sub === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Tesorería"
+        description="Flujo de caja, cobros, pagos y conciliación bancaria"
+        icon={Landmark}
+      >
+        <AdminDateFilter value={datePreset} onChange={setDatePreset} />
+      </AdminModuleHeader>
+
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId={MODULE_ID}
+      />
+
       {sub === "tesoreria" && <TreasuryTab />}
       {sub === "liquidez" && <LiquidityForecastTab />}
       {sub === "cheques" && <CheckManagementTab />}

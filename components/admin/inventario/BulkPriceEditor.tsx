@@ -235,7 +235,7 @@ export default function BulkPriceEditor() {
                     type="checkbox"
                     checked={filtered.length > 0 && filtered.every(p => p.selected)}
                     onChange={selectAllFiltered}
-                    className="w-4 h-4 rounded border-gray-300 text-[#0f766e] focus:ring-[#0f766e]"
+                    className="w-4 h-4 rounded border-gray-300 text-[#00B4A6] focus:ring-[#00B4A6]"
                   />
                 </th>
                 <th className="py-2 px-2 text-left text-gray-600 dark:text-muted font-medium">Producto</th>
@@ -263,7 +263,7 @@ export default function BulkPriceEditor() {
                         type="checkbox"
                         checked={p.selected}
                         onChange={() => toggleSelect(p.id)}
-                        className="w-4 h-4 rounded border-gray-300 text-[#0f766e] focus:ring-[#0f766e]"
+                        className="w-4 h-4 rounded border-gray-300 text-[#00B4A6] focus:ring-[#00B4A6]"
                       />
                     </td>
                     <td className="py-2 px-2 text-gray-900 dark:text-foreground truncate max-w-[200px]">{p.name}</td>
@@ -313,7 +313,7 @@ export default function BulkPriceEditor() {
             </span>
             <button
               onClick={() => setShowActions(!showActions)}
-              className="text-sm text-[#0f766e] font-medium hover:underline"
+              className="text-sm text-[#00B4A6] font-medium hover:underline"
             >
               {showActions ? 'Ocultar acciones' : 'Acciones masivas'}
             </button>
@@ -333,7 +333,7 @@ export default function BulkPriceEditor() {
                 <button
                   onClick={subirPorcentaje}
                   disabled={!pctInput}
-                  className="flex-1 px-3 py-1.5 bg-[#0f766e] text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-[#0d5f58] transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-[#00B4A6] text-white rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-[#009690] transition-colors"
                 >
                   Subir %
                 </button>
@@ -379,7 +379,7 @@ export default function BulkPriceEditor() {
 
       {/* Save bar */}
       {changedProducts.length > 0 && (
-        <div className="bg-[#0f766e]/5 border border-[#0f766e]/20 rounded-xl p-4 space-y-3">
+        <div className="bg-[#00B4A6]/5 border border-[#00B4A6]/20 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-700 dark:text-muted">
               <strong>{changedProducts.length}</strong> productos se actualizaran
@@ -392,7 +392,7 @@ export default function BulkPriceEditor() {
             <button
               onClick={guardarCambios}
               disabled={saving}
-              className="px-6 py-2 bg-[#0f766e] text-white rounded-lg font-medium hover:bg-[#0d5f58] disabled:opacity-50 transition-colors"
+              className="px-6 py-2 bg-[#00B4A6] text-white rounded-lg font-medium hover:bg-[#009690] disabled:opacity-50 transition-colors"
             >
               {saving ? 'Guardando...' : 'Aplicar cambios'}
             </button>

@@ -29,7 +29,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
         {/* Header */}
         <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-card-border">
           <div className="flex items-center gap-2 min-w-0">
-            <Package className="h-4 w-4 text-[#0f766e] shrink-0" />
+            <Package className="h-4 w-4 text-[#00B4A6] shrink-0" />
             <div className="min-w-0">
               <h3 className="text-xs font-bold text-gray-900 dark:text-white truncate">
                 Seleccionar lote
@@ -66,12 +66,12 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
                 className={cn(
                   "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all",
                   "border border-gray-200 dark:border-card-border",
-                  "hover:border-[#0f766e] hover:bg-[#0f766e]/5 dark:hover:bg-[#0f766e]/10",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]",
+                  "hover:border-[#00B4A6] hover:bg-[#00B4A6]/5 dark:hover:bg-[#00B4A6]/10",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
                 )}
               >
                 {/* Badge */}
-                <span className="shrink-0 h-8 w-8 rounded-lg bg-[#0f766e]/10 text-[#0f766e] flex items-center justify-center text-xs font-bold">
+                <span className="shrink-0 h-8 w-8 rounded-lg bg-[#00B4A6]/10 text-[#00B4A6] flex items-center justify-center text-xs font-bold">
                   {lot.icon}
                 </span>
 
@@ -87,7 +87,7 @@ export default function PuntoCompraLotSelector({ product, open, onClose, onSelec
 
                 {/* Price */}
                 <div className="text-right shrink-0">
-                  <p className="text-xs font-bold font-mono text-[#0f766e]">
+                  <p className="text-xs font-bold font-mono text-[#00B4A6]">
                     S/{totalPrice.toFixed(2)}
                   </p>
                   {savingsPct > 0 && (

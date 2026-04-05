@@ -59,10 +59,10 @@ export default function ThemeInjector() {
 
   // ── Color overrides ──
   const colorOverrides = [
-    primaryColor && `[class*="bg-[#2d6a4f]"]{background-color:${primaryColor}!important}`,
-    primaryColor && `[class*="bg-[#0f766e]"]{background-color:${primaryColor}!important}`,
-    primaryColor && `[class*="border-[#2d6a4f]"]{border-color:${primaryColor}!important}`,
-    primaryColor && `[class*="from-[#2d6a4f]"]{--tw-gradient-from:${primaryColor}!important}`,
+    primaryColor && `[class*="bg-[#00B4A6]"]{background-color:${primaryColor}!important}`,
+    primaryColor && `[class*="bg-[#00B4A6]"]{background-color:${primaryColor}!important}`,
+    primaryColor && `[class*="border-[#00B4A6]"]{border-color:${primaryColor}!important}`,
+    primaryColor && `[class*="from-[#00B4A6]"]{--tw-gradient-from:${primaryColor}!important}`,
     primaryColor && `.border-primary{border-color:${primaryColor}!important}`,
     secondaryColor && `[class*="bg-[#f4a261]"]{background-color:${secondaryColor}!important}`,
     backgroundColor && `body{background-color:${backgroundColor}}`,
@@ -93,7 +93,7 @@ export default function ThemeInjector() {
   const cardCSS = {
     minimal: `.product-card,.store-card{border:1px solid transparent!important;box-shadow:none!important}`,
     shadow: `.product-card,.store-card{box-shadow:0 4px 12px rgba(0,0,0,0.08)!important;border-color:transparent!important}`,
-    border: `.product-card,.store-card{border:2px solid ${primaryColor ?? "#0f766e"}20!important;box-shadow:none!important}`,
+    border: `.product-card,.store-card{border:2px solid ${primaryColor ?? "#00B4A6"}20!important;box-shadow:none!important}`,
     glass: `.product-card,.store-card{background:rgba(255,255,255,0.7)!important;backdrop-filter:blur(12px)!important;border:1px solid rgba(255,255,255,0.3)!important}`,
   }[cardStyle ?? ""] ?? "";
 

@@ -103,7 +103,7 @@ function SupplierLoginScreen({
         <div className="mb-8 text-center">
           <span
             className="inline-flex h-12 w-12 items-center justify-center rounded-2xl text-white text-xl font-black mb-3"
-            style={{ background: "#2d6a4f" }}
+            style={{ background: "#00B4A6" }}
           >
             B
           </span>
@@ -147,7 +147,7 @@ function SupplierLoginScreen({
             type="submit"
             disabled={loading || !apiKey.trim()}
             className="w-full min-h-[44px] rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition-opacity disabled:opacity-50"
-            style={{ background: "#2d6a4f" }}
+            style={{ background: "#00B4A6" }}
           >
             {loading ? "Verificando..." : "Ingresar"}
           </button>

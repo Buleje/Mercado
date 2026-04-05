@@ -5,6 +5,7 @@ import { PurchasesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
+import { withDbRetry } from "@/lib/db-retry";
 
 const DiferenciaSchema = z.object({
   productoId: z.number().int().positive(),
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   try {
-    const po = await PurchasesDB.getById(id);
+    const po = await withDbRetry(() => PurchasesDB.getById(id));
     if (!po) return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
     return NextResponse.json(po);
   } catch (e) {

@@ -63,7 +63,7 @@ function trimBuckets(buckets: HourlyBucket[]): HourlyBucket[] {
 // ─── Confetti visual simple ────────────────────────────────────────────────────
 
 function Confetti() {
-  const colors = ["#0f766e", "#f97316", "#14b8a6", "#f4d03f", "#e76f51"];
+  const colors = ["#00B4A6", "#f97316", "#2dd4bf", "#f4d03f", "#e76f51"];
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl">
@@ -130,7 +130,7 @@ function HourlyChart({ buckets }: { buckets: HourlyBucket[] }) {
                     isCurrent
                       ? "bg-[#f97316]"
                       : b.revenue > 0
-                      ? "bg-[#0f766e] dark:bg-[#14b8a6]"
+                      ? "bg-[#00B4A6] dark:bg-[#2dd4bf]"
                       : "bg-gray-100 dark:bg-gray-700"
                   )}
                   style={{ height: `${Math.max(heightPct, b.revenue > 0 ? 8 : 2)}%` }}
@@ -217,7 +217,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
     pct >= 100
       ? "from-emerald-500 to-emerald-600"
       : pct >= 80
-      ? "from-[#0f766e] to-[#14b8a6]"
+      ? "from-[#00B4A6] to-[#2dd4bf]"
       : pct >= 50
       ? "from-[#f97316] to-[#e8803a]"
       : "from-red-400 to-red-500";
@@ -235,7 +235,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
     pct >= 100
       ? "text-emerald-600 dark:text-emerald-400"
       : pct >= 80
-      ? "text-[#0f766e] dark:text-green-400"
+      ? "text-[#00B4A6] dark:text-green-400"
       : pct >= 50
       ? "text-[#f97316]"
       : "text-red-500 dark:text-red-400";
@@ -245,7 +245,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Target className="w-5 h-5 text-[#0f766e] dark:text-green-400" />
+          <Target className="w-5 h-5 text-[#00B4A6] dark:text-green-400" />
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Meta del dia
@@ -263,7 +263,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
           disabled={loading}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            "text-[#0f766e] dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
+            "text-[#00B4A6] dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
             loading && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -348,7 +348,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
                 </div>
                 <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-3 text-center">
                   <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">Vendido</p>
-                  <p className="font-bold text-[#0f766e] dark:text-green-400">{fmt(totalToday)}</p>
+                  <p className="font-bold text-[#00B4A6] dark:text-green-400">{fmt(totalToday)}</p>
                 </div>
               </div>
             )}
@@ -360,7 +360,7 @@ export default function DailyGoalTracker({ dailyGoal = DEFAULT_DAILY_GOAL }: Dai
       {!loading && hourlyBuckets.length > 0 && (
         <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-[#0f766e] dark:text-green-400" />
+            <TrendingUp className="w-4 h-4 text-[#00B4A6] dark:text-green-400" />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Actividad por hora
             </span>

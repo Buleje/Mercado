@@ -233,7 +233,7 @@ export default function AdminCommandPalette({ items }: AdminCommandPaletteProps)
                       className={cn(
                         "w-full flex items-center gap-3 px-4 py-2 text-sm text-left transition-colors",
                         idx === selectedIdx
-                          ? "bg-[#2d6a4f]/10 dark:bg-[#2d6a4f]/20 text-[#2d6a4f] dark:text-emerald-400"
+                          ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400"
                           : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5",
                       )}
                     >

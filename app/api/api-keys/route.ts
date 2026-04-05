@@ -23,7 +23,7 @@ async function getTenantId(req: NextRequest): Promise<string> {
 
 async function requireApiAccess(tenantId: string): Promise<boolean> {
   const tenant = await prisma.tenant.findFirst({
-    where: { slug: tenantId },
+    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
     select: { plan: true },
   });
   const limits = getPlanLimits(tenant?.plan ?? "free");

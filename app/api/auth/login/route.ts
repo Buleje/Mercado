@@ -61,30 +61,75 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "password required" }, { status: 400 });
   }
 
-  // Step 1: Resolve slug → tenant ID
+  // Step 1: Resolve slug → tenant ID (CUID)
+  // Also build a list of possible IDs (CUID + slug) for data that may have inconsistent tenantIds
   let tenantId = resolvedSlug;
+  let possibleTenantIds = [resolvedSlug];
   try {
-    const tenant = await prisma.tenant.findUnique({ where: { slug: resolvedSlug }, select: { id: true } });
-    if (tenant) tenantId = tenant.id;
+    const tenant = await prisma.tenant.findUnique({ where: { slug: resolvedSlug }, select: { id: true, slug: true } });
+    if (tenant) {
+      tenantId = tenant.id;
+      possibleTenantIds = [...new Set([tenant.id, tenant.slug, resolvedSlug])];
+    }
   } catch { /* use slug as-is */ }
 
-  // Step 2: Find AdminUser for that tenant
-  let dbUsers: { username: string; passwordHash: string; role: string; name: string; onboardingCompletedAt: Date | null }[] = [];
+  // Step 2: Find AdminUser for that tenant (search by all possible tenantId values)
+  type DbUser = { username: string; passwordHash: string; role: string; name: string; tenantId: string; onboardingCompletedAt: Date | null };
+  let dbUsers: DbUser[] = [];
   try {
     dbUsers = await prisma.adminUser.findMany({
-      where: { active: true, tenantId, ...(username ? { username } : {}) },
-      select: { username: true, passwordHash: true, role: true, name: true, onboardingCompletedAt: true },
+      where: { active: true, tenantId: { in: possibleTenantIds }, ...(username ? { username } : {}) },
+      select: { username: true, passwordHash: true, role: true, name: true, tenantId: true, onboardingCompletedAt: true },
     });
   } catch { /* DB unavailable */ }
 
+  // Step 2b: If no users found in resolved tenant and username is specified,
+  // search globally — the user might be logging in at /admin/login without a tenant context
+  if (dbUsers.length === 0 && username) {
+    try {
+      dbUsers = await prisma.adminUser.findMany({
+        where: { active: true, username },
+        select: { username: true, passwordHash: true, role: true, name: true, tenantId: true, onboardingCompletedAt: true },
+      });
+      // If found, resolve the user's actual tenant
+      if (dbUsers.length > 0) {
+        const userTenantId = dbUsers[0].tenantId;
+        // Resolve the user's tenantId to the actual Tenant record
+        const userTenant = await prisma.tenant.findFirst({
+          where: { OR: [{ id: userTenantId }, { slug: userTenantId }] },
+          select: { id: true, slug: true },
+        });
+        if (userTenant) {
+          tenantId = userTenant.id;
+          possibleTenantIds = [...new Set([userTenant.id, userTenant.slug])];
+        } else {
+          tenantId = userTenantId;
+        }
+      }
+    } catch { /* DB unavailable */ }
+  }
+
   for (const u of dbUsers) {
     if (await checkPassword(password, u.passwordHash)) {
+      // Always use the canonical Tenant ID (CUID) for the session
       const token = await createSessionToken(u.role as AdminRole, u.username, tenantId, u.name);
       const onboardingPending = !u.onboardingCompletedAt;
-      const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending, tenantId });
+      // Find the tenant slug for the active-tenant-slug cookie (used by admin UI)
+      let tenantSlug = resolvedSlug;
+      try {
+        const t = await prisma.tenant.findFirst({
+          where: { OR: [{ id: tenantId }, { slug: tenantId }] },
+          select: { slug: true },
+        });
+        if (t) tenantSlug = t.slug;
+      } catch { /* use resolvedSlug */ }
+
+      const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending, tenantId, tenantSlug });
       response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
-      // Also set active-tenant cookie for storefront isolation
+      // Set active-tenant cookie with the canonical Tenant ID for proxy.ts
       response.cookies.set("active-tenant", tenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
+      // Set active-tenant-slug cookie for the admin UI (readable by client JS)
+      response.cookies.set("active-tenant-slug", tenantSlug, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
       return response;
     }
   }
@@ -98,6 +143,7 @@ export async function POST(req: Request) {
         const token = await createSessionToken(u.role, u.username, tenantId, u.name);
         const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending: true });
         response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
+        response.cookies.set("active-tenant", tenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
         return response;
       }
     }
@@ -105,12 +151,13 @@ export async function POST(req: Request) {
 
   // ── Final fallback: admin password stored in Settings (no hardcoded default) ──
   try {
-    const settings = await SettingsDB.get();
+    const settings = await SettingsDB.get(tenantId);
     const adminPassword = settings.adminPassword;
     if (adminPassword && await checkPassword(password, adminPassword)) {
       const token = await createSessionToken("admin", "admin", tenantId, "Administrador");
       const response = NextResponse.json({ ok: true, role: "admin", name: "Administrador", onboardingPending: true });
       response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
+      response.cookies.set("active-tenant", tenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
       return response;
     }
   } catch {

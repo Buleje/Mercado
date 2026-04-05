@@ -749,12 +749,12 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
     const chips = [
       ...(contextSuggestions.length > 0 ? contextSuggestions : timeSuggestions),
       ...favorites.slice(0, 2).map(f => f.slice(0, 30)),
-    ].slice(0, 5);
+    ].filter((c, i, arr) => c && arr.indexOf(c) === i).slice(0, 5);
     if (chips.length === 0) return null;
     return (
       <div className="flex flex-wrap gap-1.5 px-3 py-1.5 border-t border-gray-100 dark:border-card-border shrink-0">
-        {chips.map(chip => (
-          <button key={chip} onClick={() => sendMessage(chip)}
+        {chips.map((chip, idx) => (
+          <button key={`${chip}-${idx}`} onClick={() => sendMessage(chip)}
             className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800/40 hover:bg-violet-100 dark:hover:bg-violet-950/50 transition-colors">
             {chip}
           </button>

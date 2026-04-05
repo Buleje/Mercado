@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
@@ -324,7 +324,7 @@ export default function AIFiadoDashboard() {
               onClick={() => setFilterRisk(filterRisk === risk ? "all" : risk)}
               className={cn(
                 "rounded-lg p-2 text-center border transition-colors",
-                filterRisk === risk ? "ring-2 ring-[#0f766e] border-[#0f766e]" : "border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                filterRisk === risk ? "ring-2 ring-[#00B4A6] border-[#00B4A6]" : "border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
               )}
             >
               <p className={cn("text-sm font-bold", cfg.color)}>{metrics.riskCounts[risk]}</p>
@@ -351,7 +351,7 @@ export default function AIFiadoDashboard() {
                   key={k}
                   onClick={() => setSortKey(k)}
                   className={cn("text-[10px] px-1.5 py-0.5 rounded transition-colors",
-                    sortKey === k ? "bg-[#0f766e] text-white" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    sortKey === k ? "bg-[#00B4A6] text-white" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   )}
                 >
                   {k === "risk" ? "Riesgo" : k === "balance" ? "Saldo" : k === "days" ? "Dias" : "Nombre"}

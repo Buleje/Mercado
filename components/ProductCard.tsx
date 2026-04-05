@@ -2,7 +2,7 @@ import { memo, useCallback, useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Minus, Package, Heart, Eye, Flame, Clock, ShoppingCart, Star, GitCompareArrows } from "lucide-react";
+import { Plus, Minus, Package, Heart, Eye, Flame, Clock, ShoppingCart, Star, GitCompareArrows, BellRing } from "lucide-react";
 import { getProductSlug } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
@@ -133,7 +133,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
 
   const handleAdd = useCallback(() => {
     const now = Date.now();
-    if (now - lastActionRef.current < 300) return;
+    if (now - lastActionRef.current < 150) return;
     lastActionRef.current = now;
     if (isOutOfStock) return;
     addItem(product);
@@ -193,13 +193,15 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
 
   const handleDecrement = useCallback(() => {
     const now = Date.now();
-    if (now - lastActionRef.current < 300) return;
+    if (now - lastActionRef.current < 150) return;
     lastActionRef.current = now;
     updateQty(product.id, qty - 1);
   }, [updateQty, product.id, qty]);
 
   return (
     <div
+      role="article"
+      aria-label={product.name}
       className={cn(
         "group relative bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-100 dark:border-card-border hover:shadow-xl hover:shadow-primary/10 hover:border-primary/20 transition-shadow duration-300 flex flex-col",
         isOutOfStock && "opacity-60 pointer-events-none"
@@ -258,7 +260,12 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
           Agotado
         </span>
       )}
-      {isLowStock && (
+      {!isOutOfStock && product.stock === 1 && (
+        <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm bg-red-500 animate-pulse">
+          ¡Última unidad!
+        </span>
+      )}
+      {isLowStock && product.stock !== 1 && (
         <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm bg-amber-500 animate-pulse">
           ¡Quedan {product.stock}!
         </span>
@@ -269,7 +276,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         aria-label={fav ? "Quitar de favoritos" : "Agregar a favoritos"}
         className={cn(
           "absolute z-10 flex items-center justify-center h-9 w-9 sm:h-11 sm:w-11 rounded-full transition-all duration-200 pointer-events-auto",
-          isOutOfStock || isLowStock ? "top-8 right-1.5" : "top-1.5 right-1.5",
+          isOutOfStock || isLowStock || product.stock === 1 ? "top-8 right-1.5" : "top-1.5 right-1.5",
           fav
             ? "bg-red-500 text-white shadow-md scale-110"
             : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-red-500 hover:bg-white dark:hover:bg-card shadow-sm"
@@ -284,7 +291,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
         aria-label={isInCompare(product.id) ? "Quitar de comparación" : "Agregar a comparación"}
         className={cn(
           "absolute z-10 flex items-center justify-center h-7 w-7 sm:h-8 sm:w-8 rounded-full transition-all duration-200 pointer-events-auto opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100",
-          isOutOfStock || isLowStock ? "top-[4.2rem] right-1.5" : "top-[2.8rem] right-2",
+          isOutOfStock || isLowStock || product.stock === 1 ? "top-[4.2rem] right-1.5" : "top-[2.8rem] right-2",
           isInCompare(product.id)
             ? "bg-primary text-white shadow-md scale-105"
             : "bg-white/80 dark:bg-card/80 text-gray-400 hover:text-primary hover:bg-white dark:hover:bg-card shadow-sm"
@@ -331,39 +338,6 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
           </button>
         )}
 
-        {/* Quick-add overlay button */}
-        {!isOutOfStock && (
-          <div className="absolute bottom-2 right-2 z-10">
-            {qty === 0 ? (
-              <button
-                onClick={(e) => { e.stopPropagation(); handleAdd(); }}
-                className={cn(
-                  "flex items-center justify-center h-8 w-8 rounded-full bg-primary text-white shadow-lg transition-all duration-200 active:scale-90",
-                  "sm:opacity-0 sm:scale-75 sm:group-hover:opacity-100 sm:group-hover:scale-100"
-                )}
-                aria-label={`Agregar rápido ${product.name}`}
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            ) : (
-              <div className="flex items-center gap-0.5 bg-primary rounded-full shadow-lg overflow-hidden animate-[scaleIn_0.15s_ease-out]">
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDecrement(); }}
-                  className="h-7 w-7 flex items-center justify-center text-white hover:bg-primary-dark transition-colors"
-                >
-                  <Minus className="h-3 w-3" />
-                </button>
-                <span className="w-5 text-center text-xs font-bold text-white tabular-nums">{qty}</span>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleAdd(); }}
-                  className="h-7 w-7 flex items-center justify-center text-white hover:bg-primary-dark transition-colors"
-                >
-                  <Plus className="h-3 w-3" />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
         {isOutOfStock && (
           <div className="absolute bottom-2 right-2 z-10">
             <span className="bg-gray-500/90 text-white text-[9px] font-bold px-2 py-1 rounded-full">Agotado</span>
@@ -433,6 +407,27 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                 </span>
               )}
               <span className="block text-[10px] text-muted mt-0.5">/{product.unit}</span>
+              {/* Stock indicator */}
+              {product.stock != null && product.stock > 0 && !isLowStock && (
+                <span className="block text-[9px] font-semibold text-gray-400 dark:text-muted mt-0.5">
+                  Stock: {product.stock} {product.unit}
+                </span>
+              )}
+              {isLowStock && (
+                <span className="block text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 animate-pulse">
+                  ⚠ ¡Solo quedan {product.stock}!
+                </span>
+              )}
+              {isOutOfStock && (
+                <Link
+                  href={`/tienda/${getProductSlug(product)}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1 text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5 hover:text-amber-700 dark:hover:text-amber-300 transition-colors pointer-events-auto"
+                >
+                  <BellRing className="h-3 w-3" />
+                  Avisarme cuando vuelva
+                </Link>
+              )}
             </div>
 
             {qty === 0 ? (

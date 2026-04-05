@@ -21,7 +21,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   const max = Math.max(...data, 1); const min = Math.min(...data, 0); const range = max - min || 1;
   const points = data.map((val, i) => { const x = (i / (data.length - 1)) * 80; const y = 24 - ((val - min) / range) * 20; return `${x},${y}`; }).join(" ");
   const colorMap: Record<string, string> = { "emerald-500":"#10b981","blue-500":"#3b82f6","violet-500":"#8b5cf6","red-500":"#ef4444" };
-  return <svg width="80" height="24" className="opacity-60"><polyline points={points} fill="none" stroke={colorMap[color]||"#0f766e"} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
+  return <svg width="80" height="24" className="opacity-60"><polyline points={points} fill="none" stroke={colorMap[color]||"#00B4A6"} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
 }
 function Kpi({ label, value, icon: Icon, accent, delta, sparklineData, invertTrend }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null; sparklineData?: number[]; invertTrend?: boolean }) {
   const isPositive = delta != null ? (invertTrend ? delta <= 0 : delta >= 0) : false;
@@ -100,7 +100,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
               <div>
                 <div className="flex items-center gap-3 mb-2 justify-end flex-wrap">
                   <span className="flex items-center gap-1.5 text-[11px] text-gray-400">
-                    <svg width="12" height="4"><line x1="0" y1="2" x2="12" y2="2" stroke="#0f766e" strokeWidth="2.5" strokeLinecap="round"/></svg>
+                    <svg width="12" height="4"><line x1="0" y1="2" x2="12" y2="2" stroke="#00B4A6" strokeWidth="2.5" strokeLinecap="round"/></svg>
                     Ventas
                   </span>
                   <span className="flex items-center gap-1.5 text-[11px] text-gray-400">
@@ -125,8 +125,8 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   <svg viewBox={`0 0 ${st.daily.length * 50} 160`} className="w-full h-full" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#0f766e" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#0f766e" stopOpacity="0.02" />
+                        <stop offset="0%" stopColor="#00B4A6" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#00B4A6" stopOpacity="0.02" />
                       </linearGradient>
                     </defs>
                     {/* Grid lines */}
@@ -143,7 +143,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     {/* Revenue line */}
                     <polyline
                       points={st.daily.map(([,v],i) => `${i*50+25},${140-((v/st.maxDaily)*130)}`).join(' ')}
-                      fill="none" stroke="#0f766e" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
+                      fill="none" stroke="#00B4A6" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
                     />
                     {/* Profit line (dashed, emerald) */}
                     {st.dailyProfit.some(v => v > 0) && (
@@ -154,7 +154,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     )}
                     {/* Revenue dots */}
                     {st.daily.map(([,v],i) => (
-                      <circle key={i} cx={i*50+25} cy={140-((v/st.maxDaily)*130)} r="3.5" fill="#0f766e" stroke="white" strokeWidth="2" />
+                      <circle key={i} cx={i*50+25} cy={140-((v/st.maxDaily)*130)} r="3.5" fill="#00B4A6" stroke="white" strokeWidth="2" />
                     ))}
                     {/* 7-day moving average line (amber) */}
                     {st.movingAvg7.length >= 2 && (

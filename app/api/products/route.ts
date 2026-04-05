@@ -9,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
+import { withDbRetry } from "@/lib/db-retry";
 
 const ProductPostSchema = z.object({
   name: z.string().min(1).max(150),
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     // Read tenantId from header (injected by proxy from session or cookie)
     const tenantId = req.headers.get("x-tenant-id") ?? "main";
-    let products = await ProductsDB.getAll(tenantId);
+    let products = await withDbRetry(() => ProductsDB.getAll(tenantId));
 
     if (category && category !== "todos") {
       products = products.filter(p => p.category === category);
@@ -95,7 +96,9 @@ export async function POST(req: NextRequest) {
     const body = parsed.data;
 
     // Plan limit check
-    const tenant = await prisma.tenant.findFirst({ where: { slug: auth.tenantId } });
+    const tenant = await prisma.tenant.findFirst({
+      where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
+    });
     const limits = getPlanLimits(tenant?.plan ?? "free");
     const db = prismaForTenant(auth.tenantId);
     const currentProductCount = await db.product.count();
@@ -117,9 +120,10 @@ export async function POST(req: NextRequest) {
       unit: body.unit ?? "und",
       badge: body.badge || undefined,
       active: true,
+      tenantId: auth.tenantId,
     });
     const requestId = req.headers.get("x-request-id") ?? undefined;
-    await logActivity("Crear", "producto", `Producto creado: ${product.name} (S/${product.price})`, String(product.id), "admin", requestId);
+    logActivity("Crear", "producto", `Producto creado: ${product.name} (S/${product.price})`, String(product.id), "admin", requestId).catch(() => {});
     invalidate(`dashboard:${auth.tenantId}`);
     return NextResponse.json(product);
   } catch {

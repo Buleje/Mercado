@@ -48,7 +48,7 @@ const LEVEL_STYLES: Record<ExpiryLevel, { badge: string; row: string; label: str
     label: "Esta semana",
   },
   soon: {
-    badge: "bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6]",
+    badge: "bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf]",
     row: "bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800",
     label: "Proximas 2 semanas",
   },
@@ -174,7 +174,7 @@ export default function ExpiryAlertWidget() {
               </span>
             )}
             {counts.soon > 0 && (
-              <span className="px-2.5 py-1 rounded-full bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6] text-xs font-bold">
+              <span className="px-2.5 py-1 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf] text-xs font-bold">
                 {counts.soon} en 2 semanas
               </span>
             )}
@@ -210,7 +210,7 @@ export default function ExpiryAlertWidget() {
                     ? "border-l-red-500"
                     : item.level === "warning"
                       ? "border-l-[#f97316]"
-                      : "border-l-[#0f766e]"
+                      : "border-l-[#00B4A6]"
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -266,7 +266,7 @@ export default function ExpiryAlertWidget() {
                   </button>
                 </div>
                 {action && (
-                  <p className="mt-2 text-xs text-[#0f766e] dark:text-[#14b8a6] font-medium">
+                  <p className="mt-2 text-xs text-[#00B4A6] dark:text-[#2dd4bf] font-medium">
                     {action === "sale"
                       ? "Marcado para oferta — recuerda actualizar el precio en el sistema"
                       : "Marcado para devolucion — contacta al proveedor"}

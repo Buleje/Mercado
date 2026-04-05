@@ -5,15 +5,15 @@ import { usePathname } from "next/navigation";
 import { ShoppingCart, Star, Package, Truck } from "lucide-react";
 
 const ACTIVITIES = [
-  { Icon: ShoppingCart, color: "#0f766e", msg: "Ana M. de Yarinacocha acaba de pedir Arroz Costeño 5 kg" },
+  { Icon: ShoppingCart, color: "#00B4A6", msg: "Ana M. de Yarinacocha acaba de pedir Arroz Costeño 5 kg" },
   { Icon: Star, color: "#f59e0b", msg: 'Rosa A. reseñó con ⭐⭐⭐⭐⭐: "¡Llegó rapidísimo!"' },
-  { Icon: ShoppingCart, color: "#0f766e", msg: "Luis T. agregó Aceite Primor 1L al carrito" },
-  { Icon: Truck, color: "#10b981", msg: "Pedido #1852 está en camino a Pucallpa centro" },
-  { Icon: ShoppingCart, color: "#0f766e", msg: "Carmen V. realizó su pedido por WhatsApp" },
-  { Icon: Package, color: "#10b981", msg: "14 pedidos entregados hoy en Pucallpa" },
-  { Icon: ShoppingCart, color: "#0f766e", msg: "Pedro G. pidió 3 Gaseosas Inca Kola 1.5 L" },
+  { Icon: ShoppingCart, color: "#00B4A6", msg: "Luis T. agregó Aceite Primor 1L al carrito" },
+  { Icon: Truck, color: "#10b981", msg: "Pedido #1852 está en camino" },
+  { Icon: ShoppingCart, color: "#00B4A6", msg: "Carmen V. realizó su pedido por WhatsApp" },
+  { Icon: Package, color: "#10b981", msg: "14 pedidos entregados hoy" },
+  { Icon: ShoppingCart, color: "#00B4A6", msg: "Pedro G. pidió 3 Gaseosas Inca Kola 1.5 L" },
   { Icon: Star, color: "#f59e0b", msg: "Marco R. reseñó con ⭐⭐⭐⭐⭐ su último pedido" },
-  { Icon: ShoppingCart, color: "#0f766e", msg: "María P. acaba de comprar Pan de molde + Mantequilla" },
+  { Icon: ShoppingCart, color: "#00B4A6", msg: "María P. acaba de comprar Pan de molde + Mantequilla" },
   { Icon: Truck, color: "#10b981", msg: "Entrega completada en Jr. Ucayali 340 ✓" },
 ];
 

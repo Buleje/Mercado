@@ -4,7 +4,7 @@ import { Truck, CheckCircle2, MapPin, Clock } from "lucide-react";
 import { useInView } from "@/hooks/use-in-view";
 
 const ZONES = [
-  { name: "Centro de Pucallpa", time: "20-30 min", free: true,  price: "Gratis", color: "bg-emerald-500", ring: "ring-emerald-500/20", circleColor: "rgba(45,106,79,0.25)" },
+  { name: "Centro", time: "20-30 min", free: true,  price: "Gratis", color: "bg-emerald-500", ring: "ring-emerald-500/20", circleColor: "rgba(45,106,79,0.25)" },
   { name: "San Fernando",       time: "30-40 min", free: true,  price: "Gratis", color: "bg-emerald-400", ring: "ring-emerald-400/20", circleColor: "rgba(52,211,153,0.20)" },
   { name: "Manantay",           time: "30-45 min", free: false, price: "S/3",    color: "bg-amber-500",   ring: "ring-amber-500/20",   circleColor: "rgba(245,158,11,0.18)" },
   { name: "Yarinacocha",        time: "40-60 min", free: false, price: "S/3",    color: "bg-orange-500",  ring: "ring-orange-500/20",  circleColor: "rgba(249,115,22,0.15)" },
@@ -33,7 +33,7 @@ export default function DeliveryZoneMap() {
             </span>
           </h2>
           <p className="mt-5 text-muted text-base sm:text-lg max-w-xl mx-auto">
-            Cobertura de delivery en Pucallpa y alrededores
+            Cobertura de delivery y alrededores
           </p>
         </div>
 

@@ -211,7 +211,7 @@ export default function ConteoFisicoWizard() {
                     onClick={() => setTipo('completo')}
                     className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                       tipo === 'completo'
-                        ? 'border-[#0f766e] bg-[#0f766e]/5 text-[#0f766e]'
+                        ? 'border-[#00B4A6] bg-[#00B4A6]/5 text-[#00B4A6]'
                         : 'border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-gray-300'
                     }`}
                   >
@@ -221,7 +221,7 @@ export default function ConteoFisicoWizard() {
                     onClick={() => setTipo('categoria')}
                     className={`flex-1 p-3 rounded-lg border-2 text-sm font-medium transition-colors ${
                       tipo === 'categoria'
-                        ? 'border-[#0f766e] bg-[#0f766e]/5 text-[#0f766e]'
+                        ? 'border-[#00B4A6] bg-[#00B4A6]/5 text-[#00B4A6]'
                         : 'border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:border-gray-300'
                     }`}
                   >
@@ -246,7 +246,7 @@ export default function ConteoFisicoWizard() {
               <button
                 onClick={iniciarConteo}
                 disabled={loading || (tipo === 'categoria' && !categoria.trim())}
-                className="w-full py-3 bg-[#0f766e] text-white rounded-lg font-medium hover:bg-[#0d5f58] disabled:opacity-50 transition-colors"
+                className="w-full py-3 bg-[#00B4A6] text-white rounded-lg font-medium hover:bg-[#009690] disabled:opacity-50 transition-colors"
               >
                 {loading ? 'Creando...' : 'Iniciar Conteo'}
               </button>
@@ -291,10 +291,10 @@ export default function ConteoFisicoWizard() {
           <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700 dark:text-muted">Progreso</span>
-              <span className="text-sm font-bold text-[#0f766e]">{contados}/{totalItems} ({pctContado}%)</span>
+              <span className="text-sm font-bold text-[#00B4A6]">{contados}/{totalItems} ({pctContado}%)</span>
             </div>
             <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div className="h-full bg-[#0f766e] rounded-full transition-all" style={{ width: `${pctContado}%` }} />
+              <div className="h-full bg-[#00B4A6] rounded-full transition-all" style={{ width: `${pctContado}%` }} />
             </div>
           </div>
 
@@ -311,7 +311,7 @@ export default function ConteoFisicoWizard() {
                 />
                 <button
                   onClick={() => setShowScanner(true)}
-                  className="px-3 py-2 bg-[#0f766e] text-white rounded-lg hover:bg-[#0d5f58] transition-colors"
+                  className="px-3 py-2 bg-[#00B4A6] text-white rounded-lg hover:bg-[#009690] transition-colors"
                   title="Escanear codigo"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -329,7 +329,7 @@ export default function ConteoFisicoWizard() {
                       onClick={() => { setSelectedIdx(realIdx); setInputValue(''); }}
                       className={`w-full flex items-center justify-between p-2 rounded-lg text-left text-sm transition-colors ${
                         realIdx === selectedIdx
-                          ? 'bg-[#0f766e]/10 border border-[#0f766e]/30'
+                          ? 'bg-[#00B4A6]/10 border border-[#00B4A6]/30'
                           : 'hover:bg-gray-50 dark:hover:bg-card-hover'
                       }`}
                     >
@@ -387,7 +387,7 @@ export default function ConteoFisicoWizard() {
                       onKeyDown={e => { if (e.key === 'Enter') guardarConteo(); }}
                       min={0}
                       placeholder="Ingresa cantidad..."
-                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-card-border rounded-xl bg-white dark:bg-card text-gray-900 dark:text-foreground text-2xl text-center font-bold focus:border-[#0f766e] focus:outline-none"
+                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-card-border rounded-xl bg-white dark:bg-card text-gray-900 dark:text-foreground text-2xl text-center font-bold focus:border-[#00B4A6] focus:outline-none"
                       autoFocus
                     />
                   </div>
@@ -410,7 +410,7 @@ export default function ConteoFisicoWizard() {
                   <button
                     onClick={guardarConteo}
                     disabled={loading || !inputValue || isNaN(parseInt(inputValue))}
-                    className="w-full py-3 bg-[#0f766e] text-white rounded-lg font-medium hover:bg-[#0d5f58] disabled:opacity-50 transition-colors"
+                    className="w-full py-3 bg-[#00B4A6] text-white rounded-lg font-medium hover:bg-[#009690] disabled:opacity-50 transition-colors"
                   >
                     {loading ? 'Guardando...' : 'Guardar y siguiente'}
                   </button>
@@ -477,7 +477,7 @@ export default function ConteoFisicoWizard() {
                             type="checkbox"
                             checked={item.ajustado}
                             onChange={() => toggleAjustado(item.id)}
-                            className="w-4 h-4 rounded border-gray-300 text-[#0f766e] focus:ring-[#0f766e]"
+                            className="w-4 h-4 rounded border-gray-300 text-[#00B4A6] focus:ring-[#00B4A6]"
                           />
                         </td>
                       </tr>
@@ -498,7 +498,7 @@ export default function ConteoFisicoWizard() {
             <button
               onClick={cerrarConteo}
               disabled={loading}
-              className="flex-1 py-2 bg-[#0f766e] text-white rounded-lg font-medium hover:bg-[#0d5f58] disabled:opacity-50 transition-colors"
+              className="flex-1 py-2 bg-[#00B4A6] text-white rounded-lg font-medium hover:bg-[#009690] disabled:opacity-50 transition-colors"
             >
               {loading ? 'Cerrando...' : `Aplicar ${itemsConDiferencia.filter(i => i.ajustado).length} ajustes y cerrar`}
             </button>
@@ -538,7 +538,7 @@ export default function ConteoFisicoWizard() {
 
           <button
             onClick={() => { setPaso(1); setConteo(null); setItems([]); setResumen(null); }}
-            className="px-6 py-3 bg-[#0f766e] text-white rounded-lg font-medium hover:bg-[#0d5f58] transition-colors"
+            className="px-6 py-3 bg-[#00B4A6] text-white rounded-lg font-medium hover:bg-[#009690] transition-colors"
           >
             Nuevo conteo
           </button>

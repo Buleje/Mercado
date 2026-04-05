@@ -119,10 +119,37 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Marketplace stores — dynamic from DB
+  let marketplaceStorePages: MetadataRoute.Sitemap = [];
+  try {
+    const stores = await prisma.store.findMany({
+      where: { isPublished: true },
+      select: { slug: true, updatedAt: true },
+      orderBy: { rating: "desc" },
+    });
+    marketplaceStorePages = [
+      {
+        url: `${baseUrl}/marketplace`,
+        lastModified,
+        changeFrequency: "daily" as const,
+        priority: 0.9,
+      },
+      ...stores.map((s) => ({
+        url: `${baseUrl}/marketplace/${s.slug}`,
+        lastModified: s.updatedAt,
+        changeFrequency: "weekly" as const,
+        priority: 0.7,
+      })),
+    ];
+  } catch {
+    // DB unavailable during static build
+  }
+
   return [
     ...staticPages,
     ...categoryPages,
     ...dbCategoryPages,
     ...productPages,
+    ...marketplaceStorePages,
   ];
 }

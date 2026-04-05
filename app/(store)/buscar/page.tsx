@@ -15,7 +15,7 @@ const UserAccountModal = dynamic(() => import("@/components/UserAccountModal"));
 export const metadata: Metadata = {
   title: "Buscar productos — Buleje",
   description:
-    "Busca entre todos nuestros productos de abarrotes, bebidas, carnes, snacks, limpieza y más. Delivery rápido en Pucallpa.",
+    "Busca entre todos nuestros productos de abarrotes, bebidas, carnes, snacks, limpieza y más. Delivery rápido.",
   robots: { index: false, follow: true },
 };
 
@@ -30,6 +30,8 @@ export default function BuscarPage() {
       />
       <AnnouncementBar />
       <Header />
+      {/* Spacer for fixed header */}
+      <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <main id="main-content" className="min-h-screen">
         <SearchTrigger />
         <ProductCatalog />

@@ -47,7 +47,7 @@ const STATUS_CONFIG: Record<
   Assignment["status"],
   { label: string; badge: string; next?: Assignment["status"]; nextLabel?: string; nextColor?: string }
 > = {
-  assigned:   { label: "Asignado",    badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",   next: "picked_up",  nextLabel: "Recogí el pedido", nextColor: "bg-[#0d9488] hover:bg-teal-700" },
+  assigned:   { label: "Asignado",    badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",   next: "picked_up",  nextLabel: "Recogí el pedido", nextColor: "bg-[#33C4B8] hover:bg-teal-700" },
   picked_up:  { label: "Recogido",    badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",       next: "in_transit", nextLabel: "En camino",        nextColor: "bg-blue-600 hover:bg-blue-700" },
   in_transit: { label: "En camino",   badge: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300", next: "delivered", nextLabel: "Entregado",        nextColor: "bg-emerald-600 hover:bg-emerald-700" },
   delivered:  { label: "Entregado",   badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
@@ -55,7 +55,7 @@ const STATUS_CONFIG: Record<
 
 // ── Confetti simple ────────────────────────────────────────────────────────
 function MiniConfetti() {
-  const colors = ["#0d9488", "#f4a261", "#fbbf24", "#34d399", "#60a5fa"];
+  const colors = ["#33C4B8", "#f4a261", "#fbbf24", "#34d399", "#60a5fa"];
   return (
     <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
       {Array.from({ length: 30 }).map((_, i) => (
@@ -96,7 +96,7 @@ function OrderCard({ assignment, onStatusUpdate, updating }: OrderCardProps) {
       {/* Header de la card */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex items-center gap-2">
-          <Package className="h-4 w-4 text-[#0d9488]" />
+          <Package className="h-4 w-4 text-[#33C4B8]" />
           <span className="font-mono text-xs font-bold text-gray-500 dark:text-gray-400">
             #{assignment.orderId.slice(-8).toUpperCase()}
           </span>
@@ -374,7 +374,7 @@ export default function DeliveryAppDashboard() {
       {showConfetti && <MiniConfetti />}
 
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-[#0d9488] text-white px-4 py-3 shadow-md"
+      <header className="sticky top-0 z-30 bg-[#33C4B8] text-white px-4 py-3 shadow-md"
         style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
       >
         <div className="flex items-center gap-3">
@@ -418,7 +418,7 @@ export default function DeliveryAppDashboard() {
         {/* Indicador pull-to-refresh */}
         {pulling && (
           <div className="flex justify-center py-3">
-            <RefreshCw className="h-5 w-5 text-[#0d9488] animate-spin" />
+            <RefreshCw className="h-5 w-5 text-[#33C4B8] animate-spin" />
           </div>
         )}
 
@@ -426,7 +426,7 @@ export default function DeliveryAppDashboard() {
           {/* KPI Cards */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-800 text-center">
-              <p className="text-3xl font-extrabold text-[#0d9488]">{todayDeliveries}</p>
+              <p className="text-3xl font-extrabold text-[#33C4B8]">{todayDeliveries}</p>
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1 leading-tight">
                 Entregas hoy
               </p>
@@ -490,7 +490,7 @@ export default function DeliveryAppDashboard() {
               <button
                 type="button"
                 onClick={loadAssignments}
-                className="mt-3 text-sm text-[#0d9488] font-bold underline"
+                className="mt-3 text-sm text-[#33C4B8] font-bold underline"
               >
                 Reintentar
               </button>

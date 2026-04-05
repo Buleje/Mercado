@@ -2,8 +2,14 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useCustomer } from "@/contexts/customer-context";
 import { usePathname } from "next/navigation";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import {
+  MessageCircle, X, Send, Loader2,
+  Clock, Truck, CreditCard, MapPin, ShoppingBag,
+  Package, HelpCircle, Bot, User,
+  Sparkles,
+} from "lucide-react";
 import { useStoreProducts } from "@/hooks/use-store-products";
+import { cn } from "@/lib/utils";
 
 function getProductSlug(product: { name: string; id: number }): string {
   return product.name
@@ -19,7 +25,21 @@ function getProductSlug(product: { name: string; id: number }): string {
     + `-${product.id}`;
 }
 
-type Msg = { id: string; sender: "customer" | "admin"; message: string; createdAt: string };
+type Msg = {
+  id: string;
+  sender: "customer" | "admin" | "bot";
+  message: string;
+  createdAt: string;
+};
+
+const QUICK_QUESTIONS = [
+  { icon: Truck, text: "¿Cuánto cuesta el delivery?", color: "text-primary" },
+  { icon: Clock, text: "¿Cuáles son los horarios?", color: "text-amber-500" },
+  { icon: CreditCard, text: "¿Tienen pago con Yape?", color: "text-violet-500" },
+  { icon: Package, text: "¿Cuándo llega mi pedido?", color: "text-blue-500" },
+  { icon: ShoppingBag, text: "Quiero hacer un pedido", color: "text-emerald-500" },
+  { icon: HelpCircle, text: "¿Tienen descuentos hoy?", color: "text-pink-500" },
+];
 
 export default function LiveChatWidget() {
   const { customer } = useCustomer();
@@ -35,25 +55,37 @@ export default function LiveChatWidget() {
     const slug = match[1];
     return products.find(p => getProductSlug(p) === slug) ?? null;
   }, [pathname, products]);
+
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
+  const [botTyping, setBotTyping] = useState(false);
+  const [aiStatus, setAiStatus] = useState<{ hasAI: boolean; activeProviderName: string } | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const fetchMessages = useCallback(async () => {
     if (!phone) return;
     try {
-      const res = await fetch(`/api/chat?phone=${phone}`);
+      const res = await fetch(`/api/chat?phone=${encodeURIComponent(phone)}`);
       if (!res.ok) return;
       const data: Msg[] = await res.json();
-      setMessages(data);
+      setMessages(prev => {
+        // Merge server messages with local bot messages
+        const botMsgs = prev.filter(m => m.sender === "bot");
+        const serverIds = new Set(data.map(m => m.id));
+        const uniqueBotMsgs = botMsgs.filter(m => !serverIds.has(m.id));
+        return [...data, ...uniqueBotMsgs].sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      });
     } catch { /* ignore */ }
   }, [phone]);
 
-  // Derive unread status without setState in effect
+  // Derive unread status
   const lastAdminTs = messages.filter(m => m.sender === "admin").pop()?.createdAt;
   const lastSeen = typeof window !== "undefined" ? sessionStorage.getItem("bsm-chat-seen") : null;
   const derivedUnread = !open && !!lastAdminTs && lastAdminTs !== lastSeen;
@@ -72,7 +104,7 @@ export default function LiveChatWidget() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, open]);
+  }, [messages, open, botTyping]);
 
   useEffect(() => {
     if (open && lastAdminTs) {
@@ -80,22 +112,88 @@ export default function LiveChatWidget() {
     }
   }, [open, lastAdminTs]);
 
-  const send = async () => {
-    if (!input.trim() || !phone || sending) return;
-    setSending(true);
+  // Focus input when opened
+  useEffect(() => {
+    if (open) setTimeout(() => inputRef.current?.focus(), 300);
+  }, [open]);
+
+  // Fetch AI status on mount
+  useEffect(() => {
+    fetch("/api/ai/status")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setAiStatus({ hasAI: data.hasAI, activeProviderName: data.activeProviderName }); })
+      .catch(() => {});
+  }, []);
+
+  const getAutoReply = async (message: string): Promise<{ reply: string; type: "auto" | "fallback" }> => {
     try {
+      const res = await fetch("/api/chat/auto-reply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+      if (!res.ok) throw new Error();
+      return await res.json();
+    } catch {
+      return { reply: "Hubo un error al procesar tu consulta. Intenta de nuevo.", type: "fallback" };
+    }
+  };
+
+  const send = async (overrideMessage?: string) => {
+    const msg = overrideMessage ?? input.trim();
+    if (!msg || !phone || sending) return;
+    setSending(true);
+
+    const customerMsg: Msg = {
+      id: `local-${Date.now()}`,
+      sender: "customer",
+      message: msg,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, customerMsg]);
+    setInput("");
+
+    try {
+      // Save customer message to server
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, name: customerName || "Cliente", message: input.trim() }),
+        body: JSON.stringify({ phone, name: customerName || "Cliente", message: msg }),
       });
       if (res.ok) {
-        const msg: Msg = await res.json();
-        setMessages(prev => [...prev, msg]);
-        setInput("");
+        const saved: Msg = await res.json();
+        setMessages(prev => prev.map(m => m.id === customerMsg.id ? saved : m));
       }
     } catch { /* ignore */ }
+
     setSending(false);
+
+    // Get auto-reply from bot
+    setBotTyping(true);
+    await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
+    const { reply, type } = await getAutoReply(msg);
+    setBotTyping(false);
+
+    const botMsg: Msg = {
+      id: `bot-${Date.now()}`,
+      sender: "bot",
+      message: reply,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, botMsg]);
+
+    // If bot couldn't answer, log it so admin sees it needs attention
+    if (type === "fallback") {
+      fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          phone: "sistema",
+          name: "Bot",
+          message: `⚠️ Cliente ${customerName || phone} preguntó algo que no pude responder: "${msg}"`,
+        }),
+      }).catch(() => {});
+    }
   };
 
   if (!phone) return null;
@@ -105,96 +203,236 @@ export default function LiveChatWidget() {
       {/* Floating button */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="fixed bottom-20 right-4 z-50 w-14 h-14 rounded-full bg-green-600 text-white shadow-lg flex items-center justify-center hover:bg-green-700 transition-colors md:bottom-6"
+        className={cn(
+          "fixed bottom-20 right-4 z-50 flex items-center justify-center shadow-xl transition-all duration-300 md:bottom-6",
+          open
+            ? "w-12 h-12 rounded-full bg-gray-600 hover:bg-gray-700"
+            : "h-14 rounded-full bg-linear-to-r from-primary to-teal-500 hover:from-primary/90 hover:to-teal-500/90 text-white px-5 gap-2.5"
+        )}
         aria-label={open ? "Cerrar chat" : "Abrir chat"}
       >
-        {open ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+        {open ? (
+          <X className="w-5 h-5 text-white" />
+        ) : (
+          <>
+            <MessageCircle className="w-5 h-5" />
+            <span className="text-sm font-bold hidden sm:inline">Chat</span>
+          </>
+        )}
         {hasUnread && !open && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 animate-pulse" />
+          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center animate-bounce">
+            !
+          </span>
         )}
       </button>
 
       {/* Chat window */}
       {open && (
-        <div className="fixed bottom-36 right-4 z-50 w-80 max-h-112 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 flex flex-col md:bottom-22">
+        <div
+          className={cn(
+            "fixed z-50 flex flex-col overflow-hidden",
+            "bottom-36 right-4 w-88 max-h-128 rounded-2xl shadow-2xl border md:bottom-22",
+            "bg-white dark:bg-[#0f1117] border-gray-200 dark:border-card-border",
+            "animate-[fadeUp_0.3s_ease-out]"
+          )}
+        >
           {/* Header */}
-          <div className="px-4 py-3 bg-green-600 text-white rounded-t-2xl flex items-center gap-2">
-            <MessageCircle className="w-5 h-5" />
-            <div>
-              <p className="font-semibold text-sm">Chat con Buleje</p>
-              <p className="text-xs opacity-80">Responderemos pronto</p>
+          <div
+            className="relative shrink-0 overflow-hidden"
+            style={{ background: "linear-gradient(135deg, #0a3d38 0%, #00B4A6 55%, #00d4c4 100%)" }}
+          >
+            <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/5" />
+            <div className="absolute -bottom-3 -left-6 w-20 h-20 rounded-full bg-white/5" />
+            <div className="relative px-4 py-3.5 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0 border border-white/20">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-extrabold text-white leading-tight">Chatea con el Negocio</h3>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  {aiStatus?.hasAI ? (
+                    <>
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-[11px] text-white/70 font-medium">IA activa · {aiStatus.activeProviderName}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="h-2 w-2 rounded-full bg-amber-400" />
+                      <span className="text-[11px] text-white/70 font-medium">Respuestas automáticas</span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1.5 rounded-xl bg-white/15 hover:bg-white/25 transition-colors border border-white/20"
+                aria-label="Cerrar chat"
+              >
+                <X className="h-4 w-4 text-white" />
+              </button>
             </div>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-48 max-h-72">
-            {messages.length === 0 && (
-              <div className="text-center mt-6 space-y-1">
-                <p className="text-zinc-400 text-sm">¡Hola! ¿En qué te podemos ayudar?</p>
-                <p className="text-zinc-300 dark:text-zinc-600 text-xs">Usa las opciones rápidas ↓</p>
+          {/* Messages area */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-48 max-h-72" style={{ scrollbarWidth: "thin" }}>
+            {messages.length === 0 && !botTyping && (
+              <div className="text-center mt-4 space-y-3">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                  <Bot className="h-7 w-7 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">¡Hola{customerName ? `, ${customerName.split(" ")[0]}` : ""}! 👋</p>
+                  <p className="text-xs text-muted mt-1">Pregúntame lo que necesites o usa las opciones rápidas</p>
+                </div>
               </div>
             )}
+
             {messages.map(m => (
-              <div key={m.id} className={`flex ${m.sender === "customer" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[70%] px-3 py-2 rounded-xl text-sm ${
+              <div key={m.id} className={cn("flex gap-2", m.sender === "customer" ? "justify-end" : "justify-start")}>
+                {m.sender !== "customer" && (
+                  <div className={cn(
+                    "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5",
+                    m.sender === "bot" ? "bg-primary/10" : "bg-secondary/10"
+                  )}>
+                    {m.sender === "bot"
+                      ? <Bot className="h-3.5 w-3.5 text-primary" />
+                      : <User className="h-3.5 w-3.5 text-secondary" />}
+                  </div>
+                )}
+                <div className={cn(
+                  "max-w-[75%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed",
                   m.sender === "customer"
-                    ? "bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200"
-                }`}>
-                  <p>{m.message}</p>
-                  <p className="text-[10px] opacity-50 mt-1">
+                    ? "bg-primary text-white rounded-br-md"
+                    : m.sender === "bot"
+                      ? "bg-gray-100 dark:bg-surface text-foreground rounded-bl-md border border-gray-200 dark:border-card-border"
+                      : "bg-secondary/10 text-foreground rounded-bl-md border border-secondary/20"
+                )}>
+                  <p className="whitespace-pre-line">{m.message}</p>
+                  <p className={cn(
+                    "text-[10px] mt-1.5",
+                    m.sender === "customer" ? "text-white/60" : "text-muted"
+                  )}>
+                    {m.sender === "bot" && "🤖 "}
+                    {m.sender === "admin" && "👤 Equipo · "}
                     {new Date(m.createdAt).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
+                {m.sender === "customer" && (
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <User className="h-3.5 w-3.5 text-primary" />
+                  </div>
+                )}
               </div>
             ))}
+
+            {/* Bot typing indicator */}
+            {botTyping && (
+              <div className="flex gap-2 justify-start">
+                <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                  <Bot className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-gray-100 dark:bg-surface border border-gray-200 dark:border-card-border">
+                  <div className="flex gap-1.5 items-center">
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-delay:0ms]" />
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-delay:150ms]" />
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-delay:300ms]" />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div ref={bottomRef} />
           </div>
 
-          {/* Quick replies */}
-          <div className="px-3 pb-2 flex flex-wrap gap-1.5 border-t border-zinc-100 dark:border-zinc-800 pt-2">
-            {[
-              ...(contextProduct ? [`¿Tienen ${contextProduct.name} disponible?`] : []),
-              "¿Cuánto cuesta el delivery?",
-              "¿Cuáles son los horarios?",
-              "¿Tienen pago con Yape?",
-              "¿Cuándo llega mi pedido?",
-              "Quiero hacer un pedido",
-              "¿Tienen descuentos hoy?",
-            ].map(q => (
-              <button
-                key={q}
-                onClick={() => { setInput(q); }}
-                className="text-[11px] font-medium px-2.5 py-1 rounded-full border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors active:scale-95"
-              >
-                {q}
-              </button>
-            ))}
-          </div>
+          {/* Quick questions */}
+          {messages.length === 0 && (
+            <div className="px-3 pb-2 border-t border-gray-100 dark:border-card-border pt-2">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2 px-1">Preguntas frecuentes</p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {contextProduct && (
+                  <button
+                    onClick={() => send(`¿Tienen ${contextProduct.name} disponible?`)}
+                    className="col-span-2 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-foreground bg-primary/5 hover:bg-primary/10 border border-primary/10 transition-colors text-left"
+                  >
+                    <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span className="truncate">¿Tienen {contextProduct.name} disponible?</span>
+                  </button>
+                )}
+                {QUICK_QUESTIONS.map(q => (
+                  <button
+                    key={q.text}
+                    onClick={() => send(q.text)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-semibold text-foreground bg-gray-50 dark:bg-surface hover:bg-primary/5 border border-gray-100 dark:border-card-border transition-colors text-left"
+                  >
+                    <q.icon className={cn("h-3.5 w-3.5 shrink-0", q.color)} />
+                    <span className="truncate">{q.text}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quick reply chips when in conversation */}
+          {messages.length > 0 && messages.length < 6 && (
+            <div className="px-3 pb-2 flex flex-wrap gap-1 border-t border-gray-100 dark:border-card-border pt-2">
+              {QUICK_QUESTIONS.slice(0, 3).map(q => (
+                <button
+                  key={q.text}
+                  onClick={() => send(q.text)}
+                  className="text-[10px] font-semibold px-2.5 py-1 rounded-full border border-primary/15 text-primary bg-primary/5 hover:bg-primary/10 transition-colors"
+                >
+                  {q.text}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Input */}
           <form
             onSubmit={e => { e.preventDefault(); send(); }}
-            className="flex items-center gap-2 p-3 border-t border-zinc-200 dark:border-zinc-700"
+            className="flex items-center gap-2 p-3 border-t border-gray-200 dark:border-card-border bg-white dark:bg-[#0f1117]"
           >
             <input
+              ref={inputRef}
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
               placeholder="Escribe tu mensaje..."
               maxLength={500}
-              className="flex-1 px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-sm outline-none"
+              className="flex-1 px-3.5 py-2.5 rounded-xl bg-gray-100 dark:bg-surface text-sm outline-none border border-transparent focus:border-primary/30 focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-muted"
             />
             <button
               type="submit"
               disabled={!input.trim() || sending}
-              className="p-2 rounded-lg bg-green-600 text-white disabled:opacity-40 hover:bg-green-700 transition-colors"
+              className={cn(
+                "p-2.5 rounded-xl transition-all",
+                input.trim()
+                  ? "bg-primary text-white shadow-md shadow-primary/25 hover:bg-primary/90"
+                  : "bg-gray-200 dark:bg-surface text-muted"
+              )}
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
             </button>
           </form>
+
+          {/* Powered by */}
+          <div className="px-3 pb-2 flex items-center justify-center">
+            <span className="text-[9px] text-muted/50 font-medium">
+              {aiStatus?.hasAI
+                ? `✨ IA: ${aiStatus.activeProviderName} · El equipo también responde`
+                : "⚠️ Sin API de IA · Solo respuestas automáticas básicas"}
+            </span>
+          </div>
         </div>
       )}
+
+      {/* Animation keyframe */}
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(16px) scale(0.96); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
     </>
   );
 }

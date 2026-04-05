@@ -112,7 +112,7 @@ describe("ProductCard", () => {
     const lowStockProduct = { ...mockProduct, stock: 3, stockMin: 5 };
     render(<ProductCard product={lowStockProduct} />);
 
-    expect(screen.getByText(/¡Quedan 3!/)).toBeInTheDocument();
+    expect(screen.getByText(/¡Solo quedan 3!/)).toBeInTheDocument();
   });
 
   it("should toggle favorite when heart button is clicked", () => {
@@ -194,5 +194,64 @@ describe("ProductCard", () => {
 
     // Should not call contexts again (memoized)
     expect(mockAddItem).not.toHaveBeenCalled();
+  });
+
+  // ── Stock indicator tests ──
+
+  it("should show normal stock count when stock is above minimum", () => {
+    const product = { ...mockProduct, stock: 20, stockMin: 5 };
+    render(<ProductCard product={product} />);
+
+    expect(screen.getByText(/Stock: 20 kg/)).toBeInTheDocument();
+  });
+
+  it("should show animated low stock warning when stock <= stockMin", () => {
+    const product = { ...mockProduct, stock: 2, stockMin: 5 };
+    render(<ProductCard product={product} />);
+
+    const warning = screen.getByText(/¡Solo quedan 2!/);
+    expect(warning).toBeInTheDocument();
+    expect(warning).toHaveClass("animate-pulse");
+  });
+
+  it("should show 'Avisarme cuando vuelva' link when stock is 0", () => {
+    const product = { ...mockProduct, stock: 0 };
+    render(<ProductCard product={product} />);
+
+    const link = screen.getByText("Avisarme cuando vuelva");
+    expect(link).toBeInTheDocument();
+    expect(link.closest("a")).toHaveAttribute("href", expect.stringContaining("/tienda/"));
+  });
+
+  it("should not show stock indicator when stock is null", () => {
+    const product = { ...mockProduct, stock: undefined };
+    render(<ProductCard product={product} />);
+
+    expect(screen.queryByText(/Stock:/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/¡Solo quedan/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Avisarme cuando vuelva")).not.toBeInTheDocument();
+  });
+
+  it("should show low stock warning emoji", () => {
+    const product = { ...mockProduct, stock: 2, stockMin: 3 };
+    render(<ProductCard product={product} />);
+
+    expect(screen.getByText(/⚠ ¡Solo quedan 2!/)).toBeInTheDocument();
+  });
+
+  it("should show '¡Última unidad!' badge when stock is exactly 1", () => {
+    const product = { ...mockProduct, stock: 1, stockMin: 3 };
+    render(<ProductCard product={product} />);
+
+    expect(screen.getByText("¡Última unidad!")).toBeInTheDocument();
+  });
+
+  it("should show '¡Última unidad!' badge with pulse animation", () => {
+    const product = { ...mockProduct, stock: 1, stockMin: 5 };
+    render(<ProductCard product={product} />);
+
+    const badge = screen.getByText("¡Última unidad!");
+    expect(badge).toHaveClass("animate-pulse");
+    expect(badge).toHaveClass("bg-red-500");
   });
 });

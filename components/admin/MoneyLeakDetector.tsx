@@ -49,9 +49,9 @@ export default function MoneyLeakDetector() {
     const prev3 = [getMonthRange(-1), getMonthRange(-2), getMonthRange(-3)];
 
     const queries = [
-      fetch(`/api/expenses?limit=200&from=${curr.from}&to=${curr.to}`).then((r) => r.json()),
+      fetch(`/api/expenses?limit=200&from=${curr.from}&to=${curr.to}`).then((r) => r.ok ? r.json() : []),
       ...prev3.map((r) =>
-        fetch(`/api/expenses?limit=200&from=${r.from}&to=${r.to}`).then((r) => r.json())
+        fetch(`/api/expenses?limit=200&from=${r.from}&to=${r.to}`).then((r) => r.ok ? r.json() : [])
       ),
     ];
 
@@ -121,7 +121,7 @@ export default function MoneyLeakDetector() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-[#0f766e]" />
+          <ShieldAlert className="w-5 h-5 text-[#00B4A6]" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Detector de Fugas de Dinero
           </h2>
@@ -129,7 +129,7 @@ export default function MoneyLeakDetector() {
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#0f766e] dark:hover:text-[#14b8a6] transition-colors"
+          className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#00B4A6] dark:hover:text-[#2dd4bf] transition-colors"
         >
           <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
           Actualizar
@@ -246,7 +246,7 @@ export default function MoneyLeakDetector() {
                       <div
                         className={cn(
                           "h-full rounded-full transition-all duration-500",
-                          cat.isLeak ? "bg-red-500 dark:bg-red-600" : "bg-[#0f766e] dark:bg-[#14b8a6]"
+                          cat.isLeak ? "bg-red-500 dark:bg-red-600" : "bg-[#00B4A6] dark:bg-[#2dd4bf]"
                         )}
                         style={{ width: `${barCurrent}%` }}
                       />

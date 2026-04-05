@@ -374,7 +374,7 @@ export default function CRMTab() {
           <button
             onClick={() => setShowNewClientModal(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold text-white transition-colors shadow-sm"
-            style={{ backgroundColor: "#0f766e" }}
+            style={{ backgroundColor: "#00B4A6" }}
           >
             <UserPlus className="h-4 w-4" /> Nuevo Cliente
           </button>
@@ -447,7 +447,7 @@ export default function CRMTab() {
 
       {/* Mejora 13: Canal de adquisicion pie chart */}
       {(() => {
-        const CHANNEL_COLORS = ["#0f766e", "#f97316", "#457b9d", "#9b5de5", "#6b7280"];
+        const CHANNEL_COLORS = ["#00B4A6", "#f97316", "#457b9d", "#9b5de5", "#6b7280"];
         const CHANNEL_LABELS: Record<string, string> = { local: "Local", whatsapp: "WhatsApp", web: "Web", referido: "Referido", redes: "Redes" };
         const channelCounts: Record<string, number> = {};
         for (const c of customers) {
@@ -502,7 +502,7 @@ export default function CRMTab() {
                 ? "text-white border-transparent"
                 : "border-gray-200 dark:border-card-border text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
             )}
-            style={quickFilter === f.key ? { backgroundColor: "#0f766e" } : undefined}
+            style={quickFilter === f.key ? { backgroundColor: "#00B4A6" } : undefined}
           >
             {f.label} · {quickFilterCounts[f.key]}
           </button>

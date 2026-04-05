@@ -221,7 +221,7 @@ export default function WeatherDemandPredictor() {
                 className="flex items-center justify-between gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <Thermometer className="w-4 h-4 text-[#0f766e] flex-shrink-0" />
+                  <Thermometer className="w-4 h-4 text-[#00B4A6] flex-shrink-0" />
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 dark:text-white text-sm truncate">
                       {sug.product}

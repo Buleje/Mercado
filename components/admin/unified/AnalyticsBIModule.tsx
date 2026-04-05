@@ -1,15 +1,17 @@
 "use client";
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
+import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   BarChart3, Flame, TrendingUp, RefreshCw,
-  CreditCard, Wallet, Users, Trophy, Package,
+  CreditCard, Users, Trophy, Package,
   LayoutDashboard, DollarSign, ShoppingBasket,
-  Target, Clock, AlertTriangle, GripVertical,
+  Target, Clock, AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Sale, Customer } from "@/types/erp";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 // ── Spinner ──────────────────────────────────────────────────────────────────
 const S = () => (
@@ -19,15 +21,10 @@ const S = () => (
 );
 
 // ── Existing components (dynamic imports) ────────────────────────────────────
-const BusinessIntelligenceTab = dynamic(() => import("@/components/admin/BusinessIntelligenceTab"), { loading: S });
-const _HeatMapTab = dynamic(() => import("@/components/admin/HeatMapTab"), { loading: S });
 const ABCAnalysisTab = dynamic(() => import("@/components/admin/ABCAnalysisTab"), { loading: S });
-const _ParetoAnalysisTab = dynamic(() => import("@/components/admin/ParetoAnalysisTab"), { loading: S });
 const BCGMatrixTab = dynamic(() => import("@/components/admin/BCGMatrixTab"), { loading: S });
 const BasketAnalysisTab = dynamic(() => import("@/components/admin/BasketAnalysisTab"), { loading: S });
-const CustomKPITab = dynamic(() => import("@/components/admin/CustomKPITab"), { loading: S });
 const PeakHoursTab = dynamic(() => import("@/components/admin/PeakHoursTab"), { loading: S });
-const CompetitorPriceTracker = dynamic(() => import("@/components/admin/CompetitorPriceTracker"), { loading: S });
 const PredictiveAnalyticsTab = dynamic(() => import("@/components/admin/PredictiveAnalyticsTab"), { loading: S });
 
 // ── New Analytics PRO components (React.lazy) ────────────────────────────────
@@ -36,14 +33,14 @@ const SalesTrendChart = lazy(() => import("@/components/admin/analytics/SalesTre
 const VentasHeatmap = lazy(() => import("@/components/admin/analytics/VentasHeatmap"));
 const MarginWaterfallChart = lazy(() => import("@/components/admin/analytics/MarginWaterfallChart"));
 const FiadoAnalyticsPanel = lazy(() => import("@/components/admin/analytics/FiadoAnalyticsPanel"));
-const CashFlowChart = lazy(() => import("@/components/admin/analytics/CashFlowChart"));
+const AIFiadoDashboard = lazy(() => import("@/components/admin/ai-center/AIFiadoDashboard"));
 const AnomalyDetector = lazy(() => import("@/components/admin/analytics/AnomalyDetector"));
 const RFMSegmentationPanel = lazy(() => import("@/components/admin/analytics/RFMSegmentationPanel"));
 
 // ── Types ────────────────────────────────────────────────────────────────────
 export type AnalyticsPeriod = "1d" | "7d" | "30d" | "90d" | "1y";
 
-type SectionId = "resumen" | "ventas" | "productos" | "clientes" | "finanzas" | "predicciones";
+type SectionId = "resumen" | "ventas" | "productos" | "clientes" | "predicciones";
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const PERIODS: { key: AnalyticsPeriod; label: string }[] = [
@@ -62,12 +59,13 @@ const PERIOD_DISPLAY: Record<AnalyticsPeriod, string> = {
   "1y": "Ultimo ano",
 };
 
+const MODULE_ID = "analytics-bi";
+
 const SECTIONS: { id: SectionId; label: string; icon: typeof LayoutDashboard; description: string }[] = [
   { id: "resumen",   label: "Resumen",   icon: LayoutDashboard, description: "Vista general de tu negocio" },
   { id: "ventas",    label: "Ventas",    icon: TrendingUp,      description: "Tendencias, horarios y patrones de venta" },
   { id: "productos", label: "Productos", icon: Package,         description: "Clasificacion ABC, BCG y margenes" },
   { id: "clientes",  label: "Clientes",  icon: Users,           description: "Segmentación RFM (Recencia, Frecuencia, Monetario — clasifica clientes por comportamiento de compra), ranking y fidelidad" },
-  { id: "finanzas",     label: "Finanzas",     icon: DollarSign,      description: "Flujo de caja, rentabilidad y KPIs" },
   { id: "predicciones", label: "Predicciones", icon: Target,          description: "Pronosticos y alertas basados en historial" },
 ];
 
@@ -81,19 +79,19 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 }) {
   return (
     <div className={cn(
-      "bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm transition-shadow hover:shadow-md",
+      "bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-shadow hover:shadow-md",
       className,
     )}>
       <div className="mb-5">
         <div className="flex items-center gap-2.5">
           {Icon && (
-            <div className="h-9 w-9 rounded-lg bg-[#0f766e]/10 dark:bg-[#0f766e]/20 flex items-center justify-center shrink-0">
-              <Icon className="h-4.5 w-4.5 text-[#0f766e] dark:text-[#14b8a6]" />
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <Icon className="h-4.5 w-4.5 text-primary" />
             </div>
           )}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">{title}</h3>
-            {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>}
+            <h3 className="text-lg font-semibold text-gray-900 leading-tight">{title}</h3>
+            {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
           </div>
         </div>
       </div>
@@ -106,9 +104,187 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 function SectionHeader({ title, description }: { title: string; description: string }) {
   return (
     <div className="mb-2">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
-      <div className="w-12 h-1 bg-[#0f766e] rounded-full mt-2" />
-      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{description}</p>
+      <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+      <div className="w-12 h-1 bg-primary rounded-full mt-2" />
+      <p className="text-sm text-gray-500 mt-2">{description}</p>
+    </div>
+  );
+}
+
+// ── Shared KPI cache — one fetch for all KPI strips ──────────────────────────
+let _kpiCache: { data: Record<string, unknown>; ts: number } | null = null;
+const KPI_CACHE_TTL = 60_000; // 1 minute
+
+async function fetchKpisV2(): Promise<Record<string, unknown>> {
+  if (_kpiCache && Date.now() - _kpiCache.ts < KPI_CACHE_TTL) return _kpiCache.data;
+  try {
+    const res = await fetch("/api/analytics/kpis-v2", { credentials: "include" });
+    if (!res.ok) return _kpiCache?.data ?? {};
+    const data = await res.json();
+    _kpiCache = { data, ts: Date.now() };
+    return data;
+  } catch {
+    return _kpiCache?.data ?? {};
+  }
+}
+
+// ── InlineKPIStrip — compact KPI bar embedded in Resumen ─────────────────────
+function InlineKPIStrip() {
+  const [kpis, setKpis] = useState<{
+    ventasHoy: number; ticketPromedio: number; margen: number; clientesHoy: number; fiadoPendiente: number; rotacion: number;
+  } | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const d = await fetchKpisV2();
+      if (!d || Object.keys(d).length === 0) return;
+      setKpis({
+        ventasHoy: Number(d.ingresosHoy ?? d.ventasHoy ?? d.salesDay ?? 0) || 0,
+        ticketPromedio: Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0,
+        margen: Number(d.margenOperativo ?? d.marginPct ?? 0) || 0,
+        clientesHoy: Number(d.clientesActivos ?? d.clientesHoy ?? d.customersToday ?? 0) || 0,
+        fiadoPendiente: Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0,
+        rotacion: Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0,
+      });
+    })();
+  }, []);
+
+  if (!kpis) {
+    return (
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  const items = [
+    { label: "Ventas hoy", value: `S/ ${kpis.ventasHoy.toFixed(0)}`, color: "text-emerald-600" },
+    { label: "Ticket prom", value: `S/ ${kpis.ticketPromedio.toFixed(0)}`, color: "text-blue-600" },
+    { label: "Margen", value: `${kpis.margen.toFixed(1)}%`, color: kpis.margen >= 20 ? "text-emerald-600" : "text-amber-600" },
+    { label: "Clientes hoy", value: String(kpis.clientesHoy), color: "text-purple-600" },
+    { label: "Fiado pend.", value: `S/ ${kpis.fiadoPendiente.toFixed(0)}`, color: kpis.fiadoPendiente > 0 ? "text-red-500" : "text-gray-500" },
+    { label: "Rotación", value: `${kpis.rotacion.toFixed(1)}x`, color: "text-cyan-600" },
+  ];
+
+  return (
+    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 mb-4">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 shadow-sm text-center"
+        >
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">{item.label}</p>
+          <p className={cn("text-lg font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── SectionKPIStrip — KPIs contextuales por sección ──────────────────────────
+function SectionKPIStrip({ section }: { section: "ventas" | "productos" | "clientes" | "finanzas" }) {
+  const [items, setItems] = useState<{ label: string; value: string; color: string }[] | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const d = await fetchKpisV2();
+      if (!d || Object.keys(d).length === 0) return;
+
+      if (section === "ventas") {
+          setItems([
+            { label: "Ventas hoy", value: `S/ ${(Number(d.ingresosHoy ?? d.ventasHoy ?? 0) || 0).toFixed(0)}`, color: "text-emerald-600" },
+            { label: "Ticket prom", value: `S/ ${(Number(d.ticketPromedio ?? d.avgTicket ?? 0) || 0).toFixed(0)}`, color: "text-blue-600" },
+            { label: "Operaciones", value: String(Number(d.ordersToday ?? d.totalVentas ?? 0) || 0), color: "text-purple-600" },
+            { label: "Pico (hora)", value: d.peakHour ? `${d.peakHour}h` : "--", color: "text-amber-600" },
+          ]);
+        } else if (section === "productos") {
+          setItems([
+            { label: "SKUs activos", value: String(Number(d.skuCount ?? d.totalProducts ?? 0) || 0), color: "text-emerald-600" },
+            { label: "Margen prom", value: `${(Number(d.margenOperativo ?? d.marginPct ?? 0) || 0).toFixed(1)}%`, color: "text-blue-600" },
+            { label: "Stock bajo", value: String(Number(d.lowStockCount ?? d.stockBajo ?? 0) || 0), color: "text-red-500" },
+            { label: "Rotación", value: `${(Number(d.rotacionInventario ?? d.inventoryTurnover ?? 0) || 0).toFixed(1)}x`, color: "text-cyan-600" },
+          ]);
+        } else if (section === "clientes") {
+          setItems([
+            { label: "Total clientes", value: String(Number(d.totalClientes ?? d.totalCustomers ?? 0) || 0), color: "text-emerald-600" },
+            { label: "Nuevos (mes)", value: String(Number(d.newCustomersMonth ?? d.clientesNuevos ?? 0) || 0), color: "text-blue-600" },
+            { label: "Fiado pend.", value: `S/ ${(Number(d.fiadoPendiente ?? d.fiadoTotal ?? 0) || 0).toFixed(0)}`, color: "text-red-500" },
+            { label: "Retención", value: `${(Number(d.retentionRate ?? d.retencion ?? 0) || 0).toFixed(0)}%`, color: "text-purple-600" },
+          ]);
+        }
+      })();
+  }, [section]);
+
+  if (!items) {
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-14 bg-gray-100 rounded-xl animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+      {items.map((item) => (
+        <div key={item.label} className="rounded-xl border border-gray-200 bg-white px-3 py-2 shadow-sm text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5">{item.label}</p>
+          <p className={cn("text-base font-extrabold tabular-nums", item.color)} style={{ fontVariantNumeric: "tabular-nums" }}>{item.value}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── TabbedCard — card con tabs internas para unificar componentes ─────────────
+function TabbedCard({ title, subtitle, icon, tabs, className }: {
+  title: string;
+  subtitle?: string;
+  icon?: typeof BarChart3;
+  tabs: { id: string; label: string; content: React.ReactNode }[];
+  className?: string;
+}) {
+  const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? "");
+  return (
+    <div className={cn(
+      "bg-white rounded-2xl border border-gray-200 p-6 shadow-sm transition-shadow hover:shadow-md",
+      className,
+    )}>
+      <div className="mb-4">
+        <div className="flex items-center gap-2.5 mb-3">
+          {icon && (
+            <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              {React.createElement(icon, { className: "h-4.5 w-4.5 text-primary" })}
+            </div>
+          )}
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 leading-tight">{title}</h3>
+            {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+          </div>
+        </div>
+        <div className="flex gap-1 border-b border-gray-200">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id)}
+              className={cn(
+                "px-3 py-2 text-xs font-semibold rounded-t-lg transition-colors",
+                activeTab === t.id
+                  ? "bg-primary/10 text-primary border-b-2 border-primary"
+                  : "text-gray-500 hover:bg-gray-50"
+              )}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="w-full">
+        {tabs.find(t => t.id === activeTab)?.content}
+      </div>
     </div>
   );
 }
@@ -146,7 +322,7 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-12 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse" />
+          <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
         ))}
       </div>
     );
@@ -162,27 +338,27 @@ function Top10Clientes({ refreshKey }: { refreshKey: number }) {
       ) : (
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700 text-left">
-              <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs">#</th>
-              <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs">Cliente</th>
-              <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs text-right">Gasto total</th>
-              <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs text-right hidden sm:table-cell">Compras</th>
-              <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs text-right hidden md:table-cell">Ticket prom</th>
-              <th className="px-3 py-3 font-semibold text-gray-500 dark:text-gray-400 text-xs text-center">Tendencia</th>
+            <tr className="border-b border-gray-200 text-left">
+              <th className="px-3 py-3 font-semibold text-gray-500 text-xs">#</th>
+              <th className="px-3 py-3 font-semibold text-gray-500 text-xs">Cliente</th>
+              <th className="px-3 py-3 font-semibold text-gray-500 text-xs text-right">Gasto total</th>
+              <th className="px-3 py-3 font-semibold text-gray-500 text-xs text-right hidden sm:table-cell">Compras</th>
+              <th className="px-3 py-3 font-semibold text-gray-500 text-xs text-right hidden md:table-cell">Ticket prom</th>
+              <th className="px-3 py-3 font-semibold text-gray-500 text-xs text-center">Tendencia</th>
             </tr>
           </thead>
           <tbody>
             {customers.map((c, i) => (
-              <tr key={c.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer transition-colors">
+              <tr key={c.id} className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors">
                 <td className="px-3 py-3 text-center">
                   {i < 3 ? <span className="text-lg">{medals[i]}</span> : <span className="text-xs font-bold text-gray-400">{i + 1}</span>}
                 </td>
                 <td className="px-3 py-3">
-                  <p className="font-medium text-gray-900 dark:text-white truncate max-w-[200px]">{c.nombre}</p>
+                  <p className="font-medium text-gray-900 truncate max-w-50">{c.nombre}</p>
                 </td>
-                <td className="px-3 py-3 text-right font-bold text-[#0f766e] dark:text-[#14b8a6]">{formatCurrency(c.gastoTotal)}</td>
-                <td className="px-3 py-3 text-right text-gray-500 dark:text-gray-400 hidden sm:table-cell">{c.compras} compras</td>
-                <td className="px-3 py-3 text-right text-gray-500 dark:text-gray-400 hidden md:table-cell">{formatCurrency(c.ticketPromedio)}</td>
+                <td className="px-3 py-3 text-right font-bold text-primary">{formatCurrency(c.gastoTotal)}</td>
+                <td className="px-3 py-3 text-right text-gray-500 hidden sm:table-cell">{c.compras} compras</td>
+                <td className="px-3 py-3 text-right text-gray-500 hidden md:table-cell">{formatCurrency(c.ticketPromedio)}</td>
                 <td className="px-3 py-3 text-center">
                   {c.tendencia > 5 ? (
                     <span className="text-emerald-500 text-xs font-bold">&#8593; +{c.tendencia.toFixed(0)}%</span>
@@ -254,8 +430,8 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
   if (loading) {
     return (
       <div className="animate-pulse">
-        <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-4" />
-        <div className="h-8 w-56 bg-gray-200 dark:bg-gray-700 rounded" />
+        <div className="h-5 w-40 bg-gray-200 rounded mb-4" />
+        <div className="h-8 w-56 bg-gray-200 rounded" />
       </div>
     );
   }
@@ -263,8 +439,8 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
   if (!star) {
     return (
       <div>
-        <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-2">
-          <Flame className="h-4 w-4 text-[#f97316]" /> Producto Estrella
+        <p className="text-sm font-semibold text-gray-500 flex items-center gap-2">
+          <Flame className="h-4 w-4 text-secondary" /> Producto Estrella
         </p>
         <p className="text-xs text-gray-400 mt-2">Aun no hay ventas esta semana</p>
       </div>
@@ -272,23 +448,23 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
   }
 
   return (
-    <div className="rounded-xl bg-gradient-to-br from-[#f97316]/5 to-[#f97316]/10 dark:from-[#f97316]/10 dark:to-[#f97316]/20 p-4 border border-[#f97316]/20">
+    <div className="rounded-xl bg-linear-to-br from-secondary/5 to-secondary/10 p-4 border border-secondary/20">
       <div className="flex items-start gap-3">
         {star.imageUrl && (
-          <div className="w-16 h-16 rounded-xl overflow-hidden bg-white dark:bg-gray-800 shrink-0 border border-gray-200 dark:border-gray-700">
+          <div className="w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 border border-gray-200">
             <img src={star.imageUrl} alt={star.name} className="w-full h-full object-cover" />
           </div>
         )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold text-[#f97316] bg-[#f97316]/15 px-2.5 py-0.5 rounded-full">
+            <span className="text-xs font-bold text-secondary bg-secondary/15 px-2.5 py-0.5 rounded-full">
               Mas vendido
             </span>
           </div>
-          <p className="text-lg font-extrabold text-gray-900 dark:text-white truncate">{star.name}</p>
+          <p className="text-lg font-extrabold text-gray-900 truncate">{star.name}</p>
           <div className="flex items-center gap-3 mt-1 flex-wrap">
-            <span className="text-sm text-gray-500 dark:text-gray-400">{star.qty} unidades esta semana</span>
-            <span className="text-sm font-bold text-[#0f766e] dark:text-[#14b8a6]">S/{star.revenue.toFixed(0)}</span>
+            <span className="text-sm text-gray-500">{star.qty} unidades esta semana</span>
+            <span className="text-sm font-bold text-primary">S/{star.revenue.toFixed(0)}</span>
             {star.trend !== 0 && (
               <span className={`text-xs font-bold ${star.trend > 0 ? "text-emerald-600" : "text-red-500"}`}>
                 {star.trend > 0 ? "\u2191" : "\u2193"} {star.trend > 0 ? "+" : ""}{star.trend.toFixed(0)}% vs sem. pasada
@@ -328,12 +504,12 @@ function AnomalyDetectorWrapper({ refreshKey }: { refreshKey: number }) {
   if (sales.length === 0 && orders.length === 0) {
     return (
       <div className="text-center py-8">
-        <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-3">
-          <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+          <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Sin anomalias — Todo marcha bien</p>
+        <p className="text-sm text-gray-500">Sin anomalias — Todo marcha bien</p>
       </div>
     );
   }
@@ -388,47 +564,6 @@ export default function AnalyticsBIModule() {
     setRefreshKey(k => k + 1);
   }, []);
 
-  // ── Drag-and-drop section reordering ──
-  const [sectionOrder, setSectionOrder] = useState<string[]>(() => {
-    if (typeof window === "undefined") return SECTIONS.map(s => s.id);
-    try {
-      const saved = localStorage.getItem("analytics-tab-order");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        const allIds: string[] = SECTIONS.map(s => s.id);
-        const valid = (parsed as string[]).filter((id: string) => allIds.includes(id));
-        const missing = allIds.filter((id: string) => !valid.includes(id));
-        return [...valid, ...missing];
-      }
-    } catch { /* ignore */ }
-    return SECTIONS.map(s => s.id);
-  });
-  const [draggedTab, setDraggedTab] = useState<string | null>(null);
-  const [dragOverTab, setDragOverTab] = useState<string | null>(null);
-
-  const orderedSections = useMemo(
-    () => sectionOrder.map(id => SECTIONS.find(s => s.id === id)).filter(Boolean) as typeof SECTIONS,
-    [sectionOrder],
-  );
-
-  function handleDropTab(targetId: string) {
-    if (!draggedTab || draggedTab === targetId) return;
-    const newOrder = [...sectionOrder];
-    const fromIdx = newOrder.indexOf(draggedTab);
-    const toIdx = newOrder.indexOf(targetId);
-    newOrder.splice(fromIdx, 1);
-    newOrder.splice(toIdx, 0, draggedTab);
-    setSectionOrder(newOrder);
-    localStorage.setItem("analytics-tab-order", JSON.stringify(newOrder));
-    setDraggedTab(null);
-    setDragOverTab(null);
-  }
-
-  const resetSectionOrder = () => {
-    setSectionOrder(SECTIONS.map(s => s.id));
-    localStorage.removeItem("analytics-tab-order");
-  };
-
   // ── Section content renderer ───────────────────────────────────────────────
   const renderSection = () => {
     switch (activeSection) {
@@ -437,31 +572,40 @@ export default function AnalyticsBIModule() {
       // ────────────────────────────────────────────────────────────────────────
       case "resumen":
         return (
-          <div className="flex flex-col gap-8 max-w-7xl mx-auto" key={`resumen-${refreshKey}`}>
-            <SectionHeader
-              title="Resumen General"
-              description="Vista panoramica de indicadores clave, alertas y productos destacados"
-            />
-
-            {/* Anomaly Detector */}
+          <div className="flex flex-col gap-6 max-w-7xl mx-auto" key={`resumen-${refreshKey}`}>
+            {/* KPIs compactos — embebidos en la sección, no como barra separada */}
+            <InlineKPIStrip />
+            {/* Tendencia de ventas — el gráfico principal a pantalla completa */}
             <AnalyticsCard
-              title="Detector de Anomalias"
-              subtitle="Alertas automaticas basadas en desviacion estadistica"
-              icon={AlertTriangle}
+              title="Tendencia de Ventas"
+              subtitle="Ventas diarias con media movil y proyeccion"
+              icon={TrendingUp}
             >
-              <AnomalyDetectorWrapper refreshKey={refreshKey} />
+              <div className="min-h-80">
+                <Suspense fallback={<S />}>
+                  <SalesTrendChart />
+                </Suspense>
+              </div>
             </AnalyticsCard>
-
-            {/* Star Product + Top 10 — 2 cols on desktop */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AnalyticsCard
-                title="Producto Estrella de la Semana"
-                subtitle="El mas vendido en los ultimos 7 dias"
-                icon={Flame}
-              >
-                <StarProductCard refreshKey={refreshKey} />
-              </AnalyticsCard>
-
+            {/* Alertas + Estrella + Top Clientes — unificados en 2 columnas */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <TabbedCard
+                title="Alertas y Destacados"
+                subtitle="Lo más importante de un vistazo"
+                icon={AlertTriangle}
+                tabs={[
+                  {
+                    id: "alertas",
+                    label: "Alertas",
+                    content: <AnomalyDetectorWrapper refreshKey={refreshKey} />,
+                  },
+                  {
+                    id: "estrella",
+                    label: "Producto Estrella",
+                    content: <StarProductCard refreshKey={refreshKey} />,
+                  },
+                ]}
+              />
               <AnalyticsCard
                 title="Top 10 Clientes"
                 subtitle="Ranking por gasto total acumulado"
@@ -470,19 +614,6 @@ export default function AnalyticsBIModule() {
                 <Top10Clientes refreshKey={refreshKey} />
               </AnalyticsCard>
             </div>
-
-            {/* Sales Trend — full width, grande */}
-            <AnalyticsCard
-              title="Tendencia de Ventas"
-              subtitle="Evolucion diaria con media movil y tendencia"
-              icon={TrendingUp}
-            >
-              <div className="min-h-[450px]">
-                <Suspense fallback={<S />}>
-                  <SalesTrendChart />
-                </Suspense>
-              </div>
-            </AnalyticsCard>
           </div>
         );
 
@@ -491,48 +622,48 @@ export default function AnalyticsBIModule() {
       // ────────────────────────────────────────────────────────────────────────
       case "ventas":
         return (
-          <div className="flex flex-col gap-8 max-w-7xl mx-auto" key={`ventas-${refreshKey}`}>
-            <SectionHeader
-              title="Analisis de Ventas"
-              description="Tendencias, patrones horarios y mapa de calor de actividad"
-            />
-
-            {/* Sales Trend Chart — height 450px */}
+          <div className="flex flex-col gap-4 max-w-7xl mx-auto" key={`ventas-${refreshKey}`}>
+            <SectionKPIStrip section="ventas" />
+            {/* Sales Trend — chart principal */}
             <AnalyticsCard
               title="Tendencia de Ventas"
-              subtitle="Linea de ventas diarias con media movil de 7 dias y prediccion"
+              subtitle="Ventas diarias con media movil y prediccion"
               icon={TrendingUp}
             >
-              <div className="min-h-[450px]">
+              <div className="min-h-80">
                 <Suspense fallback={<S />}>
                   <SalesTrendChart />
                 </Suspense>
               </div>
             </AnalyticsCard>
-
-            {/* Heatmap — full width */}
-            <AnalyticsCard
-              title="Mapa de Calor — Cuando vendes mas?"
-              subtitle="Intensidad de ventas por dia de la semana y franja horaria"
-              icon={BarChart3}
-            >
-              <div className="min-h-[350px]">
-                <Suspense fallback={<S />}>
-                  <VentasHeatmap />
-                </Suspense>
-              </div>
-            </AnalyticsCard>
-
-            {/* Peak Hours — full width */}
-            <AnalyticsCard
-              title="Ventas por Hora"
-              subtitle="Distribucion horaria — identifica picos y valles"
+            {/* Patrones de Venta — Heatmap + PeakHours unificados */}
+            <TabbedCard
+              title="Patrones de Venta"
+              subtitle="¿Cuándo compran tus clientes? Mapa de calor y distribución horaria"
               icon={Clock}
-            >
-              <div className="min-h-[350px]">
-                <PeakHoursTab period={period} />
-              </div>
-            </AnalyticsCard>
+              tabs={[
+                {
+                  id: "heatmap",
+                  label: "Mapa de Calor",
+                  content: (
+                    <div className="min-h-70">
+                      <Suspense fallback={<S />}>
+                        <VentasHeatmap />
+                      </Suspense>
+                    </div>
+                  ),
+                },
+                {
+                  id: "horario",
+                  label: "Por Hora",
+                  content: (
+                    <div className="min-h-70">
+                      <PeakHoursTab period={period} />
+                    </div>
+                  ),
+                },
+              ]}
+            />
           </div>
         );
 
@@ -541,55 +672,58 @@ export default function AnalyticsBIModule() {
       // ────────────────────────────────────────────────────────────────────────
       case "productos":
         return (
-          <div className="flex flex-col gap-8 max-w-7xl mx-auto" key={`productos-${refreshKey}`}>
-            <SectionHeader
-              title="Analisis de Productos"
-              description="Clasificacion ABC, matriz BCG, margenes y asociaciones de compra"
+          <div className="flex flex-col gap-4 max-w-7xl mx-auto" key={`productos-${refreshKey}`}>
+            <SectionKPIStrip section="productos" />
+            {/* Clasificación de Productos — ABC + BCG unificados */}
+            <TabbedCard
+              title="Clasificación de Productos"
+              subtitle="ABC: cuáles generan más ingresos · BCG: en qué etapa de vida están"
+              icon={Package}
+              tabs={[
+                {
+                  id: "abc",
+                  label: "ABC (80/20)",
+                  content: (
+                    <div className="min-h-87.5">
+                      <ABCAnalysisTab />
+                    </div>
+                  ),
+                },
+                {
+                  id: "bcg",
+                  label: "Matriz BCG",
+                  content: (
+                    <div className="min-h-87.5">
+                      <BCGMatrixTab />
+                    </div>
+                  ),
+                },
+              ]}
             />
-
-            {/* ABC / Pareto */}
-            <AnalyticsCard
-              title="Clasificacion ABC -- Pareto"
-              subtitle="80/20: que productos generan el 80% de tus ingresos"
-              icon={BarChart3}
-            >
-              <div className="min-h-[450px]">
-                <ABCAnalysisTab />
-              </div>
-            </AnalyticsCard>
-
-            {/* BCG Matrix */}
-            <AnalyticsCard
-              title="Matriz BCG -- Estrellas vs Perros"
-              subtitle="Cuadrantes de crecimiento y participacion de mercado"
-              icon={Target}
-            >
-              <div className="min-h-[450px]">
-                <BCGMatrixTab />
-              </div>
-            </AnalyticsCard>
-
-            {/* Margin Waterfall */}
-            <AnalyticsCard
-              title="Analisis de Margenes"
-              subtitle="Waterfall de margen bruto por producto y categoria"
+            {/* Rentabilidad — Márgenes + Cesta de compra unificados */}
+            <TabbedCard
+              title="Rentabilidad y Comportamiento"
+              subtitle="Márgenes por producto · Qué se compra junto"
               icon={DollarSign}
-            >
-              <div className="min-h-[400px]">
-                <Suspense fallback={<S />}>
-                  <MarginWaterfallChart />
-                </Suspense>
-              </div>
-            </AnalyticsCard>
-
-            {/* Basket Analysis */}
-            <AnalyticsCard
-              title="Analisis de Cesta — Que se compra junto?"
-              subtitle="Asociaciones frecuentes entre productos (reglas de confianza)"
-              icon={ShoppingBasket}
-            >
-              <BasketAnalysisTab />
-            </AnalyticsCard>
+              tabs={[
+                {
+                  id: "margenes",
+                  label: "Márgenes",
+                  content: (
+                    <div className="min-h-75">
+                      <Suspense fallback={<S />}>
+                        <MarginWaterfallChart />
+                      </Suspense>
+                    </div>
+                  ),
+                },
+                {
+                  id: "cesta",
+                  label: "Cesta de Compra",
+                  content: <BasketAnalysisTab />,
+                },
+              ]}
+            />
           </div>
         );
 
@@ -598,110 +732,65 @@ export default function AnalyticsBIModule() {
       // ────────────────────────────────────────────────────────────────────────
       case "clientes":
         return (
-          <div className="flex flex-col gap-8 max-w-7xl mx-auto" key={`clientes-${refreshKey}`}>
-            <SectionHeader
-              title="Analisis de Clientes"
-              description="Segmentacion RFM, ranking de mejores clientes y gestion de fiados"
-            />
-
-            {/* RFM Segmentation */}
-            <AnalyticsCard
-              title="Segmentacion RFM de Clientes"
-              subtitle="Recencia, Frecuencia, Monto — identifica Champions, At Risk, Lost"
+          <div className="flex flex-col gap-4 max-w-7xl mx-auto" key={`clientes-${refreshKey}`}>
+            <SectionKPIStrip section="clientes" />
+            {/* Inteligencia de Clientes — RFM + Top10 unificados */}
+            <TabbedCard
+              title="Inteligencia de Clientes"
+              subtitle="Segmentación por comportamiento de compra · Ranking de los mejores"
               icon={Users}
-            >
-              <RFMWrapper refreshKey={refreshKey} />
-            </AnalyticsCard>
-
-            {/* Top 10 Clientes */}
-            <AnalyticsCard
-              title="Top 10 Clientes"
-              subtitle="Ranking por volumen de compra con tendencias"
-              icon={Trophy}
-            >
-              <Top10Clientes refreshKey={refreshKey} />
-            </AnalyticsCard>
-
-            {/* Fiado Analytics */}
-            <AnalyticsCard
-              title="Fiado Analytics"
-              subtitle="Deuda pendiente, tasa de recuperacion y tendencia de cobranza"
-              icon={CreditCard}
-            >
-              <div className="min-h-[400px]">
-                <Suspense fallback={<S />}>
-                  <FiadoAnalyticsPanel />
-                </Suspense>
-              </div>
-            </AnalyticsCard>
-          </div>
-        );
-
-      // ────────────────────────────────────────────────────────────────────────
-      // SECCION 5: FINANZAS
-      // ────────────────────────────────────────────────────────────────────────
-      case "finanzas":
-        return (
-          <div className="flex flex-col gap-8 max-w-7xl mx-auto" key={`finanzas-${refreshKey}`}>
-            <SectionHeader
-              title="Analisis Financiero"
-              description="Flujo de caja, comparativos y KPIs personalizados"
+              tabs={[
+                {
+                  id: "rfm",
+                  label: "Segmentación RFM",
+                  content: <RFMWrapper refreshKey={refreshKey} />,
+                },
+                {
+                  id: "top10",
+                  label: "Top 10 Ranking",
+                  content: <Top10Clientes refreshKey={refreshKey} />,
+                },
+              ]}
             />
-
-            {/* Cash Flow */}
-            <AnalyticsCard
-              title="Flujo de Caja -- 30 Dias"
-              subtitle="Ingresos, egresos y balance proyectado con barras y linea acumulada"
-              icon={Wallet}
-            >
-              <div className="min-h-[450px]">
-                <Suspense fallback={<S />}>
-                  <CashFlowChart />
-                </Suspense>
-              </div>
-            </AnalyticsCard>
-
-            {/* Business Intelligence / Forecasting */}
-            <AnalyticsCard
-              title="Inteligencia de Negocio"
-              subtitle="Tendencias por categoria, anomalias y pronosticos de ingresos"
-              icon={BarChart3}
-            >
-              <div className="min-h-[400px]">
-                <BusinessIntelligenceTab />
-              </div>
-            </AnalyticsCard>
-
-            {/* Custom KPIs */}
-            <AnalyticsCard
-              title="KPIs Personalizados"
-              subtitle="Crea y monitorea metricas a tu medida"
-              icon={Target}
-            >
-              <CustomKPITab />
-            </AnalyticsCard>
-
-            {/* Competitor Price Tracker */}
-            <AnalyticsCard
-              title="Dashboard Competencia"
-              subtitle="Monitoreo de precios en el mercado local"
-              icon={TrendingUp}
-            >
-              <CompetitorPriceTracker />
-            </AnalyticsCard>
+            {/* Fiados — Datos + IA unificados */}
+            <TabbedCard
+              title="Fiados — Deuda y Cobranza"
+              subtitle="Cuánto te deben, quién paga y quién no · Análisis de riesgo IA"
+              icon={CreditCard}
+              tabs={[
+                {
+                  id: "resumen-fiados",
+                  label: "Resumen",
+                  content: (
+                    <div className="min-h-75">
+                      <Suspense fallback={<S />}>
+                        <FiadoAnalyticsPanel />
+                      </Suspense>
+                    </div>
+                  ),
+                },
+                {
+                  id: "ia-fiados",
+                  label: "Riesgo IA",
+                  content: (
+                    <div className="min-h-75">
+                      <Suspense fallback={<S />}>
+                        <AIFiadoDashboard />
+                      </Suspense>
+                    </div>
+                  ),
+                },
+              ]}
+            />
           </div>
         );
 
       // ────────────────────────────────────────────────────────────────────────
-      // SECCION 6: PREDICCIONES
+      // SECCION 5: PREDICCIONES
       // ────────────────────────────────────────────────────────────────────────
       case "predicciones":
         return (
-          <div className="flex flex-col gap-6 max-w-3xl mx-auto" key={`pred-${refreshKey}`}>
-            <SectionHeader
-              title="Predicciones"
-              description="Pronosticos simples basados en promedios historicos de 28 dias"
-            />
+          <div className="flex flex-col gap-4 max-w-5xl mx-auto" key={`pred-${refreshKey}`}>
             <PredictiveAnalyticsTab />
           </div>
         );
@@ -712,109 +801,18 @@ export default function AnalyticsBIModule() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* ── Header ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-xl bg-[#0f766e] text-white flex items-center justify-center shadow-sm">
-            <BarChart3 className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">
-              Analytics PRO
-            </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Analisis avanzado de tu negocio
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1.5 rounded-full bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6] text-xs font-bold border border-[#0f766e]/20">
-            {PERIOD_DISPLAY[period]}
-          </span>
-          <button
-            onClick={handleRefresh}
-            title="Recargar datos"
-            className="h-9 w-9 rounded-xl flex items-center justify-center text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#0f766e] transition-colors border border-gray-200 dark:border-gray-700"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* ── KPI Bar V2 — always visible ── */}
-      <div className="sticky top-0 z-10 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm py-3 -mx-1 px-1 rounded-2xl">
-        <Suspense fallback={
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-24 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse" />
-            ))}
-          </div>
-        }>
-          <AnalyticsKPIBarV2 key={`kpi-${refreshKey}`} />
-        </Suspense>
-      </div>
-
-      {/* ── Period selector ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 mr-1">Periodo:</span>
-        {PERIODS.map(p => (
-          <button
-            key={p.key}
-            onClick={() => setPeriod(p.key)}
-            className={cn(
-              "px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold border transition-all",
-              period === p.key
-                ? "text-white border-transparent bg-[#0f766e] shadow-sm"
-                : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
-
-      {/* ── Section navigation — 5 pills grandes con icono + drag-and-drop ── */}
-      <div className="flex gap-2.5 overflow-x-auto scrollbar-none pb-1 -mx-1 px-1">
-        {orderedSections.map(section => {
-          const Icon = section.icon;
-          const isActive = activeSection === section.id;
-          return (
-            <button
-              key={section.id}
-              draggable
-              onDragStart={() => setDraggedTab(section.id)}
-              onDragOver={(e) => { e.preventDefault(); setDragOverTab(section.id); }}
-              onDragLeave={() => setDragOverTab(null)}
-              onDrop={() => handleDropTab(section.id)}
-              onDragEnd={() => { setDraggedTab(null); setDragOverTab(null); }}
-              onClick={() => setActiveSection(section.id)}
-              className={cn(
-                "shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all cursor-grab active:cursor-grabbing",
-                isActive
-                  ? "bg-[#0f766e] text-white shadow-sm"
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
-                draggedTab === section.id && "opacity-40 scale-95",
-                dragOverTab === section.id && draggedTab !== section.id && "ring-2 ring-[#0f766e] ring-offset-1",
-              )}
-            >
-              <GripVertical className="h-3 w-3 shrink-0 opacity-30" />
-              <Icon className="h-4 w-4 shrink-0" />
-              <span>{section.label}</span>
-            </button>
-          );
-        })}
-        {/* Reset section order button */}
-        {JSON.stringify(sectionOrder) !== JSON.stringify(SECTIONS.map(s => s.id)) && (
-          <button
-            onClick={resetSectionOrder}
-            className="shrink-0 ml-1 px-2 py-1.5 text-[10px] text-gray-400 dark:text-muted hover:text-[#0f766e] dark:hover:text-emerald-400 transition-colors whitespace-nowrap self-center"
-            title="Restablecer orden de secciones"
-          >
-            Restablecer
-          </button>
-        )}
-      </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Analytics BI"
+        description="Analítica avanzada de ventas, productos, clientes y predicciones"
+        icon={BarChart3}
+      />
+      <AdminTabBar
+        tabs={SECTIONS.map(s => ({ id: s.id, label: s.label, icon: s.icon }))}
+        activeTab={activeSection}
+        onTabChange={(id) => setActiveSection(id as SectionId)}
+        moduleId={MODULE_ID}
+      />
 
       {/* ── Section content with AnimatePresence ── */}
       <AnimatePresence mode="wait">

@@ -10,7 +10,6 @@ import {
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import { cn } from "@/lib/utils";
 import { ChartTooltip } from "@/lib/chart-tooltip";
 import {
@@ -27,8 +26,8 @@ const S = () => (
 
 export const TabError = () => (
   <div className="text-center py-12">
-    <p className="text-sm text-red-500 dark:text-red-400">Error al cargar el módulo</p>
-    <button onClick={() => window.location.reload()} className="mt-2 text-xs text-[#0f766e] hover:underline">Recargar página</button>
+    <p className="text-sm text-red-500">Error al cargar el módulo</p>
+    <button onClick={() => window.location.reload()} className="mt-2 text-xs text-[#00B4A6] hover:underline">Recargar página</button>
   </div>
 );
 
@@ -41,7 +40,7 @@ const SupplierComparator = dynamic(() => import("@/components/admin/SupplierComp
 
 const MODULE_ID = "compras";
 
-const CHART_COLORS = ['#0f766e', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#14b8a6', '#264653', '#6b705c'];
+const CHART_COLORS = ['#00B4A6', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653', '#6b705c'];
 
 const TABS: AdminTab[] = [
   { id: "punto-compra", label: "Punto de Compra", icon: ShoppingBasket },
@@ -69,7 +68,7 @@ function useComprasFavCharts(key: string) {
   return { favs, toggle, isFav: (id: string) => favs.includes(id) };
 }
 function ComprasFavStar({ id, favs }: { id: string; favs: ReturnType<typeof useComprasFavCharts> }) {
-  return <button onClick={() => favs.toggle(id)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors text-sm">{favs.isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300 dark:text-gray-600">&#9734;</span>}</button>;
+  return <button onClick={() => favs.toggle(id)} className="p-1 hover:bg-gray-100 rounded transition-colors text-sm">{favs.isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300">&#9734;</span>}</button>;
 }
 
 function ComprasDashboard() {
@@ -250,17 +249,17 @@ function ComprasDashboard() {
     <div className="space-y-6 animate-pulse">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+          <div key={i} className="h-24 bg-gray-200 rounded-2xl" />
         ))}
       </div>
-      <div className="h-72 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+      <div className="h-72 bg-gray-200 rounded-2xl" />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="h-72 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
-        <div className="h-72 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+        <div className="h-72 bg-gray-200 rounded-2xl" />
+        <div className="h-72 bg-gray-200 rounded-2xl" />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
-        <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+        <div className="h-64 bg-gray-200 rounded-2xl" />
+        <div className="h-64 bg-gray-200 rounded-2xl" />
       </div>
     </div>
   );
@@ -268,7 +267,7 @@ function ComprasDashboard() {
   const kpiCards = [
     { label: "OC totales", value: kpis.totalOC, icon: ShoppingCart, color: "#457b9d", borderColor: "border-l-[#457b9d]", change: kpiChanges.oc != null ? Math.round(kpiChanges.oc * 10) / 10 : undefined },
     { label: "OC pendientes", value: kpis.ocPendientes, icon: Clock, color: "#f97316", borderColor: "border-l-[#f97316]" },
-    { label: "Total gastado", value: `S/ ${kpis.totalGastado.toLocaleString()}`, icon: DollarSign, color: "#0f766e", borderColor: "border-l-[#0f766e]", change: kpiChanges.gastado != null ? Math.round(kpiChanges.gastado * 10) / 10 : undefined },
+    { label: "Total gastado", value: `S/ ${kpis.totalGastado.toLocaleString()}`, icon: DollarSign, color: "#00B4A6", borderColor: "border-l-[#00B4A6]", change: kpiChanges.gastado != null ? Math.round(kpiChanges.gastado * 10) / 10 : undefined },
     { label: "Proveedores", value: kpis.totalProveedores, icon: Building2, color: "#9b5de5", borderColor: "border-l-[#9b5de5]" },
     { label: "Deuda total", value: `S/ ${kpis.deudaTotal.toLocaleString()}`, icon: CreditCard, color: "#f97316", borderColor: "border-l-[#f97316]" },
     { label: "Deuda vencida", value: `S/ ${kpis.deudaVencida.toLocaleString()}`, icon: AlertTriangle, color: "#e63946", borderColor: "border-l-[#e63946]", bad: kpis.deudaVencida > 0 },
@@ -281,23 +280,23 @@ function ComprasDashboard() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
           {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
-            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>{p.label}</button>
+            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-[#00B4A6] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>{p.label}</button>
           ))}
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <span>Actualizado hace {minAgo} min</span>
-            <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors"><RefreshCw className="h-3 w-3" /></button>
+            <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 hover:bg-gray-100 rounded transition-colors"><RefreshCw className="h-3 w-3" /></button>
           </div>
-          <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"><FileDown className="h-3 w-3" /> Exportar</button>
+          <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors"><FileDown className="h-3 w-3" /> Exportar</button>
         </div>
       </div>
 
       {/* === Alertas Compras === */}
       {(kpis.ocPendientes > 0 || kpis.deudaVencida > 0) && (
         <div className="flex flex-wrap gap-2">
-          {kpis.ocPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" /> {kpis.ocPendientes} ordenes pendientes</span>}
-          {kpis.deudaVencida > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"><AlertTriangle className="h-3 w-3" /> S/ {kpis.deudaVencida.toLocaleString()} deuda vencida</span>}
+          {kpis.ocPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700"><AlertTriangle className="h-3 w-3" /> {kpis.ocPendientes} ordenes pendientes</span>}
+          {kpis.deudaVencida > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-700"><AlertTriangle className="h-3 w-3" /> S/ {kpis.deudaVencida.toLocaleString()} deuda vencida</span>}
         </div>
       )}
 
@@ -306,15 +305,15 @@ function ComprasDashboard() {
         {kpiCards.map((k, i) => {
           const Icon = k.icon;
           return (
-            <div key={i} className={cn("bg-white dark:bg-card rounded-2xl shadow-sm p-4 border-l-[3px] border border-gray-100 dark:border-card-border", k.borderColor)}>
+            <div key={i} className={cn("bg-white rounded-2xl shadow-sm p-4 border-l-[3px] border border-gray-100", k.borderColor)}>
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">{k.label}</p>
+                  <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
                   <div className="flex items-center gap-1">
-                    <p className={cn("text-2xl font-mono font-bold mt-1", (k as any).bad ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-white")}>{k.value}</p>
+                    <p className={cn("text-2xl font-mono font-bold mt-1", (k as any).bad ? "text-red-600" : "text-gray-900")}>{k.value}</p>
                   </div>
                   {(k as any).change != null && (
-                    <p className={cn("text-[10px] font-medium mt-0.5", (k as any).change >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400")}>
+                    <p className={cn("text-[10px] font-medium mt-0.5", (k as any).change >= 0 ? "text-emerald-600" : "text-red-500")}>
                       {(k as any).change >= 0 ? "+" : ""}{(k as any).change}% vs mes ant.
                     </p>
                   )}
@@ -329,48 +328,48 @@ function ComprasDashboard() {
       </div>
 
       {/* === Compras por Mes (AreaChart) === */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-4"><ComprasFavStar id="compras-mes" favs={compFavs} /><h3 className="text-sm font-bold text-gray-900 dark:text-white">Compras por mes (ultimos 6 meses)</h3></div>
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4"><ComprasFavStar id="compras-mes" favs={compFavs} /><h3 className="text-sm font-bold text-gray-900">Compras por mes (ultimos 6 meses)</h3></div>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={purchasesByMonth}>
             <defs>
               <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#0f766e" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#0f766e" stopOpacity={0.02} />
+                <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#00B4A6" stopOpacity={0.02} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
-            <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500 dark:fill-gray-400" />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500 dark:fill-gray-400" />
+            <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
             <Tooltip content={({ active, payload, label }: any) => {
               if (!active || !payload?.length) return null;
               return (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 px-4 py-3">
-                  <p className="text-xs font-semibold text-gray-900 dark:text-white">{label}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3">
+                  <p className="text-xs font-semibold text-gray-900">{label}</p>
+                  <p className="text-xs text-gray-500 mt-1">
                     S/ {(payload[0]?.value || 0).toLocaleString()} ({payload[0]?.payload?.count || 0} OCs)
                   </p>
                 </div>
               );
             }} />
-            <Area type="monotone" dataKey="total" stroke="#0f766e" strokeWidth={2.5} fill="url(#areaGradient)" name="Total compras" />
+            <Area type="monotone" dataKey="total" stroke="#00B4A6" strokeWidth={2.5} fill="url(#areaGradient)" name="Total compras" />
           </AreaChart>
         </ResponsiveContainer>
       </div>
 
       {/* === Distribucion por Proveedor (PieChart + tabla) === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6 shadow-sm">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Gasto por proveedor</h3>
+            <h3 className="text-sm font-bold text-gray-900">Gasto por proveedor</h3>
             <div className="flex items-center gap-2">
               {pieFilter && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0f766e]/10 text-[#0f766e] dark:text-emerald-400 text-xs font-bold">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-bold">
                   {pieFilter}
-                  <button onClick={() => setPieFilter(null)} className="hover:bg-[#0f766e]/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
+                  <button onClick={() => setPieFilter(null)} className="hover:bg-[#00B4A6]/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
                 </span>
               )}
-              <button onClick={() => setExpandedChart("proveedor")} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
+              <button onClick={() => setExpandedChart("proveedor")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={280}>
@@ -389,11 +388,11 @@ function ComprasDashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Ranking de proveedores</h3>
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-900 mb-4">Ranking de proveedores</h3>
           <div className="space-y-3 overflow-y-auto max-h-[280px]">
             {supplierSpend.length === 0 ? (
-              <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-8">Sin datos de proveedores</p>
+              <p className="text-xs text-gray-400 text-center py-8">Sin datos de proveedores</p>
             ) : (
               supplierSpend.map((s, i) => {
                 const pct = totalSpend > 0 ? (s.total / totalSpend) * 100 : 0;
@@ -402,11 +401,11 @@ function ComprasDashboard() {
                     <span className="text-xs font-mono font-bold w-5 text-gray-400 shrink-0">#{i + 1}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{s.name}</span>
-                        <span className="text-xs font-mono font-bold text-gray-900 dark:text-white shrink-0 ml-2">S/ {s.total.toLocaleString()}</span>
+                        <span className="text-xs font-medium text-gray-800 truncate">{s.name}</span>
+                        <span className="text-xs font-mono font-bold text-gray-900 shrink-0 ml-2">S/ {s.total.toLocaleString()}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                         </div>
                         <span className="text-[10px] text-gray-400 shrink-0 w-10 text-right">{pct.toFixed(0)}%</span>
@@ -422,18 +421,18 @@ function ComprasDashboard() {
       </div>
 
       {/* === Estado de OC (BarChart stacked) === */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Estado de ordenes por mes</h3>
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-900 mb-4">Estado de ordenes por mes</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={statusByMonth}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
-            <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500 dark:fill-gray-400" />
-            <YAxis tick={{ fontSize: 11 }} className="fill-gray-500 dark:fill-gray-400" />
+            <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
+            <YAxis tick={{ fontSize: 11 }} className="fill-gray-500" />
             <Tooltip content={<ChartTooltip />} />
-            <Legend iconType="circle" formatter={(value: any) => <span className="text-xs text-gray-600 dark:text-gray-300">{value}</span>} />
+            <Legend iconType="circle" formatter={(value: any) => <span className="text-xs text-gray-600">{value}</span>} />
             <Bar dataKey="Pendiente" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
             <Bar dataKey="En proceso" stackId="a" fill="#457b9d" />
-            <Bar dataKey="Recibido" stackId="a" fill="#0f766e" />
+            <Bar dataKey="Recibido" stackId="a" fill="#00B4A6" />
             <Bar dataKey="Cancelado" stackId="a" fill="#e63946" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
@@ -441,20 +440,20 @@ function ComprasDashboard() {
 
       {/* === Deuda por Proveedor (horizontal) + Proximos Pagos === */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Deuda por proveedor</h3>
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-900 mb-4">Deuda por proveedor</h3>
           {debtBySupplier.length === 0 ? (
-            <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-12">Sin deudas registradas</p>
+            <p className="text-xs text-gray-400 text-center py-12">Sin deudas registradas</p>
           ) : (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={debtBySupplier} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.06)" />
                 <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
-                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10 }} className="fill-gray-600 dark:fill-gray-300" />
+                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10 }} className="fill-gray-600" />
                 <Tooltip content={<ChartTooltip />} />
                 <Bar dataKey="total" name="Deuda total" radius={[0, 6, 6, 0]} barSize={14}>
                   {debtBySupplier.map((d, i) => (
-                    <Cell key={i} fill={d.vencida > 0 ? "#e63946" : d.total > 500 ? "#f97316" : "#0f766e"} />
+                    <Cell key={i} fill={d.vencida > 0 ? "#e63946" : d.total > 500 ? "#f97316" : "#00B4A6"} />
                   ))}
                 </Bar>
               </BarChart>
@@ -462,34 +461,34 @@ function ComprasDashboard() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6 shadow-sm">
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">Proximos pagos</h3>
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-900 mb-4">Proximos pagos</h3>
           {nextPayments.length === 0 ? (
-            <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-12">Sin pagos pendientes</p>
+            <p className="text-xs text-gray-400 text-center py-12">Sin pagos pendientes</p>
           ) : (
             <div className="space-y-3">
               {nextPayments.map((p, i) => {
                 const isOverdue = p.days < 0;
                 const isUrgent = p.days >= 0 && p.days <= 7;
                 const badgeColor = isOverdue
-                  ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                  ? "bg-red-100 text-red-700"
                   : isUrgent
-                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
-                    : "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400";
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-green-100 text-green-700";
                 const dotColor = isOverdue ? "bg-red-500" : isUrgent ? "bg-amber-500" : "bg-green-500";
 
                 return (
-                  <div key={p.id || i} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30">
+                  <div key={p.id || i} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/50">
                     <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", dotColor)} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{p.name}</p>
-                      <p className="text-lg font-mono font-bold text-gray-900 dark:text-white">S/ {p.amount.toLocaleString()}</p>
+                      <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
+                      <p className="text-lg font-mono font-bold text-gray-900">S/ {p.amount.toLocaleString()}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1 shrink-0">
                       <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", badgeColor)}>
                         {isOverdue ? `Vencido ${Math.abs(p.days)}d` : p.days === 0 ? "Hoy" : `En ${p.days}d`}
                       </span>
-                      <button className="text-[10px] font-semibold text-[#0f766e] dark:text-[#14b8a6] hover:underline flex items-center gap-1">
+                      <button className="text-[10px] font-semibold text-[#00B4A6] hover:underline flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3" /> Pagado
                       </button>
                     </div>
@@ -502,17 +501,17 @@ function ComprasDashboard() {
       </div>
 
       {/* === Tendencia de Gastos vs Promedio Movil (ComposedChart) === */}
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6 shadow-sm">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-1">Tendencia de gastos</h3>
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-4">Gasto real vs promedio movil 3 meses</p>
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-900 mb-1">Tendencia de gastos</h3>
+        <p className="text-[10px] text-gray-400 mb-4">Gasto real vs promedio movil 3 meses</p>
         <ResponsiveContainer width="100%" height={260}>
           <ComposedChart data={trendData}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
-            <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500 dark:fill-gray-400" />
-            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500 dark:fill-gray-400" />
+            <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
             <Tooltip content={<ChartTooltip />} />
-            <Legend iconType="circle" formatter={(value: any) => <span className="text-xs text-gray-600 dark:text-gray-300">{value}</span>} />
-            <Bar dataKey="total" fill="#0f766e" radius={[6, 6, 0, 0]} name="Gasto real" barSize={28} fillOpacity={0.85} />
+            <Legend iconType="circle" formatter={(value: any) => <span className="text-xs text-gray-600">{value}</span>} />
+            <Bar dataKey="total" fill="#00B4A6" radius={[6, 6, 0, 0]} name="Gasto real" barSize={28} fillOpacity={0.85} />
             <Line type="monotone" dataKey="promedio" stroke="#f97316" strokeWidth={2.5} dot={{ r: 4, fill: "#f97316", strokeWidth: 0 }} name="Prom. movil 3m" />
           </ComposedChart>
         </ResponsiveContainer>
@@ -520,10 +519,10 @@ function ComprasDashboard() {
 
       {/* Mejora 13: Expand chart modal */}
       {expandedChart && (
-        <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 p-8 overflow-auto">
+        <div className="fixed inset-0 z-50 bg-white p-8 overflow-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Gasto por proveedor</h2>
-            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><XIcon className="h-5 w-5 text-gray-500" /></button>
+            <h2 className="text-lg font-bold text-gray-900">Gasto por proveedor</h2>
+            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><XIcon className="h-5 w-5 text-gray-500" /></button>
           </div>
           <div style={{ height: 500 }}>
             <ResponsiveContainer width="100%" height={500}>
@@ -561,42 +560,17 @@ export default function ComprasModule() {
     return () => window.removeEventListener("compras-navigate-tab", handler);
   }, []);
 
-  const [bannerVisible, setBannerVisible] = useState(true);
-  useEffect(() => {
-    const stored = localStorage.getItem("banner-compras");
-    if (stored === "hidden") setBannerVisible(false);
-  }, []);
-  const toggleBanner = () => {
-    const next = !bannerVisible;
-    setBannerVisible(next);
-    localStorage.setItem("banner-compras", next ? "visible" : "hidden");
-  };
+
 
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-4">
       <AdminModuleHeader
         title="Compras"
         description="Pedidos a proveedores, recepción y cuentas por pagar"
         icon={Truck}
       />
 
-      <AdminBreadcrumb items={[
-        { label: "Compras" },
-        { label: TABS.find(t => t.id === sub)?.label || "" },
-      ]} />
 
-      {bannerVisible && (
-        <button onClick={toggleBanner} className="w-full text-left bg-[#0f766e]/5 dark:bg-[#0f766e]/10 border border-[#0f766e]/20 rounded-xl p-3 mb-1 transition-colors hover:bg-[#0f766e]/10">
-          <p className="text-sm text-[#0f766e] dark:text-emerald-400">
-            <span className="font-semibold">Compras</span> — Aqui haces pedidos a tus proveedores, recibes la mercaderia y controlas lo que les debes.
-          </p>
-        </button>
-      )}
-      {!bannerVisible && (
-        <button onClick={toggleBanner} className="text-xs text-gray-400 hover:text-[#0f766e] transition-colors">
-          Mostrar descripcion
-        </button>
-      )}
 
       <AdminTabBar
         tabs={TABS}

@@ -14,6 +14,7 @@ const createReviewSchema = z.object({
   rating: z.number().int().min(1).max(5),
   comment: z.string().min(1).max(1000),
   customerPhone: z.string().max(20).optional(),
+  imageUrls: z.array(z.string().url()).max(3).optional(),
 });
 
 // ── GET /api/marketplace/stores/[slug]/reviews — listar reseñas (público) ───
@@ -46,6 +47,7 @@ export async function GET(
         rating: true,
         text: true,
         date: true,
+        imageUrls: true,
       },
       orderBy: { date: "desc" },
       take: 20,
@@ -85,7 +87,7 @@ export async function POST(
       );
     }
 
-    const { reviewerName, rating, comment, customerPhone } = parsed.data;
+    const { reviewerName, rating, comment, customerPhone, imageUrls } = parsed.data;
 
     // Una reseña por teléfono por tienda (si se proporciona phone)
     if (customerPhone) {
@@ -112,6 +114,7 @@ export async function POST(
         storeId: store.id,
         tenantId: store.tenantId,
         status: "approved",
+        imageUrls: imageUrls ? JSON.stringify(imageUrls) : null,
       },
     });
 
@@ -139,6 +142,7 @@ export async function POST(
           rating: review.rating,
           text: review.text,
           date: review.date,
+          imageUrls: review.imageUrls,
         },
         store: { rating: newRating, reviewCount: newCount },
       },

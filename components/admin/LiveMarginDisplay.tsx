@@ -42,9 +42,9 @@ function getLevel(marginPct: number): MarginLevel {
 
 const LEVEL_STYLES: Record<MarginLevel, { bar: string; text: string; badge: string }> = {
   good: {
-    bar: "bg-[#0f766e]",
-    text: "text-[#0f766e] dark:text-[#14b8a6]",
-    badge: "bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6]",
+    bar: "bg-[#00B4A6]",
+    text: "text-[#00B4A6] dark:text-[#2dd4bf]",
+    badge: "bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf]",
   },
   warning: {
     bar: "bg-[#f97316]",
@@ -128,7 +128,7 @@ export default function LiveMarginDisplay({ items }: Props) {
       className={cn(
         "rounded-2xl border-2 overflow-hidden transition-colors shadow-sm",
         level === "good"
-          ? "border-[#0f766e]/30"
+          ? "border-[#00B4A6]/30"
           : level === "warning"
             ? "border-[#f97316]/30"
             : "border-red-300 dark:border-red-800"
@@ -144,7 +144,7 @@ export default function LiveMarginDisplay({ items }: Props) {
             className={cn(
               "p-2 rounded-xl",
               level === "good"
-                ? "bg-[#0f766e]/10"
+                ? "bg-[#00B4A6]/10"
                 : level === "warning"
                   ? "bg-[#f97316]/10"
                   : "bg-red-50 dark:bg-red-950/30"
@@ -154,7 +154,7 @@ export default function LiveMarginDisplay({ items }: Props) {
               className={cn(
                 "w-5 h-5",
                 level === "good"
-                  ? "text-[#0f766e]"
+                  ? "text-[#00B4A6]"
                   : level === "warning"
                     ? "text-[#f97316]"
                     : "text-red-500"

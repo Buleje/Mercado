@@ -7,6 +7,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { invalidate } from "@/lib/cache";
+import { withDbRetry } from "@/lib/db-retry";
 
 const LocationSchema = z.object({
   id: z.string().min(1),
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
     const cursorParam = sp.get("cursor");
     const search     = sp.get("q");
 
-    let customers = await CustomersDB.getAll(auth.tenantId);
+    let customers = await withDbRetry(() => CustomersDB.getAll(auth.tenantId));
 
     if (search) {
       const q = search.toLowerCase();

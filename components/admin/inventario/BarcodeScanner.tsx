@@ -65,10 +65,10 @@ export default function BarcodeScanner({ onScan, onClose }: BarcodeScannerProps)
                 }}
               />
               {/* Corner brackets */}
-              <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[#0f766e] rounded-tl-lg" />
-              <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[#0f766e] rounded-tr-lg" />
-              <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-[#0f766e] rounded-bl-lg" />
-              <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-[#0f766e] rounded-br-lg" />
+              <div className="absolute top-0 left-0 w-6 h-6 border-t-4 border-l-4 border-[#00B4A6] rounded-tl-lg" />
+              <div className="absolute top-0 right-0 w-6 h-6 border-t-4 border-r-4 border-[#00B4A6] rounded-tr-lg" />
+              <div className="absolute bottom-0 left-0 w-6 h-6 border-b-4 border-l-4 border-[#00B4A6] rounded-bl-lg" />
+              <div className="absolute bottom-0 right-0 w-6 h-6 border-b-4 border-r-4 border-[#00B4A6] rounded-br-lg" />
             </div>
           </div>
 

@@ -14,16 +14,34 @@ export default function FeaturedCarousel() {
   const { showToast } = useToast();
   const lastClickRef = useRef(0);
 
-  const featured = useMemo(
-    () => products.filter(p => p.badge === "Popular" || p.badge === "Oferta").slice(0, 6),
-    [products]
-  );
+  const featured = useMemo(() => {
+    // First try products with badges (Popular/Oferta)
+    const badged = products.filter(p => p.badge === "Popular" || p.badge === "Oferta").slice(0, 6);
+    if (badged.length >= 3) return badged;
+
+    // Fallback: auto-select from inventory — prefer in-stock products with images
+    const inStock = products.filter(p => (p.stock ?? 0) > 0);
+    const withImage = inStock.filter(p => p.image);
+    const pool = withImage.length >= 6 ? withImage : inStock;
+
+    // Deterministic daily shuffle (same products each day so it doesn't feel random)
+    const today = new Date();
+    const daySeed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+    const scored = pool.map((p, i) => ({
+      product: p,
+      score: ((daySeed * 31 + i * 17) % 997) + (p.image ? 500 : 0) + (p.badge ? 200 : 0),
+    }));
+    scored.sort((a, b) => b.score - a.score);
+    // Merge badged (keep them first) with auto-selected
+    const autoSelected = scored.map(s => s.product).filter(p => !badged.some(b => b.id === p.id));
+    return [...badged, ...autoSelected].slice(0, 6);
+  }, [products]);
 
   // No mostrar el carrusel mientras carga o si el tenant no tiene productos destacados
   if (isLoading || featured.length === 0) return null;
 
   return (
-    <section className="py-6 sm:py-8" style={{ background: "linear-gradient(to bottom, rgba(45,106,79,0.05), transparent)" }}>
+    <section className="py-6 sm:py-8" style={{ background: "linear-gradient(to bottom, rgba(0,180,166,0.05), transparent)" }}>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2 mb-4">
           <Star className="h-4 w-4 text-secondary fill-secondary" />
@@ -67,10 +85,10 @@ export default function FeaturedCarousel() {
                     ) : (
                       <button
                         onClick={() => { const now = Date.now(); if (now - lastClickRef.current < 300) return; lastClickRef.current = now; addItem(product); showToast(product.name, product.image); }}
-                        className="flex items-center justify-center h-8.5 w-8.5 sm:h-9 sm:w-9 rounded-full bg-primary text-white hover:bg-primary-dark active:scale-95 shrink-0"
+                        className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-primary text-white hover:bg-primary-dark active:scale-95 shrink-0"
                         aria-label={`Agregar ${product.name}`}
                       >
-                        <ShoppingCart className="h-4 w-4" />
+                        <ShoppingCart className="h-5 w-5" />
                       </button>
                     );
                   })()}

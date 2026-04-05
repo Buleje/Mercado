@@ -30,8 +30,8 @@ type RFMSegment = {
 };
 
 const SEGMENT_CONFIG: Record<string, { color: string; action: string }> = {
-  Champions: { color: "#0f766e", action: "Recompensar lealtad, ofrecer exclusividades" },
-  Loyal: { color: "#0d9488", action: "Upselling, programa de referidos" },
+  Champions: { color: "#00B4A6", action: "Recompensar lealtad, ofrecer exclusividades" },
+  Loyal: { color: "#33C4B8", action: "Upselling, programa de referidos" },
   New: { color: "#74c0fc", action: "Onboarding, primera experiencia memorable" },
   AtRisk: { color: "#f97316", action: "Campaña de reactivación urgente" },
   Lost: { color: "#e76f51", action: "Descuento agresivo o descarte" },

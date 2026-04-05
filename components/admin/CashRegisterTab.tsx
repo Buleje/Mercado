@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
@@ -144,7 +144,7 @@ function YapePlinConciliation({ breakdown }: { breakdown: Record<string, number>
               Diferencia de S/{Math.abs(diferencia).toFixed(2)} — {diferencia > 0 ? "sobrante" : "revisa si hay transferencias personales"}
             </p>
           )}
-          <button onClick={guardarConciliacion} className="mt-2 px-4 py-1.5 rounded-lg bg-[#0f766e] text-white text-xs font-bold hover:bg-[#245a41] transition-colors">
+          <button onClick={guardarConciliacion} className="mt-2 px-4 py-1.5 rounded-lg bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#245a41] transition-colors">
             Anotar conciliacion
           </button>
         </div>
@@ -234,7 +234,9 @@ export default function CashRegisterTab() {
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch("/api/cash-registers");
-      setRegisters(await res.json());
+      if (!res.ok) { setLoading(false); return; }
+      const data = await res.json();
+      setRegisters(Array.isArray(data) ? data : data?.items ?? data?.registers ?? []);
     } catch { /* ignore */ }
     setLoading(false);
   }, []);
@@ -765,7 +767,7 @@ export default function CashRegisterTab() {
                           <p className="text-lg font-extrabold font-mono text-gray-900 dark:text-foreground">{fmt(amount)}</p>
                           <p className="text-[10px] text-gray-400 dark:text-muted">{pct.toFixed(0)}%</p>
                           <div className="mt-1.5 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                            <div className="h-full bg-[#0f766e] rounded-full transition-all" style={{ width: `${pct}%` }} />
+                            <div className="h-full bg-[#00B4A6] rounded-full transition-all" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
                       );
@@ -801,8 +803,8 @@ export default function CashRegisterTab() {
                         <div key={idx} className="flex gap-3">
                           {/* Vertical line + dot */}
                           <div className="flex flex-col items-center">
-                            <div className={cn("w-2.5 h-2.5 rounded-full shrink-0 mt-1", isLast ? "bg-[#0f766e] animate-pulse" : "bg-[#0f766e]")} />
-                            {!isLast && <div className="w-0.5 flex-1 bg-[#0f766e]/20 min-h-6" />}
+                            <div className={cn("w-2.5 h-2.5 rounded-full shrink-0 mt-1", isLast ? "bg-[#00B4A6] animate-pulse" : "bg-[#00B4A6]")} />
+                            {!isLast && <div className="w-0.5 flex-1 bg-[#00B4A6]/20 min-h-6" />}
                           </div>
                           {/* Content — clickable */}
                           <div
@@ -1774,7 +1776,7 @@ export default function CashRegisterTab() {
                     className={cn(
                       "flex-1 py-1.5 rounded-lg text-[11px] font-bold transition-colors capitalize",
                       arqueoTab === tab
-                        ? "bg-[#0f766e] text-white"
+                        ? "bg-[#00B4A6] text-white"
                         : "bg-white dark:bg-card border border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-100"
                     )}
                   >

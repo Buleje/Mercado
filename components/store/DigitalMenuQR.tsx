@@ -110,9 +110,9 @@ export default function DigitalMenuQR() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 pb-32">
       {/* Header */}
-      <header className="sticky top-0 z-20 bg-[#0f766e] text-white px-4 py-4 shadow-lg">
+      <header className="sticky top-0 z-20 bg-[#00B4A6] text-white px-4 py-4 shadow-lg">
         <h1 className="text-2xl font-bold tracking-tight">Menu Digital</h1>
-        <p className="text-sm text-white/70">Buleje — Pucallpa</p>
+        <p className="text-sm text-white/70">Buleje</p>
         <div className="mt-3 flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2">
           <Search className="w-4 h-4 text-white/70 flex-shrink-0" />
           <input
@@ -139,7 +139,7 @@ export default function DigitalMenuQR() {
             className={cn(
               "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors border",
               activeCategory === cat
-                ? "bg-[#0f766e] text-white border-[#0f766e]"
+                ? "bg-[#00B4A6] text-white border-[#00B4A6]"
                 : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
             )}
           >
@@ -175,8 +175,8 @@ export default function DigitalMenuQR() {
                       className="w-full h-32 object-cover"
                     />
                   ) : (
-                    <div className="w-full h-32 bg-[#0f766e]/10 flex items-center justify-center">
-                      <span className="text-4xl text-[#0f766e]/30 font-black">
+                    <div className="w-full h-32 bg-[#00B4A6]/10 flex items-center justify-center">
+                      <span className="text-4xl text-[#00B4A6]/30 font-black">
                         {product.name[0]}
                       </span>
                     </div>
@@ -185,7 +185,7 @@ export default function DigitalMenuQR() {
                     <p className="font-semibold text-gray-900 dark:text-white text-sm leading-tight line-clamp-2">
                       {product.name}
                     </p>
-                    <p className="text-[#0f766e] dark:text-[#14b8a6] font-bold mt-1">
+                    <p className="text-[#00B4A6] dark:text-[#2dd4bf] font-bold mt-1">
                       {fmt(product.price)}
                       {product.unit ? (
                         <span className="text-xs text-gray-400 font-normal ml-1">
@@ -205,7 +205,7 @@ export default function DigitalMenuQR() {
                         <span className="font-bold text-sm">{inCart.qty}</span>
                         <button
                           onClick={() => changeQty(product.id, 1)}
-                          className="w-7 h-7 rounded-full bg-[#0f766e] text-white flex items-center justify-center"
+                          className="w-7 h-7 rounded-full bg-[#00B4A6] text-white flex items-center justify-center"
                           aria-label="Agregar"
                         >
                           <Plus className="w-3 h-3" />
@@ -214,7 +214,7 @@ export default function DigitalMenuQR() {
                     ) : (
                       <button
                         onClick={() => addToCart(product)}
-                        className="mt-2 w-full py-1.5 rounded-xl bg-[#0f766e] text-white text-xs font-semibold flex items-center justify-center gap-1"
+                        className="mt-2 w-full py-1.5 rounded-xl bg-[#00B4A6] text-white text-xs font-semibold flex items-center justify-center gap-1"
                       >
                         <Plus className="w-3 h-3" />
                         Agregar
@@ -232,7 +232,7 @@ export default function DigitalMenuQR() {
       {totalItems > 0 && (
         <button
           onClick={() => setShowCart(true)}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 bg-[#0f766e] text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-base"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 bg-[#00B4A6] text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-bold text-base"
         >
           <ShoppingCart className="w-5 h-5" />
           Ver pedido ({totalItems}) — {fmt(totalPrice)}
@@ -283,12 +283,12 @@ export default function DigitalMenuQR() {
                     </span>
                     <button
                       onClick={() => changeQty(item.id, 1)}
-                      className="w-7 h-7 rounded-full bg-[#0f766e] text-white flex items-center justify-center"
+                      className="w-7 h-7 rounded-full bg-[#00B4A6] text-white flex items-center justify-center"
                       aria-label="Agregar"
                     >
                       <Plus className="w-3 h-3" />
                     </button>
-                    <span className="ml-2 font-bold text-[#0f766e] dark:text-[#14b8a6] text-sm w-20 text-right">
+                    <span className="ml-2 font-bold text-[#00B4A6] dark:text-[#2dd4bf] text-sm w-20 text-right">
                       {fmt(item.price * item.qty)}
                     </span>
                   </div>

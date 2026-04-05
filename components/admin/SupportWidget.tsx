@@ -121,7 +121,7 @@ export default function SupportWidget() {
           onClick={() => setOpen((v) => !v)}
           className={cn(
             "relative flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all",
-            "bg-[#2d6a4f] hover:bg-[#255c44] text-white text-sm font-medium",
+            "bg-[#00B4A6] hover:bg-[#255c44] text-white text-sm font-medium",
             open && "bg-[#255c44]",
           )}
           aria-label="Soporte"
@@ -153,7 +153,7 @@ export default function SupportWidget() {
               className={cn(
                 "px-3 py-1 rounded-lg text-xs font-medium transition-colors",
                 view === "form"
-                  ? "bg-[#2d6a4f] text-white"
+                  ? "bg-[#00B4A6] text-white"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
               )}
             >
@@ -164,7 +164,7 @@ export default function SupportWidget() {
               className={cn(
                 "relative px-3 py-1 rounded-lg text-xs font-medium transition-colors",
                 view === "list"
-                  ? "bg-[#2d6a4f] text-white"
+                  ? "bg-[#00B4A6] text-white"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
               )}
             >
@@ -196,7 +196,7 @@ export default function SupportWidget() {
                   placeholder="¿En qué podemos ayudarte?"
                   maxLength={200}
                   required
-                  className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]"
+                  className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]"
                 />
               </div>
               <div>
@@ -208,7 +208,7 @@ export default function SupportWidget() {
                   rows={4}
                   maxLength={2000}
                   required
-                  className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] resize-none"
+                  className="w-full text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6] resize-none"
                 />
               </div>
               <div>
@@ -247,7 +247,7 @@ export default function SupportWidget() {
                   disabled={submitting || !subject.trim() || !message.trim()}
                   className={cn(
                     "w-full flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-colors",
-                    "bg-[#2d6a4f] hover:bg-[#255c44] text-white",
+                    "bg-[#00B4A6] hover:bg-[#255c44] text-white",
                     "disabled:opacity-50 disabled:cursor-not-allowed",
                   )}
                 >
@@ -271,7 +271,7 @@ export default function SupportWidget() {
                   <p className="text-sm">No tienes tickets aún</p>
                   <button
                     onClick={() => setView("form")}
-                    className="mt-2 text-xs text-[#2d6a4f] dark:text-emerald-400 hover:underline"
+                    className="mt-2 text-xs text-[#00B4A6] dark:text-emerald-400 hover:underline"
                   >
                     Crear el primero
                   </button>

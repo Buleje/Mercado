@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, startTransition } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, startTransition } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
-  Search, Trophy, Gift, History, PackageCheck, User, ClipboardList, Mic, Flame, ChefHat,
+  Search, Trophy, Gift, History, PackageCheck, User, Mic, Flame, ChefHat, Globe,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -91,13 +91,14 @@ export default function Header() {
   const [cartBounce, setCartBounce] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<{ name: string; image?: string; price: number; stock?: number; id: number }[]>([]);
   const [announcementVisible, setAnnouncementVisible] = useState(true);
   const [inlineSearchFocused, setInlineSearchFocused] = useState(false);
   const inlineSearchRef = useRef<HTMLDivElement>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [orderStatusChanged, setOrderStatusChanged] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   /* X4: Voice search + ordering */
   const [listening, setListening] = useState(false);
   const [voiceResult, setVoiceResult] = useState<{ type: "added"; product: string; qty: number } | null>(null);
@@ -141,14 +142,28 @@ export default function Header() {
   /* Trending products — top sellers from selling-fast localStorage data */
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
 
-  // Load products + levenshtein lazily after mount
+  // Categories with actual products — filter out empties
+  const [activeCategoryIds, setActiveCategoryIds] = useState<Set<string> | null>(null);
+
+  // Load products from API + levenshtein lazily after mount
   useEffect(() => {
     void Promise.all([
-      import("@/data/products"),
+      fetch("/api/products").then(r => r.ok ? r.json() : []).catch(() => []),
       import("@/hooks/use-advanced-search"),
-    ]).then(([{ products: p }, { levenshteinDistance: ld }]) => {
+    ]).then(([apiProducts, { levenshteinDistance: ld }]) => {
+      const raw = Array.isArray(apiProducts) ? apiProducts : [];
+      const p: Product[] = raw.filter((x: Record<string, unknown>) => x.active !== false).map((x: Record<string, unknown>) => ({
+        id: x.id as number, name: x.name as string, category: x.category as string,
+        price: x.price as number, image: x.image as string, unit: (x.unit as string) ?? "",
+        badge: x.badge as string | undefined, stock: x.stock as number | undefined,
+      }));
       productsRef.current = p;
       levenshteinRef.current = ld;
+
+      // Build set of categories that have at least 1 product
+      const catIds = new Set(p.map((prod: Product) => prod.category).filter(Boolean));
+      setActiveCategoryIds(catIds);
+
       // Populate trending products once data is available
       try {
         const now = Date.now();
@@ -169,6 +184,13 @@ export default function Header() {
       } catch { /* no-op */ }
     });
   }, []);
+
+  // Only show categories that have at least 1 product
+  const filteredCategories = useMemo(
+    () => activeCategoryIds ? categoryMenuItems.filter(cat => activeCategoryIds.has(cat.id)) : categoryMenuItems,
+    [activeCategoryIds]
+  );
+
   const userMenuRef = useRef<HTMLDivElement>(null);
   const prevCount = useRef(0);
   const prevOrderStatus = useRef<string | null>(null);
@@ -234,6 +256,11 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Detectar si hay cookie de admin para mostrar enlace al panel
+  useEffect(() => {
+    setIsAdmin(document.cookie.includes("bsm-admin-sess"));
+  }, []);
+
   useEffect(() => {
     updateCategoryStripState();
     const element = categoryStripRef.current;
@@ -292,6 +319,16 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Close mobile menu on Escape key
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [mobileOpen]);
+
   // Check for active order
   useEffect(() => {
     const checkOrder = () => {
@@ -334,7 +371,7 @@ export default function Header() {
 
   // Search autocomplete — fuzzy with Levenshtein typo tolerance (debounced)
   useEffect(() => {
-    if (searchQuery.trim().length < 2) { startTransition(() => setSuggestions([])); return; }
+    if (searchQuery.trim().length < 1) { startTransition(() => setSuggestions([])); return; }
     const p = productsRef.current;
     const ld = levenshteinRef.current;
     if (!p || !ld) { startTransition(() => setSuggestions([])); return; }
@@ -367,12 +404,12 @@ export default function Header() {
             else if (editHits > 0) score = 30;
           }
         }
-        return { name: prod.name, score };
+        return { name: prod.name, image: prod.image, price: prod.price, stock: prod.stock, id: prod.id, score };
       })
       .filter(x => x.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 6)
-      .map(x => x.name);
+      .map(({ score: _s, ...rest }) => rest);
     startTransition(() => setSuggestions(scored));
     }, 200); // 200ms debounce
     return () => clearTimeout(timer);
@@ -526,11 +563,11 @@ export default function Header() {
               <div className="px-4 py-3 border-t border-b border-gray-100 bg-linear-to-r from-primary/5 to-primary/5">
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Categorías</p>
-                  <span className="text-[10px] text-muted font-medium">{categoryMenuItems.length} secciones</span>
+                  <span className="text-[10px] text-muted font-medium">{filteredCategories.length} secciones</span>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-1 p-2.5">
-                {categoryMenuItems.map((cat) => (
+                {filteredCategories.map((cat) => (
                   <Link
                     key={cat.id}
                     href="/tienda"
@@ -559,86 +596,23 @@ export default function Header() {
       case "tienda":
         return <Link key="tienda" href="/tienda" className={navLinkCls}>Tienda</Link>;
       case "categorias":
-        return (
-          <div key="categorias" className="relative"
-            onMouseEnter={() => openDropdown("categorias")}
-            onMouseLeave={closeDropdown}
-          >
-            <button
-              onClick={() => setActiveDropdown(prev => prev === "categorias" ? null : "categorias")}
-              aria-expanded={_megaOpen}
-              aria-haspopup="true"
-              className={cn(
-                "flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-base font-semibold",
-                scrolled ? "text-foreground hover:text-primary hover:bg-primary/5" : "text-white/90 hover:text-white hover:bg-white/10",
-                _megaOpen && (scrolled ? "text-primary bg-primary/8" : "text-white bg-white/15")
-              )}
-            >
-              Categorías
-              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", _megaOpen && "rotate-180")} />
-            </button>
-            {/* Mega Menu Panel */}
-            <div
-              onMouseEnter={cancelClose}
-              onMouseLeave={closeDropdown}
-              className={cn(
-                "absolute top-full -left-32 mt-2 z-[60] bg-white dark:bg-card rounded-2xl shadow-2xl border border-gray-100 dark:border-card-border overflow-hidden transition-all duration-200",
-                "w-[640px]",
-                _megaOpen ? "opacity-100 scale-100 translate-y-0 pointer-events-auto" : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
-              )}
-            >
-              {/* Overlay behind mega menu */}
-              <div className="px-5 py-3 border-b border-gray-100 dark:border-card-border bg-linear-to-r from-primary/5 to-transparent">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Todas las categorías</p>
-              </div>
-              <div className="grid grid-cols-3 gap-0 p-3">
-                {categoryMenuItems.map((cat) => (
-                  <div key={cat.id} className="p-2">
-                    <Link
-                      href={`/tienda/categoria/${cat.id}`}
-                      onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
-                      className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-primary/5 group"
-                    >
-                      <span className={cn("flex items-center justify-center h-8 w-8 rounded-lg text-base shrink-0 group-hover:scale-110 transition-transform", cat.iconBg)}>
-                        {cat.emoji}
-                      </span>
-                      <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{cat.label}</span>
-                    </Link>
-                    <div className="ml-12 mt-0.5 space-y-0.5">
-                      {cat.subs.map((sub) => (
-                        <Link
-                          key={sub}
-                          href={`/tienda/categoria/${cat.id}`}
-                          onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
-                          className="block text-xs text-muted hover:text-primary transition-colors py-0.5 pl-1"
-                        >
-                          {sub}
-                        </Link>
-                      ))}
-                      <Link
-                        href={`/tienda/categoria/${cat.id}`}
-                        onClick={() => { setActiveDropdown(null); handleCategoryClick(cat.id); }}
-                        className="block text-xs font-semibold text-primary hover:text-primary/80 transition-colors py-0.5 pl-1 mt-1"
-                      >
-                        Ver todo &rarr;
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="px-4 py-2.5 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border">
-                <Link href="/tienda" onClick={() => setActiveDropdown(null)}
-                  className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-sm font-bold text-primary hover:bg-primary/8 transition-colors">
-                  Ver todos los productos &rarr;
-                </Link>
-              </div>
-            </div>
-          </div>
-        );
+        return null;
       case "recetas":
         return (
           <Link key="recetas" href="/recetas" className={cn(navLinkCls, "flex items-center gap-1.5")}>
             <ChefHat className="h-4 w-4" /> Recetas
+          </Link>
+        );
+      case "marketplace":
+        return (
+          <Link key="marketplace" href="/marketplace" className={cn(navLinkCls, "flex items-center gap-1.5")}>
+            <Globe className="h-4 w-4" /> Marketplace
+          </Link>
+        );
+      case "historial":
+        return (
+          <Link key="historial" href="/cuenta/historial" className={cn(navLinkCls, "flex items-center gap-1.5")}>
+            <History className="h-4 w-4" /> Historial
           </Link>
         );
       default:
@@ -683,7 +657,7 @@ export default function Header() {
                   <div className="pt-2 border-t border-gray-100">
                     <p className="px-1 pb-2 text-[10px] font-bold text-primary uppercase tracking-widest">Categorías</p>
                     <div className="grid grid-cols-2 gap-2">
-                      {categoryMenuItems.map((cat) => (
+                      {filteredCategories.map((cat) => (
                         <Link
                           key={cat.id}
                           href="/tienda"
@@ -713,52 +687,23 @@ export default function Header() {
       case "tienda":
         return <Link key="tienda" href="/tienda" onClick={() => setMobileOpen(false)} className={cls}>Tienda</Link>;
       case "categorias":
-        return (
-          <div key="categorias">
-            <button
-              onClick={() => setMobileCatOpen((o) => !o)}
-              aria-expanded={_mobileCatOpen}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-foreground font-medium hover:bg-primary/5 hover:text-primary transition-colors"
-            >
-              <span>Categorías</span>
-              <span className={cn("transition-transform duration-200 inline-block", _mobileCatOpen && "rotate-180")}>
-                <ChevronDown className="h-4 w-4 text-muted" />
-              </span>
-            </button>
-            {_mobileCatOpen && (
-              <div className="mx-4 my-2 space-y-1">
-                {categoryMenuItems.map((cat) => (
-                  <div key={cat.id}>
-                    <Link
-                      href={`/tienda/categoria/${cat.id}`}
-                      onClick={() => { setMobileOpen(false); setMobileCatOpen(false); handleCategoryClick(cat.id); }}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-card-border hover:border-primary/25 hover:bg-primary/5"
-                    >
-                      <span className={cn("flex items-center justify-center h-9 w-9 rounded-xl text-lg shrink-0", cat.iconBg)}>
-                        {cat.emoji}
-                      </span>
-                      <div>
-                        <p className="text-sm font-bold text-foreground">{cat.label}</p>
-                        <p className="text-xs text-muted">{cat.desc}</p>
-                      </div>
-                    </Link>
-                  </div>
-                ))}
-                <Link
-                  href="/tienda"
-                  onClick={() => { setMobileOpen(false); setMobileCatOpen(false); }}
-                  className="flex items-center justify-center gap-1.5 mt-2 py-2.5 rounded-xl bg-primary/8 text-sm font-bold text-primary"
-                >
-                  Ver todos los productos &rarr;
-                </Link>
-              </div>
-            )}
-          </div>
-        );
+        return null;
       case "recetas":
         return (
           <Link key="recetas" href="/recetas" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
             <ChefHat className="h-4 w-4 text-[#f97316]" /> Recetas
+          </Link>
+        );
+      case "marketplace":
+        return (
+          <Link key="marketplace" href="/marketplace" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <Globe className="h-4 w-4 text-teal-500" /> Marketplace
+          </Link>
+        );
+      case "historial":
+        return (
+          <Link key="historial" href="/cuenta/historial" onClick={() => setMobileOpen(false)} className={cn(cls, "flex items-center gap-2")}>
+            <History className="h-4 w-4 text-pink-500" /> Historial
           </Link>
         );
       default:
@@ -795,8 +740,8 @@ export default function Header() {
             <div
               className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl text-white shadow-lg overflow-hidden"
               style={{
-                background: "linear-gradient(135deg, #0f766e 0%, #0d5f58 50%, #1b4332 100%)",
-                boxShadow: "0 4px 12px rgba(45, 106, 79, 0.35)"
+                background: "linear-gradient(135deg, #00B4A6 0%, #009690 50%, #007A72 100%)",
+                boxShadow: "0 4px 12px rgba(0, 180, 166, 0.35)"
               }}
             >
               {storeTheme?.logo ? (
@@ -858,18 +803,36 @@ export default function Header() {
               )}
               {inlineSearchFocused && (suggestions.length > 0 || searchQuery.length === 0) && (
                 <div className="absolute top-full mt-2 w-full min-w-72 bg-white dark:bg-card rounded-2xl shadow-xl border border-gray-100 dark:border-card-border overflow-hidden z-50 max-h-96 overflow-y-auto">
-                  {/* Sugerencias al escribir */}
+                  {/* Sugerencias al escribir — con imagen, precio y stock */}
                   {suggestions.length > 0 && (
                     <div className="pt-2 pb-1">
                       <p className="px-4 pt-1 pb-1 text-[10px] font-bold uppercase tracking-wider text-muted">Sugerencias</p>
-                      {suggestions.map((name) => (
+                      {suggestions.map((item) => (
                         <button
-                          key={name}
-                          onMouseDown={() => { handleSearchSelect(name); setInlineSearchFocused(false); }}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-primary/5 hover:text-primary text-left"
+                          key={item.id}
+                          onMouseDown={() => { handleSearchSelect(item.name); setInlineSearchFocused(false); }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-primary/5 text-left transition-colors"
                         >
-                          <Search className="h-3.5 w-3.5 text-muted shrink-0" />
-                          <HighlightMatch text={name} query={searchQuery} />
+                          {item.image ? (
+                            <Image src={item.image} alt="" width={40} height={40} className="h-10 w-10 rounded-xl object-cover bg-gray-100 dark:bg-surface shrink-0 border border-gray-200 dark:border-card-border" unoptimized={item.image.startsWith("data:")} />
+                          ) : (
+                            <div className="h-10 w-10 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center shrink-0">
+                              <Package className="h-4 w-4 text-muted" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <span className="font-bold text-sm block truncate"><HighlightMatch text={item.name} query={searchQuery} /></span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs font-bold text-primary">S/{item.price.toFixed(2)}</span>
+                              {(item.stock ?? 0) > 0 ? (
+                                <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-full", (item.stock ?? 0) <= 5 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400")}>
+                                  {(item.stock ?? 0) <= 5 ? `¡Solo ${item.stock}!` : "Disponible"}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Agotado</span>
+                              )}
+                            </div>
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -898,16 +861,16 @@ export default function Header() {
 
                       {/* Categorías */}
                       <div className="px-4 pt-3 pb-3 border-t border-gray-100 dark:border-card-border first:border-t-0">
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Categorías</p>
-                        <div className="grid grid-cols-2 gap-1">
-                          {categoryMenuItems.slice(0, 8).map(cat => (
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-3">Categorías</p>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {filteredCategories.slice(0, 8).map(cat => (
                             <button
                               key={cat.id}
                               onMouseDown={() => { setInlineSearchFocused(false); handleCategoryClick(cat.id); }}
-                              className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold text-foreground hover:bg-primary/5 hover:text-primary transition-colors text-left"
+                              className="flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-foreground hover:bg-primary/8 hover:text-primary transition-colors text-left"
                             >
-                              <span className="text-lg leading-none">{cat.emoji}</span>
-                              <span className="truncate text-xs">{cat.label}</span>
+                              <span className="text-2xl leading-none">{cat.emoji}</span>
+                              <span className="truncate text-sm font-bold">{cat.label}</span>
                             </button>
                           ))}
                         </div>
@@ -916,22 +879,22 @@ export default function Header() {
                       {/* Productos populares */}
                       {trendingProducts.length > 0 && (
                         <div className="px-4 pt-2 pb-3 border-t border-gray-100 dark:border-card-border">
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2 flex items-center gap-1">
-                            <Flame className="h-3 w-3 text-orange-500" /> Populares ahora
+                          <p className="text-xs font-bold uppercase tracking-wider text-muted mb-3 flex items-center gap-1.5">
+                            <Flame className="h-4 w-4 text-orange-500" /> Populares ahora
                           </p>
-                          <div className="space-y-0.5">
+                          <div className="space-y-1">
                             {trendingProducts.slice(0, 3).map(p => (
                               <button
                                 key={p.id}
                                 onMouseDown={() => { handleSearchSelect(p.name); setInlineSearchFocused(false); }}
-                                className="w-full flex items-center gap-3 px-2 py-1.5 rounded-xl text-sm text-foreground hover:bg-primary/5 hover:text-primary text-left"
+                                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-foreground hover:bg-primary/8 hover:text-primary text-left"
                               >
                                 {p.image && (
-                                  <Image src={p.image} alt="" width={28} height={28} className="h-7 w-7 rounded-lg object-cover bg-gray-100 shrink-0" unoptimized={p.image.startsWith("data:")} />
+                                  <Image src={p.image} alt="" width={40} height={40} className="h-10 w-10 rounded-xl object-cover bg-gray-100 shrink-0" unoptimized={p.image.startsWith("data:")} />
                                 )}
                                 <div className="flex-1 min-w-0">
-                                  <span className="font-semibold text-xs block truncate">{p.name}</span>
-                                  <span className="text-[10px] text-muted">S/{p.price.toFixed(2)}</span>
+                                  <span className="font-bold text-sm block truncate">{p.name}</span>
+                                  <span className="text-xs text-muted font-semibold">S/{p.price.toFixed(2)}</span>
                                 </div>
                               </button>
                             ))}
@@ -1016,14 +979,19 @@ export default function Header() {
                       <History className="h-4 w-4" />
                       <span>Historial de datos</span>
                     </button>
-                    <a
-                      href="/admin"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-gray-400 hover:bg-primary/5 hover:text-primary transition-colors"
-                    >
-                      <Settings className="h-4 w-4" />
-                      <span>Panel de administración</span>
-                    </a>
+                    {loyalty && customer && (
+                      <a
+                        href="/puntos"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-primary/5 hover:text-primary transition-colors"
+                      >
+                        <Trophy className="h-4 w-4 text-amber-500" />
+                        <span className="flex-1">Mis puntos</span>
+                        <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                          {loyalty.loyaltyPoints ?? 0}
+                        </span>
+                      </a>
+                    )}
                     <button
                       onClick={() => { setOrderStatusChanged(false); openOrderStatusModal(); setUserMenuOpen(false); }}
                       className={cn(
@@ -1047,6 +1015,14 @@ export default function Header() {
                     {customer && (
                       <>
                         <div className="mx-3 my-1 border-t border-gray-100 dark:border-card-border" />
+                        <a
+                          href="/admin"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-muted hover:bg-primary/5 hover:text-primary transition-colors"
+                        >
+                          <Settings className="h-4 w-4" />
+                          <span>Panel administrador</span>
+                        </a>
                         <button
                           onClick={() => {
                             clear();
@@ -1065,36 +1041,7 @@ export default function Header() {
               )}
             </div>
 
-            {/* Loyalty points badge — desktop with tier glow animation */}
-            {loyalty && customer && (
-              <a
-                href="/cuenta"
-                className={cn(
-                  "relative flex items-center gap-1.5 rounded-full text-xs font-bold transition-all duration-300 px-2.5 py-1.5 group overflow-hidden",
-                  scrolled
-                    ? loyalty.loyaltyTier === "oro" || loyalty.loyaltyTier === "diamante"
-                      ? "bg-amber-100 text-amber-700 hover:bg-amber-200 ring-1 ring-amber-300/50"
-                      : loyalty.loyaltyTier === "plata"
-                        ? "bg-gray-100 text-gray-600 hover:bg-gray-200 ring-1 ring-gray-300/50"
-                        : "bg-secondary/15 text-secondary hover:bg-secondary/25"
-                    : "bg-white/15 backdrop-blur-sm text-white border border-white/20 hover:bg-white/25"
-                )}
-                title={`Nivel ${loyalty.loyaltyTier} · ${loyalty.loyaltyPoints} puntos`}
-              >
-                {/* Shimmer animation for gold/diamond tiers */}
-                {(loyalty.loyaltyTier === "oro" || loyalty.loyaltyTier === "diamante") && (
-                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-linear-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
-                )}
-                <span className={cn(
-                  "text-sm leading-none",
-                  loyalty.loyaltyTier === "oro" || loyalty.loyaltyTier === "diamante" ? "animate-bounce" : ""
-                )} style={loyalty.loyaltyTier === "oro" || loyalty.loyaltyTier === "diamante" ? { animationDuration: "2s" } : undefined}>
-                  {loyalty.loyaltyTier === "diamante" ? "💎" : loyalty.loyaltyTier === "oro" ? "🥇" : loyalty.loyaltyTier === "plata" ? "🥈" : "🥉"}
-                </span>
-                <span className="relative">{loyalty.loyaltyPoints}</span>
-                <Gift className="h-3 w-3 relative" />
-              </a>
-            )}
+
           </nav>
 
           {/* Actions */}
@@ -1183,14 +1130,13 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Category quick-strip — only on /tienda pages */}
-        {(pathname === "/tienda" || pathname?.startsWith("/tienda/")) && (
-        <div className="relative z-[1] px-3 pb-2 pt-0 lg:border-t lg:border-white/10 lg:px-4">
+        {/* Category quick-strip — visible on all pages */}
+        <div className="relative z-[1] px-3 pb-3 pt-1 lg:border-t lg:border-white/10 lg:px-4">
           <button
             type="button"
             onClick={() => scrollCategoryStrip("left")}
             className={cn(
-              "absolute left-1 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border bg-white/95 shadow-md transition-all lg:hidden",
+              "absolute left-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border bg-white/95 shadow-md transition-all lg:hidden",
               scrolled ? "border-gray-200 text-primary" : "border-white/35 text-white bg-black/20 backdrop-blur",
               canScrollCategoriesLeft ? "opacity-100" : "pointer-events-none opacity-30"
             )}
@@ -1199,17 +1145,19 @@ export default function Header() {
             <ChevronLeft className="h-4 w-4" />
           </button>
 
-          <div ref={categoryStripRef} className="scrollbar-hide flex gap-3 overflow-x-auto px-7 lg:justify-center lg:px-0">
-            {categoryMenuItems.map(cat => (
+          <div ref={categoryStripRef} className="scrollbar-hide flex gap-2 overflow-x-auto px-8 lg:justify-center lg:px-0">
+            {filteredCategories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => handleCategoryClick(cat.id)}
                 className={cn(
-                  "flex shrink-0 flex-col items-center gap-1 whitespace-nowrap px-3 py-1 text-xs font-bold transition-opacity",
-                  scrolled ? "text-primary hover:opacity-70" : "text-white hover:opacity-70"
+                  "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-bold transition-all",
+                  scrolled
+                    ? "bg-primary/8 text-primary hover:bg-primary/15 border border-primary/15"
+                    : "bg-white/12 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm"
                 )}
               >
-                <span className="text-2xl leading-none">{cat.emoji}</span>
+                <span className="text-xl leading-none">{cat.emoji}</span>
                 {cat.label}
               </button>
             ))}
@@ -1217,11 +1165,13 @@ export default function Header() {
               href="/tienda"
               onClick={() => {}}
               className={cn(
-                "flex shrink-0 flex-col items-center gap-1 whitespace-nowrap px-3 py-1 text-xs font-bold transition-opacity",
-                scrolled ? "text-primary hover:opacity-70" : "text-white hover:opacity-70"
+                "flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-bold transition-all",
+                scrolled
+                  ? "bg-secondary/10 text-secondary hover:bg-secondary/20 border border-secondary/20"
+                  : "bg-white/12 text-white hover:bg-white/20 border border-white/20 backdrop-blur-sm"
               )}
             >
-              <span className="text-2xl leading-none">🔍</span>
+              <span className="text-xl leading-none">🔍</span>
               Ver todos
             </Link>
           </div>
@@ -1230,7 +1180,7 @@ export default function Header() {
             type="button"
             onClick={() => scrollCategoryStrip("right")}
             className={cn(
-              "absolute right-1 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border bg-white/95 shadow-md transition-all lg:hidden",
+              "absolute right-1 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border bg-white/95 shadow-md transition-all lg:hidden",
               scrolled ? "border-gray-200 text-primary" : "border-white/35 text-white bg-black/20 backdrop-blur",
               canScrollCategoriesRight ? "opacity-100" : "pointer-events-none opacity-30"
             )}
@@ -1239,7 +1189,6 @@ export default function Header() {
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
-        )}
       </div>
 
       {/* Mobile Menu */}
@@ -1273,15 +1222,24 @@ export default function Header() {
                   </button>
                 )}
                 {suggestions.length > 0 && (
-                  <div className="absolute top-full mt-1.5 w-full bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
-                    {suggestions.map((name) => (
+                  <div className="absolute top-full mt-1.5 w-full bg-white dark:bg-card rounded-2xl shadow-xl border border-gray-100 dark:border-card-border overflow-hidden z-50 max-h-72 overflow-y-auto">
+                    {suggestions.map((item) => (
                       <button
-                        key={name}
-                        onMouseDown={() => { handleSearchSelect(name); setMobileOpen(false); }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-primary/5 hover:text-primary text-left"
+                        key={item.id}
+                        onMouseDown={() => { handleSearchSelect(item.name); setMobileOpen(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-primary/5 text-left transition-colors"
                       >
-                        <Search className="h-3.5 w-3.5 text-muted shrink-0" />
-                        <HighlightMatch text={name} query={searchQuery} />
+                        {item.image ? (
+                          <Image src={item.image} alt="" width={36} height={36} className="h-9 w-9 rounded-lg object-cover bg-gray-100 shrink-0" unoptimized={item.image.startsWith("data:")} />
+                        ) : (
+                          <div className="h-9 w-9 rounded-lg bg-gray-100 dark:bg-surface flex items-center justify-center shrink-0">
+                            <Package className="h-3.5 w-3.5 text-muted" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <span className="font-bold text-sm block truncate"><HighlightMatch text={item.name} query={searchQuery} /></span>
+                          <span className="text-xs font-bold text-primary">S/{item.price.toFixed(2)}</span>
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -1322,7 +1280,7 @@ export default function Header() {
                 {/* Loyalty — mobile with tier animation */}
                 {loyalty && customer && (
                   <a
-                    href="/cuenta"
+                    href="/puntos"
                     onClick={() => setMobileOpen(false)}
                     className={cn(
                       "relative flex items-center gap-3 px-4 py-3 rounded-xl font-semibold transition-colors overflow-hidden",
@@ -1343,14 +1301,6 @@ export default function Header() {
                     </span>
                   </a>
                 )}
-                <a
-                  href="/admin"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 font-medium hover:bg-primary/5 hover:text-primary transition-colors"
-                >
-                  <Settings className="h-5 w-5" />
-                  <span>Panel de administración</span>
-                </a>
                 {customer && (
                   <button
                     onClick={() => {
@@ -1417,14 +1367,23 @@ export default function Header() {
               {suggestions.length > 0 && (
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3 space-y-1">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Sugerencias</p>
-                  {suggestions.map((name) => (
+                  {suggestions.map((item) => (
                     <button
-                      key={name}
-                      onClick={() => handleSearchSelect(name)}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-foreground hover:bg-primary/5 hover:text-primary transition-colors text-left"
+                      key={item.id}
+                      onClick={() => handleSearchSelect(item.name)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-foreground hover:bg-primary/5 transition-colors text-left"
                     >
-                      <Search className="h-3.5 w-3.5 text-muted shrink-0" />
-                      <HighlightMatch text={name} query={searchQuery} />
+                      {item.image ? (
+                        <Image src={item.image} alt="" width={36} height={36} className="h-9 w-9 rounded-lg object-cover bg-gray-100 shrink-0" unoptimized={item.image.startsWith("data:")} />
+                      ) : (
+                        <div className="h-9 w-9 rounded-lg bg-gray-100 dark:bg-surface flex items-center justify-center shrink-0">
+                          <Package className="h-3.5 w-3.5 text-muted" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <span className="font-bold text-sm block truncate"><HighlightMatch text={item.name} query={searchQuery} /></span>
+                        <span className="text-xs font-bold text-primary">S/{item.price.toFixed(2)}</span>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -1436,7 +1395,7 @@ export default function Header() {
                   <p className="text-sm font-bold text-foreground">No encontramos &ldquo;{searchQuery.trim()}&rdquo;</p>
                   <p className="text-xs text-muted mt-1">Prueba con otro término o explora nuestras categorías</p>
                   <div className="flex flex-wrap gap-2 justify-center mt-3">
-                    {categoryMenuItems.slice(0, 4).map(cat => (
+                    {filteredCategories.slice(0, 4).map(cat => (
                       <button
                         key={cat.id}
                         onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}
@@ -1499,7 +1458,7 @@ export default function Header() {
                 <div className="mt-3 border-t border-gray-100 dark:border-card-border pt-3">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2">Categorías populares</p>
                   <div className="flex flex-wrap gap-2">
-                    {categoryMenuItems.map((cat) => (
+                    {filteredCategories.map((cat) => (
                       <button
                         key={cat.id}
                         onClick={() => { setSearchOpen(false); handleCategoryClick(cat.id); }}

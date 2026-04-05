@@ -101,9 +101,9 @@ function StepBadge({ step, current }: { step: number; current: number }) {
       className={cn(
         "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
         current === step
-          ? "bg-[#0f766e] text-white"
+          ? "bg-[#00B4A6] text-white"
           : current > step
-          ? "bg-[#0f766e]/30 text-[#0f766e] dark:text-[#14b8a6]"
+          ? "bg-[#00B4A6]/30 text-[#00B4A6] dark:text-[#2dd4bf]"
           : "bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500"
       )}
     >
@@ -348,7 +348,7 @@ export default function CustomReportBuilder({
               <StepBadge step={s} current={step} />
               <span className={cn(
                 "text-xs font-medium",
-                step === s ? "text-[#0f766e] dark:text-[#14b8a6]" : "text-gray-500 dark:text-gray-400"
+                step === s ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-gray-500 dark:text-gray-400"
               )}>
                 {s === 1 ? "Metricas" : s === 2 ? "Periodo" : "Filtros"}
               </span>
@@ -371,15 +371,15 @@ export default function CustomReportBuilder({
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-lg border cursor-pointer transition-colors",
                   selectedMetrics.includes(key)
-                    ? "bg-[#0f766e]/10 dark:bg-[#0f766e]/20 border-[#0f766e]/40 text-[#0f766e] dark:text-[#14b8a6]"
-                    : "bg-white dark:bg-card border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#0f766e]/40"
+                    ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border-[#00B4A6]/40 text-[#00B4A6] dark:text-[#2dd4bf]"
+                    : "bg-white dark:bg-card border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[#00B4A6]/40"
                 )}
               >
                 <input
                   type="checkbox"
                   checked={selectedMetrics.includes(key)}
                   onChange={() => toggleMetric(key)}
-                  className="accent-[#0f766e]"
+                  className="accent-[#00B4A6]"
                 />
                 <span className="text-sm">{label}</span>
               </label>
@@ -388,7 +388,7 @@ export default function CustomReportBuilder({
           <button
             onClick={() => setStep(2)}
             disabled={selectedMetrics.length === 0}
-            className="mt-2 px-4 py-2 rounded-lg bg-[#0f766e] text-white text-sm font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
+            className="mt-2 px-4 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
           >
             Siguiente: Periodo
           </button>
@@ -429,8 +429,8 @@ export default function CustomReportBuilder({
                 className={cn(
                   "flex-1 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
                   grouping === key
-                    ? "bg-[#0f766e] text-white border-[#0f766e]"
-                    : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-[#0f766e]"
+                    ? "bg-[#00B4A6] text-white border-[#00B4A6]"
+                    : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]"
                 )}
               >
                 {label}
@@ -447,7 +447,7 @@ export default function CustomReportBuilder({
             </button>
             <button
               onClick={() => setStep(3)}
-              className="flex-1 px-3 py-2 rounded-lg bg-[#0f766e] text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
             >
               Siguiente: Filtros
             </button>
@@ -481,8 +481,8 @@ export default function CustomReportBuilder({
                   className={cn(
                     "px-2 py-1 rounded-lg text-xs border transition-colors",
                     payment === key
-                      ? "bg-[#0f766e] text-white border-[#0f766e]"
-                      : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-[#0f766e]"
+                      ? "bg-[#00B4A6] text-white border-[#00B4A6]"
+                      : "text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]"
                   )}
                 >
                   {label}
@@ -500,7 +500,7 @@ export default function CustomReportBuilder({
             </button>
             <button
               onClick={() => setStep(4)}
-              className="flex-1 px-3 py-2 rounded-lg bg-[#0f766e] text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
+              className="flex-1 px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#245a41] transition-colors"
             >
               Ver reporte
             </button>
@@ -529,7 +529,7 @@ export default function CustomReportBuilder({
             <button
               onClick={exportPDF}
               disabled={reportRows.length === 0 || exporting}
-              className="px-3 py-1.5 rounded-lg bg-[#0f766e] text-white text-xs font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
+              className="px-3 py-1.5 rounded-lg bg-[#00B4A6] text-white text-xs font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
             >
               {exporting ? "Generando PDF..." : "Exportar PDF"}
             </button>
@@ -594,7 +594,7 @@ export default function CustomReportBuilder({
               <button
                 onClick={saveTemplate}
                 disabled={!templateName.trim()}
-                className="px-3 py-1.5 rounded-lg bg-[#0f766e] text-white text-xs font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
+                className="px-3 py-1.5 rounded-lg bg-[#00B4A6] text-white text-xs font-medium hover:bg-[#245a41] disabled:opacity-50 transition-colors"
               >
                 Guardar
               </button>
@@ -621,7 +621,7 @@ export default function CustomReportBuilder({
                 </div>
                 <button
                   onClick={() => loadTemplate(t)}
-                  className="px-2 py-1 rounded text-[10px] font-medium text-[#0f766e] dark:text-[#14b8a6] border border-[#0f766e]/30 hover:bg-[#0f766e]/10 transition-colors"
+                  className="px-2 py-1 rounded text-[10px] font-medium text-[#00B4A6] dark:text-[#2dd4bf] border border-[#00B4A6]/30 hover:bg-[#00B4A6]/10 transition-colors"
                 >
                   Cargar
                 </button>

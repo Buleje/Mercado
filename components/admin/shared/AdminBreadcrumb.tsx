@@ -24,7 +24,7 @@ export default function AdminBreadcrumb({ items, className }: AdminBreadcrumbPro
           {item.onClick ? (
             <button
               onClick={item.onClick}
-              className="hover:text-[#0f766e] dark:hover:text-emerald-400 transition-colors font-medium"
+              className="hover:text-[#00B4A6] dark:hover:text-emerald-400 transition-colors font-medium"
             >
               {item.label}
             </button>

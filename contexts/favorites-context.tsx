@@ -1,8 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, startTransition, type ReactNode } from "react";
-
-const STORAGE_KEY = "bsm-favorites";
+import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
 
 type FavoritesCtx = {
   favorites: Set<string>;
@@ -13,30 +12,32 @@ type FavoritesCtx = {
 
 const FavoritesContext = createContext<FavoritesCtx | null>(null);
 
-function loadFavorites(): Set<string> {
+function loadFavorites(key: string): Set<string> {
   if (typeof window === "undefined") return new Set();
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(key);
     if (raw) return new Set(JSON.parse(raw) as string[]);
   } catch { /* ignore */ }
   return new Set();
 }
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
+  const slug = useTenantSlug();
+  const storageKey = tenantKey(slug, "favorites");
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [hydrated, setHydrated] = useState(false);
 
   // Hydrate from localStorage after mount to avoid SSR mismatch
   useEffect(() => {
     startTransition(() => {
-      setFavorites(loadFavorites());
+      setFavorites(loadFavorites(storageKey));
       setHydrated(true);
     });
-  }, []);
+  }, [storageKey]);
 
   useEffect(() => {
-    if (hydrated) localStorage.setItem(STORAGE_KEY, JSON.stringify([...favorites]));
-  }, [favorites, hydrated]);
+    if (hydrated) localStorage.setItem(storageKey, JSON.stringify([...favorites]));
+  }, [favorites, hydrated, storageKey]);
 
   const toggle = useCallback((productId: string) => {
     setFavorites((prev) => {

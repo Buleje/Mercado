@@ -154,7 +154,7 @@ export default function PresupuestoMensualTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
+        <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
       </div>
     );
   }
@@ -164,7 +164,7 @@ export default function PresupuestoMensualTab() {
       <div className="flex flex-col items-center justify-center py-12 gap-2">
         <AlertTriangle className="h-8 w-8 text-red-400" />
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        <button onClick={fetchData} className="text-xs text-[#0f766e] hover:underline font-semibold">Reintentar</button>
+        <button onClick={fetchData} className="text-xs text-[#00B4A6] hover:underline font-semibold">Reintentar</button>
       </div>
     );
   }
@@ -173,8 +173,8 @@ export default function PresupuestoMensualTab() {
   if (!data || data.categorias.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <div className="h-16 w-16 rounded-2xl bg-[#0f766e]/10 flex items-center justify-center">
-          <Wallet className="h-8 w-8 text-[#0f766e]" />
+        <div className="h-16 w-16 rounded-2xl bg-[#00B4A6]/10 flex items-center justify-center">
+          <Wallet className="h-8 w-8 text-[#00B4A6]" />
         </div>
         <div className="text-center">
           <p className="text-base font-bold text-gray-900 dark:text-white">No has definido un presupuesto</p>
@@ -182,7 +182,7 @@ export default function PresupuestoMensualTab() {
         </div>
         <button
           onClick={openEdit}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
         >
           <Plus className="h-4 w-4" />
           Crear presupuesto
@@ -202,7 +202,7 @@ export default function PresupuestoMensualTab() {
         </div>
         <button
           onClick={openEdit}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[#0f766e] bg-[#0f766e]/10 hover:bg-[#0f766e]/20 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-[#00B4A6] bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors"
         >
           <Pencil className="h-3.5 w-3.5" />
           Editar presupuesto
@@ -330,7 +330,7 @@ export default function PresupuestoMensualTab() {
                         value={d.nombre}
                         onChange={e => updateDraft(i, "nombre", e.target.value)}
                         placeholder="Ej: Mercaderia"
-                        className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30"
+                        className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
                       />
                     </div>
                     <div className="w-28">
@@ -342,7 +342,7 @@ export default function PresupuestoMensualTab() {
                         value={d.limite}
                         onChange={e => updateDraft(i, "limite", e.target.value)}
                         placeholder="0.00"
-                        className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30"
+                        className="w-full px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
                       />
                     </div>
                     <button
@@ -357,7 +357,7 @@ export default function PresupuestoMensualTab() {
 
               <button
                 onClick={addDraftCat}
-                className="flex items-center gap-1 text-xs font-bold text-[#0f766e] hover:underline"
+                className="flex items-center gap-1 text-xs font-bold text-[#00B4A6] hover:underline"
               >
                 <Plus className="h-3.5 w-3.5" /> Agregar categoria
               </button>
@@ -374,7 +374,7 @@ export default function PresupuestoMensualTab() {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-50 shadow-sm transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
                 >
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                   Guardar

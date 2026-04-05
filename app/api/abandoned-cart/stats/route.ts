@@ -1,7 +1,8 @@
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 
 /**
  * GET /api/abandoned-cart/stats
@@ -9,7 +10,9 @@ import { prisma } from "@/lib/prisma";
  * Retorna conteo y valor estimado de carritos abandonados (>2h, <24h)
  * para mostrar en el dashboard admin.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
+  if (auth instanceof NextResponse) return auth;
   try {
     const now = Date.now();
     const cutoff = new Date(now - 2 * 60 * 60 * 1000);

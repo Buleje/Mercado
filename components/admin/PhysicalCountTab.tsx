@@ -295,7 +295,7 @@ export default function PhysicalCountTab() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-2 mb-2">
-          <ClipboardList className="h-5 w-5 text-[#0f766e]" />
+          <ClipboardList className="h-5 w-5 text-[#00B4A6]" />
           <h2 className="text-lg font-bold text-gray-900 dark:text-foreground">
             Conteo físico
           </h2>
@@ -311,15 +311,15 @@ export default function PhysicalCountTab() {
           <button
             onClick={handleStart}
             disabled={loading}
-            className="flex items-center gap-3 p-5 rounded-xl border-2 border-[#0f766e] bg-[#0f766e]/5 dark:bg-[#0f766e]/10 hover:bg-[#0f766e]/10 dark:hover:bg-[#0f766e]/20 transition-colors text-left disabled:opacity-60"
+            className="flex items-center gap-3 p-5 rounded-xl border-2 border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 hover:bg-[#00B4A6]/10 dark:hover:bg-[#00B4A6]/20 transition-colors text-left disabled:opacity-60"
           >
             {loading ? (
-              <RefreshCw className="h-8 w-8 text-[#0f766e] animate-spin shrink-0" />
+              <RefreshCw className="h-8 w-8 text-[#00B4A6] animate-spin shrink-0" />
             ) : (
-              <Play className="h-8 w-8 text-[#0f766e] shrink-0" />
+              <Play className="h-8 w-8 text-[#00B4A6] shrink-0" />
             )}
             <div>
-              <p className="font-bold text-[#0f766e]">Iniciar conteo de hoy</p>
+              <p className="font-bold text-[#00B4A6]">Iniciar conteo de hoy</p>
               <p className="text-xs text-gray-500 dark:text-muted mt-0.5">
                 Carga todos los productos con su stock actual
               </p>
@@ -362,7 +362,7 @@ export default function PhysicalCountTab() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
-              <ClipboardList className="h-5 w-5 text-[#0f766e]" />
+              <ClipboardList className="h-5 w-5 text-[#00B4A6]" />
               Conteo: {session.date}
             </h2>
             <p className="text-xs text-gray-500 dark:text-muted mt-0.5">
@@ -380,7 +380,7 @@ export default function PhysicalCountTab() {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#0f766e] text-white text-sm font-medium hover:bg-[#0f766e]/90 transition-colors disabled:opacity-60 min-h-[44px]"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#00B4A6] text-white text-sm font-medium hover:bg-[#00B4A6]/90 transition-colors disabled:opacity-60 min-h-[44px]"
             >
               <Save className="h-4 w-4" />
               {saving ? "Guardando..." : "Guardar conteo"}
@@ -398,7 +398,7 @@ export default function PhysicalCountTab() {
         {/* Barra progreso */}
         <div className="w-full bg-gray-100 dark:bg-card rounded-full h-2">
           <div
-            className="bg-[#0f766e] h-2 rounded-full transition-all"
+            className="bg-[#00B4A6] h-2 rounded-full transition-all"
             style={{ width: `${total ? (countedCount / total) * 100 : 0}%` }}
           />
         </div>
@@ -411,7 +411,7 @@ export default function PhysicalCountTab() {
             placeholder="Buscar producto o código..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-foreground placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 min-h-[44px]"
+            className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-foreground placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 min-h-[44px]"
           />
         </div>
 
@@ -456,7 +456,7 @@ export default function PhysicalCountTab() {
                         value={row.realStock}
                         onChange={(e) => updateRow(row.productId, "realStock", e.target.value)}
                         placeholder="—"
-                        className="w-20 text-right px-2 py-1 rounded border border-gray-200 dark:border-card-border bg-white dark:bg-input text-gray-900 dark:text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 min-h-[36px]"
+                        className="w-20 text-right px-2 py-1 rounded border border-gray-200 dark:border-card-border bg-white dark:bg-input text-gray-900 dark:text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 min-h-[36px]"
                       />
                     </td>
                     <td className={`px-3 py-2 text-right font-bold font-mono ${diffColor(d)}`}>
@@ -556,7 +556,7 @@ export default function PhysicalCountTab() {
                           value={row.reason}
                           onChange={(e) => updateRow(row.productId, "reason", e.target.value)}
                           disabled={session.status === "aplicado"}
-                          className="w-full px-2 py-1.5 rounded border border-gray-200 dark:border-card-border bg-white dark:bg-input text-gray-900 dark:text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 min-h-[36px]"
+                          className="w-full px-2 py-1.5 rounded border border-gray-200 dark:border-card-border bg-white dark:bg-input text-gray-900 dark:text-foreground text-xs focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 min-h-[36px]"
                         >
                           {REASONS.map((r) => (
                             <option key={r.value} value={r.value}>{r.label}</option>
@@ -581,7 +581,7 @@ export default function PhysicalCountTab() {
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
-            <History className="h-5 w-5 text-[#0f766e]" />
+            <History className="h-5 w-5 text-[#00B4A6]" />
             Historial de conteos
           </h2>
           <button
@@ -649,7 +649,7 @@ export default function PhysicalCountTab() {
                           setSession(s);
                           setView("counting");
                         }}
-                        className="text-sm text-[#0f766e] font-medium hover:underline"
+                        className="text-sm text-[#00B4A6] font-medium hover:underline"
                       >
                         Retomar este conteo
                       </button>

@@ -1,14 +1,22 @@
 import type { MetadataRoute } from "next";
-import { SettingsDB } from "@/lib/jsondb";
-import { headers } from "next/headers";
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * PWA Web App Manifest — served at /manifest.webmanifest
+ *
+ * Uses dynamic imports so a failed DB connection never breaks the manifest.
+ * ──────────────────────────────────────────────────────────────────────────── */
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   let name = "Mi Tienda - Delivery";
   let shortName = "Tienda";
   let description = "Compra online con delivery a domicilio.";
-  let themeColor = "#0f766e";
+  let themeColor = "#00B4A6";
 
   try {
+    const [{ headers }, { SettingsDB }] = await Promise.all([
+      import("next/headers"),
+      import("@/lib/db/settings.db"),
+    ]);
     const hdrs = await headers();
     const tenantId = hdrs.get("x-tenant-id") ?? "main";
     const s = await SettingsDB.get(tenantId);

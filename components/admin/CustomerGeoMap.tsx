@@ -47,7 +47,7 @@ function getSpendTier(totalSpent: number): "high" | "medium" | "low" {
 function getTierColor(tier: "high" | "medium" | "low"): string {
   switch (tier) {
     case "high":
-      return "#0f766e";
+      return "#00B4A6";
     case "medium":
       return "#f97316";
     case "low":
@@ -262,9 +262,9 @@ export default function CustomerGeoMap({ className }: Props) {
           max: 1,
           minOpacity: 0.4,
           gradient: {
-            0.2: "#0f766e",
-            0.4: "#0d9488",
-            0.6: "#14b8a6",
+            0.2: "#00B4A6",
+            0.4: "#33C4B8",
+            0.6: "#2dd4bf",
             0.8: "#f97316",
             1.0: "#e63946",
           },
@@ -325,7 +325,7 @@ export default function CustomerGeoMap({ className }: Props) {
             className={cn(
               "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
               showStats
-                ? "bg-[#0f766e] text-white"
+                ? "bg-[#00B4A6] text-white"
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
             )}
           >
@@ -340,7 +340,7 @@ export default function CustomerGeoMap({ className }: Props) {
               className={cn(
                 "flex items-center gap-1.5 rounded-l-lg px-3 py-1.5 text-xs font-medium transition-colors",
                 viewMode === "markers"
-                  ? "bg-[#0f766e] text-white"
+                  ? "bg-[#00B4A6] text-white"
                   : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
               )}
             >
@@ -352,7 +352,7 @@ export default function CustomerGeoMap({ className }: Props) {
               className={cn(
                 "flex items-center gap-1.5 rounded-r-lg px-3 py-1.5 text-xs font-medium transition-colors",
                 viewMode === "heat"
-                  ? "bg-[#0f766e] text-white"
+                  ? "bg-[#00B4A6] text-white"
                   : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
               )}
             >
@@ -368,7 +368,7 @@ export default function CustomerGeoMap({ className }: Props) {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
             <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-[#0f766e]" />
+              <Users className="h-4 w-4 text-[#00B4A6]" />
               <span className="text-xs text-gray-500 dark:text-gray-400">Con GPS</span>
             </div>
             <p className="mt-1 text-xl font-bold text-gray-900 dark:text-white">
@@ -386,7 +386,7 @@ export default function CustomerGeoMap({ className }: Props) {
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
             <div className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-[#0f766e]" />
+              <TrendingUp className="h-4 w-4 text-[#00B4A6]" />
               <span className="text-xs text-gray-500 dark:text-gray-400">Top zona</span>
             </div>
             <p className="mt-1 truncate text-sm font-bold text-gray-900 dark:text-white">
@@ -401,7 +401,7 @@ export default function CustomerGeoMap({ className }: Props) {
             </div>
             <div className="mt-1 flex items-center gap-2 text-xs">
               <span className="flex items-center gap-1">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#0f766e]" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#00B4A6]" />
                 {tierCounts.high}
               </span>
               <span className="flex items-center gap-1">
@@ -433,7 +433,7 @@ export default function CustomerGeoMap({ className }: Props) {
                   </span>
                   <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
                     <div
-                      className="h-full rounded-full bg-[#0f766e] transition-all duration-500"
+                      className="h-full rounded-full bg-[#00B4A6] transition-all duration-500"
                       style={{ width: `${Math.max(pct, 3)}%` }}
                     />
                   </div>
@@ -450,7 +450,7 @@ export default function CustomerGeoMap({ className }: Props) {
       {/* Map container */}
       {loading ? (
         <div className="flex items-center justify-center rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900" style={{ height: 480 }}>
-          <Loader2 className="h-8 w-8 animate-spin text-[#0f766e]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
         </div>
       ) : error ? (
         <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-8 dark:border-red-900/30 dark:bg-red-900/10">
@@ -480,7 +480,7 @@ export default function CustomerGeoMap({ className }: Props) {
         <div className="flex flex-wrap items-center gap-4 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs dark:border-gray-700 dark:bg-gray-900">
           <span className="font-medium text-gray-500 dark:text-gray-400">Leyenda:</span>
           <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-3 rounded-full bg-[#0f766e]" />
+            <span className="inline-block h-3 w-3 rounded-full bg-[#00B4A6]" />
             Oro+ (S/1500+)
           </span>
           <span className="flex items-center gap-1.5">
@@ -500,9 +500,9 @@ export default function CustomerGeoMap({ className }: Props) {
           <div className="flex items-center gap-1">
             <span className="text-gray-400">Bajo</span>
             <div className="flex h-3 w-32 overflow-hidden rounded-full">
-              <div className="flex-1 bg-[#0f766e]" />
-              <div className="flex-1 bg-[#0d9488]" />
-              <div className="flex-1 bg-[#14b8a6]" />
+              <div className="flex-1 bg-[#00B4A6]" />
+              <div className="flex-1 bg-[#33C4B8]" />
+              <div className="flex-1 bg-[#2dd4bf]" />
               <div className="flex-1 bg-[#f97316]" />
               <div className="flex-1 bg-[#e63946]" />
             </div>

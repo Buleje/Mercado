@@ -116,7 +116,7 @@ export default function ShiftNotes() {
         {unreadCount > 0 && (
           <button
             onClick={markAllRead}
-            className="flex items-center gap-1.5 text-sm text-[#0f766e] hover:underline dark:text-emerald-400"
+            className="flex items-center gap-1.5 text-sm text-[#00B4A6] hover:underline dark:text-emerald-400"
           >
             <CheckCheck className="h-4 w-4" />
             Marcar todo como leido
@@ -139,7 +139,7 @@ export default function ShiftNotes() {
             value={author}
             onChange={(e) => saveUser(e.target.value)}
             placeholder="Ej: Maria, Juan cajero turno manana..."
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           />
         </div>
 
@@ -152,7 +152,7 @@ export default function ShiftNotes() {
           }}
           rows={3}
           placeholder="Escribe aqui tu nota... (Ctrl+Enter para enviar)"
-          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
 
         <div className="mt-3 flex items-center justify-between">
@@ -162,7 +162,7 @@ export default function ShiftNotes() {
           <button
             onClick={handleSend}
             disabled={!text.trim() || text.length > 500}
-            className="flex items-center gap-2 rounded-lg bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0d5f58] disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-[#00B4A6] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#009690] disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
             Enviar nota
@@ -207,7 +207,7 @@ export default function ShiftNotes() {
 
                 {/* Author & time */}
                 <div className="mb-2 flex items-center gap-2">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#0f766e] text-xs font-bold text-white">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#00B4A6] text-xs font-bold text-white">
                     {(note.author[0] ?? "C").toUpperCase()}
                   </div>
                   <div>
@@ -230,7 +230,7 @@ export default function ShiftNotes() {
                   {!note.read && (
                     <button
                       onClick={() => markAsRead(note.id)}
-                      className="flex items-center gap-1.5 text-xs font-medium text-[#0f766e] hover:underline dark:text-emerald-400"
+                      className="flex items-center gap-1.5 text-xs font-medium text-[#00B4A6] hover:underline dark:text-emerald-400"
                     >
                       <CheckCheck className="h-3.5 w-3.5" />
                       Marcar como leido

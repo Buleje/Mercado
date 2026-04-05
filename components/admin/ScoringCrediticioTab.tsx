@@ -101,7 +101,7 @@ const LEVEL_CONFIG: Record<ScoreLevel, {
   EXCELENTE: {
     label: "Excelente",
     badge: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400",
-    bar: "#0f766e",
+    bar: "#00B4A6",
     icon: CheckCircle,
   },
   BUENO: {
@@ -267,7 +267,7 @@ export default function ScoringCrediticioTab() {
     <div className="space-y-5 pb-8">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#0f766e" }}>
+        <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: "#00B4A6" }}>
           <Shield className="h-5 w-5 text-white" />
         </div>
         <div className="min-w-0">
@@ -295,9 +295,9 @@ export default function ScoringCrediticioTab() {
               onClick={() => setFilterLevel(lvl)}
               className={cn(
                 "px-3 h-8 rounded-full text-xs font-medium transition-all",
-                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
                 isActive
-                  ? cfg ? cfg.badge + " ring-1 ring-current" : "bg-[#0f766e] text-white"
+                  ? cfg ? cfg.badge + " ring-1 ring-current" : "bg-[#00B4A6] text-white"
                   : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
               )}
             >
@@ -316,7 +316,7 @@ export default function ScoringCrediticioTab() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Buscar cliente..."
-          className="w-full pl-9 pr-4 h-10 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 focus:border-[#0f766e]"
+          className="w-full pl-9 pr-4 h-10 rounded-xl text-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
         />
       </div>
 

@@ -254,20 +254,20 @@ export default function RecetarioAdminTab() {
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder="Buscar receta..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
           />
         </div>
         <select
           value={filterCat}
           onChange={e => setFilterCat(e.target.value)}
-          className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+          className="px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
         >
           <option value="">Todas las categorias</option>
           {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <button
           onClick={openNew}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors shrink-0"
         >
           <Plus className="h-4 w-4" />
           Nueva Receta
@@ -277,14 +277,14 @@ export default function RecetarioAdminTab() {
       {/* Table */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
+          <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 gap-2">
           <BookOpen className="h-8 w-8 text-gray-300 dark:text-gray-600" />
           <p className="text-sm text-gray-500">{recetas.length === 0 ? "No hay recetas en el recetario" : "Sin resultados"}</p>
           {recetas.length === 0 && (
-            <button onClick={openNew} className="text-xs text-[#0f766e] hover:underline font-semibold mt-1">
+            <button onClick={openNew} className="text-xs text-[#00B4A6] hover:underline font-semibold mt-1">
               Crear la primera receta
             </button>
           )}
@@ -340,7 +340,7 @@ export default function RecetarioAdminTab() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => openEdit(r)}
-                          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-[#0f766e] transition-colors"
+                          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-gray-400 hover:text-[#00B4A6] transition-colors"
                           title="Editar"
                         >
                           <Save className="h-4 w-4" />
@@ -414,7 +414,7 @@ export default function RecetarioAdminTab() {
                       className={cn(
                         "px-3 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-colors",
                         modalTab === t
-                          ? "border-[#0f766e] text-[#0f766e] dark:text-emerald-400"
+                          ? "border-[#00B4A6] text-[#00B4A6] dark:text-emerald-400"
                           : "border-transparent text-gray-400 hover:text-gray-600"
                       )}
                     >
@@ -430,28 +430,28 @@ export default function RecetarioAdminTab() {
                     <div className="space-y-3">
                       <div>
                         <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Nombre *</label>
-                        <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Ceviche Clasico" className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                        <input type="text" value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Ceviche Clasico" className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Descripcion</label>
-                        <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Descripcion de la receta..." rows={3} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                        <textarea value={descripcion} onChange={e => setDescripcion(e.target.value)} placeholder="Descripcion de la receta..." rows={3} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div>
                           <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Emoji</label>
-                          <input type="text" value={emoji} onChange={e => setEmoji(e.target.value)} placeholder="🍲" maxLength={2} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                          <input type="text" value={emoji} onChange={e => setEmoji(e.target.value)} placeholder="🍲" maxLength={2} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Tiempo (min)</label>
-                          <input type="number" value={tiempoMinutos} onChange={e => setTiempoMinutos(Number(e.target.value))} min={1} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                          <input type="number" value={tiempoMinutos} onChange={e => setTiempoMinutos(Number(e.target.value))} min={1} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Porciones</label>
-                          <input type="number" value={porciones} onChange={e => setPorciones(Number(e.target.value))} min={1} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                          <input type="number" value={porciones} onChange={e => setPorciones(Number(e.target.value))} min={1} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Dificultad</label>
-                          <select value={dificultad} onChange={e => setDificultad(e.target.value as typeof dificultad)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30">
+                          <select value={dificultad} onChange={e => setDificultad(e.target.value as typeof dificultad)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30">
                             {DIFICULTADES.map(d => <option key={d} value={d}>{d}</option>)}
                           </select>
                         </div>
@@ -459,13 +459,13 @@ export default function RecetarioAdminTab() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Categoria</label>
-                          <select value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30">
+                          <select value={categoria} onChange={e => setCategoria(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30">
                             {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">URL Video YouTube (opcional)</label>
-                          <input type="text" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://youtube.com/..." className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                          <input type="text" value={videoUrl} onChange={e => setVideoUrl(e.target.value)} placeholder="https://youtube.com/..." className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                         </div>
                       </div>
                     </div>
@@ -476,7 +476,7 @@ export default function RecetarioAdminTab() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-bold text-gray-900 dark:text-white">Ingredientes ({ingredientes.length})</p>
-                        <button onClick={addIngrediente} className="text-xs font-bold text-[#0f766e] hover:underline flex items-center gap-1">
+                        <button onClick={addIngrediente} className="text-xs font-bold text-[#00B4A6] hover:underline flex items-center gap-1">
                           <Plus className="h-3 w-3" /> Agregar ingrediente
                         </button>
                       </div>
@@ -494,7 +494,7 @@ export default function RecetarioAdminTab() {
                                   value={ing.nombre}
                                   onChange={e => updateIngrediente(idx, "nombre", e.target.value)}
                                   placeholder="Buscar producto o escribir..."
-                                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30"
+                                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
                                   list={`prod-list-${idx}`}
                                 />
                                 <datalist id={`prod-list-${idx}`}>
@@ -531,25 +531,25 @@ export default function RecetarioAdminTab() {
                           <div className="grid grid-cols-3 gap-2">
                             <div>
                               <label className="block text-[10px] font-bold text-gray-400 mb-0.5">Cantidad</label>
-                              <input type="number" step="0.01" min="0" value={ing.cantidad} onChange={e => updateIngrediente(idx, "cantidad", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30" />
+                              <input type="number" step="0.01" min="0" value={ing.cantidad} onChange={e => updateIngrediente(idx, "cantidad", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30" />
                             </div>
                             <div>
                               <label className="block text-[10px] font-bold text-gray-400 mb-0.5">Unidad</label>
-                              <select value={ing.unidad} onChange={e => updateIngrediente(idx, "unidad", e.target.value)} className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30">
+                              <select value={ing.unidad} onChange={e => updateIngrediente(idx, "unidad", e.target.value)} className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30">
                                 {UNIDADES.map(u => <option key={u} value={u}>{u}</option>)}
                               </select>
                             </div>
                             <div>
                               <label className="block text-[10px] font-bold text-gray-400 mb-0.5">Precio (S/)</label>
-                              <input type="number" step="0.01" min="0" value={ing.precio} onChange={e => updateIngrediente(idx, "precio", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30" />
+                              <input type="number" step="0.01" min="0" value={ing.precio} onChange={e => updateIngrediente(idx, "precio", parseFloat(e.target.value) || 0)} className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-xs focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30" />
                             </div>
                           </div>
                         </div>
                       ))}
                       {ingredientes.length > 0 && (
-                        <div className="flex items-center justify-between bg-[#0f766e]/5 dark:bg-[#0f766e]/10 rounded-xl p-3 border border-[#0f766e]/20">
-                          <span className="text-xs font-bold text-[#0f766e]">Total ingredientes</span>
-                          <span className="text-sm font-bold text-[#0f766e]">{formatCurrency(totalIngredientes)}</span>
+                        <div className="flex items-center justify-between bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 rounded-xl p-3 border border-[#00B4A6]/20">
+                          <span className="text-xs font-bold text-[#00B4A6]">Total ingredientes</span>
+                          <span className="text-sm font-bold text-[#00B4A6]">{formatCurrency(totalIngredientes)}</span>
                         </div>
                       )}
                     </div>
@@ -560,19 +560,19 @@ export default function RecetarioAdminTab() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-bold text-gray-900 dark:text-white">Pasos de preparacion ({pasos.filter(p => p.trim()).length})</p>
-                        <button onClick={addPaso} className="text-xs font-bold text-[#0f766e] hover:underline flex items-center gap-1">
+                        <button onClick={addPaso} className="text-xs font-bold text-[#00B4A6] hover:underline flex items-center gap-1">
                           <Plus className="h-3 w-3" /> Agregar paso
                         </button>
                       </div>
                       {pasos.map((paso, idx) => (
                         <div key={idx} className="flex gap-2 items-start">
-                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-[#0f766e]/10 text-[#0f766e] text-xs font-bold shrink-0 mt-1">{idx + 1}</span>
+                          <span className="flex items-center justify-center h-7 w-7 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-bold shrink-0 mt-1">{idx + 1}</span>
                           <textarea
                             value={paso}
                             onChange={e => updatePaso(idx, e.target.value)}
                             placeholder={`Paso ${idx + 1}...`}
                             rows={2}
-                            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30"
+                            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30"
                           />
                           <div className="flex flex-col gap-0.5 shrink-0">
                             <button onClick={() => movePaso(idx, -1)} disabled={idx === 0} className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 transition-colors">
@@ -595,7 +595,7 @@ export default function RecetarioAdminTab() {
                     <div className="space-y-4">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Vista previa de la receta</p>
                       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
-                        <div className="bg-gradient-to-r from-[#0f766e] to-[#0d9488] p-4 text-white">
+                        <div className="bg-gradient-to-r from-[#00B4A6] to-[#33C4B8] p-4 text-white">
                           <div className="flex items-center gap-3">
                             <span className="text-3xl">{emoji || "🍽️"}</span>
                             <div>
@@ -623,7 +623,7 @@ export default function RecetarioAdminTab() {
                                     <span className="font-bold">{formatCurrency(ing.precio * ing.cantidad)}</span>
                                   </div>
                                 ))}
-                                <div className="flex justify-between text-xs font-bold text-[#0f766e] pt-1 border-t border-gray-100">
+                                <div className="flex justify-between text-xs font-bold text-[#00B4A6] pt-1 border-t border-gray-100">
                                   <span>Total</span>
                                   <span>{formatCurrency(totalIngredientes)}</span>
                                 </div>
@@ -636,7 +636,7 @@ export default function RecetarioAdminTab() {
                               <ol className="space-y-1.5">
                                 {pasos.filter(p => p.trim()).map((p, idx) => (
                                   <li key={idx} className="flex gap-2 text-xs text-gray-600 dark:text-gray-300">
-                                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-[#0f766e]/10 text-[#0f766e] text-[10px] font-bold shrink-0">{idx + 1}</span>
+                                    <span className="flex items-center justify-center h-5 w-5 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-[10px] font-bold shrink-0">{idx + 1}</span>
                                     {p}
                                   </li>
                                 ))}
@@ -657,7 +657,7 @@ export default function RecetarioAdminTab() {
                   <button
                     onClick={handleSave}
                     disabled={saving || !nombre.trim() || ingredientes.length === 0}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-50 shadow-sm transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
                   >
                     {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     {editing ? "Actualizar" : "Guardar"}

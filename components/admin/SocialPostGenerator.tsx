@@ -199,8 +199,8 @@ export default function SocialPostGenerator() {
                   className={cn(
                     "rounded-lg border px-3 py-2 text-sm font-medium transition",
                     postType === t.value
-                      ? "border-[#0f766e] bg-[#0f766e] text-white"
-                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#0f766e]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                      ? "border-[#00B4A6] bg-[#00B4A6] text-white"
+                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#00B4A6]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
                   )}
                 >
                   {t.label}
@@ -221,7 +221,7 @@ export default function SocialPostGenerator() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar producto..."
-                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
               </div>
               {search && (
@@ -243,7 +243,7 @@ export default function SocialPostGenerator() {
                         <span className="text-gray-800 dark:text-gray-200">
                           {p.name}
                         </span>
-                        <span className="font-medium text-[#0f766e]">
+                        <span className="font-medium text-[#00B4A6]">
                           S/ {p.price?.toFixed(2)}
                         </span>
                       </button>
@@ -252,7 +252,7 @@ export default function SocialPostGenerator() {
                 </div>
               )}
               {selectedProduct && (
-                <p className="mt-1 text-xs text-[#0f766e]">
+                <p className="mt-1 text-xs text-[#00B4A6]">
                   Seleccionado: {selectedProduct.name} — S/{" "}
                   {selectedProduct.price.toFixed(2)}
                 </p>
@@ -271,7 +271,7 @@ export default function SocialPostGenerator() {
                 value={prevPrice}
                 onChange={(e) => setPrevPrice(e.target.value)}
                 placeholder="Ej: 5.50"
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </div>
           )}
@@ -287,7 +287,7 @@ export default function SocialPostGenerator() {
                 onChange={(e) => setCustomNote(e.target.value)}
                 rows={2}
                 placeholder="Agrega un detalle personal..."
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </div>
           )}
@@ -295,7 +295,7 @@ export default function SocialPostGenerator() {
           <button
             onClick={handleGenerate}
             disabled={!selectedProduct && postType !== "motivacional"}
-            className="w-full rounded-lg bg-[#0f766e] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d5f58] disabled:opacity-50"
+            className="w-full rounded-lg bg-[#00B4A6] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#009690] disabled:opacity-50"
           >
             Generar post
           </button>
@@ -311,7 +311,7 @@ export default function SocialPostGenerator() {
               </span>
             </div>
             {generatedText ? (
-              <div className="rounded-xl border border-gray-100 bg-gradient-to-br from-[#0f766e] to-[#1a3d2e] p-5 dark:border-gray-800">
+              <div className="rounded-xl border border-gray-100 bg-gradient-to-br from-[#00B4A6] to-[#1a3d2e] p-5 dark:border-gray-800">
                 <div className="mb-1 text-xs font-bold text-[#f97316]">
                   Buleje
                 </div>
@@ -358,7 +358,7 @@ export default function SocialPostGenerator() {
             {HASHTAGS.split(" ").map((tag) => (
               <span
                 key={tag}
-                className="flex items-center gap-1 rounded-full bg-[#0f766e]/10 px-2.5 py-1 text-xs text-[#0f766e] dark:bg-[#0f766e]/20 dark:text-emerald-400"
+                className="flex items-center gap-1 rounded-full bg-[#00B4A6]/10 px-2.5 py-1 text-xs text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-emerald-400"
               >
                 <Hash className="h-3 w-3" />
                 {tag.replace("#", "")}

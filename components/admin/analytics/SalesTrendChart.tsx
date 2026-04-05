@@ -78,7 +78,7 @@ function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<
       <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{formatDate(d.fecha, "full")}</p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Ventas</span>
-        <span className="font-mono font-medium text-[#0f766e]">S/ {d.total.toFixed(2)}</span>
+        <span className="font-mono font-medium text-[#00B4A6]">S/ {d.total.toFixed(2)}</span>
       </p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Media 7d</span>
@@ -286,8 +286,8 @@ export default function SalesTrendChart() {
         <ComposedChart data={predictedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0f766e" />
-              <stop offset="100%" stopColor="#14b8a6" />
+              <stop offset="0%" stopColor="#00B4A6" />
+              <stop offset="100%" stopColor="#2dd4bf" />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
@@ -352,7 +352,7 @@ export default function SalesTrendChart() {
             type="monotone"
             dataKey="predictedHigh"
             stroke="none"
-            fill="#0f766e"
+            fill="#00B4A6"
             fillOpacity={0.08}
             isAnimationActive={false}
           />
@@ -360,7 +360,7 @@ export default function SalesTrendChart() {
             type="monotone"
             dataKey="predictedLow"
             stroke="none"
-            fill="#0f766e"
+            fill="#00B4A6"
             fillOpacity={0.08}
             isAnimationActive={false}
           />
@@ -398,7 +398,7 @@ export default function SalesTrendChart() {
           <Line
             type="monotone"
             dataKey="predicted"
-            stroke="#0f766e"
+            stroke="#00B4A6"
             strokeDasharray="6 4"
             dot={false}
             strokeWidth={1.5}

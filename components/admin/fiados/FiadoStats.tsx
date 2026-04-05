@@ -52,7 +52,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
             {/* KPI inline */}
             <div className="flex gap-4 overflow-x-auto flex-1 scrollbar-hide">
               <div className="flex items-center gap-1.5 shrink-0">
-                <DollarSign className="h-3.5 w-3.5 text-[#0f766e]" />
+                <DollarSign className="h-3.5 w-3.5 text-[#00B4A6]" />
                 <span className="text-xs text-gray-500">Total:</span>
                 <span className="text-xs font-mono font-bold text-gray-900 dark:text-white">{formatCurrency(totalPendienteKpi)}</span>
               </div>
@@ -113,7 +113,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               ) : null}
             </div>
             <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2">
-              <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct > 80 ? "#22c55e" : pct < 30 ? "#ef4444" : "#0f766e" }} />
+              <div className="h-2 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct > 80 ? "#22c55e" : pct < 30 ? "#ef4444" : "#00B4A6" }} />
             </div>
           </div>
         );
@@ -123,12 +123,12 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
       {!loading && fiados.length > 0 && (
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="h-4 w-4 text-[#0f766e]" />
+            <TrendingUp className="h-4 w-4 text-[#00B4A6]" />
             <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Proyeccion de cobro</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
             <div className="text-center">
-              <p className="text-lg font-extrabold text-[#0f766e]">{formatCurrency(proyeccionCobro.cobradoHoy)}</p>
+              <p className="text-lg font-extrabold text-[#00B4A6]">{formatCurrency(proyeccionCobro.cobradoHoy)}</p>
               <p className="text-[10px] text-gray-400 dark:text-muted uppercase">Cobrado hoy</p>
             </div>
             <div className="text-center">
@@ -146,11 +146,11 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           </div>
           {/* Progress bar */}
           <div className="w-full bg-gray-200 dark:bg-zinc-700 rounded-full h-2 mb-2">
-            <div className="h-2 rounded-full transition-all bg-[#0f766e]" style={{ width: `${Math.min(100, proyeccionCobro.pctRecuperado)}%` }} />
+            <div className="h-2 rounded-full transition-all bg-[#00B4A6]" style={{ width: `${Math.min(100, proyeccionCobro.pctRecuperado)}%` }} />
           </div>
           <p className="text-xs text-gray-600 dark:text-gray-400">
             {proyeccionCobro.promedioDiario > 0 ? (
-              <>Si cobras <span className="font-bold text-[#0f766e]">{formatCurrency(proyeccionCobro.promedioDiario)}/dia</span>, recuperas todo en <span className="font-bold">{proyeccionCobro.diasRestantes} dias</span></>
+              <>Si cobras <span className="font-bold text-[#00B4A6]">{formatCurrency(proyeccionCobro.promedioDiario)}/dia</span>, recuperas todo en <span className="font-bold">{proyeccionCobro.diasRestantes} dias</span></>
             ) : (
               <span className="text-amber-600 font-bold">Aun no has cobrado esta semana — empieza hoy!</span>
             )}
@@ -266,13 +266,13 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               aria-label="Buscar fiados"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
             />
           </div>
           <button
             type="button"
             onClick={() => setShowQuickClient(true)}
-            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#0f766e] hover:text-white hover:border-[#0f766e] text-gray-500 transition-colors"
+            className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#00B4A6] hover:text-white hover:border-[#00B4A6] text-gray-500 transition-colors"
             title="Crear cliente rapido"
           >
             <Plus className="h-4 w-4" />
@@ -286,7 +286,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
               className={cn(
                 "shrink-0 px-3 py-2 rounded-xl text-xs font-bold transition-colors",
                 statusFilter === s
-                  ? "bg-[#0f766e] text-white"
+                  ? "bg-[#00B4A6] text-white"
                   : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10"
               )}
             >
@@ -437,7 +437,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
                 esHoy ? "ring-2 ring-blue-500" : "",
                 tieneVencidos ? "bg-red-50 dark:bg-red-950/20" : "",
                 fiadosDia.length > 0 ? "cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5" : "",
-                calDiaSeleccionado === diaKey ? "bg-[#0f766e]/10 dark:bg-[#0f766e]/20" : ""
+                calDiaSeleccionado === diaKey ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20" : ""
               )}
             >
               <span className={cn("text-xs font-bold", esHoy ? "text-blue-600" : "text-gray-700 dark:text-gray-300")}>{d}</span>
@@ -455,7 +455,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-[#0f766e]" /> Calendario de Vencimientos
+                <Calendar className="h-3.5 w-3.5 text-[#00B4A6]" /> Calendario de Vencimientos
               </p>
               <p className="text-xs text-gray-500">
                 Este mes: {countMes} fiados vencen · Total: {formatCurrency(totalMes)}

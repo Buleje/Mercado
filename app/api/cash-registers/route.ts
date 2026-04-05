@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CashRegistersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { toErrorPayload } from "@/lib/api-error";
+import { withDbRetry } from "@/lib/db-retry";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "cajero"]);
@@ -15,11 +16,11 @@ export async function GET(req: NextRequest) {
 
     if (limitParam !== null || cursor) {
       const limit = Math.min(Math.max(1, parseInt(limitParam ?? "25", 10)), 200);
-      const result = await CashRegistersDB.getAllPaginated(limit, cursor);
+      const result = await withDbRetry(() => CashRegistersDB.getAllPaginated(limit, cursor));
       return NextResponse.json(result);
     }
 
-    return NextResponse.json(await CashRegistersDB.getAll(auth.tenantId));
+    return NextResponse.json(await withDbRetry(() => CashRegistersDB.getAll(auth.tenantId)));
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
     return NextResponse.json(payload, { status });

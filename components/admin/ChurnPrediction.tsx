@@ -94,8 +94,8 @@ export default function ChurnPrediction() {
     setLoading(true);
     setError("");
     Promise.all([
-      fetch("/api/customers?limit=300").then((r) => r.json()),
-      fetch("/api/orders?limit=2000").then((r) => r.json()),
+      fetch("/api/customers?limit=300").then((r) => r.ok ? r.json() : []),
+      fetch("/api/orders?limit=2000").then((r) => r.ok ? r.json() : []),
     ])
       .then(([custData, orderData]) => {
         const cList: Customer[] = Array.isArray(custData)
@@ -217,7 +217,7 @@ export default function ChurnPrediction() {
             className={cn(
               "rounded-xl border p-4 text-left transition",
               filterRisk === r
-                ? "border-[#0f766e] bg-[#0f766e]/5 dark:bg-[#0f766e]/10"
+                ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
                 : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900"
             )}
           >
@@ -233,7 +233,7 @@ export default function ChurnPrediction() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0f766e]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
         </div>
       ) : error ? (
         <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-900/10">
@@ -251,7 +251,7 @@ export default function ChurnPrediction() {
                 className={cn(
                   "rounded-lg px-3 py-1.5 text-xs font-medium transition",
                   filterRisk === r
-                    ? "bg-[#0f766e] text-white"
+                    ? "bg-[#00B4A6] text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                 )}
               >

@@ -4,6 +4,15 @@ import { LoyaltyDB, normalizePhone } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+
+// Auto-discount tiers based on purchase count (from discount engine)
+const AUTO_DISCOUNT_TIERS = [
+  { minPurchases: 50, percent: 6, label: "VIP" },
+  { minPurchases: 20, percent: 4, label: "Habitual" },
+  { minPurchases: 5, percent: 2, label: "Conocido" },
+  { minPurchases: 0, percent: 0, label: "Nuevo" },
+];
 
 // -- GET /api/loyalty/[phone] -- public, rate-limited -------------------------
 export async function GET(
@@ -15,10 +24,31 @@ export async function GET(
   if (!allowed) return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
 
   const { phone } = await params;
+  const tenantId = req.headers.get("x-tenant-id") ?? "main";
   try {
     const data = await LoyaltyDB.getByPhone(normalizePhone(phone));
     if (!data) return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
-    return NextResponse.json({ ...data, tiers: LoyaltyDB.TIERS });
+
+    // Count total orders for auto-discount calculation
+    const totalOrders = await prisma.order.count({
+      where: { tenantId, customerPhone: normalizePhone(phone) },
+    }).catch(() => 0);
+
+    // Find current and next auto-discount tier
+    const currentTier = AUTO_DISCOUNT_TIERS.find(t => totalOrders >= t.minPurchases) ?? AUTO_DISCOUNT_TIERS[AUTO_DISCOUNT_TIERS.length - 1];
+    const nextTier = AUTO_DISCOUNT_TIERS.slice().reverse().find(t => totalOrders < t.minPurchases);
+
+    return NextResponse.json({
+      ...data,
+      tiers: LoyaltyDB.TIERS,
+      autoDiscount: {
+        totalOrders,
+        currentTier: currentTier.label,
+        currentPercent: currentTier.percent,
+        nextTier: nextTier ? { label: nextTier.label, percent: nextTier.percent, ordersNeeded: nextTier.minPurchases - totalOrders } : null,
+        allTiers: AUTO_DISCOUNT_TIERS,
+      },
+    });
   } catch (e) {
     console.error("[loyalty] GET error:", e);
     return NextResponse.json({ error: "Database error" }, { status: 503 });

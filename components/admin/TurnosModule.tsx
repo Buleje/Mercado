@@ -354,7 +354,7 @@ export default function TurnosModule() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-[#0f766e]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
       </div>
     );
   }
@@ -364,7 +364,7 @@ export default function TurnosModule() {
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <AlertTriangle className="h-10 w-10 text-red-400" />
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        <button onClick={fetchData} className="text-xs text-[#0f766e] hover:underline font-semibold">Reintentar</button>
+        <button onClick={fetchData} className="text-xs text-[#00B4A6] hover:underline font-semibold">Reintentar</button>
       </div>
     );
   }
@@ -374,7 +374,7 @@ export default function TurnosModule() {
       {/* Header — Mejora 20 */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[#0f766e] text-white flex items-center justify-center shadow-sm">
+          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm">
             <Clock className="h-5 w-5" />
           </div>
           <div>
@@ -498,7 +498,7 @@ export default function TurnosModule() {
             {/* 1. Grid de cajeros */}
             <div>
               <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <User className="h-4 w-4 text-[#0f766e]" />
+                <User className="h-4 w-4 text-[#00B4A6]" />
                 Equipo de Cajeros
               </h3>
               {cajeroStats.length === 0 ? (
@@ -553,7 +553,7 @@ export default function TurnosModule() {
                         {/* Mini performance bar */}
                         <div className="h-1.5 bg-gray-100 dark:bg-white/5 rounded-full overflow-hidden">
                           <div
-                            className={cn("h-full rounded-full transition-all", isTop ? "bg-amber-500" : "bg-[#0f766e]")}
+                            className={cn("h-full rounded-full transition-all", isTop ? "bg-amber-500" : "bg-[#00B4A6]")}
                             style={{ width: `${barWidth}%` }}
                           />
                         </div>
@@ -630,7 +630,7 @@ export default function TurnosModule() {
             {chartData.length > 0 && (
               <div>
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-[#0f766e]" />
+                  <BarChart3 className="h-4 w-4 text-[#00B4A6]" />
                   Ventas por Cajero (este mes)
                 </h3>
                 <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm p-4">
@@ -640,7 +640,7 @@ export default function TurnosModule() {
                       <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `S/${v}`} />
                       <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={90} />
                       <Tooltip formatter={(value: unknown) => [`S/${Number(value).toLocaleString("es-PE")}`, "Ventas"]} />
-                      <Bar dataKey="ventas" fill="#0f766e" radius={[0, 6, 6, 0]} />
+                      <Bar dataKey="ventas" fill="#00B4A6" radius={[0, 6, 6, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -687,7 +687,7 @@ export default function TurnosModule() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card shadow-sm hover:shadow-md transition-shadow p-3">
               <div className="flex items-center gap-2 mb-1">
-                <Clock className="h-4 w-4 text-[#0f766e]" />
+                <Clock className="h-4 w-4 text-[#00B4A6]" />
                 <p className="text-[10px] uppercase font-bold text-gray-400">Turnos del mes</p>
               </div>
               <p className="text-2xl font-extrabold font-mono text-gray-900 dark:text-white">{turnosMesCount}</p>
@@ -786,8 +786,8 @@ export default function TurnosModule() {
         /* Open turno card */
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm p-6 sm:p-8">
           <div className="max-w-sm mx-auto text-center space-y-5">
-            <div className="h-16 w-16 rounded-2xl bg-[#0f766e]/10 flex items-center justify-center mx-auto">
-              <Clock className="h-8 w-8 text-[#0f766e]" />
+            <div className="h-16 w-16 rounded-2xl bg-[#00B4A6]/10 flex items-center justify-center mx-auto">
+              <Clock className="h-8 w-8 text-[#00B4A6]" />
             </div>
             <div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">No hay turno abierto</h3>
@@ -799,7 +799,7 @@ export default function TurnosModule() {
               <select
                 value={selectedCajero}
                 onChange={e => setSelectedCajero(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
               >
                 <option value="">Yo mismo (usuario actual)</option>
                 {cajeros.map(c => (
@@ -817,13 +817,13 @@ export default function TurnosModule() {
                 value={efectivoInicial}
                 onChange={e => setEfectivoInicial(e.target.value)}
                 placeholder="0.00"
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30 text-center text-lg font-bold"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
               />
             </div>
             <button
               onClick={handleAbrir}
               disabled={opening}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-50 shadow-sm transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 shadow-sm transition-colors"
             >
               {opening ? <Loader2 className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
               Abrir Turno
@@ -883,7 +883,7 @@ export default function TurnosModule() {
             {/* Calendario Semanal */}
             <div>
               <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-[#0f766e]" />
+                <CalendarDays className="h-4 w-4 text-[#00B4A6]" />
                 Calendario Semanal
               </h3>
               <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-sm overflow-hidden">
@@ -1169,7 +1169,7 @@ export default function TurnosModule() {
                       value={cierreEfectivo}
                       onChange={e => setCierreEfectivo(e.target.value)}
                       placeholder="0.00"
-                      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30 text-center text-lg font-bold"
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 text-center text-lg font-bold"
                     />
                   </div>
 
@@ -1191,7 +1191,7 @@ export default function TurnosModule() {
                       onChange={e => setCierreNotas(e.target.value)}
                       placeholder="Observaciones del turno..."
                       rows={2}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30 resize-none"
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
                     />
                   </div>
                 </div>
@@ -1395,7 +1395,7 @@ export default function TurnosModule() {
                       </p>
                       <div className="w-full bg-gray-200 dark:bg-white/10 rounded-full h-3">
                         <div
-                          className="h-3 rounded-full bg-[#0f766e] transition-all"
+                          className="h-3 rounded-full bg-[#00B4A6] transition-all"
                           style={{ width: `${Math.min(100, porcentaje)}%` }}
                         />
                       </div>
@@ -1529,7 +1529,7 @@ export default function TurnosModule() {
                   </button>
                   <button
                     onClick={() => setShowResumen(false)}
-                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors"
+                    className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
                   >
                     Cerrar
                   </button>

@@ -40,7 +40,7 @@ function MiniWidget({ stats }: { stats: DailyStats }) {
   const pct = Math.min(100, (stats.salesTotal / stats.dailyGoal) * 100);
 
   return (
-    <div className="w-full rounded-2xl bg-gradient-to-br from-[#0f766e] to-[#1b4332] p-4 text-white shadow-lg">
+    <div className="w-full rounded-2xl bg-gradient-to-br from-[#00B4A6] to-[#007A72] p-4 text-white shadow-lg">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-xs font-medium text-green-200">Buleje</span>
         <span className="text-xs text-green-300">hoy</span>
@@ -201,7 +201,7 @@ export default function SalesWidgetPreview() {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
           <div className="mb-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-            <TrendingUp className="h-3.5 w-3.5 text-[#0f766e]" />
+            <TrendingUp className="h-3.5 w-3.5 text-[#00B4A6]" />
             Ventas hoy
           </div>
           {loading ? (
@@ -215,7 +215,7 @@ export default function SalesWidgetPreview() {
 
         <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
           <div className="mb-1 flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-            <ShoppingBag className="h-3.5 w-3.5 text-[#0f766e]" />
+            <ShoppingBag className="h-3.5 w-3.5 text-[#00B4A6]" />
             Pedidos
           </div>
           <p className="text-lg font-bold text-gray-800 dark:text-gray-100">
@@ -268,7 +268,7 @@ export default function SalesWidgetPreview() {
               }}
               className={cn(
                 "w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm",
-                "text-gray-800 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
+                "text-gray-800 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                 "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
               )}
             />
@@ -278,7 +278,7 @@ export default function SalesWidgetPreview() {
         {/* Instructions */}
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5 text-[#0f766e]" />
+            <Smartphone className="h-5 w-5 text-[#00B4A6]" />
             <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
               Agregar a pantalla de inicio (PWA)
             </p>
@@ -292,8 +292,8 @@ export default function SalesWidgetPreview() {
                 className={cn(
                   "w-full rounded-xl border p-4 text-left transition",
                   activeStep === i
-                    ? "border-[#0f766e] bg-[#0f766e]/5 dark:bg-[#0f766e]/10"
-                    : "border-gray-200 bg-white hover:border-[#0f766e]/30 dark:border-gray-700 dark:bg-gray-900"
+                    ? "border-[#00B4A6] bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
+                    : "border-gray-200 bg-white hover:border-[#00B4A6]/30 dark:border-gray-700 dark:bg-gray-900"
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -301,7 +301,7 @@ export default function SalesWidgetPreview() {
                     className={cn(
                       "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
                       activeStep === i
-                        ? "bg-[#0f766e] text-white"
+                        ? "bg-[#00B4A6] text-white"
                         : "bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-300"
                     )}
                   >
@@ -342,7 +342,7 @@ export default function SalesWidgetPreview() {
 
           {/* Quick action */}
           <button
-            className="flex items-center justify-center gap-2 rounded-xl bg-[#0f766e] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
+            className="flex items-center justify-center gap-2 rounded-xl bg-[#00B4A6] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
             onClick={() => {
               if (typeof window !== "undefined") {
                 window.open(window.location.origin, "_blank");

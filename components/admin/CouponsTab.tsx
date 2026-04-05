@@ -70,7 +70,7 @@ export default function CouponsTab() {
   const [whatsappPhone, setWhatsappPhone] = useState("");
 
   const load = useCallback(() => {
-    fetch("/api/coupons").then(r => r.json()).then(setCoupons).catch(() => {}).finally(() => setLoading(false));
+    fetch("/api/coupons").then(r => r.ok ? r.json() : []).then(d => setCoupons(Array.isArray(d) ? d : d?.coupons ?? [])).catch(() => {}).finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
 

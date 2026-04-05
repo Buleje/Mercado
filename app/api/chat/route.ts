@@ -15,7 +15,9 @@ export async function GET(req: NextRequest) {
 // POST: customer sends a message
 export async function POST(req: NextRequest) {
   const { phone, name, message } = await req.json();
-  if (!phone || !/^9\d{8}$/.test(phone)) {
+  // Allow special system phones for bot/internal messages
+  const isSystemPhone = phone === "sistema" || phone === "bot";
+  if (!phone || (!isSystemPhone && !/^9\d{8}$/.test(phone))) {
     return NextResponse.json({ error: "phone inválido" }, { status: 400 });
   }
   if (!message?.trim() || message.trim().length > 500) {

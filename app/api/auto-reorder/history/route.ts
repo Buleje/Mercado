@@ -17,10 +17,10 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       take: limit,
       include: {
-        items: {
-          include: { product: { select: { id: true, name: true, unit: true } } },
+        PurchaseItem: {
+          include: { Product: { select: { id: true, name: true, unit: true } } },
         },
-        supplier: { select: { id: true, name: true } },
+        Supplier: { select: { id: true, name: true } },
       },
     });
 
@@ -28,13 +28,13 @@ export async function GET(req: NextRequest) {
       id: o.id,
       date: o.createdAt,
       status: o.status,
-      supplier: o.supplier?.name ?? "Sin proveedor",
+      supplier: o.Supplier?.name ?? "Sin proveedor",
       total: o.total,
-      itemCount: o.items.length,
-      items: o.items.map(i => ({
+      itemCount: o.PurchaseItem.length,
+      items: o.PurchaseItem.map(i => ({
         productId: i.productId,
-        productName: i.product?.name ?? "—",
-        unit: i.product?.unit ?? "",
+        productName: i.Product?.name ?? "—",
+        unit: i.Product?.unit ?? "",
         quantity: i.quantity,
         unitCost: i.unitCost,
       })),

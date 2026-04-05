@@ -1,6 +1,11 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { Receipt, Wallet, Shield, Building2 } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import AdminDateFilter from "@/components/admin/shared/AdminDateFilter";
+import type { DatePreset } from "@/components/admin/shared/AdminDateFilter";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -13,32 +18,35 @@ const CostCenterTab = dynamic(() => import("@/components/admin/CostCenterTab"), 
 const InsuranceTab = dynamic(() => import("@/components/admin/InsuranceTab"), { loading: S });
 const AssetManagerTab = dynamic(() => import("@/components/admin/AssetManagerTab"), { loading: S });
 
+const MODULE_ID = "gastos-activos";
+
 const TABS = [
-  { id: "gastos" as const, label: "Gastos" },
-  { id: "centros-costo" as const, label: "Centros de Costo" },
-  { id: "seguros" as const, label: "Pólizas y Seguros" },
-  { id: "activos" as const, label: "Activos Fijos" },
+  { id: "gastos", label: "Gastos", icon: Wallet },
+  { id: "centros-costo", label: "Centros de Costo", icon: Building2 },
+  { id: "seguros", label: "Pólizas y Seguros", icon: Shield },
+  { id: "activos", label: "Activos Fijos", icon: Receipt },
 ];
 
 export default function GastosActivosModule() {
   const [sub, setSub] = useState(TABS[0].id);
+  const [datePreset, setDatePreset] = useState<DatePreset>("month");
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none border-b border-gray-200 dark:border-card-border -mx-1 px-1">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSub(t.id)}
-            className={`shrink-0 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${
-              sub === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Gastos & Activos"
+        description="Control de gastos, centros de costo, seguros y activos fijos"
+        icon={Receipt}
+      >
+        <AdminDateFilter value={datePreset} onChange={setDatePreset} />
+      </AdminModuleHeader>
+
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId={MODULE_ID}
+      />
+
       {sub === "gastos" && <ExpensesTab />}
       {sub === "centros-costo" && <CostCenterTab />}
       {sub === "seguros" && <InsuranceTab />}

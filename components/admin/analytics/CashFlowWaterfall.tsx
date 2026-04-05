@@ -128,7 +128,7 @@ export default function CashFlowWaterfall({
         color: step.isFinal
           ? "#3b82f6"
           : step.isPositive
-          ? "#0f766e"
+          ? "#00B4A6"
           : "#ef4444",
       });
     });
@@ -169,7 +169,7 @@ export default function CashFlowWaterfall({
       <div className="flex gap-2">
         <div className="flex-1 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-2 text-center">
           <p className="text-[10px] text-gray-500 dark:text-gray-400">Entradas</p>
-          <p className="text-sm font-bold text-[#0f766e] dark:text-[#14b8a6]">
+          <p className="text-sm font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
             {fmt(initialBalance + cashSales + digitalSales)}
           </p>
         </div>
@@ -183,7 +183,7 @@ export default function CashFlowWaterfall({
           className={cn(
             "flex-1 rounded-lg border p-2 text-center",
             isPositiveFinal
-              ? "bg-[#0f766e]/10 dark:bg-[#0f766e]/20 border-[#0f766e]/30"
+              ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border-[#00B4A6]/30"
               : "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-800"
           )}
         >
@@ -191,7 +191,7 @@ export default function CashFlowWaterfall({
           <p
             className={cn(
               "text-sm font-bold",
-              isPositiveFinal ? "text-[#0f766e] dark:text-[#14b8a6]" : "text-red-600 dark:text-red-400"
+              isPositiveFinal ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-red-600 dark:text-red-400"
             )}
           >
             {fmt(finalBalance?.value ?? 0)}
@@ -258,7 +258,7 @@ export default function CashFlowWaterfall({
       {/* Legend */}
       <div className="flex items-center gap-4 justify-center text-[10px] text-gray-500 dark:text-gray-400">
         <div className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#0f766e" }} />
+          <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#00B4A6" }} />
           Entradas
         </div>
         <div className="flex items-center gap-1">

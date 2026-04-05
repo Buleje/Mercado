@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { PurchasesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { withDbRetry } from "@/lib/db-retry";
 import { PayablesDB } from "@/lib/db/finance.db";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
@@ -31,7 +32,8 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    return NextResponse.json(await PurchasesDB.getAll(auth.tenantId));
+    const data = await withDbRetry(() => PurchasesDB.getAll(auth.tenantId));
+    return NextResponse.json(data);
   } catch (e) {
     console.error("[purchases] GET error:", e);
     return NextResponse.json({ error: "Database error" }, { status: 503 });

@@ -12,9 +12,9 @@ import Image from "next/image";
 export const AboutBlockSchema = z.object({
   badge: z.string().default("Nuestra Historia"),
   title: z.string().default("Tu tienda virtual de"),
-  titleAccent: z.string().default("abarrotes en Pucallpa"),
-  description1: z.string().default("Desde 2011, Buleje ha sido el corazón del barrio en Pucallpa."),
-  description2: z.string().default("Hoy somos una tienda de consumo masivo en Pucallpa con entrega a domicilio."),
+  titleAccent: z.string().default("abarrotes en tu zona"),
+  description1: z.string().default("Desde 2011, Buleje ha sido el corazón del barrio."),
+  description2: z.string().default("Hoy somos una tienda de consumo masivo con entrega a domicilio."),
   image: z.string().url().default("https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&h=600&fit=crop&q=80"),
   imageAlt: z.string().default("Interior de Buleje"),
   showStats: z.boolean().default(true),
@@ -28,7 +28,7 @@ export const AboutBlockSchema = z.object({
     { icon: "Heart", value: "100%", label: "Productos frescos" },
     { icon: "Award", value: "#1", label: "Bodega del barrio" },
   ]),
-  badges: z.array(z.string()).default(["Delivery en Pucallpa", "Pago con Yape", "Productos Frescos"]),
+  badges: z.array(z.string()).default(["Delivery a domicilio", "Pago con Yape", "Productos Frescos"]),
 });
 
 export type AboutBlockProps = z.infer<typeof AboutBlockSchema>;
@@ -45,7 +45,7 @@ export default function AboutBlock(props: Partial<AboutBlockProps>) {
   const {
     badge = "Nuestra Historia",
     title = "Tu tienda virtual de",
-    titleAccent = "abarrotes en Pucallpa",
+    titleAccent = "abarrotes en tu zona",
     description1,
     description2,
     image,
@@ -151,6 +151,6 @@ export const AboutBlockMetadata = {
   description: "Historia, misión y estadísticas de la empresa",
   category: "informativo" as const,
   icon: "Users",
-  defaultProps: (() => { const parsed = AboutBlockSchema.safeParse({}); return parsed.success ? parsed.data : { badge: "Nuestra Historia", title: "Tu tienda virtual de", titleAccent: "abarrotes en Pucallpa", description1: "", description2: "", image: "", imageAlt: "Interior de Buleje", showStats: true, stats: [], badges: [] }; })(),
+  defaultProps: (() => { const parsed = AboutBlockSchema.safeParse({}); return parsed.success ? parsed.data : { badge: "Nuestra Historia", title: "Tu tienda virtual de", titleAccent: "abarrotes en tu zona", description1: "", description2: "", image: "", imageAlt: "Interior de Buleje", showStats: true, stats: [], badges: [] }; })(),
   propsSchema: AboutBlockSchema,
 };

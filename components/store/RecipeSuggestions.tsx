@@ -126,7 +126,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
       className={cn(
         "rounded-2xl border bg-white dark:bg-gray-900 overflow-hidden shadow-sm transition-all",
         matchPct === 100
-          ? "border-[#0f766e]"
+          ? "border-[#00B4A6]"
           : matchPct >= 50
             ? "border-[#f97316]"
             : "border-gray-200 dark:border-gray-700"
@@ -153,7 +153,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
               className={cn(
                 "text-xs font-bold px-2 py-1 rounded-full",
                 matchPct === 100
-                  ? "bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6]"
+                  ? "bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf]"
                   : matchPct >= 50
                     ? "bg-[#f97316]/10 text-[#f97316]"
                     : "bg-gray-100 dark:bg-gray-800 text-gray-500"
@@ -173,7 +173,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
           <div
             className={cn(
               "h-full rounded-full transition-all",
-              matchPct === 100 ? "bg-[#0f766e]" : matchPct >= 50 ? "bg-[#f97316]" : "bg-gray-300"
+              matchPct === 100 ? "bg-[#00B4A6]" : matchPct >= 50 ? "bg-[#f97316]" : "bg-gray-300"
             )}
             style={{ width: `${matchPct}%` }}
           />
@@ -189,7 +189,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
                 <div key={ing} className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     {present ? (
-                      <CheckCircle2 className="w-4 h-4 text-[#0f766e] flex-shrink-0" />
+                      <CheckCircle2 className="w-4 h-4 text-[#00B4A6] flex-shrink-0" />
                     ) : (
                       <Circle className="w-4 h-4 text-gray-300 dark:text-gray-600 flex-shrink-0" />
                     )}
@@ -207,7 +207,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
                   {!present && onAddIngredient && (
                     <button
                       onClick={() => onAddIngredient(ing)}
-                      className="text-xs text-[#0f766e] dark:text-[#14b8a6] font-semibold hover:underline"
+                      className="text-xs text-[#00B4A6] dark:text-[#2dd4bf] font-semibold hover:underline"
                     >
                       + Agregar
                     </button>
@@ -219,7 +219,7 @@ function RecipeCard({ recipe, cartItems, onAddIngredient }: RecipeCardProps) {
           {missing.length > 0 && onAddIngredient && (
             <button
               onClick={() => missing.forEach((ing) => onAddIngredient(ing))}
-              className="mt-4 w-full py-2.5 rounded-xl bg-[#0f766e] text-white text-sm font-semibold flex items-center justify-center gap-2"
+              className="mt-4 w-full py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-semibold flex items-center justify-center gap-2"
             >
               <ShoppingCart className="w-4 h-4" />
               Agregar {missing.length} ingrediente{missing.length !== 1 ? "s" : ""} faltante{missing.length !== 1 ? "s" : ""}
@@ -278,7 +278,7 @@ export default function RecipeSuggestions({ cartItems, onAddIngredient }: Props)
       {/* Link al recetario completo */}
       <Link
         href="/recetas"
-        className="mt-4 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#0f766e]/8 hover:bg-[#0f766e]/15 text-[#0f766e] dark:text-[#14b8a6] text-sm font-bold transition-colors"
+        className="mt-4 flex items-center justify-center gap-2 py-3 rounded-xl bg-[#00B4A6]/8 hover:bg-[#00B4A6]/15 text-[#00B4A6] dark:text-[#2dd4bf] text-sm font-bold transition-colors"
       >
         Ver todas las recetas <ArrowRight className="h-4 w-4" />
       </Link>

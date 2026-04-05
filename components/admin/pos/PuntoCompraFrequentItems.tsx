@@ -83,7 +83,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
   return (
     <div className="space-y-1.5 p-1 max-h-72 overflow-y-auto">
       <div className="flex items-center gap-1.5 mb-2">
-        <TrendingUp className="h-3 w-3 text-[#0f766e]" />
+        <TrendingUp className="h-3 w-3 text-[#00B4A6]" />
         <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
           Top {items.length} productos (90 dias)
         </span>
@@ -96,12 +96,12 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
           onClick={() => onAddToCart(item.productId, item.avgQuantity)}
           className={cn(
             "w-full flex items-center gap-2 p-2 rounded-xl text-left transition-colors",
-            "bg-gray-50 dark:bg-white/5 hover:bg-[#0f766e]/10 dark:hover:bg-[#0f766e]/20",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]",
+            "bg-gray-50 dark:bg-white/5 hover:bg-[#00B4A6]/10 dark:hover:bg-[#00B4A6]/20",
+            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
           )}
         >
           {/* Frequency badge */}
-          <span className="shrink-0 h-7 w-7 rounded-lg bg-[#0f766e]/10 text-[#0f766e] flex items-center justify-center text-[10px] font-bold">
+          <span className="shrink-0 h-7 w-7 rounded-lg bg-[#00B4A6]/10 text-[#00B4A6] flex items-center justify-center text-[10px] font-bold">
             {item.frequency}x
           </span>
 
@@ -116,7 +116,7 @@ export default function PuntoCompraFrequentItems({ onAddToCart }: Props) {
           </div>
 
           {/* Add hint */}
-          <span className="shrink-0 text-[10px] text-[#0f766e] font-medium opacity-0 group-hover:opacity-100">
+          <span className="shrink-0 text-[10px] text-[#00B4A6] font-medium opacity-0 group-hover:opacity-100">
             + {item.avgQuantity}
           </span>
         </button>

@@ -25,7 +25,9 @@ export const DEFAULT_NAV_LINKS: NavLinkItem[] = [
   { id: "inicio", visible: true },
   { id: "tienda", visible: true },
   { id: "recetas", visible: true },
-  { id: "categorias", visible: true },
+  { id: "marketplace", visible: true },
+  { id: "historial", visible: false },
+  { id: "categorias", visible: false },
   { id: "beneficios", visible: true },
   { id: "contacto", visible: true },
 ];
@@ -136,7 +138,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         : "main";
     const isMainTenant = tenantSlug === "main";
 
-    fetch("/api/settings")
+    fetch("/api/settings", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: Record<string, unknown> | null) => {
         if (data) {
@@ -149,7 +151,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             phone: (data.yapePhone as string) || "",
           });
           if (data.cashEnabled !== undefined) setCashEnabled(!!data.cashEnabled);
-          if (Array.isArray(data.navLinks) && data.navLinks.length > 0) setNavLinks(data.navLinks as NavLinkItem[]);
+          if (Array.isArray(data.navLinks) && data.navLinks.length > 0) {
+            // Merge saved navLinks with defaults so new items (e.g. marketplace) appear
+            const saved = data.navLinks as NavLinkItem[];
+            const savedMap = new Map(saved.map(n => [n.id, n.visible]));
+            const merged = DEFAULT_NAV_LINKS.map(def => ({
+              ...def,
+              visible: savedMap.has(def.id) ? savedMap.get(def.id)! : def.visible,
+            }));
+            setNavLinks(merged);
+          }
           if (data.homepageContent && typeof data.homepageContent === "object") {
             // Para el tenant "main" usar DEFAULT_HOMEPAGE como base; para otros usar NEW_STORE_DEFAULTS
             const base = isMainTenant ? DEFAULT_HOMEPAGE : NEW_STORE_DEFAULTS;

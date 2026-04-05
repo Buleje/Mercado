@@ -52,6 +52,54 @@ async function main() {
     } else {
       console.log("ℹ️   Default tenant 'main' already exists — skipping");
     }
+
+    // ── Playbooks anti-churn por defecto ────────────────────────────────────
+    const defaultPlaybooks = [
+      {
+        name: "trial_expiring_3d",
+        triggerSignal: "trial_expiring",
+        triggerSeverity: "high",
+        action: "email",
+        templateId: "trial_expiring_cta",
+      },
+      {
+        name: "login_drop_7d",
+        triggerSignal: "login_drop",
+        triggerSeverity: "high",
+        action: "whatsapp",
+        templateId: "login_drop_wa",
+      },
+      {
+        name: "order_drop_50pct",
+        triggerSignal: "order_drop",
+        triggerSeverity: "high",
+        action: "email",
+        templateId: "order_drop_tips",
+      },
+      {
+        name: "critical_score",
+        triggerSignal: "login_drop",
+        triggerSeverity: "critical",
+        action: "call",
+        templateId: null,
+      },
+    ];
+
+    let playbooksCreated = 0;
+    for (const pb of defaultPlaybooks) {
+      try {
+        // upsert: si ya existe no falla
+        await prisma.$executeRaw`
+          INSERT INTO "ChurnPlaybook" (id, name, "triggerSignal", "triggerSeverity", action, "templateId", "isActive", "createdAt")
+          VALUES (gen_random_uuid(), ${pb.name}, ${pb.triggerSignal}, ${pb.triggerSeverity}, ${pb.action}, ${pb.templateId}, true, NOW())
+          ON CONFLICT (name) DO NOTHING
+        `;
+        playbooksCreated++;
+      } catch {
+        // tabla aún no migrada en este entorno, skip silencioso
+      }
+    }
+    console.log(`✅  ${playbooksCreated} playbooks anti-churn seeded (ON CONFLICT DO NOTHING)`);
   } finally {
     await prisma.$disconnect();
   }

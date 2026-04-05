@@ -1,6 +1,11 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { TrendingUp, Megaphone, Zap, LineChart, BarChart3, Gift } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import AdminDateFilter from "@/components/admin/shared/AdminDateFilter";
+import type { DatePreset } from "@/components/admin/shared/AdminDateFilter";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -14,33 +19,36 @@ const ConversionMetricsTab = dynamic(() => import("@/components/admin/Conversion
 const ReferralTab = dynamic(() => import("@/components/admin/ReferralTab"), { loading: S });
 const CampañasTab = dynamic(() => import("@/components/admin/CampañasTab"), { loading: S });
 
+const MODULE_ID = "ventas-marketing";
+
 const TABS = [
-  { id: "campanas" as const, label: "Campañas" },
-  { id: "marketing" as const, label: "Automatización" },
-  { id: "forecast" as const, label: "Forecast Ventas" },
-  { id: "metricas" as const, label: "Métricas" },
-  { id: "referidos" as const, label: "Referidos" },
+  { id: "campanas", label: "Campañas", icon: Megaphone },
+  { id: "marketing", label: "Automatización", icon: Zap },
+  { id: "forecast", label: "Forecast Ventas", icon: LineChart },
+  { id: "metricas", label: "Métricas", icon: BarChart3 },
+  { id: "referidos", label: "Referidos", icon: Gift },
 ];
 
 export default function VentasMarketingModule() {
   const [sub, setSub] = useState(TABS[0].id);
+  const [datePreset, setDatePreset] = useState<DatePreset>("month");
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none border-b border-gray-200 dark:border-card-border -mx-1 px-1">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSub(t.id)}
-            className={`shrink-0 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${
-              sub === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Ventas & Marketing"
+        description="Campañas, automatización, forecast y métricas de conversión"
+        icon={TrendingUp}
+      >
+        <AdminDateFilter value={datePreset} onChange={setDatePreset} />
+      </AdminModuleHeader>
+
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId={MODULE_ID}
+      />
+
       {sub === "campanas" && <CampañasTab />}
       {sub === "marketing" && <MarketingAutomationTab />}
       {sub === "forecast" && <SalesForecastTab />}

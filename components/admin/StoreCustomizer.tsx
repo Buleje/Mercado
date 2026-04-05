@@ -68,9 +68,9 @@ const DEFAULT_THEME: StoreTheme = {
   storeName: "Bodega San Martin",
   slogan: "Tu bodega de confianza en Pucallpa",
   description: "Abarrotes, bebidas y productos de primera necesidad con delivery a domicilio.",
-  primaryColor: "#0f766e",
+  primaryColor: "#00B4A6",
   secondaryColor: "#f4a261",
-  accentColor: "#2d6a4f",
+  accentColor: "#00B4A6",
   darkModeDefault: false,
   heroTitle: "Todo lo que necesitas, en tu puerta",
   heroSubtitle: "Delivery rapido en Pucallpa. Paga con Yape o efectivo.",
@@ -117,7 +117,7 @@ const DEFAULT_THEME: StoreTheme = {
 // ── Paleta de colores predefinidos ────────────────────────────────────────────
 
 const COLOR_PRESETS = [
-  { label: "Teal",    value: "#0f766e" },
+  { label: "Teal",    value: "#00B4A6" },
   { label: "Verde",   value: "#16a34a" },
   { label: "Azul",    value: "#2563eb" },
   { label: "Emerald", value: "#059669" },
@@ -156,7 +156,7 @@ const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "clasico",
     name: "Clásico",
     description: "Verde bodega + naranja. El look original.",
-    colors: { primaryColor: "#0f766e", secondaryColor: "#f97316", accentColor: "#2d6a4f" },
+    colors: { primaryColor: "#00B4A6", secondaryColor: "#f97316", accentColor: "#00B4A6" },
     fontFamily: "geist",
     darkModeDefault: false,
   },

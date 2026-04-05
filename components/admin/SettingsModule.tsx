@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,7 @@ type SettingsData = Record<string, unknown>;
 
 type SectionId = "business" | "security" | "system" | "sales" | "inventory"
   | "cash" | "delivery" | "notifications" | "integrations" | "appearance"
-  | "audit" | "backup" | "subscription" | "storefront";
+  | "audit" | "backup" | "modules" | "shortcuts" | "subscription" | "storefront";
 
 const NAV_LABEL: Record<string, string> = {
   inicio: "Inicio", productos: "Productos", beneficios: "Beneficios", contacto: "Contacto",
@@ -53,7 +53,9 @@ const SECTION_META: { id: SectionId; icon: React.ReactNode; title: string; desc:
   { id: "storefront", icon: <Monitor className="h-5 w-5" />, title: "Mi Tienda Web", desc: "Secciones visibles y orden del home", color: "text-primary bg-primary/10 dark:bg-primary/20" },
   { id: "audit", icon: <Activity className="h-5 w-5" />, title: "Auditoría y Control", desc: "Logs, retención, alertas", color: "text-indigo-500 bg-indigo-50 dark:bg-indigo-950/30" },
   { id: "backup", icon: <HardDrive className="h-5 w-5" />, title: "Respaldo y Mantenimiento", desc: "Backups, estado, limpieza", color: "text-teal-500 bg-teal-50 dark:bg-teal-950/30" },
-  { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Suscripción", desc: "Plan, límites, módulos", color: "text-yellow-500 bg-yellow-50 dark:bg-yellow-950/30" },
+  { id: "modules", icon: <Layers className="h-5 w-5" />, title: "Gestión de Módulos", desc: "Activa, oculta o reorganiza módulos", color: "text-cyan-500 bg-cyan-50 dark:bg-cyan-950/30" },
+  { id: "shortcuts", icon: <Zap className="h-5 w-5" />, title: "Accesos Directos", desc: "Atajos personalizados en la barra lateral", color: "text-yellow-500 bg-yellow-50 dark:bg-yellow-950/30" },
+  { id: "subscription", icon: <Crown className="h-5 w-5" />, title: "Suscripción", desc: "Plan, límites, módulos", color: "text-yellow-600 bg-yellow-50 dark:bg-yellow-950/30" },
 ];
 
 // ── Reusable sub-components ───────────────────────────────────────────────────
@@ -290,12 +292,13 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   const [confirmPw, setConfirmPw] = useState("");
   const [pwChangeError, setPwChangeError] = useState("");
   const [storedAdminPw, setStoredAdminPw] = useState("admin2024");
+  const [showCredPw, setShowCredPw] = useState(false);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [maintenanceMsg, setMaintenanceMsg] = useState("");
   const [bypassLogin, setBypassLogin] = useState(false);
 
   // Appearance
-  const [primaryColor, setPrimaryColor] = useState("#0f766e");
+  const [primaryColor, setPrimaryColor] = useState("#00B4A6");
   const [secondaryColor, setSecondaryColor] = useState("#f97316");
   const [slogan, setSlogan] = useState("Productos frescos, precios justos");
 
@@ -391,6 +394,15 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
   // Feature flags
   const [featureFlags, setFeatureFlags] = useState<Record<string, boolean>>({});
+
+  // Custom shortcuts for sidebar
+  const [customShortcuts, setCustomShortcuts] = useState<Array<{id: string; label: string; tabId: string}>>(() => {
+    try {
+      const saved = localStorage.getItem("admin_custom_shortcuts");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return [];
+  });
 
   const yapeImgRef = useRef<HTMLInputElement>(null);
   const plinImgRef = useRef<HTMLInputElement>(null);
@@ -558,9 +570,11 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       audit: check([String(logRetentionDays)]),
       backup: check([backupSchedule !== "none" ? "yes" : "", lastBackupAt]),
       subscription: check([planName]),
+      modules: 100,
+      shortcuts: customShortcuts.length > 0 ? 100 : 0,
       storefront: 100,
     } as Record<SectionId, number>;
-  }, [businessName, businessPhone, businessAddress, razonSocial, ruc, businessEmail, logoUrl, description, hours, storedAdminPw, dateFormat, timeFormat, taxRate, sunatRuc, sunatDenominacion, sunatDireccion, invoiceFooterText, defaultUnit, globalMinStock, fefoEnabled, cashEnabled, yapeEnabled, deliveryZones.length, smtpHost, smtpUser, whatsappApiToken, sunatProvider, googleAnalyticsId, primaryColor, secondaryColor, slogan, logRetentionDays, backupSchedule, lastBackupAt, planName]);
+  }, [businessName, businessPhone, businessAddress, razonSocial, ruc, businessEmail, logoUrl, description, hours, storedAdminPw, dateFormat, timeFormat, taxRate, sunatRuc, sunatDenominacion, sunatDireccion, invoiceFooterText, defaultUnit, globalMinStock, fefoEnabled, cashEnabled, yapeEnabled, deliveryZones.length, smtpHost, smtpUser, whatsappApiToken, sunatProvider, googleAnalyticsId, primaryColor, secondaryColor, slogan, logRetentionDays, backupSchedule, lastBackupAt, planName, customShortcuts.length]);
 
   const filteredSections = useMemo(() => {
     if (!searchQuery.trim()) return SECTION_META;
@@ -586,8 +600,100 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
   );
 
   // ══════════════════════════════════════════════════════════════════════════════
-  // SECTION RENDERERS (13 sections)
+  // SECTION RENDERERS (15 sections)
   // ══════════════════════════════════════════════════════════════════════════════
+
+  const renderModules = () => (
+    <div className="space-y-4">
+      <SectionCard title="Módulos activos" desc="Controla qué módulos ves en tu panel">
+        <p className="text-sm text-gray-600 dark:text-muted">Activa, oculta o limpia datos de ejemplo por módulo. Los cambios se aplican inmediatamente.</p>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("open-module-manager"))}
+          className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition-colors mt-2"
+        >
+          <Layers className="h-4 w-4" /> Abrir gestión de módulos
+        </button>
+      </SectionCard>
+    </div>
+  );
+
+  const renderShortcuts = () => {
+    const availableTabs = [
+      { value: "dashboard", label: "Ventas hoy" },
+      { value: "inventario", label: "Inventario" },
+      { value: "pos-caja", label: "Caja POS" },
+      { value: "pedidos", label: "Pedidos" },
+      { value: "productos", label: "Productos" },
+      { value: "clientes-crm", label: "Clientes" },
+      { value: "compras", label: "Compras" },
+      { value: "fiados", label: "Fiados" },
+      { value: "reportes", label: "Reportes" },
+      { value: "config", label: "Configuración" },
+      { value: "chat", label: "Chat" },
+      { value: "cotizaciones", label: "Cotizaciones" },
+    ];
+
+    const addShortcut = () => {
+      if (customShortcuts.length >= 6) return;
+      const newId = `shortcut-${Date.now()}`;
+      const updated = [...customShortcuts, { id: newId, label: "Nuevo acceso", tabId: "dashboard" }];
+      setCustomShortcuts(updated);
+      localStorage.setItem("admin_custom_shortcuts", JSON.stringify(updated));
+    };
+
+    const removeShortcut = (id: string) => {
+      const updated = customShortcuts.filter(s => s.id !== id);
+      setCustomShortcuts(updated);
+      localStorage.setItem("admin_custom_shortcuts", JSON.stringify(updated));
+    };
+
+    const updateShortcut = (id: string, field: "label" | "tabId", value: string) => {
+      const updated = customShortcuts.map(s => s.id === id ? { ...s, [field]: value } : s);
+      setCustomShortcuts(updated);
+      localStorage.setItem("admin_custom_shortcuts", JSON.stringify(updated));
+    };
+
+    return (
+      <div className="space-y-4">
+        <SectionCard title="Mis accesos directos" desc="Aparecen como favoritos en tu barra lateral (máx. 6)">
+          {customShortcuts.length === 0 && (
+            <p className="text-sm text-gray-400 dark:text-muted text-center py-4">No tienes accesos directos aún. Agrega uno para navegar más rápido.</p>
+          )}
+          <div className="space-y-3">
+            {customShortcuts.map(sc => (
+              <div key={sc.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface rounded-xl border border-gray-100 dark:border-card-border">
+                <Zap className="h-4 w-4 text-yellow-500 shrink-0" />
+                <input
+                  value={sc.label}
+                  onChange={e => updateShortcut(sc.id, "label", e.target.value)}
+                  className="flex-1 px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground"
+                  placeholder="Nombre del acceso"
+                />
+                <select
+                  value={sc.tabId}
+                  onChange={e => updateShortcut(sc.id, "tabId", e.target.value)}
+                  className="px-2 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground"
+                >
+                  {availableTabs.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
+                <button onClick={() => removeShortcut(sc.id)} className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          {customShortcuts.length < 6 && (
+            <button onClick={addShortcut} className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border text-sm font-semibold text-gray-500 hover:text-primary hover:border-primary transition-colors mt-2">
+              <Plus className="h-4 w-4" /> Agregar acceso directo
+            </button>
+          )}
+        </SectionCard>
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 rounded-xl p-3">
+          <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">💡 Los accesos directos aparecen en la sección &quot;Favoritos&quot; de tu barra lateral. Puedes agregar hasta 6.</p>
+        </div>
+      </div>
+    );
+  };
 
   const renderBusiness = () => (
     <div className="space-y-4">
@@ -633,6 +739,24 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
               <div className="flex-1"><TextInput value={businessAddress} onChange={setBusinessAddress} /></div>
               <button onClick={() => setShowMapPicker(true)} className="px-3 py-2 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors shrink-0">
                 <MapPin className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => {
+                  if (!navigator.geolocation) return;
+                  navigator.geolocation.getCurrentPosition(
+                    pos => {
+                      setPickerLat(pos.coords.latitude);
+                      setPickerLon(pos.coords.longitude);
+                      setBusinessLat(pos.coords.latitude);
+                      setBusinessLon(pos.coords.longitude);
+                    },
+                    () => {},
+                    { enableHighAccuracy: true }
+                  );
+                }}
+                className="px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors shrink-0 flex items-center gap-1.5"
+              >
+                <MapPin className="h-4 w-4" /> Mi ubicación
               </button>
             </div>
             {businessLat && businessLon && <p className="text-[10px] text-gray-400 font-mono mt-1">GPS: {businessLat.toFixed(5)}, {businessLon.toFixed(5)}</p>}
@@ -702,6 +826,65 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
 
   const renderSecurity = () => (
     <div className="space-y-4">
+      {/* Current credentials display */}
+      <SectionCard title="Credenciales de acceso" desc="Usuario y contraseña para iniciar sesión en el panel">
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
+              <div className="flex items-center gap-2 mb-1.5">
+                <User className="h-3.5 w-3.5 text-gray-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Usuario</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-gray-900 dark:text-white font-mono">admin</span>
+                <button type="button" onClick={() => { navigator.clipboard.writeText("admin"); }} className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Copiar usuario">
+                  <Copy className="h-3.5 w-3.5 text-gray-400" />
+                </button>
+              </div>
+            </div>
+            <div className="p-3 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
+              <div className="flex items-center gap-2 mb-1.5">
+                <Key className="h-3.5 w-3.5 text-gray-400" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Contraseña</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold text-gray-900 dark:text-white font-mono">{showCredPw ? storedAdminPw : "••••••••"}</span>
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => setShowCredPw(v => !v)} className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title={showCredPw ? "Ocultar" : "Mostrar"}>
+                    {showCredPw ? <EyeOff className="h-3.5 w-3.5 text-gray-400" /> : <Eye className="h-3.5 w-3.5 text-gray-400" />}
+                  </button>
+                  <button type="button" onClick={() => { navigator.clipboard.writeText(storedAdminPw); }} className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Copiar contraseña">
+                    <Copy className="h-3.5 w-3.5 text-gray-400" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Share credentials button */}
+          <button
+            type="button"
+            onClick={() => {
+              const text = `🔐 Credenciales de acceso al panel\n\n👤 Usuario: admin\n🔑 Contraseña: ${storedAdminPw}\n🌐 Link: ${window.location.origin}/admin/login`;
+              if (navigator.share) {
+                navigator.share({ title: "Credenciales del Panel", text }).catch(() => {});
+              } else {
+                navigator.clipboard.writeText(text);
+                alert("Credenciales copiadas al portapapeles");
+              }
+            }}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/5 transition-colors"
+          >
+            <Send className="h-4 w-4" /> Compartir credenciales
+          </button>
+          {storedAdminPw === "admin2024" && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">Estás usando la contraseña por defecto. Te recomendamos cambiarla abajo.</p>
+            </div>
+          )}
+        </div>
+      </SectionCard>
+
       {/* Password change */}
       <SectionCard title="Cambiar contraseña" desc="Contraseña de acceso al panel de administración">
         <form onSubmit={async (e) => {
@@ -1437,6 +1620,8 @@ export default function SettingsModule({ storeMode, onModeChange }: { storeMode:
       case "audit": return renderAudit();
       case "backup": return renderBackup();
       case "subscription": return renderSubscription();
+      case "modules": return renderModules();
+      case "shortcuts": return renderShortcuts();
       case "storefront": return <StorefrontEditor />;
     }
   };

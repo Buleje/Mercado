@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, Suspense } from "react";
 import {
   Brain, RefreshCw, ClipboardList, Stethoscope, GraduationCap,
   FlaskConical, Newspaper, AlertCircle, CreditCard, BookOpen,
-  Keyboard, WifiOff, ChevronLeft, ChevronRight,
+  Keyboard, WifiOff, ChevronLeft, ChevronRight, TrendingUp, MessageSquare,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,9 @@ const AINaturalQueryEngine = React.lazy(() => import("./AINaturalQueryEngine"));
 const AIWeeklyReport = React.lazy(() => import("./AIWeeklyReport"));
 const AIFiadoDashboard = React.lazy(() => import("./AIFiadoDashboard"));
 const AIDecisionLog = React.lazy(() => import("./AIDecisionLog"));
+const AIMarketResearch = React.lazy(() => import("./AIMarketResearch"));
+const AIStrategicAdvisor = React.lazy(() => import("./AIStrategicAdvisor"));
+const AISmartPricing = React.lazy(() => import("./AISmartPricing"));
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -96,16 +100,19 @@ export type BusinessData = {
 
 // ── Tabs ───────────────────────────────────────────────────────────────────────
 
-type TabId = "briefing" | "plan" | "diagnostico" | "coach" | "simulador" | "fiado" | "decisiones";
+type TabId = "briefing" | "plan" | "diagnostico" | "coach" | "simulador" | "fiado" | "decisiones" | "mercado" | "asesor" | "precios";
 
 const TABS: { id: TabId; label: string; icon: React.ElementType; shortcut: string }[] = [
   { id: "briefing", label: "Briefing", icon: Newspaper, shortcut: "Alt+1" },
   { id: "plan", label: "Plan", icon: ClipboardList, shortcut: "Alt+2" },
-  { id: "diagnostico", label: "Diagnostico", icon: Stethoscope, shortcut: "Alt+3" },
-  { id: "coach", label: "Coach", icon: GraduationCap, shortcut: "Alt+4" },
-  { id: "simulador", label: "Simulador", icon: FlaskConical, shortcut: "Alt+5" },
-  { id: "fiado", label: "Fiado Dashboard", icon: CreditCard, shortcut: "Alt+6" },
-  { id: "decisiones", label: "Decisiones", icon: BookOpen, shortcut: "Alt+7" },
+  { id: "mercado", label: "Mercado", icon: TrendingUp, shortcut: "Alt+3" },
+  { id: "asesor", label: "Asesor IA", icon: MessageSquare, shortcut: "Alt+4" },
+  { id: "precios", label: "Precios", icon: DollarSign, shortcut: "Alt+5" },
+  { id: "diagnostico", label: "Diagnostico", icon: Stethoscope, shortcut: "Alt+6" },
+  { id: "coach", label: "Coach", icon: GraduationCap, shortcut: "Alt+7" },
+  { id: "simulador", label: "Simulador", icon: FlaskConical, shortcut: "Alt+8" },
+  { id: "fiado", label: "Fiado Dashboard", icon: CreditCard, shortcut: "Alt+9" },
+  { id: "decisiones", label: "Decisiones", icon: BookOpen, shortcut: "Alt+0" },
 ];
 
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 min
@@ -222,7 +229,7 @@ function VoiceQueryPanel({ data }: { data: BusinessData }) {
           disabled={isListening}
           className={cn(
             "flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all",
-            isListening ? "bg-red-500 text-white animate-pulse" : "bg-[#0f766e] text-white hover:bg-[#235c42]"
+            isListening ? "bg-red-500 text-white animate-pulse" : "bg-[#00B4A6] text-white hover:bg-[#235c42]"
           )}
         >
           {isListening ? "Escuchando..." : "Hablar"}
@@ -301,8 +308,8 @@ function QuickActionsBar({ data, onChangeTab }: { data: BusinessData; onChangeTa
         ))}
       </div>
       {quickResult && (
-        <div className="flex items-center gap-2 bg-[#0f766e]/5 border border-[#0f766e]/20 rounded-lg px-3 py-2">
-          <p className="text-sm font-semibold text-[#0f766e] dark:text-emerald-400 flex-1">{quickResult}</p>
+        <div className="flex items-center gap-2 bg-[#00B4A6]/5 border border-[#00B4A6]/20 rounded-lg px-3 py-2">
+          <p className="text-sm font-semibold text-[#00B4A6] dark:text-emerald-400 flex-1">{quickResult}</p>
           <button onClick={() => setQuickResult(null)} className="text-xs text-gray-400 hover:text-gray-600 shrink-0">✕</button>
         </div>
       )}
@@ -336,7 +343,7 @@ function BusinessCalculators() {
     ? Math.ceil(parseFloat(roiInversion) / parseFloat(roiGanancia))
     : null;
 
-  const inputCls = "w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30";
+  const inputCls = "w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30";
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
@@ -354,9 +361,9 @@ function BusinessCalculators() {
             <input type="number" value={margenPct} onChange={e => setMargenPct(e.target.value)} placeholder="Ej: 30" className={inputCls} />
           </div>
           {precioSugerido && (
-            <div className="bg-[#0f766e]/10 rounded-lg p-2 text-center">
+            <div className="bg-[#00B4A6]/10 rounded-lg p-2 text-center">
               <p className="text-[10px] text-gray-500">Precio sugerido</p>
-              <p className="text-lg font-bold text-[#0f766e]">S/{precioSugerido}</p>
+              <p className="text-lg font-bold text-[#00B4A6]">S/{precioSugerido}</p>
               <p className="text-[10px] text-gray-400">Ganancia: S/{gananciaMargen}</p>
             </div>
           )}
@@ -454,7 +461,7 @@ function DailyChecklist() {
       </div>
       {/* Progress bar */}
       <div className="relative h-2 bg-gray-200 dark:bg-white/10 rounded-full overflow-hidden mb-3">
-        <div className={cn("h-full rounded-full transition-all", allDone ? "bg-emerald-500" : "bg-[#0f766e]")} style={{ width: `${(completadas / total) * 100}%` }} />
+        <div className={cn("h-full rounded-full transition-all", allDone ? "bg-emerald-500" : "bg-[#00B4A6]")} style={{ width: `${(completadas / total) * 100}%` }} />
       </div>
       <div className="space-y-1.5">
         {DAILY_TASKS.map((task, i) => (
@@ -520,10 +527,10 @@ export default function AICommandCenter() {
     try { localStorage.setItem("ai-center-active-tab", tab); } catch { /* noop */ }
   }, []);
 
-  // Keyboard shortcuts: Alt+1..7 for tabs
+  // Keyboard shortcuts: Alt+1..9 for tabs
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.altKey && e.key >= "1" && e.key <= "7") {
+      if (e.altKey && e.key >= "1" && e.key <= "9") {
         e.preventDefault();
         const idx = parseInt(e.key) - 1;
         if (TABS[idx]) changeTab(TABS[idx].id);
@@ -633,70 +640,6 @@ export default function AICommandCenter() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#0f766e] text-white shadow-md">
-            <Brain className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50 tracking-tight">
-              Centro de Comando IA
-            </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Consultor de negocio — analisis local en tiempo real
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Data freshness indicator */}
-          {lastRefresh && (
-            <div className="flex items-center gap-1.5 hidden sm:flex">
-              <span className={cn("w-2 h-2 rounded-full", getFreshnessColor(lastRefresh))} />
-              <span className="text-xs text-gray-400 dark:text-gray-500">
-                {getRelativeTime(lastRefresh)}
-              </span>
-            </div>
-          )}
-          {/* Keyboard shortcuts toggle */}
-          <button
-            onClick={() => setShowShortcuts(s => !s)}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors hidden sm:block"
-            title="Atajos de teclado"
-          >
-            <Keyboard className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleRefresh}
-            disabled={loading || isOffline}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
-              "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700",
-              "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700",
-              (loading || isOffline) && "opacity-50 cursor-not-allowed"
-            )}
-          >
-            <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
-            {loading ? "Cargando..." : "Actualizar"}
-          </button>
-        </div>
-      </div>
-
-      {/* Keyboard shortcuts tooltip */}
-      {showShortcuts && (
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-xs text-gray-500 dark:text-gray-400">
-          <p className="font-bold text-gray-700 dark:text-gray-300 mb-1.5">Atajos de teclado</p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
-            {TABS.map(t => (
-              <div key={t.id} className="flex items-center gap-1.5">
-                <kbd className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 font-mono text-[10px]">{t.shortcut}</kbd>
-                <span>{t.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Error banner */}
       {error && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 text-red-700 dark:text-red-400 text-sm">
@@ -704,115 +647,6 @@ export default function AICommandCenter() {
           <span>{error} Los analisis se ejecutan con datos parciales disponibles.</span>
         </div>
       )}
-
-      {/* 30-second summary */}
-      {data && !loading && (
-        <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-          {(() => {
-            const today = new Date().toISOString().slice(0, 10);
-            const salesToday = data.sales.filter(s => (s.createdAt ?? "").slice(0, 10) === today);
-            const ventasHoy = salesToday.reduce((s, sl) => s + sl.total, 0);
-            const cantidadVentas = salesToday.length;
-
-            const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString().slice(0, 10);
-            const prodQty: Record<string, { name: string; qty: number }> = {};
-            for (const s of data.sales) {
-              if ((s.createdAt ?? "").slice(0, 10) < weekAgo) continue;
-              for (const i of s.items) {
-                const pid = String(i.productId);
-                if (!prodQty[pid]) prodQty[pid] = { name: i.name, qty: 0 };
-                prodQty[pid].qty += i.quantity;
-              }
-            }
-            const topProduct = Object.values(prodQty).sort((a, b) => b.qty - a.qty)[0];
-            const lowStockCount = data.products.filter(p => p.stock != null && p.stockMin != null && p.stock <= p.stockMin && p.active !== false).length;
-
-            return (
-              <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                {cantidadVentas > 0 ? (
-                  <p>💰 Hoy llevas <span className="font-bold text-gray-800 dark:text-gray-200">S/{ventasHoy.toFixed(0)}</span> en {cantidadVentas} venta{cantidadVentas !== 1 ? "s" : ""}.</p>
-                ) : (
-                  <p>💰 Aun no hay ventas hoy. Todo bien?</p>
-                )}
-                {topProduct && (
-                  <p>⭐ Tu producto estrella es <span className="font-bold text-gray-800 dark:text-gray-200">{topProduct.name}</span> con {topProduct.qty} unidades.</p>
-                )}
-                {lowStockCount > 0 && (
-                  <p>⚠ <span className="font-bold text-amber-600 dark:text-amber-400">{lowStockCount}</span> producto{lowStockCount !== 1 ? "s" : ""} con stock bajo.</p>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* Score general del negocio */}
-      {data && !loading && (
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-          {(() => {
-            const today = new Date().toISOString().slice(0, 10);
-            const salesToday = data.sales.filter(s => (s.createdAt ?? "").slice(0, 10) === today);
-            const ventasHoy = salesToday.reduce((s, sl) => s + sl.total, 0);
-
-            const last7 = data.sales.filter(s => Date.now() - new Date(s.createdAt ?? "").getTime() < 7 * 86_400_000);
-            const promedioDiario = last7.length > 0 ? last7.reduce((s, sl) => s + sl.total, 0) / 7 : 1;
-            const ventasRatio = promedioDiario > 0 ? ventasHoy / promedioDiario : 0;
-            const ptVentas = ventasRatio >= 1 ? 25 : ventasRatio >= 0.7 ? 17 : 8;
-
-            let revenue = 0, cogs = 0;
-            for (const sale of salesToday) {
-              revenue += sale.total ?? 0;
-              for (const item of sale.items) {
-                const cost = (item.price ?? 0) * 0.7;
-                cogs += cost * item.quantity;
-              }
-            }
-            const margen = revenue > 0 ? ((revenue - cogs) / revenue) * 100 : 0;
-            const ptMargen = margen >= 25 ? 20 : margen >= 15 ? 12 : 5;
-
-            const activeProds = data.products.filter(p => p.active !== false);
-            const okProds = activeProds.filter(p => p.stock == null || p.stockMin == null || p.stock > p.stockMin);
-            const ptStock = activeProds.length > 0 ? Math.round((okProds.length / activeProds.length) * 20) : 20;
-
-            const pendingOrders = data.orders.filter(o => o.status === "pendiente");
-            const ptFiados = pendingOrders.length === 0 ? 20 : pendingOrders.length <= 3 ? 12 : 5;
-
-            const clientesHoy = new Set(salesToday.map(s => s.customerPhone ?? "anon")).size;
-            const clientesDaysAgo = new Set(last7.map(s => s.customerPhone ?? "anon")).size;
-            const clientePromedio = clientesDaysAgo > 0 ? clientesDaysAgo / 7 : 1;
-            const clienteRatio = clientePromedio > 0 ? clientesHoy / clientePromedio : 0;
-            const ptClientes = clienteRatio >= 1 ? 15 : Math.round(clienteRatio * 15);
-
-            const score = ptVentas + ptMargen + ptStock + ptFiados + ptClientes;
-            const emoji = score >= 80 ? "😊" : score >= 60 ? "🙂" : score >= 40 ? "😐" : "😟";
-            const label = score >= 80 ? "Excelente dia!" : score >= 60 ? "Buen dia" : score >= 40 ? "Dia regular" : "Dia dificil";
-            const color = score >= 80 ? "#0f766e" : score >= 60 ? "#65a30d" : score >= 40 ? "#f97316" : "#ef4444";
-            const bgGrad = score >= 80 ? "rgba(45,106,79,0.06)" : score >= 60 ? "rgba(101,163,13,0.06)" : score >= 40 ? "rgba(244,162,97,0.06)" : "rgba(239,68,68,0.06)";
-
-            return (
-              <div className="flex items-center gap-4" style={{ background: `linear-gradient(135deg, ${bgGrad}, transparent)`, borderRadius: 12, padding: 8 }}>
-                <div className="text-center">
-                  <p className="text-5xl font-extrabold leading-none" style={{ color }}>{score}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">de 100</p>
-                </div>
-                <div className="text-4xl">{emoji}</div>
-                <div className="flex-1">
-                  <p className="text-sm font-bold" style={{ color }}>{label}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
-                    Ventas {ptVentas}/25 · Margen {ptMargen}/20 · Stock {ptStock}/20 · Pagos {ptFiados}/20 · Clientes {ptClientes}/15
-                  </p>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* Voice Query Panel */}
-      {data && !loading && <VoiceQueryPanel data={data} />}
-
-      {/* Quick Actions Bar */}
-      {data && !loading && <QuickActionsBar data={data} onChangeTab={changeTab} />}
 
       {/* Tabs with badges and scroll arrows on mobile */}
       <div className="relative">
@@ -840,7 +674,7 @@ export default function AICommandCenter() {
                 className={cn(
                   "relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap",
                   isActive
-                    ? "bg-[#0f766e] text-white shadow-sm"
+                    ? "bg-[#00B4A6] text-white shadow-sm"
                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                 )}
                 title={tab.shortcut}
@@ -851,7 +685,7 @@ export default function AICommandCenter() {
                   <span className={cn(
                     "absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold px-1",
                     isActive
-                      ? "bg-white text-[#0f766e]"
+                      ? "bg-white text-[#00B4A6]"
                       : "bg-red-500 text-white"
                   )}>
                     {badge > 99 ? "99+" : badge}
@@ -875,6 +709,8 @@ export default function AICommandCenter() {
       <div className="flex-1">
         {loading && !data ? (
           <LoadingSkeleton />
+        ) : !data ? (
+          <div className="text-center py-12 text-gray-400">No se pudieron cargar los datos. Intenta recargar.</div>
         ) : (
           <Suspense fallback={<LoadingSkeleton />}>
             {activeTab === "briefing" && (
@@ -927,6 +763,15 @@ export default function AICommandCenter() {
             )}
             {activeTab === "decisiones" && (
               <AIDecisionLog />
+            )}
+            {activeTab === "mercado" && (
+              <AIMarketResearch data={data} />
+            )}
+            {activeTab === "asesor" && (
+              <AIStrategicAdvisor data={data} />
+            )}
+            {activeTab === "precios" && (
+              <AISmartPricing data={data} />
             )}
           </Suspense>
         )}

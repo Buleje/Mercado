@@ -187,7 +187,7 @@ export default function POSSearchBar({
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0",
                     outOfStock && "opacity-50",
-                    isFirstHighlight && "ring-2 ring-[#0f766e] bg-[#0f766e]/5"
+                    isFirstHighlight && "ring-2 ring-[#00B4A6] bg-[#00B4A6]/5"
                   )}
                 >
                   <div className="h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-surface shrink-0 relative">

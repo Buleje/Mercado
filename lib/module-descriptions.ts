@@ -56,4 +56,8 @@ export const MODULE_DESCRIPTIONS: Record<string, ModuleDescription> = {
     summary: "Prestamos a clientes con cuotas mensuales e intereses",
     example: "Ej: Prestaste S/.1,000 a Juan en 6 cuotas de S/.180",
   },
+  rendimiento: {
+    summary: "Velocidad de tu tienda web y estado del sistema",
+    example: "Ej: Tu pagina carga en 1.2 segundos — eso es rapido",
+  },
 };

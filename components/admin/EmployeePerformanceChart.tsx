@@ -196,7 +196,7 @@ function ComparisonBars({
     <div>
       <div className="flex items-center gap-4 mb-3">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm bg-[#0f766e]" />
+          <div className="w-3 h-3 rounded-sm bg-[#00B4A6]" />
           <span className="text-xs text-gray-500 dark:text-gray-400">Esta semana</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -224,7 +224,7 @@ function ComparisonBars({
               {/* Par de barras */}
               <div className="w-full flex items-end gap-0.5" style={{ height: 80 }}>
                 <div
-                  className="flex-1 bg-[#0f766e] dark:bg-[#14b8a6] rounded-t transition-all duration-500"
+                  className="flex-1 bg-[#00B4A6] dark:bg-[#2dd4bf] rounded-t transition-all duration-500"
                   style={{ height: `${thisH}px` }}
                 />
                 <div
@@ -333,7 +333,7 @@ export default function EmployeePerformanceChart() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <BarChart3 className="w-5 h-5 text-[#0f766e] dark:text-green-400" />
+          <BarChart3 className="w-5 h-5 text-[#00B4A6] dark:text-green-400" />
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Rendimiento por empleado
@@ -351,7 +351,7 @@ export default function EmployeePerformanceChart() {
           disabled={loading}
           className={cn(
             "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
-            "text-[#0f766e] dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
+            "text-[#00B4A6] dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20",
             loading && "opacity-50 cursor-not-allowed"
           )}
         >
@@ -369,7 +369,7 @@ export default function EmployeePerformanceChart() {
               "w-full appearance-none rounded-xl border border-gray-200 dark:border-gray-700",
               "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100",
               "px-4 py-3 pr-10 text-sm font-medium",
-              "focus:outline-none focus:ring-2 focus:ring-[#0f766e] dark:focus:ring-green-500"
+              "focus:outline-none focus:ring-2 focus:ring-[#00B4A6] dark:focus:ring-green-500"
             )}
           >
             {allStats.map((s) => (

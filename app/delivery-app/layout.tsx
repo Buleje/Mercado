@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import DeliveryAppShell from "@/components/delivery/DeliveryAppShell";
 
 export const metadata: Metadata = {
   title: "Buleje Delivery",
@@ -9,9 +10,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,   // Bloquear zoom — optimizado para uso con una mano
+  maximumScale: 1,
   userScalable: false,
-  themeColor: "#0d9488",
+  themeColor: "#00B4A6",
 };
 
 export default function DeliveryAppLayout({
@@ -21,13 +22,7 @@ export default function DeliveryAppLayout({
 }) {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 font-sans">
-      {/* Safe area para iOS notch / home indicator */}
-      <div
-        className="min-h-screen"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        {children}
-      </div>
+      <DeliveryAppShell>{children}</DeliveryAppShell>
     </div>
   );
 }

@@ -66,13 +66,13 @@ function KpiCard({ label, value, icon, accent }: KpiCardProps) {
         "border-2 shadow-2xl transition-colors",
         accent
           ? "border-[#f97316] bg-[#f97316]/10 dark:bg-[#f97316]/5"
-          : "border-[#0f766e] bg-[#0f766e]/10 dark:bg-[#0f766e]/5"
+          : "border-[#00B4A6] bg-[#00B4A6]/10 dark:bg-[#00B4A6]/5"
       )}
     >
       <div
         className={cn(
           "p-5 rounded-full",
-          accent ? "bg-[#f97316]/20" : "bg-[#0f766e]/20"
+          accent ? "bg-[#f97316]/20" : "bg-[#00B4A6]/20"
         )}
       >
         {icon}
@@ -146,7 +146,7 @@ export default function TVDashboard() {
   const progress = pct(data.salesToday, data.dailyGoal);
   const barColor =
     progress >= 80
-      ? "bg-[#0f766e]"
+      ? "bg-[#00B4A6]"
       : progress >= 50
         ? "bg-[#f97316]"
         : "bg-red-500";
@@ -162,7 +162,7 @@ export default function TVDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-5xl font-black tracking-tight text-[#0f766e] dark:text-[#14b8a6]">
+          <h1 className="text-5xl font-black tracking-tight text-[#00B4A6] dark:text-[#2dd4bf]">
             Buleje
           </h1>
           <p className="text-2xl text-gray-500 dark:text-gray-400 mt-1">
@@ -181,25 +181,25 @@ export default function TVDashboard() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="p-3 rounded-full bg-[#0f766e]/10 hover:bg-[#0f766e]/20 transition-colors disabled:opacity-50"
+            className="p-3 rounded-full bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors disabled:opacity-50"
             aria-label="Actualizar"
           >
             <RefreshCw
               className={cn(
-                "w-7 h-7 text-[#0f766e]",
+                "w-7 h-7 text-[#00B4A6]",
                 loading && "animate-spin"
               )}
             />
           </button>
           <button
             onClick={toggleFullscreen}
-            className="p-3 rounded-full bg-[#0f766e]/10 hover:bg-[#0f766e]/20 transition-colors"
+            className="p-3 rounded-full bg-[#00B4A6]/10 hover:bg-[#00B4A6]/20 transition-colors"
             aria-label={fullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
           >
             {fullscreen ? (
-              <Minimize className="w-7 h-7 text-[#0f766e]" />
+              <Minimize className="w-7 h-7 text-[#00B4A6]" />
             ) : (
-              <Maximize className="w-7 h-7 text-[#0f766e]" />
+              <Maximize className="w-7 h-7 text-[#00B4A6]" />
             )}
           </button>
         </div>
@@ -210,18 +210,18 @@ export default function TVDashboard() {
         <KpiCard
           label="Ventas hoy"
           value={fmt(data.salesToday)}
-          icon={<TrendingUp className="w-14 h-14 text-[#0f766e]" />}
+          icon={<TrendingUp className="w-14 h-14 text-[#00B4A6]" />}
         />
         <KpiCard
           label="Meta %"
           value={`${progress}%`}
-          icon={<Target className="w-14 h-14 text-[#0f766e]" />}
+          icon={<Target className="w-14 h-14 text-[#00B4A6]" />}
           accent={progress >= 100}
         />
         <KpiCard
           label="Pedidos activos"
           value={String(data.activeOrders)}
-          icon={<ShoppingCart className="w-14 h-14 text-[#0f766e]" />}
+          icon={<ShoppingCart className="w-14 h-14 text-[#00B4A6]" />}
         />
         <KpiCard
           label={`#1 Cajero — ${data.topCashier}`}

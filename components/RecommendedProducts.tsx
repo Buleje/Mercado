@@ -99,10 +99,10 @@ export default function RecommendedProducts() {
                   </span>
                   <button
                     onClick={() => handleAdd(p)}
-                    className="p-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                    className="flex items-center justify-center h-10 w-10 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-colors"
                     title="Agregar al carrito"
                   >
-                    <ShoppingCart className="h-3.5 w-3.5" />
+                    <ShoppingCart className="h-5 w-5" />
                   </button>
                 </div>
               </div>

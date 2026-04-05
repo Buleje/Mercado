@@ -53,7 +53,7 @@ export default function FiadoFormModal({ showNew, setShowNew, newForm, setNewFor
                         value={newForm.customerId}
                         onChange={e => setNewForm(p => ({ ...p, customerId: e.target.value }))}
                         placeholder="Ej: 987654321"
-                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                       />
                     </div>
                   </div>
@@ -62,7 +62,7 @@ export default function FiadoFormModal({ showNew, setShowNew, newForm, setNewFor
                   {newForm.customerId.trim().length >= 6 && (
                     clienteResumenLoading ? (
                       <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
-                        <Loader2 className="h-4 w-4 animate-spin text-[#0f766e]" />
+                        <Loader2 className="h-4 w-4 animate-spin text-[#00B4A6]" />
                         <span className="text-xs text-gray-500">Buscando historial...</span>
                       </div>
                     ) : clienteResumen ? (
@@ -118,7 +118,7 @@ export default function FiadoFormModal({ showNew, setShowNew, newForm, setNewFor
                         value={newForm.total}
                         onChange={e => setNewForm(p => ({ ...p, total: e.target.value }))}
                         placeholder="0.00"
-                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                       />
                     </div>
                   </div>
@@ -132,7 +132,7 @@ export default function FiadoFormModal({ showNew, setShowNew, newForm, setNewFor
                         onChange={e => setNewForm(p => ({ ...p, descripcion: e.target.value }))}
                         placeholder="Detalle de lo que se llevó..."
                         rows={2}
-                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30 resize-none"
+                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
                       />
                     </div>
                   </div>
@@ -145,7 +145,7 @@ export default function FiadoFormModal({ showNew, setShowNew, newForm, setNewFor
                         type="date"
                         value={newForm.fechaVence}
                         onChange={e => setNewForm(p => ({ ...p, fechaVence: e.target.value }))}
-                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                       />
                     </div>
                   </div>
@@ -173,7 +173,7 @@ export default function FiadoFormModal({ showNew, setShowNew, newForm, setNewFor
                           </button>
                         </div>
                       ) : (
-                        <label className="flex items-center justify-center gap-2 w-full py-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-white/20 cursor-pointer hover:border-[#0f766e] hover:bg-[#0f766e]/5 transition-colors">
+                        <label className="flex items-center justify-center gap-2 w-full py-6 rounded-xl border-2 border-dashed border-gray-300 dark:border-white/20 cursor-pointer hover:border-[#00B4A6] hover:bg-[#00B4A6]/5 transition-colors">
                           <Camera className="h-5 w-5 text-gray-400" />
                           <span className="text-xs text-gray-500">Tomar foto o seleccionar imagen</span>
                           <input
@@ -214,7 +214,7 @@ export default function FiadoFormModal({ showNew, setShowNew, newForm, setNewFor
                   <button
                     onClick={handleCreate}
                     disabled={creating}
-                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-50 rounded-lg shadow-sm transition-colors"
+                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 rounded-lg shadow-sm transition-colors"
                   >
                     {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     Crear Fíado

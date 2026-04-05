@@ -122,7 +122,7 @@ function getInitials(name: string) {
 
 // ── Mejora 9: Avatar color auto-generado ─────────────────────────────────────
 function getAvatarColor(name: string): string {
-  const colors = ["#0f766e", "#f97316", "#e63946", "#457b9d", "#6b705c", "#9b5de5"];
+  const colors = ["#00B4A6", "#f97316", "#e63946", "#457b9d", "#6b705c", "#9b5de5"];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
@@ -216,7 +216,7 @@ function FavoriteProductsSection({ phone }: { phone: string }) {
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${Math.max(8, (p.totalQty / maxQty) * 100)}%`,
-                    backgroundColor: i === 0 ? "#0f766e" : i === 1 ? "#f97316" : "#457b9d",
+                    backgroundColor: i === 0 ? "#00B4A6" : i === 1 ? "#f97316" : "#457b9d",
                   }}
                 />
               </div>
@@ -302,7 +302,7 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
     return (
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
         <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
-          <Clock className="h-4 w-4" style={{ color: "#0f766e" }} /> Cuando compra?
+          <Clock className="h-4 w-4" style={{ color: "#00B4A6" }} /> Cuando compra?
         </h3>
         <p className="text-xs text-gray-400 dark:text-muted text-center py-4">
           Aun no hay suficientes datos (minimo 5 compras)
@@ -333,12 +333,12 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
     }
   }
 
-  // Color scale: #d8f3dc (lightest) → #1b4332 (darkest)
+  // Color scale: #d8f3dc (lightest) → #007A72 (darkest)
   const getColor = (val: number): string => {
     if (val === 0) return "transparent";
     const intensity = val / Math.max(maxVal, 1);
     // Interpolate between light green and dark green
-    const colors = ["#d8f3dc", "#b7e4c7", "#95d5b2", "#74c69d", "#14b8a6", "#0d9488", "#0f766e", "#1b4332"];
+    const colors = ["#d8f3dc", "#b7e4c7", "#95d5b2", "#74c69d", "#2dd4bf", "#33C4B8", "#00B4A6", "#007A72"];
     const idx = Math.min(Math.floor(intensity * (colors.length - 1)), colors.length - 1);
     return colors[idx];
   };
@@ -349,7 +349,7 @@ function PurchaseHeatmap({ orders }: { orders: Order[] }) {
   return (
     <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
       <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
-        <Clock className="h-4 w-4" style={{ color: "#0f766e" }} /> Cuando compra?
+        <Clock className="h-4 w-4" style={{ color: "#00B4A6" }} /> Cuando compra?
       </h3>
 
       {/* Heatmap grid */}
@@ -827,7 +827,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
       {orders.length > 0 && (
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 sm:p-5">
           <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-3 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" style={{ color: "#0f766e" }} /> Compras ultimos 6 meses
+            <TrendingUp className="h-4 w-4" style={{ color: "#00B4A6" }} /> Compras ultimos 6 meses
           </h3>
           <div className="flex items-end gap-1" style={{ height: 80 }}>
             {(() => {
@@ -852,7 +852,7 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 const monthName = new Date(label + "-01").toLocaleDateString("es-PE", { month: "short" });
                 return (
                   <div key={label} className="flex-1 flex flex-col items-center gap-1" title={`${monthName}: S/${val.toFixed(0)}`}>
-                    <div className="w-full max-w-[28px] rounded-t" style={{ height, backgroundColor: "#0f766e", opacity: val > 0 ? 1 : 0.2 }} />
+                    <div className="w-full max-w-[28px] rounded-t" style={{ height, backgroundColor: "#00B4A6", opacity: val > 0 ? 1 : 0.2 }} />
                     <span className="text-[9px] text-gray-400 dark:text-muted">{monthName}</span>
                   </div>
                 );

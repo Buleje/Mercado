@@ -105,7 +105,7 @@ function SalesBar({
         <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
           {month.label}
         </p>
-        <p className="text-xs text-[#0f766e]">{fmt(month.total)}</p>
+        <p className="text-xs text-[#00B4A6]">{fmt(month.total)}</p>
         {compareVal !== undefined && (
           <p className="text-xs text-gray-400">Ant: {fmt(compareVal)}</p>
         )}
@@ -123,7 +123,7 @@ function SalesBar({
         <div
           className={cn(
             "relative w-full rounded-t-sm transition-all",
-            month.total > (compareVal ?? 0) ? "bg-[#0f766e]" : "bg-[#f97316]"
+            month.total > (compareVal ?? 0) ? "bg-[#00B4A6]" : "bg-[#f97316]"
           )}
           style={{ height: `${Math.max(pct, 2)}%` }}
         />
@@ -248,7 +248,7 @@ export default function SeasonalityInsights() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-[#0f766e]" />
+          <Calendar className="h-5 w-5 text-[#00B4A6]" />
           <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
             Análisis de estacionalidad
           </h3>
@@ -266,7 +266,7 @@ export default function SeasonalityInsights() {
                 className={cn(
                   "px-3 py-1.5 text-xs font-medium transition first:rounded-l-lg last:rounded-r-lg",
                   view === v
-                    ? "bg-[#0f766e] text-white"
+                    ? "bg-[#00B4A6] text-white"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
                 )}
               >
@@ -282,7 +282,7 @@ export default function SeasonalityInsights() {
         <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
           <div className="mb-4 flex flex-wrap items-center gap-4 text-xs">
             <div className="flex items-center gap-1.5">
-              <div className="h-2.5 w-2.5 rounded-sm bg-[#0f766e]" />
+              <div className="h-2.5 w-2.5 rounded-sm bg-[#00B4A6]" />
               <span className="text-gray-500">{currentYear}</span>
             </div>
             <div className="flex items-center gap-1.5">

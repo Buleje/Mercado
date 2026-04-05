@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck } from "lucide-react";
+import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck, DollarSign } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type ExportModule = { id: string; label: string; icon: React.ElementType };
@@ -11,6 +11,7 @@ const EXPORT_MODULES: ExportModule[] = [
   { id: "productos", label: "Productos", icon: Package },
   { id: "clientes", label: "Clientes", icon: Users },
   { id: "pedidos", label: "Pedidos", icon: ShoppingCart },
+  { id: "ventas", label: "Ventas", icon: DollarSign },
   { id: "inventario", label: "Movimientos Inventario", icon: Package },
   { id: "proveedores", label: "Proveedores", icon: Truck },
   { id: "gastos", label: "Gastos", icon: FileText },
@@ -66,6 +67,30 @@ async function fetchModuleData(moduleId: string): Promise<Record<string, unknown
       cantidad: m.quantity, notas: m.notes ?? "",
       fecha: m.createdAt ? String(m.createdAt).slice(0, 10) : "",
     }));
+  }
+  if (moduleId === "ventas") {
+    const res = await fetch("/api/sales");
+    if (!res.ok) return [];
+    const data = await res.json() as Record<string, unknown>[];
+    return data.map(s => {
+      const total = Number(s.total) || 0;
+      const totalCogs = Number(s.totalCogs) || 0;
+      const margin = total - totalCogs;
+      return {
+        id: s.id,
+        fecha: s.createdAt ? String(s.createdAt).slice(0, 10) : "",
+        num_productos: Array.isArray(s.items) ? s.items.length : 0,
+        total: total.toFixed(2),
+        costo_total: totalCogs.toFixed(2),
+        margen: margin.toFixed(2),
+        margen_pct: total > 0 ? ((margin / total) * 100).toFixed(1) + "%" : "0%",
+        metodo_pago: s.payment ?? "",
+        comprobante: s.comprobanteTipo ?? "ticket",
+        descuento: s.descuentoMonto ?? 0,
+        cajero: s.cashierId ?? "",
+        cliente: s.customerPhone ?? "",
+      };
+    });
   }
   // proveedores / gastos — no dedicated API yet, return empty
   return [];
@@ -263,7 +288,7 @@ export default function ImportExportTab() {
 
       {view === "history" && (
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-y-hidden overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
+          <table className="w-full min-w-150 text-sm">
             <thead><tr className="bg-gray-50 dark:bg-surface text-left">
               <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Archivo</th>
               <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Módulo</th>

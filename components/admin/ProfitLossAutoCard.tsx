@@ -73,9 +73,9 @@ export default function ProfitLossAutoCard() {
     setError(null);
     try {
       const [dashRes, expRes, salesRes] = await Promise.all([
-        fetch("/api/daily-report").then(r => r.json()).catch(() => null),
-        fetch("/api/expenses/summary").then(r => r.json()).catch(() => null),
-        fetch("/api/sales").then(r => r.json()).catch(() => []),
+        fetch("/api/daily-report").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch("/api/sales").then(r => r.ok ? r.json() : []).catch(() => []),
       ]);
 
       setReport(dashRes);
@@ -122,7 +122,7 @@ export default function ProfitLossAutoCard() {
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="bg-[#0f766e] px-5 py-4 flex items-center justify-between">
+      <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <DollarSign className="h-5 w-5 text-white" />
           <span className="text-white font-semibold text-sm">Estado de Resultados</span>
@@ -146,7 +146,7 @@ export default function ProfitLossAutoCard() {
       <div className="p-5">
         {loading ? (
           <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
+            <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
           </div>
         ) : error ? (
           <p className="text-sm text-red-500 dark:text-red-400 text-center py-6">{error}</p>

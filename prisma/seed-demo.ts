@@ -94,11 +94,11 @@ async function main() {
         yapeEnabled: true,
         businessPhone: "999888777",
         businessAddress: "Jr. Ucayali 456, Pucallpa, Peru",
-        primaryColor: "#0f766e",
+        primaryColor: "#00B4A6",
         secondaryColor: "#f97316",
         slogan: "Tu bodega digital de confianza",
         storeThemeJson: JSON.stringify({
-          primaryColor: "#0f766e", secondaryColor: "#f97316", accentColor: "#2d6a4f",
+          primaryColor: "#00B4A6", secondaryColor: "#f97316", accentColor: "#00B4A6",
           name: TENANT_NAME, slogan: "Tu bodega digital de confianza",
           description: "Tienda demo con plan Enterprise. Explora todos los modulos del sistema.",
           heroTitle: "Todo lo que necesitas, en tu puerta",

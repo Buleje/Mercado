@@ -1,6 +1,11 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { LayoutDashboard, BarChart3 } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import AdminDateFilter from "@/components/admin/shared/AdminDateFilter";
+import type { DatePreset } from "@/components/admin/shared/AdminDateFilter";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -11,30 +16,33 @@ const S = () => (
 const DashboardTab = dynamic(() => import("@/components/admin/DashboardTab"), { loading: S });
 const ExecutiveDashboardTab = dynamic(() => import("@/components/admin/ExecutiveDashboardTab"), { loading: S });
 
+const MODULE_ID = "panel-principal";
+
 const TABS = [
-  { id: "dashboard" as const, label: "Dashboard" },
-  { id: "ejecutivo" as const, label: "Ejecutivo" },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "ejecutivo", label: "Ejecutivo", icon: BarChart3 },
 ];
 
 export default function PanelPrincipalModule() {
   const [sub, setSub] = useState(TABS[0].id);
+  const [datePreset, setDatePreset] = useState<DatePreset>("today");
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none border-b border-gray-200 dark:border-card-border -mx-1 px-1">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSub(t.id)}
-            className={`shrink-0 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${
-              sub === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Panel Principal"
+        description="Vista general del negocio y métricas clave"
+        icon={LayoutDashboard}
+      >
+        <AdminDateFilter value={datePreset} onChange={setDatePreset} />
+      </AdminModuleHeader>
+
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId={MODULE_ID}
+      />
+
       {sub === "dashboard" && <DashboardTab />}
       {sub === "ejecutivo" && <ExecutiveDashboardTab />}
     </div>

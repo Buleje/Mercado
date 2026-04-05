@@ -121,7 +121,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-card-border">
           <div className="flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4 text-[#0f766e]" />
+            <ShoppingCart className="h-4 w-4 text-[#00B4A6]" />
             <h3 className="text-sm font-bold text-gray-900 dark:text-white">
               Crear pedido de cliente
             </h3>
@@ -150,7 +150,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-4 px-6 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-medium hover:bg-[#0d5f58] transition-colors"
+                className="mt-4 px-6 py-2 bg-[#00B4A6] text-white rounded-xl text-xs font-medium hover:bg-[#009690] transition-colors"
               >
                 Cerrar
               </button>
@@ -163,8 +163,8 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                   Cliente
                 </label>
                 {selectedCustomer ? (
-                  <div className="flex items-center gap-2 p-2 bg-[#0f766e]/10 rounded-xl">
-                    <User className="h-4 w-4 text-[#0f766e] shrink-0" />
+                  <div className="flex items-center gap-2 p-2 bg-[#00B4A6]/10 rounded-xl">
+                    <User className="h-4 w-4 text-[#00B4A6] shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
                         {selectedCustomer.name}
@@ -192,7 +192,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
                       placeholder="Buscar por nombre o telefono..."
-                      className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                      className="w-full pl-9 pr-3 py-2 border border-gray-200 dark:border-card-border rounded-xl text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
                     />
                     {searchLoading && (
                       <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 animate-spin" />
@@ -243,7 +243,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                         className={cn(
                           "w-full flex items-center gap-2 p-2 rounded-lg text-left transition-colors",
                           checked
-                            ? "bg-[#0f766e]/10 border border-[#0f766e]/30"
+                            ? "bg-[#00B4A6]/10 border border-[#00B4A6]/30"
                             : "bg-gray-50 dark:bg-white/5 border border-transparent",
                         )}
                       >
@@ -251,7 +251,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                           className={cn(
                             "h-4 w-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors",
                             checked
-                              ? "bg-[#0f766e] border-[#0f766e] text-white"
+                              ? "bg-[#00B4A6] border-[#00B4A6] text-white"
                               : "border-gray-300 dark:border-gray-600",
                           )}
                         >
@@ -279,7 +279,7 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                 <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
                   Total seleccionado
                 </span>
-                <span className="text-sm font-bold font-mono text-[#0f766e]">
+                <span className="text-sm font-bold font-mono text-[#00B4A6]">
                   S/{selectedTotal.toFixed(2)}
                 </span>
               </div>
@@ -298,9 +298,9 @@ export default function PuntoCompraOrderCreator({ open, onClose, cartItems }: Pr
                 disabled={submitting || !selectedCustomer || selectedItems.size === 0}
                 className={cn(
                   "w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-colors",
-                  "bg-[#0f766e] hover:bg-[#0d5f58] text-white",
+                  "bg-[#00B4A6] hover:bg-[#009690] text-white",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
-                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]",
+                  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
                 )}
               >
                 {submitting ? (

@@ -248,7 +248,7 @@ export default function PriceTagGenerator() {
         <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-900">
           <div className="border-b border-gray-100 px-5 py-3 dark:border-gray-700">
             <div className="flex items-center gap-2">
-              <Tag className="h-4 w-4 text-[#0f766e]" />
+              <Tag className="h-4 w-4 text-[#00B4A6]" />
               <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
                 Seleccionar productos
               </h3>
@@ -264,7 +264,7 @@ export default function PriceTagGenerator() {
                 placeholder="Buscar producto..."
                 className={cn(
                   "w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm",
-                  "text-gray-800 placeholder-gray-400 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
+                  "text-gray-800 placeholder-gray-400 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                   "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                 )}
               />
@@ -286,7 +286,7 @@ export default function PriceTagGenerator() {
                     className={cn(
                       "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition",
                       isSelected
-                        ? "bg-[#0f766e]/10 text-[#0f766e] dark:bg-[#0f766e]/20 dark:text-green-300"
+                        ? "bg-[#00B4A6]/10 text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-green-300"
                         : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
                     )}
                   >
@@ -317,8 +317,8 @@ export default function PriceTagGenerator() {
                 className={cn(
                   "flex-1 rounded-lg border py-2 text-xs font-medium transition",
                   format === f
-                    ? "border-[#0f766e] bg-[#0f766e] text-white"
-                    : "border-gray-200 text-gray-600 hover:border-[#0f766e]/40 dark:border-gray-600 dark:text-gray-300"
+                    ? "border-[#00B4A6] bg-[#00B4A6] text-white"
+                    : "border-gray-200 text-gray-600 hover:border-[#00B4A6]/40 dark:border-gray-600 dark:text-gray-300"
                 )}
               >
                 {FORMAT_CONFIG[f].label}
@@ -432,7 +432,7 @@ export default function PriceTagGenerator() {
 
             <button
               onClick={handlePrint}
-              className="flex items-center justify-center gap-2 rounded-xl bg-[#0f766e] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
+              className="flex items-center justify-center gap-2 rounded-xl bg-[#00B4A6] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#245a40]"
             >
               <Printer className="h-4 w-4" />
               Imprimir {totalLabels} etiqueta{totalLabels !== 1 ? "s" : ""}

@@ -49,7 +49,7 @@ const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {
   "Platos de fondo": { from: "#f97316", to: "#ef4444" },
   "Postres": { from: "#f472b6", to: "#a855f7" },
   "Bebidas": { from: "#facc15", to: "#f59e0b" },
-  "Sopas": { from: "#4ade80", to: "#14b8a6" },
+  "Sopas": { from: "#4ade80", to: "#2dd4bf" },
 };
 
 const DIFICULTAD_EMOJI: Record<string, string> = {
@@ -204,7 +204,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-[#0f766e] flex items-center justify-center">
+          <div className="h-14 w-14 rounded-2xl bg-[#00B4A6] flex items-center justify-center">
             <ChefHat className="h-7 w-7 text-white animate-pulse" />
           </div>
           <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Cargando receta...</p>
@@ -223,7 +223,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
           <p className="text-gray-500 dark:text-gray-400 mb-6">La receta que buscas no existe o fue eliminada.</p>
           <Link
             href="/recetas"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0f766e] text-white font-bold hover:bg-[#0d5f58] transition-colors shadow-lg"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00B4A6] text-white font-bold hover:bg-[#009690] transition-colors shadow-lg"
           >
             <ArrowLeft className="h-4 w-4" /> Ver recetario
           </Link>
@@ -234,7 +234,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
 
   const colors = receta.colorFrom && receta.colorTo
     ? { from: receta.colorFrom, to: receta.colorTo }
-    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#0f766e", to: "#1b4332" };
+    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#00B4A6", to: "#007A72" };
   const completedSteps = checkedSteps.size;
   const totalSteps = receta.pasos?.length || 0;
 
@@ -414,7 +414,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                 {totalSteps > 0 && (
                   <div className="h-2.5 rounded-full bg-gray-100 dark:bg-gray-800 mb-8 overflow-hidden">
                     <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-[#0f766e] to-[#14b8a6]"
+                      className="h-full rounded-full bg-gradient-to-r from-[#00B4A6] to-[#2dd4bf]"
                       initial={{ width: 0 }}
                       animate={{ width: `${(completedSteps / totalSteps) * 100}%` }}
                       transition={{ duration: 0.5, ease: "easeOut" }}
@@ -436,15 +436,15 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                         className={cn(
                           "w-full flex items-start gap-4 sm:gap-5 p-4 sm:p-5 rounded-2xl border text-left transition-all duration-300",
                           done
-                            ? "bg-[#0f766e]/5 border-[#0f766e]/20 dark:bg-[#0f766e]/10"
-                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-[#0f766e]/30 hover:shadow-md"
+                            ? "bg-[#00B4A6]/5 border-[#00B4A6]/20 dark:bg-[#00B4A6]/10"
+                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]/30 hover:shadow-md"
                         )}
                       >
                         {/* Step number circle */}
                         <div className={cn(
                           "flex-shrink-0 flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-full text-sm sm:text-base font-bold transition-all duration-300",
                           done
-                            ? "bg-[#0f766e] text-white shadow-lg shadow-[#0f766e]/30"
+                            ? "bg-[#00B4A6] text-white shadow-lg shadow-[#00B4A6]/30"
                             : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                         )}>
                           {done ? <Check className="h-5 w-5" /> : idx + 1}
@@ -467,10 +467,10 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-[#0f766e]/10 to-[#f97316]/10 dark:from-[#0f766e]/20 dark:to-[#f97316]/20 text-center border border-[#0f766e]/20"
+                      className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-[#00B4A6]/10 to-[#f97316]/10 dark:from-[#00B4A6]/20 dark:to-[#f97316]/20 text-center border border-[#00B4A6]/20"
                     >
                       <p className="text-2xl mb-2">{showConfetti ? "\uD83C\uDF89\uD83C\uDF8A\uD83E\uDD73" : "\uD83C\uDF7D\uFE0F"}</p>
-                      <p className="text-[#0f766e] dark:text-[#14b8a6] font-bold text-lg flex items-center justify-center gap-2">
+                      <p className="text-[#00B4A6] dark:text-[#2dd4bf] font-bold text-lg flex items-center justify-center gap-2">
                         <Sparkles className="h-5 w-5" />
                         Receta completada! Buen provecho!
                       </p>
@@ -531,7 +531,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                   {relatedRecetas.map(r => {
                     const rColors = r.colorFrom && r.colorTo
                       ? { from: r.colorFrom, to: r.colorTo }
-                      : CATEGORIA_GRADIENTS[r.categoria || ""] || { from: "#0f766e", to: "#1b4332" };
+                      : CATEGORIA_GRADIENTS[r.categoria || ""] || { from: "#00B4A6", to: "#007A72" };
                     return (
                       <Link
                         key={r.id}
@@ -548,7 +548,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                         </div>
                         <div className="p-4">
-                          <h3 className="font-bold text-sm text-gray-900 dark:text-white truncate group-hover:text-[#0f766e] dark:group-hover:text-[#14b8a6] transition-colors">
+                          <h3 className="font-bold text-sm text-gray-900 dark:text-white truncate group-hover:text-[#00B4A6] dark:group-hover:text-[#2dd4bf] transition-colors">
                             {r.nombre}
                           </h3>
                           <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -559,7 +559,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                             )}
                             <span>{r.ingredientes.length} ing.</span>
                           </div>
-                          <p className="text-sm font-bold text-[#0f766e] dark:text-[#14b8a6] mt-2">
+                          <p className="text-sm font-bold text-[#00B4A6] dark:text-[#2dd4bf] mt-2">
                             S/ {r.totalIngredientes.toFixed(2)}
                           </p>
                         </div>
@@ -589,10 +589,10 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                 >
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                      <ShoppingCart className="h-5 w-5 text-[#0f766e]" />
+                      <ShoppingCart className="h-5 w-5 text-[#00B4A6]" />
                       Lista de compras
                     </h2>
-                    <span className="text-lg font-extrabold text-[#0f766e] dark:text-[#14b8a6]">
+                    <span className="text-lg font-extrabold text-[#00B4A6] dark:text-[#2dd4bf]">
                       S/ {receta.totalIngredientes.toFixed(2)}
                     </span>
                   </div>
@@ -613,7 +613,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                         className={cn(
                           "flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200",
                           isChecked && !agotado
-                            ? "border-[#0f766e]/20 bg-[#0f766e]/5 dark:bg-[#0f766e]/10"
+                            ? "border-[#00B4A6]/20 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
                             : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600",
                           agotado && "opacity-50 cursor-not-allowed"
                         )}
@@ -622,7 +622,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                         <div className={cn(
                           "flex-shrink-0 h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all",
                           isChecked && !agotado
-                            ? "bg-[#0f766e] border-[#0f766e]"
+                            ? "bg-[#00B4A6] border-[#00B4A6]"
                             : "border-gray-300 dark:border-gray-600"
                         )}>
                           {isChecked && !agotado && <Check className="h-3 w-3 text-white" />}
@@ -696,7 +696,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                   <button
                     onClick={handleAddSelected}
                     disabled={selectedIngredients.length === 0}
-                    className="w-full py-4 rounded-xl bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#0f766e]/25 active:scale-[0.98]"
+                    className="w-full py-4 rounded-xl bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#00B4A6]/25 active:scale-[0.98]"
                   >
                     <ShoppingCart className="h-5 w-5" />
                     Agregar {selectedIngredients.length} ingredientes &middot; S/ {selectedTotal.toFixed(2)}
@@ -725,7 +725,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
         <button
           onClick={handleAddSelected}
           disabled={selectedIngredients.length === 0}
-          className="w-full py-4 rounded-xl bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold flex items-center justify-center gap-2 shadow-xl shadow-[#0f766e]/25 active:scale-[0.98]"
+          className="w-full py-4 rounded-xl bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold flex items-center justify-center gap-2 shadow-xl shadow-[#00B4A6]/25 active:scale-[0.98]"
         >
           <ShoppingCart className="h-5 w-5" />
           Agregar {selectedIngredients.length} ingredientes &middot; S/ {selectedTotal.toFixed(2)}

@@ -11,7 +11,7 @@ export default async function LocalBusinessJsonLd() {
   let name = "Mi Tienda";
   let description = "Tienda online con delivery a domicilio.";
   let phone = "";
-  let address = "Pucallpa";
+  let address = "";
   let logo = "/logo.png";
   let lat = -8.3791;
   let lon = -74.5539;
@@ -35,7 +35,7 @@ export default async function LocalBusinessJsonLd() {
     "@context": "https://schema.org",
     "@type": "GroceryStore",
     name,
-    alternateName: `${name} - Abarrotes Delivery Pucallpa`,
+    alternateName: `${name} - Abarrotes Delivery`,
     description,
     url: baseUrl,
     telephone: phone ? `+51${phone}` : undefined,

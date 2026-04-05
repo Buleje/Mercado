@@ -36,8 +36,8 @@ export default function BreakEvenDashboard() {
     const today = new Date().toISOString().split("T")[0];
 
     Promise.all([
-      fetch(`/api/sales?date=${today}&limit=500`).then((r) => r.json()),
-      fetch("/api/expenses/summary?limit=200").then((r) => r.json()),
+      fetch(`/api/sales?date=${today}&limit=500`).then((r) => r.ok ? r.json() : []),
+      fetch("/api/expenses/summary?limit=200").then((r) => r.ok ? r.json() : []),
     ])
       .then(([salesData, expData]) => {
         const salesRows: SaleRecord[] = Array.isArray(salesData)
@@ -116,7 +116,7 @@ export default function BreakEvenDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-[#0f766e]" />
+          <Target className="w-5 h-5 text-[#00B4A6]" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             Punto de Equilibrio Diario
           </h2>
@@ -124,7 +124,7 @@ export default function BreakEvenDashboard() {
         <button
           onClick={load}
           disabled={loading}
-          className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#0f766e] dark:hover:text-[#14b8a6] transition-colors"
+          className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-[#00B4A6] dark:hover:text-[#2dd4bf] transition-colors"
         >
           <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
           {lastRefresh.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}
@@ -286,7 +286,7 @@ export default function BreakEvenDashboard() {
                 <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
                   Si sigues vendiendo a este ritmo ({fmt(stats.salesPerHour)}/hora), cubres costos
                   a las{" "}
-                  <span className="font-bold text-[#0f766e] dark:text-[#14b8a6]">
+                  <span className="font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
                     {stats.estimatedHour}
                   </span>
                   .
@@ -302,7 +302,7 @@ export default function BreakEvenDashboard() {
           {/* Ritmo de ventas */}
           <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-[#0f766e]" />
+              <TrendingUp className="w-4 h-4 text-[#00B4A6]" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Ritmo actual de ventas
               </span>

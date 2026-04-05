@@ -136,8 +136,8 @@ export default function LanguageSelector({ className, compact = false }: Languag
         onClick={() => setLang(lang === "es" ? "qu" : "es")}
         className={cn(
           "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border transition-colors",
-          "border-[#0f766e] text-[#0f766e] dark:text-[#14b8a6] dark:border-[#14b8a6]",
-          "hover:bg-[#0f766e]/10",
+          "border-[#00B4A6] text-[#00B4A6] dark:text-[#2dd4bf] dark:border-[#2dd4bf]",
+          "hover:bg-[#00B4A6]/10",
           className
         )}
         aria-label="Cambiar idioma"
@@ -156,7 +156,7 @@ export default function LanguageSelector({ className, compact = false }: Languag
       )}
     >
       <div className="flex items-center gap-2 mb-3">
-        <Globe className="w-4 h-4 text-[#0f766e]" />
+        <Globe className="w-4 h-4 text-[#00B4A6]" />
         <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
           Idioma / Simi
         </h3>
@@ -170,7 +170,7 @@ export default function LanguageSelector({ className, compact = false }: Languag
             className={cn(
               "flex-1 py-2.5 text-sm font-semibold transition-colors",
               lang === opt.value
-                ? "bg-[#0f766e] text-white"
+                ? "bg-[#00B4A6] text-white"
                 : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
             )}
           >

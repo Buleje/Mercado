@@ -39,8 +39,8 @@ export function LoyaltyBanner({
     <div
       className={cn(
         "relative overflow-hidden rounded-2xl p-4",
-        "bg-gradient-to-r from-[#0f766e] via-[#3a8a65] to-[#0f766e]",
-        "dark:from-[#1a3d2e] dark:via-[#0f766e] dark:to-[#1a3d2e]",
+        "bg-gradient-to-r from-[#00B4A6] via-[#3a8a65] to-[#00B4A6]",
+        "dark:from-[#1a3d2e] dark:via-[#00B4A6] dark:to-[#1a3d2e]",
         "text-white shadow-lg",
         className
       )}

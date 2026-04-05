@@ -65,7 +65,7 @@ function PriceBar({
       />
       {/* Mi precio */}
       <div
-        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-[#2d6a4f] dark:bg-[#2d6a4f] rounded-full border-2 border-white dark:border-gray-900 shadow"
+        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-[#00B4A6] dark:bg-[#00B4A6] rounded-full border-2 border-white dark:border-gray-900 shadow"
         style={{ left: `${myPct}%`, transform: "translate(-50%, -50%)" }}
         title={`Mi precio: S/${myPrice.toFixed(2)}`}
       />
@@ -87,13 +87,13 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 shadow-sm">
       <div className="flex items-center gap-2 mb-4">
-        <BarChart2 className="h-4 w-4 text-[#2d6a4f]" />
+        <BarChart2 className="h-4 w-4 text-[#00B4A6]" />
         <h3 className="text-sm font-bold text-gray-900 dark:text-white">
           Mi precio vs promedio (top {withData.length})
         </h3>
         <div className="ml-auto flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
           <span className="flex items-center gap-1">
-            <span className="inline-block w-3 h-3 rounded-sm bg-[#2d6a4f]" /> Mi precio
+            <span className="inline-block w-3 h-3 rounded-sm bg-[#00B4A6]" /> Mi precio
           </span>
           <span className="flex items-center gap-1">
             <span className="inline-block w-3 h-3 rounded-sm bg-[#f4a261]" /> Promedio
@@ -110,7 +110,7 @@ function PriceComparisonChart({ products }: { products: PricingProduct[] }) {
               {/* Mi precio */}
               <div className="flex-1 flex items-center gap-1">
                 <div
-                  className="h-5 bg-[#2d6a4f] rounded-sm transition-all"
+                  className="h-5 bg-[#00B4A6] rounded-sm transition-all"
                   style={{ width: `${(p.myPrice / maxVal) * 100}%` }}
                 />
                 <span className="text-xs font-mono text-gray-600 dark:text-gray-400 whitespace-nowrap">
@@ -265,7 +265,7 @@ export default function CompetitivePricingTab() {
           <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             Oportunidad estimada
           </p>
-          <p className="text-3xl font-extrabold text-[#2d6a4f] font-mono mt-1">
+          <p className="text-3xl font-extrabold text-[#00B4A6] font-mono mt-1">
             S/{opportunityIncome.toFixed(2)}
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
@@ -285,7 +285,7 @@ export default function CompetitivePricingTab() {
         <button
           type="button"
           onClick={load}
-          className="p-1.5 rounded-lg text-gray-400 hover:text-[#2d6a4f] hover:bg-[#2d6a4f]/10 transition-colors"
+          className="p-1.5 rounded-lg text-gray-400 hover:text-[#00B4A6] hover:bg-[#00B4A6]/10 transition-colors"
           title="Actualizar"
         >
           <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
@@ -402,7 +402,7 @@ export default function CompetitivePricingTab() {
                           className="
                             inline-flex items-center gap-1 px-3 py-1.5
                             rounded-lg text-xs font-bold
-                            bg-[#2d6a4f] hover:bg-[#245a42]
+                            bg-[#00B4A6] hover:bg-[#009690]
                             text-white transition-colors
                             disabled:opacity-50 disabled:cursor-not-allowed
                             min-h-[32px]

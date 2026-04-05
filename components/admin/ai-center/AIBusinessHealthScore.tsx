@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
@@ -754,7 +754,7 @@ export default function AIBusinessHealthScore({ data }: Props) {
         </h3>
         {fiadoLoading ? (
           <div className="flex items-center gap-2 py-3">
-            <div className="w-4 h-4 border-2 border-[#0f766e] border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
             <span className="text-xs text-gray-400">Cargando datos de fiado...</span>
           </div>
         ) : computedFiadoRisk ? (
@@ -866,7 +866,7 @@ export default function AIBusinessHealthScore({ data }: Props) {
                           </td>
                           <td className="py-1.5 text-right">
                             {row.suggestedPurchase > 0 ? (
-                              <span className="text-[#0f766e] dark:text-emerald-400 font-medium">+{row.suggestedPurchase}</span>
+                              <span className="text-[#00B4A6] dark:text-emerald-400 font-medium">+{row.suggestedPurchase}</span>
                             ) : (
                               <span className="text-gray-300 dark:text-gray-600">—</span>
                             )}
@@ -998,7 +998,7 @@ export default function AIBusinessHealthScore({ data }: Props) {
               {(rotation.muerto.length > 5 || rotation.lento.length > 5 || rotation.estrella.length > 8) && (
                 <button
                   onClick={() => setShowAllRotation(!showAllRotation)}
-                  className="text-xs text-[#0f766e] dark:text-emerald-400 hover:underline"
+                  className="text-xs text-[#00B4A6] dark:text-emerald-400 hover:underline"
                 >
                   {showAllRotation ? "Ver menos" : "Ver todos"}
                 </button>

@@ -94,7 +94,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
     >
       {/* Encabezado */}
       <div className="mb-3 flex items-center gap-2">
-        <ClipboardList className="h-5 w-5 text-[#0f766e] dark:text-[#3a8a65]" aria-hidden="true" />
+        <ClipboardList className="h-5 w-5 text-[#00B4A6] dark:text-[#3a8a65]" aria-hidden="true" />
         <h2 className="text-base font-semibold text-gray-900 dark:text-white">
           Apertura del dia
         </h2>
@@ -109,7 +109,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
           <span>
             <span className="font-semibold text-gray-900 dark:text-white">{done}</span> de {total} completados
           </span>
-          <span className="font-semibold text-[#0f766e] dark:text-[#3a8a65]">{pct}%</span>
+          <span className="font-semibold text-[#00B4A6] dark:text-[#3a8a65]">{pct}%</span>
         </div>
         <div
           className="h-2 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700"
@@ -122,7 +122,7 @@ export function OpeningChecklist({ className }: { className?: string }) {
           <div
             className={cn(
               "h-full rounded-full transition-all duration-500",
-              allDone ? "bg-[#f97316]" : "bg-[#0f766e]"
+              allDone ? "bg-[#f97316]" : "bg-[#00B4A6]"
             )}
             style={{ width: `${pct}%` }}
           />
@@ -140,14 +140,14 @@ export function OpeningChecklist({ className }: { className?: string }) {
                 "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm",
                 "transition-colors duration-150",
                 item.done
-                  ? "bg-[#0f766e]/10 dark:bg-[#0f766e]/20"
+                  ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20"
                   : "bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f766e]"
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00B4A6]"
               )}
               aria-pressed={item.done}
             >
               {item.done ? (
-                <CheckCircle className="h-4 w-4 flex-shrink-0 text-[#0f766e] dark:text-[#3a8a65]" aria-hidden="true" />
+                <CheckCircle className="h-4 w-4 flex-shrink-0 text-[#00B4A6] dark:text-[#3a8a65]" aria-hidden="true" />
               ) : (
                 <Circle className="h-4 w-4 flex-shrink-0 text-gray-400" aria-hidden="true" />
               )}

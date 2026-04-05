@@ -36,6 +36,10 @@ export interface UserPreferences {
   autoSaveCart?: boolean;
   /** Remember filters */
   rememberFilters?: boolean;
+  /** Module tier level (principal/intermedio/avanzado) */
+  moduleTier?: "principal" | "intermedio" | "avanzado";
+  /** Custom module tier overrides — modules manually moved to a different tier */
+  moduleTierOverrides?: Record<string, "principal" | "intermedio" | "avanzado">;
 }
 
 /**
@@ -58,6 +62,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   showPricesWithTax: true,
   autoSaveCart: true,
   rememberFilters: true,
+  moduleTier: "avanzado",
+  moduleTierOverrides: {},
 };
 
 const STORAGE_KEY = "user-preferences";

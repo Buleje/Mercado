@@ -61,7 +61,7 @@ export default function FirstVisitCouponModal() {
         </button>
 
         {/* Gradient header */}
-        <div className="relative h-36 bg-gradient-to-br from-[#0f766e] via-[#0d9488] to-[#f97316] overflow-hidden">
+        <div className="relative h-36 bg-gradient-to-br from-[#00B4A6] via-[#33C4B8] to-[#f97316] overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.12)_1px,transparent_1px)] bg-[length:20px_20px] opacity-40" />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
             <Gift className="h-14 w-14 mb-2 drop-shadow-lg" />
@@ -76,21 +76,21 @@ export default function FirstVisitCouponModal() {
               Bienvenido a Buleje!
             </h2>
             <p className="text-muted text-sm">
-              Usa este codigo para obtener <strong className="text-[#0f766e]">10% de descuento</strong> en tu primer pedido
+              Usa este codigo para obtener <strong className="text-[#00B4A6]">10% de descuento</strong> en tu primer pedido
             </p>
           </div>
 
           {/* Coupon code */}
-          <div className="bg-gradient-to-r from-[#0f766e]/5 to-[#f97316]/10 rounded-2xl p-5 border-2 border-dashed border-[#0f766e]/20">
+          <div className="bg-gradient-to-r from-[#00B4A6]/5 to-[#f97316]/10 rounded-2xl p-5 border-2 border-dashed border-[#00B4A6]/20">
             <p className="text-xs font-semibold text-muted mb-2">Codigo de descuento</p>
             <div className="flex items-center justify-center gap-3">
-              <p className="text-3xl font-black text-[#0f766e] tracking-[0.2em] select-all">{COUPON_CODE}</p>
+              <p className="text-3xl font-black text-[#00B4A6] tracking-[0.2em] select-all">{COUPON_CODE}</p>
               <button
                 onClick={handleCopy}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                   copied
                     ? "bg-emerald-100 text-emerald-700"
-                    : "bg-[#0f766e]/10 text-[#0f766e] hover:bg-[#0f766e]/20"
+                    : "bg-[#00B4A6]/10 text-[#00B4A6] hover:bg-[#00B4A6]/20"
                 }`}
               >
                 {copied ? <><Check className="h-3.5 w-3.5" /> Copiado!</> : <><Copy className="h-3.5 w-3.5" /> Copiar</>}
@@ -104,7 +104,7 @@ export default function FirstVisitCouponModal() {
             <Link
               href="/tienda"
               onClick={handleClose}
-              className="w-full flex items-center justify-center gap-2 bg-[#0f766e] text-white rounded-xl px-6 py-4 font-bold shadow-md hover:bg-[#0d5f58] transition-all"
+              className="w-full flex items-center justify-center gap-2 bg-[#00B4A6] text-white rounded-xl px-6 py-4 font-bold shadow-md hover:bg-[#009690] transition-all"
             >
               <ShoppingCart className="h-5 w-5" />
               Ir a comprar

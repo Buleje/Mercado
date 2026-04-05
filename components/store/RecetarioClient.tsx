@@ -59,7 +59,7 @@ const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {
   "Platos de fondo": { from: "#f97316", to: "#ef4444" },
   "Postres": { from: "#f472b6", to: "#a855f7" },
   "Bebidas": { from: "#facc15", to: "#f59e0b" },
-  "Sopas": { from: "#4ade80", to: "#14b8a6" },
+  "Sopas": { from: "#4ade80", to: "#2dd4bf" },
 };
 
 const DIFICULTAD_LABELS: Record<string, { label: string; icon: string }> = {
@@ -119,7 +119,7 @@ function RecetaCard({
 
   const colors = receta.colorFrom && receta.colorTo
     ? { from: receta.colorFrom, to: receta.colorTo }
-    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#0f766e", to: "#1b4332" };
+    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#00B4A6", to: "#007A72" };
 
   const dif = DIFICULTAD_LABELS[receta.dificultad || ""] || null;
   // Variable aspect ratio based on category
@@ -210,7 +210,7 @@ function RecetaCard({
         {/* Card body */}
         <div className="p-5">
           <Link href={`/recetas/${receta.id}`}>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight group-hover:text-[#0f766e] dark:group-hover:text-[#14b8a6] transition-colors">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight group-hover:text-[#00B4A6] dark:group-hover:text-[#2dd4bf] transition-colors">
               {receta.emoji} {receta.nombre}
             </h3>
           </Link>
@@ -225,7 +225,7 @@ function RecetaCard({
             <span className="text-sm text-gray-500 dark:text-gray-400">
               {receta.ingredientes.length} ingredientes
             </span>
-            <span className="text-lg font-extrabold text-[#0f766e] dark:text-[#14b8a6]">
+            <span className="text-lg font-extrabold text-[#00B4A6] dark:text-[#2dd4bf]">
               S/ {receta.totalIngredientes.toFixed(2)}
             </span>
           </div>
@@ -237,7 +237,7 @@ function RecetaCard({
               e.stopPropagation();
               onAddAll(receta);
             }}
-            className="w-full mt-4 py-3 rounded-xl bg-[#0f766e] hover:bg-[#0d5f58] active:scale-[0.98] text-white text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#0f766e]/20 hover:shadow-xl hover:shadow-[#0f766e]/30"
+            className="w-full mt-4 py-3 rounded-xl bg-[#00B4A6] hover:bg-[#009690] active:scale-[0.98] text-white text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#00B4A6]/20 hover:shadow-xl hover:shadow-[#00B4A6]/30"
           >
             <ShoppingCart className="h-4 w-4" />
             Comprar ingredientes
@@ -394,7 +394,7 @@ export default function RecetarioClient() {
         {/* Background */}
         <div
           className="absolute inset-0"
-          style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 70%, #1b4332 100%)" }}
+          style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 70%, #007A72 100%)" }}
         />
         {/* Pattern overlay */}
         <div
@@ -496,7 +496,7 @@ export default function RecetarioClient() {
                   className={cn(
                     "px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 flex items-center gap-1.5",
                     catFilter === cat.id
-                      ? "bg-[#0f766e] text-white shadow-lg shadow-[#0f766e]/20 scale-105"
+                      ? "bg-[#00B4A6] text-white shadow-lg shadow-[#00B4A6]/20 scale-105"
                       : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                   )}
                 >
@@ -516,7 +516,7 @@ export default function RecetarioClient() {
                   onClick={() => setViewMode("grid")}
                   className={cn(
                     "p-2 transition-colors",
-                    viewMode === "grid" ? "bg-[#0f766e] text-white" : "text-gray-400 hover:text-gray-600"
+                    viewMode === "grid" ? "bg-[#00B4A6] text-white" : "text-gray-400 hover:text-gray-600"
                   )}
                   aria-label="Vista de galeria"
                 >
@@ -526,7 +526,7 @@ export default function RecetarioClient() {
                   onClick={() => setViewMode("list")}
                   className={cn(
                     "p-2 transition-colors",
-                    viewMode === "list" ? "bg-[#0f766e] text-white" : "text-gray-400 hover:text-gray-600"
+                    viewMode === "list" ? "bg-[#00B4A6] text-white" : "text-gray-400 hover:text-gray-600"
                   )}
                   aria-label="Vista de lista"
                 >
@@ -570,7 +570,7 @@ export default function RecetarioClient() {
             </p>
             <button
               onClick={handleRetry}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0f766e] text-white font-bold hover:bg-[#0d5f58] transition-colors shadow-lg"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00B4A6] text-white font-bold hover:bg-[#009690] transition-colors shadow-lg"
             >
               <Sparkles className="h-4 w-4" />
               Reintentar
@@ -591,7 +591,7 @@ export default function RecetarioClient() {
             </p>
             <button
               onClick={() => { setSearch(""); setCatFilter("todas"); }}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0f766e] text-white font-bold hover:bg-[#0d5f58] transition-colors shadow-lg"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00B4A6] text-white font-bold hover:bg-[#009690] transition-colors shadow-lg"
             >
               <Sparkles className="h-4 w-4" />
               Ver todas las recetas
@@ -633,7 +633,7 @@ export default function RecetarioClient() {
             </h2>
             <div className="flex items-stretch gap-4 overflow-x-auto pb-4 scrollbar-hide">
               {Object.entries(categoryCounts).map(([cat, count]) => {
-                const colors = CATEGORIA_GRADIENTS[cat] || { from: "#0f766e", to: "#1b4332" };
+                const colors = CATEGORIA_GRADIENTS[cat] || { from: "#00B4A6", to: "#007A72" };
                 const catEntry = CATEGORIAS.find(c => c.label === cat);
                 const emoji = catEntry?.emoji || "\uD83C\uDF7D\uFE0F";
                 return (
@@ -673,12 +673,12 @@ export default function RecetarioClient() {
               value={suggestion}
               onChange={e => setSuggestion(e.target.value)}
               onKeyDown={e => e.key === "Enter" && handleSuggestion()}
-              className="flex-1 h-12 px-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 transition-all"
+              className="flex-1 h-12 px-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 transition-all"
             />
             <button
               onClick={handleSuggestion}
               disabled={!suggestion.trim()}
-              className="h-12 px-6 rounded-xl bg-[#0f766e] text-white font-bold text-sm hover:bg-[#0d5f58] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-lg shadow-[#0f766e]/20"
+              className="h-12 px-6 rounded-xl bg-[#00B4A6] text-white font-bold text-sm hover:bg-[#009690] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-lg shadow-[#00B4A6]/20"
             >
               <Send className="h-4 w-4" />
               Sugerir
@@ -698,7 +698,7 @@ export default function RecetarioClient() {
           </p>
           <Link
             href="/tienda"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#0f766e] text-white font-bold text-lg hover:bg-[#0d5f58] transition-all shadow-xl shadow-[#0f766e]/20 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#00B4A6] text-white font-bold text-lg hover:bg-[#009690] transition-all shadow-xl shadow-[#00B4A6]/20 active:scale-[0.98]"
           >
             Ver tienda <ArrowRight className="h-5 w-5" />
           </Link>
@@ -722,7 +722,7 @@ function RecetaListItem({
   const inView = useInView(cardRef);
   const colors = receta.colorFrom && receta.colorTo
     ? { from: receta.colorFrom, to: receta.colorTo }
-    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#0f766e", to: "#1b4332" };
+    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#00B4A6", to: "#007A72" };
 
   return (
     <motion.div
@@ -747,7 +747,7 @@ function RecetaListItem({
         {/* Content */}
         <div className="flex-1 py-4 pr-4 flex flex-col justify-center min-w-0">
           <Link href={`/recetas/${receta.id}`}>
-            <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-[#0f766e] dark:group-hover:text-[#14b8a6] transition-colors truncate">
+            <h3 className="font-bold text-gray-900 dark:text-white group-hover:text-[#00B4A6] dark:group-hover:text-[#2dd4bf] transition-colors truncate">
               {receta.emoji} {receta.nombre}
             </h3>
           </Link>
@@ -763,7 +763,7 @@ function RecetaListItem({
               </span>
             )}
             <span>{receta.ingredientes.length} ingredientes</span>
-            <span className="font-bold text-[#0f766e] dark:text-[#14b8a6]">
+            <span className="font-bold text-[#00B4A6] dark:text-[#2dd4bf]">
               S/ {receta.totalIngredientes.toFixed(2)}
             </span>
           </div>
@@ -773,7 +773,7 @@ function RecetaListItem({
         <div className="flex-shrink-0 flex items-center pr-4">
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onAddAll(receta); }}
-            className="h-10 w-10 rounded-xl bg-[#0f766e] hover:bg-[#0d5f58] text-white flex items-center justify-center transition-colors shadow-md"
+            className="h-10 w-10 rounded-xl bg-[#00B4A6] hover:bg-[#009690] text-white flex items-center justify-center transition-colors shadow-md"
             aria-label={`Comprar ingredientes de ${receta.nombre}`}
           >
             <ShoppingCart className="h-4 w-4" />

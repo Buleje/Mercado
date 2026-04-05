@@ -65,7 +65,7 @@ export default function OrderConfirmModal() {
     try { localStorage.removeItem("bsm-last-order"); } catch { /* ignore */ }
     closeConfirmModal();
     const name = customer?.name ?? "Cliente";
-    const loc = customer?.location ?? "Pucallpa";
+    const loc = customer?.location ?? "";
     setTimeout(() => openReviewModal(name, loc), 500);
   };
 
@@ -108,7 +108,7 @@ export default function OrderConfirmModal() {
           >
             <div className="pointer-events-auto w-full max-w-sm bg-white dark:bg-background rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-label="Confirmar recepción">
               {/* Header strip */}
-              <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(90deg, #0d5f58, #0f766e, #0d5f58)" }}>
+              <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(90deg, #009690, #00B4A6, #009690)" }}>
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                     <Clock className="h-5 w-5 text-white" />

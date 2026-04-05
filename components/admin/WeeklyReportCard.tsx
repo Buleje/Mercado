@@ -98,9 +98,9 @@ export default function WeeklyReportCard() {
     setError(null);
     try {
       const [dashRes, salesRes, expRes] = await Promise.all([
-        fetch("/api/daily-report").then(r => r.json()).catch(() => null),
-        fetch("/api/sales").then(r => r.json()).catch(() => []),
-        fetch("/api/expenses/summary").then(r => r.json()).catch(() => null),
+        fetch("/api/daily-report").then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch("/api/sales").then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch("/api/expenses/summary").then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
 
       const { monday, sunday } = getWeekRange();
@@ -258,7 +258,7 @@ export default function WeeklyReportCard() {
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
       {/* Header */}
-      <div className="bg-[#0f766e] px-5 py-4 flex items-center justify-between">
+      <div className="bg-[#00B4A6] px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText className="h-5 w-5 text-white" />
           <span className="text-white font-semibold text-sm">Reporte Semanal</span>
@@ -277,7 +277,7 @@ export default function WeeklyReportCard() {
       <div className="p-5">
         {loading ? (
           <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
+            <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
           </div>
         ) : error ? (
           <p className="text-sm text-red-500 dark:text-red-400 text-center py-6">{error}</p>
@@ -294,7 +294,7 @@ export default function WeeklyReportCard() {
               </div>
               <div className="rounded-lg bg-gray-50 dark:bg-gray-800 p-3 text-center">
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Margen</p>
-                <p className="text-base font-bold text-[#0f766e] dark:text-emerald-400">
+                <p className="text-base font-bold text-[#00B4A6] dark:text-emerald-400">
                   {data.margin.toFixed(1)}%
                 </p>
               </div>
@@ -316,7 +316,7 @@ export default function WeeklyReportCard() {
                   return (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
                       <div
-                        className="w-full rounded-t-sm bg-[#0f766e] dark:bg-emerald-600 min-h-[2px] transition-all"
+                        className="w-full rounded-t-sm bg-[#00B4A6] dark:bg-emerald-600 min-h-[2px] transition-all"
                         style={{ height: `${Math.max(pct, 2)}%` }}
                         title={fmt(d.total)}
                       />
@@ -361,7 +361,7 @@ export default function WeeklyReportCard() {
               disabled={generatingPdf}
               className={cn(
                 "w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                "bg-[#0f766e] hover:bg-[#245a41] text-white",
+                "bg-[#00B4A6] hover:bg-[#245a41] text-white",
                 "disabled:opacity-60 disabled:cursor-not-allowed"
               )}
             >

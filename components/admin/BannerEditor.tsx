@@ -29,7 +29,7 @@ const SEED: Banner[] = [
     title:    "Ofertas de la semana",
     subtitle: "Ahorra hasta 30% en abarrotes seleccionados",
     imageUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&q=80",
-    bgColor:  "#0f766e",
+    bgColor:  "#00B4A6",
     link:     "/tienda",
     active:   true,
   },
@@ -49,13 +49,13 @@ function saveBanners(banners: Banner[]) {
 
 // ── Empty form ────────────────────────────────────────────────────────────────
 
-const PRESET_COLORS = ["#0f766e", "#f97316", "#264653", "#e76f51", "#2a9d8f", "#e9c46a", "#1d3557", "#457b9d"];
+const PRESET_COLORS = ["#00B4A6", "#f97316", "#264653", "#e76f51", "#2a9d8f", "#e9c46a", "#1d3557", "#457b9d"];
 
 const emptyForm = (): FormState => ({
   title:    "",
   subtitle: "",
   imageUrl: "",
-  bgColor:  "#0f766e",
+  bgColor:  "#00B4A6",
   link:     "",
 });
 
@@ -67,7 +67,7 @@ function BannerPreview({ banner }: { banner: Banner }) {
   return (
     <div
       className="relative rounded-xl overflow-hidden aspect-[3/1]"
-      style={{ backgroundColor: banner.bgColor || "#0f766e" }}
+      style={{ backgroundColor: banner.bgColor || "#00B4A6" }}
     >
       {banner.imageUrl && !imgError ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -133,7 +133,7 @@ function BannerForm({
         onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
         placeholder={placeholder}
         className={cn(
-          "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40",
+          "w-full px-3 py-2 rounded-xl border bg-white dark:bg-card text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40",
           errors[field] ? "border-red-400 dark:border-red-500" : "border-gray-200 dark:border-card-border"
         )}
       />
@@ -170,7 +170,7 @@ function BannerForm({
           ))}
           <input
             type="color"
-            value={form.bgColor || "#0f766e"}
+            value={form.bgColor || "#00B4A6"}
             onChange={e => setForm(f => ({ ...f, bgColor: e.target.value }))}
             className="w-7 h-7 rounded-lg cursor-pointer border-0 p-0"
             title="Color personalizado"
@@ -197,7 +197,7 @@ function BannerForm({
         </button>
         <button
           onClick={handleSave}
-          className="px-4 py-2 rounded-xl text-sm font-medium bg-[#0f766e] text-white hover:bg-[#245a41] transition-colors"
+          className="px-4 py-2 rounded-xl text-sm font-medium bg-[#00B4A6] text-white hover:bg-[#245a41] transition-colors"
         >
           Guardar banner
         </button>
@@ -287,7 +287,7 @@ export default function BannerEditor() {
             "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors",
             creating
               ? "bg-gray-100 text-gray-400 dark:bg-gray-800 cursor-not-allowed"
-              : "bg-[#0f766e] text-white hover:bg-[#245a41]"
+              : "bg-[#00B4A6] text-white hover:bg-[#245a41]"
           )}
         >
           <Plus className="w-4 h-4" />
@@ -324,7 +324,7 @@ export default function BannerEditor() {
           <div key={banner.id}>
             {editing?.id === banner.id ? (
               <BannerForm
-                initial={{ title: banner.title, subtitle: banner.subtitle, imageUrl: banner.imageUrl, bgColor: banner.bgColor || "#0f766e", link: banner.link }}
+                initial={{ title: banner.title, subtitle: banner.subtitle, imageUrl: banner.imageUrl, bgColor: banner.bgColor || "#00B4A6", link: banner.link }}
                 onSave={handleEdit}
                 onCancel={() => setEditing(null)}
               />
@@ -338,7 +338,7 @@ export default function BannerEditor() {
                 className={cn(
                   "bg-white dark:bg-card border rounded-2xl overflow-hidden shadow-sm transition-all cursor-grab active:cursor-grabbing",
                   dragging === banner.id ? "opacity-50 scale-[0.98]" : "",
-                  dragOver === banner.id && dragging !== banner.id ? "border-[#0f766e] ring-2 ring-[#0f766e]/30" : "border-gray-200 dark:border-card-border"
+                  dragOver === banner.id && dragging !== banner.id ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/30" : "border-gray-200 dark:border-card-border"
                 )}
               >
                 {/* Banner mini preview */}
@@ -362,7 +362,7 @@ export default function BannerEditor() {
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
                       banner.active
-                        ? "bg-[#0f766e]/10 text-[#0f766e] dark:text-[#4a9e78]"
+                        ? "bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#4a9e78]"
                         : "bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500",
                       !banner.active && activeCount >= MAX_ACTIVE ? "cursor-not-allowed opacity-50" : "cursor-pointer"
                     )}
@@ -374,7 +374,7 @@ export default function BannerEditor() {
                   <button
                     onClick={() => { setEditing(banner); setCreating(false); }}
                     title="Editar"
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-[#0f766e] dark:hover:text-[#4a9e78] hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-[#00B4A6] dark:hover:text-[#4a9e78] hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, useCallback, useMemo, KeyboardEvent } from "react";
 import { Send, Clock, BarChart3, Lightbulb, Search } from "lucide-react";
@@ -369,7 +369,7 @@ function MiniBarChart({ data }: { data: { label: string; value: number }[] }) {
         return (
           <div key={d.label} className="flex flex-col items-center gap-0.5 flex-1 min-w-0">
             <div
-              className="w-full rounded-t bg-[#0f766e]/70 dark:bg-[#14b8a6]/50 transition-all duration-500"
+              className="w-full rounded-t bg-[#00B4A6]/70 dark:bg-[#2dd4bf]/50 transition-all duration-500"
               style={{ height: h }}
               title={`${d.label}: ${d.value}`}
             />
@@ -478,14 +478,14 @@ export default function AINaturalQueryEngine({ data }: Props) {
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKey}
           placeholder="Ej: cuanto vendi esta semana?"
-          className="flex-1 text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30 focus:border-[#0f766e]"
+          className="flex-1 text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6]"
         />
         <button
           onClick={handleSubmit}
           disabled={!query.trim()}
           className={cn(
-            "px-3 py-2 rounded-lg bg-[#0f766e] text-white transition-colors",
-            !query.trim() ? "opacity-40 cursor-not-allowed" : "hover:bg-[#0d5f58]"
+            "px-3 py-2 rounded-lg bg-[#00B4A6] text-white transition-colors",
+            !query.trim() ? "opacity-40 cursor-not-allowed" : "hover:bg-[#009690]"
           )}
         >
           <Send className="w-4 h-4" />
@@ -503,7 +503,7 @@ export default function AINaturalQueryEngine({ data }: Props) {
             <button
               key={s}
               onClick={() => { setQuery(s); inputRef.current?.focus(); }}
-              className="text-xs px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#0f766e]/50 hover:text-[#0f766e] dark:hover:text-[#14b8a6] transition-colors"
+              className="text-xs px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[#00B4A6]/50 hover:text-[#00B4A6] dark:hover:text-[#2dd4bf] transition-colors"
             >
               {s}
             </button>

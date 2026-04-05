@@ -11,7 +11,7 @@ type Suggestion = "Subir" | "Bajar" | "OK" | "Sin datos";
 
 interface PricingResult {
   id: string;
-  productId: string;
+  productId: number;
   name: string;
   myPrice: number;
   avgPrice: number | null;
@@ -29,12 +29,22 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const productId = searchParams.get("productId");
 
-    // Obtener los productos del tenant actual
+    // Find the store for this tenant
+    const myStore = await prisma.store.findFirst({
+      where: { tenantId: auth.tenantId },
+      select: { id: true },
+    });
+
+    if (!myStore) {
+      return NextResponse.json({ products: [] });
+    }
+
+    // Obtener los productos del tenant actual via storeId
     const myProducts = await prisma.storeProduct.findMany({
       where: {
-        tenantId: auth.tenantId,
+        storeId: myStore.id,
         isActive: true,
-        ...(productId ? { productId } : {}),
+        ...(productId ? { productId: Number(productId) } : {}),
       },
       include: {
         product: { select: { id: true, name: true } },
@@ -45,14 +55,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ products: [] });
     }
 
-    // Para cada producto del tenant, buscar precios de OTROS tenants
+    // Para cada producto del tenant, buscar precios de OTROS stores
     const settled = await Promise.allSettled(
       myProducts.map(async (sp): Promise<PricingResult> => {
         const competitors = await prisma.storeProduct.findMany({
           where: {
             productId: sp.productId,
             isActive: true,
-            NOT: { tenantId: auth.tenantId },
+            NOT: { storeId: myStore.id },
           },
           select: { retailPrice: true },
         });

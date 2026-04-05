@@ -13,6 +13,13 @@ import {
   getContextoFecha,
 } from "@/lib/ai-business-snapshot";
 import { z } from "zod";
+import { processSafeInput, buildInjectionGuard, detectPromptInjection, moderateLLMOutput } from "@/lib/ai-safety";
+import { fetchGroqWithRetry } from "@/lib/groq-fetch";
+import { checkTokenBudget, recordTokenUsage } from "@/lib/ai-usage-tracker";
+import { recordAIFailure, recordAISuccess } from "@/lib/ai-failure-monitor";
+import { getOrCreateConversation, loadConversationHistory, saveMessage } from "@/lib/ai-conversation-memory";
+import { getPromptVariant, recordVariantUsage } from "@/lib/ai-ab-testing";
+import { evaluateResponse } from "@/lib/ai-quality-evaluator";
 
 // ── Zod schema ──────────────────────────────────────────────────────────────
 
@@ -116,7 +123,30 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { message, context, history } = parsed.data;
+  const { context } = parsed.data;
+  let { history } = parsed.data;
+
+  // ── Multi-turn memory: load conversation history if no explicit history ───
+  let activeConversationId: string | undefined;
+  if (history.length === 0) {
+    activeConversationId = await getOrCreateConversation(auth.tenantId, auth.username, "coach");
+    const savedHistory = await loadConversationHistory(activeConversationId);
+    if (savedHistory.length > 0) {
+      history = savedHistory;
+    }
+  }
+
+  // ── Prompt injection protection ─────────────────────────────────────────────
+  const safetyCheck = processSafeInput(parsed.data.message);
+  if (!safetyCheck.safe) {
+    logger.warn("[ai-coach] Prompt injection blocked", { user: auth.username });
+    return NextResponse.json({ response: safetyCheck.reason, mode: "blocked" as const });
+  }
+  const message = safetyCheck.input;
+  const injectionCheck = detectPromptInjection(message);
+  if (injectionCheck.severity === "medium") {
+    logger.warn("[ai-coach] Possible injection attempt", { user: auth.username, pattern: injectionCheck.matchedPattern });
+  }
 
   // Build snapshot
   const snapshot = await generateBusinessSnapshot(auth.tenantId);
@@ -163,10 +193,25 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // ── Token budget check ──────────────────────────────────────────────────
+  const budget = checkTokenBudget(auth.tenantId);
+  if (!budget.allowed) {
+    return NextResponse.json({
+      response: budget.warning,
+      mode: "budget-exceeded" as const,
+      usage: { percentUsed: budget.percentUsed, limit: budget.limit },
+      snapshot: snapshot.metrics,
+    });
+  }
+
   // ── Build messages for Groq (same pattern as ai-assistant/route.ts) ───────
 
+  // ── A/B testing: select prompt variant ───────────────────────────────────
+  const abVariant = getPromptVariant("coach-tone", auth.tenantId);
+  const abModifier = abVariant ? `\n\nINSTRUCCIÓN ADICIONAL: ${abVariant.promptModifier}` : "";
+
   const messages = [
-    { role: "system" as const, content: systemPrompt },
+    { role: "system" as const, content: buildInjectionGuard() + "\n\n" + systemPrompt + abModifier },
     ...history.slice(-8).map((m) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
@@ -175,24 +220,17 @@ export async function POST(req: NextRequest) {
   ];
 
   try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages,
-        temperature: 0.6,
-        max_tokens: 1500,
-        stream: true,
-      }),
-    });
+    const res = await fetchGroqWithRetry(apiKey, {
+      model: "llama-3.3-70b-versatile",
+      messages,
+      temperature: 0.6,
+      max_tokens: 1500,
+      stream: true,
+    }, "ai-coach");
 
     if (!res.ok) {
-      const errText = await res.text();
-      console.error("[ai-coach] Groq API error:", res.status, errText);
+      console.error("[ai-coach] Groq API error:", res.error);
+      recordAIFailure("ai-coach", res.error ?? "unknown");
       return NextResponse.json({
         response: generateFallbackResponse(snapshot.metrics, fecha, temporada, feriadoStr),
         mode: "rule-based" as const,
@@ -200,7 +238,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ── Streaming response (same pattern as ai-assistant/route.ts) ──────────
+    // ── Streaming response ──────────────────────────────────────────────────
 
     if (res.body) {
       const encoder = new TextEncoder();
@@ -258,20 +296,46 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Non-streaming fallback ──────────────────────────────────────────────
-    const data = await res.json();
-    const reply =
-      data.choices?.[0]?.message?.content ?? "No pude generar una respuesta.";
+    const data = res.data!;
+    const rawReply =
+      (data.choices as { message: { content: string } }[])?.[0]?.message?.content ?? "No pude generar una respuesta.";
+
+    const moderation = moderateLLMOutput(rawReply);
+    if (!moderation.safe) {
+      logger.warn("[ai-coach] Output moderation triggered", { violations: moderation.violations });
+    }
+
+    logger.info("[ai-coach] Token usage", { usage: res.usage, attempts: res.attempts });
+    recordAISuccess("ai-coach");
+    recordTokenUsage(auth.tenantId, res.usage?.totalTokens ?? 0);
+    if (abVariant) recordVariantUsage("coach-tone", abVariant.id, { tokensUsed: res.usage?.totalTokens ?? 0 });
+
+    // ── Auto quality evaluation ────────────────────────────────────────────
+    const qualityScore = evaluateResponse(message, moderation.output, "coach");
+
+    // ── Save to conversation memory (fire-and-forget) ─────────────────────
+    if (activeConversationId) {
+      saveMessage(activeConversationId, "user", message).catch(() => {});
+      saveMessage(activeConversationId, "assistant", moderation.output, {
+        mode: `coach-${context}`,
+        tokensUsed: res.usage?.totalTokens ?? 0,
+      }).catch(() => {});
+    }
 
     return NextResponse.json({
-      response: reply,
+      response: moderation.output,
       mode: "ai" as const,
+      conversationId: activeConversationId,
+      abVariant: abVariant?.id ?? null,
+      tokensUsed: res.usage?.totalTokens ?? 0,
+      budgetWarning: budget.warning,
+      qualityScore: qualityScore.overall,
       snapshot: snapshot.metrics,
     });
   } catch (err) {
-    console.error(
-      "[ai-coach] Fetch error:",
-      err instanceof Error ? err.message : String(err)
-    );
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("[ai-coach] Fetch error:", errMsg);
+    recordAIFailure("ai-coach", errMsg);
     return NextResponse.json({
       response: generateFallbackResponse(snapshot.metrics, fecha, temporada, feriadoStr),
       mode: "rule-based" as const,

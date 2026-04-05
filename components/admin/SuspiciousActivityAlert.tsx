@@ -247,7 +247,7 @@ export default function SuspiciousActivityAlert() {
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => setExpandedAlert(expandedAlert === alert.id ? null : alert.id)}
-                      className="text-xs text-[#0f766e] hover:underline"
+                      className="text-xs text-[#00B4A6] hover:underline"
                     >
                       {expandedAlert === alert.id ? "Ocultar" : "Ver"}
                     </button>

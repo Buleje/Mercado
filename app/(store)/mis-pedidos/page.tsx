@@ -444,7 +444,7 @@ export default function MisPedidosPage() {
       {/* ── Hero header — matches site gradient ──────────────────── */}
       <div
         className="pt-32 sm:pt-36 pb-10 sm:pb-14"
-        style={{ background: "linear-gradient(135deg, #0d5f58 0%, #0f766e 50%, #0d9488 100%)" }}
+        style={{ background: "linear-gradient(135deg, #009690 0%, #00B4A6 50%, #33C4B8 100%)" }}
       >
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-3 mb-6">
@@ -456,7 +456,7 @@ export default function MisPedidosPage() {
             </Link>
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">Mis Pedidos</h1>
-              <p className="text-xs text-white/60 mt-0.5">Buleje · Pucallpa</p>
+              <p className="text-xs text-white/60 mt-0.5">Buleje</p>
             </div>
             {identified && safeOrders.length > 0 && (
               <div className="text-right shrink-0 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/15">
@@ -590,7 +590,7 @@ export default function MisPedidosPage() {
             {/* Bottom CTA — encourage more purchases */}
             <div className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border shadow-sm p-5 text-center space-y-3">
               <p className="text-sm font-bold text-foreground">¿Necesitas algo más?</p>
-              <p className="text-xs text-muted">Delivery rápido en Pucallpa · Paga con Yape o efectivo</p>
+              <p className="text-xs text-muted">Delivery rápido · Paga con Yape o efectivo</p>
               <div className="flex gap-2 justify-center">
                 <Link
                   href="/tienda"

@@ -162,7 +162,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
-              background: "linear-gradient(135deg, #0f766e 0%, #3d8b68 40%, #f97316 100%)",
+              background: "linear-gradient(135deg, #00B4A6 0%, #3d8b68 40%, #f97316 100%)",
             }}
           />
 
@@ -229,7 +229,7 @@ export default function UpgradeBanner({ moduleId, moduleName, onDismiss }: Upgra
             {/* Boton principal */}
             <Link
               href="/pricing"
-              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-[#0f766e] font-bold text-base shadow-lg hover:shadow-xl hover:bg-white/95 active:scale-[0.98] transition-all mb-3"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-white text-[#00B4A6] font-bold text-base shadow-lg hover:shadow-xl hover:bg-white/95 active:scale-[0.98] transition-all mb-3"
             >
               Ver planes
               <ArrowRight className="h-4 w-4" />

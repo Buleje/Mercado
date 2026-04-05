@@ -126,8 +126,8 @@ export default function BulkWeightCalculator() {
               className={cn(
                 "rounded-lg border px-3 py-1.5 text-xs font-medium transition",
                 product === p.name
-                  ? "border-[#0f766e] bg-[#0f766e] text-white"
-                  : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#0f766e]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  ? "border-[#00B4A6] bg-[#00B4A6] text-white"
+                  : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#00B4A6]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
               )}
             >
               {p.name}
@@ -148,7 +148,7 @@ export default function BulkWeightCalculator() {
               value={product}
               onChange={(e) => setProduct(e.target.value)}
               placeholder="Nombre del producto"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
           <div>
@@ -164,7 +164,7 @@ export default function BulkWeightCalculator() {
                 placeholder="0.000"
                 step="0.001"
                 min="0"
-                className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               />
             </div>
           </div>
@@ -179,20 +179,20 @@ export default function BulkWeightCalculator() {
               placeholder="0.00"
               step="0.10"
               min="0"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
         </div>
 
         {/* Result */}
-        <div className="mt-5 flex items-center justify-between rounded-xl bg-[#0f766e]/10 px-5 py-4 dark:bg-[#0f766e]/20">
+        <div className="mt-5 flex items-center justify-between rounded-xl bg-[#00B4A6]/10 px-5 py-4 dark:bg-[#00B4A6]/20">
           <div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {w > 0 && ppkg > 0
                 ? `${w.toFixed(3)} kg × ${fmt(ppkg)}/kg`
                 : "Ingresa peso y precio"}
             </p>
-            <p className="text-3xl font-bold text-[#0f766e]">{fmt(total)}</p>
+            <p className="text-3xl font-bold text-[#00B4A6]">{fmt(total)}</p>
           </div>
           <button
             onClick={handleAddToCart}
@@ -214,7 +214,7 @@ export default function BulkWeightCalculator() {
               Pesajes del dia
             </h3>
           </div>
-          <span className="rounded-full bg-[#0f766e]/10 px-3 py-1 text-sm font-bold text-[#0f766e]">
+          <span className="rounded-full bg-[#00B4A6]/10 px-3 py-1 text-sm font-bold text-[#00B4A6]">
             Total: {fmt(todayTotal)}
           </span>
         </div>
@@ -242,7 +242,7 @@ export default function BulkWeightCalculator() {
                     })}
                   </p>
                 </div>
-                <span className="font-bold text-[#0f766e]">{fmt(e.total)}</span>
+                <span className="font-bold text-[#00B4A6]">{fmt(e.total)}</span>
                 <button
                   onClick={() => removeEntry(e.id)}
                   className="ml-2 text-gray-300 hover:text-red-400 dark:text-gray-600"

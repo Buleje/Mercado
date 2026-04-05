@@ -6,7 +6,6 @@ import {
   useEffect,
   useState,
   useCallback,
-  startTransition,
   type ReactNode,
 } from "react";
 
@@ -46,85 +45,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
   const [resolved, setResolved] = useState<"light" | "dark">("light");
 
-  // Hydrate from localStorage after mount to avoid SSR mismatch
+  // Always force light mode — dark mode toggle is only in Settings module
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const t = stored && ["light", "dark", "system", "auto", "auto-schedule"].includes(stored) ? stored : "light";
-    startTransition(() => {
-      setThemeState(t);
-      setResolved(
-        t === "system" ? getSystemTheme() :
-        t === "auto" ? getTimeBasedTheme() :
-        t === "auto-schedule" ? getScheduleBasedTheme() :
-        t
-      );
-    });
+    document.documentElement.classList.remove("dark");
   }, []);
 
-  // Resolve and apply
-  useEffect(() => {
-    const isMobile = window.innerWidth < 640;
-
-    const apply = () => {
-      // Force light mode on mobile/small screens
-      const r = isMobile
-        ? "light"
-        : theme === "system"
-          ? getSystemTheme()
-          : theme === "auto"
-            ? getTimeBasedTheme()
-            : theme === "auto-schedule"
-              ? getScheduleBasedTheme()
-              : theme;
-      setResolved(r);
-      document.documentElement.classList.toggle("dark", r === "dark");
-    };
-
-    apply();
-
-    // Listen for system preference changes
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => {
-      if (theme === "system") apply();
-    };
-    mq.addEventListener("change", handler);
-
-    // Listen for resize — if user rotates phone or resizes browser
-    const resizeHandler = () => {
-      const nowMobile = window.innerWidth < 640;
-      if (nowMobile) {
-        setResolved("light");
-        document.documentElement.classList.remove("dark");
-      } else {
-        apply();
-      }
-    };
-    window.addEventListener("resize", resizeHandler);
-
-    // Auto-mode timers — verificar cada 60 segundos si cambió el horario
-    let autoInterval: ReturnType<typeof setInterval> | null = null;
-    if (theme === "auto" || theme === "auto-schedule") {
-      autoInterval = setInterval(apply, 60_000);
-    }
-
-    return () => {
-      mq.removeEventListener("change", handler);
-      window.removeEventListener("resize", resizeHandler);
-      if (autoInterval) clearInterval(autoInterval);
-    };
-  }, [theme]);
-
-  const setTheme = useCallback((t: Theme) => {
-    setThemeState(t);
-    localStorage.setItem(STORAGE_KEY, t);
+  const setTheme = useCallback((_t: Theme) => {
+    // no-op: theme is locked to light
   }, []);
 
   const toggle = useCallback(() => {
-    // Ciclo: light → dark → auto-schedule → light
-    if (theme === "light") setTheme("dark");
-    else if (theme === "dark") setTheme("auto-schedule");
-    else setTheme("light");
-  }, [theme, setTheme]);
+    // no-op: theme is locked to light
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, resolved, setTheme, toggle }}>

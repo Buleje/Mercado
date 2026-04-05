@@ -37,6 +37,10 @@ export type { ScopedLogger, ScopedCache } from "./context";
 export { orchestrator } from "./orchestrator";
 export type { SubmitTaskInput, HistoryOptions } from "./orchestrator";
 
+// ── Tool definitions (LLM function calling) ──────────────────────────────────
+export { ALL_AGENT_TOOLS, resolveToolCall, getToolsByDomain } from "./tool-definitions";
+export type { ToolDefinition, ToolMapping } from "./tool-definitions";
+
 // ── Lazy agent registration ───────────────────────────────────────────────────
 
 let registered = false;

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ShoppingCart, X, ArrowRight } from "lucide-react";
 import { m, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/cart-context";
+import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
 
 // 30 minutes before we consider cart "abandoned"
 const IDLE_MS = 30 * 60 * 1000;
@@ -12,6 +13,7 @@ const DISMISS_COOLDOWN_MS = 4 * 60 * 60 * 1000;
 
 export default function AbandonedCartRecovery() {
   const { total, openCheckout } = useCart();
+  const slug = useTenantSlug();
   const [visible, setVisible] = useState(false);
   const [savedTotal, setSavedTotal] = useState(0);
 
@@ -19,16 +21,16 @@ export default function AbandonedCartRecovery() {
     // Wait 2s for cart context to hydrate from localStorage, then check
     const t = setTimeout(() => {
       try {
-        const ts = localStorage.getItem("bsm-cart-ts");
+        const ts = localStorage.getItem(tenantKey(slug, "cart-ts"));
         if (!ts) return;
 
         const age = Date.now() - parseInt(ts, 10);
         if (age < IDLE_MS) return; // abandoned less than 30 min ago
 
-        const dismissed = localStorage.getItem("bsm-cart-dismissed");
+        const dismissed = localStorage.getItem(tenantKey(slug, "cart-dismissed"));
         if (dismissed && Date.now() - parseInt(dismissed, 10) < DISMISS_COOLDOWN_MS) return;
 
-        const cartStr = localStorage.getItem("bsm-cart");
+        const cartStr = localStorage.getItem(tenantKey(slug, "cart"));
         if (!cartStr) return;
         const cartItems: { price: number; quantity: number }[] = JSON.parse(cartStr);
         if (!Array.isArray(cartItems) || cartItems.length === 0) return;
@@ -46,10 +48,10 @@ export default function AbandonedCartRecovery() {
       } catch { /* ignore */ }
     }, 2000);
     return () => clearTimeout(t);
-  }, []);
+  }, [slug]);
 
   const dismiss = () => {
-    localStorage.setItem("bsm-cart-dismissed", Date.now().toString());
+    localStorage.setItem(tenantKey(slug, "cart-dismissed"), Date.now().toString());
     setVisible(false);
   };
 

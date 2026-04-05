@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
@@ -611,7 +611,7 @@ export default function AIActionPlan({ data }: { data: BusinessData }) {
             className={cn(
               "flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-all",
               focusMode
-                ? "bg-[#0f766e] text-white shadow-sm"
+                ? "bg-[#00B4A6] text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             )}
             title="Modo enfoque: muestra solo las tareas más importantes"
@@ -648,17 +648,17 @@ export default function AIActionPlan({ data }: { data: BusinessData }) {
       </div>
 
       {/* Time slot + time estimate */}
-      <div className="flex items-center gap-2 mb-3 px-2.5 py-1.5 rounded-lg bg-[#0f766e]/10 dark:bg-[#0f766e]/20 border border-[#0f766e]/20 dark:border-[#0f766e]/30">
+      <div className="flex items-center gap-2 mb-3 px-2.5 py-1.5 rounded-lg bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 border border-[#00B4A6]/20 dark:border-[#00B4A6]/30">
         <span className="text-sm">{timeSlot.icon}</span>
         <div className="flex-1">
-          <span className="text-xs font-medium text-[#0f766e] dark:text-[#14b8a6]">
+          <span className="text-xs font-medium text-[#00B4A6] dark:text-[#2dd4bf]">
             {timeSlot.label}
           </span>
-          <span className="text-[10px] text-[#0f766e]/70 dark:text-[#14b8a6]/70 ml-1.5">
+          <span className="text-[10px] text-[#00B4A6]/70 dark:text-[#2dd4bf]/70 ml-1.5">
             {timeSlot.description}
           </span>
         </div>
-        <div className="flex items-center gap-1 text-xs text-[#0f766e] dark:text-[#14b8a6]">
+        <div className="flex items-center gap-1 text-xs text-[#00B4A6] dark:text-[#2dd4bf]">
           <Timer className="w-3 h-3" />
           ~{totalEstimatedTime}min pendiente
         </div>
@@ -670,7 +670,7 @@ export default function AIActionPlan({ data }: { data: BusinessData }) {
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {doneCount} de {totalCount} tareas · {recDoneCount}/{recurring.length} recurrentes
           </span>
-          <span className="text-xs font-semibold text-[#0f766e] dark:text-[#14b8a6]">
+          <span className="text-xs font-semibold text-[#00B4A6] dark:text-[#2dd4bf]">
             {pctDone.toFixed(0)}%
           </span>
         </div>
@@ -678,7 +678,7 @@ export default function AIActionPlan({ data }: { data: BusinessData }) {
           <div
             className={cn(
               "h-full rounded-full transition-all duration-500",
-              pctDone === 100 ? "bg-gradient-to-r from-[#0f766e] to-emerald-400" : "bg-[#0f766e]"
+              pctDone === 100 ? "bg-gradient-to-r from-[#00B4A6] to-emerald-400" : "bg-[#00B4A6]"
             )}
             style={{ width: `${pctDone}%` }}
           />
@@ -849,7 +849,7 @@ function TaskRow({
         title={task.done ? "Marcar como pendiente" : "Marcar como hecho"}
       >
         {task.done ? (
-          <CheckCircle2 className="w-5 h-5 text-[#0f766e] dark:text-[#14b8a6]" />
+          <CheckCircle2 className="w-5 h-5 text-[#00B4A6] dark:text-[#2dd4bf]" />
         ) : (
           <Circle className="w-5 h-5 text-gray-300 dark:text-gray-600 hover:text-gray-400" />
         )}

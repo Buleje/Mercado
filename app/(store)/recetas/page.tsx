@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Recetario Peruano — Buleje",
     description:
-      "Cocina rico con ingredientes de tu bodega favorita en Pucallpa. Recetas paso a paso con compra directa de ingredientes.",
+      "Cocina rico con ingredientes de tu bodega favorita. Recetas paso a paso con compra directa de ingredientes.",
     type: "website",
     locale: "es_PE",
     url: "https://www.buleje.pe/recetas",

@@ -61,9 +61,15 @@ function loadOrCreateDeals(allProducts: Product[], discount: number) {
   if (savedDate === today) {
     try {
       const saved = JSON.parse(localStorage.getItem(DEALS_KEY) || "[]");
-      if (saved.length > 0) return saved;
+      // Validate that ALL saved deals still exist in current products
+      const currentIds = new Set(allProducts.map(p => p.id));
+      const validDeals = saved.filter((d: Product) => currentIds.has(d.id));
+      if (validDeals.length > 0) return validDeals;
     } catch {}
   }
+  // Clear stale localStorage and create fresh deals from current products
+  localStorage.removeItem(DEALS_KEY);
+  localStorage.removeItem(DEALS_DATE_KEY);
   const deals = pickDeals(allProducts, discount);
   localStorage.setItem(DEALS_KEY, JSON.stringify(deals));
   localStorage.setItem(DEALS_DATE_KEY, today);
@@ -94,39 +100,8 @@ export default function FlashDeals() {
     return () => clearInterval(t);
   }, [endTime]);
 
-  // Skeleton mientras carga
-  if (isLoading) {
-    return (
-      <section className="py-10 sm:py-14 bg-orange-50/70 dark:bg-surface">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-            <div className="space-y-2">
-              <div className="h-9 w-48 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-              <div className="h-4 w-64 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-            </div>
-            <div className="flex gap-2">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-12 w-12 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border animate-pulse">
-                <div className="aspect-square bg-gray-200 dark:bg-gray-700" />
-                <div className="p-3 space-y-2">
-                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (deals.length === 0) return null;
+  // No render while loading or if no deals — prevents blank gaps
+  if (isLoading || deals.length === 0) return null;
 
   /* JSON-LD Offer schema for flash deals */
   const flashOffersSchema = {
@@ -140,7 +115,7 @@ export default function FlashDeals() {
       priceCurrency: "PEN",
       availability: "https://schema.org/InStock",
       priceValidUntil: endTime.toISOString().split("T")[0],
-      eligibleRegion: { "@type": "Place", name: "Pucallpa, Ucayali, Perú" },
+      eligibleRegion: { "@type": "Place", name: "Ucayali, Perú" },
     })),
   };
 
@@ -204,9 +179,11 @@ function DealCard({ deal, qty, onAdd, onDec, onInc }: { deal: Product & { origin
   return (
     <div className="group relative bg-white dark:bg-card rounded-xl overflow-hidden border border-gray-100 dark:border-card-border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
       {/* Discount badge */}
-      <div className="absolute top-1.5 left-1.5 z-10 bg-red-500 text-white rounded px-1.5 py-0.5 text-[10px] font-extrabold">
-        -{deal.discount}%
-      </div>
+      {deal.discount > 0 && (
+        <div className="absolute top-1.5 left-1.5 z-10 bg-red-500 text-white rounded px-1.5 py-0.5 text-[10px] font-extrabold">
+          -{deal.discount}%
+        </div>
+      )}
 
       {/* Image */}
       <div className="relative aspect-square bg-gray-50 dark:bg-surface overflow-hidden">

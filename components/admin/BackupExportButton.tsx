@@ -97,7 +97,7 @@ export default function BackupExportButton() {
               ? "bg-red-600 text-white"
               : status === "downloading"
                 ? "bg-gray-400 text-white cursor-not-allowed"
-                : "bg-[#2d6a4f] hover:bg-[#245a42] text-white dark:bg-[#2d6a4f] dark:hover:bg-[#1f4d38]"
+                : "bg-[#00B4A6] hover:bg-[#009690] text-white dark:bg-[#00B4A6] dark:hover:bg-[#1f4d38]"
         )}
       >
         {status === "downloading" && (

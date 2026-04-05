@@ -61,7 +61,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
                         <span className="font-semibold text-gray-800 dark:text-foreground ml-2">{fmt(s.total)}</span>
                       </div>
                       <div className="h-1.5 bg-gray-100 dark:bg-accent rounded-full overflow-hidden">
-                        <div className="h-full rounded-full" style={{width:`${(s.total/mx)*100}%`,background:"#0f766e"}} />
+                        <div className="h-full rounded-full" style={{width:`${(s.total/mx)*100}%`,background:"#00B4A6"}} />
                       </div>
                     </div>
                   );

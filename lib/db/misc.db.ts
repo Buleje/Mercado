@@ -65,6 +65,7 @@ export type DbProduct = {
   stockMin?: number;
   stockMax?: number;
   active: boolean;
+  tenantId?: string;
 };
 
 export type DbOrderItem = {
@@ -257,7 +258,7 @@ export type DbSupplier = {
   createdAt: string;
 };
 
-export type PurchaseStatus = "pendiente" | "recibido" | "parcial" | "cancelado";
+export type PurchaseStatus = "pendiente" | "recibido" | "parcial" | "cancelado" | "auto_generated";
 
 export type DbPurchaseItem = {
   productId: number;

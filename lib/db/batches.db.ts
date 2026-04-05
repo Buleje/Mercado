@@ -307,9 +307,9 @@ export const BatchesDB = {
     if (input.costUnit !== undefined) data.costUnit = input.costUnit;
     if (input.notes !== undefined) data.notes = input.notes;
 
-    const row = await prisma.batch.update({
-      where: { id },
-      data,
+    await prisma.batch.updateMany({ where: { id, tenantId }, data });
+    const row = await prisma.batch.findFirst({
+      where: { id, tenantId },
       include: { product: { select: { id: true, name: true } } },
     });
 
@@ -319,6 +319,7 @@ export const BatchesDB = {
       propagateExpiresAt(input.productId).catch(() => {});
     }
 
+    if (!row) return null;
     return mapBatch(row);
   },
 
@@ -330,13 +331,17 @@ export const BatchesDB = {
     const existing = await prisma.batch.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
 
-    const row = await prisma.batch.update({
-      where: { id },
+    await prisma.batch.updateMany({
+      where: { id, tenantId },
       data: { quantity: Math.max(0, newQuantity) },
+    });
+    const row = await prisma.batch.findFirst({
+      where: { id, tenantId },
     });
 
     propagateExpiresAt(existing.productId).catch(() => {});
 
+    if (!row) return null;
     return mapBatch(row);
   },
 
@@ -348,7 +353,7 @@ export const BatchesDB = {
     const existing = await prisma.batch.findFirst({ where: { id, tenantId } });
     if (!existing) return false;
 
-    await prisma.batch.delete({ where: { id } });
+    await prisma.batch.deleteMany({ where: { id, tenantId } });
 
     propagateExpiresAt(existing.productId).catch(() => {});
 

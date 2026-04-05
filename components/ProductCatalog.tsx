@@ -255,6 +255,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
   const [showPriceFilter, setShowPriceFilter] = useState(false);
   const [filterOnSale, setFilterOnSale] = useState(false);
   const [filterAvailable, setFilterAvailable] = useState(false);
+  const [filterOutOfStock, setFilterOutOfStock] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<LiveProduct | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -440,7 +441,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
   // Reset to first page whenever search term or filters change
   useEffect(() => {
     startTransition(() => setSearchPage(1));
-  }, [search, sort, priceRange, filterOnSale, filterAvailable]);
+  }, [search, sort, priceRange, filterOnSale, filterAvailable, filterOutOfStock]);
 
   // Debounced search term to avoid running fuzzy scoring on every keystroke
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -463,7 +464,8 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
       )
         .filter(p => p.price >= priceRange[0] && p.price <= priceRange[1])
         .filter(p => !filterOnSale || (p.badge && /\d+%|oferta|promo|sale/i.test(p.badge)))
-        .filter(p => !filterAvailable || p.stock === undefined || p.stock > 0),
+        .filter(p => !filterAvailable || p.stock === undefined || p.stock > 0)
+        .filter(p => !filterOutOfStock || (p.stock != null && p.stock <= 0)),
       sort
     );
     // Push out-of-stock products to the end
@@ -475,7 +477,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
       return 0;
     });
     return sorted;
-  }, [searchTerm, productList, priceRange, filterOnSale, filterAvailable, sort]);
+  }, [searchTerm, productList, priceRange, filterOnSale, filterAvailable, filterOutOfStock, sort]);
 
   const handleQuickView = useCallback((p: LiveProduct) => setQuickViewProduct(p), []);
 
@@ -492,11 +494,11 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
         {/* Section Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
-            Abarrotes y <span className="text-primary">Productos</span> en Pucallpa
+            Abarrotes y <span className="text-primary">Productos</span> para ti
           </h2>
           <p className="mt-4 text-lg text-muted max-w-2xl mx-auto">
             Bebidas, golosinas, carne, pollo, productos de limpieza y más. Compra online
-            con delivery en Pucallpa. Paga con Yape o efectivo.
+            con delivery a domicilio. Paga con Yape o efectivo.
           </p>
         </div>
 
@@ -593,7 +595,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               <span className="sm:hidden">🏷️</span>
             </button>
             <button
-              onClick={() => setFilterAvailable(v => !v)}
+              onClick={() => { setFilterAvailable(v => !v); if (!filterAvailable) setFilterOutOfStock(false); }}
               className={cn(
                 "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-sm whitespace-nowrap",
                 filterAvailable
@@ -603,6 +605,18 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             >
               <span className="hidden sm:inline">✅ Disponible</span>
               <span className="sm:hidden">✅</span>
+            </button>
+            <button
+              onClick={() => { setFilterOutOfStock(v => !v); if (!filterOutOfStock) setFilterAvailable(false); }}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-semibold transition-all shadow-sm whitespace-nowrap",
+                filterOutOfStock
+                  ? "border-gray-400 bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300"
+                  : "border-gray-200 dark:border-card-border bg-white dark:bg-card text-foreground hover:border-gray-400"
+              )}
+            >
+              <span className="hidden sm:inline">❌ Agotado</span>
+              <span className="sm:hidden">❌</span>
             </button>
             {/* U1: Grid/List toggle — enhanced with active indicator */}
             <div className="flex items-center bg-gray-100 dark:bg-accent rounded-xl p-0.5 shadow-sm relative">
@@ -653,7 +667,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               .price-range-slider input[type="range"]::-webkit-slider-thumb {
                 -webkit-appearance: none; appearance: none;
                 width: 18px; height: 18px; border-radius: 50%;
-                background: #0f766e; border: 3px solid #fff;
+                background: #00B4A6; border: 3px solid #fff;
                 box-shadow: 0 1px 6px rgba(0,0,0,0.2);
                 cursor: grab; pointer-events: all;
                 transition: transform 0.15s, box-shadow 0.15s;
@@ -664,7 +678,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               .price-range-slider input[type="range"]::-webkit-slider-thumb:active { cursor: grabbing; }
               .price-range-slider input[type="range"]::-moz-range-thumb {
                 width: 18px; height: 18px; border-radius: 50%;
-                background: #0f766e; border: 3px solid #fff;
+                background: #00B4A6; border: 3px solid #fff;
                 box-shadow: 0 1px 6px rgba(0,0,0,0.2);
                 cursor: grab; pointer-events: all;
               }
@@ -692,7 +706,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                   style={{
                     left: `${(priceRange[0] / maxPrice) * 100}%`,
                     right: `${100 - (priceRange[1] / maxPrice) * 100}%`,
-                    background: "linear-gradient(90deg, #f97316, #0f766e)",
+                    background: "linear-gradient(90deg, #f97316, #00B4A6)",
                   }}
                 />
                 <input
@@ -718,7 +732,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
         )}
 
         {/* Active filters bar */}
-        {(search || filterOnSale || filterAvailable || (priceRange[0] > 0 || priceRange[1] < maxPrice)) && (
+        {(search || filterOnSale || filterAvailable || filterOutOfStock || (priceRange[0] > 0 || priceRange[1] < maxPrice)) && (
           <div className="max-w-3xl mx-auto mb-3 flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold text-muted">Filtros activos:</span>
             {search && (
@@ -739,6 +753,12 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 <button onClick={() => setFilterAvailable(false)} className="ml-0.5"><X className="h-3 w-3" /></button>
               </span>
             )}
+            {filterOutOfStock && (
+              <span className="flex items-center gap-1 text-xs font-semibold bg-gray-100 dark:bg-gray-800/50 text-gray-600 dark:text-gray-300 px-2.5 py-1 rounded-full">
+                ❌ Agotado
+                <button onClick={() => setFilterOutOfStock(false)} className="ml-0.5"><X className="h-3 w-3" /></button>
+              </span>
+            )}
             {(priceRange[0] > 0 || priceRange[1] < maxPrice) && (
               <span className="flex items-center gap-1 text-xs font-semibold bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-full">
                 S/{priceRange[0]}–S/{priceRange[1]}
@@ -746,7 +766,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
               </span>
             )}
             <button
-              onClick={() => { setSearch(""); setFilterOnSale(false); setFilterAvailable(false); setPriceRange([0, maxPrice]); }}
+              onClick={() => { setSearch(""); setFilterOnSale(false); setFilterAvailable(false); setFilterOutOfStock(false); setPriceRange([0, maxPrice]); }}
               className="text-xs font-bold text-muted hover:text-foreground ml-auto underline underline-offset-2"
             >
               Limpiar todo
@@ -754,7 +774,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
           </div>
         )}
         {/* Product count bar — visible when filters are active (not in search mode) */}
-        {!searchTerm && (filterOnSale || filterAvailable || priceRange[0] > 0 || priceRange[1] < maxPrice) && (
+        {!searchTerm && (filterOnSale || filterAvailable || filterOutOfStock || priceRange[0] > 0 || priceRange[1] < maxPrice) && (
           <div className="max-w-3xl mx-auto mb-3 flex items-center gap-2">
             <span className="text-xs font-semibold text-muted">
               <span className="text-primary font-bold">{filteredProducts.length}</span>{" "}

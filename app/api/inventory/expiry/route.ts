@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { withDbRetry } from "@/lib/db-retry";
 
 // GET — Returns batches grouped by expiry urgency: expired, 7d, 30d
 export async function GET(req: NextRequest) {
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
     thirtyDays.setDate(thirtyDays.getDate() + 30);
 
     // Fetch all batches with quantity > 0 and expiryDate within 30 days or already expired
-    const batches = await prisma.batch.findMany({
+    const batches = await withDbRetry(() => prisma.batch.findMany({
       where: {
         tenantId,
         quantity: { gt: 0 },
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: { expiryDate: "asc" },
-    });
+    }));
 
     const expired: typeof batches = [];
     const expiresThisWeek: typeof batches = [];

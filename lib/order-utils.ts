@@ -1,4 +1,4 @@
-﻿import type { Customer } from "@/contexts/customer-context";
+import type { Customer } from "@/contexts/customer-context";
 import type { CartItem } from "@/contexts/cart-context";
 
 /** Minimal item shape required by order utilities — superset of CartItem without requiring category */
@@ -9,8 +9,8 @@ type _CartItemCompat = CartItem extends OrderItem ? true : false; // compile-tim
 
 // Theme colors
 const PC = {
-  primaryDark: "#0d5f58",
-  primary: "#0f766e",
+  primaryDark: "#009690",
+  primary: "#00B4A6",
   secondary: "#f97316",
   bgLight: "#F0FDF4",
   border: "#D1FAE5",

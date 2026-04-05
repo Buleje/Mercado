@@ -146,14 +146,21 @@ export function getWhatsAppMessage(order: OrderInfo): string | null {
  * Returns true if sent, false if no API configured, throws on error.
  */
 export async function sendWhatsAppNotification(order: OrderInfo): Promise<boolean> {
+  const message = getWhatsAppMessage(order);
+  if (!message || !order.customerPhone) return false;
+  return sendWhatsAppText(order.customerPhone, message);
+}
+
+/**
+ * Send a generic WhatsApp text message to any phone number.
+ * Returns true if sent, false if no API configured, throws on error.
+ */
+export async function sendWhatsAppText(phone: string, message: string): Promise<boolean> {
   const apiUrl = process.env.WHATSAPP_API_URL;
   const apiToken = process.env.WHATSAPP_API_TOKEN;
-  if (!apiUrl || !apiToken || !order.customerPhone) return false;
+  if (!apiUrl || !apiToken || !phone) return false;
 
-  const message = getWhatsAppMessage(order);
-  if (!message) return false;
-
-  const phone = formatPhone(order.customerPhone);
+  const formatted = formatPhone(phone);
   const res = await fetch(apiUrl, {
     method: "POST",
     headers: {
@@ -162,7 +169,7 @@ export async function sendWhatsAppNotification(order: OrderInfo): Promise<boolea
     },
     body: JSON.stringify({
       messaging_product: "whatsapp",
-      to: phone,
+      to: formatted,
       type: "text",
       text: { body: message },
     }),

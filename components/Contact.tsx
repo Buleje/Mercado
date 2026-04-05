@@ -74,7 +74,7 @@ export default function Contact() {
     {
       icon: MapPin,
       label: "Dirección",
-      value: "Jr. Ucayali 450, Pucallpa, Ucayali",
+      value: "Jr. Ucayali 450, Ucayali",
     },
     {
       icon: Phone,
@@ -106,7 +106,7 @@ export default function Contact() {
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
             Delivery de Abarrotes en{" "}
             <span className="text-primary relative">
-              Pucallpa
+              tu zona
               <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/30" viewBox="0 0 100 12" preserveAspectRatio="none">
                 <path d="M0 8 Q25 0 50 6 Q75 12 100 4" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
               </svg>
@@ -181,7 +181,7 @@ export default function Contact() {
             className={`rounded-2xl p-8 sm:p-10 text-white shadow-xl ${
               inView ? "animate-[fadeUp_0.5s_ease-out_0.3s_both]" : "opacity-0"
             }`}
-            style={{ background: "linear-gradient(135deg, #312e81, #0d5f58)" }}
+            style={{ background: "linear-gradient(135deg, #312e81, #009690)" }}
           >
             <h3 className="text-2xl sm:text-3xl font-extrabold mb-4">
               ¿Listo para pedir?

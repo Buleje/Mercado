@@ -114,7 +114,7 @@ export default function DeliveryNotificationSettings({ partner, onSaved }: Props
               <div
                 className={`w-10 h-6 rounded-full transition-colors duration-200 ${
                   config[opt.key]
-                    ? "bg-[#2d6a4f]"
+                    ? "bg-[#00B4A6]"
                     : "bg-gray-300 dark:bg-gray-600"
                 }`}
                 onClick={() => toggle(opt.key)}
@@ -153,7 +153,7 @@ export default function DeliveryNotificationSettings({ partner, onSaved }: Props
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full py-2 px-4 rounded-lg bg-[#2d6a4f] hover:bg-[#245a42] text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-2 px-4 rounded-lg bg-[#00B4A6] hover:bg-[#009690] text-white text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {saving ? "Guardando..." : "Guardar configuracion"}
       </button>

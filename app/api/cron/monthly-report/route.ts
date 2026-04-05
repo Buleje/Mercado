@@ -177,7 +177,7 @@ async function generatePdfBuffer(report: ReportData): Promise<Buffer> {
   const { default: autoTable } = await import("jspdf-autotable");
 
   const doc     = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const primary = [45, 106, 79] as [number, number, number];   // #2d6a4f
+  const primary = [45, 106, 79] as [number, number, number];   // #00B4A6
   const dark    = [30, 30, 30]  as [number, number, number];
 
   let y = 20;
@@ -329,19 +329,19 @@ async function sendReportEmail(
     subject: `Reporte mensual ${report.period} — ${report.tenantName}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;">
-        <div style="background:#2d6a4f;padding:20px 24px;border-radius:8px 8px 0 0;">
+        <div style="background:#00B4A6;padding:20px 24px;border-radius:8px 8px 0 0;">
           <h2 style="color:#fff;margin:0;">Reporte Mensual — ${report.period}</h2>
           <p style="color:#a8d5ba;margin:4px 0 0;">${report.tenantName}</p>
         </div>
         <div style="padding:20px 24px;border:1px solid #e0e0e0;border-top:none;border-radius:0 0 8px 8px;">
           <table style="width:100%;border-collapse:collapse;font-size:14px;">
             <tr><td style="padding:6px 0;color:#555;">Ingresos</td>
-                <td style="text-align:right;font-weight:bold;color:#2d6a4f;">${fmt(report.ingresos)}</td></tr>
+                <td style="text-align:right;font-weight:bold;color:#00B4A6;">${fmt(report.ingresos)}</td></tr>
             <tr><td style="padding:6px 0;color:#555;">Gastos</td>
                 <td style="text-align:right;font-weight:bold;color:#dc2626;">${fmt(report.gastos)}</td></tr>
             <tr style="border-top:1px solid #e0e0e0;">
                 <td style="padding:8px 0;font-weight:bold;">Utilidad</td>
-                <td style="text-align:right;font-weight:bold;color:#2d6a4f;font-size:16px;">${fmt(report.utilidad)}</td></tr>
+                <td style="text-align:right;font-weight:bold;color:#00B4A6;font-size:16px;">${fmt(report.utilidad)}</td></tr>
             <tr><td style="padding:4px 0;color:#555;">Margen</td>
                 <td style="text-align:right;">${report.margenPct.toFixed(1)}%</td></tr>
           </table>

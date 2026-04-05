@@ -7,16 +7,16 @@ import { AnnouncementBar, StatsCounter, Benefits, CTABanner, RecommendedProducts
 import type { SectionKey } from "@/components/admin/StorefrontEditor";
 
 export const metadata: Metadata = {
-  title: "Buleje — Abarrotes con Delivery en Pucallpa | Yape y Efectivo",
+  title: "Buleje — Abarrotes con Delivery | Yape y Efectivo",
   description:
-    "Compra abarrotes, bebidas, carnes, pollo, golosinas y productos de limpieza online en Pucallpa. Delivery rápido a domicilio. Paga con Yape o efectivo. +500 productos, precios de bodega.",
+    "Compra abarrotes, bebidas, carnes, pollo, golosinas y productos de limpieza online. Delivery rápido a domicilio. Paga con Yape o efectivo. +500 productos, precios de bodega.",
   alternates: {
     canonical: "https://www.buleje.pe",
   },
   openGraph: {
-    title: "Buleje — Abarrotes con Delivery en Pucallpa",
+    title: "Buleje — Abarrotes con Delivery",
     description:
-      "Tu bodega online en Pucallpa. +500 productos frescos con delivery rápido. Paga con Yape o efectivo.",
+      "Tu bodega online. +500 productos frescos con delivery rápido. Paga con Yape o efectivo.",
     url: "https://www.buleje.pe",
     type: "website",
     locale: "es_PE",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Buleje — Tienda de Abarrotes en Pucallpa con delivery a domicilio",
+        alt: "Buleje — Tienda de Abarrotes con delivery a domicilio",
       },
     ],
   },
@@ -40,18 +40,18 @@ import {
 
 // Landing page sections — optimized conversion flow
 const ProductsPreview     = dynamic(() => import("@/components/ProductsPreview"),    { ssr: true });
-const PopularCategories  = dynamic(() => import("@/components/PopularCategories"));
-const DailyDeal          = dynamic(() => import("@/components/DailyDeal"));
-const CombosSection      = dynamic(() => import("@/components/CombosSection"));
-const RecipeSuggestions  = dynamic(() => import("@/components/RecipeSuggestions"));
+const PopularCategories  = dynamic(() => import("@/components/PopularCategories"),  { loading: () => <SectionSkeleton /> });
+const DailyDeal          = dynamic(() => import("@/components/DailyDeal"),          { loading: () => <CardSkeleton /> });
+const CombosSection      = dynamic(() => import("@/components/CombosSection"),      { loading: () => <SectionSkeleton /> });
+const RecipeSuggestions  = dynamic(() => import("@/components/RecipeSuggestions"),  { loading: () => <SectionSkeleton /> });
 const HowItWorks         = dynamic(() => import("@/components/HowItWorks"),         { ssr: true });
 const Testimonials       = dynamic(() => import("@/components/Testimonials"),       { ssr: true });
 const BrandStory         = dynamic(() => import("@/components/BrandStory"),         { ssr: true });
 const StoreHours         = dynamic(() => import("@/components/StoreHours"),         { ssr: true });
 const FAQ                = dynamic(() => import("@/components/FAQ"),                { ssr: true });
-const ReferralBanner     = dynamic(() => import("@/components/ReferralBanner"));
+const ReferralBanner     = dynamic(() => import("@/components/ReferralBanner"),     { loading: () => <CardSkeleton /> });
 const PWAInstallBanner   = dynamic(() => import("@/components/PWAInstallBanner"));
-const DeliveryZoneMap    = dynamic(() => import("@/components/DeliveryZoneMap"));
+const DeliveryZoneMap    = dynamic(() => import("@/components/DeliveryZoneMap"),    { loading: () => <CardSkeleton /> });
 const Contact            = dynamic(() => import("@/components/Contact"),            { ssr: true });
 const Footer             = dynamic(() => import("@/components/Footer"),             { ssr: true });
 
@@ -63,7 +63,7 @@ const SECTION_MAP: Record<SectionKey, () => ReactNode> = {
   announcement: () => <AnnouncementBar />,
   hero: () => <Hero />,
   categories: () => (
-    <Suspense fallback={<LoadingSection />}>
+    <Suspense fallback={null}>
       <PopularCategories />
     </Suspense>
   ),
@@ -81,7 +81,7 @@ const SECTION_MAP: Record<SectionKey, () => ReactNode> = {
     </Suspense>
   ),
   combos: () => (
-    <Suspense fallback={<LoadingSection />}>
+    <Suspense fallback={null}>
       <CombosSection />
     </Suspense>
   ),
@@ -107,20 +107,30 @@ const SECTION_MAP: Record<SectionKey, () => ReactNode> = {
   ),
   delivery_map: () => (
     <Suspense fallback={<LoadingSection />}>
-      <section className="py-14 sm:py-20 bg-white dark:bg-card">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-8">
-            <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full mb-4">
-              Cobertura
+      <section className="py-16 sm:py-24 bg-white dark:bg-card relative overflow-hidden">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70vw] h-[30vw] bg-primary/3 rounded-full blur-[100px] pointer-events-none" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10 sm:mb-14">
+            <span className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary mb-3 bg-primary/8 rounded-full px-4 py-1.5">
+              🚚 Cobertura
             </span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground">
-              Llegamos a tu zona?
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-foreground">
+              ¿Llegamos a tu{" "}
+              <span className="text-primary relative">
+                zona
+                <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/30" viewBox="0 0 100 12" preserveAspectRatio="none">
+                  <path d="M0 8 Q25 0 50 6 Q75 12 100 4" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" />
+                </svg>
+              </span>
+              ?
             </h2>
-            <p className="text-muted mt-2 text-sm sm:text-base max-w-lg mx-auto">
-              Revisa nuestra zona de delivery en Pucallpa
+            <p className="text-muted mt-4 text-sm sm:text-base max-w-lg mx-auto">
+              Revisa nuestra zona de delivery y alrededores
             </p>
           </div>
-          <DeliveryZoneMap />
+          <div className="rounded-2xl overflow-hidden border border-gray-100 dark:border-card-border shadow-lg">
+            <DeliveryZoneMap />
+          </div>
         </div>
       </section>
     </Suspense>
@@ -180,6 +190,8 @@ export default async function Home() {
   return (
     <>
       <Header />
+      {/* Spacer for fixed header (announcement h-11 + header h-16/h-20) */}
+      <div className="h-[6.75rem] sm:h-[7.75rem]" />
       <main id="main-content">
         {/* Secciones dinámicas — en el orden del StorefrontEditor */}
         {orderedSections.map((key) => {
@@ -227,11 +239,15 @@ export default async function Home() {
   );
 }
 
-/* ── Loading States ── */
+/* ── Loading States — consistent skeleton design ── */
 function LoadingStats() {
   return (
-    <section className="py-12 sm:py-16 bg-surface">
+    <section className="py-16 sm:py-24 bg-surface">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-3 animate-pulse" />
+          <div className="h-10 w-56 bg-gray-200 dark:bg-gray-700 rounded-xl mx-auto mb-3 animate-pulse" />
+        </div>
         <StatsSkeleton />
       </div>
     </section>
@@ -240,8 +256,13 @@ function LoadingStats() {
 
 function LoadingProducts() {
   return (
-    <section className="py-20 sm:py-28 bg-white dark:bg-card">
+    <section className="py-20 sm:py-28 bg-surface">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-14">
+          <div className="h-5 w-28 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-3 animate-pulse" />
+          <div className="h-10 w-64 bg-gray-200 dark:bg-gray-700 rounded-xl mx-auto mb-3 animate-pulse" />
+          <div className="h-4 w-80 bg-gray-100 dark:bg-gray-800 rounded-lg mx-auto animate-pulse" />
+        </div>
         <SectionSkeleton />
       </div>
     </section>
@@ -252,7 +273,11 @@ function LoadingSection() {
   return (
     <section className="py-16 sm:py-20 bg-surface">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="space-y-8">
+        <div className="text-center mb-10">
+          <div className="h-5 w-28 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-3 animate-pulse" />
+          <div className="h-9 w-52 bg-gray-200 dark:bg-gray-700 rounded-xl mx-auto animate-pulse" />
+        </div>
+        <div className="space-y-6">
           <CardSkeleton />
           <CardSkeleton />
         </div>
@@ -263,8 +288,12 @@ function LoadingSection() {
 
 function LoadingTestimonials() {
   return (
-    <section className="py-20 sm:py-28 bg-white dark:bg-card">
+    <section className="py-20 sm:py-28 bg-primary/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-14">
+          <div className="h-5 w-36 bg-primary/10 rounded-full mx-auto mb-3 animate-pulse" />
+          <div className="h-10 w-72 bg-gray-200 dark:bg-gray-700 rounded-xl mx-auto animate-pulse" />
+        </div>
         <div className="grid md:grid-cols-3 gap-6">
           <TestimonialSkeleton />
           <TestimonialSkeleton />
@@ -279,6 +308,10 @@ function LoadingFAQ() {
   return (
     <section className="py-20 sm:py-28 bg-surface">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-10">
+          <div className="h-5 w-24 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-3 animate-pulse" />
+          <div className="h-9 w-64 bg-gray-200 dark:bg-gray-700 rounded-xl mx-auto animate-pulse" />
+        </div>
         <FAQSkeleton />
       </div>
     </section>

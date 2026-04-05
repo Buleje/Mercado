@@ -170,7 +170,7 @@ export default function CompetitorPriceTracker() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 rounded-xl bg-[#0f766e] text-white flex items-center justify-center shadow-sm">
+        <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm">
           <BarChart3 className="h-5 w-5" />
         </div>
         <div>
@@ -230,7 +230,7 @@ export default function CompetitorPriceTracker() {
         return (
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-4">
             <p className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3 flex items-center gap-1.5">
-              <TrendingUp className="h-3.5 w-3.5 text-[#0f766e]" />
+              <TrendingUp className="h-3.5 w-3.5 text-[#00B4A6]" />
               Sugerencia de Precio Inteligente
             </p>
             <div className="space-y-2">
@@ -262,7 +262,7 @@ export default function CompetitorPriceTracker() {
                     {s.status !== "alineado" && (
                       <button
                         onClick={() => updateMyPrice(s.productId, s.sugerido)}
-                        className="shrink-0 px-2 py-1 rounded-lg bg-[#0f766e] text-white text-[10px] font-bold hover:bg-[#245a41] transition-colors"
+                        className="shrink-0 px-2 py-1 rounded-lg bg-[#00B4A6] text-white text-[10px] font-bold hover:bg-[#245a41] transition-colors"
                       >
                         Ajustar
                       </button>
@@ -291,12 +291,12 @@ export default function CompetitorPriceTracker() {
             onChange={e => setNewCompetitor(e.target.value)}
             onKeyDown={e => e.key === "Enter" && addCompetitor()}
             placeholder='Ej: "Bodega Pérez", "Market Plaza"'
-            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           <button
             onClick={addCompetitor}
             disabled={!newCompetitor.trim()}
-            className="px-3 py-2 rounded-xl bg-[#0f766e] text-white text-xs font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50"
+            className="px-3 py-2 rounded-xl bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -324,7 +324,7 @@ export default function CompetitorPriceTracker() {
             value={newProduct}
             onChange={e => setNewProduct(e.target.value)}
             placeholder="Nombre del producto"
-            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+            className="flex-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           <input
             type="number"
@@ -332,12 +332,12 @@ export default function CompetitorPriceTracker() {
             onChange={e => setNewMyPrice(e.target.value)}
             placeholder="Mi precio"
             step="0.10"
-            className="w-24 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+            className="w-24 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
           <button
             onClick={addProduct}
             disabled={!newProduct.trim()}
-            className="px-3 py-2 rounded-xl bg-[#0f766e] text-white text-xs font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50"
+            className="px-3 py-2 rounded-xl bg-[#00B4A6] text-white text-xs font-bold hover:bg-[#245a41] transition-colors disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -353,7 +353,7 @@ export default function CompetitorPriceTracker() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar producto..."
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
           />
         </div>
       )}
@@ -365,7 +365,7 @@ export default function CompetitorPriceTracker() {
             <thead>
               <tr className="bg-gray-50 dark:bg-surface">
                 <th className="text-left px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Producto</th>
-                <th className="text-right px-3 py-2.5 text-xs font-bold text-[#0f766e] uppercase tracking-wider">Mi precio</th>
+                <th className="text-right px-3 py-2.5 text-xs font-bold text-[#00B4A6] uppercase tracking-wider">Mi precio</th>
                 {data.competitors.map(c => (
                   <th key={c.id} className="text-right px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{c.name}</th>
                 ))}
@@ -386,12 +386,12 @@ export default function CompetitorPriceTracker() {
                         onBlur={() => { updateMyPrice(product.productId, parseFloat(editValue) || 0); }}
                         onKeyDown={e => { if (e.key === "Enter") updateMyPrice(product.productId, parseFloat(editValue) || 0); }}
                         step="0.10"
-                        className="w-20 px-2 py-1 rounded-lg border border-[#0f766e] text-xs text-right bg-white dark:bg-card focus:outline-none text-gray-900 dark:text-white"
+                        className="w-20 px-2 py-1 rounded-lg border border-[#00B4A6] text-xs text-right bg-white dark:bg-card focus:outline-none text-gray-900 dark:text-white"
                       />
                     ) : (
                       <button
                         onClick={() => { setEditingCell({ productId: product.productId, competitorId: "my" }); setEditValue(String(product.myPrice)); }}
-                        className="text-xs font-bold text-[#0f766e] hover:underline"
+                        className="text-xs font-bold text-[#00B4A6] hover:underline"
                       >
                         S/{product.myPrice.toFixed(2)}
                       </button>

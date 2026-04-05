@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { TrendingUp, TrendingDown, Minus, MessageCircle, Send, Trash2, Target, Plus, Calendar, FileText, Copy, X, Share2 } from "lucide-react";
@@ -1012,7 +1012,7 @@ export default function AIPerformanceCoach({ data }: Props) {
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => askCoachAboutAlert(alert.text)}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-[#0f766e]/10 text-[#0f766e] dark:text-emerald-400 hover:bg-[#0f766e]/20 transition-colors"
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-[#00B4A6]/10 text-[#00B4A6] dark:text-emerald-400 hover:bg-[#00B4A6]/20 transition-colors"
                     title="Preguntar al coach"
                   >
                     💬
@@ -1292,7 +1292,7 @@ export default function AIPerformanceCoach({ data }: Props) {
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <MessageCircle className="w-4 h-4 text-[#0f766e]" />
+            <MessageCircle className="w-4 h-4 text-[#00B4A6]" />
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
               Preguntale al Coach
             </h3>
@@ -1300,7 +1300,7 @@ export default function AIPerformanceCoach({ data }: Props) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowHistory(v => !v)}
-              className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#0f766e] transition-colors"
+              className="flex items-center gap-1 text-xs text-gray-400 hover:text-[#00B4A6] transition-colors"
             >
               <FileText className="w-3 h-3" />
               Historial
@@ -1308,7 +1308,7 @@ export default function AIPerformanceCoach({ data }: Props) {
             {viewingHistoryId && (
               <button
                 onClick={startNewConversation}
-                className="flex items-center gap-1 text-xs font-bold text-[#0f766e] hover:text-[#0f766e]/80 transition-colors"
+                className="flex items-center gap-1 text-xs font-bold text-[#00B4A6] hover:text-[#00B4A6]/80 transition-colors"
               >
                 <Plus className="w-3 h-3" />
                 Nueva
@@ -1344,7 +1344,7 @@ export default function AIPerformanceCoach({ data }: Props) {
                     key={convo.id}
                     className={cn(
                       "flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-800 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors",
-                      viewingHistoryId === convo.id && "bg-[#0f766e]/5 dark:bg-[#0f766e]/10"
+                      viewingHistoryId === convo.id && "bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
                     )}
                   >
                     <button onClick={() => loadConversation(convo)} className="flex-1 text-left min-w-0">
@@ -1370,7 +1370,7 @@ export default function AIPerformanceCoach({ data }: Props) {
         {viewingHistoryId && (
           <div className="mb-2 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30">
             <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">Revisando anterior</span>
-            <button onClick={startNewConversation} className="text-xs font-bold text-[#0f766e] hover:underline ml-auto">Nueva</button>
+            <button onClick={startNewConversation} className="text-xs font-bold text-[#00B4A6] hover:underline ml-auto">Nueva</button>
           </div>
         )}
 
@@ -1383,7 +1383,7 @@ export default function AIPerformanceCoach({ data }: Props) {
                 className={cn(
                   "rounded-lg p-3 text-sm",
                   msg.role === "user"
-                    ? "bg-[#0f766e]/10 dark:bg-[#0f766e]/20 ml-8"
+                    ? "bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 ml-8"
                     : "bg-gray-50 dark:bg-gray-800/70 mr-4"
                 )}
               >
@@ -1414,7 +1414,7 @@ export default function AIPerformanceCoach({ data }: Props) {
                   key={q}
                   onClick={() => sendChatMessage(q)}
                   disabled={chatLoading}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-[#0f766e]/10 hover:border-[#0f766e]/30 hover:text-[#0f766e] dark:hover:text-emerald-400 transition-colors disabled:opacity-50"
+                  className="text-[11px] px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 text-gray-600 dark:text-gray-400 hover:bg-[#00B4A6]/10 hover:border-[#00B4A6]/30 hover:text-[#00B4A6] dark:hover:text-emerald-400 transition-colors disabled:opacity-50"
                 >
                   {q}
                 </button>
@@ -1432,12 +1432,12 @@ export default function AIPerformanceCoach({ data }: Props) {
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }}
             placeholder="¿Debo comprar mas arroz esta semana?"
             disabled={chatLoading || !!viewingHistoryId}
-            className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 disabled:opacity-50"
+            className="flex-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 disabled:opacity-50"
           />
           <button
             onClick={() => sendChatMessage()}
             disabled={chatLoading || !chatInput.trim() || !!viewingHistoryId}
-            className="flex items-center gap-1.5 rounded-lg bg-[#0f766e] hover:bg-[#0f766e]/90 text-white px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 rounded-lg bg-[#00B4A6] hover:bg-[#00B4A6]/90 text-white px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Send className="w-3.5 h-3.5" />
             {chatLoading ? "..." : "Preguntar"}
@@ -1456,7 +1456,7 @@ export default function AIPerformanceCoach({ data }: Props) {
           </div>
           <button
             onClick={() => setShowGoalForm((v) => !v)}
-            className="flex items-center gap-1 text-xs font-medium text-[#0f766e] hover:text-[#0f766e]/80 transition-colors"
+            className="flex items-center gap-1 text-xs font-medium text-[#00B4A6] hover:text-[#00B4A6]/80 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Nueva Meta
@@ -1501,7 +1501,7 @@ export default function AIPerformanceCoach({ data }: Props) {
             <div className="flex gap-2">
               <button
                 onClick={addGoal}
-                className="rounded-md bg-[#0f766e] text-white px-3 py-1.5 text-xs font-medium hover:bg-[#0f766e]/90 transition-colors"
+                className="rounded-md bg-[#00B4A6] text-white px-3 py-1.5 text-xs font-medium hover:bg-[#00B4A6]/90 transition-colors"
               >
                 Guardar
               </button>
@@ -1564,7 +1564,7 @@ export default function AIPerformanceCoach({ data }: Props) {
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#0f766e]" />
+            <Calendar className="w-4 h-4 text-[#00B4A6]" />
             <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
               Calendario Comercial
             </h3>
@@ -1657,7 +1657,7 @@ export default function AIPerformanceCoach({ data }: Props) {
             <div className="flex-1 overflow-y-auto p-4">
               {reportLoading && !reportContent ? (
                 <div className="flex items-center justify-center py-8">
-                  <div className="w-6 h-6 border-2 border-[#0f766e] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-6 h-6 border-2 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
                 <div

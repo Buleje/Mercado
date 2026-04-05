@@ -42,18 +42,18 @@ function inferZone(customer: Customer): string {
 }
 
 const ZONE_COLORS = [
-  "bg-[#0f766e]",
-  "bg-[#0d9488]",
-  "bg-[#14b8a6]",
+  "bg-[#00B4A6]",
+  "bg-[#33C4B8]",
+  "bg-[#2dd4bf]",
   "bg-[#74c69d]",
   "bg-[#95d5b2]",
   "bg-gray-400",
 ];
 
 const ZONE_TEXT_COLORS = [
-  "text-[#0f766e]",
-  "text-[#0d9488]",
-  "text-[#14b8a6]",
+  "text-[#00B4A6]",
+  "text-[#33C4B8]",
+  "text-[#2dd4bf]",
   "text-[#74c69d]",
   "text-[#95d5b2]",
   "text-gray-400",
@@ -113,9 +113,9 @@ export default function CustomerHeatmap() {
 
       {/* Insight banner */}
       {!loading && topZone && (
-        <div className="flex items-center gap-3 rounded-xl bg-[#0f766e]/10 px-4 py-3 dark:bg-[#0f766e]/20">
-          <TrendingUp className="h-5 w-5 shrink-0 text-[#0f766e]" />
-          <p className="text-sm font-medium text-[#0f766e] dark:text-emerald-400">
+        <div className="flex items-center gap-3 rounded-xl bg-[#00B4A6]/10 px-4 py-3 dark:bg-[#00B4A6]/20">
+          <TrendingUp className="h-5 w-5 shrink-0 text-[#00B4A6]" />
+          <p className="text-sm font-medium text-[#00B4A6] dark:text-emerald-400">
             El {topPct}% de tus clientes estan en {topZone.zone} ({topZone.count}{" "}
             clientes)
           </p>
@@ -125,19 +125,19 @@ export default function CustomerHeatmap() {
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-2xl font-bold text-[#0f766e]">{total}</p>
+          <p className="text-2xl font-bold text-[#00B4A6]">{total}</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Total clientes
           </p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-2xl font-bold text-[#0f766e]">
+          <p className="text-2xl font-bold text-[#00B4A6]">
             {zones.filter((z) => z.zone !== "Sin ubicacion").length}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">Zonas</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-          <p className="text-2xl font-bold text-[#0f766e]">
+          <p className="text-2xl font-bold text-[#00B4A6]">
             {zones.find((z) => z.zone === "Sin ubicacion")?.count ?? 0}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -148,7 +148,7 @@ export default function CustomerHeatmap() {
 
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0f766e]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
         </div>
       ) : error ? (
         <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/30 dark:bg-red-900/10">
@@ -190,7 +190,7 @@ export default function CustomerHeatmap() {
                           onClick={() =>
                             setExpandedZone(isExpanded ? null : z.zone)
                           }
-                          className="text-xs text-[#0f766e] underline-offset-2 hover:underline"
+                          className="text-xs text-[#00B4A6] underline-offset-2 hover:underline"
                         >
                           {isExpanded ? "Ocultar" : "Ver lista"}
                         </button>

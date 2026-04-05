@@ -19,13 +19,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Acerca de Nosotros — Buleje | Tu bodega de confianza en Pucallpa",
+  title: "Acerca de Nosotros — Buleje | Tu bodega de confianza",
   description:
-    "Buleje es una bodega familiar en Pucallpa que ofrece productos frescos, delivery rápido y precios justos. Conoce nuestra historia, horarios y cómo contactarnos.",
+    "Buleje es una bodega familiar que ofrece productos frescos, delivery rápido y precios justos. Conoce nuestra historia, horarios y cómo contactarnos.",
   openGraph: {
     title: "Acerca de Nosotros — Buleje",
     description:
-      "Bodega familiar en Pucallpa con productos frescos, delivery rápido y los mejores precios. Conoce nuestra historia.",
+      "Bodega familiar con productos frescos, delivery rápido y los mejores precios. Conoce nuestra historia.",
     type: "website",
     locale: "es_PE",
     url: "https://www.buleje.pe/about",
@@ -43,14 +43,14 @@ const porQueElegirnos = [
   {
     icon: Truck,
     title: "Delivery rápido",
-    desc: "Entregamos en menos de 30 minutos en toda nuestra zona de cobertura en Pucallpa.",
+    desc: "Entregamos en menos de 30 minutos en toda nuestra zona de cobertura.",
     color: "text-blue-600 dark:text-blue-400",
     bg: "bg-blue-50 dark:bg-blue-900/20",
   },
   {
     icon: DollarSign,
     title: "Precios justos",
-    desc: "Los mejores precios de Pucallpa. Compramos directo al proveedor para darte el mejor precio.",
+    desc: "Los mejores precios. Compramos directo al proveedor para darte el mejor precio.",
     color: "text-amber-600 dark:text-amber-400",
     bg: "bg-amber-50 dark:bg-amber-900/20",
   },
@@ -75,12 +75,12 @@ export default async function AboutPage() {
   }
 
   const businessName = (settings.businessName as string) || "Buleje";
-  const address = (settings.businessAddress as string) || "Pucallpa, Ucayali, Perú";
+  const address = (settings.businessAddress as string) || "Ucayali, Perú";
   const phone = (settings.businessPhone as string) || "";
   const email = (settings.businessEmail as string) || "";
   const storyText =
     (settings.storyText as string) ||
-    "Buleje nació de la necesidad de ofrecer productos frescos y de calidad a los vecinos de Pucallpa. Comenzamos como una pequeña tienda familiar y hoy atendemos a cientos de familias con el mismo cariño del primer día. Cada producto que ofrecemos es seleccionado cuidadosamente para garantizar frescura y el mejor precio para nuestros clientes.";
+    "Buleje nació de la necesidad de ofrecer productos frescos y de calidad a nuestros vecinos. Comenzamos como una pequeña tienda familiar y hoy atendemos a cientos de familias con el mismo cariño del primer día. Cada producto que ofrecemos es seleccionado cuidadosamente para garantizar frescura y el mejor precio para nuestros clientes.";
 
   const weekdayHours = (settings.weekdayHours as string) || "6:00am - 10:00pm";
   const weekendHours = (settings.weekendHours as string) || "7:00am - 10:00pm";
@@ -101,7 +101,7 @@ export default async function AboutPage() {
         <section
           className="relative overflow-hidden py-20 sm:py-28"
           style={{
-            background: "linear-gradient(135deg, #1b4332 0%, #0f766e 50%, #0d9488 100%)",
+            background: "linear-gradient(135deg, #007A72 0%, #00B4A6 50%, #33C4B8 100%)",
           }}
         >
           <div className="absolute inset-0 opacity-10" style={{
@@ -117,7 +117,7 @@ export default async function AboutPage() {
               {businessName}
             </h1>
             <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-8">
-              Desde siempre sirviendo a Pucallpa con productos frescos,
+              Desde siempre sirviendo a nuestros vecinos con productos frescos,
               precios justos y el cariño de una familia.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
@@ -340,7 +340,7 @@ export default async function AboutPage() {
             <ShoppingCart className="h-10 w-10 mx-auto mb-3 opacity-80" />
             <h2 className="text-2xl font-extrabold mb-2">Haz tu pedido ahora</h2>
             <p className="text-white/70 mb-6 text-sm">
-              Más de 500 productos con delivery en Pucallpa. Paga con Yape o efectivo.
+              Más de 500 productos con delivery. Paga con Yape o efectivo.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
               <Link

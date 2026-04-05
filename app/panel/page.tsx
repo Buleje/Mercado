@@ -189,7 +189,7 @@ export default function PanelPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* Header */}
-      <header className="bg-gradient-to-r from-[#0f766e] to-[#065f46] text-white">
+      <header className="bg-gradient-to-r from-[#00B4A6] to-[#065f46] text-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <div className="flex items-center gap-4 mb-4">
             <div className="h-14 w-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shadow-lg">

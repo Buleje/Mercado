@@ -4,6 +4,7 @@ import { z } from "zod";
 import { SuppliersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { withDbRetry } from "@/lib/db-retry";
 
 const SupplierSchema = z.object({
   name: z.string().min(1, "name required").max(200),
@@ -37,7 +38,8 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    return NextResponse.json(await SuppliersDB.getAll(auth.tenantId));
+    const data = await withDbRetry(() => SuppliersDB.getAll(auth.tenantId));
+    return NextResponse.json(data);
   } catch (e) {
     console.error("[suppliers] GET error:", e);
     return NextResponse.json({ error: "Database error" }, { status: 503 });

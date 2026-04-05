@@ -28,16 +28,16 @@ export default function About() {
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground leading-tight mb-6">
               Tu tienda virtual de
               <br />
-              <span className="text-primary">abarrotes en Pucallpa</span>
+              <span className="text-primary">abarrotes a tu puerta</span>
             </h2>
             <p className="text-lg text-foreground/70 leading-relaxed mb-6">
-              Desde 2011, Buleje ha sido el corazón del barrio en Pucallpa.
+              Desde 2011, Buleje ha sido el corazón del barrio.
               Comenzamos como un pequeño negocio familiar con la visión de
               ofrecer productos de primera calidad a precios accesibles, con delivery rápido
               y pago fácil por Yape o efectivo.
             </p>
             <p className="text-lg text-foreground/70 leading-relaxed mb-4">
-              Hoy somos una tienda de consumo masivo en Pucallpa con entrega a domicilio.
+              Hoy somos una tienda de consumo masivo con entrega a domicilio.
               Vendemos abarrotes, bebidas, golosinas, carne, pollo, productos de limpieza
               y artículos para el hogar. Seleccionamos cuidadosamente cada producto
               para que tú y tu familia disfruten siempre lo mejor. Compra desde casa,
@@ -45,7 +45,7 @@ export default function About() {
             </p>
             <p className="text-lg text-foreground/70 leading-relaxed mb-8">
               Nuestro compromiso: si recibes un producto en mal estado, te lo cambiamos
-              o devolvemos tu dinero. Trabajamos con proveedores locales de Pucallpa y Ucayali
+              o devolvemos tu dinero. Trabajamos con proveedores locales de Ucayali
               para garantizar frescura y los mejores precios de la zona.
             </p>
 
@@ -53,7 +53,7 @@ export default function About() {
               <div className="flex items-center gap-2 bg-muted rounded-full px-5 py-2.5">
                 <div className="h-2 w-2 rounded-full bg-primary" />
                 <span className="text-sm font-medium text-foreground">
-                  Delivery en Pucallpa
+                  Delivery a domicilio
                 </span>
               </div>
               <div className="flex items-center gap-2 bg-muted rounded-full px-5 py-2.5">
@@ -80,7 +80,7 @@ export default function About() {
               <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-2xl">
                 <Image
                   src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&h=600&fit=crop&q=80"
-                  alt="Interior de Buleje en Pucallpa con productos frescos y abarrotes"
+                  alt="Interior de Buleje con productos frescos y abarrotes"
                   width={800}
                   height={600}
                   loading="lazy"

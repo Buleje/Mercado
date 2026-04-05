@@ -39,7 +39,7 @@ const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {
   "Platos de fondo": { from: "#f97316", to: "#ef4444" },
   "Postres": { from: "#f472b6", to: "#a855f7" },
   "Bebidas": { from: "#facc15", to: "#f59e0b" },
-  "Sopas": { from: "#4ade80", to: "#14b8a6" },
+  "Sopas": { from: "#4ade80", to: "#2dd4bf" },
 };
 
 function getWeekSeed(): number {
@@ -95,7 +95,7 @@ export default function RecipeOfTheWeek() {
 
   const colors = receta.colorFrom && receta.colorTo
     ? { from: receta.colorFrom, to: receta.colorTo }
-    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#0f766e", to: "#1b4332" };
+    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#00B4A6", to: "#007A72" };
 
   return (
     <section className="py-10 sm:py-14">
@@ -184,7 +184,7 @@ export default function RecipeOfTheWeek() {
 
               {/* Price + actions */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-6">
-                <span className="text-2xl font-extrabold text-[#0f766e] dark:text-[#14b8a6]">
+                <span className="text-2xl font-extrabold text-[#00B4A6] dark:text-[#2dd4bf]">
                   S/ {receta.totalIngredientes.toFixed(2)}
                 </span>
                 <div className="flex gap-2">
@@ -196,9 +196,9 @@ export default function RecipeOfTheWeek() {
                   </Link>
                   <button
                     onClick={handleAddIngredients}
-                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0f766e] hover:bg-[#0d5f58] text-white font-bold text-sm transition-all shadow-lg shadow-[#0f766e]/20 active:scale-[0.98]"
+                    className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#00B4A6] hover:bg-[#009690] text-white font-bold text-sm transition-all shadow-lg shadow-[#00B4A6]/20 active:scale-[0.98]"
                   >
-                    <ShoppingCart className="h-4 w-4" />
+                    <ShoppingCart className="h-5 w-5" />
                     Comprar
                   </button>
                 </div>

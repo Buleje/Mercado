@@ -121,7 +121,7 @@ export default function LoanCalculator() {
               onChange={(e) => setPrincipal(e.target.value)}
               min="0"
               step="100"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
           <div>
@@ -135,7 +135,7 @@ export default function LoanCalculator() {
               min="0"
               max="200"
               step="0.5"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
           <div>
@@ -148,7 +148,7 @@ export default function LoanCalculator() {
               onChange={(e) => setMonths(e.target.value)}
               min="1"
               max="360"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
           <div>
@@ -161,7 +161,7 @@ export default function LoanCalculator() {
               onChange={(e) => setAvgMonthlySales(e.target.value)}
               placeholder="Opcional"
               min="0"
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#0f766e] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
         </div>
@@ -175,7 +175,7 @@ export default function LoanCalculator() {
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Cuota mensual
               </p>
-              <p className="mt-1 text-2xl font-bold text-[#0f766e]">
+              <p className="mt-1 text-2xl font-bold text-[#00B4A6]">
                 {fmt(monthlyPayment)}
               </p>
             </div>
@@ -183,7 +183,7 @@ export default function LoanCalculator() {
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Total a pagar
               </p>
-              <p className="mt-1 text-2xl font-bold text-[#0f766e]">
+              <p className="mt-1 text-2xl font-bold text-[#00B4A6]">
                 {fmt(totalPayment)}
               </p>
             </div>
@@ -248,7 +248,7 @@ export default function LoanCalculator() {
             <div className="h-6 overflow-hidden rounded-full">
               <div className="flex h-full">
                 <div
-                  className="flex items-center justify-center bg-[#0f766e] text-xs font-semibold text-white"
+                  className="flex items-center justify-center bg-[#00B4A6] text-xs font-semibold text-white"
                   style={{ width: `${principalPct}%` }}
                 >
                   {principalPct > 15 && `${principalPct.toFixed(0)}%`}
@@ -263,7 +263,7 @@ export default function LoanCalculator() {
             </div>
             <div className="mt-2 flex gap-4">
               <div className="flex items-center gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-[#0f766e]" />
+                <div className="h-3 w-3 rounded-full bg-[#00B4A6]" />
                 <span className="text-xs text-gray-600 dark:text-gray-400">
                   Capital ({fmt(p)})
                 </span>
@@ -281,7 +281,7 @@ export default function LoanCalculator() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowTable(!showTable)}
-              className="flex items-center gap-2 rounded-lg border border-[#0f766e] px-4 py-2 text-sm font-medium text-[#0f766e] transition hover:bg-[#0f766e]/5 dark:text-emerald-400"
+              className="flex items-center gap-2 rounded-lg border border-[#00B4A6] px-4 py-2 text-sm font-medium text-[#00B4A6] transition hover:bg-[#00B4A6]/5 dark:text-emerald-400"
             >
               <Calculator className="h-4 w-4" />
               {showTable ? "Ocultar tabla" : "Ver tabla de amortizacion"}
@@ -301,7 +301,7 @@ export default function LoanCalculator() {
             <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="bg-[#0f766e]/10 dark:bg-[#0f766e]/20">
+                  <tr className="bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20">
                     <th className="px-4 py-2.5 text-left font-semibold text-gray-700 dark:text-gray-300">
                       Mes
                     </th>
@@ -335,7 +335,7 @@ export default function LoanCalculator() {
                       <td className="px-4 py-2 text-right font-medium text-gray-800 dark:text-gray-200">
                         {fmt(row.payment)}
                       </td>
-                      <td className="px-4 py-2 text-right text-[#0f766e]">
+                      <td className="px-4 py-2 text-right text-[#00B4A6]">
                         {fmt(row.principal)}
                       </td>
                       <td className="px-4 py-2 text-right text-amber-600">

@@ -520,7 +520,7 @@ export default function InvoiceEmitter({
         <button
           onClick={handleEmitir}
           disabled={emitiendo || !clienteNombre.trim() || items.every(i => !i.producto.trim())}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0f766e] text-white text-sm font-bold hover:bg-[#0f766e]/90 transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#00B4A6]/90 transition-colors disabled:opacity-50"
         >
           {emitiendo ? (
             <><Loader2 className="h-4 w-4 animate-spin" /> Emitiendo...</>

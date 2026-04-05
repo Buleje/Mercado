@@ -218,7 +218,7 @@ function CategoryChart({
               <span className="text-[10px] text-gray-400 w-14 shrink-0">Real</span>
               <div className="flex-1 h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
                 <div
-                  className={cn("h-full rounded-full", isOver ? "bg-red-500" : isUnder ? "bg-emerald-500" : "bg-[#0f766e]")}
+                  className={cn("h-full rounded-full", isOver ? "bg-red-500" : isUnder ? "bg-emerald-500" : "bg-[#00B4A6]")}
                   style={{ width: `${Math.min((c.actual / max) * 100, 100)}%` }}
                 />
               </div>
@@ -231,7 +231,7 @@ function CategoryChart({
       })}
       <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-400">
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-blue-300 dark:bg-blue-700" /> Presupuestado</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[#0f766e]" /> Real (OK)</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[#00B4A6]" /> Real (OK)</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-red-500" /> Real (exceso)</span>
         <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-emerald-500" /> Real (ahorro)</span>
       </div>
@@ -393,7 +393,7 @@ export default function BudgetVsRealTab() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-[#0f766e]" />
+        <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
         <p className="text-sm text-gray-500 dark:text-muted">Cargando datos...</p>
       </div>
     );
@@ -406,7 +406,7 @@ export default function BudgetVsRealTab() {
         <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
         <button
           onClick={load}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0f766e] text-white text-sm font-semibold"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-semibold"
         >
           <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
@@ -445,7 +445,7 @@ export default function BudgetVsRealTab() {
               "meta-vs-real"
             )
           }
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0f766e] text-white text-sm font-bold hover:bg-[#0f766e]/90 transition-colors shadow-md shadow-[#0f766e]/20 min-h-[44px]"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#00B4A6]/90 transition-colors shadow-md shadow-[#00B4A6]/20 min-h-[44px]"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
@@ -454,7 +454,7 @@ export default function BudgetVsRealTab() {
       {/* ── 1. Configurador de metas mensuales ── */}
       <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
         <div className="flex items-center gap-2 mb-3">
-          <Target className="h-4 w-4 text-[#0f766e]" />
+          <Target className="h-4 w-4 text-[#00B4A6]" />
           <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">
             Mis metas de {monthName} {yearNum}
           </h3>
@@ -470,7 +470,7 @@ export default function BudgetVsRealTab() {
               value={formSalesGoal}
               onChange={(e) => setFormSalesGoal(e.target.value)}
               placeholder="Ej: 15000"
-              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#0f766e] transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#00B4A6] transition-colors min-h-[44px]"
             />
           </div>
           <div>
@@ -483,7 +483,7 @@ export default function BudgetVsRealTab() {
               value={formExpensesGoal}
               onChange={(e) => setFormExpensesGoal(e.target.value)}
               placeholder="Ej: 8000"
-              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#0f766e] transition-colors min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#00B4A6] transition-colors min-h-[44px]"
             />
           </div>
         </div>
@@ -493,7 +493,7 @@ export default function BudgetVsRealTab() {
             "mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all min-h-[44px]",
             savedFlash
               ? "bg-emerald-500 text-white"
-              : "bg-[#0f766e] text-white hover:bg-[#0f766e]/90"
+              : "bg-[#00B4A6] text-white hover:bg-[#00B4A6]/90"
           )}
         >
           <Save className="h-4 w-4" />
@@ -641,12 +641,12 @@ export default function BudgetVsRealTab() {
           placeholder="Buscar categoría..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#0f766e] transition-colors w-48 min-h-[44px]"
+          className="px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#00B4A6] transition-colors w-48 min-h-[44px]"
         />
         <select
           value={effectiveMonthFilter}
           onChange={(e) => setMonthFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#0f766e] min-h-[44px]"
+          className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#00B4A6] min-h-[44px]"
         >
           <option value="all">Todos los meses</option>
           {MONTHS.filter((m) => m !== "all").map((m) => (
@@ -656,7 +656,7 @@ export default function BudgetVsRealTab() {
         <select
           value={deptFilter}
           onChange={(e) => setDeptFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#0f766e] min-h-[44px]"
+          className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#00B4A6] min-h-[44px]"
         >
           <option value="all">Todos los dptos</option>
           {DEPARTMENTS.map((d) => (
@@ -678,7 +678,7 @@ export default function BudgetVsRealTab() {
               className={cn(
                 "px-3 py-2 text-sm font-semibold transition-colors min-h-[44px]",
                 alertFilter === val
-                  ? "bg-[#0f766e] text-white"
+                  ? "bg-[#00B4A6] text-white"
                   : "text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
               )}
             >

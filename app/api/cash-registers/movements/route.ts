@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
+import { withDbRetry } from "@/lib/db-retry";
 
 const CreateMovementSchema = z.object({
   cashRegisterId: z.string().min(1),
@@ -32,9 +33,9 @@ export async function POST(req: NextRequest) {
     const { cashRegisterId, type, amount, motivo, descripcion } = parsed.data;
 
     // Verify the cash register exists and belongs to tenant
-    const register = await prisma.cashRegister.findFirst({
+    const register = await withDbRetry(() => prisma.cashRegister.findFirst({
       where: { id: cashRegisterId, tenantId: auth.tenantId, status: "abierta" },
-    });
+    }));
 
     if (!register) {
       return NextResponse.json(
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     const description = [motivo, descripcion].filter(Boolean).join(" — ") || (type === "ingreso" ? "Ingreso manual" : "Egreso manual");
 
-    const movement = await prisma.cashMovement.create({
+    const movement = await withDbRetry(() => prisma.cashMovement.create({
       data: {
         cashRegisterId,
         type,
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
         method: "efectivo",
         description,
       },
-    });
+    }));
 
     logActivity(
       "Crear", "movimiento_caja",
@@ -83,20 +84,20 @@ export async function GET(req: NextRequest) {
       where.cashRegisterId = cashRegisterId;
     } else {
       // Find current open register
-      const openRegister = await prisma.cashRegister.findFirst({
+      const openRegister = await withDbRetry(() => prisma.cashRegister.findFirst({
         where: { tenantId: auth.tenantId, status: "abierta" },
-      });
+      }));
       if (!openRegister) {
         return NextResponse.json([]);
       }
       where.cashRegisterId = openRegister.id;
     }
 
-    const movements = await prisma.cashMovement.findMany({
+    const movements = await withDbRetry(() => prisma.cashMovement.findMany({
       where,
       orderBy: { createdAt: "desc" },
       take: 100,
-    });
+    }));
 
     return NextResponse.json(movements);
   } catch (e) {

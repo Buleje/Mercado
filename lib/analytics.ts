@@ -43,6 +43,14 @@ export type AnalyticsEvent =
   | "login"
   | "signup"
   | "profile_update"
+  // Registration funnel events
+  | "registration_start"
+  | "registration_step_1_complete"
+  | "registration_step_2_complete"
+  | "registration_step_3_complete"
+  | "registration_complete"
+  | "registration_error"
+  | "registration_step_back"
   // Error events
   | "error_occurred";
 

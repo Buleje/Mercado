@@ -47,11 +47,11 @@ function hourLabel(h: number): string {
 function heatColor(value: number, max: number): string {
   if (max === 0 || value === 0) return "bg-gray-100 dark:bg-gray-800";
   const ratio = value / max;
-  if (ratio >= 0.85) return "bg-[#1b4332]";
-  if (ratio >= 0.65) return "bg-[#0f766e]";
-  if (ratio >= 0.45) return "bg-[#0d9488]";
+  if (ratio >= 0.85) return "bg-[#007A72]";
+  if (ratio >= 0.65) return "bg-[#00B4A6]";
+  if (ratio >= 0.45) return "bg-[#33C4B8]";
   if (ratio >= 0.25) return "bg-[#74c69d]";
-  return "bg-[#b7e4c7] dark:bg-[#1b4332]/40";
+  return "bg-[#b7e4c7] dark:bg-[#007A72]/40";
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ export default function SalesHeatmap() {
                 className={cn(
                   "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
                   period === p
-                    ? "bg-[#0f766e] text-white"
+                    ? "bg-[#00B4A6] text-white"
                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                 )}
               >
@@ -155,7 +155,7 @@ export default function SalesHeatmap() {
 
       {/* Best slot insight */}
       {bestCell && bestCell.amount > 0 && (
-        <div className="rounded-xl border border-[#0f766e]/30 bg-[#0f766e]/5 px-5 py-3 text-sm text-[#0f766e] dark:text-green-400">
+        <div className="rounded-xl border border-[#00B4A6]/30 bg-[#00B4A6]/5 px-5 py-3 text-sm text-[#00B4A6] dark:text-green-400">
           Hora pico: <strong>{bestCell.day} {hourLabel(bestCell.hour)}</strong> &mdash;{" "}
           {formatCurrency(bestCell.amount)} en {bestCell.value} venta{bestCell.value !== 1 ? "s" : ""}
         </div>
@@ -225,7 +225,7 @@ export default function SalesHeatmap() {
       <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
         <span>Menos ventas</span>
         <div className="flex gap-1">
-          {["bg-gray-100 dark:bg-gray-800", "bg-[#b7e4c7]", "bg-[#74c69d]", "bg-[#0d9488]", "bg-[#0f766e]", "bg-[#1b4332]"].map((cls, i) => (
+          {["bg-gray-100 dark:bg-gray-800", "bg-[#b7e4c7]", "bg-[#74c69d]", "bg-[#33C4B8]", "bg-[#00B4A6]", "bg-[#007A72]"].map((cls, i) => (
             <div key={i} className={cn("h-4 w-6 rounded", cls)} />
           ))}
         </div>

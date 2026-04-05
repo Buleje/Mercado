@@ -146,7 +146,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
                   fill: '#f97316',
                 }}
               />
-              <Bar dataKey="qty" fill="#0f766e" radius={[2, 2, 0, 0]} name="Vendidos" />
+              <Bar dataKey="qty" fill="#00B4A6" radius={[2, 2, 0, 0]} name="Vendidos" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -190,7 +190,7 @@ export default function DemandForecast({ productId, onClose }: DemandForecastPro
         <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4">
           <div className="text-xs text-gray-500 dark:text-muted mb-1">Pronostico proximos 7 dias</div>
           <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-[#0f766e]">~{data.forecastNext7}</span>
+            <span className="text-xl font-bold text-[#00B4A6]">~{data.forecastNext7}</span>
             <span className="text-xs text-gray-500">unidades</span>
           </div>
           <div className="text-xs text-gray-500 mt-1">Semanal: {data.weeklyAvg}</div>

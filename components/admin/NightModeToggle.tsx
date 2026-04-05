@@ -103,7 +103,7 @@ export default function NightModeToggle() {
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <SunMoon className="w-5 h-5 text-[#0f766e]" />
+        <SunMoon className="w-5 h-5 text-[#00B4A6]" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Modo Nocturno Automatico
         </h2>
@@ -170,7 +170,7 @@ export default function NightModeToggle() {
               className={cn(
                 "flex flex-col items-center gap-1.5 px-3 py-3 rounded-xl border text-sm font-medium transition-all",
                 prefs.override === value
-                  ? "border-[#0f766e] bg-[#0f766e]/5 text-[#0f766e] dark:border-[#14b8a6] dark:text-[#14b8a6]"
+                  ? "border-[#00B4A6] bg-[#00B4A6]/5 text-[#00B4A6] dark:border-[#2dd4bf] dark:text-[#2dd4bf]"
                   : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750"
               )}
             >
@@ -199,7 +199,7 @@ export default function NightModeToggle() {
               className={cn(
                 "flex-1 py-2 rounded-lg border text-sm font-medium transition-colors",
                 prefs.fontSize === value
-                  ? "border-[#0f766e] bg-[#0f766e]/5 text-[#0f766e] dark:border-[#14b8a6] dark:text-[#14b8a6]"
+                  ? "border-[#00B4A6] bg-[#00B4A6]/5 text-[#00B4A6] dark:border-[#2dd4bf] dark:text-[#2dd4bf]"
                   : "border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-750"
               )}
             >

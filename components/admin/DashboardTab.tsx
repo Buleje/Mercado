@@ -465,7 +465,7 @@ export default function DashboardTab() {
 
     const allPeriodOrders = orders.filter(o => inPeriod(o.createdAt, period));
     const funnelData = [
-      { label: "Recibidos",   count: allPeriodOrders.length, color: "#0f766e" },
+      { label: "Recibidos",   count: allPeriodOrders.length, color: "#00B4A6" },
       { label: "Confirmados", count: allPeriodOrders.filter(o => ["confirmado","en_camino","entregado"].includes(o.status)).length, color: "#3b82f6" },
       { label: "En camino",  count: allPeriodOrders.filter(o => ["en_camino","entregado"].includes(o.status)).length, color: "#06b6d4" },
       { label: "Entregados", count: allPeriodOrders.filter(o => o.status === "entregado").length, color: "#10b981" },
@@ -1560,12 +1560,12 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     <svg viewBox={`0 0 ${Math.max(st.daily.length, 1) * 36} 80`} className="w-full h-full" preserveAspectRatio="none">
                       <defs>
                         <linearGradient id="fsAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#0f766e" stopOpacity="0.3" />
-                          <stop offset="100%" stopColor="#0f766e" stopOpacity="0.02" />
+                          <stop offset="0%" stopColor="#00B4A6" stopOpacity="0.3" />
+                          <stop offset="100%" stopColor="#00B4A6" stopOpacity="0.02" />
                         </linearGradient>
                       </defs>
                       <path d={st.daily.map(([,v],i) => { const x=i*36+18; const y=70-((v/st.maxDaily)*60); return i===0?`M${x},${y}`:`L${x},${y}`; }).join(' ') + ` L${(st.daily.length-1)*36+18},70 L18,70 Z`} fill="url(#fsAreaGrad)" />
-                      <polyline points={st.daily.map(([,v],i) => `${i*36+18},${70-((v/st.maxDaily)*60)}`).join(' ')} fill="none" stroke="#0f766e" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                      <polyline points={st.daily.map(([,v],i) => `${i*36+18},${70-((v/st.maxDaily)*60)}`).join(' ')} fill="none" stroke="#00B4A6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
                     </svg>
                   </div>
                 )}
@@ -1866,6 +1866,11 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
         const ydRev = yOrders.reduce((a, o) => a + o.total, 0) + ySales.reduce((a, s) => a + s.total, 0);
         const delta = ydRev > 0 ? ((todayRev - ydRev) / ydRev) * 100 : 0;
         const isUp = delta >= 0;
+        // Quick status counts
+        const pendingCount = orders.filter(o => o.status === "pendiente").length;
+        const enCaminoCount = orders.filter(o => o.status === "en_camino").length;
+        const agotadosCount = products.filter(p => p.stock != null && p.stock <= 0).length;
+        const stockBajoCount = products.filter(p => p.stock != null && p.stockMin != null && p.stock > 0 && p.stock <= p.stockMin).length;
         return (
           <div className="mb-4 rounded-2xl border border-emerald-200 dark:border-emerald-800/40 bg-linear-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/25 dark:to-teal-950/25 px-5 py-4">
             <div className="flex items-center justify-between mb-3">
@@ -1880,7 +1885,8 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* Revenue row */}
+            <div className="grid grid-cols-3 gap-3 mb-3">
               <div className="text-center">
                 <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">S/{todayRev.toFixed(0)}</p>
                 <p className="text-[10px] text-gray-400 dark:text-muted">Ingresos</p>
@@ -1894,6 +1900,31 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                 <p className="text-[10px] text-gray-400 dark:text-muted">Ticket prom.</p>
               </div>
             </div>
+            {/* Status row — pending orders + stock */}
+            {(pendingCount > 0 || enCaminoCount > 0 || agotadosCount > 0 || stockBajoCount > 0) && (
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/30">
+                {pendingCount > 0 && (
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                    <Clock className="h-3 w-3" /> {pendingCount} pendiente{pendingCount !== 1 ? "s" : ""}
+                  </span>
+                )}
+                {enCaminoCount > 0 && (
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+                    <Truck className="h-3 w-3" /> {enCaminoCount} en camino
+                  </span>
+                )}
+                {agotadosCount > 0 && (
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                    <PackageX className="h-3 w-3" /> {agotadosCount} agotado{agotadosCount !== 1 ? "s" : ""}
+                  </span>
+                )}
+                {stockBajoCount > 0 && (
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400">
+                    <AlertTriangle className="h-3 w-3" /> {stockBajoCount} stock bajo
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         );
       })()}
@@ -2534,8 +2565,8 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                   <svg viewBox={`0 0 ${st.daily.length * 50} 120`} className="w-full h-full" preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="areaGradSmall" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#0f766e" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="#0f766e" stopOpacity="0" />
+                        <stop offset="0%" stopColor="#00B4A6" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#00B4A6" stopOpacity="0" />
                       </linearGradient>
                     </defs>
                     <path d={
@@ -2546,10 +2577,10 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
                     } fill="url(#areaGradSmall)" />
                     <polyline
                       points={st.daily.map(([,v],i) => `${i*50+25},${100-((v/(st.maxDaily||1))*85)}`).join(' ')}
-                      fill="none" stroke="#0f766e" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"
+                      fill="none" stroke="#00B4A6" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round"
                     />
                     {st.daily.map(([,v],i) => (
-                      <circle key={i} cx={i*50+25} cy={100-((v/(st.maxDaily||1))*85)} r="2.5" fill="#0f766e" stroke="white" strokeWidth="1.5" />
+                      <circle key={i} cx={i*50+25} cy={100-((v/(st.maxDaily||1))*85)} r="2.5" fill="#00B4A6" stroke="white" strokeWidth="1.5" />
                     ))}
                   </svg>
                   <div className="flex justify-between px-0.5">
@@ -2844,12 +2875,12 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
     "emerald-500": "#10b981",
     "blue-500": "#3b82f6",
     "violet-500": "#8b5cf6",
-    "indigo-500": "#0f766e",
+    "indigo-500": "#00B4A6",
     "cyan-500": "#06b6d4",
     "amber-500": "#f59e0b",
     "red-500": "#ef4444",
   };
-  const strokeColor = colorMap[color] || "#0f766e";
+  const strokeColor = colorMap[color] || "#00B4A6";
   
   return (
     <svg width="80" height="24" className="opacity-60">

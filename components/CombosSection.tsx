@@ -117,7 +117,7 @@ function ComboCard({ combo, categories }: { combo: Combo; categories: Category[]
       id: comboId,
       name: `${combo.emoji} ${combo.name}`,
       price: combo.comboPrice,
-      image: combo.products[0]?.image ?? "",
+      image: combo.products[0]?.image || "/placeholder-product.png",
       unit: "combo",
       category: "combos",
       badge: `-${combo.discountPercent}%` as const,
@@ -246,7 +246,7 @@ export default function CombosSection() {
     [liveProducts, settingsTemplates]
   );
 
-  // No renderizar si cargando, sin productos o sin combos armables
+  // No render while loading or if no combos — prevents blank gaps
   if (isLoading || liveProducts.length === 0 || combos.length === 0) return null;
 
   return (

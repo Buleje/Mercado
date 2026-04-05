@@ -129,7 +129,7 @@ function SalesBarChart({ stores }: { stores: StoreRow[] }) {
             </span>
             <div className="relative h-5 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
               <div
-                className="h-full rounded-full bg-[#0f766e] transition-all duration-700"
+                className="h-full rounded-full bg-[#00B4A6] transition-all duration-700"
                 style={{ width: `${pct}%` }}
               />
             </div>
@@ -183,7 +183,7 @@ function StoresMapInner({ stores }: { stores: StoreRow[] }) {
         const icon = L.divIcon({
           className: "store-map-marker",
           html: `<div style="
-            background:#0f766e;color:white;
+            background:#00B4A6;color:white;
             width:34px;height:34px;border-radius:50%;
             display:flex;align-items:center;justify-content:center;
             font-size:14px;border:2px solid white;
@@ -198,7 +198,7 @@ function StoresMapInner({ stores }: { stores: StoreRow[] }) {
             <div style="min-width:140px;">
               <p style="font-weight:700;margin:0 0 4px;">${store.name}</p>
               <p style="margin:0 0 2px;font-size:12px;color:#555;">${store.zone ?? "Sin zona"}</p>
-              <p style="margin:0;font-size:12px;font-weight:600;color:#0f766e;">
+              <p style="margin:0;font-size:12px;font-weight:600;color:#00B4A6;">
                 Ventas: ${formatSoles(store.sales)}
               </p>
             </div>
@@ -333,8 +333,8 @@ export default function MultiStoreDashboard() {
     return (
       <th
         className={cn(
-          "cursor-pointer select-none whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-gray-500 hover:text-[#0f766e] dark:text-gray-400",
-          active && "text-[#0f766e] dark:text-teal-400",
+          "cursor-pointer select-none whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-gray-500 hover:text-[#00B4A6] dark:text-gray-400",
+          active && "text-[#00B4A6] dark:text-teal-400",
           cx
         )}
         onClick={() => handleSort(sortK)}
@@ -375,7 +375,7 @@ export default function MultiStoreDashboard() {
                 className={cn(
                   "px-3 py-1.5 text-xs font-medium transition-colors first:rounded-l-lg last:rounded-r-lg",
                   period === key
-                    ? "bg-[#0f766e] text-white"
+                    ? "bg-[#00B4A6] text-white"
                     : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
                 )}
               >
@@ -387,7 +387,7 @@ export default function MultiStoreDashboard() {
           <button
             type="button"
             onClick={() => fetchStores(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-[#0f766e] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-[#00B4A6] dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"
             title="Actualizar"
           >
             <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
@@ -406,7 +406,7 @@ export default function MultiStoreDashboard() {
       {/* KPIs globales */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Ventas totales", value: formatSoles(totalSales), icon: DollarSign, color: "text-[#0f766e]" },
+          { label: "Ventas totales", value: formatSoles(totalSales), icon: DollarSign, color: "text-[#00B4A6]" },
           { label: "Pedidos totales", value: totalOrders, icon: ShoppingCart, color: "text-blue-600 dark:text-blue-400" },
           { label: "Comisiones", value: formatSoles(totalCommissions), icon: TrendingUp, color: "text-amber-600 dark:text-amber-400" },
           { label: "Rating promedio", value: avgRating.toFixed(1), icon: Star, color: "text-amber-500" },
@@ -452,7 +452,7 @@ export default function MultiStoreDashboard() {
                 className={cn(
                   "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors",
                   viewTab === id
-                    ? "bg-white text-[#0f766e] shadow-sm dark:bg-gray-900"
+                    ? "bg-white text-[#00B4A6] shadow-sm dark:bg-gray-900"
                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                 )}
               >
@@ -472,7 +472,7 @@ export default function MultiStoreDashboard() {
                       <th className="px-3 py-2.5 text-left text-xs font-bold text-gray-500 dark:text-gray-400">
                         <button
                           type="button"
-                          className="inline-flex items-center gap-1 hover:text-[#0f766e]"
+                          className="inline-flex items-center gap-1 hover:text-[#00B4A6]"
                           onClick={() => handleSort("name")}
                         >
                           Tienda
@@ -497,7 +497,7 @@ export default function MultiStoreDashboard() {
                         {/* Nombre + logo */}
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-2.5">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#0f766e]/10 text-sm dark:bg-[#0f766e]/20">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#00B4A6]/10 text-sm dark:bg-[#00B4A6]/20">
                               {store.logo ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
@@ -514,7 +514,7 @@ export default function MultiStoreDashboard() {
                                 href={`/marketplace/${store.slug}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1 truncate font-semibold text-gray-900 hover:text-[#0f766e] dark:text-white"
+                                className="flex items-center gap-1 truncate font-semibold text-gray-900 hover:text-[#00B4A6] dark:text-white"
                               >
                                 {store.name}
                                 <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100" />
@@ -578,7 +578,7 @@ export default function MultiStoreDashboard() {
           {viewTab === "grafico" && (
             <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
               <div className="mb-4 flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-[#0f766e]" />
+                <BarChart3 className="h-4 w-4 text-[#00B4A6]" />
                 <h3 className="text-sm font-bold text-gray-800 dark:text-white">
                   Top 5 tiendas por ventas
                 </h3>
@@ -591,7 +591,7 @@ export default function MultiStoreDashboard() {
           {viewTab === "mapa" && (
             <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
               <div className="mb-3 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-[#0f766e]" />
+                <MapPin className="h-4 w-4 text-[#00B4A6]" />
                 <h3 className="text-sm font-bold text-gray-800 dark:text-white">
                   Ubicación de tiendas
                 </h3>
@@ -606,8 +606,8 @@ export default function MultiStoreDashboard() {
       )}
 
       {/* Nota de plan */}
-      <div className="flex items-start gap-2 rounded-xl border border-[#0f766e]/20 bg-[#0f766e]/5 p-3 text-xs text-gray-600 dark:border-[#0f766e]/30 dark:bg-[#0f766e]/10 dark:text-gray-400">
-        <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#0f766e]" />
+      <div className="flex items-start gap-2 rounded-xl border border-[#00B4A6]/20 bg-[#00B4A6]/5 p-3 text-xs text-gray-600 dark:border-[#00B4A6]/30 dark:bg-[#00B4A6]/10 dark:text-gray-400">
+        <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#00B4A6]" />
         <p>
           Vista disponible para planes <strong>Business</strong> y{" "}
           <strong>Enterprise</strong>. Las métricas de ventas y pedidos se actualizan en

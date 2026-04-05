@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import MarketplaceGrid from "@/components/marketplace/MarketplaceGrid";
+import MarketplaceContent from "@/components/marketplace/MarketplaceContent";
 
 export const metadata: Metadata = {
   title: "Marketplace | Buleje — Todas las bodegas en un solo lugar",
@@ -17,5 +17,5 @@ export const metadata: Metadata = {
 };
 
 export default function MarketplacePage() {
-  return <MarketplaceGrid />;
+  return <MarketplaceContent />;
 }

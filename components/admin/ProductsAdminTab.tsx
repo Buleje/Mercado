@@ -6,6 +6,7 @@ import {
   Plus, Pencil, Trash2, Search, X, Package, CheckCircle, XCircle,
   ChevronUp, ChevronDown, RefreshCw, Eye, EyeOff, Save, AlertTriangle,
   ImageOff, LayoutGrid, List, Filter, Download, Upload, Tag,
+  Loader2, Globe, Camera,
 } from "lucide-react";
 import TagBadge, { TAG_COLORS, type TagColor, type Tag as TagType } from "./TagBadge";
 import { cn } from "@/lib/utils";
@@ -110,6 +111,76 @@ function ProductFormModal({
     set("badge", newTags.length > 0 ? JSON.stringify(newTags) : "");
   };
 
+  // ── National database search ──────────────────────────────────────────────
+  const [nationalQuery, setNationalQuery] = useState("");
+  const [nationalResults, setNationalResults] = useState<Array<{
+    name: string; brand: string; image: string; barcode: string;
+    category: string; quantity: string; unit: string;
+  }>>([]);
+  const [nationalLoading, setNationalLoading] = useState(false);
+  const [showNationalDropdown, setShowNationalDropdown] = useState(false);
+  const nationalDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Image upload ──────────────────────────────────────────────────────────
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const searchNational = useCallback((q: string) => {
+    if (nationalDebounceRef.current) clearTimeout(nationalDebounceRef.current);
+    if (q.trim().length < 2) {
+      setNationalResults([]);
+      setShowNationalDropdown(false);
+      return;
+    }
+    setNationalLoading(true);
+    nationalDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/products/search-national?q=${encodeURIComponent(q.trim())}&limit=8`);
+        if (res.ok) {
+          const data = await res.json();
+          setNationalResults(data.results || []);
+          setShowNationalDropdown(true);
+        }
+      } catch {
+        setNationalResults([]);
+      } finally {
+        setNationalLoading(false);
+      }
+    }, 350);
+  }, []);
+
+  const selectNationalProduct = (product: typeof nationalResults[0]) => {
+    set("name", product.name);
+    if (product.category) set("category", product.category);
+    if (product.image) set("image", product.image);
+    if (product.unit) set("unit", product.unit);
+    if (product.brand) {
+      set("description", `${product.brand}${product.quantity ? ` — ${product.quantity}` : ""}`);
+    }
+    setShowNationalDropdown(false);
+    setNationalQuery("");
+    setNationalResults([]);
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "products");
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        set("image", data.url);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setUploading(false);
+    }
+  };
+
   useEffect(() => {
     nameRef.current?.focus();
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -168,23 +239,121 @@ function ProductFormModal({
         </div>
 
         <div className="p-6 space-y-4">
-          {/* Image preview */}
-          {form.image && !imgError ? (
-            <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border">
-              <Image
-                src={form.image}
-                alt="Preview"
-                fill
-                className="object-cover"
-                onError={() => setImgError(true)}
-                unoptimized
-              />
-            </div>
-          ) : (
-            <div className="aspect-video w-full rounded-xl bg-gray-50 dark:bg-surface border border-dashed border-gray-300 dark:border-card-border flex items-center justify-center text-gray-300">
-              <ImageOff className="h-10 w-10" />
+          {/* National database search — only for new products */}
+          {!form.id && (
+            <div className="relative">
+              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider flex items-center gap-1.5">
+                <Globe className="h-3 w-3" />
+                Buscar en base nacional
+              </label>
+              <div className="relative mt-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <input
+                  value={nationalQuery}
+                  onChange={(e) => {
+                    setNationalQuery(e.target.value);
+                    searchNational(e.target.value);
+                  }}
+                  onFocus={() => nationalResults.length > 0 && setShowNationalDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowNationalDropdown(false), 200)}
+                  placeholder="Ej: arroz, leche gloria, galletas..."
+                  className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+                {nationalLoading && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
+                )}
+                {nationalQuery && !nationalLoading && (
+                  <button
+                    type="button"
+                    onClick={() => { setNationalQuery(""); setNationalResults([]); setShowNationalDropdown(false); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {showNationalDropdown && nationalResults.length > 0 && (
+                <div className="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border shadow-xl">
+                  {nationalResults.map((r, i) => (
+                    <button
+                      key={`${r.barcode}-${i}`}
+                      type="button"
+                      onClick={() => selectNationalProduct(r)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0"
+                    >
+                      {r.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={r.image} alt="" className="h-10 w-10 rounded-lg object-cover bg-gray-100 shrink-0" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-surface flex items-center justify-center shrink-0">
+                          <Package className="h-5 w-5 text-gray-300" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{r.name}</p>
+                        <p className="text-xs text-muted truncate">
+                          {r.brand && <span>{r.brand}</span>}
+                          {r.quantity && <span> · {r.quantity}</span>}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {showNationalDropdown && nationalResults.length === 0 && !nationalLoading && nationalQuery.length >= 2 && (
+                <div className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border shadow-xl p-4 text-center text-sm text-muted">
+                  No se encontraron productos para &ldquo;{nationalQuery}&rdquo;
+                </div>
+              )}
             </div>
           )}
+
+          {/* Image — upload + preview */}
+          <div>
+            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Imagen del producto</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = ""; }}
+            />
+            <div
+              className="mt-1 relative aspect-video w-full rounded-xl overflow-hidden bg-gray-50 dark:bg-surface border border-dashed border-gray-300 dark:border-card-border cursor-pointer group"
+              onClick={() => !uploading && fileInputRef.current?.click()}
+            >
+              {form.image && !imgError ? (
+                <>
+                  <Image src={form.image} alt="Preview" fill className="object-cover" onError={() => setImgError(true)} unoptimized />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 text-gray-700 text-sm font-semibold shadow-lg">
+                      <Camera className="h-4 w-4" />
+                      Cambiar imagen
+                    </div>
+                  </div>
+                </>
+              ) : uploading ? (
+                <div className="h-full flex flex-col items-center justify-center gap-2 text-primary">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <span className="text-xs font-semibold">Subiendo imagen…</span>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center gap-2 text-gray-300 group-hover:text-primary transition-colors">
+                  <Camera className="h-10 w-10" />
+                  <span className="text-xs font-semibold text-gray-400 group-hover:text-primary">Click para subir imagen</span>
+                </div>
+              )}
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-[10px] text-muted shrink-0">o pega URL:</span>
+              <input
+                value={form.image ?? ""}
+                onChange={(e) => set("image", e.target.value)}
+                placeholder="https://..."
+                className="flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+            </div>
+          </div>
 
           {/* Name */}
           <div>
@@ -293,17 +462,6 @@ function ProductFormModal({
                 className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
               />
             </div>
-          </div>
-
-          {/* Image URL */}
-          <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">URL de Imagen</label>
-            <input
-              value={form.image ?? ""}
-              onChange={(e) => set("image", e.target.value)}
-              placeholder="https://images.unsplash.com/photo-..."
-              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-            />
           </div>
 
           {/* Tags personalizados */}

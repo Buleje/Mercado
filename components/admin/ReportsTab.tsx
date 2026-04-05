@@ -30,7 +30,7 @@ export default function ReportsTab() {
       "metricas-completas": ["/api/sales?limit=1000", "/api/products", "/api/customers", "/api/payables", "/api/suppliers", "/api/orders?limit=1000"],
       "informe-mensual": ["/api/sales?limit=500", "/api/orders?limit=500", "/api/products", "/api/customers", "/api/payables"],
     };
-    const results = await Promise.all(endpoints[type].map(url => fetch(url).then(r => r.json()).catch(() => [])));
+    const results = await Promise.all(endpoints[type].map(url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => [])));
     return results;
   }, []);
 

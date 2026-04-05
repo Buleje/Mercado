@@ -107,7 +107,7 @@ const MOTIVOS = [
 ];
 
 const PILL_COLORS: Record<string, { active: string; inactive: string }> = {
-  "":          { active: "bg-[#0f766e] text-white",  inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
+  "":          { active: "bg-[#00B4A6] text-white",  inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
   BORRADOR:    { active: "bg-gray-600 text-white",    inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
   EMITIDA:     { active: "bg-blue-600 text-white",    inactive: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" },
   EN_TRANSITO: { active: "bg-amber-500 text-white",   inactive: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400" },
@@ -226,17 +226,17 @@ function OrderPickerCard({ order, isSelected, onSelect }: {
       className={cn(
         "w-full text-left rounded-2xl border-2 p-4 transition-all duration-200 relative overflow-hidden",
         isSelected
-          ? "border-[#0f766e] ring-2 ring-[#0f766e]/20 bg-[#0f766e]/5"
-          : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 hover:shadow-lg hover:border-[#0f766e]/40"
+          ? "border-[#00B4A6] ring-2 ring-[#00B4A6]/20 bg-[#00B4A6]/5"
+          : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 hover:shadow-lg hover:border-[#00B4A6]/40"
       )}
     >
-      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-[#0f766e]" : "bg-blue-400")} />
+      <div className={cn("absolute top-0 left-0 w-1.5 h-full rounded-l-2xl", isSelected ? "bg-[#00B4A6]" : "bg-blue-400")} />
       <div className="pl-2">
         <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
           <span className="font-mono text-xs font-bold text-gray-900 dark:text-white">#{order.numero}</span>
           <span className="text-[10px] text-gray-400">{formatDate(order.createdAt)}</span>
         </div>
-        <p className={cn("text-sm font-semibold truncate mb-1", isSelected ? "text-[#0f766e]" : "text-gray-800 dark:text-white")}>
+        <p className={cn("text-sm font-semibold truncate mb-1", isSelected ? "text-[#00B4A6]" : "text-gray-800 dark:text-white")}>
           {order.customerName}
         </p>
         {order.shippingAddress && (
@@ -274,7 +274,7 @@ function FilterPanel({ filters, onChange }: {
           <Filter className="h-4 w-4" />
           Filtros avanzados
           {hasActive && (
-            <span className="px-1.5 py-0.5 bg-[#0f766e] text-white rounded-full text-[9px] font-bold">{activeCount}</span>
+            <span className="px-1.5 py-0.5 bg-[#00B4A6] text-white rounded-full text-[9px] font-bold">{activeCount}</span>
           )}
         </span>
         {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -292,27 +292,27 @@ function FilterPanel({ filters, onChange }: {
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Desde</label>
                 <input type="date" value={filters.from} onChange={e => onChange({ ...filters, from: e.target.value })}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Hasta</label>
                 <input type="date" value={filters.to} onChange={e => onChange({ ...filters, to: e.target.value })}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">RUC transportista</label>
                 <input type="text" value={filters.transportistaRuc} onChange={e => onChange({ ...filters, transportistaRuc: e.target.value })} placeholder="20XXXXXXXXX"
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Punto de llegada</label>
                 <input type="text" value={filters.puntoLlegada} onChange={e => onChange({ ...filters, puntoLlegada: e.target.value })} placeholder="Ciudad o dirección"
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Placa vehículo</label>
                 <input type="text" value={filters.vehiculoPlaca} onChange={e => onChange({ ...filters, vehiculoPlaca: e.target.value })} placeholder="ABC-123"
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
               </div>
               <div className="flex items-end">
                 <button type="button"
@@ -373,7 +373,7 @@ function AnularModal({ guia, onConfirm, onCancel, loading }: {
               placeholder="Describe el motivo..."
               className={cn(
                 "w-full px-3 py-2 rounded-xl border bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2",
-                error ? "border-red-400 focus:ring-red-400/30" : "border-gray-200 dark:border-white/10 focus:ring-[#0f766e]/30"
+                error ? "border-red-400 focus:ring-red-400/30" : "border-gray-200 dark:border-white/10 focus:ring-[#00B4A6]/30"
               )} />
             {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
           </div>
@@ -449,7 +449,7 @@ function DashboardSection({ resumen, loading }: { resumen: Resumen | null; loadi
                   <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{t.nombre}</p>
                   <p className="text-[10px] text-gray-400 font-mono">{t.ruc}</p>
                 </div>
-                <span className="text-xs font-bold text-[#0f766e]">{t.count} guía{t.count !== 1 ? "s" : ""}</span>
+                <span className="text-xs font-bold text-[#00B4A6]">{t.count} guía{t.count !== 1 ? "s" : ""}</span>
               </div>
             ))}
           </div>
@@ -918,7 +918,7 @@ export default function GuiasRemisionModule() {
       {/* Header — Mejora 20 */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <div className="h-10 w-10 rounded-xl bg-[#0f766e] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
             <Truck className="h-5 w-5" />
           </div>
           <div>
@@ -928,7 +928,7 @@ export default function GuiasRemisionModule() {
         </div>
         <button
           onClick={() => { setShowNew(true); setCreateError(null); }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors shrink-0"
         >
           <Plus className="h-4 w-4" />
           Nueva Guía
@@ -978,7 +978,7 @@ export default function GuiasRemisionModule() {
             aria-label="Buscar guías de remisión"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30"
+            className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
           />
         </div>
         {/* Mejora 12: Pills coloreadas con count */}
@@ -986,7 +986,7 @@ export default function GuiasRemisionModule() {
           {(["", "BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA", "ANULADA"] as const).map(s => {
             const count = s === "" ? guias.length : guias.filter(g => g.status === s).length;
             const pillColors: Record<string, { active: string; inactive: string }> = {
-              "": { active: "bg-[#0f766e] text-white", inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
+              "": { active: "bg-[#00B4A6] text-white", inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
               BORRADOR: { active: "bg-gray-600 text-white", inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
               EMITIDA: { active: "bg-blue-600 text-white", inactive: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" },
               EN_TRANSITO: { active: "bg-amber-500 text-white", inactive: "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400" },
@@ -1019,20 +1019,20 @@ export default function GuiasRemisionModule() {
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
+            <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 gap-2">
             <AlertTriangle className="h-8 w-8 text-red-400" />
             <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-            <button onClick={fetchGuias} className="text-xs text-[#0f766e] hover:underline font-semibold mt-1">Reintentar</button>
+            <button onClick={fetchGuias} className="text-xs text-[#00B4A6] hover:underline font-semibold mt-1">Reintentar</button>
           </div>
         ) : guias.length === 0 ? (
           <div className="text-center py-16 px-4">
             <div className="text-6xl mb-4">🚚</div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin guías de remisión</h3>
             <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Documenta tus envíos de mercadería</p>
-            <button onClick={() => { setShowNew(true); setCreateError(null); }} className="bg-[#0f766e] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#0d5f58]">Crear guía</button>
+            <button onClick={() => { setShowNew(true); setCreateError(null); }} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Crear guía</button>
           </div>
         ) : (
           <>
@@ -1297,10 +1297,10 @@ export default function GuiasRemisionModule() {
                   const itemsSinPeso = items.filter(it => !it.pesoUnitario || it.pesoUnitario <= 0);
                   const pesoTotal = itemsConPeso.reduce((sum, it) => sum + (it.cantidad * (it.pesoUnitario || 0)), 0);
                   return (
-                    <div className="bg-[#0f766e]/5 dark:bg-[#0f766e]/10 border border-[#0f766e]/20 rounded-xl p-4">
+                    <div className="bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/20 rounded-xl p-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-gray-700 dark:text-gray-300">Peso total</span>
-                        <span className="text-lg font-extrabold text-[#0f766e]">
+                        <span className="text-lg font-extrabold text-[#00B4A6]">
                           {pesoTotal > 0 ? `${pesoTotal.toFixed(1)} kg` : "Sin datos de peso"}
                         </span>
                       </div>
@@ -1321,7 +1321,7 @@ export default function GuiasRemisionModule() {
                   </button>
                   <button
                     onClick={() => printGuiaSunat(selected, formatDate)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-sm transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-sm transition-colors"
                   >
                     <Printer className="h-4 w-4" /> GRR SUNAT
                   </button>
@@ -1361,13 +1361,13 @@ export default function GuiasRemisionModule() {
                   <div>
                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Vincular pedido (opcional)</label>
                     <input type="text" value={form.orderIds} onChange={e => setForm(p => ({ ...p, orderIds: e.target.value }))} placeholder="N° de orden"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                   </div>
                   {/* Motivo */}
                   <div>
                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Motivo de traslado</label>
                     <select value={form.motivoTraslado} onChange={e => setForm(p => ({ ...p, motivoTraslado: e.target.value }))}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30">
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30">
                       {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
                   </div>
@@ -1375,34 +1375,34 @@ export default function GuiasRemisionModule() {
                   <div>
                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Destinatario</label>
                     <input type="text" value={form.destinatarioNombre} onChange={e => setForm(p => ({ ...p, destinatarioNombre: e.target.value }))} placeholder="Nombre"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">RUC destinatario</label>
                     <input type="text" value={form.destinatarioRuc} onChange={e => setForm(p => ({ ...p, destinatarioRuc: e.target.value }))} placeholder="20XXXXXXXXX"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Dirección destinatario</label>
                     <input type="text" value={form.destinatarioDireccion} onChange={e => setForm(p => ({ ...p, destinatarioDireccion: e.target.value }))} placeholder="Dirección"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                   </div>
                   {/* Transportista */}
                   <div>
                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Transportista</label>
                     <input type="text" value={form.transportistaNombre} onChange={e => setForm(p => ({ ...p, transportistaNombre: e.target.value }))} placeholder="Nombre"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">RUC transp.</label>
                       <input type="text" value={form.transportistaRuc} onChange={e => setForm(p => ({ ...p, transportistaRuc: e.target.value }))} placeholder="RUC"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Placa</label>
                       <input type="text" value={form.vehiculoPlaca} onChange={e => setForm(p => ({ ...p, vehiculoPlaca: e.target.value }))} placeholder="ABC-123"
-                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                        className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                     </div>
                   </div>
                   {/* Partida / Llegada */}
@@ -1410,28 +1410,28 @@ export default function GuiasRemisionModule() {
                   <div>
                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Conductor</label>
                     <input type="text" value={form.conductorNombre} onChange={e => setForm(p => ({ ...p, conductorNombre: e.target.value }))} placeholder="Nombre del conductor"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">DNI Conductor</label>
                     <input type="text" value={form.conductorDni} onChange={e => setForm(p => ({ ...p, conductorDni: e.target.value.replace(/\D/g, "").slice(0, 8) }))} placeholder="12345678" maxLength={8}
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                   </div>
                   {/* Bultos / Doc Referencia / Peso Bruto */}
                   <div>
                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">N° Bultos</label>
                     <input type="number" min="0" value={form.bultos} onChange={e => setForm(p => ({ ...p, bultos: e.target.value }))} placeholder="0"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Doc. Referencia</label>
                     <input type="text" value={form.documentoRef} onChange={e => setForm(p => ({ ...p, documentoRef: e.target.value }))} placeholder="Factura, boleta u orden"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Peso Bruto (kg)</label>
                     <input type="number" min="0" step="0.001" value={form.pesoBruto} onChange={e => setForm(p => ({ ...p, pesoBruto: e.target.value }))} placeholder="0.000"
-                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                      className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                   </div>
                   {/* Ruta */}
                   <div>
@@ -1439,7 +1439,7 @@ export default function GuiasRemisionModule() {
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input type="text" value={form.puntoPartida} onChange={e => setForm(p => ({ ...p, puntoPartida: e.target.value }))} placeholder="Dirección origen"
-                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                     </div>
                   </div>
                   <div>
@@ -1447,7 +1447,7 @@ export default function GuiasRemisionModule() {
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input type="text" value={form.puntoLlegada} onChange={e => setForm(p => ({ ...p, puntoLlegada: e.target.value }))} placeholder="Dirección destino"
-                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                     </div>
                   </div>
                   {/* Fecha */}
@@ -1456,7 +1456,7 @@ export default function GuiasRemisionModule() {
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input type="datetime-local" value={form.fechaTraslado} onChange={e => setForm(p => ({ ...p, fechaTraslado: e.target.value }))}
-                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30" />
+                        className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
                     </div>
                   </div>
                 </div>
@@ -1468,20 +1468,20 @@ export default function GuiasRemisionModule() {
                     {newItems.map((item, idx) => (
                       <div key={idx} className="flex gap-2 items-center">
                         <input type="text" value={item.descripcion} onChange={e => updateItem(idx, "descripcion", e.target.value)} placeholder="Descripción"
-                          className="flex-1 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30" />
+                          className="flex-1 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30" />
                         <input type="number" min="1" value={item.cantidad} onChange={e => updateItem(idx, "cantidad", e.target.value)} placeholder="Cant."
-                          className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-center text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30" />
+                          className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-center text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30" />
                         <input type="text" value={item.unidad} onChange={e => updateItem(idx, "unidad", e.target.value)} placeholder="Und"
-                          className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-center text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30" />
+                          className="w-16 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-center text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30" />
                         <input type="number" min="0" step="0.1" value={item.pesoUnitario} onChange={e => updateItem(idx, "pesoUnitario", e.target.value)} placeholder="Peso kg"
-                          className="w-20 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-center text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#0f766e]/30" />
+                          className="w-20 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-center text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]/30" />
                         {newItems.length > 1 && (
                           <button onClick={() => removeItem(idx)} className="p-1 text-red-400 hover:text-red-600"><X className="h-4 w-4" /></button>
                         )}
                       </div>
                     ))}
                   </div>
-                  <button onClick={addItem} className="flex items-center gap-1 text-xs font-bold text-[#0f766e] hover:underline mt-2">
+                  <button onClick={addItem} className="flex items-center gap-1 text-xs font-bold text-[#00B4A6] hover:underline mt-2">
                     <Plus className="h-3.5 w-3.5" /> Agregar item
                   </button>
 
@@ -1491,10 +1491,10 @@ export default function GuiasRemisionModule() {
                     const itemsSinPeso = newItems.filter(it => it.descripcion.trim() && (!it.pesoUnitario || parseFloat(it.pesoUnitario) <= 0));
                     const pesoTotal = itemsConPeso.reduce((sum, it) => sum + ((parseFloat(it.cantidad) || 0) * (parseFloat(it.pesoUnitario) || 0)), 0);
                     return pesoTotal > 0 || itemsSinPeso.length > 0 ? (
-                      <div className="bg-[#0f766e]/5 dark:bg-[#0f766e]/10 border border-[#0f766e]/20 rounded-lg p-3 mt-2">
+                      <div className="bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/20 rounded-lg p-3 mt-2">
                         <div className="flex items-center justify-between text-sm">
                           <span className="font-bold text-gray-700 dark:text-gray-300">Peso total:</span>
-                          <span className="font-extrabold text-[#0f766e]">{pesoTotal.toFixed(1)} kg</span>
+                          <span className="font-extrabold text-[#00B4A6]">{pesoTotal.toFixed(1)} kg</span>
                         </div>
                         {itemsSinPeso.length > 0 && (
                           <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
@@ -1515,7 +1515,7 @@ export default function GuiasRemisionModule() {
                     Cancelar
                   </button>
                   <button onClick={handleCreate} disabled={creating}
-                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] disabled:opacity-50 rounded-lg shadow-sm transition-colors">
+                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-50 rounded-lg shadow-sm transition-colors">
                     {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     Crear Guía
                   </button>

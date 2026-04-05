@@ -176,8 +176,8 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-[#0f766e]/10 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-[#0f766e]" />
+            <div className="h-10 w-10 rounded-xl bg-[#00B4A6]/10 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-[#00B4A6]" />
             </div>
             <div>
               <h2 className="text-lg font-extrabold text-gray-900 dark:text-white">Lista de mercado</h2>
@@ -200,7 +200,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
               value={text}
               onChange={e => setText(e.target.value)}
               placeholder={"2 kg arroz\n1 leche gloria\naceite 1 litro\n3 tomates\nfideos\njugo de naranja"}
-              className="w-full h-40 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 transition-all"
+              className="w-full h-40 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 transition-all"
               autoFocus
             />
             <p className="text-xs text-gray-400 mt-1.5">Escribe un producto por linea. Puedes poner cantidad y unidad.</p>
@@ -211,7 +211,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
             <div className="space-y-2">
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                 Resultados
-                {isSearching && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0f766e]" />}
+                {isSearching && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#00B4A6]" />}
               </h3>
               <AnimatePresence>
                 {results.map((r, idx) => (
@@ -286,7 +286,7 @@ export default function MarketListMode({ onClose }: { onClose: () => void }) {
           <div className="border-t border-gray-200 dark:border-gray-700 p-5">
             <button
               onClick={handleAddAll}
-              className="w-full py-4 rounded-xl bg-[#0f766e] hover:bg-[#0d5f58] text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#0f766e]/25 active:scale-[0.98]"
+              className="w-full py-4 rounded-xl bg-[#00B4A6] hover:bg-[#009690] text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#00B4A6]/25 active:scale-[0.98]"
             >
               <ShoppingCart className="h-5 w-5" />
               Agregar {foundItems.length} producto{foundItems.length !== 1 ? "s" : ""} al carrito · S/ {totalPrice.toFixed(2)}

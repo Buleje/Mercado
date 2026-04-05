@@ -114,7 +114,7 @@ export default function FavoritesSection() {
               onClick={addAll}
               className="flex items-center gap-2 bg-primary text-white rounded-xl px-4 py-2.5 text-sm font-bold hover:bg-primary-dark active:scale-95 transition-all shadow-md"
             >
-              <ShoppingCart className="h-4 w-4" />
+              <ShoppingCart className="h-5 w-5" />
               <span className="hidden sm:inline">Agregar todos</span>
             </button>
           </div>
@@ -156,10 +156,10 @@ export default function FavoritesSection() {
                   ) : (
                     <button
                       onClick={() => { addItem(product); showToast(product.name, product.image); }}
-                      className="flex items-center justify-center h-9 w-9 rounded-full bg-primary text-white shadow-md hover:bg-primary-dark active:scale-95 transition-all"
+                      className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-primary text-white shadow-md hover:bg-primary-dark active:scale-95 transition-all"
                       aria-label={`Agregar ${product.name}`}
                     >
-                      <ShoppingCart className="h-4 w-4" />
+                      <ShoppingCart className="h-5 w-5" />
                     </button>
                   ); })()}
                 </div>

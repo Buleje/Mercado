@@ -72,7 +72,7 @@ function CashFlowTooltip({ active, payload }: { active?: boolean; payload?: Arra
       </p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Ingresos</span>
-        <span className="font-mono font-medium text-[#0f766e]">{formatCurrency(d.ingresos)}</span>
+        <span className="font-mono font-medium text-[#00B4A6]">{formatCurrency(d.ingresos)}</span>
       </p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Egresos</span>
@@ -81,12 +81,20 @@ function CashFlowTooltip({ active, payload }: { active?: boolean; payload?: Arra
       <div className="border-t border-gray-200 dark:border-gray-600 mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
           <span className="font-semibold text-gray-700 dark:text-gray-300">Balance</span>
-          <span className={cn("font-mono font-bold", d.balance >= 0 ? "text-[#0f766e]" : "text-[#e63946]")}>{formatCurrency(d.balance)}</span>
+          <span className={cn("font-mono font-bold", d.balance >= 0 ? "text-[#00B4A6]" : "text-[#e63946]")}>{formatCurrency(d.balance)}</span>
         </p>
       </div>
     </div>
   );
 }
+
+// ─── Period pills ────────────────────────────────────────────────────────────
+type CashFlowPeriod = "30d" | "60d" | "90d";
+const CF_PILLS: { key: CashFlowPeriod; label: string; days: number }[] = [
+  { key: "30d", label: "30D", days: 30 },
+  { key: "60d", label: "60D", days: 60 },
+  { key: "90d", label: "90D", days: 90 },
+];
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
@@ -95,12 +103,14 @@ export default function CashFlowChart() {
   const [resumen, setResumen] = useState<CashFlowResponse["resumen"] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [cfPeriod, setCfPeriod] = useState<CashFlowPeriod>("30d");
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (days: number) => {
     try {
       setError(false);
+      setLoading(true);
       // Try dedicated cash-flow endpoint
-      const res = await fetch("/api/analytics/cash-flow?days=30", { credentials: "include" });
+      const res = await fetch(`/api/analytics/cash-flow?days=${days}`, { credentials: "include" });
 
       if (res.ok) {
         const json: CashFlowResponse = await res.json();
@@ -139,8 +149,9 @@ export default function CashFlowChart() {
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    const days = CF_PILLS.find(p => p.key === cfPeriod)?.days ?? 30;
+    fetchData(days);
+  }, [cfPeriod, fetchData]);
 
   // Transform for chart: egresos as negative values for downward bars
   const chartData = useMemo((): ChartDia[] => {
@@ -188,7 +199,7 @@ export default function CashFlowChart() {
       <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-6 flex flex-col items-center justify-center h-64">
         <p className="text-sm text-red-600 dark:text-red-400 mb-3">No se pudieron cargar los datos de flujo de caja</p>
         <button
-          onClick={() => { setLoading(true); fetchData(); }}
+          onClick={() => { const days = CF_PILLS.find(p => p.key === cfPeriod)?.days ?? 30; fetchData(days); }}
           className="text-xs px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 hover:bg-red-200 transition-colors"
         >
           <RefreshCw className="h-3 w-3 inline mr-1" />
@@ -217,9 +228,28 @@ export default function CashFlowChart() {
 
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-        Flujo de Caja
-      </h3>
+      {/* Header + period pills */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+          Flujo de Caja
+        </h3>
+        <div className="flex items-center gap-1">
+          {CF_PILLS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setCfPeriod(p.key)}
+              className={cn(
+                "px-3 py-1 rounded-full text-xs font-medium transition-colors",
+                cfPeriod === p.key
+                  ? "bg-gray-900 dark:bg-white text-white dark:text-gray-900"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Summary cards */}
       {summaryCards.length > 0 && (
@@ -285,7 +315,7 @@ export default function CashFlowChart() {
           <Bar
             yAxisId="bars"
             dataKey="ingresos"
-            fill="#0f766e"
+            fill="#00B4A6"
             radius={[4, 4, 0, 0]}
             barSize={12}
             isAnimationActive={false}

@@ -224,7 +224,7 @@ export default function SaasHowItWorks() {
               <motion.div key={num} custom={i} variants={vLeft} initial="hidden" whileInView="visible"
                 viewport={{ once: true }} className="relative flex flex-col items-center text-center flex-1">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center mb-2 z-10"
-                  style={{ background: "linear-gradient(135deg,#0f766e,#0d5f58)", boxShadow: "0 4px 14px -2px rgba(15,118,110,0.4)" }}>
+                  style={{ background: "linear-gradient(135deg,#00B4A6,#009690)", boxShadow: "0 4px 14px -2px rgba(15,118,110,0.4)" }}>
                   <Icon className="w-4 h-4 text-white" aria-hidden="true" />
                 </div>
                 <span className="text-xs font-bold text-gray-900 dark:text-[#f0f4f1] leading-tight">{label}</span>

@@ -109,7 +109,7 @@ export default function DeliveryTimeSlots() {
           disabled={saving}
           className={cn(
             "flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150",
-            saved ? "bg-emerald-500 text-white" : "bg-[#0f766e] hover:bg-[#235c42] text-white",
+            saved ? "bg-emerald-500 text-white" : "bg-[#00B4A6] hover:bg-[#235c42] text-white",
             saving && "opacity-70 cursor-not-allowed"
           )}
         >
@@ -126,7 +126,7 @@ export default function DeliveryTimeSlots() {
             className={cn(
               "rounded-xl border p-4 transition-all duration-150",
               slot.active
-                ? "border-[#0f766e]/30 bg-[#0f766e]/5 dark:bg-[#0f766e]/10 dark:border-[#0f766e]/40"
+                ? "border-[#00B4A6]/30 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 dark:border-[#00B4A6]/40"
                 : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 opacity-60"
             )}
           >
@@ -134,7 +134,7 @@ export default function DeliveryTimeSlots() {
               <div className="flex items-center gap-2">
                 <Clock
                   size={15}
-                  className={cn(slot.active ? "text-[#0f766e]" : "text-gray-400")}
+                  className={cn(slot.active ? "text-[#00B4A6]" : "text-gray-400")}
                 />
                 <span
                   className={cn(
@@ -151,7 +151,7 @@ export default function DeliveryTimeSlots() {
                 onClick={() => toggleSlot(slot.id)}
                 className={cn(
                   "relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200",
-                  slot.active ? "bg-[#0f766e]" : "bg-gray-300 dark:bg-gray-600"
+                  slot.active ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
                 )}
                 role="switch"
                 aria-checked={slot.active}
@@ -185,7 +185,7 @@ export default function DeliveryTimeSlots() {
                   value={slot.maxOrders}
                   disabled={!slot.active}
                   onChange={(e) => setMaxOrdersDirect(slot.id, parseInt(e.target.value) || 1)}
-                  className="w-10 h-6 text-center text-sm font-semibold rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-[#0f766e]"
+                  className="w-10 h-6 text-center text-sm font-semibold rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white disabled:opacity-40 focus:outline-none focus:ring-1 focus:ring-[#00B4A6]"
                 />
                 <button
                   onClick={() => setMaxOrders(slot.id, 1)}
@@ -237,8 +237,8 @@ export function DeliverySlotPicker({ value, onChange, className }: DeliverySlotP
           className={cn(
             "flex flex-col items-start px-3 py-2.5 rounded-xl border text-left transition-all duration-150",
             value === slot.id
-              ? "border-[#0f766e] bg-[#0f766e]/10 dark:bg-[#0f766e]/20 text-[#0f766e] dark:text-emerald-400"
-              : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:border-[#0f766e]/50 hover:bg-[#0f766e]/5"
+              ? "border-[#00B4A6] bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20 text-[#00B4A6] dark:text-emerald-400"
+              : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:border-[#00B4A6]/50 hover:bg-[#00B4A6]/5"
           )}
         >
           <span className="text-sm font-medium">{slot.label}</span>

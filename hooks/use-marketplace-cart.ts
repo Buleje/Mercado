@@ -7,6 +7,8 @@ import { useState, useEffect, useCallback } from "react";
 export interface CartItem {
   storeId: string;
   storeName: string;
+  storeSlug: string;
+  storeProductId: string;
   productId: number;
   name: string;
   price: number;
@@ -50,6 +52,26 @@ function writeStorage(state: CartState) {
 
 export function useMarketplaceCart() {
   const [items, setItems] = useState<CartItem[]>(() => readStorage().items);
+
+  // On mount: validate cart items still exist — remove stale/deleted products
+  useEffect(() => {
+    const stored = readStorage().items;
+    if (stored.length === 0) return;
+    const productIds = [...new Set(stored.map(i => i.productId))];
+    fetch("/api/products?active=true")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        const products: { id: number }[] = Array.isArray(data) ? data : [];
+        const validIds = new Set(products.map((p: { id: number }) => p.id));
+        const cleaned = stored.filter(i => validIds.has(i.productId));
+        if (cleaned.length !== stored.length) {
+          setItems(cleaned);
+          writeStorage({ items: cleaned });
+        }
+      })
+      .catch(() => { /* silently ignore */ });
+  }, []);
 
   // Sincronizar si otra pestaña cambia el carrito
   useEffect(() => {
@@ -132,10 +154,10 @@ export function useMarketplaceCart() {
 
   const itemCount = items.reduce((acc, i) => acc + i.quantity, 0);
 
-  const totalByStore = items.reduce<Record<string, { storeName: string; total: number }>>(
+  const totalByStore = items.reduce<Record<string, { storeName: string; storeSlug: string; total: number }>>(
     (acc, i) => {
       if (!acc[i.storeId]) {
-        acc[i.storeId] = { storeName: i.storeName, total: 0 };
+        acc[i.storeId] = { storeName: i.storeName, storeSlug: i.storeSlug, total: 0 };
       }
       acc[i.storeId].total += i.price * i.quantity;
       return acc;
@@ -146,10 +168,10 @@ export function useMarketplaceCart() {
   const grandTotal = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
 
   // Agrupar items por tienda
-  const byStore = items.reduce<Record<string, { storeName: string; items: CartItem[] }>>(
+  const byStore = items.reduce<Record<string, { storeName: string; storeSlug: string; items: CartItem[] }>>(
     (acc, i) => {
       if (!acc[i.storeId]) {
-        acc[i.storeId] = { storeName: i.storeName, items: [] };
+        acc[i.storeId] = { storeName: i.storeName, storeSlug: i.storeSlug, items: [] };
       }
       acc[i.storeId].items.push(i);
       return acc;

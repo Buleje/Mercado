@@ -185,7 +185,7 @@ export default function HapticFeedback() {
     <div className="space-y-5">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Vibrate className="w-5 h-5 text-[#0f766e]" />
+        <Vibrate className="w-5 h-5 text-[#00B4A6]" />
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Vibracion Haptica
         </h2>
@@ -203,13 +203,13 @@ export default function HapticFeedback() {
         className={cn(
           "rounded-xl border p-5 flex items-center justify-between gap-4 transition-all",
           haptic.enabled
-            ? "border-[#0f766e]/40 bg-[#0f766e]/5 dark:bg-[#0f766e]/10"
+            ? "border-[#00B4A6]/40 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
             : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
         )}
       >
         <div className="flex items-center gap-3">
           {haptic.enabled ? (
-            <Volume2 className="w-6 h-6 text-[#0f766e] dark:text-[#14b8a6] shrink-0" />
+            <Volume2 className="w-6 h-6 text-[#00B4A6] dark:text-[#2dd4bf] shrink-0" />
           ) : (
             <VolumeX className="w-6 h-6 text-gray-400 shrink-0" />
           )}
@@ -229,9 +229,9 @@ export default function HapticFeedback() {
         <button
           onClick={() => haptic.toggle()}
           className={cn(
-            "relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:ring-offset-2",
+            "relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[#00B4A6] focus:ring-offset-2",
             haptic.enabled
-              ? "bg-[#0f766e] dark:bg-[#14b8a6]"
+              ? "bg-[#00B4A6] dark:bg-[#2dd4bf]"
               : "bg-gray-200 dark:bg-gray-700"
           )}
           aria-label="Toggle vibración"
@@ -263,8 +263,8 @@ export default function HapticFeedback() {
               className={cn(
                 "rounded-xl border p-3 text-left transition-all",
                 lastTest === label
-                  ? "border-[#0f766e] bg-[#0f766e]/10 scale-95"
-                  : "border-gray-200 dark:border-gray-700 hover:border-[#0f766e]/40 hover:bg-gray-50 dark:hover:bg-gray-750",
+                  ? "border-[#00B4A6] bg-[#00B4A6]/10 scale-95"
+                  : "border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]/40 hover:bg-gray-50 dark:hover:bg-gray-750",
                 (!haptic.enabled || !haptic.isSupported) &&
                   "opacity-50 cursor-not-allowed"
               )}
@@ -274,7 +274,7 @@ export default function HapticFeedback() {
                   {label}
                 </span>
                 {lastTest === label && (
-                  <Check className="w-3.5 h-3.5 text-[#0f766e] dark:text-[#14b8a6]" />
+                  <Check className="w-3.5 h-3.5 text-[#00B4A6] dark:text-[#2dd4bf]" />
                 )}
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">{desc}</p>
@@ -292,14 +292,14 @@ export default function HapticFeedback() {
         <div className="space-y-2 text-xs font-mono text-gray-600 dark:text-gray-400">
           <div className="rounded-lg bg-gray-100 dark:bg-gray-700 px-3 py-2">
             <p className="text-gray-400 dark:text-gray-500">{"// Hook"}</p>
-            <p className="text-[#0f766e] dark:text-[#14b8a6]">{"import { useHaptic } from './HapticFeedback';"}</p>
+            <p className="text-[#00B4A6] dark:text-[#2dd4bf]">{"import { useHaptic } from './HapticFeedback';"}</p>
             <p className="mt-1">{"const { vibrateSuccess } = useHaptic();"}</p>
             <p>{"vibrateSuccess(); // al completar una venta"}</p>
           </div>
 
           <div className="rounded-lg bg-gray-100 dark:bg-gray-700 px-3 py-2">
             <p className="text-gray-400 dark:text-gray-500">{"// Wrapper de componente"}</p>
-            <p className="text-[#0f766e] dark:text-[#14b8a6]">{"import { HapticWrapper } from './HapticFeedback';"}</p>
+            <p className="text-[#00B4A6] dark:text-[#2dd4bf]">{"import { HapticWrapper } from './HapticFeedback';"}</p>
             <p className="mt-1">{"<HapticWrapper event=\"success\">"}</p>
             <p>{"  <Button>Cobrar</Button>"}</p>
             <p>{"</HapticWrapper>"}</p>

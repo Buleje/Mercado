@@ -64,7 +64,7 @@ export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: numb
 }
 
 export function avatarColor(name: string): string {
-  const colors = ["#ef4444","#f97316","#f59e0b","#65a30d","#16a34a","#14b8a6","#0891b2","#0ea5e9","#3b82f6","#0f766e","#8b5cf6","#a855f7","#ec4899","#f43f5e"];
+  const colors = ["#ef4444","#f97316","#f59e0b","#65a30d","#16a34a","#2dd4bf","#0891b2","#0ea5e9","#3b82f6","#00B4A6","#8b5cf6","#a855f7","#ec4899","#f43f5e"];
   let h = 0;
   for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
   return colors[Math.abs(h) % colors.length];

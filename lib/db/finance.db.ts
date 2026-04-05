@@ -59,8 +59,8 @@ export const PayablesDB = {
     if (tenantId) where.tenantId = tenantId;
     return (await prisma.payable.findMany({ where, include: { payments: true }, orderBy: { createdAt: "desc" } })).map(mapPayable);
   },
-  async getById(id: string): Promise<DbPayable | null> {
-    const row = await prisma.payable.findUnique({ where: { id }, include: { payments: true } });
+  async getById(tenantId: string, id: string): Promise<DbPayable | null> {
+    const row = await prisma.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
     return row ? mapPayable(row) : null;
   },
   async getBySupplierId(supplierId: string): Promise<DbPayable[]> {
@@ -78,8 +78,8 @@ export const PayablesDB = {
     });
     return mapPayable(row);
   },
-  async update(id: string, patch: Partial<DbPayable>): Promise<DbPayable | null> {
-    const existing = await prisma.payable.findUnique({ where: { id } });
+  async update(tenantId: string, id: string, patch: Partial<DbPayable>): Promise<DbPayable | null> {
+    const existing = await prisma.payable.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
     const data: Record<string, unknown> = {};
     if (patch.description !== undefined) data.description = patch.description;
@@ -87,11 +87,13 @@ export const PayablesDB = {
     if (patch.status !== undefined) data.status = patch.status;
     if (patch.dueDate !== undefined) data.dueDate = new Date(patch.dueDate);
     if (patch.supplierName !== undefined) data.supplierName = patch.supplierName;
-    const row = await prisma.payable.update({ where: { id }, data, include: { payments: true } });
+    await prisma.payable.updateMany({ where: { id, tenantId }, data });
+    const row = await prisma.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
+    if (!row) return null;
     return mapPayable(row);
   },
-  async addPayment(id: string, payment: DbPayment): Promise<DbPayable | null> {
-    const existing = await prisma.payable.findUnique({ where: { id }, include: { payments: true } });
+  async addPayment(tenantId: string, id: string, payment: DbPayment): Promise<DbPayable | null> {
+    const existing = await prisma.payable.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
     await prisma.payment.create({
       data: { id: payment.id, payableId: id, amount: payment.amount, method: payment.method, date: new Date(payment.date), reference: payment.reference },
@@ -99,11 +101,13 @@ export const PayablesDB = {
     const allPay = await prisma.payment.findMany({ where: { payableId: id } });
     const paidAmount = allPay.reduce((s: number, p: PPayment) => s + p.amount, 0);
     const status = paidAmount >= existing.amount ? "pagado" : paidAmount > 0 ? "parcial" : "pendiente";
-    const row = await prisma.payable.update({ where: { id }, data: { paidAmount, status }, include: { payments: true } });
+    await prisma.payable.updateMany({ where: { id, tenantId }, data: { paidAmount, status } });
+    const row = await prisma.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
+    if (!row) return null;
     return mapPayable(row);
   },
-  async delete(id: string): Promise<void> {
-    await prisma.payable.delete({ where: { id } }).catch(() => {});
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.payable.deleteMany({ where: { id, tenantId } }).catch(() => {});
   },
 };
 
@@ -122,8 +126,8 @@ export const ExpensesDB = {
     const row = await prisma.expense.create({ data: { category: data.category, description: data.description, amount: data.amount, date: new Date(data.date), recurring: data.recurring } });
     return mapExpense(row);
   },
-  async delete(id: string): Promise<void> {
-    await prisma.expense.delete({ where: { id } }).catch(() => {});
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.expense.deleteMany({ where: { id, tenantId } }).catch(() => {});
   },
   async getSummary(): Promise<{ category: string; total: number; count: number }[]> {
     const groups = await prisma.expense.groupBy({ by: ["category"], _sum: { amount: true }, _count: true, orderBy: { _sum: { amount: "desc" } } });

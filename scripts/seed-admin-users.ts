@@ -20,6 +20,7 @@ async function main() {
       where: { id: u.id },
       create: {
         id: u.id,
+        tenantId: "main",
         username: u.username,
         passwordHash: u.password,
         role: u.role,

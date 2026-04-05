@@ -318,11 +318,16 @@ export default function CheckoutModal() {
     setReference("");
   };
 
-  const useGeo = () => {
+  const useGeo = async () => {
     if (!navigator.geolocation) {
       setGeoError("Tu navegador no soporta geolocalización. Ingresa tu dirección manualmente.");
       return;
     }
+
+    // Skip stale permission cache check — let getCurrentPosition handle denials
+    // via its error callback (code 1 = PERMISSION_DENIED). The permissions API
+    // can return stale "denied" state even after user re-grants, blocking GPS.
+
     setLoadingGeo(true);
     setGeoError("");
     setGeoSuggested(true);
@@ -402,11 +407,17 @@ export default function CheckoutModal() {
               
               setRefSuggestions([...new Set(suggestions)].slice(0, 6));
               setShowRefSuggestions(true);
+              
+              // Auto-fill reference with first relevant suggestion and use simple address
+              if (suggestions.length > 0) {
+                setReference(suggestions[0]);
+              }
+              setUseDetailedAddress(false);
             }
           }
         } catch {
           // Fallback to basic GPS location
-          setLocation(`Pucallpa — GPS: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+          setLocation(`GPS: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
         }
         
         setLoadingGeo(false);
@@ -721,7 +732,12 @@ export default function CheckoutModal() {
 
         if (!res.ok || !data.nombreCompleto) {
           setDniLookupStatus("error");
-          setDniLookupMessage(data.error || "No encontramos datos para este DNI.");
+          const fallbackMsg = res.status === 503
+            ? "RENIEC no disponible ahora. Escribe el nombre manualmente."
+            : res.status === 502
+            ? "No pudimos conectar con RENIEC. Escribe el nombre manualmente."
+            : data.error || "No encontramos datos para este DNI.";
+          setDniLookupMessage(fallbackMsg);
           return;
         }
 
@@ -884,61 +900,11 @@ export default function CheckoutModal() {
                           </div>
                         </div>
 
-                        {/* ── 3 columnas: cuenta guardada | buscar número | cliente nuevo ── */}
-                        <div className="grid grid-cols-3 gap-3">
+                        {/* ── 2 columnas: buscar número | cliente nuevo ── */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-                          {/* Col 1: Cuenta guardada (o placeholder vacío) */}
-                          <div className={`rounded-2xl border-2 p-4 flex flex-col gap-3 ${
-                            customer ? "border-primary/20 bg-primary/5" : "border-dashed border-gray-200 dark:border-zinc-700 bg-gray-50/50 dark:bg-surface/20"
-                          }`}>
-                            <p className="text-xs font-bold text-primary/60 uppercase tracking-wider">Cuenta guardada</p>
-                            {customer ? (
-                              <>
-                                <div className="flex items-center gap-2.5">
-                                  <div className="h-9 w-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-                                    <User className="h-4 w-4 text-primary" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="font-bold text-gray-900 dark:text-foreground text-sm leading-tight truncate">{customer.name}</p>
-                                    {customer.phone && (
-                                      <p className="text-xs text-gray-500 truncate">{customer.phone}</p>
-                                    )}
-                                  </div>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setFoundCustomer(customer);
-                                    setName(customer.name);
-                                    setPhone(customer.phone ?? "");
-                                    if (customer.phone) fetchLoyaltyPoints(customer.phone);
-                                    const cLocs: SavedLocation[] = customer.locations?.length
-                                      ? customer.locations
-                                      : customer.location
-                                      ? [{ id: "default", location: customer.location, reference: customer.reference ?? "" }]
-                                      : [];
-                                    if (cLocs.length > 0) {
-                                      const aId = customer.activeLocationId ?? cLocs[0].id;
-                                      const aLoc = cLocs.find((l) => l.id === aId) ?? cLocs[0];
-                                      setSelectedLocId(aId);
-                                      setLocation(aLoc.location ?? "");
-                                      setReference(aLoc.reference ?? "");
-                                      setMapCoords(coordsFromLocation(aLoc.location ?? ""));
-                                    }
-                                    setStep("datos");
-                                  }}
-                                  className="mt-auto w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-md shadow-primary/20"
-                                >
-                                  Continuar <ChevronRight className="h-4 w-4" />
-                                </button>
-                              </>
-                            ) : (
-                              <p className="text-xs text-gray-400 leading-tight">No hay sesión activa</p>
-                            )}
-                          </div>
-
-                          {/* Col 2: Buscar número */}
-                          <div className="rounded-2xl border-2 border-gray-200 dark:border-zinc-700 p-4 flex flex-col gap-3">
+                          {/* Col 1: Buscar número */}
+                          <div className="rounded-2xl border-2 border-gray-200 dark:border-zinc-700 p-5 flex flex-col gap-3">
                             <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Buscar cuenta</p>
                             <div className="relative">
                               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
@@ -962,32 +928,42 @@ export default function CheckoutModal() {
                             {phoneNotFound && (
                               <p className="text-xs text-red-500 font-semibold">Número no encontrado</p>
                             )}
-                            <button
+                            <m.button
                               type="button"
                               onClick={handlePhoneSearch}
                               disabled={!phoneQueryValidation.valid || phoneSearching}
-                              className="mt-auto w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-md shadow-primary/20 disabled:opacity-50"
+                              whileHover={{ scale: 1.03, y: -1 }}
+                              whileTap={{ scale: 0.96 }}
+                              className="mt-auto w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-all shadow-md shadow-primary/20 disabled:opacity-50"
                             >
                               {phoneSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}
                               {phoneSearching ? "Buscando…" : "Buscar"}
-                            </button>
+                            </m.button>
                           </div>
 
-                          {/* Col 3: Cliente nuevo */}
-                          <div className="rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 flex flex-col gap-3 items-center justify-between">
-                            <p className="text-xs font-bold text-primary/60 uppercase tracking-wider self-start">Soy nuevo</p>
-                            <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center">
-                              <User className="h-5 w-5 text-primary" />
+                          {/* Col 2: Cliente nuevo */}
+                          <m.div
+                            className="rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-5 flex flex-col gap-4 items-center justify-center"
+                            whileHover={{ scale: 1.02, borderColor: "rgba(0,180,166,0.5)" }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                          >
+                            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                              <User className="h-6 w-6 text-primary" />
                             </div>
-                            <p className="text-xs text-gray-400 text-center leading-tight">Registro rápido</p>
-                            <button
+                            <div className="text-center">
+                              <p className="text-sm font-extrabold text-primary">Soy nuevo</p>
+                              <p className="text-xs text-gray-400 mt-1">Registro rápido sin cuenta</p>
+                            </div>
+                            <m.button
                               type="button"
                               onClick={handleSkipAccount}
-                              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-primary/40 text-sm font-bold text-primary hover:bg-primary/10 hover:border-primary/60 transition-all"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-primary/40 text-sm font-bold text-primary hover:bg-primary/10 hover:border-primary/60 transition-all"
                             >
                               Continuar <ChevronRight className="h-4 w-4" />
-                            </button>
-                          </div>
+                            </m.button>
+                          </m.div>
 
                         </div>
                       </div>
@@ -1221,7 +1197,7 @@ export default function CheckoutModal() {
                                         <div className="relative">
                                           <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                                           <input required value={location} onChange={(e) => { setLocation(e.target.value); setMapCoords(coordsFromLocation(e.target.value)); }}
-                                            placeholder="Ej: Jr. Ucayali 450, Pucallpa"
+                                            placeholder="Ej: Jr. Ucayali 450"
                                             className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
                                         </div>
                                       )}
@@ -1417,7 +1393,7 @@ export default function CheckoutModal() {
                                       onClick={() => setDeliverySlot(slot.id)}
                                       className={`px-3 py-2 rounded-full text-xs font-bold transition-all ${
                                         deliverySlot === slot.id
-                                          ? "bg-[#0f766e] text-white shadow-md scale-105"
+                                          ? "bg-[#00B4A6] text-white shadow-md scale-105"
                                           : slot.disabled
                                             ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed"
                                             : "bg-gray-100 dark:bg-surface text-gray-700 dark:text-gray-300 hover:bg-primary/10 hover:text-primary"
@@ -1446,14 +1422,18 @@ export default function CheckoutModal() {
 
                         {/* datos → continue to pago */}
                         <div className="flex gap-3 pt-1">
-                          <button type="button" onClick={() => setStep("cuenta")}
-                            className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                          <m.button type="button" onClick={() => setStep("cuenta")}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.96 }}
+                            className="flex-1 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                             ← Volver
-                          </button>
-                          <button type="submit"
-                            className="flex-1 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
+                          </m.button>
+                          <m.button type="submit"
+                            whileHover={{ scale: 1.03, y: -1 }}
+                            whileTap={{ scale: 0.96 }}
+                            className="flex-1 py-3.5 rounded-xl bg-linear-to-r from-primary to-primary-dark text-white font-extrabold text-sm transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2">
                             Continuar al pago <ChevronRight className="h-4 w-4" />
-                          </button>
+                          </m.button>
                         </div>
                       </form>
                     </m.div>
@@ -1470,29 +1450,49 @@ export default function CheckoutModal() {
 
                             {/* Mejora 12: Direccion de entrega resaltada */}
                             {(location || effectiveCustomer?.location) ? (
-                              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/40 rounded-lg p-3">
-                                <div className="flex items-center gap-2">
-                                  <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
-                                  <span className="text-sm font-medium text-blue-800 dark:text-blue-300">Entregaremos en:</span>
+                              <m.div
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-linear-to-r from-primary/5 to-blue-50/50 dark:from-primary/10 dark:to-blue-900/10 border border-primary/20 rounded-2xl p-4 relative overflow-hidden"
+                              >
+                                <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                                <div className="flex items-start gap-3 relative z-10">
+                                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                    <MapPin className="h-5 w-5 text-primary" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Entregaremos en</p>
+                                    <p className="text-sm font-bold text-gray-800 dark:text-foreground mt-0.5 truncate">{location || effectiveCustomer?.location}</p>
+                                    {(reference || effectiveCustomer?.reference) && (
+                                      <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1"><Home className="h-3 w-3 shrink-0" />{reference || effectiveCustomer?.reference}</p>
+                                    )}
+                                  </div>
+                                  <m.button type="button" onClick={() => setStep("datos")}
+                                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                                    className="text-xs text-primary font-bold hover:underline shrink-0 px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors">
+                                    Cambiar
+                                  </m.button>
                                 </div>
-                                <p className="text-sm mt-1 text-gray-700 dark:text-foreground">{location || effectiveCustomer?.location}</p>
-                                {(reference || effectiveCustomer?.reference) && (
-                                  <p className="text-xs text-gray-500 mt-0.5">{reference || effectiveCustomer?.reference}</p>
-                                )}
-                                <button type="button" onClick={() => setStep("datos")} className="text-xs text-blue-600 dark:text-blue-400 mt-1 hover:underline font-medium">
-                                  Cambiar direccion →
-                                </button>
-                              </div>
+                              </m.div>
                             ) : (
-                              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg p-3">
-                                <button type="button" onClick={() => setStep("datos")} className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-400 font-medium">
-                                  <MapPin className="h-4 w-4" /> Agrega tu direccion de entrega
-                                </button>
-                              </div>
+                              <m.div
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-2xl p-4"
+                              >
+                                <m.button type="button" onClick={() => setStep("datos")}
+                                  whileHover={{ scale: 1.02 }}
+                                  className="flex items-center gap-3 text-sm text-amber-700 dark:text-amber-400 font-bold w-full">
+                                  <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-800/30 flex items-center justify-center shrink-0">
+                                    <MapPin className="h-5 w-5" />
+                                  </div>
+                                  Agrega tu dirección de entrega →
+                                </m.button>
+                              </m.div>
                             )}
 
                             {/* Mejora 19: Items list — collapsible review */}
-                            <details className="group">
+                            <details open className="group">
                               <summary className="flex items-center justify-between cursor-pointer list-none text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 py-2 px-3 rounded-xl bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-surface/80 transition-colors">
                                 <span className="flex items-center gap-2">
                                   <ShoppingCart className="h-4 w-4" />
@@ -1553,23 +1553,6 @@ export default function CheckoutModal() {
                               </div>
                             </details>
 
-                            {/* Cupón */}
-                            <div>
-                              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Cupón de descuento</label>
-                              <div className="flex gap-2">
-                                <input value={couponCode} onChange={e => { setCouponCode(e.target.value.toUpperCase()); if (couponApplied) { setCouponApplied(false); setCouponDiscount(0); setCouponMsg(""); } }} placeholder="Ej: DESCUENTO10" disabled={couponApplied}
-                                  className="flex-1 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm disabled:opacity-50 uppercase" />
-                                {couponApplied ? (
-                                  <button type="button" onClick={() => { setCouponApplied(false); setCouponDiscount(0); setCouponCode(""); setCouponMsg(""); }} className="px-4 py-2 rounded-xl bg-red-100 text-red-600 font-bold text-sm hover:bg-red-200 transition">Quitar</button>
-                                ) : (
-                                  <button type="button" onClick={validateCoupon} disabled={!couponCode.trim() || validatingCoupon} className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary/90 transition disabled:opacity-50">
-                                    {validatingCoupon ? "..." : "Aplicar"}
-                                  </button>
-                                )}
-                              </div>
-                              {couponMsg && <p className={`text-xs mt-1 font-bold ${couponApplied ? "text-emerald-600" : "text-red-500"}`}>{couponMsg}</p>}
-                            </div>
-
                             {/* K2 — WhatsApp summary */}
                             <a
                               href={`https://wa.me/?text=${encodeURIComponent(
@@ -1591,15 +1574,51 @@ export default function CheckoutModal() {
                               const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
                               const h = now.getHours();
                               const isOpen = h >= 8 && h < 21;
-                              const eta = isOpen ? "~30 minutos" : "Manana de 8:00 a 10:00 am";
+                              const eta = isOpen ? "~30 minutos" : "Mañana de 8:00 a 10:00 am";
+                              const etaDetail = isOpen ? "Tu pedido está siendo preparado" : "Abrimos a las 8:00 AM";
                               return (
-                                <div className="rounded-2xl border border-[#0f766e]/20 bg-[#0f766e]/5 dark:bg-[#0f766e]/10 p-3.5 flex items-center gap-3">
-                                  <span className="text-2xl">🚚</span>
-                                  <div>
-                                    <p className="text-xs font-bold text-[#0f766e] dark:text-emerald-400 uppercase tracking-wider">Entrega estimada</p>
-                                    <p className="text-sm font-bold text-gray-800 dark:text-foreground">{eta}</p>
+                                <m.div
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="rounded-2xl border border-primary/20 bg-linear-to-br from-primary/5 via-primary/8 to-emerald-50/50 dark:from-primary/10 dark:via-primary/15 dark:to-emerald-900/10 p-4 relative overflow-hidden"
+                                >
+                                  {/* Background decoration */}
+                                  <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                                  <div className="flex items-center gap-3.5 relative z-10">
+                                    <m.div
+                                      animate={{ x: [0, 4, 0] }}
+                                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                      className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"
+                                    >
+                                      <span className="text-2xl">🚚</span>
+                                    </m.div>
+                                    <div className="flex-1">
+                                      <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Entrega estimada</p>
+                                      <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{eta}</p>
+                                      <p className="text-xs text-gray-500 mt-0.5">{etaDetail}</p>
+                                    </div>
+                                    <div className={`h-3 w-3 rounded-full shrink-0 ${isOpen ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
                                   </div>
-                                </div>
+                                  {/* Progress bar */}
+                                  {isOpen && (
+                                    <div className="mt-3 relative z-10">
+                                      <div className="h-1.5 bg-gray-200/60 dark:bg-gray-700/40 rounded-full overflow-hidden">
+                                        <m.div
+                                          className="h-full bg-linear-to-r from-primary to-emerald-400 rounded-full"
+                                          initial={{ width: "0%" }}
+                                          animate={{ width: "15%" }}
+                                          transition={{ duration: 1.5, ease: "easeOut" }}
+                                        />
+                                      </div>
+                                      <div className="flex justify-between mt-1.5 text-[9px] font-semibold text-gray-400">
+                                        <span>Confirmado</span>
+                                        <span>Preparando</span>
+                                        <span>En camino</span>
+                                        <span>Entregado</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </m.div>
                               );
                             })()}
 
@@ -1692,9 +1711,14 @@ export default function CheckoutModal() {
                                   <span className="font-bold text-amber-600">+S/{tip.toFixed(2)}</span>
                                 </div>
                               )}
-                              <div className="flex justify-between items-center px-4 py-3.5 bg-linear-to-r from-primary/8 to-indigo-500/8 dark:from-primary/15 dark:to-indigo-500/15 border-t border-primary/20">
-                                <span className="font-extrabold text-gray-900 dark:text-foreground text-sm">Total a pagar</span>
-                                <span className="text-2xl font-extrabold text-primary">S/{finalTotal.toFixed(2)}</span>
+                              <div className="flex justify-between items-center px-4 py-4 bg-linear-to-r from-primary/8 to-emerald-400/8 dark:from-primary/15 dark:to-emerald-500/15 border-t-2 border-primary/30">
+                                <span className="font-extrabold text-gray-900 dark:text-foreground text-base">Total a pagar</span>
+                                <m.span
+                                  key={finalTotal}
+                                  initial={{ scale: 1.2, color: "#00B4A6" }}
+                                  animate={{ scale: 1, color: "#00B4A6" }}
+                                  className="text-2xl font-extrabold text-primary"
+                                >S/{finalTotal.toFixed(2)}</m.span>
                               </div>
                             </div>
 
@@ -1810,15 +1834,24 @@ export default function CheckoutModal() {
                             )}
 
                             <div className="flex gap-3 pt-1">
-                              <button type="button" onClick={() => setStep("datos")}
+                              <m.button type="button" onClick={() => setStep("datos")}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.96 }}
                                 className="flex items-center justify-center gap-1.5 shrink-0 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                                 ← Volver
-                              </button>
-                              <button type="submit" disabled={submitting}
-                                className="flex-1 py-3.5 rounded-xl bg-linear-to-r from-primary to-indigo-600 text-white font-extrabold text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-lg shadow-primary/30 disabled:opacity-50 flex items-center justify-center gap-2">
-                                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                                {submitting ? "Enviando…" : "Finalizar pedido"}
-                              </button>
+                              </m.button>
+                              <m.button type="submit" disabled={submitting}
+                                whileHover={submitting ? {} : { scale: 1.03, y: -2 }}
+                                whileTap={submitting ? {} : { scale: 0.96 }}
+                                className="flex-1 py-4 rounded-xl bg-linear-to-r from-primary via-emerald-500 to-primary text-white font-extrabold text-base transition-all shadow-lg shadow-primary/30 disabled:opacity-50 flex items-center justify-center gap-2.5 relative overflow-hidden">
+                                {!submitting && (
+                                  <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_3s_ease-in-out_infinite]" />
+                                )}
+                                <span className="relative z-10 flex items-center gap-2">
+                                  {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                                  {submitting ? "Enviando…" : "🛒 Finalizar pedido"}
+                                </span>
+                              </m.button>
                             </div>
                           </div>
 
@@ -1842,7 +1875,7 @@ export default function CheckoutModal() {
                               className="absolute w-2 h-2 rounded-sm"
                               style={{
                                 left: `${10 + (i * 7) % 80}%`,
-                                backgroundColor: ["#0f766e", "#f97316", "#e63946", "#457b9d", "#ffd60a", "#9b5de5"][i % 6],
+                                backgroundColor: ["#00B4A6", "#f97316", "#e63946", "#457b9d", "#ffd60a", "#9b5de5"][i % 6],
                               }}
                             />
                           ))}

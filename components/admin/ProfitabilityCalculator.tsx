@@ -63,7 +63,7 @@ function BarChart({
               <p className="text-xs font-semibold text-gray-800 dark:text-gray-100">
                 {fmt(p.price)}
               </p>
-              <p className="text-xs text-[#0f766e]">{fmt(p.profit)}/mes</p>
+              <p className="text-xs text-[#00B4A6]">{fmt(p.profit)}/mes</p>
             </div>
             <div
               className={cn(
@@ -71,7 +71,7 @@ function BarChart({
                 isOptimal
                   ? "bg-[#f97316]"
                   : isCurrent
-                  ? "bg-[#0f766e]"
+                  ? "bg-[#00B4A6]"
                   : "bg-gray-200 dark:bg-gray-700"
               )}
               style={{ height: `${Math.max(pct, 2)}%` }}
@@ -175,7 +175,7 @@ export default function ProfitabilityCalculator() {
         {/* Inputs */}
         <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
           <div className="mb-4 flex items-center gap-2">
-            <Calculator className="h-5 w-5 text-[#0f766e]" />
+            <Calculator className="h-5 w-5 text-[#00B4A6]" />
             <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">
               Parámetros
             </h3>
@@ -193,7 +193,7 @@ export default function ProfitabilityCalculator() {
                 disabled={loadingProds}
                 className={cn(
                   "w-full appearance-none rounded-lg border border-gray-200 bg-gray-50 py-2 pl-3 pr-8 text-sm",
-                  "text-gray-800 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
+                  "text-gray-800 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                   "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 )}
               >
@@ -229,7 +229,7 @@ export default function ProfitabilityCalculator() {
                   onChange={(e) => setter(Number(e.target.value))}
                   className={cn(
                     "w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm",
-                    "text-gray-800 outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/20",
+                    "text-gray-800 outline-none focus:border-[#00B4A6] focus:ring-2 focus:ring-[#00B4A6]/20",
                     "dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                   )}
                 />
@@ -248,7 +248,7 @@ export default function ProfitabilityCalculator() {
                 step={5}
                 value={elasticity}
                 onChange={(e) => setElasticity(Number(e.target.value))}
-                className="w-full accent-[#0f766e]"
+                className="w-full accent-[#00B4A6]"
               />
               <div className="mt-0.5 flex justify-between text-xs text-gray-400">
                 <span>Poca demanda</span>
@@ -268,7 +268,7 @@ export default function ProfitabilityCalculator() {
               </div>
               <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800">
                 <p className="text-xs text-gray-500 dark:text-gray-400">Ganancia/mes</p>
-                <p className="text-sm font-bold text-[#0f766e]">
+                <p className="text-sm font-bold text-[#00B4A6]">
                   {fmt(currentPoint.profit)}
                 </p>
               </div>
@@ -299,7 +299,7 @@ export default function ProfitabilityCalculator() {
               {/* Legend */}
               <div className="mt-3 flex flex-wrap gap-3 text-xs">
                 <div className="flex items-center gap-1.5">
-                  <div className="h-2.5 w-2.5 rounded-sm bg-[#0f766e]" />
+                  <div className="h-2.5 w-2.5 rounded-sm bg-[#00B4A6]" />
                   <span className="text-gray-500 dark:text-gray-400">Precio actual</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -384,7 +384,7 @@ export default function ProfitabilityCalculator() {
                       className={cn(
                         "transition",
                         isOptimal && "bg-[#f97316]/5 dark:bg-[#f97316]/10",
-                        isCurrent && "bg-[#0f766e]/5 dark:bg-[#0f766e]/10"
+                        isCurrent && "bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
                       )}
                     >
                       <td className="px-4 py-2 font-medium text-gray-800 dark:text-gray-100">
@@ -393,7 +393,7 @@ export default function ProfitabilityCalculator() {
                           <Star className="ml-1 inline h-3 w-3 text-[#f97316]" />
                         )}
                         {isCurrent && (
-                          <span className="ml-1 text-[10px] text-[#0f766e]">(actual)</span>
+                          <span className="ml-1 text-[10px] text-[#00B4A6]">(actual)</span>
                         )}
                       </td>
                       <td className="px-4 py-2 text-gray-500 dark:text-gray-400">{p.label}</td>

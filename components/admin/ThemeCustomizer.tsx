@@ -25,7 +25,7 @@ const PRESETS: Preset[] = [
   {
     id:   "bodega",
     name: "Buleje",
-    colors: { primary: "#0f766e", secondary: "#f97316", background: "#f9fafb", text: "#111827" },
+    colors: { primary: "#00B4A6", secondary: "#f97316", background: "#f9fafb", text: "#111827" },
   },
   {
     id:   "moderno",
@@ -138,7 +138,7 @@ function ColorField({
           if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onChange(v);
         }}
         maxLength={7}
-        className="w-24 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40"
+        className="w-24 px-2 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-white text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40"
       />
     </div>
   );
@@ -298,7 +298,7 @@ export default function ThemeCustomizer() {
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors",
                     activePreset === preset.id
-                      ? "border-[#0f766e] bg-[#0f766e]/10 text-[#0f766e] dark:text-[#4a9e78]"
+                      ? "border-[#00B4A6] bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#4a9e78]"
                       : "border-gray-200 dark:border-card-border text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                   )}
                 >
@@ -358,7 +358,7 @@ export default function ThemeCustomizer() {
               disabled={saving}
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-colors disabled:opacity-70",
-                saved ? "bg-emerald-600" : "bg-[#0f766e] hover:bg-[#245a41]"
+                saved ? "bg-emerald-600" : "bg-[#00B4A6] hover:bg-[#245a41]"
               )}
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : null}

@@ -69,7 +69,7 @@ export default function ReferralProgram() {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-gradient-to-br from-[#0f766e]/5 to-[#f97316]/5 dark:from-[#0f766e]/10 dark:to-[#f97316]/10 rounded-2xl border border-[#0f766e]/15 dark:border-[#0f766e]/25 p-5 sm:p-6"
+      className="bg-gradient-to-br from-[#00B4A6]/5 to-[#f97316]/5 dark:from-[#00B4A6]/10 dark:to-[#f97316]/10 rounded-2xl border border-[#00B4A6]/15 dark:border-[#00B4A6]/25 p-5 sm:p-6"
     >
       {/* Header */}
       <div className="flex items-start gap-3 mb-5">
@@ -90,7 +90,7 @@ export default function ReferralProgram() {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 mb-4">
         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1.5 font-medium">Tu codigo de referido</p>
         <div className="flex items-center gap-3">
-          <span className="text-2xl font-extrabold text-[#0f766e] dark:text-[#14b8a6] tracking-wider flex-1">
+          <span className="text-2xl font-extrabold text-[#00B4A6] dark:text-[#2dd4bf] tracking-wider flex-1">
             {data.code}
           </span>
           <button
@@ -106,7 +106,7 @@ export default function ReferralProgram() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 mb-5">
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-3 text-center">
-          <Users className="h-4 w-4 text-[#0f766e] mx-auto mb-1" />
+          <Users className="h-4 w-4 text-[#00B4A6] mx-auto mb-1" />
           <p className="text-lg font-extrabold text-gray-900 dark:text-white">{data.referredCount}</p>
           <p className="text-[11px] text-gray-500 dark:text-gray-400">Amigos referidos</p>
         </div>

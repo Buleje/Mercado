@@ -603,11 +603,11 @@ function DeliveryZonesConfig() {
             <span className="text-xs text-gray-400">S/</span>
             <input type="number" min={0} value={newZone.tarifa} onChange={e => setNewZone({...newZone, tarifa: Number(e.target.value) || 0})} className="w-16 text-xs border border-gray-200 dark:border-zinc-600 rounded-lg px-2 py-1.5 bg-white dark:bg-zinc-900 text-gray-900 dark:text-zinc-100" />
           </div>
-          <button onClick={() => { if (newZone.zona.trim()) { saveZones([...zones, { zona: newZone.zona.trim(), tarifa: newZone.tarifa }]); setNewZone({ zona: "", tarifa: 0 }); setAddingZone(false); } }} className="px-2 py-1.5 rounded-lg bg-[#0f766e] text-white text-xs font-bold">OK</button>
+          <button onClick={() => { if (newZone.zona.trim()) { saveZones([...zones, { zona: newZone.zona.trim(), tarifa: newZone.tarifa }]); setNewZone({ zona: "", tarifa: 0 }); setAddingZone(false); } }} className="px-2 py-1.5 rounded-lg bg-[#00B4A6] text-white text-xs font-bold">OK</button>
           <button onClick={() => setAddingZone(false)} className="text-xs text-gray-400">&times;</button>
         </div>
       ) : (
-        <button onClick={() => setAddingZone(true)} className="mt-2 w-full py-1.5 rounded-lg border border-dashed border-gray-200 dark:border-zinc-600 text-xs font-bold text-gray-400 hover:text-[#0f766e] hover:border-[#0f766e]/40 transition-colors">
+        <button onClick={() => setAddingZone(true)} className="mt-2 w-full py-1.5 rounded-lg border border-dashed border-gray-200 dark:border-zinc-600 text-xs font-bold text-gray-400 hover:text-[#00B4A6] hover:border-[#00B4A6]/40 transition-colors">
           + Agregar zona
         </button>
       )}
@@ -623,7 +623,7 @@ function CustomAreaTooltip({ active, payload, label }: { active?: boolean; paylo
   return (
     <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg shadow-lg px-3 py-2">
       <p className="text-xs font-semibold text-gray-700 dark:text-zinc-300">{label}</p>
-      <p className="text-sm font-bold font-mono text-[#0f766e]">{fmt(payload[0].value)}</p>
+      <p className="text-sm font-bold font-mono text-[#00B4A6]">{fmt(payload[0].value)}</p>
     </div>
   );
 }
@@ -641,11 +641,11 @@ const CHART_OPTIONS: { id: ChartType; label: string }[] = [
   { id: "flujo-caja", label: "Flujo de caja (ComposedChart)" },
 ];
 
-const PIE_COLORS = ["#0f766e", "#f97316", "#264653", "#e76f51", "#2a9d8f", "#e9c46a", "#606c38", "#bc6c25"];
+const PIE_COLORS = ["#00B4A6", "#f97316", "#264653", "#e76f51", "#2a9d8f", "#e9c46a", "#606c38", "#bc6c25"];
 const PAYMENT_COLORS: Record<string, string> = {
-  efectivo: "#0f766e",
+  efectivo: "#00B4A6",
   yape: "#6d28d9",
-  plin: "#0d9488",
+  plin: "#33C4B8",
   tarjeta: "#2563eb",
   transferencia: "#f59e0b",
 };
@@ -1802,7 +1802,7 @@ export default function SmartDashboardTab({
               <YAxis type="category" dataKey="name" fontSize={9} width={55} />
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               <Tooltip formatter={((value: any, name: any) => String(name) === "qty" ? `${value} uds` : fmt(Number(value))) as any} />
-              <Bar dataKey="qty" fill="#0f766e" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="qty" fill="#00B4A6" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         ) : <p className="text-xs text-gray-400 text-center py-8">Sin datos de productos</p>;
@@ -1830,7 +1830,7 @@ export default function SmartDashboardTab({
               <YAxis fontSize={10} tickFormatter={(v: number) => fmtShort(v)} />
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               <Tooltip formatter={((value: any) => fmt(Number(value))) as any} />
-              <Line type="monotone" dataKey="ventas" stroke="#0f766e" strokeWidth={2} dot={{ r: 4, fill: "#0f766e" }} />
+              <Line type="monotone" dataKey="ventas" stroke="#00B4A6" strokeWidth={2} dot={{ r: 4, fill: "#00B4A6" }} />
             </LineChart>
           </ResponsiveContainer>
         );
@@ -1845,9 +1845,9 @@ export default function SmartDashboardTab({
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
               <Tooltip formatter={((value: any) => fmt(Number(value))) as any} />
               <Legend fontSize={10} />
-              <Bar dataKey="ingresos" fill="#0f766e" radius={[4, 4, 0, 0]} name="Ingresos" />
+              <Bar dataKey="ingresos" fill="#00B4A6" radius={[4, 4, 0, 0]} name="Ingresos" />
               <Bar dataKey="egresos" fill="#e76f51" radius={[4, 4, 0, 0]} name="Egresos" />
-              <Line type="monotone" dataKey="ingresos" stroke="#0f766e" strokeWidth={2} dot={false} name="Tendencia" />
+              <Line type="monotone" dataKey="ingresos" stroke="#00B4A6" strokeWidth={2} dot={false} name="Tendencia" />
             </ComposedChart>
           </ResponsiveContainer>
         );
@@ -1873,8 +1873,8 @@ export default function SmartDashboardTab({
       {/* Header: Resumen + period selector + refresh */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#0f766e]/10 dark:bg-[#0f766e]/20">
-            <GreetingIcon className="w-5 h-5 text-[#0f766e]" />
+          <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-[#00B4A6]/10 dark:bg-[#00B4A6]/20">
+            <GreetingIcon className="w-5 h-5 text-[#00B4A6]" />
           </span>
           <div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-zinc-100 leading-tight">
@@ -1899,7 +1899,7 @@ export default function SmartDashboardTab({
                 className={cn(
                   "px-3 py-1.5 text-xs font-semibold rounded-md transition-all",
                   period === p.id
-                    ? "bg-white dark:bg-zinc-800 text-[#0f766e] shadow-sm"
+                    ? "bg-white dark:bg-zinc-800 text-[#00B4A6] shadow-sm"
                     : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300"
                 )}
               >
@@ -1939,13 +1939,13 @@ export default function SmartDashboardTab({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => updateRegionalConfig({ currency: "PEN" })}
-                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "PEN" ? "bg-[#0f766e]/10 border-[#0f766e] text-[#0f766e]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
+                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "PEN" ? "bg-[#00B4A6]/10 border-[#00B4A6] text-[#00B4A6]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
                     >
                       S/ Soles {regionalConfig.currency === "PEN" && <Check className="w-3 h-3 inline ml-1" />}
                     </button>
                     <button
                       onClick={() => updateRegionalConfig({ currency: "USD" })}
-                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "USD" ? "bg-[#0f766e]/10 border-[#0f766e] text-[#0f766e]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
+                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.currency === "USD" ? "bg-[#00B4A6]/10 border-[#00B4A6] text-[#00B4A6]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
                     >
                       $ Dolar {regionalConfig.currency === "USD" && <Check className="w-3 h-3 inline ml-1" />}
                     </button>
@@ -1957,13 +1957,13 @@ export default function SmartDashboardTab({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => updateRegionalConfig({ dateFormat: "DD/MM/YYYY" })}
-                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "DD/MM/YYYY" ? "bg-[#0f766e]/10 border-[#0f766e] text-[#0f766e]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
+                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "DD/MM/YYYY" ? "bg-[#00B4A6]/10 border-[#00B4A6] text-[#00B4A6]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
                     >
                       DD/MM/YYYY {regionalConfig.dateFormat === "DD/MM/YYYY" && <Check className="w-3 h-3 inline ml-1" />}
                     </button>
                     <button
                       onClick={() => updateRegionalConfig({ dateFormat: "MM/DD/YYYY" })}
-                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "MM/DD/YYYY" ? "bg-[#0f766e]/10 border-[#0f766e] text-[#0f766e]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
+                      className={cn("flex-1 py-2 px-3 rounded-lg text-xs font-bold border transition-colors", regionalConfig.dateFormat === "MM/DD/YYYY" ? "bg-[#00B4A6]/10 border-[#00B4A6] text-[#00B4A6]" : "border-gray-200 dark:border-zinc-600 text-gray-500 dark:text-zinc-400 hover:border-gray-300")}
                     >
                       MM/DD/YYYY {regionalConfig.dateFormat === "MM/DD/YYYY" && <Check className="w-3 h-3 inline ml-1" />}
                     </button>
@@ -1989,7 +1989,7 @@ export default function SmartDashboardTab({
             className={cn(
               "flex items-center gap-1.5 px-4 py-2.5 text-xs font-medium whitespace-nowrap transition-colors border-b-2 -mb-[1px]",
               dashTab === tab.id
-                ? "border-[#0f766e] text-[#0f766e] font-semibold"
+                ? "border-[#00B4A6] text-[#00B4A6] font-semibold"
                 : "border-transparent text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-300 hover:border-gray-300 dark:hover:border-zinc-500"
             )}
           >
@@ -2019,7 +2019,7 @@ export default function SmartDashboardTab({
               label={`Ventas ${period === "hoy" ? "hoy" : period === "semana" ? "semana" : "mes"}`}
               value={fmtR(revenueFiltered)}
               subtext={`${filteredSales.length} transacciones`}
-              colorClass="bg-[#0f766e]"
+              colorClass="bg-[#00B4A6]"
               isEmpty={revenueFiltered === 0}
               emptyLabel="Sin ventas"
             />
@@ -2077,12 +2077,12 @@ export default function SmartDashboardTab({
 
       {/* Banner motivacional — tienda nueva sin datos */}
       {!loading && dashTab === "resumen" && products.length === 0 && orders.length === 0 && sales.length === 0 && (
-        <div className="rounded-xl border border-[#2d6a4f]/20 bg-[#2d6a4f]/5 dark:bg-[#2d6a4f]/10 p-5 flex items-start gap-4">
-          <div className="h-10 w-10 rounded-xl bg-[#2d6a4f] flex items-center justify-center shrink-0">
+        <div className="rounded-xl border border-[#00B4A6]/20 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 p-5 flex items-start gap-4">
+          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] flex items-center justify-center shrink-0">
             <TrendingUp className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="font-bold text-[#2d6a4f] dark:text-emerald-400 text-sm">Tu tienda está lista.</p>
+            <p className="font-bold text-[#00B4A6] dark:text-emerald-400 text-sm">Tu tienda está lista.</p>
             <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Agrega productos y empieza a vender. Los datos aparecerán aquí automáticamente.</p>
           </div>
         </div>
@@ -2120,8 +2120,8 @@ export default function SmartDashboardTab({
               <AreaChart data={monthlyDailyData} margin={{ left: 10, right: 10, top: 10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0f766e" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#0f766e" stopOpacity={0.02} />
+                    <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#00B4A6" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.5} vertical={false} />
@@ -2143,11 +2143,11 @@ export default function SmartDashboardTab({
                 <Area
                   type="monotone"
                   dataKey="ventas"
-                  stroke="#0f766e"
+                  stroke="#00B4A6"
                   strokeWidth={2}
                   fill="url(#colorVentas)"
-                  dot={{ r: 3, fill: "#0f766e", strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: "#0f766e", stroke: "#fff", strokeWidth: 2 }}
+                  dot={{ r: 3, fill: "#00B4A6", strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: "#00B4A6", stroke: "#fff", strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -2167,7 +2167,7 @@ export default function SmartDashboardTab({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Card 1: Cuentas por cobrar (Fiados) */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-4 shadow-sm">
-            <a href="/admin?module=fiados" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-[#0f766e] transition-colors cursor-pointer">
+            <a href="/admin?module=fiados" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-[#00B4A6] transition-colors cursor-pointer">
               Cuentas por cobrar
             </a>
             <p className="text-xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">
@@ -2190,7 +2190,7 @@ export default function SmartDashboardTab({
 
           {/* Card 2: Cuentas por pagar */}
           <div className="bg-white dark:bg-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-700 p-4 shadow-sm">
-            <a href="/admin?module=compras" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-[#0f766e] transition-colors cursor-pointer">
+            <a href="/admin?module=compras" className="text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:text-[#00B4A6] transition-colors cursor-pointer">
               Cuentas por pagar
             </a>
             <p className="text-xl font-mono font-bold text-gray-900 dark:text-zinc-100 mt-1">
@@ -2290,7 +2290,7 @@ export default function SmartDashboardTab({
                   "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                   activeCharts.length >= 6
                     ? "bg-gray-100 dark:bg-zinc-700 text-gray-400 cursor-not-allowed"
-                    : "bg-[#0f766e] text-white hover:bg-[#0d5f58]"
+                    : "bg-[#00B4A6] text-white hover:bg-[#009690]"
                 )}
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -2396,7 +2396,7 @@ export default function SmartDashboardTab({
           )}
           {bestHourToday && (
             <span className="inline-flex items-center gap-1 text-xs bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2">
-              <Clock className="h-3.5 w-3.5 text-[#0f766e]" />
+              <Clock className="h-3.5 w-3.5 text-[#00B4A6]" />
               <span className="text-gray-600 dark:text-zinc-300">Mejor hora: <span className="font-bold">{bestHourToday.hour}:00</span> (S/{bestHourToday.total.toFixed(0)})</span>
             </span>
           )}
@@ -2515,7 +2515,7 @@ export default function SmartDashboardTab({
             ) : upcomingPayables.overdue === 0 ? (
               <p className="text-xs text-emerald-500 font-medium">Sin pagos pendientes esta semana</p>
             ) : null}
-            <a href="/admin?module=compras" className="text-[10px] font-bold text-[#0f766e] hover:underline mt-2 block">
+            <a href="/admin?module=compras" className="text-[10px] font-bold text-[#00B4A6] hover:underline mt-2 block">
               Ver todos &rarr;
             </a>
           </div>
@@ -2574,7 +2574,7 @@ export default function SmartDashboardTab({
               <p className="text-xs text-emerald-500 font-medium">Stock estable para esta semana</p>
             )}
             {productsRunningOut.length > 0 && (
-              <a href="/admin?module=compras" className="text-[10px] font-bold text-[#0f766e] hover:underline mt-2 block">
+              <a href="/admin?module=compras" className="text-[10px] font-bold text-[#00B4A6] hover:underline mt-2 block">
                 Crear OC &rarr;
               </a>
             )}
@@ -2622,12 +2622,12 @@ export default function SmartDashboardTab({
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Target className="h-4 w-4 text-[#0f766e]" /> Meta del día
+                <Target className="h-4 w-4 text-[#00B4A6]" /> Meta del día
               </p>
-              <span className="text-xs font-bold text-[#0f766e]">{dailyGoalPct.toFixed(0)}%</span>
+              <span className="text-xs font-bold text-[#00B4A6]">{dailyGoalPct.toFixed(0)}%</span>
             </div>
             <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-              <div className="h-full bg-[#0f766e] rounded-full transition-all" style={{ width: `${Math.min(100, dailyGoalPct)}%` }} />
+              <div className="h-full bg-[#00B4A6] rounded-full transition-all" style={{ width: `${Math.min(100, dailyGoalPct)}%` }} />
             </div>
           </div>
         );
@@ -2664,7 +2664,7 @@ export default function SmartDashboardTab({
           className={cn(
             "relative group/section transition-all duration-200",
             dragIdx === sectionIdx && "opacity-50 scale-[0.98]",
-            dragOverIdx === sectionIdx && dragIdx !== sectionIdx && "ring-2 ring-[#0f766e]/40 ring-offset-2 rounded-xl",
+            dragOverIdx === sectionIdx && dragIdx !== sectionIdx && "ring-2 ring-[#00B4A6]/40 ring-offset-2 rounded-xl",
           )}
           draggable
           onDragStart={() => handleDragStart(sectionIdx)}
@@ -2697,7 +2697,7 @@ export default function SmartDashboardTab({
           {sectionId === "top-productos" && (
             <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="w-4 h-4" style={{ color: "#0f766e" }} />
+                <TrendingUp className="w-4 h-4" style={{ color: "#00B4A6" }} />
                 <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">
                   Top 10 productos mas vendidos
                 </span>
@@ -2717,7 +2717,7 @@ export default function SmartDashboardTab({
                         <div className="flex-1 h-5 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                           <div
                             className="absolute inset-y-0 left-0 rounded transition-all"
-                            style={{ width: `${pct}%`, backgroundColor: idx === 0 ? "#0f766e" : "#0f766e60" }}
+                            style={{ width: `${pct}%`, backgroundColor: idx === 0 ? "#00B4A6" : "#00B4A660" }}
                           />
                           <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{prod.qty} uds</span>
                         </div>
@@ -2751,7 +2751,7 @@ export default function SmartDashboardTab({
                         <span className={cn("w-8 text-right shrink-0 font-mono", isActive ? "text-amber-500 font-bold" : "text-gray-400 dark:text-zinc-500")}>{bucket.label}</span>
                         <div className="flex-1 h-4 rounded bg-gray-100 dark:bg-zinc-700 relative overflow-hidden">
                           {pct > 0 && (
-                            <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "#0f766e80" }} />
+                            <div className="absolute inset-y-0 left-0 rounded transition-all" style={{ width: `${pct}%`, backgroundColor: isActive ? "#f97316" : "#00B4A680" }} />
                           )}
                           {pct > 10 && (
                             <span className="absolute inset-y-0 left-2 flex items-center text-[10px] font-semibold text-white z-10">{fmtR(bucket.amount)}</span>
@@ -2790,7 +2790,7 @@ export default function SmartDashboardTab({
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {[
-                  { label: "Este mes", value: revenueThisMonth, color: "#0f766e", max: Math.max(revenueThisMonth, revenuePrevMonth, 1) },
+                  { label: "Este mes", value: revenueThisMonth, color: "#00B4A6", max: Math.max(revenueThisMonth, revenuePrevMonth, 1) },
                   { label: "Anterior", value: revenuePrevMonth, color: "#94a3b8", max: Math.max(revenueThisMonth, revenuePrevMonth, 1) },
                 ].map((bar) => (
                   <div key={bar.label}>
@@ -2899,7 +2899,7 @@ export default function SmartDashboardTab({
                 {/* Top 5 clientes */}
                 <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
                   <div className="flex items-center gap-2 mb-4">
-                    <Users className="w-4 h-4" style={{ color: "#0f766e" }} />
+                    <Users className="w-4 h-4" style={{ color: "#00B4A6" }} />
                     <span className="text-sm font-semibold text-gray-700 dark:text-zinc-300">Top 5 clientes del mes</span>
                   </div>
                   {loading ? (
@@ -2918,12 +2918,12 @@ export default function SmartDashboardTab({
                     <ol className="space-y-2">
                       {topCustomers.map((c, idx) => (
                         <li key={c.phone ?? c.name} className="flex items-center gap-2 text-sm">
-                          <span className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "#0f766e" : "#94a3b8" }}>
+                          <span className="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 text-white" style={{ backgroundColor: idx === 0 ? "#00B4A6" : "#94a3b8" }}>
                             {idx + 1}
                           </span>
                           <span className="flex-1 truncate text-gray-700 dark:text-zinc-300 text-xs" title={c.name}>{c.name}</span>
                           <span className="text-[10px] text-gray-400 dark:text-zinc-500 shrink-0">{c.orderCount} ped.</span>
-                          <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: "#0f766e" }}>{fmtR(c.total)}</span>
+                          <span className="text-xs font-semibold tabular-nums shrink-0" style={{ color: "#00B4A6" }}>{fmtR(c.total)}</span>
                         </li>
                       ))}
                     </ol>
@@ -2987,7 +2987,7 @@ export default function SmartDashboardTab({
               )}
             </div>
             <p className="text-lg font-bold font-mono text-gray-900 dark:text-zinc-100">{fmtR(deadValue)} <span className="text-xs font-normal text-gray-400">en {deadStock.length} productos sin vender 30+ dias</span></p>
-            <a href="/admin?module=inventario&sub=sin-movimiento" className="text-[10px] font-bold text-[#0f766e] hover:underline mt-1.5 block">Ver productos &rarr;</a>
+            <a href="/admin?module=inventario&sub=sin-movimiento" className="text-[10px] font-bold text-[#00B4A6] hover:underline mt-1.5 block">Ver productos &rarr;</a>
           </div>
         );
       })()}
@@ -3039,11 +3039,11 @@ export default function SmartDashboardTab({
           {topClientMonth && (
             <div className="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-[#0f766e]" />
+                <Users className="w-4 h-4 text-[#00B4A6]" />
                 <span className="text-xs font-bold text-gray-600 dark:text-zinc-300">Cliente del mes</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white" style={{ backgroundColor: "#0f766e" }}>
+                <span className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold text-white" style={{ backgroundColor: "#00B4A6" }}>
                   {topClientMonth.name.charAt(0).toUpperCase()}
                 </span>
                 <p className="text-sm font-bold text-gray-900 dark:text-zinc-100">{topClientMonth.name}</p>

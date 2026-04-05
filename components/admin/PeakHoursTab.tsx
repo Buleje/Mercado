@@ -179,9 +179,9 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                           : isValley
                             ? "bg-gray-300 dark:bg-gray-600"
                             : h.count > 0
-                              ? "bg-[#0f766e] group-hover:bg-[#0f766e]/80"
+                              ? "bg-[#00B4A6] group-hover:bg-[#00B4A6]/80"
                               : "bg-gray-100 dark:bg-surface",
-                      isCurrent && "ring-2 ring-[#0f766e] ring-offset-1"
+                      isCurrent && "ring-2 ring-[#00B4A6] ring-offset-1"
                     )}
                     style={{ height: `${Math.max(pct, 2)}%` }}
                   />
@@ -224,7 +224,7 @@ export default function PeakHoursTab({ period }: { period?: AnalyticsPeriod }) {
                     <div
                       className={cn(
                         "h-full rounded-full transition-all flex items-center justify-end pr-3",
-                        isTop ? "bg-[#f97316]" : "bg-[#0f766e]/60 dark:bg-[#14b8a6]/50 hover:bg-[#0f766e]/80"
+                        isTop ? "bg-[#f97316]" : "bg-[#00B4A6]/60 dark:bg-[#2dd4bf]/50 hover:bg-[#00B4A6]/80"
                       )}
                       style={{ width: `${Math.max(pct, 3)}%` }}
                     >

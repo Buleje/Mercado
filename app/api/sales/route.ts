@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
 
@@ -33,7 +34,31 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    return NextResponse.json(await SalesDB.getAll(auth.tenantId));
+    const { searchParams } = new URL(req.url);
+    const limitParam = searchParams.get("limit");
+    const pageParam = searchParams.get("page");
+
+    let data = await withDbRetry(() => SalesDB.getAll(auth.tenantId));
+    const total = data.length;
+
+    if (limitParam) {
+      const limit = Math.min(Math.max(parseInt(limitParam, 10) || 50, 1), 1000);
+      const page = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
+      const start = (page - 1) * limit;
+      data = data.slice(start, start + limit);
+
+      return NextResponse.json(data, {
+        headers: {
+          "X-Total-Count": String(total),
+          "X-Page": String(page),
+          "X-Limit": String(limit),
+        },
+      });
+    }
+
+    return NextResponse.json(data, {
+      headers: { "X-Total-Count": String(total) },
+    });
   } catch (e) {
     console.error("[sales] GET error:", e);
     return NextResponse.json({ error: "Database error" }, { status: 503 });

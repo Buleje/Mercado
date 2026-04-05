@@ -142,9 +142,9 @@ export default function SalesOrdersTab() {
   // Mejora 17: Filtro de urgencia
   const [urgencyFilter, setUrgencyFilter] = useState<"todos" | "urgentes" | "hoy" | "manana" | "atrasados">("todos");
 
-  // Mejora 13: Kanban view mode
-  const [viewMode, setViewMode] = useState<"list" | "kanban">(() => {
-    try { return (localStorage.getItem("orders-view-mode") as "list" | "kanban") || "list"; } catch { return "list"; }
+  // Mejora 13: Kanban view mode + historial
+  const [viewMode, setViewMode] = useState<"list" | "kanban" | "historial">(() => {
+    try { return (localStorage.getItem("orders-view-mode") as "list" | "kanban" | "historial") || "list"; } catch { return "list"; }
   });
 
   // Mejora 15: Group by zone toggle
@@ -713,7 +713,7 @@ export default function SalesOrdersTab() {
               <MapPin className="h-3 w-3" /> Agrupar por zona
             </button>
           )}
-          {/* Mejora 13: Kanban / List toggle */}
+          {/* Mejora 13: Kanban / List / Historial toggle */}
           <div className="flex bg-gray-100 dark:bg-accent rounded-lg p-0.5">
             <button
               onClick={() => { setViewMode("list"); try { localStorage.setItem("orders-view-mode", "list"); } catch {} }}
@@ -726,6 +726,12 @@ export default function SalesOrdersTab() {
               className={cn("px-2 py-1 rounded-md text-[10px] font-bold transition-all", viewMode === "kanban" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
             >
               <Columns3 className="h-3 w-3 inline mr-1" />Kanban
+            </button>
+            <button
+              onClick={() => { setViewMode("historial"); try { localStorage.setItem("orders-view-mode", "historial"); } catch {} }}
+              className={cn("px-2 py-1 rounded-md text-[10px] font-bold transition-all", viewMode === "historial" ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted")}
+            >
+              📋 Historial
             </button>
           </div>
         </div>
@@ -788,6 +794,70 @@ export default function SalesOrdersTab() {
                 </div>
               );
             })}
+          </div>
+        );
+      })()}
+
+      {/* ── Historial completo ────────────────────────────────────────── */}
+      {viewMode === "historial" && (() => {
+        const allOrders = [...orders].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const histFiltered = allOrders.filter(o => {
+          if (search) {
+            const q = search.toLowerCase();
+            if (!(o.customerName?.toLowerCase().includes(q) || o.id.toLowerCase().includes(q))) return false;
+          }
+          return true;
+        });
+        const histPaged = histFiltered.slice(0, page * PAGE_SIZE);
+        const hasMoreHist = histPaged.length < histFiltered.length;
+        return (
+          <div className="space-y-2">
+            <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
+                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">#</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Fecha</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Cliente</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Total</th>
+                    <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Estado</th>
+                    <th className="text-center px-4 py-3 text-[10px] font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {histPaged.map((order, idx) => {
+                    const cfg = STATUS_CONFIG[order.status] ?? { label: order.status, color: "bg-gray-100 text-gray-600", icon: null };
+                    return (
+                      <tr key={order.id} className="border-b border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                        <td className="px-4 py-3 font-mono text-xs text-gray-400">{idx + 1}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 dark:text-foreground">{fmtDate(order.createdAt)}</td>
+                        <td className="px-4 py-3 text-xs font-semibold text-gray-900 dark:text-foreground">{order.customerName ?? "Cliente"}</td>
+                        <td className="px-4 py-3 text-xs font-extrabold text-primary text-right">{fmt(order.total)}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold", cfg.color)}>
+                            {cfg.icon} {cfg.label}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => { setViewMode("list"); setExpandedId(order.id); }}
+                            className="px-2 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-bold hover:bg-primary/20 transition-colors"
+                          >
+                            Ver detalle
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-gray-400 dark:text-muted text-center">{histFiltered.length} pedido{histFiltered.length !== 1 ? "s" : ""} en total</p>
+            {hasMoreHist && (
+              <button onClick={() => setPage(p => p + 1)} className="w-full py-3 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
+                Cargar más ({histFiltered.length - histPaged.length} restantes)
+              </button>
+            )}
           </div>
         );
       })()}
@@ -855,50 +925,84 @@ export default function SalesOrdersTab() {
                 </div>
               </button>
 
-                {/* Expanded detail panel */}
+                {/* Expanded detail panel — Redesigned */}
                 {isExpanded && (
-                  <div className="px-3.5 pb-3.5 border-t border-gray-100 dark:border-card-border pt-3 space-y-3">
-                    {/* Timeline visual (Mejora 2) */}
-                    <OrderTimeline
-                      currentStatus={order.status}
-                      statusHistory={order.statusHistory}
-                      onChangeStatus={!isTerminal ? (newStatus) => changeStatus(order.id, newStatus) : undefined}
-                      updating={updatingId === order.id}
-                    />
-
-                    {/* Meta info */}
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-gray-400 dark:text-muted">ID:</span>{" "}
-                        <span className="font-mono font-bold text-gray-700 dark:text-foreground">{order.id.slice(0, 8)}</span>
-                      </div>
-                      <div>
-                        <span className="text-gray-400 dark:text-muted">Pago:</span>{" "}
-                        <span className="font-bold text-gray-700 dark:text-foreground capitalize">{order.paymentMethod ?? "efectivo"}</span>
-                      </div>
-                      {order.customerPhone && (
-                        <div className="col-span-2">
-                          <span className="text-gray-400 dark:text-muted">Tel:</span>{" "}
-                          <span className="font-bold text-gray-700 dark:text-foreground">{order.customerPhone}</span>
+                  <div className="border-t-2 border-primary/30 dark:border-primary/20">
+                    {/* Enhanced header with order ID, date and status */}
+                    <div className="bg-linear-to-r from-primary/5 via-white to-transparent dark:from-primary/10 dark:via-card px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <ShoppingBag className="h-4 w-4 text-primary" />
                         </div>
-                      )}
+                        <div>
+                          <p className="text-sm font-extrabold text-gray-900 dark:text-foreground">Pedido #{order.id.slice(0, 8)}</p>
+                          <p className="text-[10px] text-gray-400 dark:text-muted">{fmtDate(order.createdAt)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={cn("inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold", cfg.color)}>
+                          {cfg.icon} {cfg.label}
+                        </span>
+                        <span className="text-lg font-extrabold text-primary">{fmt(order.total)}</span>
+                      </div>
                     </div>
 
-                    {/* Items list */}
+                    <div className="px-4 pb-4 pt-3 space-y-3">
+                    {/* Timeline visual (Mejora 2) */}
+                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
+                      <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Clock className="h-3 w-3" /> Progreso del pedido
+                      </p>
+                      <OrderTimeline
+                        currentStatus={order.status}
+                        statusHistory={order.statusHistory}
+                        onChangeStatus={!isTerminal ? (newStatus) => changeStatus(order.id, newStatus) : undefined}
+                        updating={updatingId === order.id}
+                      />
+                    </div>
+
+                    {/* Meta info — card style */}
+                    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
+                      <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                        <Receipt className="h-3 w-3" /> Información del pedido
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                        <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
+                          <span className="text-[10px] text-gray-400 dark:text-muted block mb-0.5">ID Pedido</span>
+                          <span className="font-mono font-bold text-gray-700 dark:text-foreground">{order.id.slice(0, 8)}</span>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
+                          <span className="text-[10px] text-gray-400 dark:text-muted block mb-0.5">Método de pago</span>
+                          <span className="font-bold text-gray-700 dark:text-foreground capitalize">{order.paymentMethod ?? "efectivo"}</span>
+                        </div>
+                        {order.customerPhone && (
+                          <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5">
+                            <span className="text-[10px] text-gray-400 dark:text-muted block mb-0.5">Teléfono</span>
+                            <span className="font-bold text-gray-700 dark:text-foreground">{order.customerPhone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Items list — card style */}
                     {order.items && order.items.length > 0 && (
-                      <div className="bg-gray-50 dark:bg-surface rounded-lg p-2.5 space-y-1.5">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Productos</p>
+                      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl p-3">
+                        <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                          <Package className="h-3 w-3" /> Productos ({order.items.length})
+                        </p>
+                        <div className="space-y-1.5">
                         {order.items.map((item, i) => (
-                          <div key={i} className="flex justify-between text-xs">
+                          <div key={i} className="flex justify-between text-xs px-2.5 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-surface transition-colors">
                             <span className="text-gray-700 dark:text-foreground">{item.qty}x {item.name}</span>
                             {item.price != null && (
                               <span className="font-bold text-gray-600 dark:text-muted">{fmt(item.price * item.qty)}</span>
                             )}
                           </div>
                         ))}
-                        <div className="flex justify-between text-xs pt-1.5 border-t border-gray-200 dark:border-card-border">
+                        </div>
+                        <div className="flex justify-between text-sm pt-2.5 mt-2 border-t-2 border-primary/20 dark:border-primary/10 px-2.5">
                           <span className="font-bold text-gray-900 dark:text-foreground">Total</span>
-                          <span className="font-extrabold text-primary">{fmt(order.total)}</span>
+                          <span className="font-extrabold text-primary text-base">{fmt(order.total)}</span>
                         </div>
                       </div>
                     )}
@@ -993,9 +1097,9 @@ export default function SalesOrdersTab() {
                     <div className="flex gap-2 pt-1 flex-wrap">
                       <button
                         onClick={() => setTicketOrder(order)}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 text-xs font-bold hover:bg-violet-100 dark:hover:bg-violet-900/30 transition-colors"
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors border border-primary/20"
                       >
-                        <Receipt className="h-3 w-3" /> Ver Ticket
+                        <Receipt className="h-3.5 w-3.5" /> Ver Ticket
                       </button>
                       {/* Idea 11: Assign delivery person */}
                       {!isTerminal && deliveryPeople.length > 0 && (
@@ -1063,6 +1167,7 @@ export default function SalesOrdersTab() {
                         </button>
                       )}
                     </div>
+                  </div>
                   </div>
                 )}
               </div>
@@ -1319,7 +1424,7 @@ function DashTooltip({ active, payload, label }: any) {
   );
 }
 
-const DASH_COLORS = ['#0f766e', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#14b8a6', '#264653'];
+const DASH_COLORS = ['#00B4A6', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653'];
 
 const DASH_STATUS_COLORS: Record<string, string> = {
   pendiente: '#f59e0b', confirmado: '#3b82f6', preparando: '#8b5cf6',
@@ -1335,7 +1440,7 @@ const DASH_STATUS_LABELS: Record<string, string> = {
   delivering: 'En camino', delivered: 'Entregado', cancelled: 'Cancelado',
 };
 
-const DASH_PAYMENT_COLORS: Record<string, string> = { efectivo: '#0f766e', yape: '#8b5cf6', plin: '#06b6d4', tarjeta: '#3b82f6', fiado: '#f59e0b', otro: '#6b7280' };
+const DASH_PAYMENT_COLORS: Record<string, string> = { efectivo: '#00B4A6', yape: '#8b5cf6', plin: '#06b6d4', tarjeta: '#3b82f6', fiado: '#f59e0b', otro: '#6b7280' };
 const DASH_PAYMENT_LABELS: Record<string, string> = { efectivo: 'Efectivo', yape: 'Yape', plin: 'Plin', tarjeta: 'Tarjeta', fiado: 'Fiado', otro: 'Otro' };
 
 // ── Empty state for charts (Mejora 10) ───────────────────────────────────────
@@ -1495,7 +1600,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
           {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
-            <button key={p.id} onClick={() => setOrdPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", ordPeriod === p.id ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>{p.label}</button>
+            <button key={p.id} onClick={() => setOrdPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", ordPeriod === p.id ? "bg-[#00B4A6] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>{p.label}</button>
           ))}
         </div>
         <div className="flex items-center gap-2">
@@ -1517,7 +1622,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 
       {/* === SECCION 1: 8 KPIs con iconos === */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-[#0f766e]" sparkColor="#0f766e" sparkVal={kpis.pedidosHoy} />
+        <DashKpi icon={<ShoppingBag className="h-4 w-4" />} iconBg="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" label="Pedidos hoy" value={kpis.pedidosHoy} border="border-l-[#00B4A6]" sparkColor="#00B4A6" sparkVal={kpis.pedidosHoy} />
         <DashKpi icon={<DollarSign className="h-4 w-4" />} iconBg="bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400" label="Monto hoy" value={`S/${kpis.totalMonto.toFixed(2)}`} border="border-l-blue-500" sparkColor="#3b82f6" sparkVal={kpis.totalMonto} />
         <DashKpi icon={<Receipt className="h-4 w-4" />} iconBg="bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400" label="Ticket promedio" value={`S/${kpis.ticketProm.toFixed(2)}`} border="border-l-purple-500" sparkColor="#8b5cf6" sparkVal={kpis.ticketProm} />
         <DashKpi icon={<Clock className="h-4 w-4" />} iconBg="bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400" label="Pendientes" value={kpis.pendientes} border="border-l-amber-500" pulse={kpis.pendientes > 5} />
@@ -1575,7 +1680,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
               <Tooltip content={<DashTooltip />} />
               <Bar dataKey="count" name="Pedidos" radius={[4, 4, 0, 0]}>
                 {hourlyData.map((entry, i) => (
-                  <Cell key={i} fill={entry.isCurrent ? '#f97316' : '#0f766e'} />
+                  <Cell key={i} fill={entry.isCurrent ? '#f97316' : '#00B4A6'} />
                 ))}
               </Bar>
             </BarChart>
@@ -1613,8 +1718,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
           <ComposedChart data={weeklyData}>
             <defs>
               <linearGradient id="ordersBarGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#0f766e" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="#0f766e" stopOpacity={0.5} />
+                <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.9} />
+                <stop offset="100%" stopColor="#00B4A6" stopOpacity={0.5} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
@@ -1643,7 +1748,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
                 <XAxis type="number" tick={{ fontSize: 10 }} allowDecimals={false} />
                 <YAxis type="category" dataKey="zona" tick={{ fontSize: 11 }} width={80} />
                 <Tooltip content={<DashTooltip />} />
-                <Bar dataKey="count" fill="#0f766e" radius={[0, 4, 4, 0]} name="Pedidos" barSize={20} />
+                <Bar dataKey="count" fill="#00B4A6" radius={[0, 4, 4, 0]} name="Pedidos" barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           )}

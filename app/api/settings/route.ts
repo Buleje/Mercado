@@ -5,17 +5,18 @@ import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
 import { hash } from "bcryptjs";
 import { logger } from "@/lib/logger";
+import { withDbRetry } from "@/lib/db-retry";
 
 export async function GET(req: NextRequest) {
   try {
     const tenantId = req.headers.get("x-tenant-id") ?? "main";
-    const settings = await SettingsDB.get(tenantId);
+    const settings = await withDbRetry(() => SettingsDB.get(tenantId));
     // Never expose credentials or security toggles to public callers
      
     const { adminPassword: _pw, adminBypassLogin: _bypass, ...publicSettings } = settings as DbSettings & { adminPassword?: string; adminBypassLogin?: boolean };
     return NextResponse.json(publicSettings, {
       headers: {
-        "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+        "Cache-Control": "private, no-cache, max-age=0",
       },
     });
   } catch (e) {

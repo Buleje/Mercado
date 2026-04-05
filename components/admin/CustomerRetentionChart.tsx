@@ -104,8 +104,8 @@ function buildCohorts(customers: Customer[]): CohortRow[] {
 // ─── Color helper ─────────────────────────────────────────────────────────────
 
 function retentionColor(pct: number): string {
-  if (pct >= 70) return "bg-[#0f766e] text-white";
-  if (pct >= 50) return "bg-[#0d9488] text-white";
+  if (pct >= 70) return "bg-[#00B4A6] text-white";
+  if (pct >= 50) return "bg-[#33C4B8] text-white";
   if (pct >= 35) return "bg-[#74c69d] text-gray-900";
   if (pct >= 20) return "bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100";
   return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
@@ -261,8 +261,8 @@ export default function CustomerRetentionChart() {
       {/* Legend */}
       <div className="flex flex-wrap gap-3 text-xs">
         {[
-          { label: "70%+", cls: "bg-[#0f766e] text-white" },
-          { label: "50-69%", cls: "bg-[#0d9488] text-white" },
+          { label: "70%+", cls: "bg-[#00B4A6] text-white" },
+          { label: "50-69%", cls: "bg-[#33C4B8] text-white" },
           { label: "35-49%", cls: "bg-[#74c69d] text-gray-900" },
           { label: "20-34%", cls: "bg-amber-200 text-amber-900" },
           { label: "<20%", cls: "bg-red-100 text-red-700" },

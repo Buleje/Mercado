@@ -87,7 +87,7 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
     progressLabel: "dias de meta cumplida esta semana",
     maxProgress: 5,
     iconSymbol: "G",
-    colorUnlocked: "text-[#0f766e] dark:text-green-400",
+    colorUnlocked: "text-[#00B4A6] dark:text-green-400",
     colorBg: "bg-green-50 dark:bg-green-900/30 border-green-300 dark:border-green-700",
   },
 ];
@@ -216,7 +216,7 @@ function BadgeCard({
             className={cn(
               "h-full rounded-full transition-all duration-500",
               unlocked
-                ? "bg-gradient-to-r from-[#0f766e] to-[#14b8a6]"
+                ? "bg-gradient-to-r from-[#00B4A6] to-[#2dd4bf]"
                 : pct > 50
                 ? "bg-gradient-to-r from-[#f97316] to-[#e76f51]"
                 : "bg-gray-300 dark:bg-gray-600"
@@ -317,7 +317,7 @@ export default function AchievementBadges({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Award className="w-5 h-5 text-[#0f766e] dark:text-green-400" />
+          <Award className="w-5 h-5 text-[#00B4A6] dark:text-green-400" />
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Logros del empleado
@@ -334,7 +334,7 @@ export default function AchievementBadges({
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
               editMode
-                ? "bg-[#0f766e] text-white"
+                ? "bg-[#00B4A6] text-white"
                 : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
             )}
           >
@@ -347,13 +347,13 @@ export default function AchievementBadges({
       <div className="rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-3">
         <div className="flex justify-between text-xs mb-2">
           <span className="text-gray-500 dark:text-gray-400">Progreso total</span>
-          <span className="font-semibold text-[#0f766e] dark:text-green-400">
+          <span className="font-semibold text-[#00B4A6] dark:text-green-400">
             {Math.round((unlockedCount / BADGE_DEFINITIONS.length) * 100)}%
           </span>
         </div>
         <div className="h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-[#0f766e] to-[#14b8a6] rounded-full transition-all duration-700"
+            className="h-full bg-gradient-to-r from-[#00B4A6] to-[#2dd4bf] rounded-full transition-all duration-700"
             style={{ width: `${(unlockedCount / BADGE_DEFINITIONS.length) * 100}%` }}
           />
         </div>

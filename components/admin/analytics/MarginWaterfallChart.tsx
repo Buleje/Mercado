@@ -109,7 +109,7 @@ export default function MarginWaterfallChart() {
         value: totalRevenue,
         displayValue: totalRevenue,
         base: 0,
-        fill: "#0f766e",
+        fill: "#00B4A6",
         label: "100%",
       },
       {
@@ -133,7 +133,7 @@ export default function MarginWaterfallChart() {
         value: Math.max(0, margen),
         displayValue: margen,
         base: 0,
-        fill: margen >= 0 ? "#0f766e" : "#e63946",
+        fill: margen >= 0 ? "#00B4A6" : "#e63946",
         label: `${((margen / totalRevenue) * 100).toFixed(1)}%`,
       },
     ];
@@ -266,7 +266,7 @@ export default function MarginWaterfallChart() {
               const barWidth = Math.max(2, (Math.abs(product.marginPct) / maxMarginPct) * 100);
               const barColor =
                 product.marginPct > 20
-                  ? "bg-[#0f766e]"
+                  ? "bg-[#00B4A6]"
                   : product.marginPct > 10
                   ? "bg-[#f97316]"
                   : "bg-[#e63946]";
@@ -279,7 +279,7 @@ export default function MarginWaterfallChart() {
                         {product.name}
                       </span>
                       <span
-                        className={cn("text-xs font-mono font-bold shrink-0", product.marginPct > 20 ? "text-[#0f766e]" : product.marginPct > 10 ? "text-[#f97316]" : "text-[#e63946]")}
+                        className={cn("text-xs font-mono font-bold shrink-0", product.marginPct > 20 ? "text-[#00B4A6]" : product.marginPct > 10 ? "text-[#f97316]" : "text-[#e63946]")}
                         style={{ fontVariantNumeric: "tabular-nums" }}
                       >
                         {product.marginPct.toFixed(1)}%

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, startTransition } from "react";
 import { Copy, Check, Share2, Users, Star } from "lucide-react";
@@ -74,7 +74,7 @@ export default function ReferralBanner() {
 
         {/* Main card */}
         <div className="relative rounded-3xl overflow-hidden shadow-2xl" style={{
-          background: "linear-gradient(135deg, #1e1b4b 0%, #0d5f58 40%, #0f766e 70%, #0d5f58 100%)",
+          background: "linear-gradient(135deg, #1e1b4b 0%, #009690 40%, #00B4A6 70%, #009690 100%)",
         }}>
           {/* Decorative circles */}
           <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(244,162,97,0.18) 0%, transparent 70%)" }} />

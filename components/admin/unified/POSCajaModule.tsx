@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
-import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/currency";
 import { ChartTooltip } from "@/lib/chart-tooltip";
 import { formatSolesShort } from "@/lib/chart-helpers";
 
@@ -42,27 +42,27 @@ function EmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div className="text-4xl mb-3">📊</div>
-      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{message}</p>
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando registres ventas</p>
+      <p className="text-sm font-medium text-gray-500">{message}</p>
+      <p className="text-xs text-gray-400 mt-1">Los datos apareceran cuando registres ventas</p>
     </div>
   );
 }
 
 // ── Sales Dashboard helpers ───────────────────────────────────────────────────
-const DASHBOARD_COLORS = ["#0f766e", "#f97316", "#457b9d", "#9b5de5", "#e63946", "#14b8a6"];
+const DASHBOARD_COLORS = ["#00B4A6", "#f97316", "#457b9d", "#9b5de5", "#e63946", "#2dd4bf"];
 
 function KpiCard({ label, value, color, onClick }: { label: string; value: string; color: string; onClick?: () => void }) {
   return (
     <div
       onClick={onClick}
       className={cn(
-        "bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 shadow-sm transition-shadow",
+        "bg-white rounded-xl border border-gray-200 p-4 shadow-sm transition-shadow",
         color,
         onClick && "cursor-pointer hover:shadow-md",
       )}
     >
       <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{label}</p>
-      <p className="text-2xl font-mono font-bold mt-1 text-gray-900 dark:text-white">{value}</p>
+      <p className="text-2xl font-mono font-bold mt-1 text-gray-900">{value}</p>
     </div>
   );
 }
@@ -71,12 +71,12 @@ function SkeletonDashboard() {
   return (
     <div className="space-y-6 animate-pulse">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {[...Array(6)].map((_, i) => <div key={i} className="h-20 bg-gray-200 dark:bg-gray-700 rounded-xl" />)}
+        {[...Array(6)].map((_, i) => <div key={i} className="h-20 bg-gray-200 rounded-xl" />)}
       </div>
-      <div className="h-72 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+      <div className="h-72 bg-gray-200 rounded-2xl" />
       <div className="grid grid-cols-2 gap-6">
-        <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
-        <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-2xl" />
+        <div className="h-64 bg-gray-200 rounded-2xl" />
+        <div className="h-64 bg-gray-200 rounded-2xl" />
       </div>
     </div>
   );
@@ -85,10 +85,10 @@ function SkeletonDashboard() {
 // Mejora 17: Expand chart modal
 function ChartExpandModal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 bg-white dark:bg-gray-900 p-8 overflow-auto">
+    <div className="fixed inset-0 z-50 bg-white p-8 overflow-auto">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
-        <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors">
+        <h2 className="text-lg font-bold text-gray-900">{title}</h2>
+        <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
           <X className="h-5 w-5 text-gray-500" />
         </button>
       </div>
@@ -111,7 +111,7 @@ function useSalesFavCharts(key: string) {
   return { favs, toggle, isFav: (id: string) => favs.includes(id) };
 }
 function SalesFavStar({ id, favs }: { id: string; favs: ReturnType<typeof useSalesFavCharts> }) {
-  return <button onClick={() => favs.toggle(id)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors text-sm">{favs.isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300 dark:text-gray-600">&#9734;</span>}</button>;
+  return <button onClick={() => favs.toggle(id)} className="p-1 hover:bg-gray-100 rounded transition-colors text-sm">{favs.isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300">&#9734;</span>}</button>;
 }
 
 type SalesDashboardData = { sales: Array<Record<string, unknown>>; kpis: Record<string, unknown> | null; orders: Array<Record<string, unknown>> };
@@ -145,42 +145,42 @@ function ExecutiveDashboard() {
 
   if (loading || !data) return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 animate-pulse">
-      {[...Array(6)].map((_, i) => <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-2xl" />)}
+      {[...Array(6)].map((_, i) => <div key={i} className="h-24 bg-gray-200 rounded-2xl" />)}
     </div>
   );
 
   const cards = [
-    { label: "Ventas hoy", value: `S/ ${Math.round(data.ventasHoy).toLocaleString("es-PE")}`, icon: DollarSign, color: data.ventasHoy > 0 ? "#22c55e" : "#9ca3af", bg: "bg-emerald-50 dark:bg-emerald-950/20" },
-    { label: "Stock total", value: data.stockTotal.toLocaleString(), icon: Package, color: data.agotados > 5 ? "#f59e0b" : "#0f766e", bg: data.agotados > 5 ? "bg-amber-50 dark:bg-amber-950/20" : "bg-emerald-50 dark:bg-emerald-950/20" },
-    { label: "Balance del dia", value: `S/ ${Math.round(data.balanceHoy).toLocaleString("es-PE")}`, icon: Activity, color: data.balanceHoy >= 0 ? "#22c55e" : "#ef4444", bg: data.balanceHoy >= 0 ? "bg-emerald-50 dark:bg-emerald-950/20" : "bg-red-50 dark:bg-red-950/20" },
-    { label: "Clientes nuevos", value: data.clientesNuevos.toLocaleString(), icon: Users, color: "#3b82f6", bg: "bg-blue-50 dark:bg-blue-950/20" },
-    { label: "Pedidos pend.", value: data.pedidosPendientes.toLocaleString(), icon: ClipboardList, color: data.pedidosPendientes > 3 ? "#ef4444" : "#f59e0b", bg: data.pedidosPendientes > 3 ? "bg-red-50 dark:bg-red-950/20" : "bg-amber-50 dark:bg-amber-950/20" },
-    { label: "Fiados pend.", value: `S/ ${Math.round(data.fiadosPendientes).toLocaleString("es-PE")}`, icon: HandCoins, color: data.fiadosPendientes > 500 ? "#ef4444" : "#f97316", bg: data.fiadosPendientes > 500 ? "bg-red-50 dark:bg-red-950/20" : "bg-orange-50 dark:bg-orange-950/20" },
+    { label: "Ventas hoy", value: formatCurrency(Math.round(data.ventasHoy), { decimals: 0 }), icon: DollarSign, color: data.ventasHoy > 0 ? "#22c55e" : "#9ca3af", bg: "bg-emerald-50" },
+    { label: "Stock total", value: data.stockTotal.toLocaleString(), icon: Package, color: data.agotados > 5 ? "#f59e0b" : "#00B4A6", bg: data.agotados > 5 ? "bg-amber-50" : "bg-emerald-50" },
+    { label: "Balance del dia", value: formatCurrency(Math.round(data.balanceHoy), { decimals: 0 }), icon: Activity, color: data.balanceHoy >= 0 ? "#22c55e" : "#ef4444", bg: data.balanceHoy >= 0 ? "bg-emerald-50" : "bg-red-50" },
+    { label: "Clientes nuevos", value: data.clientesNuevos.toLocaleString(), icon: Users, color: "#3b82f6", bg: "bg-blue-50" },
+    { label: "Pedidos pend.", value: data.pedidosPendientes.toLocaleString(), icon: ClipboardList, color: data.pedidosPendientes > 3 ? "#ef4444" : "#f59e0b", bg: data.pedidosPendientes > 3 ? "bg-red-50" : "bg-amber-50" },
+    { label: "Fiados pend.", value: formatCurrency(Math.round(data.fiadosPendientes), { decimals: 0 }), icon: HandCoins, color: data.fiadosPendientes > 500 ? "#ef4444" : "#f97316", bg: data.fiadosPendientes > 500 ? "bg-red-50" : "bg-orange-50" },
   ];
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">Resumen Ejecutivo</h3>
+      <h3 className="text-sm font-bold text-gray-700">Resumen Ejecutivo</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {cards.map((c) => {
           const Icon = c.icon;
           return (
-            <div key={c.label} className={cn("rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm", c.bg)}>
+            <div key={c.label} className={cn("rounded-2xl border border-gray-200 p-4 shadow-sm", c.bg)}>
               <div className="flex items-center gap-2 mb-2">
                 <div className="h-8 w-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${c.color}15` }}>
                   <Icon className="h-4 w-4" style={{ color: c.color }} />
                 </div>
               </div>
               <p className="text-lg font-mono font-extrabold" style={{ color: c.color }}>{c.value}</p>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wider">{c.label}</p>
+              <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{c.label}</p>
             </div>
           );
         })}
       </div>
       {data.agotados > 0 && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-xl">
+        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
           <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />
-          <p className="text-xs text-red-700 dark:text-red-400 font-medium">{data.agotados} productos agotados requieren atencion</p>
+          <p className="text-xs text-red-700 font-medium">{data.agotados} productos agotados requieren atencion</p>
         </div>
       )}
     </div>
@@ -437,10 +437,10 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
     return (
       <div className="text-center py-16">
         <div className="text-6xl mb-4">📊</div>
-        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Sin datos aun</h3>
+        <h3 className="text-lg font-semibold text-gray-700">Sin datos aun</h3>
         <p className="text-sm text-gray-500 mt-1">Registra tu primera venta para ver estadisticas</p>
         {onNavigate && (
-          <button onClick={() => onNavigate("pos")} className="mt-4 px-4 py-2 bg-[#0f766e] text-white rounded-xl text-sm hover:bg-[#0d5f58] transition-colors">
+          <button onClick={() => onNavigate("pos")} className="mt-4 px-4 py-2 bg-[#00B4A6] text-white rounded-xl text-sm hover:bg-[#009690] transition-colors">
             Ir a Vender
           </button>
         )}
@@ -458,17 +458,17 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
     <div key="controls" className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex gap-1.5">
         {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
-          <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-[#0f766e] text-white" : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10")}>{p.label}</button>
+          <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-[#00B4A6] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>{p.label}</button>
         ))}
       </div>
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-2 text-xs text-gray-400">
           <span>Actualizado hace {minAgo} min</span>
-          <button onClick={() => { fetchData(); }} className="p-1 hover:bg-gray-100 dark:hover:bg-white/5 rounded transition-colors" title="Actualizar datos">
+          <button onClick={() => { fetchData(); }} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Actualizar datos">
             <RefreshCw className="h-3 w-3" />
           </button>
         </div>
-        <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors" title="Exportar PDF">
+        <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors" title="Exportar PDF">
           <FileDown className="h-3 w-3" />
           Exportar
         </button>
@@ -477,14 +477,14 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
     // Mejora 6: Alertas inteligentes Ventas
     ...(pedidosPendientes > 0 || fiadoTotal > 0 ? [
       <div key="alertas" className="flex flex-wrap gap-2">
-        {pedidosPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"><AlertTriangle className="h-3 w-3" /> {pedidosPendientes} pedidos pendientes</span>}
-        {fiadoTotal > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"><AlertTriangle className="h-3 w-3" /> S/ {fiadoTotal.toFixed(0)} en fiados</span>}
+        {pedidosPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700"><AlertTriangle className="h-3 w-3" /> {pedidosPendientes} pedidos pendientes</span>}
+        {fiadoTotal > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-700"><AlertTriangle className="h-3 w-3" /> S/ {fiadoTotal.toFixed(0)} en fiados</span>}
       </div>,
     ] : []),
     // Section 1: KPIs with sparklines (Mejora 8) and comparativo (Mejora 7)
     <div key="kpis" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       {[
-        { label: "Ventas periodo", value: `S/ ${ventasPeriodo.toFixed(0)}`, color: "border-b-4 border-[#0f766e]", spark: true, strokeColor: "#0f766e", sparkVal: ventasPeriodo },
+        { label: "Ventas periodo", value: `S/ ${ventasPeriodo.toFixed(0)}`, color: "border-b-4 border-[#00B4A6]", spark: true, strokeColor: "#00B4A6", sparkVal: ventasPeriodo },
         { label: "Transacciones", value: String(transacciones), color: "border-b-4 border-blue-500", spark: true, strokeColor: "#3b82f6", sparkVal: transacciones },
         { label: "Ticket promedio", value: `S/ ${ticketPromedio.toFixed(0)}`, color: "border-b-4 border-purple-500", spark: true, strokeColor: "#8b5cf6", sparkVal: ticketPromedio },
         { label: "Pedidos pend.", value: String(pedidosPendientes), color: "border-b-4 border-amber-500", spark: false, strokeColor: "", sparkVal: 0, onClick: onNavigate ? () => onNavigate("pedidos") : undefined },
@@ -493,10 +493,10 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       ].map((k) => {
         const change = Math.round((Math.random() - 0.3) * 30);
         return (
-          <div key={k.label} onClick={k.onClick} className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 shadow-sm transition-shadow", k.color, k.onClick && "cursor-pointer hover:shadow-md")}>
+          <div key={k.label} onClick={k.onClick} className={cn("bg-white rounded-xl border border-gray-200 p-4 shadow-sm transition-shadow", k.color, k.onClick && "cursor-pointer hover:shadow-md")}>
             <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
             <div className="flex items-center gap-1.5">
-              <p className="text-2xl font-mono font-bold mt-1 text-gray-900 dark:text-white">{k.value}</p>
+              <p className="text-2xl font-mono font-bold mt-1 text-gray-900">{k.value}</p>
               <span className={`text-xs ${change >= 0 ? "text-green-600" : "text-red-500"}`}>{change >= 0 ? "\u2191" : "\u2193"} {Math.abs(change)}%</span>
             </div>
             {k.spark && (
@@ -513,10 +513,10 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       })}
     </div>,
     // Section 2: Ventas por hora
-    <div key="hourly" className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm relative">
+    <div key="hourly" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm relative">
       <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-1"><SalesFavStar id="ventas-hora" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700 dark:text-foreground">Ventas por hora</h3></div>
-        <button onClick={() => setExpandedChart("hourly")} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors" title="Expandir">
+        <div className="flex items-center gap-1"><SalesFavStar id="ventas-hora" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Ventas por hora</h3></div>
+        <button onClick={() => setExpandedChart("hourly")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
           <Maximize2 className="h-3.5 w-3.5 text-gray-400" />
         </button>
       </div>
@@ -528,20 +528,20 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
             <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 11 }} />
             <Tooltip content={<ChartTooltip />} />
             <ReferenceLine y={500} stroke="#f97316" strokeDasharray="5 5" label={{ value: "Meta: S/500", position: "right", fill: "#f97316", fontSize: 11 }} />
-            <Bar dataKey="total" fill="#0f766e" radius={[4, 4, 0, 0]} className="cursor-pointer" />
+            <Bar dataKey="total" fill="#00B4A6" radius={[4, 4, 0, 0]} className="cursor-pointer" />
           </BarChart>
         </ResponsiveContainer>
       ) : <EmptyChart message="Sin ventas en este periodo" />}
     </div>,
     // Section 3: PieChart + Top5
     <div key="charts-row" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-1"><SalesFavStar id="metodo-pago" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700 dark:text-foreground">Por metodo de pago</h3></div>
+          <div className="flex items-center gap-1"><SalesFavStar id="metodo-pago" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Por metodo de pago</h3></div>
           {pieFilter && (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#0f766e]/10 text-[#0f766e] dark:text-emerald-400 text-xs font-bold">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-bold">
               Filtrando: {pieFilter}
-              <button onClick={() => setPieFilter(null)} className="hover:bg-[#0f766e]/20 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
+              <button onClick={() => setPieFilter(null)} className="hover:bg-[#00B4A6]/20 rounded-full p-0.5 transition-colors"><X className="h-3 w-3" /></button>
             </span>
           )}
         </div>
@@ -558,15 +558,15 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
           </ResponsiveContainer>
         ) : <EmptyChart message="Sin ventas en este periodo" />}
       </div>
-      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-        <div className="flex items-center gap-1 mb-4"><SalesFavStar id="top-productos" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700 dark:text-foreground">Top 5 productos</h3></div>
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+        <div className="flex items-center gap-1 mb-4"><SalesFavStar id="top-productos" favs={salesFavs} /><h3 className="text-sm font-bold text-gray-700">Top 5 productos</h3></div>
         {topProducts.length > 0 ? (
           <div className="space-y-2.5">
             {topProducts.map((p, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-[#0f766e] text-white text-xs flex items-center justify-center shrink-0">{p.name.charAt(0)}</div>
-                <span className="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{p.name}</span>
-                <span className="text-sm font-bold font-mono text-gray-900 dark:text-white">S/ {p.total.toFixed(0)}</span>
+                <div className="w-6 h-6 rounded-full bg-[#00B4A6] text-white text-xs flex items-center justify-center shrink-0">{p.name.charAt(0)}</div>
+                <span className="flex-1 text-sm text-gray-700 truncate">{p.name}</span>
+                <span className="text-sm font-bold font-mono text-gray-900">S/ {p.total.toFixed(0)}</span>
               </div>
             ))}
           </div>
@@ -574,10 +574,10 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </div>
     </div>,
     // Section 4: Tendencia semanal
-    <div key="weekly" className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm relative">
+    <div key="weekly" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm relative">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">Tendencia de ventas &mdash; Ultimos 7 dias</h3>
-        <button onClick={() => setExpandedChart("weekly")} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors" title="Expandir">
+        <h3 className="text-sm font-bold text-gray-700">Tendencia de ventas &mdash; Ultimos 7 dias</h3>
+        <button onClick={() => setExpandedChart("weekly")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
           <Maximize2 className="h-3.5 w-3.5 text-gray-400" />
         </button>
       </div>
@@ -585,21 +585,21 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         <AreaChart data={weeklyData}>
           <defs>
             <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#0f766e" stopOpacity={0.3} />
-              <stop offset="100%" stopColor="#0f766e" stopOpacity={0} />
+              <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
+              <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
           <XAxis dataKey="dia" tick={{ fontSize: 11 }} />
           <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 11 }} />
           <Tooltip content={<ChartTooltip />} />
-          <Area dataKey="total" stroke="#0f766e" fill="url(#salesGrad)" strokeWidth={2} />
+          <Area dataKey="total" stroke="#00B4A6" fill="url(#salesGrad)" strokeWidth={2} />
         </AreaChart>
       </ResponsiveContainer>
     </div>,
     // Section 5: Mejora 4 — Comparativo vs semana pasada
-    <div key="comparison" className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
-      <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">vs Semana Pasada</h3>
+    <div key="comparison" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+      <h3 className="text-sm font-bold text-gray-700 mb-4">vs Semana Pasada</h3>
       {comparisonData.some(d => d.estaSemana > 0 || d.semanaPasada > 0) ? (
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={comparisonData}>
@@ -610,26 +610,26 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
               content={({ active, payload, label }) => {
                 if (!active || !payload?.length) return null;
                 return (
-                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 px-4 py-3 text-xs">
+                  <div className="bg-white rounded-xl shadow-lg border border-gray-200 px-4 py-3 text-xs">
                     <p className="font-semibold mb-1">{label}</p>
-                    <p className="text-[#0f766e] font-mono font-bold">Esta semana: S/ {payload[0]?.value?.toLocaleString()}</p>
+                    <p className="text-[#00B4A6] font-mono font-bold">Esta semana: S/ {payload[0]?.value?.toLocaleString()}</p>
                     <p className="text-gray-400 font-mono">Semana pasada: S/ {payload[1]?.value?.toLocaleString()}</p>
                   </div>
                 );
               }}
             />
             <Legend formatter={(v: string) => v === "estaSemana" ? "Esta semana" : "Semana pasada"} />
-            <Line type="monotone" dataKey="estaSemana" stroke="#0f766e" strokeWidth={2.5} dot={{ r: 4, fill: "#0f766e" }} />
+            <Line type="monotone" dataKey="estaSemana" stroke="#00B4A6" strokeWidth={2.5} dot={{ r: 4, fill: "#00B4A6" }} />
             <Line type="monotone" dataKey="semanaPasada" stroke="#9ca3af" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3, fill: "#9ca3af" }} />
           </LineChart>
         </ResponsiveContainer>
       ) : <EmptyChart message="Sin datos comparativos" />}
     </div>,
     // Section 6: Mejora 17 — Mapa de calor
-    <div key="heatmap" className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+    <div key="heatmap" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">Mapa de Calor de Ventas</h3>
-        <button onClick={() => setExpandedChart("heatmap")} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors" title="Expandir">
+        <h3 className="text-sm font-bold text-gray-700">Mapa de Calor de Ventas</h3>
+        <button onClick={() => setExpandedChart("heatmap")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
           <Maximize2 className="h-3.5 w-3.5 text-gray-400" />
         </button>
       </div>
@@ -668,14 +668,14 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </div>
     </div>,
     // Section 7: Mejora 18 — Forecast con IA
-    <div key="forecast" className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+    <div key="forecast" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Brain className="h-4 w-4 text-purple-500" />
-          <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">Pronostico 7 dias</h3>
-          <span className="text-[9px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-1.5 py-0.5 rounded-full font-bold">Pronostico IA</span>
+          <h3 className="text-sm font-bold text-gray-700">Pronostico 7 dias</h3>
+          <span className="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">Pronostico IA</span>
         </div>
-        <button onClick={() => setExpandedChart("forecast")} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors" title="Expandir">
+        <button onClick={() => setExpandedChart("forecast")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir">
           <Maximize2 className="h-3.5 w-3.5 text-gray-400" />
         </button>
       </div>
@@ -686,37 +686,37 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
           <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 11 }} />
           <Tooltip content={<ChartTooltip />} />
           <Legend formatter={(v: string) => v === "real" ? "Ventas reales" : "Prediccion"} />
-          <Line type="monotone" dataKey="real" stroke="#0f766e" strokeWidth={2.5} dot={{ r: 3, fill: "#0f766e" }} connectNulls={false} />
+          <Line type="monotone" dataKey="real" stroke="#00B4A6" strokeWidth={2.5} dot={{ r: 3, fill: "#00B4A6" }} connectNulls={false} />
           <Line type="monotone" dataKey="prediccion" stroke="#9b5de5" strokeWidth={2} strokeDasharray="6 3" dot={{ r: 3, fill: "#9b5de5" }} connectNulls={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>,
     // Section 8: Mejora 20 — Comparativo entre meses
-    <div key="month-compare" className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 shadow-sm">
+    <div key="month-compare" className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">Comparar Meses</h3>
+        <h3 className="text-sm font-bold text-gray-700">Comparar Meses</h3>
         <div className="flex items-center gap-2">
-          <select value={month1} onChange={e => setMonth1(e.target.value)} className="text-xs border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+          <select value={month1} onChange={e => setMonth1(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700">
             {monthOptions.map(o => <option key={o} value={o}>{MESES_LABEL[o]}</option>)}
           </select>
           <span className="text-xs text-gray-400">vs</span>
-          <select value={month2} onChange={e => setMonth2(e.target.value)} className="text-xs border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+          <select value={month2} onChange={e => setMonth2(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700">
             {monthOptions.map(o => <option key={o} value={o}>{MESES_LABEL[o]}</option>)}
           </select>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="text-center p-2 bg-gray-50 dark:bg-white/5 rounded-xl">
+        <div className="text-center p-2 bg-gray-50 rounded-xl">
           <p className="text-[10px] text-gray-400 uppercase font-bold">{MESES_LABEL[month1]}</p>
-          <p className="text-lg font-extrabold text-[#0f766e]">S/ {monthComparisonData.total1.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
+          <p className={cn("text-lg font-extrabold", monthComparisonData.total1 === 0 ? "text-gray-300" : "text-[#00B4A6]")}>{formatCurrency(monthComparisonData.total1, { decimals: 0 })}</p>
           <p className="text-[10px] text-gray-400">{monthComparisonData.count1} ventas</p>
         </div>
-        <div className="text-center p-2 bg-gray-50 dark:bg-white/5 rounded-xl">
+        <div className="text-center p-2 bg-gray-50 rounded-xl">
           <p className="text-[10px] text-gray-400 uppercase font-bold">{MESES_LABEL[month2]}</p>
-          <p className="text-lg font-extrabold text-[#f97316]">S/ {monthComparisonData.total2.toLocaleString("es-PE", { maximumFractionDigits: 0 })}</p>
+          <p className={cn("text-lg font-extrabold", monthComparisonData.total2 === 0 ? "text-gray-300" : "text-[#f97316]")}>{formatCurrency(monthComparisonData.total2, { decimals: 0 })}</p>
           <p className="text-[10px] text-gray-400">{monthComparisonData.count2} ventas</p>
         </div>
-        <div className="text-center p-2 bg-gray-50 dark:bg-white/5 rounded-xl">
+        <div className="text-center p-2 bg-gray-50 rounded-xl">
           <p className="text-[10px] text-gray-400 uppercase font-bold">Diferencia</p>
           <p className={cn("text-lg font-extrabold", monthComparisonData.diffPct >= 0 ? "text-emerald-600" : "text-red-600")}>
             {monthComparisonData.diffPct >= 0 ? "+" : ""}{monthComparisonData.diffPct}%
@@ -732,7 +732,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
             <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 11 }} />
             <Tooltip content={<ChartTooltip />} />
             <Legend formatter={(v: string) => v === "mes1" ? MESES_LABEL[month1] : MESES_LABEL[month2]} />
-            <Bar dataKey="mes1" fill="#0f766e" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="mes1" fill="#00B4A6" radius={[4, 4, 0, 0]} />
             <Bar dataKey="mes2" fill="#f97316" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
@@ -762,7 +762,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
               <XAxis dataKey="hora" tick={{ fontSize: 13 }} />
               <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 13 }} />
               <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="total" fill="#0f766e" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="total" fill="#00B4A6" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartExpandModal>
@@ -773,15 +773,15 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
             <AreaChart data={weeklyData}>
               <defs>
                 <linearGradient id="salesGradBig" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0f766e" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#0f766e" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
               <XAxis dataKey="dia" tick={{ fontSize: 13 }} />
               <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 13 }} />
               <Tooltip content={<ChartTooltip />} />
-              <Area dataKey="total" stroke="#0f766e" fill="url(#salesGradBig)" strokeWidth={2.5} />
+              <Area dataKey="total" stroke="#00B4A6" fill="url(#salesGradBig)" strokeWidth={2.5} />
             </AreaChart>
           </ResponsiveContainer>
         </ChartExpandModal>
@@ -820,7 +820,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
               <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 13 }} />
               <Tooltip content={<ChartTooltip />} />
               <Legend formatter={(v: string) => v === "real" ? "Ventas reales" : "Prediccion"} />
-              <Line type="monotone" dataKey="real" stroke="#0f766e" strokeWidth={3} dot={{ r: 4, fill: "#0f766e" }} connectNulls={false} />
+              <Line type="monotone" dataKey="real" stroke="#00B4A6" strokeWidth={3} dot={{ r: 4, fill: "#00B4A6" }} connectNulls={false} />
               <Line type="monotone" dataKey="prediccion" stroke="#9b5de5" strokeWidth={2.5} strokeDasharray="6 3" dot={{ r: 4, fill: "#9b5de5" }} connectNulls={false} />
             </LineChart>
           </ResponsiveContainer>
@@ -830,10 +830,10 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       {/* Mejora 11: Drill-down modal para ventas por hora */}
       {drillHour !== null && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDrillHour(null)}>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">Ventas de las {drillHour}:00</h3>
-              <button onClick={() => setDrillHour(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"><X className="h-4 w-4 text-gray-400" /></button>
+              <h3 className="text-base font-bold text-gray-900">Ventas de las {drillHour}:00</h3>
+              <button onClick={() => setDrillHour(null)} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X className="h-4 w-4 text-gray-400" /></button>
             </div>
             {(() => {
               const hourSales = filteredSales.filter(s => {
@@ -844,18 +844,18 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
               const totalHour = hourSales.reduce((s: number, v) => s + (Number(v.total) || 0), 0);
               return (
                 <>
-                  <div className="flex items-center gap-3 mb-4 p-3 bg-[#0f766e]/5 rounded-xl">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{hourSales.length} ventas</p>
-                    <p className="text-sm font-extrabold text-[#0f766e]">Total: S/ {totalHour.toFixed(2)}</p>
+                  <div className="flex items-center gap-3 mb-4 p-3 bg-[#00B4A6]/5 rounded-xl">
+                    <p className="text-xs text-gray-500">{hourSales.length} ventas</p>
+                    <p className="text-sm font-extrabold text-[#00B4A6]">Total: S/ {totalHour.toFixed(2)}</p>
                   </div>
                   <div className="space-y-2">
                     {hourSales.slice(0, 20).map((s, i) => (
-                      <div key={i} className="flex items-center justify-between py-2 px-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl text-xs">
+                      <div key={i} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-xl text-xs">
                         <div>
-                          <p className="font-medium text-gray-700 dark:text-gray-300">{new Date(String(s.createdAt ?? "")).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</p>
+                          <p className="font-medium text-gray-700">{new Date(String(s.createdAt ?? "")).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" })}</p>
                           <p className="text-gray-400 text-[10px]">{String(s.payment ?? s.paymentMethod ?? "efectivo")}</p>
                         </div>
-                        <p className="font-mono font-bold text-gray-900 dark:text-white">S/ {(Number(s.total) || 0).toFixed(2)}</p>
+                        <p className="font-mono font-bold text-gray-900">S/ {(Number(s.total) || 0).toFixed(2)}</p>
                       </div>
                     ))}
                     {hourSales.length > 20 && <p className="text-xs text-gray-400 text-center">y {hourSales.length - 20} mas...</p>}
@@ -970,7 +970,7 @@ function ShiftCloseModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
         <div className="bg-primary px-6 py-4">
           <h3 className="text-lg font-extrabold text-white">Cerrar Turno</h3>
@@ -984,15 +984,15 @@ function ShiftCloseModal({
               <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : error ? (
-            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 rounded-xl p-4 text-center">
+            <div className="text-sm text-red-600 bg-red-50 rounded-xl p-4 text-center">
               {error}
               <button onClick={fetchSummary} className="block mx-auto mt-2 text-xs font-bold underline">Reintentar</button>
             </div>
           ) : summary ? (
             <>
               {/* Big total */}
-              <div className="text-center pb-2 border-b border-gray-100 dark:border-card-border">
-                <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-1">Total vendido en el turno</p>
+              <div className="text-center pb-2 border-b border-gray-100">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Total vendido en el turno</p>
                 <div className="flex items-center justify-center gap-2">
                   <p className="text-4xl font-black text-primary tracking-tight">{fmt(summary.totalVendido)}</p>
                 </div>
@@ -1004,52 +1004,52 @@ function ShiftCloseModal({
 
               {/* Payment breakdown - Premium Grid */}
               <div className="space-y-3">
-                <p className="text-xs font-extrabold text-gray-400 dark:text-muted uppercase tracking-widest pl-1">Desglose de ingresos</p>
+                <p className="text-xs font-extrabold text-gray-400 uppercase tracking-widest pl-1">Desglose de ingresos</p>
 
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="col-span-2 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl p-4 flex items-center justify-between group relative overflow-hidden">
+                  <div className="col-span-2 bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-center justify-between group relative overflow-hidden">
                     <div className="absolute -right-4 -top-4 h-16 w-16 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all" />
                     <div className="flex items-center gap-3 relative z-10">
-                      <div className="h-10 w-10 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center">
-                        <Banknote className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      <div className="h-10 w-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <Banknote className="h-5 w-5 text-emerald-600" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-emerald-600/80 dark:text-emerald-400/80">Efectivo (Caja)</p>
-                        <p className="text-lg font-black text-emerald-700 dark:text-emerald-400">{fmt(summary.efectivo)}</p>
+                        <p className="text-xs font-bold text-emerald-600/80">Efectivo (Caja)</p>
+                        <p className="text-lg font-black text-emerald-700">{fmt(summary.efectivo)}</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-900/30 rounded-2xl p-3 sm:p-4">
+                  <div className="bg-purple-50 border border-purple-100 rounded-2xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="h-2 w-2 rounded-full bg-purple-500" />
-                      <p className="text-xs font-bold text-purple-700/80 dark:text-purple-400/80">Yape</p>
+                      <p className="text-xs font-bold text-purple-700/80">Yape</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-purple-700 dark:text-purple-400">{fmt(summary.yape)}</p>
+                    <p className="text-base sm:text-lg font-black text-purple-700">{fmt(summary.yape)}</p>
                   </div>
 
-                  <div className="bg-teal-50 dark:bg-teal-950/20 border border-teal-100 dark:border-teal-900/30 rounded-2xl p-3 sm:p-4">
+                  <div className="bg-teal-50 border border-teal-100 rounded-2xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="h-2 w-2 rounded-full bg-teal-500" />
-                      <p className="text-xs font-bold text-teal-700/80 dark:text-teal-400/80">Plin</p>
+                      <p className="text-xs font-bold text-teal-700/80">Plin</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-teal-700 dark:text-teal-400">{fmt(summary.plin)}</p>
+                    <p className="text-base sm:text-lg font-black text-teal-700">{fmt(summary.plin)}</p>
                   </div>
 
-                  <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 rounded-2xl p-3 sm:p-4">
+                  <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <CreditCard className="h-3 w-3 text-blue-500" />
-                      <p className="text-xs font-bold text-blue-700/80 dark:text-blue-400/80">Tarjeta / POS</p>
+                      <p className="text-xs font-bold text-blue-700/80">Tarjeta / POS</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-blue-700 dark:text-blue-400">{fmt(summary.tarjeta)}</p>
+                    <p className="text-base sm:text-lg font-black text-blue-700">{fmt(summary.tarjeta)}</p>
                   </div>
 
-                  <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 rounded-2xl p-3 sm:p-4">
+                  <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 sm:p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Wallet className="h-3 w-3 text-amber-500" />
-                      <p className="text-xs font-bold text-amber-700/80 dark:text-amber-400/80">Fiado</p>
+                      <p className="text-xs font-bold text-amber-700/80">Fiado</p>
                     </div>
-                    <p className="text-base sm:text-lg font-black text-amber-700 dark:text-amber-400">{fmt(summary.fiado)}</p>
+                    <p className="text-base sm:text-lg font-black text-amber-700">{fmt(summary.fiado)}</p>
                   </div>
                 </div>
               </div>
@@ -1061,7 +1061,7 @@ function ShiftCloseModal({
         <div className="flex gap-3 px-6 pb-6">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-bold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
           >
             Cancelar
           </button>
@@ -1132,7 +1132,7 @@ export default function POSCajaModule() {
         {/* Badge de turno */}
         <span className={cn(
           "px-3 py-1 rounded-full text-xs font-bold hidden sm:inline-flex",
-          turnoAbierto ? "bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400" : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+          turnoAbierto ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
         )}>
           {turnoAbierto ? "Turno abierto" : "Sin turno"}
         </span>
@@ -1141,21 +1141,20 @@ export default function POSCajaModule() {
           {turnoAbierto ? (
             <button
               onClick={handleOpenCloseModal}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-800/30 transition-colors"
+              className="px-4 py-2 rounded-xl text-sm font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors"
             >
               Cerrar Turno
             </button>
           ) : (
             <button
               onClick={() => setSub("turnos")}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] transition-colors"
+              className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-[#00B4A6] hover:bg-[#009690] transition-colors"
             >
               Abrir Turno
             </button>
           )}
         </div>
       </AdminModuleHeader>
-      <AdminBreadcrumb items={[{ label: "Ventas & Caja" }]} />
 
       <AdminTabBar
         tabs={TABS.map(t => ({
@@ -1182,7 +1181,7 @@ export default function POSCajaModule() {
         ) : (
           <button
             onClick={() => setSub("turnos")}
-            className="px-4 py-2.5 rounded-2xl text-xs font-bold text-white bg-[#0f766e] hover:bg-[#0d5f58] shadow-lg shadow-[#0f766e]/30 transition-colors flex items-center gap-1.5"
+            className="px-4 py-2.5 rounded-2xl text-xs font-bold text-white bg-[#00B4A6] hover:bg-[#009690] shadow-lg shadow-[#00B4A6]/30 transition-colors flex items-center gap-1.5"
           >
             Abrir Turno
           </button>

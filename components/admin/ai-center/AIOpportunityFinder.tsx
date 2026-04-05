@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo } from "react";
 import {
@@ -401,7 +401,7 @@ export default function AIOpportunityFinder({ data, compact = false }: Props) {
             </span>
           )}
           {opportunities.length > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-[#0f766e]/10 text-[#0f766e] dark:text-[#14b8a6] font-semibold">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] dark:text-[#2dd4bf] font-semibold">
               {opportunities.length}
             </span>
           )}
@@ -414,7 +414,7 @@ export default function AIOpportunityFinder({ data, compact = false }: Props) {
             className={cn(
               "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
               !filterCat
-                ? "bg-[#0f766e] text-white border-[#0f766e]"
+                ? "bg-[#00B4A6] text-white border-[#00B4A6]"
                 : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
             )}
             onClick={() => setFilterCat(null)}
@@ -429,7 +429,7 @@ export default function AIOpportunityFinder({ data, compact = false }: Props) {
                 className={cn(
                   "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
                   filterCat === cat
-                    ? "bg-[#0f766e] text-white border-[#0f766e]"
+                    ? "bg-[#00B4A6] text-white border-[#00B4A6]"
                     : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                 )}
                 onClick={() => setFilterCat(filterCat === cat ? null : cat)}
@@ -488,8 +488,8 @@ export default function AIOpportunityFinder({ data, compact = false }: Props) {
                   <div className="px-3 pb-3 pt-0 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30">
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">{opp.data}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{opp.impact}</p>
-                    <div className="mt-2 p-2 rounded-lg bg-[#0f766e]/5 dark:bg-[#0f766e]/10 border border-[#0f766e]/20">
-                      <p className="text-xs font-medium text-[#0f766e] dark:text-[#14b8a6]">
+                    <div className="mt-2 p-2 rounded-lg bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10 border border-[#00B4A6]/20">
+                      <p className="text-xs font-medium text-[#00B4A6] dark:text-[#2dd4bf]">
                         Accion sugerida: {opp.action}
                       </p>
                     </div>

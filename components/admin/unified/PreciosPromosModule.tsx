@@ -1,6 +1,9 @@
 "use client";
 import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
+import { Tag, BarChart3, History, Percent, Ticket, FlaskConical } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -14,12 +17,14 @@ const PromotionsTab = dynamic(() => import("@/components/admin/PromotionsTab"), 
 const CouponsTab = dynamic(() => import("@/components/admin/CouponsTab"), { loading: S });
 const ABTestsTab = dynamic(() => import("@/components/admin/ABTestsTab"), { loading: S });
 
+const MODULE_ID = "precios-promos";
+
 const TABS = [
-  { id: "benchmark" as const, label: "Benchmark" },
-  { id: "historial" as const, label: "Historial" },
-  { id: "promociones" as const, label: "Promociones" },
-  { id: "cupones" as const, label: "Cupones" },
-  { id: "ab-tests" as const, label: "A/B Tests" },
+  { id: "benchmark", label: "Benchmark", icon: BarChart3 },
+  { id: "historial", label: "Historial", icon: History },
+  { id: "promociones", label: "Promociones", icon: Percent },
+  { id: "cupones", label: "Cupones", icon: Ticket },
+  { id: "ab-tests", label: "A/B Tests", icon: FlaskConical },
 ];
 
 // ── Bulk Price Editor ────────────────────────────────────────────────────────
@@ -123,15 +128,15 @@ function BulkPriceEditor({ onClose }: { onClose: () => void }) {
   const fmt = (n: number) => `S/${n.toFixed(2)}`;
 
   return (
-    <div className="bg-amber-50 dark:bg-amber-950/10 border border-amber-200 dark:border-amber-800/30 rounded-2xl p-4 sm:p-5 space-y-4">
+    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-extrabold text-gray-900 dark:text-foreground">Edicion Masiva de Precios</h3>
-          <p className="text-xs text-gray-500 dark:text-muted mt-0.5">Aplica un porcentaje de aumento o descuento a multiples productos</p>
+          <h3 className="text-sm font-extrabold text-gray-900">Edicion Masiva de Precios</h3>
+          <p className="text-xs text-gray-500 mt-0.5">Aplica un porcentaje de aumento o descuento a multiples productos</p>
         </div>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-foreground transition-colors text-lg leading-none"
+          className="text-gray-400 hover:text-gray-600 transition-colors text-lg leading-none"
           aria-label="Cerrar"
         >
           &times;
@@ -139,9 +144,9 @@ function BulkPriceEditor({ onClose }: { onClose: () => void }) {
       </div>
 
       {applied ? (
-        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-xl p-4 text-center">
-          <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">Precios actualizados correctamente</p>
-          <p className="text-xs text-emerald-600 dark:text-emerald-300 mt-1">{preview.length} producto{preview.length !== 1 ? "s" : ""} modificado{preview.length !== 1 ? "s" : ""}</p>
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-center">
+          <p className="text-sm font-bold text-emerald-700">Precios actualizados correctamente</p>
+          <p className="text-xs text-emerald-600 mt-1">{preview.length} producto{preview.length !== 1 ? "s" : ""} modificado{preview.length !== 1 ? "s" : ""}</p>
           <button
             onClick={() => {
               setApplied(false);
@@ -159,11 +164,11 @@ function BulkPriceEditor({ onClose }: { onClose: () => void }) {
           {/* Inputs row */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
-              <label className="block text-xs font-bold text-gray-600 dark:text-muted mb-1">Categoria</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1">Categoria</label>
               <select
                 value={category}
                 onChange={(e) => { setCategory(e.target.value); setPreview([]); }}
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-700 dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary transition-colors"
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white outline-none focus:border-primary transition-colors"
               >
                 <option value="">Todas las categorias</option>
                 {categories.map(c => (
@@ -172,14 +177,14 @@ function BulkPriceEditor({ onClose }: { onClose: () => void }) {
               </select>
             </div>
             <div className="w-full sm:w-40">
-              <label className="block text-xs font-bold text-gray-600 dark:text-muted mb-1">% de cambio</label>
+              <label className="block text-xs font-bold text-gray-600 mb-1">% de cambio</label>
               <input
                 type="number"
                 step="0.1"
                 value={percentage}
                 onChange={(e) => { setPercentage(e.target.value); setPreview([]); }}
                 placeholder="Ej: 10 o -5"
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-700 dark:text-foreground bg-white dark:bg-card outline-none focus:border-primary transition-colors"
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 bg-white outline-none focus:border-primary transition-colors"
               />
               {validPct && (
                 <p className={`text-[11px] mt-1 font-semibold ${pct > 0 ? "text-red-500" : "text-emerald-600"}`}>
@@ -191,7 +196,7 @@ function BulkPriceEditor({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handlePreview}
                 disabled={!validPct || loadingPreview}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-primary bg-white dark:bg-card border border-primary/30 hover:bg-primary/5 disabled:opacity-50 transition-colors whitespace-nowrap"
+                className="px-4 py-2 rounded-xl text-sm font-bold text-primary bg-white border border-primary/30 hover:bg-primary/5 disabled:opacity-50 transition-colors whitespace-nowrap"
               >
                 {loadingPreview ? "Cargando..." : "Vista previa"}
               </button>
@@ -199,7 +204,7 @@ function BulkPriceEditor({ onClose }: { onClose: () => void }) {
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 rounded-xl px-4 py-2">
+            <div className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2">
               {error}
             </div>
           )}
@@ -207,28 +212,28 @@ function BulkPriceEditor({ onClose }: { onClose: () => void }) {
           {/* Preview table */}
           {preview.length > 0 && (
             <div className="space-y-3">
-              <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl overflow-hidden">
+              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                 <div className="max-h-60 overflow-y-auto">
                   <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-gray-50 dark:bg-surface">
+                    <thead className="sticky top-0 bg-gray-50">
                       <tr>
-                        <th className="text-left px-3 py-2 text-xs font-bold text-gray-500 dark:text-muted">Producto</th>
-                        <th className="text-right px-3 py-2 text-xs font-bold text-gray-500 dark:text-muted">Precio actual</th>
-                        <th className="text-right px-3 py-2 text-xs font-bold text-gray-500 dark:text-muted">Precio nuevo</th>
-                        <th className="text-right px-3 py-2 text-xs font-bold text-gray-500 dark:text-muted">Diferencia</th>
+                        <th className="text-left px-3 py-2 text-xs font-bold text-gray-500">Producto</th>
+                        <th className="text-right px-3 py-2 text-xs font-bold text-gray-500">Precio actual</th>
+                        <th className="text-right px-3 py-2 text-xs font-bold text-gray-500">Precio nuevo</th>
+                        <th className="text-right px-3 py-2 text-xs font-bold text-gray-500">Diferencia</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-card-border">
+                    <tbody className="divide-y divide-gray-100">
                       {preview.map(p => {
                         const diff = p.newPrice - p.currentPrice;
                         return (
-                          <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-surface/50">
+                          <tr key={p.id} className="hover:bg-gray-50">
                             <td className="px-3 py-2">
-                              <span className="font-semibold text-gray-900 dark:text-foreground">{p.name}</span>
-                              <span className="ml-2 text-[11px] text-gray-400 dark:text-muted">{p.category}</span>
+                              <span className="font-semibold text-gray-900">{p.name}</span>
+                              <span className="ml-2 text-[11px] text-gray-400">{p.category}</span>
                             </td>
-                            <td className="px-3 py-2 text-right font-semibold text-gray-600 dark:text-muted">{fmt(p.currentPrice)}</td>
-                            <td className="px-3 py-2 text-right font-bold text-gray-900 dark:text-foreground">{fmt(p.newPrice)}</td>
+                            <td className="px-3 py-2 text-right font-semibold text-gray-600">{fmt(p.currentPrice)}</td>
+                            <td className="px-3 py-2 text-right font-bold text-gray-900">{fmt(p.newPrice)}</td>
                             <td className={`px-3 py-2 text-right font-bold ${diff > 0 ? "text-red-500" : "text-emerald-600"}`}>
                               {diff > 0 ? "+" : ""}{fmt(diff)}
                             </td>
@@ -238,7 +243,7 @@ function BulkPriceEditor({ onClose }: { onClose: () => void }) {
                     </tbody>
                   </table>
                 </div>
-                <div className="bg-gray-50 dark:bg-surface px-3 py-2 text-xs font-semibold text-gray-500 dark:text-muted border-t border-gray-200 dark:border-card-border">
+                <div className="bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-500 border-t border-gray-200">
                   {preview.length} producto{preview.length !== 1 ? "s" : ""} afectado{preview.length !== 1 ? "s" : ""}
                 </div>
               </div>
@@ -264,26 +269,15 @@ export default function PreciosPromosModule() {
   const [showBulkEdit, setShowBulkEdit] = useState(false);
 
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex items-center gap-2 border-b border-gray-200 dark:border-card-border -mx-1 px-1">
-        <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none flex-1">
-          {TABS.map(t => (
-            <button
-              key={t.id}
-              onClick={() => setSub(t.id)}
-              className={`shrink-0 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${
-                sub === t.id
-                  ? "border-primary text-primary"
-                  : "border-transparent text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Precios & Promociones"
+        description="Benchmark, historial de precios, promociones, cupones y A/B tests"
+        icon={Tag}
+      >
         <button
           onClick={() => setShowBulkEdit(!showBulkEdit)}
-          className={`shrink-0 ml-auto px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-colors whitespace-nowrap ${
+          className={`shrink-0 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-colors whitespace-nowrap ${
             showBulkEdit
               ? "text-white bg-primary"
               : "text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20"
@@ -291,7 +285,14 @@ export default function PreciosPromosModule() {
         >
           Edicion Masiva
         </button>
-      </div>
+      </AdminModuleHeader>
+
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId={MODULE_ID}
+      />
 
       {showBulkEdit && <BulkPriceEditor onClose={() => setShowBulkEdit(false)} />}
 

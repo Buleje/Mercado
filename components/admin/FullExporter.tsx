@@ -223,7 +223,7 @@ export default function FullExporter() {
             "flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors",
             bulkStatus === "loading"
               ? "bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800"
-              : "bg-[#0f766e] text-white hover:bg-[#235c43]"
+              : "bg-[#00B4A6] text-white hover:bg-[#235c43]"
           )}
         >
           {bulkStatus === "loading" ? (
@@ -248,8 +248,8 @@ export default function FullExporter() {
               className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-5"
             >
               <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#0f766e]/10">
-                  <Icon className="h-5 w-5 text-[#0f766e]" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#00B4A6]/10">
+                  <Icon className="h-5 w-5 text-[#00B4A6]" />
                 </div>
                 <div>
                   <p className="font-medium text-gray-900 dark:text-gray-100">{mod.label}</p>
@@ -275,7 +275,7 @@ export default function FullExporter() {
                     ? "bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
                     : st.status === "done"
                     ? "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30"
-                    : "bg-gray-50 dark:bg-gray-800 hover:bg-[#0f766e]/10"
+                    : "bg-gray-50 dark:bg-gray-800 hover:bg-[#00B4A6]/10"
                 )}
               >
                 {st.status === "loading" ? (

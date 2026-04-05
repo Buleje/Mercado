@@ -201,7 +201,7 @@ function ReviewForm({
 
   if (submitted) {
     return (
-      <div className="rounded-xl border border-[#0f766e]/40 bg-[#0f766e]/10 px-4 py-3 text-sm text-[#0f766e] dark:border-[#0f766e]/40 dark:bg-[#0f766e]/10 dark:text-green-300">
+      <div className="rounded-xl border border-[#00B4A6]/40 bg-[#00B4A6]/10 px-4 py-3 text-sm text-[#00B4A6] dark:border-[#00B4A6]/40 dark:bg-[#00B4A6]/10 dark:text-green-300">
         Gracias por tu opinion. Tu resena esta en revision y se publicara pronto.
       </div>
     );
@@ -227,7 +227,7 @@ function ReviewForm({
           maxLength={60}
           className={cn(
             "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#0f766e]",
+            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
             "dark:bg-background dark:border-border dark:text-foreground dark:placeholder:text-muted",
           )}
         />
@@ -254,7 +254,7 @@ function ReviewForm({
           required
           className={cn(
             "w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground",
-            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#0f766e]",
+            "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
             "dark:bg-background dark:border-border dark:text-foreground dark:placeholder:text-muted",
           )}
         />
@@ -269,8 +269,8 @@ function ReviewForm({
         type="submit"
         disabled={isPending}
         className={cn(
-          "w-full rounded-lg bg-[#0f766e] px-4 py-2.5 text-sm font-semibold text-white transition-colors",
-          "hover:bg-[#0d5f58] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed",
+          "w-full rounded-lg bg-[#00B4A6] px-4 py-2.5 text-sm font-semibold text-white transition-colors",
+          "hover:bg-[#009690] active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed",
         )}
       >
         {isPending ? "Enviando..." : "Publicar resena"}

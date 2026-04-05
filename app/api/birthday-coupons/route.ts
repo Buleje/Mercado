@@ -49,15 +49,11 @@ async function checkAndCreateBirthdayCoupons() {
 
     // Send push notification (if customer opted in to promotions)
     if (customer.notifPromotions !== false) {
-      try {
-        await sendPushToPhone(customer.phone, {
-          title: "🎂 ¡Feliz cumpleaños!",
-          body: `${customer.name}, tienes un cupón de 10% con código ${code}. ¡Válido por 7 días!`,
-          url: "/cuenta",
-        });
-      } catch {
-        // push may fail if customer has no subscription — non-blocking
-      }
+      sendPushToPhone(customer.phone, {
+        title: "🎂 ¡Feliz cumpleaños!",
+        body: `${customer.name}, tienes un cupón de 10% con código ${code}. ¡Válido por 7 días!`,
+        url: "/cuenta",
+      }).catch(() => {});
     }
 
     created++;

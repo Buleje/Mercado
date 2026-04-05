@@ -1,0 +1,95 @@
+export const dynamic = "force-dynamic";
+
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/require-admin";
+import { prisma } from "@/lib/prisma";
+import { withDbRetry } from "@/lib/db-retry";
+import { applyRateLimit } from "@/lib/rate-limit";
+
+/**
+ * GET /api/customers/inactive
+ * Returns customers who haven't purchased in X days (default 30).
+ * Calculates from Order + Sale tables (no lastPurchaseAt field needed).
+ */
+export async function GET(request: NextRequest) {
+  const rl = await applyRateLimit(request, "MODERATE", "customers-inactive");
+  if (rl) return rl;
+
+  const auth = await requireAdmin(request, ["admin", "cajero"]);
+  if (auth instanceof NextResponse) return auth;
+
+  const url = new URL(request.url);
+  const daysParam = url.searchParams.get("days");
+  const days = Math.min(Math.max(parseInt(daysParam || "30", 10) || 30, 7), 365);
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+  const tenantId = auth.tenantId;
+
+  const data = await withDbRetry(async () => {
+    // Get all customers with their latest order/sale dates
+    const customers = await prisma.customer.findMany({
+      where: { tenantId },
+      select: {
+        phone: true,
+        name: true,
+        totalSpent: true,
+        loyaltyTier: true,
+        estado: true,
+        createdAt: true,
+        Order: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { createdAt: true },
+        },
+        Sale: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { createdAt: true },
+        },
+      },
+    });
+
+    const inactive = customers
+      .map((c) => {
+        const lastOrder = c.Order[0]?.createdAt;
+        const lastSale = c.Sale[0]?.createdAt;
+        const lastActivity = lastOrder && lastSale
+          ? new Date(Math.max(lastOrder.getTime(), lastSale.getTime()))
+          : lastOrder || lastSale || null;
+
+        const daysSinceLast = lastActivity
+          ? Math.floor((Date.now() - lastActivity.getTime()) / 86400000)
+          : Math.floor((Date.now() - c.createdAt.getTime()) / 86400000);
+
+        return {
+          phone: c.phone,
+          name: c.name,
+          totalSpent: c.totalSpent,
+          loyaltyTier: c.loyaltyTier,
+          estado: c.estado,
+          lastActivity: lastActivity?.toISOString() ?? null,
+          daysSinceLast,
+          risk: daysSinceLast >= 60 ? "alto" as const
+            : daysSinceLast >= 30 ? "medio" as const
+            : "bajo" as const,
+        };
+      })
+      .filter((c) => {
+        const la = c.lastActivity ? new Date(c.lastActivity) : null;
+        // Inactive = no activity after cutoff OR never purchased
+        return (la && la < cutoff) || (!la && c.daysSinceLast >= days);
+      })
+      .sort((a, b) => b.daysSinceLast - a.daysSinceLast);
+
+    return inactive;
+  });
+
+  return NextResponse.json({
+    ok: true,
+    days,
+    total: data.length,
+    customers: data,
+  }, {
+    headers: { "X-Total-Count": String(data.length) },
+  });
+}

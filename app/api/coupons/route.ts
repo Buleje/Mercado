@@ -4,6 +4,7 @@ import { z } from "zod";
 import { CouponsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
+import { withDbRetry } from "@/lib/db-retry";
 
 const CouponPostSchema = z.object({
   code: z.string().min(1).max(50),
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const coupons = await CouponsDB.getAll(auth.tenantId);
+    const coupons = await withDbRetry(() => CouponsDB.getAll(auth.tenantId));
     logger.info("[coupons] GET", { count: coupons.length, requestId: req.headers.get("x-request-id") ?? undefined });
     return NextResponse.json(coupons);
   } catch (e) {

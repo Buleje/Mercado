@@ -14,7 +14,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
           </p>
           <button
             onClick={reset}
-            className="px-5 py-2.5 rounded-xl bg-[#0f766e] hover:bg-[#0d5f58] text-white text-sm font-bold transition-colors"
+            className="px-5 py-2.5 rounded-xl bg-[#00B4A6] hover:bg-[#009690] text-white text-sm font-bold transition-colors"
           >
             Recargar
           </button>

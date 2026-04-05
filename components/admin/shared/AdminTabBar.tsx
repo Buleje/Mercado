@@ -91,17 +91,17 @@ export default function AdminTabBar({ tabs, activeTab, onTabChange, moduleId, dr
       {canScrollLeft && (
         <button
           onClick={() => scrollTabs("left")}
-          className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white dark:from-gray-900 to-transparent z-10 flex items-center transition-opacity duration-300"
-          aria-label="Scroll tabs izquierda"
+          className="absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-white via-white/90 to-transparent z-10 flex items-center transition-opacity duration-300"
+          aria-label="Ver tabs anteriores"
         >
-          <ChevronLeft className="h-4 w-4 text-gray-400" />
+          <ChevronLeft className="h-4 w-4 text-gray-500" />
         </button>
       )}
 
       <div
         ref={tabsRef}
         onScroll={checkScroll}
-        className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none scroll-smooth border-b border-gray-200 dark:border-card-border -mx-1 px-1"
+        className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none scroll-smooth border-b border-gray-200 -mx-1 px-1"
         style={{ scrollbarWidth: "none" }}
       >
         {orderedTabs.map(t => {
@@ -122,11 +122,11 @@ export default function AdminTabBar({ tabs, activeTab, onTabChange, moduleId, dr
                 "shrink-0 flex items-center gap-1.5 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm whitespace-nowrap transition-all duration-200 border-b-[3px]",
                 draggable && "cursor-grab active:cursor-grabbing",
                 activeTab === t.id
-                  ? "border-[#0f766e] text-[#0f766e] dark:text-[#14b8a6] font-semibold bg-[#0f766e]/5"
-                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 font-normal",
+                  ? "border-[#00B4A6] text-[#00B4A6] font-semibold bg-[#00B4A6]/5"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 font-normal",
                 t.disabled && "opacity-40 cursor-not-allowed",
                 draggedTab === t.id && "opacity-40 scale-95",
-                dragOverTab === t.id && draggedTab !== t.id && "ring-2 ring-[#0f766e] ring-offset-1 rounded-t-lg",
+                dragOverTab === t.id && draggedTab !== t.id && "ring-2 ring-[#00B4A6] ring-offset-1 rounded-t-lg",
               )}
             >
               {draggable && <GripVertical className="h-3 w-3 shrink-0 opacity-30" />}
@@ -144,7 +144,7 @@ export default function AdminTabBar({ tabs, activeTab, onTabChange, moduleId, dr
         {isReordered && (
           <button
             onClick={resetOrder}
-            className="shrink-0 ml-1 px-2 py-1.5 text-[10px] text-gray-400 dark:text-gray-500 hover:text-[#0f766e] dark:hover:text-emerald-400 transition-colors whitespace-nowrap"
+            className="shrink-0 ml-1 px-2 py-1.5 text-[10px] text-gray-400 hover:text-[#00B4A6] transition-colors whitespace-nowrap"
             title="Restablecer orden de tabs"
           >
             Restablecer
@@ -155,10 +155,10 @@ export default function AdminTabBar({ tabs, activeTab, onTabChange, moduleId, dr
       {canScrollRight && (
         <button
           onClick={() => scrollTabs("right")}
-          className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-gray-900 to-transparent z-10 flex items-center justify-end transition-opacity duration-300"
-          aria-label="Scroll tabs derecha"
+          className="absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-white via-white/90 to-transparent z-10 flex items-center justify-end transition-opacity duration-300"
+          aria-label="Ver más tabs"
         >
-          <ChevronRight className="h-4 w-4 text-gray-400" />
+          <ChevronRight className="h-4 w-4 text-gray-500" />
         </button>
       )}
     </div>

@@ -156,7 +156,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
               <div className="flex flex-wrap items-center gap-6 justify-center py-2">
                 <Donut
                   data={[
-                    { total: st.newCust, color: "#0f766e" },
+                    { total: st.newCust, color: "#00B4A6" },
                     { total: st.returningCust, color: "#10b981" },
                   ].filter(x => x.total > 0)}
                   total={st.clientesAtendidos}

@@ -31,6 +31,8 @@ export default function MorningSummaryModal() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    // Don't show to SuperAdmin when impersonating a tenant — it blocks the UI unexpectedly
+    try { if (localStorage.getItem("superadmin-impersonate-tenant")) return; } catch { /* silent */ }
 
     const now = new Date();
     const hour = now.getHours();
@@ -144,7 +146,7 @@ export default function MorningSummaryModal() {
 
               <button
                 onClick={handleClose}
-                className="w-full flex items-center justify-center gap-2 bg-[#0f766e] text-white rounded-xl px-5 py-3 font-bold shadow-md hover:bg-[#0d5f58] transition-all"
+                className="w-full flex items-center justify-center gap-2 bg-[#00B4A6] text-white rounded-xl px-5 py-3 font-bold shadow-md hover:bg-[#009690] transition-all"
               >
                 <Sun className="h-4 w-4" />
                 Comenzar el dia

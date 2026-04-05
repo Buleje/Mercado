@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -10,8 +9,8 @@ import { prisma } from "@/lib/prisma";
  * Uses real order history to compute co-purchase frequency.
  */
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
-  if (auth instanceof NextResponse) return auth;
+  // Public endpoint — co-purchased data is read-only and safe for storefront
+  const tenantId = req.headers.get("x-tenant-id") ?? "main";
 
   const idsParam = req.nextUrl.searchParams.get("ids");
   const limit = Math.min(Number(req.nextUrl.searchParams.get("limit")) || 6, 20);
@@ -29,8 +28,6 @@ export async function GET(req: NextRequest) {
   if (ids.length === 0) {
     return NextResponse.json([]);
   }
-
-  const tenantId = auth.tenantId ?? "main";
 
   try {
     // Find orders containing any of these products, then count how often

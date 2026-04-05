@@ -538,7 +538,7 @@ export default function POSPaymentModal({
                 <span className="text-[10px] text-gray-400">Redondear:</span>
                 {uniq.map(o => (
                   <button key={o.val} onClick={() => { setDiscountValue(String((total - o.val).toFixed(2))); setDiscountMode("fixed"); setShowDiscount(true); }}
-                    className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-[#0f766e] hover:text-white transition-colors">
+                    className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-[#00B4A6] hover:text-white transition-colors">
                     S/{o.val}
                   </button>
                 ))}
@@ -739,7 +739,7 @@ export default function POSPaymentModal({
                     if (!w) return;
                     w.document.write(`
                       <html><head><title>QR ${isYape ? "Yape" : "Plin"}</title>
-                      <style>body{text-align:center;font-family:sans-serif;padding:40px}h2{color:${isYape ? "#7c3aed" : "#0d9488"}}img{margin:20px auto}</style>
+                      <style>body{text-align:center;font-family:sans-serif;padding:40px}h2{color:${isYape ? "#7c3aed" : "#33C4B8"}}img{margin:20px auto}</style>
                       </head><body>
                       <h2>Paga con ${isYape ? "Yape" : "Plin"}</h2>
                       <img src="https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=${encodeURIComponent(savedNumber)}&choe=UTF-8" width="250" height="250" />

@@ -78,7 +78,7 @@ function DonutTooltip({ active, payload }: { active?: boolean; payload?: Array<{
       <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{payload[0].name}</p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Monto</span>
-        <span className="font-mono font-medium text-[#0f766e]">{formatCurrency(payload[0].value)}</span>
+        <span className="font-mono font-medium text-[#00B4A6]">{formatCurrency(payload[0].value)}</span>
       </p>
     </div>
   );
@@ -95,7 +95,7 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
       <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1.5">{d.mes}</p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Cobrados</span>
-        <span className="font-mono font-medium text-[#0f766e]">{formatCurrency(d.cobrados)}</span>
+        <span className="font-mono font-medium text-[#00B4A6]">{formatCurrency(d.cobrados)}</span>
       </p>
       <p className="text-xs text-gray-500 flex justify-between gap-4">
         <span>Nuevos</span>
@@ -104,7 +104,7 @@ function TrendTooltip({ active, payload }: { active?: boolean; payload?: Array<{
       <div className="border-t border-gray-200 dark:border-gray-600 mt-1.5 pt-1.5">
         <p className="text-xs flex justify-between gap-4">
           <span className="font-semibold text-gray-700 dark:text-gray-300">Neto</span>
-          <span className={cn("font-mono font-bold", neto >= 0 ? "text-[#0f766e]" : "text-[#e63946]")}>{formatCurrency(neto)}</span>
+          <span className={cn("font-mono font-bold", neto >= 0 ? "text-[#00B4A6]" : "text-[#e63946]")}>{formatCurrency(neto)}</span>
         </p>
       </div>
     </div>
@@ -164,7 +164,7 @@ export default function FiadoAnalyticsPanel() {
 
     // Donut by aging
     const buckets = [
-      { rango: "0-7 dias", monto: 0, count: 0, color: "#0f766e" },
+      { rango: "0-7 dias", monto: 0, count: 0, color: "#00B4A6" },
       { rango: "8-30 dias", monto: 0, count: 0, color: "#f97316" },
       { rango: "31-60 dias", monto: 0, count: 0, color: "#f77f00" },
       { rango: "+60 dias", monto: 0, count: 0, color: "#e63946" },
@@ -378,8 +378,8 @@ export default function FiadoAnalyticsPanel() {
                 <Tooltip content={<TrendTooltip />} />
                 <defs>
                   <linearGradient id="fiado-green" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0f766e" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#0f766e" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#00B4A6" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#00B4A6" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="fiado-red" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#e63946" stopOpacity={0.3} />
@@ -389,7 +389,7 @@ export default function FiadoAnalyticsPanel() {
                 <Area
                   type="monotone"
                   dataKey="cobrados"
-                  stroke="#0f766e"
+                  stroke="#00B4A6"
                   fill="url(#fiado-green)"
                   strokeWidth={1.5}
                   dot={false}

@@ -1,15 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { SalesDB, CashRegistersDB } from "@/lib/db/sales.db";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { ProductsDB } from "@/lib/db/products.db";
 import { CustomersDB } from "@/lib/db/customers.db";
+import { requireAdmin } from "@/lib/require-admin";
 import type { DailyReport } from "@/lib/daily-report";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const tenantId = searchParams.get("tenantId") ?? "default";
+export async function GET(request: NextRequest) {
+  const auth = await requireAdmin(request, ["admin", "cajero"]);
+  if (auth instanceof NextResponse) return auth;
+
+  const tenantId = auth.tenantId;
 
   try {
     const now = new Date();

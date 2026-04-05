@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import MotionProvider from "@/components/MotionProvider";
 import MaintenancePage from "@/components/MaintenancePage";
 import StoreClientShell from "@/components/StoreClientShell";
 import StoreProviders from "@/components/StoreProviders";
+import TenantIndicatorBar from "@/components/store/TenantIndicatorBar";
 import LocalBusinessJsonLd from "@/components/store/LocalBusinessJsonLd";
 import StoreFloatingWidgets from "@/components/store/StoreFloatingWidgets";
 import { SettingsDB } from "@/lib/db/settings.db";
+import { tenantExists } from "@/lib/tenant-check";
 import { headers } from "next/headers";
 import {
   GoogleAnalytics,
@@ -65,6 +68,12 @@ export default async function StoreLayout({
   const hdrs = await headers();
   const tenantId = hdrs.get("x-tenant-id") ?? "main";
 
+  // Validate tenant exists — return 404 for invalid slugs
+  if (tenantId !== "main") {
+    const exists = await tenantExists(tenantId);
+    if (!exists) notFound();
+  }
+
   // Check maintenance mode para el tenant activo
   let maintenanceMode = false;
   let maintenanceMessage: string | undefined;
@@ -89,7 +98,8 @@ export default async function StoreLayout({
       >
         Saltar al contenido principal
       </a>
-      <StoreProviders>
+      <StoreProviders tenantSlug={tenantId}>
+        <TenantIndicatorBar />
         <MotionProvider>
           {children}
           <StoreClientShell />

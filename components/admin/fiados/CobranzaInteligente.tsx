@@ -221,7 +221,7 @@ function ModalDescuento({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-card-border">
           <div className="flex items-center gap-2">
-            <Gift className="h-5 w-5 text-[#0f766e]" />
+            <Gift className="h-5 w-5 text-[#00B4A6]" />
             <h2 className="text-sm font-bold text-gray-900 dark:text-white">
               Ofrecer descuento
             </h2>
@@ -262,12 +262,12 @@ function ModalDescuento({
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {op.sub} → solo paga{" "}
-                      <span className="font-bold text-[#0f766e]">
+                      <span className="font-bold text-[#00B4A6]">
                         S/{montoFinal}
                       </span>
                     </p>
                   </div>
-                  <span className="text-lg font-extrabold text-[#0f766e]">
+                  <span className="text-lg font-extrabold text-[#00B4A6]">
                     -{op.desc}%
                   </span>
                 </div>
@@ -373,7 +373,7 @@ export default function CobranzaInteligente() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
+        <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
         <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
           Cargando cobranza...
         </span>
@@ -388,7 +388,7 @@ export default function CobranzaInteligente() {
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         <button
           onClick={fetchFiados}
-          className="text-xs text-[#0f766e] hover:underline font-semibold"
+          className="text-xs text-[#00B4A6] hover:underline font-semibold"
         >
           Reintentar
         </button>
@@ -410,7 +410,7 @@ export default function CobranzaInteligente() {
         </div>
         <button
           onClick={fetchFiados}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#0f766e] border border-[#0f766e]/30 hover:bg-[#0f766e]/10 transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[#00B4A6] border border-[#00B4A6]/30 hover:bg-[#00B4A6]/10 transition-colors"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Actualizar
@@ -424,7 +424,7 @@ export default function CobranzaInteligente() {
           value={`S/${totalPorCobrar.toFixed(2)}`}
           sub={`${fiados.length} clientes pendientes`}
           icon={DollarSign}
-          colorClass="bg-[#0f766e]/10 text-[#0f766e]"
+          colorClass="bg-[#00B4A6]/10 text-[#00B4A6]"
         />
         <KpiCard
           label="En nivel 1"
@@ -491,7 +491,7 @@ export default function CobranzaInteligente() {
           className={cn(
             "px-2.5 py-1 rounded-full text-[10px] font-bold transition-colors",
             filtroNivel === 0
-              ? "bg-[#0f766e] text-white"
+              ? "bg-[#00B4A6] text-white"
               : "bg-gray-100 dark:bg-white/5 text-gray-500 hover:bg-gray-200"
           )}
         >
@@ -520,7 +520,7 @@ export default function CobranzaInteligente() {
       {/* Tabla de cobranza */}
       {fiadosFiltrados.length === 0 ? (
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-10 text-center">
-          <TrendingUp className="h-10 w-10 text-[#0f766e]/40 mx-auto mb-2" />
+          <TrendingUp className="h-10 w-10 text-[#00B4A6]/40 mx-auto mb-2" />
           <p className="text-sm font-bold text-gray-500 dark:text-gray-400">
             {fiados.length === 0
               ? "No hay fiados vencidos pendientes"
@@ -572,7 +572,7 @@ export default function CobranzaInteligente() {
                         <div className="flex items-center gap-2">
                           {(() => {
                             const avatarColors = [
-                              "#0f766e",
+                              "#00B4A6",
                               "#f97316",
                               "#e63946",
                               "#457b9d",
@@ -694,7 +694,7 @@ export default function CobranzaInteligente() {
                           {f.nivel >= 2 && (
                             <button
                               onClick={() => setModalDescuento(f)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-[#0f766e]/10 text-[#0f766e] hover:bg-[#0f766e]/20 transition-colors"
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-[#00B4A6]/10 text-[#00B4A6] hover:bg-[#00B4A6]/20 transition-colors"
                               title="Ofrecer descuento por pronto pago"
                             >
                               <Gift className="h-3 w-3" />

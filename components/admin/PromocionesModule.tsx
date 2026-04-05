@@ -101,7 +101,7 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
 }) {
   const status = promoStatus(promo);
   const statusColor = status === "hoy"
-    ? "border-l-[#0f766e]"
+    ? "border-l-[#00B4A6]"
     : status === "futura"
     ? "border-l-[#f97316]"
     : "border-l-gray-300 dark:border-l-gray-600";
@@ -141,10 +141,10 @@ function PromoCard({ promo, onToggle, onDelete, loading }: {
             onClick={() => onToggle(promo.id)}
             disabled={loading}
             aria-label={promo.activa ? "Desactivar promoción" : "Activar promoción"}
-            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]"
           >
             {promo.activa
-              ? <ToggleRight className="h-5 w-5 text-[#0f766e]" />
+              ? <ToggleRight className="h-5 w-5 text-[#00B4A6]" />
               : <ToggleLeft className="h-5 w-5 text-gray-400" />
             }
           </button>
@@ -312,13 +312,13 @@ export default function PromocionesModule() {
             aria-label="Nueva promoción"
             className={cn(
               "flex items-center gap-1.5 px-3 h-9 rounded-xl text-xs font-semibold transition-all",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]",
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
               showForm
                 ? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
                 : "text-white",
             )}
             style={showForm ? {} : {
-              background: "linear-gradient(135deg, #0f766e 0%, #0d5f58 100%)",
+              background: "linear-gradient(135deg, #00B4A6 0%, #009690 100%)",
               boxShadow: "0 4px 12px -2px rgba(45,106,79,0.4)",
             }}
           >
@@ -370,7 +370,7 @@ export default function PromocionesModule() {
                 value={form.nombre}
                 onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))}
                 placeholder="Ej: Descuento fin de semana"
-                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 focus:border-[#0f766e]"
+                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
@@ -379,7 +379,7 @@ export default function PromocionesModule() {
               <select
                 value={form.tipo}
                 onChange={e => setForm(f => ({ ...f, tipo: e.target.value as PromoType }))}
-                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 focus:border-[#0f766e]"
+                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               >
                 {(Object.keys(TIPO_LABELS) as PromoType[]).map(t => (
                   <option key={t} value={t}>{TIPO_LABELS[t]}</option>
@@ -399,7 +399,7 @@ export default function PromocionesModule() {
                   value={form.valor}
                   onChange={e => setForm(f => ({ ...f, valor: e.target.value }))}
                   placeholder={form.tipo === "porcentaje" ? "20" : "5.00"}
-                  className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 focus:border-[#0f766e]"
+                  className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
                 />
               </div>
             )}
@@ -411,7 +411,7 @@ export default function PromocionesModule() {
                 value={form.categorias}
                 onChange={e => setForm(f => ({ ...f, categorias: e.target.value }))}
                 placeholder="Lácteos, Bebidas"
-                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 focus:border-[#0f766e]"
+                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
@@ -421,7 +421,7 @@ export default function PromocionesModule() {
                 type="date"
                 value={form.fechaInicio}
                 onChange={e => setForm(f => ({ ...f, fechaInicio: e.target.value }))}
-                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 focus:border-[#0f766e]"
+                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
@@ -431,7 +431,7 @@ export default function PromocionesModule() {
                 type="date"
                 value={form.fechaFin}
                 onChange={e => setForm(f => ({ ...f, fechaFin: e.target.value }))}
-                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 focus:border-[#0f766e]"
+                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
 
@@ -444,7 +444,7 @@ export default function PromocionesModule() {
                 value={form.condicion}
                 onChange={e => setForm(f => ({ ...f, condicion: e.target.value }))}
                 placeholder='Ej: "min_cantidad:3" o "min_monto:50"'
-                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e]/40 focus:border-[#0f766e]"
+                className="w-full text-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/40 focus:border-[#00B4A6]"
               />
             </div>
           </div>
@@ -467,9 +467,9 @@ export default function PromocionesModule() {
           <button
             onClick={handleSubmit}
             disabled={saving}
-            className="w-full h-10 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e] flex items-center justify-center gap-2"
+            className="w-full h-10 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6] flex items-center justify-center gap-2"
             style={{
-              background: "linear-gradient(135deg, #0f766e 0%, #0d5f58 100%)",
+              background: "linear-gradient(135deg, #00B4A6 0%, #009690 100%)",
               boxShadow: "0 4px 12px -2px rgba(45,106,79,0.4)",
             }}
           >
@@ -487,13 +487,13 @@ export default function PromocionesModule() {
             onClick={() => setFilter(f)}
             className={cn(
               "px-3 h-8 rounded-full text-xs font-medium transition-all capitalize",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]",
+              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00B4A6]",
               filter === f
                 ? "text-white"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
             )}
             style={filter === f ? {
-              background: "linear-gradient(135deg, #0f766e 0%, #0d5f58 100%)",
+              background: "linear-gradient(135deg, #00B4A6 0%, #009690 100%)",
             } : {}}
           >
             {f === "todas" ? "Todas" : f === "hoy" ? "Activas hoy" : f === "futuras" ? "Futuras" : "Pasadas"}
@@ -513,7 +513,7 @@ export default function PromocionesModule() {
       {/* Lista */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-[#0f766e]" />
+          <Loader2 className="h-6 w-6 animate-spin text-[#00B4A6]" />
         </div>
       ) : filteredPromos.length === 0 ? (
         <div className="text-center py-12">

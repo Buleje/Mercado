@@ -85,7 +85,7 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
             const a = data.address ?? {};
             const road = a.road ?? a.pedestrian ?? a.path ?? "";
             const num = a.house_number ? ` ${a.house_number}` : "";
-            const city = a.city ?? a.town ?? a.village ?? "Pucallpa";
+            const city = a.city ?? a.town ?? a.village ?? "";
             const addr = road
               ? `${road}${num}, ${city} — GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`
               : `GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;

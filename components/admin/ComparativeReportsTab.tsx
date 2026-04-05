@@ -180,7 +180,7 @@ export default function ComparativeReportsTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="h-8 w-8 border-4 border-[#2d6a4f] border-t-transparent rounded-full animate-spin" />
+        <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -191,7 +191,7 @@ export default function ComparativeReportsTab() {
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <AlertTriangle className="h-8 w-8 text-red-500" />
         <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
-        <button onClick={fetchData} className="text-xs text-[#2d6a4f] hover:underline">Reintentar</button>
+        <button onClick={fetchData} className="text-xs text-[#00B4A6] hover:underline">Reintentar</button>
       </div>
     );
   }
@@ -201,7 +201,7 @@ export default function ComparativeReportsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-[#2d6a4f] text-white flex items-center justify-center shadow-sm shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-[#00B4A6] text-white flex items-center justify-center shadow-sm shrink-0">
             <BarChart3 className="h-5 w-5" />
           </div>
           <div>
@@ -219,7 +219,7 @@ export default function ComparativeReportsTab() {
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-xs font-bold transition-all",
                   comparison === opt
-                    ? "bg-white dark:bg-card text-[#2d6a4f] shadow-sm"
+                    ? "bg-white dark:bg-card text-[#00B4A6] shadow-sm"
                     : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground",
                 )}
               >
@@ -315,7 +315,7 @@ export default function ComparativeReportsTab() {
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey={periods.labelA} fill="#2d6a4f" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey={periods.labelA} fill="#00B4A6" radius={[4, 4, 0, 0]} />
                   <Bar dataKey={periods.labelB} fill="#f4a261" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
