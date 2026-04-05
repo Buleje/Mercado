@@ -5,6 +5,9 @@
  * Extracted so they can be unit-tested without needing the Edge runtime.
  */
 
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
 // ── Request ID generation ──────────────────────────────────────────────────────
 
 export function generateRequestId(): string {
@@ -47,7 +50,30 @@ export function isProtectedAdmin(pathname: string): boolean {
 
 // ── Edge rate limiter (in-memory, per-instance) ───────────────────────────────
 
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS = 60;
+
 export type RateLimitEntry = { count: number; resetAt: number };
+
+export const rlStore = new Map<string, RateLimitEntry>();
+let lastCleanup = Date.now();
+
+function rlCleanup() {
+  const now = Date.now();
+  if (now - lastCleanup < 300_000) return;
+  lastCleanup = now;
+  for (const [k, v] of rlStore) {
+    if (v.resetAt < now) rlStore.delete(k);
+  }
+}
+
+export function getIP(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
 
 export function checkEdgeRateLimit(
   map: Map<string, RateLimitEntry>,
@@ -64,6 +90,24 @@ export function checkEdgeRateLimit(
   if (entry.count >= maxRequests) return false;
   entry.count++;
   return true;
+}
+
+export function checkRateLimit(req: NextRequest): NextResponse | null {
+  rlCleanup();
+  const ip = getIP(req);
+  const now = Date.now();
+  const allowed = checkEdgeRateLimit(rlStore, ip, MAX_REQUESTS, WINDOW_MS, now);
+  if (!allowed) {
+    const entry = rlStore.get(ip)!;
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes. Intente de nuevo en un minuto." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((entry.resetAt - now) / 1000)) },
+      },
+    );
+  }
+  return null;
 }
 
 // ── Content-Security-Policy ───────────────────────────────────────────────────
@@ -91,7 +135,7 @@ export function buildCSP(pathname: string, nonce?: string): string {
     "style-src":                 "'self' 'unsafe-inline'",
     "img-src":                   "* data: blob:",
     "font-src":                  "'self' data:",
-    "connect-src":               "* data:",
+    "connect-src":               "* data: https://vitals.vercel-insights.com",
     "media-src":                 "'self'",
     "object-src":                "'none'",
     "base-uri":                  "'self'",

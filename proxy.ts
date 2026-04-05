@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifySessionToken, SESSION } from "@/lib/session";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
-import { generateRequestId, generateNonce, buildCSP } from "@/lib/middleware-utils";
+import { generateRequestId, generateNonce, buildCSP, checkRateLimit } from "@/lib/middleware-utils";
 
 /**
  * Root domain for tenant routing (strip port).
@@ -109,46 +109,6 @@ function applySecurityHeaders(
     );
   }
   return response;
-}
-
-// ── Simple in-memory rate limiter for API routes ──
-const WINDOW_MS = 60_000;
-const MAX_REQUESTS = 60;
-
-type RLEntry = { count: number; resetAt: number };
-const rlStore = new Map<string, RLEntry>();
-let lastCleanup = Date.now();
-
-function rlCleanup() {
-  const now = Date.now();
-  if (now - lastCleanup < 300_000) return;
-  lastCleanup = now;
-  for (const [k, v] of rlStore) {
-    if (v.resetAt < now) rlStore.delete(k);
-  }
-}
-
-function getIP(req: NextRequest): string {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
-}
-
-function checkRateLimit(req: NextRequest): NextResponse | null {
-  rlCleanup();
-  const ip = getIP(req);
-  const now = Date.now();
-  const entry = rlStore.get(ip);
-  if (!entry || entry.resetAt < now) {
-    rlStore.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return null;
-  }
-  entry.count++;
-  if (entry.count > MAX_REQUESTS) {
-    return NextResponse.json(
-      { error: "Demasiadas solicitudes. Intente de nuevo en un minuto." },
-      { status: 429, headers: { "Retry-After": String(Math.ceil((entry.resetAt - now) / 1000)) } }
-    );
-  }
-  return null;
 }
 
 export async function proxy(request: NextRequest) {
