@@ -11,6 +11,7 @@ import { SAStatCard } from "@/components/superadmin/_shared/SAStatCard";
 import { CardGridSkeleton, ChartSkeleton } from "@/components/superadmin/_shared/SASkeleton";
 
 const RevenueCharts = dynamic(() => import("@/components/RevenueCharts"), { ssr: false });
+const TenantMonitorPanel = dynamic(() => import("@/components/superadmin/TenantMonitorPanel"), { ssr: false });
 
 interface AnalyticsData {
   overview: {
@@ -107,7 +108,7 @@ export default function DashboardPage() {
             label="Total Tenants"
             value={data.overview.totalTenants}
             sub={`${data.growth.tenantsThisMonth} nuevos este mes`}
-            accent="linear-gradient(90deg,#0f766e,#14b8a6)"
+            accent="linear-gradient(90deg,#00B4A6,#2dd4bf)"
             trend={data.growth.tenantGrowthPct}
           />
           <SAStatCard
@@ -122,7 +123,7 @@ export default function DashboardPage() {
             label="Tenants activos"
             value={data.overview.activeTenants}
             sub={`${data.overview.payingTenants} de pago`}
-            accent="#14b8a6"
+            accent="#2dd4bf"
           />
           <SAStatCard
             icon={<ShoppingBag className="w-4 h-4 text-violet-500" />}
@@ -152,6 +153,14 @@ export default function DashboardPage() {
         <ChartSkeleton count={1} />
       ) : (
         <RevenueCharts />
+      )}
+
+      {/* Tenant Health Monitor */}
+      {!loading && (
+        <div>
+          <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3">Monitoreo de Tiendas</h2>
+          <TenantMonitorPanel />
+        </div>
       )}
 
       {/* Quick actions */}

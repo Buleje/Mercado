@@ -106,7 +106,7 @@ export async function getSessionPayload(token: string): Promise<SessionPayload |
       tenantId?: string;
       name?: string;
     };
-    if (!["admin", "cajero", "almacenero"].includes(payload.role)) return null;
+    if (!["admin", "cajero", "almacenero", "owner", "manager", "analista"].includes(payload.role)) return null;
     if (payload.exp < Date.now()) return null;
     return {
       role: payload.role,

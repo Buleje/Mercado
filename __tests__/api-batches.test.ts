@@ -29,8 +29,13 @@ vi.mock("@/lib/prisma", () => ({
       create: mockCreate,
       findFirst: mockFindFirst,
       update: mockUpdate,
+      updateMany: mockUpdate,
       delete: mockDelete,
+      deleteMany: mockDelete,
       count: mockCount,
+    },
+    product: {
+      update: vi.fn().mockResolvedValue({}),
     },
     $transaction: mockTransaction,
   },
@@ -158,8 +163,11 @@ describe("PATCH /api/batches", () => {
 
   it("updates quantity and returns 200", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockFindFirst.mockResolvedValue(BASE_BATCH);
-    mockUpdate.mockResolvedValue({ ...BASE_BATCH, quantity: 50 });
+    // First findFirst: existence check; second findFirst: return updated batch
+    mockFindFirst
+      .mockResolvedValueOnce(BASE_BATCH)
+      .mockResolvedValueOnce({ ...BASE_BATCH, quantity: 50 });
+    mockUpdate.mockResolvedValue({ count: 1 });
     const res = await PATCH(makeReq("PATCH", "https://host/api/batches?id=b1", { quantity: 50 }));
     expect(res.status).toBe(200);
     expect((await res.json()).quantity).toBe(50);
@@ -187,7 +195,7 @@ describe("DELETE /api/batches", () => {
   it("deletes and returns { ok: true }", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
     mockFindFirst.mockResolvedValue(BASE_BATCH);
-    mockDelete.mockResolvedValue({});
+    mockDelete.mockResolvedValue({ count: 1 });
     const res = await DELETE(makeReq("DELETE", "https://host/api/batches?id=b1"));
     expect(res.status).toBe(200);
     expect((await res.json()).ok).toBe(true);

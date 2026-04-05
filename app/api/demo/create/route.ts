@@ -110,13 +110,13 @@ export async function POST(req: NextRequest) {
           yapeEnabled: true,
           businessPhone: "999888777",
           businessAddress: "Jr. Ucayali 456, Pucallpa",
-          primaryColor: "#0f766e",
+          primaryColor: "#00B4A6",
           secondaryColor: "#f97316",
           slogan: "Tu bodega digital de confianza",
           storeThemeJson: JSON.stringify({
-            primaryColor: "#0f766e",
+            primaryColor: "#00B4A6",
             secondaryColor: "#f97316",
-            accentColor: "#2d6a4f",
+            accentColor: "#00B4A6",
             name: "Bodega Demo Enterprise",
             slogan: "Tu bodega digital de confianza",
             description: "Tienda demo con todos los modulos activos. Explora el sistema completo.",
@@ -204,7 +204,7 @@ export async function POST(req: NextRequest) {
           status: orderStatuses[i],
           total,
           paymentMethod: ["cash", "yape", "plin", "cash", "yape"][i % 5],
-          location: ["Jr. Ucayali 123", "Av. Centenario 456", "Jr. Tarapaca 789", "Av. Yarinacocha km 3", "Jr. Padre Abad 321"][i % 5],
+          customerLocation: ["Jr. Ucayali 123", "Av. Centenario 456", "Jr. Tarapaca 789", "Av. Yarinacocha km 3", "Jr. Padre Abad 321"][i % 5],
           createdAt: new Date(Date.now() - (15 - i) * 3 * 60 * 60 * 1000),
           items: {
             create: [
@@ -234,7 +234,7 @@ export async function POST(req: NextRequest) {
       const sup = DEMO_SUPPLIERS[i % 3];
       const p1 = products[i % products.length];
       const p2 = products[(i + 3) % products.length];
-      const purchaseStatuses = ["recibido", "recibido", "recibido", "pendiente", "enviado"] as const;
+      const purchaseStatuses = ["recibido", "recibido", "recibido", "pendiente", "parcial"] as const;
       await prisma.purchaseOrder.create({
         data: {
           id: `demo-${slug}-po-${i}`,
@@ -248,8 +248,8 @@ export async function POST(req: NextRequest) {
           createdAt: new Date(Date.now() - (5 - i) * 48 * 60 * 60 * 1000),
           items: {
             create: [
-              { productId: p1.id, productName: p1.name, quantity: 50, unitCost: p1.price * 0.7, subtotal: p1.price * 0.7 * 50 },
-              { productId: p2.id, productName: p2.name, quantity: 30, unitCost: p2.price * 0.7, subtotal: p2.price * 0.7 * 30 },
+              { productId: p1.id, name: p1.name, quantity: 50, unitCost: p1.price * 0.7, unit: "unidad" },
+              { productId: p2.id, name: p2.name, quantity: 30, unitCost: p2.price * 0.7, unit: "unidad" },
             ],
           },
         },
@@ -276,8 +276,8 @@ export async function POST(req: NextRequest) {
           createdAt: new Date(Date.now() - (8 - i) * 2 * 60 * 60 * 1000),
           items: {
             create: [
-              { productId: p1.id, productName: p1.name, quantity: 2, unitPrice: p1.price, subtotal: p1.price * 2 },
-              { productId: p2.id, productName: p2.name, quantity: 1, unitPrice: p2.price, subtotal: p2.price },
+              { productId: p1.id, name: p1.name, quantity: 2, price: p1.price, unit: "unidad" },
+              { productId: p2.id, name: p2.name, quantity: 1, price: p2.price, unit: "unidad" },
             ],
           },
         },
@@ -397,11 +397,12 @@ export async function POST(req: NextRequest) {
       const c = customers[i];
       await prisma.review.create({
         data: {
+          id: `demo-${slug}-review-${i}`,
           tenantId: tenant.id,
-          customerPhone: c.phone,
-          customerName: c.name,
+          phone: c.phone,
+          name: c.name,
           rating: [5, 4, 5][i],
-          comment: [
+          text: [
             "Excelente servicio, el delivery llego rapido y todo completo",
             "Buenos precios y productos frescos. Recomendado.",
             "Me encanta poder pedir por Yape. Muy practico!",
@@ -413,19 +414,20 @@ export async function POST(req: NextRequest) {
 
     // ── Seed 5 registros de actividad ───────────────────
     const DEMO_ACTIVITIES = [
-      { action: "product_created", detail: "Se agrego Arroz Costeno Extra 1kg", username: "demo" },
-      { action: "order_created", detail: "Nuevo pedido #1845 de Rosa Huanca", username: "sistema" },
-      { action: "sale_completed", detail: "Venta POS S/45.80 - Yape", username: "demo" },
-      { action: "settings_updated", detail: "Se actualizo el tema de la tienda", username: "demo" },
-      { action: "stock_alert", detail: "Atun Florida bajo stock (2 unidades)", username: "sistema" },
+      { action: "product_created", entity: "product", detail: "Se agrego Arroz Costeno Extra 1kg", user: "demo" },
+      { action: "order_created", entity: "order", detail: "Nuevo pedido #1845 de Rosa Huanca", user: "sistema" },
+      { action: "sale_completed", entity: "sale", detail: "Venta POS S/45.80 - Yape", user: "demo" },
+      { action: "settings_updated", entity: "settings", detail: "Se actualizo el tema de la tienda", user: "demo" },
+      { action: "stock_alert", entity: "product", detail: "Atun Florida bajo stock (2 unidades)", user: "sistema" },
     ];
     await prisma.$transaction(
       DEMO_ACTIVITIES.map((a, i) => prisma.activityLog.create({
         data: {
           tenantId: tenant.id,
           action: a.action,
+          entity: a.entity,
           detail: a.detail,
-          username: a.username,
+          user: a.user,
           createdAt: new Date(Date.now() - i * 60 * 60 * 1000),
         },
       }))

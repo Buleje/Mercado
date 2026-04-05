@@ -32,7 +32,7 @@ const cards = [
     title: 'Agrega al carrito',
     demo: (
       <div className="mt-3 flex justify-center">
-        <div className="bg-[#0f766e] text-white rounded-lg px-4 py-1.5 text-sm font-bold flex items-center gap-1">
+        <div className="bg-[#00B4A6] text-white rounded-lg px-4 py-1.5 text-sm font-bold flex items-center gap-1">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
@@ -83,12 +83,12 @@ export default function OnboardingStep4POSDemo({ onNext }: Props) {
             className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 border border-gray-100 dark:border-gray-700"
           >
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[#0f766e]/10 text-[#0f766e] flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-[#00B4A6]/10 text-[#00B4A6] flex items-center justify-center flex-shrink-0">
                 {card.icon}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-[#0f766e] bg-[#0f766e]/10 rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="text-xs font-bold text-[#00B4A6] bg-[#00B4A6]/10 rounded-full w-5 h-5 flex items-center justify-center">
                     {i + 1}
                   </span>
                   <h3 className="font-bold text-gray-900 dark:text-white">{card.title}</h3>
@@ -102,7 +102,7 @@ export default function OnboardingStep4POSDemo({ onNext }: Props) {
 
       <button
         onClick={onNext}
-        className="w-full py-3 rounded-xl bg-[#0f766e] text-white font-bold hover:bg-[#0d5f58] transition-colors shadow-md shadow-[#0f766e]/20"
+        className="w-full py-3 rounded-xl bg-[#00B4A6] text-white font-bold hover:bg-[#009690] transition-colors shadow-md shadow-[#00B4A6]/20"
       >
         &iexcl;Entendido, quiero vender! &rarr;
       </button>

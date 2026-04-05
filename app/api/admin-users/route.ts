@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   const db = prismaForTenant(auth.tenantId);
 
   // Plan limit check
-  const tenant = await prisma.tenant.findFirst({ where: { slug: auth.tenantId } });
+  const tenant = await prisma.tenant.findFirst({ where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] } });
   const limits = getPlanLimits(tenant?.plan ?? "free");
   const currentUserCount = await db.adminUser.count({ where: { active: true } });
   if (!withinLimit(currentUserCount, limits.maxUsers)) {
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
   const passwordHash = await hash(password, 12);
   const user = await db.adminUser.create({
-    data: { username, passwordHash, role, name, active: true },
+    data: { tenantId: auth.tenantId, username, passwordHash, role, name, active: true },
     select: { id: true, username: true, role: true, name: true, active: true, createdAt: true },
   });
 

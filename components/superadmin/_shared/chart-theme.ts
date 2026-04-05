@@ -1,8 +1,8 @@
 // SuperAdmin chart theme constants — no "use client" needed
 
 export const SA_COLORS = {
-  primary:   "#0f766e",
-  secondary: "#14b8a6",
+  primary:   "#00B4A6",
+  secondary: "#2dd4bf",
   accent:    "#f4a261",
   danger:    "#ef4444",
   warning:   "#f59e0b",
@@ -12,7 +12,7 @@ export const SA_COLORS = {
 
 export const PLAN_COLORS = {
   free:       "#6b7280",
-  pro:        "#0f766e",
+  pro:        "#00B4A6",
   business:   "#7c3aed",
   enterprise: "#d97706",
 } as const;
@@ -35,7 +35,7 @@ export const SA_CHART_COLORS = {
   pro:        PLAN_COLORS.pro,
   business:   PLAN_COLORS.business,
   enterprise: PLAN_COLORS.enterprise,
-  primary:    "#2d6a4f",
+  primary:    "#00B4A6",
   secondary:  SA_COLORS.accent,
   success:    SA_COLORS.success,
   warning:    SA_COLORS.warning,

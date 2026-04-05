@@ -10,7 +10,7 @@ import OnboardingStep3Client from './OnboardingStep3Client';
 import OnboardingStep4POSDemo from './OnboardingStep4POSDemo';
 import OnboardingStep5Finish from './OnboardingStep5Finish';
 
-const CONFETTI_COLORS = ['#0f766e', '#f97316', '#e76f51', '#264653', '#2a9d8f', '#e9c46a', '#f72585', '#4361ee'];
+const CONFETTI_COLORS = ['#00B4A6', '#f97316', '#e76f51', '#264653', '#2a9d8f', '#e9c46a', '#f72585', '#4361ee'];
 
 function generatePieces() {
   return Array.from({ length: 30 }, (_, i) => ({

@@ -39,7 +39,7 @@ export async function sendSuperAdminAlert(alert: SuperAdminAlert): Promise<void>
 
   const actionHtml = alert.actionUrl
     ? `<div style="text-align:center;margin:24px 0 8px;">
-         <a href="${alert.actionUrl}" style="background:#0f766e;color:#fff;padding:10px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block;">
+         <a href="${alert.actionUrl}" style="background:#00B4A6;color:#fff;padding:10px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;display:inline-block;">
            ${alert.actionLabel ?? "Ver en SuperAdmin"} →
          </a>
        </div>`
@@ -51,7 +51,7 @@ export async function sendSuperAdminAlert(alert: SuperAdminAlert): Promise<void>
     subject: alert.subject,
     html: `
       <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:500px;margin:0 auto;background:#111827;border:1px solid #374151;border-radius:12px;overflow:hidden;">
-        <div style="background:#0f766e;padding:20px 24px;">
+        <div style="background:#00B4A6;padding:20px 24px;">
           <h2 style="color:#fff;margin:0;font-size:18px;">${alert.title}</h2>
         </div>
         <div style="padding:20px 24px;">

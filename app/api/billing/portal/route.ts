@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
   const { tenantId } = auth;
 
-  const tenant = await prisma.tenant.findFirst({ where: { slug: tenantId } });
+  const tenant = await prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] } });
   if (!tenant) return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
 
   if (!tenant.stripeCustomerId) {

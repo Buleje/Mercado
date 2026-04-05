@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type FormEvent } from "react";
+import { useState, useEffect, useRef, useMemo, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
@@ -183,6 +183,14 @@ export default function AdminLoginPage() {
   const fromRef = useRef<string | null>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
 
+  // Detect tenant prefix from URL so navigations preserve /t/slug/
+  const tenantPrefix = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const match = window.location.pathname.match(/^(\/t\/[^/]+)\/admin/);
+    return match ? match[1] : "";
+  }, []);
+  const adminPath = (path: string) => `${tenantPrefix}${path}`;
+
   const [username, setUsername] = useState("");
   const [pw, setPw] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -198,13 +206,43 @@ export default function AdminLoginPage() {
     const params = new URLSearchParams(window.location.search);
     fromRef.current = params.get("from");
 
-    const slug = localStorage.getItem("active-tenant-slug");
-    if (slug && slug !== "main") setActiveTenant(slug);
+    // ?tenant=slug → viene de /t/[slug]/admin, guardar para redirect post-login
+    const tenantParam = params.get("tenant");
+    const autoParam = params.get("auto");
+    const userParam = params.get("user");
+
+    if (tenantParam) {
+      localStorage.setItem("active-tenant-slug", tenantParam);
+      sessionStorage.setItem("active-tenant-slug", tenantParam);
+      setActiveTenant(tenantParam);
+      // Si no hay ?from= explícito, el post-login va a /t/[slug]/admin
+      if (!fromRef.current) {
+        fromRef.current = `/t/${tenantParam}/admin`;
+      }
+    } else {
+      const slug = localStorage.getItem("active-tenant-slug");
+      if (slug && slug !== "main") setActiveTenant(slug);
+    }
 
     const saved = localStorage.getItem("login-remember-username");
     if (saved) {
       setUsername(saved);
       setRememberMe(true);
+    }
+
+    // SuperAdmin auto-fill: ?tenant=slug&auto=1
+    if (tenantParam && autoParam === "1") {
+      try {
+        const credKey = `sa-cred-${tenantParam}`;
+        const credJson = localStorage.getItem(credKey);
+        if (credJson) {
+          const cred = JSON.parse(credJson) as { username: string; password: string };
+          if (cred.username) setUsername(cred.username);
+          if (cred.password) setPw(cred.password);
+          return; // Don't focus, fields are filled
+        }
+      } catch { /* silent */ }
+      if (userParam) setUsername(userParam);
     }
 
     /* Focus automático */
@@ -255,14 +293,21 @@ export default function AdminLoginPage() {
         const data = (await res.json()) as {
           ok: boolean;
           onboardingPending?: boolean;
+          tenantId?: string;
+          tenantSlug?: string;
         };
+        // Store the tenant slug from the login response (server resolved the correct tenant)
+        if (data.tenantSlug) {
+          localStorage.setItem("active-tenant-slug", data.tenantSlug);
+          sessionStorage.setItem("active-tenant-slug", data.tenantSlug);
+        }
         if (data.onboardingPending && !fromRef.current) {
           router.push("/onboarding");
         } else {
           router.push(
             fromRef.current
               ? decodeURIComponent(fromRef.current)
-              : "/admin"
+              : adminPath("/admin")
           );
         }
       } else {
@@ -283,7 +328,7 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/auth/bypass", { method: "POST" });
       if (res.ok) {
         router.push(
-          fromRef.current ? decodeURIComponent(fromRef.current) : "/admin"
+          fromRef.current ? decodeURIComponent(fromRef.current) : adminPath("/admin")
         );
         return;
       }
@@ -320,7 +365,7 @@ export default function AdminLoginPage() {
           <div
             className="login-col-left flex flex-col justify-between p-10"
             style={{
-              background: "linear-gradient(155deg,#0f766e 0%,#14b8a6 55%,#0d9488 100%)",
+              background: "linear-gradient(155deg,#00B4A6 0%,#2dd4bf 55%,#33C4B8 100%)",
               position: "relative",
               overflow: "hidden",
               minHeight: "560px",
@@ -473,7 +518,7 @@ export default function AdminLoginPage() {
               <div className="flex items-center gap-2 mb-6 lg:hidden">
                 <div
                   className="flex items-center justify-center w-9 h-9 rounded-xl"
-                  style={{ background: "linear-gradient(135deg,#0f766e,#14b8a6)" }}
+                  style={{ background: "linear-gradient(135deg,#00B4A6,#2dd4bf)" }}
                 >
                   <Store className="w-5 h-5 text-white" />
                 </div>
@@ -503,8 +548,8 @@ export default function AdminLoginPage() {
                 >
                   <Store className="w-3.5 h-3.5 text-teal-700 dark:text-teal-400" />
                   <span className="text-xs font-medium text-teal-700 dark:text-teal-400">
-                    Entrando a:{" "}
-                    <strong>{activeTenant}</strong>
+                    Tienda:{" "}
+                    <strong className="font-bold">{activeTenant}</strong>
                   </span>
                 </div>
               )}
@@ -648,7 +693,7 @@ export default function AdminLoginPage() {
                 className="w-full flex items-center justify-center gap-2 rounded-xl font-bold text-sm text-white transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500"
                 style={{
                   minHeight: "48px",
-                  background: "linear-gradient(135deg,#0f766e 0%,#14b8a6 100%)",
+                  background: "linear-gradient(135deg,#00B4A6 0%,#2dd4bf 100%)",
                   boxShadow: "0 6px 20px -4px rgba(15,118,110,0.45)",
                 }}
               >

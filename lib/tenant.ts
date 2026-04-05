@@ -5,6 +5,17 @@ import { prisma } from "@/lib/prisma";
 export const DEFAULT_TENANT_SLUG = "main";
 
 /**
+ * Find a Tenant record by either its ID (CUID) or slug.
+ * Use this everywhere you need to look up a Tenant from auth.tenantId
+ * or x-tenant-id header — the value may be either format.
+ */
+export async function findTenantByIdOrSlug(tenantId: string) {
+  return prisma.tenant.findFirst({
+    where: { OR: [{ id: tenantId }, { slug: tenantId }] },
+  });
+}
+
+/**
  * Read the tenant slug injected by Next.js edge middleware.
  * Parses the `x-tenant-id` header set from the subdomain.
  * Must be called from a Server Component, Server Action, or Route Handler.
@@ -27,50 +38,133 @@ export function getTenantIdFromRequest(req: Request): string {
  * automatically scoped to the current tenantId by prismaForTenant().
  */
 const TENANT_MODELS = new Set([
+  // ── Core commerce ──
   "product",
   "customer",
   "order",
+  "sale",
+  "savedCart",
+  "review",
   "settings",
+  // ── Suppliers & purchasing ──
   "supplier",
   "purchaseOrder",
-  "sale",
+  "payable",
+  // ── Promotions & coupons ──
   "promotion",
   "coupon",
+  "discountRule",
+  // ── Returns ──
   "return",
-  "shoppingList",
+  "supplierReturn",
+  // ── Inventory & warehouse ──
+  "inventoryMovement",
+  "batch",
+  "warehouse",
+  "transfer",
+  "location",
+  "conteoFisico",
+  // ── Cash register ──
+  "cashRegister",
   "expense",
   "bundle",
-  "cashRegister",
+  // ── Users & auth ──
   "adminUser",
   "pushSubscription",
-  "review",
-  "payable",
-  "inventoryMovement",
-  "savedCart",
+  "apiKey",
+  "tenantInvitation",
+  // ── Shopping lists ──
+  "shoppingList",
+  // ── Audit & logs ──
   "activityLog",
   "notificationLog",
-  "chatMessage",
+  // ── Chat & messaging ──
   "adminMessage",
-  "abTest",
+  "chatMessage",
+  // ── WhatsApp commerce ──
+  "tenantWhatsAppConfig",
+  "whatsAppConversation",
+  // ── Notes, reminders, templates ──
+  "note",
+  "messageTemplate",
+  "reminder",
+  "savedFilter",
+  // ── Marketing & campaigns ──
+  "campaign",
+  "newsletterSubscriber",
+  "visitorWelcome",
+  "aBTest",
+  "aBTestEvent",
   "surveyResponse",
+  // ── Cierre diario ──
+  "dailySummary",
+  // ── Fiados (crédito informal) ──
+  "fiado",
+  // ── Turnos ──
+  "turno",
+  // ── Recetas & producción ──
+  "receta",
+  "produccionLote",
+  // ── Préstamos ──
+  "prestamo",
+  // ── Tesorería ──
+  "treasuryCuenta",
+  "treasuryMovimiento",
+  "treasuryTransferencia",
+  // ── Cotizaciones ──
+  "cotizacion",
+  // ── Guías de remisión ──
+  "guiaRemision",
+  // ── Notas de crédito ──
+  "notaCredito",
+  // ── Notifications ──
+  "notification",
+  "customerNotification",
+  // ── Compliance & KPIs ──
+  "complianceItem",
+  "customKpi",
+  "commissionRule",
+  // ── Marketplace ──
+  "store",
+  // ── Support ──
+  "supportTicket",
+  // ── SUNAT facturación ──
+  "tenantSunatConfig",
+  "sunatInvoice",
+  // ── Anti-churn ──
+  "tenantHealthScore",
+  "churnSignal",
+  // ── Crédito BNPL ──
+  "creditProfile",
+  "creditInstallment",
+  // ── AI Forecasting ──
+  "forecastLog",
+  // ── Supplier ratings ──
+  "supplierRating",
+  "supplierEvaluation",
+  "supplierPriceVersion",
+  "supplierOffer",
+  // ── CMS ──
   "page",
   "media",
+  "themeSettings",
+  "navigation",
+  // ── Delivery ──
   "deliverySlot",
+  "deliveryPartner",
+  "deliveryAssignment",
+  // ── History & tracking ──
+  "priceHistory",
+  "orderStatusHistory",
+  // ── Marketplace ledger ──
+  "commissionLedger",
 ]);
 
 /**
- * Returns a Prisma client extended with automatic tenantId injection.
- *
- * All CRUD operations on tenant-scoped models are transparently filtered
- * and tagged with `tenantId`. Non-scoped models (e.g. OrderItem, SaleItem)
- * are passed through unchanged — they inherit isolation via FK relations.
- *
- * Usage (in an API route):
- *   const tenantId = getTenantIdFromRequest(req);
- *   const db = prismaForTenant(tenantId);
- *   const products = await db.product.findMany(); // auto-filtered
+ * Build the tenant-scoped extension for a given tenantId.
+ * Extracted into a helper so we can capture the return type.
  */
-export function prismaForTenant(tenantId: string) {
+function buildTenantExtension(tenantId: string) {
   return prisma.$extends({
     query: {
       $allModels: {
@@ -139,4 +233,36 @@ export function prismaForTenant(tenantId: string) {
       },
     },
   });
+}
+
+/** Concrete type returned by prismaForTenant(). */
+type TenantPrismaClient = ReturnType<typeof buildTenantExtension>;
+
+/**
+ * Cache of Prisma extensions keyed by tenantId.
+ * Avoids re-creating the extension on every request for the same tenant.
+ */
+const extensionCache = new Map<string, TenantPrismaClient>();
+
+/**
+ * Returns a Prisma client extended with automatic tenantId injection.
+ *
+ * All CRUD operations on tenant-scoped models are transparently filtered
+ * and tagged with `tenantId`. Non-scoped models (e.g. OrderItem, SaleItem)
+ * are passed through unchanged — they inherit isolation via FK relations.
+ *
+ * Extensions are cached per tenantId to avoid re-creation overhead.
+ *
+ * Usage (in an API route):
+ *   const tenantId = getTenantIdFromRequest(req);
+ *   const db = prismaForTenant(tenantId);
+ *   const products = await db.product.findMany(); // auto-filtered
+ */
+export function prismaForTenant(tenantId: string): TenantPrismaClient {
+  const cached = extensionCache.get(tenantId);
+  if (cached) return cached;
+
+  const extended = buildTenantExtension(tenantId);
+  extensionCache.set(tenantId, extended);
+  return extended;
 }

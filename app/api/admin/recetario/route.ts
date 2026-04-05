@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { requireAdmin } from "@/lib/require-admin";
 
 const IngredienteSchema = z.object({
   nombre: z.string().min(1),
@@ -26,7 +27,10 @@ const RecetarioSchema = z.object({
 });
 
 // GET: list all recetario recipes (admin-managed public recipes)
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin", "cajero"]);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const notes = await prisma.note.findMany({
       where: { title: "__RECETARIO__" },
@@ -52,6 +56,9 @@ export async function GET() {
 
 // POST: create a new recetario recipe
 export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await req.json();
     const parsed = RecetarioSchema.safeParse(body);
@@ -95,6 +102,7 @@ export async function POST(req: NextRequest) {
 
     const note = await prisma.note.create({
       data: {
+        tenantId: auth.tenantId,
         title: "__RECETARIO__",
         content: JSON.stringify(recetaData),
         color: "green",

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const tenant = await prisma.tenant.findFirst({
-    where: { slug: auth.tenantId },
+    where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
     select: { customDomain: true },
   });
 

@@ -1,14 +1,14 @@
 export const dynamic = "force-dynamic";
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, CustomersDB, OrdersDB, SettingsDB, FiadosDB } from "@/lib/db";
 import { logActivity } from "@/lib/activity-logger";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   // 1. Auth — solo admin puede descargar backup completo
   const auth = await requireAdmin(req, ["admin"]);
-  if (!auth) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  if (auth instanceof NextResponse) return auth;
 
   try {
     // Calcular fecha de corte: últimos 90 días
@@ -93,7 +93,7 @@ export async function GET(req: Request) {
 
     // 4. Fire-and-forget
     logActivity(
-      auth.userId,
+      auth.username,
       "export",
       "backup",
       `backup-${auth.tenantId}-${new Date().toISOString().slice(0, 10)}`

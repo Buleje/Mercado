@@ -9,8 +9,9 @@ export function useOnboarding() {
   const [currentStep, setCurrentStep] = useState(0);
   const totalSteps = 8;
 
+  // SuperAdmin impersonating a tenant is never treated as a first-time visitor
   const isFirstVisit = typeof window !== "undefined"
-    ? !localStorage.getItem(STORAGE_KEY)
+    ? !localStorage.getItem(STORAGE_KEY) && !localStorage.getItem("superadmin-impersonate-tenant")
     : false;
 
   const startTour = useCallback(() => {

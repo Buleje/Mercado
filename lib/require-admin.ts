@@ -44,7 +44,49 @@ export async function requireAdmin(
     );
   }
 
-  logger.debug("[AUTH] OK", { username: payload.username, role: payload.role, tenantId: payload.tenantId, method, path });
+  // The middleware sets x-tenant-id per-request based on subdomain or /t/[slug]/.
+  // This header is the source of truth for tenant context.
+  const headerTenantId = req.headers.get("x-tenant-id");
+  const effectiveTenantId = headerTenantId || payload.tenantId;
 
-  return payload;
+  if (headerTenantId && headerTenantId !== payload.tenantId) {
+    // Tenant mismatch: middleware says one tenant, JWT says another.
+    // Only admin/superadmin may cross-tenant (e.g. superadmin managing another store).
+    if (payload.role === "admin" || payload.role === "superadmin") {
+      logger.info("[AUTH] Tenant override", {
+        username: payload.username,
+        role: payload.role,
+        jwtTenant: payload.tenantId,
+        headerTenant: headerTenantId,
+        method,
+        path,
+      });
+      return { ...payload, tenantId: headerTenantId };
+    }
+
+    // Non-privileged role trying to access a different tenant → 403
+    logger.warn("[AUTH] Tenant mismatch — forbidden", {
+      username: payload.username,
+      role: payload.role,
+      jwtTenant: payload.tenantId,
+      headerTenant: headerTenantId,
+      method,
+      path,
+      ip,
+    });
+    return NextResponse.json(
+      { error: "forbidden", message: "Tenant mismatch" },
+      { status: 403 },
+    );
+  }
+
+  logger.debug("[AUTH] OK", {
+    username: payload.username,
+    role: payload.role,
+    tenantId: effectiveTenantId,
+    method,
+    path,
+  });
+
+  return { ...payload, tenantId: effectiveTenantId };
 }

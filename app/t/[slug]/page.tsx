@@ -1,126 +1,210 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Store, ShoppingBag, Settings, ExternalLink, Loader2 } from "lucide-react";
+import { ShoppingBag, Settings, ExternalLink, MapPin, Phone } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 
-interface TenantInfo {
-  name: string;
-  slug: string;
-  plan: string;
-  type: string;
-  active: boolean;
+export const dynamic = "force-dynamic";
+
+interface TenantLandingProps {
+  params: Promise<{ slug: string }>;
 }
 
-export default function TenantHomePage() {
-  const { slug } = useParams<{ slug: string }>();
-  const [tenant, setTenant] = useState<TenantInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+export default async function TenantLandingPage({ params }: TenantLandingProps) {
+  const { slug } = await params;
 
-  useEffect(() => {
-    fetch(`/api/superadmin/tenants`)
-      .then((r) => r.ok ? r.json() : null)
-      .then((data) => {
-        const t = data?.tenants?.find((t: TenantInfo & { slug: string }) => t.slug === slug);
-        if (t) setTenant(t);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [slug]);
+  // Buscar tenant directamente (Server Component — acceso seguro a DB)
+  const tenant = await prisma.tenant.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      plan: true,
+      active: true,
+      ownerPhone: true,
+      customDomain: true,
+    },
+  }).catch(() => null);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0f766e]" />
-      </div>
-    );
+  if (!tenant) notFound();
+
+  // Leer branding del tenant desde settings
+  const headersList = await headers();
+  const tenantIdFromMiddleware = headersList.get("x-tenant-id") ?? slug;
+
+  let storeName = tenant.name;
+  let storeDescription = "";
+  let primaryColor = "#00B4A6";
+  let logoText = tenant.name.slice(0, 2).toUpperCase();
+
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    const settingsRes = await fetch(`${baseUrl}/api/settings`, {
+      headers: { "x-tenant-id": tenantIdFromMiddleware },
+      next: { revalidate: 60 },
+    });
+    if (settingsRes.ok) {
+      const settings = await settingsRes.json() as Record<string, unknown>;
+      if (settings.storeName && typeof settings.storeName === "string") {
+        storeName = settings.storeName;
+      }
+      if (settings.storeDescription && typeof settings.storeDescription === "string") {
+        storeDescription = settings.storeDescription;
+      }
+      if (
+        settings.storeTheme &&
+        typeof settings.storeTheme === "object" &&
+        settings.storeTheme !== null
+      ) {
+        const theme = settings.storeTheme as Record<string, unknown>;
+        if (theme.primaryColor && typeof theme.primaryColor === "string") {
+          primaryColor = theme.primaryColor;
+        }
+      }
+      if (settings.logoText && typeof settings.logoText === "string") {
+        logoText = settings.logoText.slice(0, 2).toUpperCase();
+      }
+    }
+  } catch {
+    // Usar valores por defecto
   }
 
-  if (!tenant) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-4">
-        <div className="text-center">
-          <Store className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Tienda no encontrada</h1>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">No existe una tienda con el slug &quot;{slug}&quot;</p>
-          <Link href="/registro" className="px-6 py-3 bg-[#0f766e] text-white rounded-2xl font-bold hover:opacity-90">
-            Crear una tienda
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const planColors: Record<string, string> = {
-    free: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-    pro: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400",
-    business: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
-    enterprise: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  const planBadge: Record<string, { label: string; className: string }> = {
+    free: { label: "Free", className: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400" },
+    pro: { label: "Pro", className: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" },
+    business: { label: "Business", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+    enterprise: { label: "Enterprise", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
   };
-
-  const typeLabels: Record<string, string> = { store: "Tienda", supplier: "Proveedor", delivery: "Delivery" };
+  const badge = planBadge[tenant.plan] ?? planBadge.free;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-4 sm:p-8">
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-3">
-          <div className="w-20 h-20 rounded-2xl bg-[#0f766e] flex items-center justify-center mx-auto text-white text-2xl font-bold">
-            {tenant.name.slice(0, 2).toUpperCase()}
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* Hero */}
+      <section
+        className="relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}cc 100%)`,
+          minHeight: "320px",
+        }}
+      >
+        {/* Dot pattern decorativo */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)",
+            backgroundSize: "28px 28px",
+          }}
+        />
+
+        <div className="relative z-10 max-w-3xl mx-auto px-4 py-16 sm:py-20 text-center">
+          {/* Logo/avatar */}
+          <div
+            className="w-24 h-24 rounded-3xl mx-auto mb-6 flex items-center justify-center text-2xl font-black shadow-xl"
+            style={{ background: "rgba(255,255,255,0.2)", border: "2px solid rgba(255,255,255,0.3)", color: "#fff" }}
+          >
+            {logoText}
           </div>
-          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">{tenant.name}</h1>
-          <div className="flex items-center justify-center gap-2">
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${planColors[tenant.plan] ?? planColors.free}`}>
-              {tenant.plan.toUpperCase()}
+
+          <h1 className="text-4xl sm:text-5xl font-black text-white mb-3 tracking-tight">
+            {storeName}
+          </h1>
+
+          {storeDescription && (
+            <p className="text-white/75 text-lg max-w-md mx-auto mb-6">
+              {storeDescription}
+            </p>
+          )}
+
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <span className={`px-3 py-1 rounded-full text-xs font-bold ${badge.className}`}>
+              {badge.label}
             </span>
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-              {typeLabels[tenant.type] ?? tenant.type}
-            </span>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold ${tenant.active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"}`}>
-              {tenant.active ? "Activa" : "Suspendida"}
-            </span>
+            {!tenant.active && (
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                Suspendida
+              </span>
+            )}
           </div>
         </div>
+      </section>
 
-        {/* Links */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Link
-            href={`/t/${slug}/admin`}
-            className="flex items-center gap-4 p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl hover:shadow-lg transition-shadow"
-          >
-            <div className="w-12 h-12 rounded-xl bg-[#0f766e]/10 flex items-center justify-center">
-              <Settings className="w-6 h-6 text-[#0f766e]" />
-            </div>
-            <div>
-              <p className="font-bold text-gray-900 dark:text-white">Panel Admin</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Gestionar ventas, inventario, fiados</p>
-            </div>
-            <ExternalLink className="w-4 h-4 text-gray-400 ml-auto" />
-          </Link>
-
+      {/* Acciones principales */}
+      <section className="max-w-3xl mx-auto px-4 -mt-8 pb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          {/* Tienda online */}
           <Link
             href={`/t/${slug}/tienda`}
-            className="flex items-center gap-4 p-5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl hover:shadow-lg transition-shadow"
+            className="group flex items-center gap-4 p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100 dark:border-gray-800"
           >
-            <div className="w-12 h-12 rounded-xl bg-[#f97316]/10 flex items-center justify-center">
-              <ShoppingBag className="w-6 h-6 text-[#f97316]" />
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: `${primaryColor}18` }}
+            >
+              <ShoppingBag
+                className="w-7 h-7"
+                style={{ color: primaryColor }}
+              />
             </div>
-            <div>
-              <p className="font-bold text-gray-900 dark:text-white">Tienda Online</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Ver como ven tus clientes</p>
+            <div className="min-w-0">
+              <p className="font-bold text-gray-900 dark:text-white text-lg leading-tight">
+                Ver Tienda
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Productos, precios y pedidos
+              </p>
             </div>
-            <ExternalLink className="w-4 h-4 text-gray-400 ml-auto" />
+            <ExternalLink className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+          </Link>
+
+          {/* Panel admin */}
+          <Link
+            href={`/t/${slug}/admin`}
+            className="group flex items-center gap-4 p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-md hover:shadow-xl transition-all duration-200 border border-gray-100 dark:border-gray-800"
+          >
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 bg-orange-50 dark:bg-orange-900/20">
+              <Settings className="w-7 h-7 text-[#f4a261]" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-bold text-gray-900 dark:text-white text-lg leading-tight">
+                Admin
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                Ventas, inventario, fiados
+              </p>
+            </div>
+            <ExternalLink className="w-4 h-4 text-gray-400 ml-auto flex-shrink-0 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
           </Link>
         </div>
 
-        {/* Back */}
-        <div className="text-center">
-          <Link href="/superadmin" className="text-sm text-gray-500 dark:text-gray-400 hover:text-[#0f766e]">
-            ← Volver al SuperAdmin
-          </Link>
-        </div>
-      </div>
-    </div>
+        {/* Info de contacto */}
+        {(tenant.ownerPhone || tenant.customDomain) && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800 space-y-3">
+            <h2 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Contacto
+            </h2>
+            {tenant.ownerPhone && (
+              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <span className="text-sm">{tenant.ownerPhone}</span>
+              </div>
+            )}
+            {tenant.customDomain && (
+              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
+                <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <span className="text-sm font-mono">{tenant.customDomain}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Slug info */}
+        <p className="text-center mt-6 text-xs text-gray-400 dark:text-gray-600 font-mono">
+          /{slug}
+        </p>
+      </section>
+    </main>
   );
 }

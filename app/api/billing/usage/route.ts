@@ -15,8 +15,8 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const tenant = await prisma.tenant.findUnique({
-      where: { slug: auth.tenantId },
+    const tenant = await prisma.tenant.findFirst({
+      where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
       select: { plan: true, trialEndsAt: true, slug: true },
     });
 

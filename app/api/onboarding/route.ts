@@ -6,6 +6,12 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { sendWelcomeEmail } from "@/lib/mailer-onboarding";
 import { getTemplateCategories } from "@/lib/store-templates";
 import { createSessionToken, SESSION } from "@/lib/session";
+import {
+  getOrCreateStripeCustomer,
+  createCheckoutSession,
+  STRIPE_PRICE_IDS,
+} from "@/lib/stripe";
+import type { PlanId } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -88,11 +94,12 @@ export async function POST(req: NextRequest) {
   ]);
 
   // Seed AdminUser + Settings for the new tenant in one batch
+  // IMPORTANT: Use tenant.id (canonical CUID), NOT tenant.slug
   const passwordHash = await hash(adminPassword, 12);
   await prisma.$transaction([
     prisma.adminUser.create({
       data: {
-        tenantId: tenant.slug,
+        tenantId: tenant.id,
         username: adminUsername,
         passwordHash,
         role: "admin",
@@ -102,7 +109,7 @@ export async function POST(req: NextRequest) {
     }),
     prisma.settings.create({
       data: {
-        tenantId: tenant.slug,
+        tenantId: tenant.id,
         businessName: storeName,
         mode: "checkout",
         cashEnabled: true,
@@ -120,7 +127,7 @@ export async function POST(req: NextRequest) {
         name: storeName,
         email: ownerEmail,
         phone: ownerPhone ?? null,
-        tenantId: tenant.slug,
+        tenantId: tenant.id,
       },
     });
     await prisma.$transaction([
@@ -133,7 +140,7 @@ export async function POST(req: NextRequest) {
       }),
       prisma.store.create({
         data: {
-          tenantId: tenant.slug,
+          tenantId: tenant.id,
           slug,
           name: storeName,
           isPublished: false,
@@ -154,7 +161,7 @@ export async function POST(req: NextRequest) {
     // type === "store" (default) — Crear Store (draft)
     await prisma.store.create({
       data: {
-        tenantId: tenant.slug,
+        tenantId: tenant.id,
         slug,
         name: storeName,
         isPublished: false,
@@ -186,6 +193,38 @@ export async function POST(req: NextRequest) {
   // ── Auto-login: generar sesión para que el usuario no tenga que hacer login manual ──
   const sessionToken = await createSessionToken("admin", adminUsername, tenant.slug, adminName);
 
+  // ── Si plan pago, generar URL de Stripe Checkout para redirigir después del registro ──
+  let checkoutUrl: string | null = null;
+  if (plan !== "free") {
+    const priceId = STRIPE_PRICE_IDS[plan as PlanId];
+    if (priceId) {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+        const stripeCustomerId = await getOrCreateStripeCustomer({
+          stripeCustomerId: null,
+          tenantSlug: tenant.slug,
+          email: ownerEmail,
+          name: storeName,
+        });
+
+        await prisma.tenant.update({
+          where: { id: tenant.id },
+          data: { stripeCustomerId },
+        });
+
+        checkoutUrl = await createCheckoutSession({
+          customerId: stripeCustomerId,
+          priceId,
+          tenantSlug: tenant.slug,
+          successUrl: `${baseUrl}/${tenant.slug}/admin?tab=plan&upgraded=1`,
+          cancelUrl: `${baseUrl}/${tenant.slug}/admin?tab=plan`,
+        });
+      } catch {
+        // No bloquear el onboarding si Stripe falla — el usuario puede hacer upgrade después
+      }
+    }
+  }
+
   const response = NextResponse.json(
     {
       message: "Cuenta creada exitosamente",
@@ -194,6 +233,7 @@ export async function POST(req: NextRequest) {
       plan: tenant.plan,
       type: tenant.type,
       trialEndsAt: tenant.trialEndsAt,
+      ...(checkoutUrl ? { checkoutUrl } : {}),
     },
     { status: 201 }
   );

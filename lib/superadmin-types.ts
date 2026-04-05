@@ -2,6 +2,19 @@
 
 export type PlanId = "free" | "pro" | "business" | "enterprise";
 
+export interface TenantStoreInfo {
+  id: string;
+  slug: string;
+  name: string;
+  isPublished: boolean;
+  rating: number;
+  reviewCount: number;
+  category: string;
+  zone: string | null;
+  commission: number;
+  _count: { products: number };
+}
+
 export interface TenantRow {
   id: string;
   slug: string;
@@ -11,6 +24,7 @@ export interface TenantRow {
   trialEndsAt: string | null;
   createdAt: string;
   ownerEmail: string | null;
+  ownerPhone: string | null;
   customDomain: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
@@ -19,6 +33,11 @@ export interface TenantRow {
   _count: { AdminUser: number };
   usage?: { products: number; users: number; ordersThisMonth: number };
   limits?: { maxProducts: number; maxUsers: number; maxOrdersPerMonth: number };
+  stores?: TenantStoreInfo[];
+  monthRevenue?: number;
+  monthOrders?: number;
+  monthExpenses?: number;
+  monthProfit?: number;
 }
 
 export interface CommissionRow {
@@ -73,7 +92,7 @@ export const PLAN_LABELS: Record<
   { label: string; color: string; cardBg: string; iconName: string }
 > = {
   free:       { label: "Free",       color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",          cardBg: "#6b7280", iconName: "ShoppingBag" },
-  pro:        { label: "Pro",        color: "bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300",          cardBg: "#0f766e", iconName: "Zap" },
+  pro:        { label: "Pro",        color: "bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-300",          cardBg: "#00B4A6", iconName: "Zap" },
   business:   { label: "Business",   color: "bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300",  cardBg: "#7c3aed", iconName: "Crown" },
   enterprise: { label: "Enterprise", color: "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300",      cardBg: "#d97706", iconName: "Crown" },
 };

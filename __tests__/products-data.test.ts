@@ -1,13 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { products } from "@/data/products";
+import { products, categories, slugify, getProductBySlug as _getProductBySlug, getProductSlug as _getProductSlug } from "@/data/products";
 
 describe("products data", () => {
-  it("has products array with entries", () => {
+  // Products are now managed in the database — the static array is intentionally empty.
+  // These tests verify the module structure and utility functions.
+
+  it("has products as an array (empty — products are now in DB)", () => {
     expect(Array.isArray(products)).toBe(true);
-    expect(products.length).toBeGreaterThan(0);
+    // Static array was emptied when products moved to database management
+    expect(products.length).toBe(0);
   });
 
-  it("each product has required fields", () => {
+  it("each product (if any) has required fields", () => {
     for (const p of products) {
       expect(p).toHaveProperty("id");
       expect(p).toHaveProperty("name");
@@ -25,8 +29,20 @@ describe("products data", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("has products with badges", () => {
-    const withBadge = products.filter(p => p.badge);
-    expect(withBadge.length).toBeGreaterThan(0);
+  it("has categories defined", () => {
+    expect(Array.isArray(categories)).toBe(true);
+    expect(categories.length).toBeGreaterThan(0);
+    // Verify each category has required fields
+    for (const c of categories) {
+      expect(c).toHaveProperty("id");
+      expect(c).toHaveProperty("label");
+      expect(c).toHaveProperty("emoji");
+    }
+  });
+
+  it("slugify utility works correctly", () => {
+    expect(slugify("Arroz Extra")).toBe("arroz-extra");
+    expect(slugify("Plátano de Seda")).toBe("platano-de-seda");
+    expect(slugify("  Café Molido  ")).toBe("cafe-molido");
   });
 });

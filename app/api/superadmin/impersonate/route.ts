@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
       where: { slug },
       select: { id: true, name: true, slug: true },
     });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Error de base de datos" }, { status: 500 });
   }
 
@@ -67,7 +67,8 @@ export async function POST(req: NextRequest) {
   // 4. Generar token de sesión admin para ese tenant
   // username = "superadmin" identifica el origen en logs/audit
   // role = "admin" para acceso completo al panel
-  const token = await createSessionToken("admin", "superadmin", tenant.slug, "SuperAdmin");
+  // Use tenant.id (canonical ID) — NOT tenant.slug
+  const token = await createSessionToken("admin", "superadmin", tenant.id, "SuperAdmin");
 
   // 5. Escribir la misma cookie que usa /api/auth/login
   const isProd = process.env.NODE_ENV === "production";
@@ -85,8 +86,16 @@ export async function POST(req: NextRequest) {
     maxAge: SESSION.MAX_AGE,
   });
 
-  // Set active-tenant cookie for storefront isolation
-  response.cookies.set("active-tenant", tenant.slug, {
+  // Set active-tenant cookie with canonical Tenant.id for proxy.ts resolution
+  response.cookies.set("active-tenant", tenant.id, {
+    path: "/",
+    maxAge: SESSION.MAX_AGE,
+    sameSite: "lax",
+    httpOnly: false,
+  });
+
+  // Set active-tenant-slug cookie for admin UI (readable by client JS)
+  response.cookies.set("active-tenant-slug", tenant.slug, {
     path: "/",
     maxAge: SESSION.MAX_AGE,
     sameSite: "lax",

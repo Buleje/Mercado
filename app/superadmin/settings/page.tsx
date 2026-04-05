@@ -186,7 +186,7 @@ export default function SettingsPage() {
           style={{
             background: saved
               ? "#22c55e"
-              : "linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)",
+              : "linear-gradient(135deg, #00B4A6 0%, #2dd4bf 100%)",
           }}
         >
           {saved ? (

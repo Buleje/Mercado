@@ -1,26 +1,32 @@
 "use client";
 
-import { useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 /**
- * Ruta local para acceder al admin de un tenant específico.
- * Si hay sesión SuperAdmin activa, impersona automáticamente al tenant
- * y redirige directo al panel admin sin pasar por el login.
- * Si no hay sesión SuperAdmin, guarda el slug y redirige al login normal.
+ * /t/[slug]/admin — punto de entrada al panel admin de un tenant.
+ *
+ * Flujo:
+ * 1. Guarda el slug como tenant activo en localStorage/sessionStorage.
+ * 2. Intenta impersonar via SuperAdmin (solo funciona si hay sesión SA activa).
+ *    - Si OK → redirige a /admin (el middleware inyecta x-tenant-id por el cookie).
+ * 3. Si no hay sesión SA → redirige al login del tenant (/admin/login?tenant=[slug]).
  */
-export default function TenantAdminRedirect() {
+export default function TenantAdminGateway() {
   const { slug } = useParams<{ slug: string }>();
+  const router = useRouter();
+  const attempted = useRef(false);
 
   useEffect(() => {
-    if (!slug) return;
+    if (!slug || attempted.current) return;
+    attempted.current = true;
 
-    // Guardar el tenant activo — sessionStorage es PER-TAB (permite múltiples tiendas abiertas)
+    // Persistir el tenant activo — ambos storages para máxima compatibilidad
     sessionStorage.setItem("active-tenant-slug", slug);
-    localStorage.setItem("active-tenant-slug", slug); // fallback para componentes que no usan sessionStorage
-    localStorage.setItem("superadmin-impersonate-tenant", slug);
+    localStorage.setItem("active-tenant-slug", slug);
 
-    // Intentar impersonación SuperAdmin (auto-login sin contraseña)
+    // Intentar impersonación SuperAdmin (fire once)
     fetch("/api/superadmin/impersonate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -28,25 +34,25 @@ export default function TenantAdminRedirect() {
     })
       .then((r) => {
         if (r.ok) {
-          // SuperAdmin autenticado → sesión admin ya seteada → ir directo al panel
-          window.location.href = "/admin";
+          // Sesión SA activa → impersonación exitosa → panel admin con contexto de tenant
+          router.replace("/admin");
         } else {
-          // No es SuperAdmin o token expirado → login normal del tenant
-          window.location.href = "/admin/login";
+          // Sin sesión SA → login normal del tenant
+          router.replace(`/admin/login?tenant=${encodeURIComponent(slug)}`);
         }
       })
       .catch(() => {
-        // Error de red → login normal como fallback seguro
-        window.location.href = "/admin/login";
+        // Error de red → login como fallback seguro
+        router.replace(`/admin/login?tenant=${encodeURIComponent(slug)}`);
       });
-  }, [slug]);
+  }, [slug, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-      <div className="text-center space-y-3">
-        <div className="w-10 h-10 border-4 border-[#0f766e] border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-sm text-gray-500 dark:text-gray-400">Cargando panel de <strong>{slug}</strong>...</p>
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-950">
+      <Loader2 className="w-8 h-8 animate-spin text-[#00B4A6]" />
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        Cargando panel de <strong className="text-gray-700 dark:text-gray-300">{slug}</strong>…
+      </p>
     </div>
   );
 }

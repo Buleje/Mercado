@@ -19,6 +19,9 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
+  Clock,
+  Gauge,
+  HeartPulse,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,27 +35,32 @@ interface NavItem {
 interface SuperAdminShellProps {
   children: React.ReactNode;
   username: string;
+  freshToken?: string | null;
 }
 
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard",   icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard" },
-  { label: "Tiendas",     icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"   },
-  { label: "Marketplace", icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"    },
-  { label: "Analytics",   icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics" },
-  { label: "Actividad",   icon: <Activity        className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"  },
-  { label: "Config",      icon: <Settings        className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"  },
+  { label: "Dashboard",       icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"       },
+  { label: "Centro Control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
+  { label: "Tiendas",         icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"         },
+  { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"          },
+  { label: "Analytics",       icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"       },
+  { label: "Salud",           icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"          },
+  { label: "Actividad",       icon: <Activity        className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"        },
+  { label: "Config",          icon: <Settings        className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"        },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
-  "/superadmin/dashboard": "Dashboard",
-  "/superadmin/tenants":   "Tiendas",
-  "/superadmin/stores":    "Marketplace",
-  "/superadmin/analytics": "Analytics",
-  "/superadmin/activity":  "Actividad",
-  "/superadmin/settings":  "Config",
-  "/superadmin":           "Dashboard",
+  "/superadmin/dashboard":       "Dashboard",
+  "/superadmin/control-center":  "Centro de Control",
+  "/superadmin/tenants":         "Tiendas",
+  "/superadmin/stores":          "Marketplace",
+  "/superadmin/analytics":       "Analytics",
+  "/superadmin/health":          "Salud del Sistema",
+  "/superadmin/activity":        "Actividad",
+  "/superadmin/settings":        "Config",
+  "/superadmin":                 "Dashboard",
 };
 
 // ─── Theme hook ───────────────────────────────────────────────────────────────
@@ -103,7 +111,7 @@ function ImpersonationBanner({ slug, onClear }: { slug: string; onClear: () => v
 
 // ─── Main Shell ───────────────────────────────────────────────────────────────
 
-export default function SuperAdminShell({ children, username }: SuperAdminShellProps) {
+export default function SuperAdminShell({ children, username, freshToken }: SuperAdminShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { dark, toggle } = useTheme();
@@ -112,11 +120,36 @@ export default function SuperAdminShell({ children, username }: SuperAdminShellP
   const [mobileOpen, setMobileOpen] = useState(false);
   const [impersonating, setImpersonating] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  // Rotate session cookie if the layout detected it's past halfway
+  useEffect(() => {
+    if (freshToken) {
+      import("@/app/superadmin/actions").then(({ rotatePlatformCookie }) =>
+        rotatePlatformCookie(freshToken).catch(() => {})
+      );
+    }
+  }, [freshToken]);
 
   // Check for impersonation on mount
   useEffect(() => {
     const slug = localStorage.getItem("impersonating-tenant");
     if (slug) setImpersonating(slug);
+  }, []);
+
+  // Verificar sesión periódicamente (cada 2 min) — si expiró, mostrar aviso
+  useEffect(() => {
+    let active = true;
+    const check = async () => {
+      try {
+        const res = await fetch("/api/superadmin/auth", { method: "GET" });
+        if (!res.ok && active) setSessionExpired(true);
+      } catch {
+        // Network error — no marcar como expirado
+      }
+    };
+    const timer = setInterval(check, 2 * 60 * 1000); // cada 2 min
+    return () => { active = false; clearInterval(timer); };
   }, []);
 
   const clearImpersonation = () => {
@@ -361,6 +394,27 @@ export default function SuperAdminShell({ children, username }: SuperAdminShellP
         {/* Page content */}
         <main className="flex-1 overflow-auto p-4 sm:p-6">{children}</main>
       </div>
+
+      {/* Session Expired Modal */}
+      {sessionExpired && (
+        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center">
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4">
+              <Clock className="w-7 h-7 text-amber-600 dark:text-amber-400" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Sesión expirada</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+              Tu sesión ha expirado por seguridad. Inicia sesión de nuevo para continuar.
+            </p>
+            <button
+              onClick={() => router.push("/superadmin/login")}
+              className="w-full px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors"
+            >
+              Iniciar sesión
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

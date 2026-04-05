@@ -151,7 +151,7 @@ export default function AnalyticsPage() {
             label: "Nuevos tenants (mes)",
             value: analytics.growth.tenantsThisMonth,
             sub: `${analytics.growth.tenantGrowthPct > 0 ? "+" : ""}${analytics.growth.tenantGrowthPct}% vs mes anterior`,
-            accent: "linear-gradient(90deg,#0f766e,#14b8a6)",
+            accent: "linear-gradient(90deg,#00B4A6,#2dd4bf)",
           },
           {
             label: "Pedidos este mes",
@@ -217,7 +217,7 @@ export default function AnalyticsPage() {
               label: "Comisiones del mes",
               value: commThisMonth,
               sub: "No liquidadas aún",
-              accent: "linear-gradient(90deg,#0f766e,#14b8a6)",
+              accent: "linear-gradient(90deg,#00B4A6,#2dd4bf)",
               icon: <DollarSign className="w-3.5 h-3.5" />,
             },
             {

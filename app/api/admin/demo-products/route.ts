@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
     for (const p of PRODUCTOS_BODEGA) {
       await prisma.product.create({
         data: {
+          tenantId: auth.tenantId,
           name: p.name,
           category: p.category,
           price: p.price,

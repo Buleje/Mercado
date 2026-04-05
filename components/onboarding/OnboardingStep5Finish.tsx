@@ -43,12 +43,12 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
 
       <div className="space-y-4">
         {/* Notifications */}
-        <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-[#0f766e]/30 transition-colors">
+        <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-[#00B4A6]/30 transition-colors">
           <input
             type="checkbox"
             checked={data.notifications}
             onChange={e => handleNotifications(e.target.checked)}
-            className="mt-0.5 w-5 h-5 rounded accent-[#0f766e]"
+            className="mt-0.5 w-5 h-5 rounded accent-[#00B4A6]"
           />
           <div>
             <p className="font-semibold text-gray-900 dark:text-white">Activar notificaciones del navegador</p>
@@ -57,12 +57,12 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
         </label>
 
         {/* PWA */}
-        <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-[#0f766e]/30 transition-colors">
+        <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-[#00B4A6]/30 transition-colors">
           <input
             type="checkbox"
             checked={data.pwa}
             onChange={e => onChange({ ...data, pwa: e.target.checked })}
-            className="mt-0.5 w-5 h-5 rounded accent-[#0f766e]"
+            className="mt-0.5 w-5 h-5 rounded accent-[#00B4A6]"
           />
           <div>
             <p className="font-semibold text-gray-900 dark:text-white">Instalar app en mi celular</p>
@@ -71,12 +71,12 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
         </label>
 
         {/* WhatsApp resumen */}
-        <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-[#0f766e]/30 transition-colors">
+        <label className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl cursor-pointer border border-gray-100 dark:border-gray-700 hover:border-[#00B4A6]/30 transition-colors">
           <input
             type="checkbox"
             checked={data.whatsappResumen}
             onChange={e => onChange({ ...data, whatsappResumen: e.target.checked })}
-            className="mt-0.5 w-5 h-5 rounded accent-[#0f766e]"
+            className="mt-0.5 w-5 h-5 rounded accent-[#00B4A6]"
           />
           <div className="flex-1">
             <p className="font-semibold text-gray-900 dark:text-white">Recibir resumen diario por WhatsApp</p>
@@ -94,7 +94,7 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
               value={whatsappNumber}
               onChange={e => onChange({ ...data, whatsappNumber: e.target.value })}
               placeholder="961234567"
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[#0f766e] transition-colors"
+              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 outline-none focus:border-[#00B4A6] transition-colors"
             />
           </div>
         )}
@@ -103,7 +103,7 @@ export default function OnboardingStep5Finish({ data, defaultPhone, onChange, on
       <button
         onClick={onComplete}
         disabled={isCompleting}
-        className="w-full py-4 rounded-xl bg-[#0f766e] text-white font-extrabold text-lg hover:bg-[#0d5f58] transition-colors shadow-lg shadow-[#0f766e]/25 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full py-4 rounded-xl bg-[#00B4A6] text-white font-extrabold text-lg hover:bg-[#009690] transition-colors shadow-lg shadow-[#00B4A6]/25 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {isCompleting ? (
           <>

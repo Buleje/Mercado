@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const tenant = await prisma.tenant.findFirst({
-    where: { slug: auth.tenantId },
+    where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
     select: { customDomain: true },
   });
 
@@ -32,7 +32,7 @@ export async function PUT(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const tenant = await prisma.tenant.findFirst({
-    where: { slug: auth.tenantId },
+    where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
     select: { id: true, plan: true, customDomain: true },
   });
   if (!tenant) return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
@@ -65,7 +65,7 @@ export async function PUT(req: NextRequest) {
 
   // Check uniqueness
   const taken = await prisma.tenant.findFirst({
-    where: { customDomain: domain, NOT: { slug: auth.tenantId } },
+    where: { customDomain: domain, NOT: { id: auth.tenantId } },
     select: { slug: true },
   });
   if (taken) {
@@ -78,7 +78,7 @@ export async function PUT(req: NextRequest) {
   }
 
   await prisma.tenant.update({
-    where: { slug: auth.tenantId },
+    where: { id: auth.tenantId },
     data: { customDomain: domain },
   });
 
@@ -91,7 +91,7 @@ export async function DELETE(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   const tenant = await prisma.tenant.findFirst({
-    where: { slug: auth.tenantId },
+    where: { OR: [{ id: auth.tenantId }, { slug: auth.tenantId }] },
     select: { customDomain: true },
   });
 
@@ -100,7 +100,7 @@ export async function DELETE(req: NextRequest) {
   }
 
   await prisma.tenant.update({
-    where: { slug: auth.tenantId },
+    where: { id: auth.tenantId },
     data: { customDomain: null },
   });
 
