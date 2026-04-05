@@ -193,14 +193,11 @@ describe("GET /api/marketplace/stores", () => {
 
   // ── Error de BD ─────────────────────────────────────────────────────────────
 
-  it("retorna lista vacía si Prisma lanza excepción (catch graceful)", async () => {
+  it("retorna 500 si Prisma lanza excepción", async () => {
     mockStoreFindMany.mockRejectedValue(new Error("DB connection failed"));
 
     const res = await GET(makeReq("https://host/api/marketplace/stores"));
-    // El source captura errores de DB y retorna lista vacía (graceful degradation)
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data).toHaveLength(0);
+    expect(res.status).toBe(500);
   });
 
   // ── Campos devueltos ────────────────────────────────────────────────────────
@@ -225,17 +222,15 @@ describe("GET /api/marketplace/stores", () => {
   // ── Sin datos sensibles ─────────────────────────────────────────────────────
 
   it("NO expone tenantId en la respuesta pública", async () => {
-    // El select de Prisma en el source no incluye tenantId, por lo que
-    // findMany con select nunca retorna ese campo. Simulamos lo que Prisma
-    // realmente devuelve al aplicar el select (sin tenantId).
-    mockStoreFindMany.mockResolvedValue([STORE_A]);
+    const storeConTenantId = { ...STORE_A, tenantId: "super-secret-tenant" };
+    mockStoreFindMany.mockResolvedValue([storeConTenantId]);
 
     const res = await GET(makeReq("https://host/api/marketplace/stores"));
     const body = await res.json();
     const store = body.data[0];
 
-    // Verificar que el select del source no incluye tenantId
-    // (como el mock simula el select real, tenantId no debe estar presente)
+    // El select de Prisma no incluye tenantId — no debe llegar al cliente
+    // Si alguien accidentalmente lo incluye, este test fallará
     expect(store.tenantId).toBeUndefined();
   });
 });

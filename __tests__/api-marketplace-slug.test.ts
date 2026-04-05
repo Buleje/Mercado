@@ -24,25 +24,22 @@ vi.mock("@/lib/logger", () => ({
 
 // ── Mock: api-error ───────────────────────────────────────────────────────────
 
-const { MockNotFoundError } = vi.hoisted(() => {
-  class MockNotFoundError extends Error {
-    constructor(m: string) {
-      super(m);
-      this.name = "NotFoundError";
-    }
+class NotFoundError extends Error {
+  constructor(m: string) {
+    super(m);
+    this.name = "NotFoundError";
   }
-  return { MockNotFoundError };
-});
+}
 
 vi.mock("@/lib/api-error", () => ({
   toErrorPayload: vi.fn((err: unknown, _traceId: string) => {
-    if (err instanceof MockNotFoundError || (err as { name?: string }).name === "NotFoundError") {
+    if (err instanceof NotFoundError || (err as { name?: string }).name === "NotFoundError") {
       return { payload: { error: "Not found" }, status: 404 };
     }
     return { payload: { error: "Internal error" }, status: 500 };
   }),
   newTraceId: vi.fn(() => "trace-slug-789"),
-  NotFoundError: MockNotFoundError,
+  NotFoundError,
 }));
 
 // ── Mock: prisma ───────────────────────────────────────────────────────────────
@@ -105,14 +102,12 @@ const PRODUCT_ARROZ = {
   retailPrice:    3.5,
   wholesalePrice: 3.0,
   minOrderQty:    1,
-  isActive:       true,
-  Product: {
+  product: {
     id:       "prod-1",
     name:     "Arroz Extra",
     image:    "/arroz.png",
     category: "Abarrotes",
     unit:     "kg",
-    stock:    50,
     description: "Arroz de calidad",
   },
 };
@@ -122,14 +117,12 @@ const PRODUCT_ACEITE = {
   retailPrice:    8.5,
   wholesalePrice: 7.0,
   minOrderQty:    1,
-  isActive:       true,
-  Product: {
+  product: {
     id:       "prod-2",
     name:     "Aceite Vegetal",
     image:    "/aceite.png",
     category: "Aceites",
     unit:     "lt",
-    stock:    30,
     description: "Aceite de cocina",
   },
 };
@@ -242,7 +235,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?category=Abarrotes"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.Product.category).toBe("Abarrotes");
+    expect(callArgs.where.product.category).toBe("Abarrotes");
   });
 
   it("filtra por search (nombre de producto insensitive)", async () => {
@@ -252,7 +245,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?search=arroz"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.Product.name).toMatchObject({ contains: "arroz", mode: "insensitive" });
+    expect(callArgs.where.product.name).toMatchObject({ contains: "arroz", mode: "insensitive" });
   });
 
   it("ordena por precio ascendente con sort=price_asc", async () => {
