@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
+import { NotFoundError } from "@/lib/api-error";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -293,7 +294,7 @@ export const MarketplaceStoreProductsDB = {
       where:  { id: params.productId },
       select: { id: true, name: true, image: true, category: true, unit: true },
     });
-    if (!product) throw new Error(`Producto #${params.productId} no encontrado en el catálogo`);
+    if (!product) throw new NotFoundError(`Producto #${params.productId}`);
 
     const row = await prisma.storeProduct.upsert({
       where: {

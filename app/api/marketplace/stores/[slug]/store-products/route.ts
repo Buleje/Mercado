@@ -7,6 +7,22 @@ import { MarketplaceStoresDB, MarketplaceStoreProductsDB } from "@/lib/db/market
 import { logActivity } from "@/lib/activity-logger";
 import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import type { SessionPayload } from "@/lib/session";
+
+// Verifica que el usuario sea admin o dueño de la tienda específica.
+// Retorna NextResponse 403 si no tiene permiso, null si está autorizado.
+function assertStoreOwner(
+  auth: Pick<SessionPayload, "role" | "tenantId">,
+  store: { tenantId: string },
+): NextResponse | null {
+  if (auth.role !== "admin" && store.tenantId !== auth.tenantId) {
+    return NextResponse.json(
+      { error: "No tienes permiso para modificar esta tienda" },
+      { status: 403 },
+    );
+  }
+  return null;
+}
 
 const AddProductSchema = z.object({
   productId:          z.number().int().positive(),
@@ -89,12 +105,8 @@ export async function POST(
     const store = await MarketplaceStoresDB.getBySlug(slug);
     if (!store) throw new NotFoundError("Tienda");
 
-    if (auth.role !== "admin" && store.tenantId !== auth.tenantId) {
-      return NextResponse.json(
-        { error: "No tienes permiso para modificar esta tienda" },
-        { status: 403 },
-      );
-    }
+    const permError = assertStoreOwner(auth, store);
+    if (permError) return permError;
 
     const body = await req.json().catch(() => ({}));
     const parsed = AddProductSchema.safeParse(body);
@@ -146,12 +158,8 @@ export async function DELETE(
     const store = await MarketplaceStoresDB.getBySlug(slug);
     if (!store) throw new NotFoundError("Tienda");
 
-    if (auth.role !== "admin" && store.tenantId !== auth.tenantId) {
-      return NextResponse.json(
-        { error: "No tienes permiso para modificar esta tienda" },
-        { status: 403 },
-      );
-    }
+    const permError = assertStoreOwner(auth, store);
+    if (permError) return permError;
 
     const body = await req.json().catch(() => ({}));
     const parsed = DeleteSchema.safeParse(body);
