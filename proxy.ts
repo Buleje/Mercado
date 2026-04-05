@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifySessionToken, SESSION } from "@/lib/session";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
+import { generateRequestId, generateNonce, buildCSP } from "@/lib/middleware-utils";
 
 /**
  * Root domain for tenant routing (strip port).
@@ -89,49 +90,6 @@ const WRITE_PROTECTED_API_PREFIXES = [
 ];
 
 // ── Security helpers ──────────────────────────────────────────────────────────
-
-function generateRequestId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
-}
-
-function generateNonce(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
-    const buf = new Uint8Array(16);
-    crypto.getRandomValues(buf);
-    return btoa(String.fromCharCode(...buf))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=/g, "");
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-}
-
-function buildCSP(pathname: string, nonce?: string): string {
-  const isAdmin = pathname.startsWith("/admin") || pathname.startsWith("/superadmin");
-  const scriptSrc = nonce
-    ? `'self' 'nonce-${nonce}' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`
-    : `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
-  const directives: Record<string, string> = {
-    "default-src": "'self'",
-    "script-src": scriptSrc,
-    "style-src": "'self' 'unsafe-inline'",
-    "img-src": "* data: blob:",
-    "font-src": "'self' data:",
-    "connect-src": "* data:",
-    "media-src": "'self'",
-    "object-src": "'none'",
-    "base-uri": "'self'",
-    "form-action": "'self'",
-    "frame-ancestors": isAdmin ? "'none'" : "'self'",
-    "upgrade-insecure-requests": "",
-  };
-  return Object.entries(directives)
-    .map(([k, v]) => (v ? `${k} ${v}` : k))
-    .join("; ");
-}
 
 function applySecurityHeaders(
   response: NextResponse,

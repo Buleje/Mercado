@@ -82,21 +82,21 @@ export function buildCSP(pathname: string, nonce?: string): string {
     pathname.startsWith("/admin") || pathname.startsWith("/superadmin");
 
   const scriptSrc = nonce
-    ? `'self' 'nonce-${nonce}' 'unsafe-eval'`
-    : `'self' 'unsafe-inline' 'unsafe-eval'`;
+    ? `'self' 'nonce-${nonce}' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`
+    : `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
 
   const directives: Record<string, string> = {
-    "default-src":              "'self'",
-    "script-src":               scriptSrc,
-    "style-src":                "'self' 'unsafe-inline'",
-    "img-src":                  "* data: blob:",
-    "font-src":                 "'self' data:",
-    "connect-src":              "* data:",
-    "media-src":                "'self'",
-    "object-src":               "'none'",
-    "base-uri":                 "'self'",
-    "form-action":              "'self'",
-    "frame-ancestors":          isAdminRoute ? "'none'" : "'self'",
+    "default-src":               "'self'",
+    "script-src":                scriptSrc,
+    "style-src":                 "'self' 'unsafe-inline'",
+    "img-src":                   "* data: blob:",
+    "font-src":                  "'self' data:",
+    "connect-src":               "* data:",
+    "media-src":                 "'self'",
+    "object-src":                "'none'",
+    "base-uri":                  "'self'",
+    "form-action":               "'self'",
+    "frame-ancestors":           isAdminRoute ? "'none'" : "'self'",
     "upgrade-insecure-requests": "",
   };
 

@@ -57,6 +57,9 @@ const nextConfig: NextConfig = {
   },
 
   experimental: {
+    // Enable OpenTelemetry instrumentation hook (instrumentation.ts)
+    instrumentationHook: true,
+
     // Tree-shake large packages — avoids importing the entire library
     optimizePackageImports: [
       "framer-motion",
@@ -116,7 +119,7 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Security headers for all routes
+      // Security headers for all routes (CSP is handled dynamically by proxy.ts)
       {
         source: "/(.*)",
         headers: [
@@ -144,73 +147,6 @@ const nextConfig: NextConfig = {
             key: "Strict-Transport-Security",
             value: "max-age=63072000; includeSubDomains; preload",
           }] : []),
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://www.googletagmanager.com https://www.google-analytics.com https://clarity.ms https://*.clarity.ms https://unpkg.com https://va.vercel-scripts.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://images.openfoodfacts.org https://static.openfoodfacts.org https://www.google-analytics.com https://*.tile.openstreetmap.org https://unpkg.com",
-              "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms wss://*.supabase.co https://nominatim.openstreetmap.org https://images.unsplash.com https://va.vercel-scripts.com https://api.apis.net.pe https://eldni.com",
-              "worker-src 'self' blob:",
-              "frame-src 'none'",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              ...(isProd ? ["upgrade-insecure-requests"] : []),
-            ].join("; "),
-          },
-        ],
-      },
-      // Stricter CSP for admin/superadmin — allows self iframes for preview
-      {
-        source: "/(admin|superadmin)/:path*",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' blob: https://va.vercel-scripts.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://images.openfoodfacts.org https://static.openfoodfacts.org https://*.tile.openstreetmap.org",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://images.unsplash.com https://va.vercel-scripts.com",
-              "worker-src 'self' blob:",
-              "frame-src 'self'",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              ...(isProd ? ["upgrade-insecure-requests"] : []),
-            ].join("; "),
-          },
-          {
-            key: "X-Frame-Options",
-            value: "DENY",
-          },
-        ],
-      },
-      // Relaxed CSP for checkout — allows Stripe iframe
-      {
-        source: "/(registro|venta|pedido)/:path*",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' blob: https://js.stripe.com https://www.googletagmanager.com https://www.google-analytics.com https://clarity.ms https://*.clarity.ms https://va.vercel-scripts.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://*.stripe.com https://www.google-analytics.com",
-              "connect-src 'self' https://*.supabase.co https://api.stripe.com https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://images.unsplash.com",
-              "frame-src https://js.stripe.com https://hooks.stripe.com",
-              "worker-src 'self' blob:",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self' https://checkout.stripe.com",
-              ...(isProd ? ["upgrade-insecure-requests"] : []),
-            ].join("; "),
-          },
         ],
       },
     ];
