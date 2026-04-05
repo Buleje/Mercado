@@ -24,12 +24,15 @@ vi.mock("@/lib/logger", () => ({
 
 // ── Mock: api-error ───────────────────────────────────────────────────────────
 
-class NotFoundError extends Error {
-  constructor(m: string) {
-    super(m);
-    this.name = "NotFoundError";
+const { NotFoundError } = vi.hoisted(() => {
+  class NotFoundError extends Error {
+    constructor(m: string) {
+      super(m);
+      this.name = "NotFoundError";
+    }
   }
-}
+  return { NotFoundError };
+});
 
 vi.mock("@/lib/api-error", () => ({
   toErrorPayload: vi.fn((err: unknown, _traceId: string) => {
@@ -102,13 +105,13 @@ const PRODUCT_ARROZ = {
   retailPrice:    3.5,
   wholesalePrice: 3.0,
   minOrderQty:    1,
-  product: {
+  Product: {
     id:       "prod-1",
     name:     "Arroz Extra",
     image:    "/arroz.png",
     category: "Abarrotes",
     unit:     "kg",
-    description: "Arroz de calidad",
+    stock:    20,
   },
 };
 
@@ -117,13 +120,13 @@ const PRODUCT_ACEITE = {
   retailPrice:    8.5,
   wholesalePrice: 7.0,
   minOrderQty:    1,
-  product: {
+  Product: {
     id:       "prod-2",
     name:     "Aceite Vegetal",
     image:    "/aceite.png",
     category: "Aceites",
     unit:     "lt",
-    description: "Aceite de cocina",
+    stock:    15,
   },
 };
 
@@ -235,7 +238,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?category=Abarrotes"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.product.category).toBe("Abarrotes");
+    expect(callArgs.where.Product.category).toBe("Abarrotes");
   });
 
   it("filtra por search (nombre de producto insensitive)", async () => {
@@ -245,7 +248,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?search=arroz"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.product.name).toMatchObject({ contains: "arroz", mode: "insensitive" });
+    expect(callArgs.where.Product.name).toMatchObject({ contains: "arroz", mode: "insensitive" });
   });
 
   it("ordena por precio ascendente con sort=price_asc", async () => {

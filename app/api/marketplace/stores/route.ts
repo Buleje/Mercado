@@ -132,7 +132,14 @@ export async function GET(req: NextRequest) {
       stores = [];
     }
 
-    return NextResponse.json({ data: stores, total: stores.length });
+    // Explicitly pick only public-safe fields (defense-in-depth: Prisma select
+    // already excludes tenantId, but explicit destructuring ensures it can never
+    // leak even if a mock, migration, or refactor adds the field back)
+    const safeStores = stores.map(({ id, slug, name, logo, category, zone, rating, reviewCount, description, vacationMode, vacationMessage }: Record<string, unknown>) => ({
+      id, slug, name, logo, category, zone, rating, reviewCount, description, vacationMode, vacationMessage,
+    }));
+
+    return NextResponse.json({ data: safeStores, total: safeStores.length });
   } catch (err) {
     logger.error("[marketplace/stores GET]", err);
     const { payload, status } = toErrorPayload(err, traceId);

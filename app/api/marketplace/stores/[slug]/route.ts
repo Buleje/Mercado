@@ -41,7 +41,12 @@ export async function GET(
       throw new NotFoundError("Tienda");
     }
 
-    return NextResponse.json({ data: store });
+    // Explicitly pick only public-safe fields (defense-in-depth against accidental
+    // leaks if select or a mock returns extra fields like tenantId or commission)
+    const { id, slug: storeSlug, name, description, logo, banner, category, zone,
+            rating, reviewCount, vacationMode, vacationMessage, createdAt, _count } = store;
+    return NextResponse.json({ data: { id, slug: storeSlug, name, description, logo, banner,
+      category, zone, rating, reviewCount, vacationMode, vacationMessage, createdAt, _count } });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });

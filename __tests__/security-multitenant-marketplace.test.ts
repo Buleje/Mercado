@@ -23,12 +23,15 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-class NotFoundError extends Error {
-  constructor(m: string) {
-    super(m);
-    this.name = "NotFoundError";
+const { NotFoundError } = vi.hoisted(() => {
+  class NotFoundError extends Error {
+    constructor(m: string) {
+      super(m);
+      this.name = "NotFoundError";
+    }
   }
-}
+  return { NotFoundError };
+});
 
 vi.mock("@/lib/api-error", () => ({
   toErrorPayload: vi.fn((err: unknown) => {
@@ -130,7 +133,7 @@ const PRODUCT_PUBLICA = {
   wholesalePrice: 3.0,
   minOrderQty:    1,
   isActive:       true,
-  product: { id: "prod-1", name: "Arroz", image: "/arroz.png", category: "Abarrotes", unit: "kg", description: "" },
+  Product: { id: "prod-1", name: "Arroz", image: "/arroz.png", category: "Abarrotes", unit: "kg", description: "", stock: 10 },
 };
 
 // Productos de tienda rival (tenant diferente)
@@ -200,9 +203,10 @@ describe("Multi-tenant: tiendas no publicadas son invisibles", () => {
     const res  = await GETSearch(makeReq("https://host/api/marketplace/search?q=arroz"));
     const body = await res.json();
 
-    // Verificar que el filtro de store isPublished siempre esta presente
+    // Verificar que el filtro de Store isPublished siempre esta presente
+    // Prisma usa relaciones con capital (Store, Product) — no lowercase
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.store.isPublished).toBe(true);
+    expect(callArgs.where.Store.isPublished).toBe(true);
 
     // Ningún resultado debe pertenecer a tienda privada
     const storeIds = body.data.map((r: { store?: { id?: string } }) => r.store?.id);
@@ -311,8 +315,8 @@ describe("Multi-tenant: campos sensibles no expuestos al público", () => {
     // Por ahora pasa si el valor existe (es un WARNING, no un error bloqueante)
     const productData = body.data[0];
     if (productData?.wholesalePrice !== undefined) {
-      // Si tiene wholesalePrice, al menos verificar que retailPrice también está
-      expect(productData.retailPrice).toBeDefined();
+      // Si tiene wholesalePrice, al menos verificar que price (retailPrice mapeado) también está
+      expect(productData.price).toBeDefined();
     }
   });
 });
