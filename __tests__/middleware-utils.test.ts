@@ -2,21 +2,63 @@
  * __tests__/middleware-utils.test.ts
  *
  * Unit tests for lib/middleware-utils.ts:
+ *   - generateRequestId
  *   - generateNonce
  *   - isProtectedAdmin
+ *   - getIP
  *   - checkEdgeRateLimit
+ *   - checkRateLimit
  *   - buildCSP
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { NextRequest } from "next/server";
 import {
+  generateRequestId,
   generateNonce,
   isProtectedAdmin,
+  getIP,
   checkEdgeRateLimit,
+  checkRateLimit,
   buildCSP,
+  rlStore,
   PUBLIC_ADMIN_PATHS,
   type RateLimitEntry,
 } from "@/lib/middleware-utils";
+
+// Helper: crea un NextRequest mínimo con headers opcionales
+function makeReq(url = "http://localhost:3000/", headers: Record<string, string> = {}): NextRequest {
+  return new NextRequest(url, { headers });
+}
+
+// ── generateRequestId ─────────────────────────────────────────────────────────
+
+describe("generateRequestId", () => {
+  it("retorna un string no vacío", () => {
+    const id = generateRequestId();
+    expect(typeof id).toBe("string");
+    expect(id.length).toBeGreaterThan(0);
+  });
+
+  it("tiene formato UUID válido cuando crypto.randomUUID está disponible", () => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    expect(generateRequestId()).toMatch(uuidRegex);
+  });
+
+  it("dos llamadas consecutivas producen IDs diferentes", () => {
+    expect(generateRequestId()).not.toBe(generateRequestId());
+  });
+
+  it("usa el fallback cuando crypto.randomUUID no está disponible", () => {
+    const original = crypto.randomUUID;
+    // Simular entorno sin randomUUID
+    Object.defineProperty(crypto, "randomUUID", { value: undefined, configurable: true });
+    const id = generateRequestId();
+    expect(typeof id).toBe("string");
+    expect(id.length).toBeGreaterThan(0);
+    Object.defineProperty(crypto, "randomUUID", { value: original, configurable: true });
+  });
+});
 
 // ── generateNonce ──────────────────────────────────────────────────────────────
 
@@ -128,6 +170,110 @@ describe("checkEdgeRateLimit", () => {
     expect(checkEdgeRateLimit(map, "192.168.1.2", 5, 60_000)).toBe(true);
     // IP A is blocked
     expect(checkEdgeRateLimit(map, "192.168.1.1", 5, 60_000)).toBe(false);
+  });
+});
+
+// ── getIP ──────────────────────────────────────────────────────────────────────
+
+describe("getIP", () => {
+  it("extrae el primer IP de x-forwarded-for con múltiples valores", () => {
+    const req = makeReq("http://localhost/", { "x-forwarded-for": "203.0.113.1, 10.0.0.1, 192.168.0.1" });
+    expect(getIP(req)).toBe("203.0.113.1");
+  });
+
+  it("extrae IP de x-real-ip cuando no hay x-forwarded-for", () => {
+    const req = makeReq("http://localhost/", { "x-real-ip": "198.51.100.5" });
+    expect(getIP(req)).toBe("198.51.100.5");
+  });
+
+  it("retorna 'unknown' cuando no hay ningún header de IP", () => {
+    const req = makeReq("http://localhost/");
+    expect(getIP(req)).toBe("unknown");
+  });
+
+  it("x-forwarded-for tiene prioridad sobre x-real-ip", () => {
+    const req = makeReq("http://localhost/", {
+      "x-forwarded-for": "1.1.1.1",
+      "x-real-ip": "2.2.2.2",
+    });
+    expect(getIP(req)).toBe("1.1.1.1");
+  });
+
+  it("elimina espacios del primer IP de x-forwarded-for", () => {
+    const req = makeReq("http://localhost/", { "x-forwarded-for": "  172.16.0.1  , 10.0.0.2" });
+    expect(getIP(req)).toBe("172.16.0.1");
+  });
+});
+
+// ── checkRateLimit ────────────────────────────────────────────────────────────
+
+describe("checkRateLimit", () => {
+  beforeEach(() => {
+    // Limpiar el store global antes de cada test para aislamiento
+    rlStore.clear();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("primera request de una IP nueva retorna null (permitida)", () => {
+    const req = makeReq("http://localhost/", { "x-forwarded-for": "10.1.1.1" });
+    expect(checkRateLimit(req)).toBeNull();
+  });
+
+  it("request número 60 sigue siendo permitida", () => {
+    const req = makeReq("http://localhost/", { "x-forwarded-for": "10.1.1.2" });
+    for (let i = 0; i < 59; i++) checkRateLimit(req);
+    expect(checkRateLimit(req)).toBeNull();
+  });
+
+  it("request número 61 retorna NextResponse con status 429", () => {
+    const req = makeReq("http://localhost/", { "x-forwarded-for": "10.1.1.3" });
+    for (let i = 0; i < 60; i++) checkRateLimit(req);
+    const result = checkRateLimit(req);
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(429);
+  });
+
+  it("la response 429 incluye el header Retry-After", () => {
+    const req = makeReq("http://localhost/", { "x-forwarded-for": "10.1.1.4" });
+    for (let i = 0; i < 60; i++) checkRateLimit(req);
+    const result = checkRateLimit(req);
+    const retryAfter = result!.headers.get("Retry-After");
+    expect(retryAfter).toBeTruthy();
+    expect(Number(retryAfter)).toBeGreaterThan(0);
+  });
+
+  it("IPs diferentes no comparten contador", () => {
+    const reqA = makeReq("http://localhost/", { "x-forwarded-for": "10.2.0.1" });
+    const reqB = makeReq("http://localhost/", { "x-forwarded-for": "10.2.0.2" });
+    for (let i = 0; i < 60; i++) checkRateLimit(reqA);
+    // IP A bloqueada, IP B libre
+    expect(checkRateLimit(reqA)).not.toBeNull();
+    expect(checkRateLimit(reqB)).toBeNull();
+  });
+
+  it("después de que la ventana expira permite de nuevo", () => {
+    const req = makeReq("http://localhost/", { "x-forwarded-for": "10.3.0.1" });
+    for (let i = 0; i < 60; i++) checkRateLimit(req);
+    expect(checkRateLimit(req)).not.toBeNull(); // bloqueada
+
+    // Avanzar más de 60 segundos (ventana de 60_000 ms)
+    vi.advanceTimersByTime(60_001);
+    // Limpiar manualmente la entrada expirada para simular el comportamiento del store
+    // checkEdgeRateLimit detecta resetAt en el pasado y resetea la entrada
+    expect(checkRateLimit(req)).toBeNull();
+  });
+
+  it("el cuerpo de la response 429 contiene mensaje de error en español", async () => {
+    const req = makeReq("http://localhost/", { "x-forwarded-for": "10.4.0.1" });
+    for (let i = 0; i < 60; i++) checkRateLimit(req);
+    const result = checkRateLimit(req);
+    const body = await result!.json();
+    expect(body.error).toBeTruthy();
+    expect(typeof body.error).toBe("string");
   });
 });
 

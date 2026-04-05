@@ -135,7 +135,7 @@ export function buildCSP(pathname: string, nonce?: string): string {
     "style-src":                 "'self' 'unsafe-inline'",
     "img-src":                   "* data: blob:",
     "font-src":                  "'self' data:",
-    "connect-src":               "* data: https://vitals.vercel-insights.com",
+    "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com",
     "media-src":                 "'self'",
     "object-src":                "'none'",
     "base-uri":                  "'self'",
