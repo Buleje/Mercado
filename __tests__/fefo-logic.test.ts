@@ -31,8 +31,10 @@ const {
   mockBatchFindFirst: vi.fn(),
 }));
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  // Definimos el objeto y lo referenciamos a sí mismo para que $transaction
+  // pase el mismo prismaMock como `tx`, reusando los mocks ya configurados.
+  const prismaMock = {
     product: {
       findUnique: mockProductFindUnique,
       update: mockProductUpdate,
@@ -46,8 +48,15 @@ vi.mock("@/lib/prisma", () => ({
       update: mockBatchUpdate,
       findFirst: mockBatchFindFirst,
     },
-  },
-}));
+    // decrementFEFO usa prisma.$transaction(async (tx) => { ... }) — el tx
+    // expone tx.batch.findMany y tx.batch.update. Pasamos prismaMock para
+    // que reuse los mocks de batch del bloque de arriba.
+    $transaction: vi.fn(async (callback: (tx: typeof prismaMock) => Promise<unknown>) => {
+      return callback(prismaMock);
+    }),
+  };
+  return { prisma: prismaMock };
+});
 
 import { InventoryMovementsDB } from "@/lib/db/inventory.db";
 
