@@ -12,15 +12,14 @@ import { OnboardingTour } from "@/components/admin/OnboardingTour";
 import {
   Check, X,
   Users, Star, ShoppingBasket, ShoppingCart,
-  Loader2, Truck, FileText, Settings, Menu, Store,
-  Clock, Search,
-  Eye, EyeOff, Activity,
+  Loader2, Truck, FileText, Settings, Store,
+  Clock, Activity,
   Brain,
   Package, FlaskConical,
   DollarSign, Layers,
   ChevronDown, ChevronUp,
-  CheckCircle, SlidersHorizontal,
-  Maximize2, Minimize2, Zap, Tag, RefreshCw, CreditCard, Landmark,
+  SlidersHorizontal,
+  Zap, Tag, RefreshCw, CreditCard, Landmark,
   ClipboardList, Power, RotateCcw,
   Palette, CircleUser, ArrowUpDown, Globe, Pencil, Plus,
 } from "lucide-react";
@@ -101,9 +100,7 @@ const ContratosModule = dynamic(() => import("@/components/admin/ContratosModule
 // DeclaracionInventarioModule movido dentro del módulo Inventario (tab "Declaración")
 
 import SSEListener from "@/components/admin/SSEListener";
-import NotificationBell from "@/components/notifications/NotificationBell";
 import AdminCommandPalette from "@/components/admin/shared/AdminCommandPalette";
-import AdminUserDropdown from "@/components/admin/AdminUserDropdown";
 import SidebarReorderPanel from "@/components/admin/SidebarReorderPanel";
 
 // Changelog + Export
