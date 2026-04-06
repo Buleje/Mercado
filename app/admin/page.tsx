@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
-import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useSwipe } from "@/hooks/use-swipe";
@@ -38,6 +37,7 @@ import { TAB_MIGRATION } from "./_lib/tab-migration";
 import { TabSpinner } from "./_lib/tab-spinner";
 import { NavDefaultTabsConfig } from "@/components/admin/NavDefaultTabsConfig";
 import { useKeyboardShortcuts } from "./_hooks/useKeyboardShortcuts";
+import { useAdminLayout } from "./_hooks/useAdminLayout";
 
 // Lazy-load heavy admin tabs for better initial load performance
 // ── Unified Module Imports (8 consolidated modules) ──
@@ -313,21 +313,19 @@ function AdminPage() {
   // Silent token refresh — rotates access token every 12 min (expires at 15 min)
   useTokenRefresh();
   const [storeMode, setStoreModeState] = useState<StoreMode>("whatsapp");
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  // Layout state (mobileNavOpen, compactMode, focusMode, presentationMode)
+  // extraído a useAdminLayout — ver app/admin/_hooks/useAdminLayout.ts
+  const {
+    mobileNavOpen, setMobileNavOpen,
+    compactMode, toggleCompact,
+    focusMode, toggleFocusMode,
+    presentationMode, setPresentationMode,
+  } = useAdminLayout();
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // null = "Todas"
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState("");
-  const [compactMode, setCompactMode] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("admin_compact") === "1";
-  });
-  const [focusMode, setFocusMode] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("admin_focus_mode") === "1";
-  });
-  const [presentationMode, setPresentationMode] = useState(false);
   const [showModuleHelp, setShowModuleHelp] = useState(false);
   const [favoriteTabs, setFavoriteTabs] = useState<Set<Tab>>(() => {
     if (typeof window === "undefined") return new Set<Tab>();
@@ -473,20 +471,7 @@ function AdminPage() {
     window.location.href = "/superadmin";
   };
 
-  // Plan del tenant — loaded on mount (unused variable kept for future plan gating)
-  useScrollLock(mobileNavOpen);
-
-  // Close mobile nav on Escape key or resize to desktop — prevents stuck dark overlay
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") setMobileNavOpen(false); };
-    const handleResize = () => { if (window.innerWidth >= 640) setMobileNavOpen(false); };
-    window.addEventListener("keydown", handleKey);
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("keydown", handleKey);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
+  // useScrollLock + handlers Escape/Resize → ahora viven en useAdminLayout
   const { toggle: toggleTheme } = useTheme();
   const { permission, requestPermission, sendNotification, hasAsked } = useNotifications();
 
@@ -634,13 +619,7 @@ function AdminPage() {
     }, [tab, navigateTab])
   );
 
-  const toggleCompact = useCallback(() => {
-    setCompactMode(prev => { const next = !prev; localStorage.setItem("admin_compact", next ? "1" : "0"); return next; });
-  }, []);
-
-  const toggleFocusMode = useCallback(() => {
-    setFocusMode(prev => { const next = !prev; localStorage.setItem("admin_focus_mode", next ? "1" : "0"); return next; });
-  }, []);
+  // toggleCompact y toggleFocusMode → ahora viven en useAdminLayout
 
   // ── Auto-start onboarding tour for first-time visitors ──────────────
   useEffect(() => {
