@@ -57,8 +57,8 @@ const nextConfig: NextConfig = {
   },
 
   experimental: {
-    // Enable OpenTelemetry instrumentation hook (instrumentation.ts)
-    instrumentationHook: true,
+    // NOTE: instrumentation.ts is detected automatically since Next.js 15.
+    // The `instrumentationHook` flag was removed in Next.js 16.
 
     // Tree-shake large packages — avoids importing the entire library
     optimizePackageImports: [

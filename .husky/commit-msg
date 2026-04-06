@@ -1,2 +1,3 @@
+#!/usr/bin/env sh
 cd bodega-san-martin 2>/dev/null || true
 npx --no -- commitlint --edit ${1}

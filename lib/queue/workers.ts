@@ -12,12 +12,17 @@ import { getQueueConnection } from "./connection";
 import { logger } from "@/lib/logger";
 import {
   QUEUE_NAMES,
+  enqueueNotification,
   type EmailJobData,
   type PdfJobData,
   type NotificationJobData,
   type ActivityLogJobData,
   type StockSyncJobData,
 } from "./queues";
+import {
+  DOMAIN_EVENTS_QUEUE,
+  type DomainEvent,
+} from "@/lib/domain-events";
 
 const connection = getQueueConnection();
 
@@ -129,9 +134,90 @@ const stockSyncWorker = new Worker<StockSyncJobData>(
   { connection, concurrency: 5 },
 );
 
+// ── Domain Events Worker ────────────────────────────────────────────────────────
+// Consumes the domain-events queue (ADR 007) and fans out to specific handlers.
+// Each handler MUST be idempotent — events can be delivered more than once.
+
+const domainEventsWorker = new Worker<DomainEvent>(
+  DOMAIN_EVENTS_QUEUE,
+  async (job: Job<DomainEvent>) => {
+    const event = job.data;
+    logger.info("[worker/domain-events] Processing", {
+      jobId:    job.id,
+      eventId:  event.id,
+      type:     event.type,
+      tenantId: event.tenantId,
+    });
+
+    switch (event.type) {
+      case "VentaCompletada": {
+        const { orderId, total, itemCount, paymentMethod, hadCoupon } = event.payload;
+        logger.info("[worker/domain-events] VentaCompletada", {
+          orderId, total, itemCount, paymentMethod, hadCoupon,
+        });
+        // Subscribers:
+        // 1. Trigger activity log (already enqueued separately, idempotent)
+        // 2. Emit analytics event for dashboard KPIs
+        // 3. Optionally auto-emit SUNAT invoice if configured for this tenant
+        // 4. Trigger loyalty points accrual
+        break;
+      }
+
+      case "StockBajo": {
+        const { productId, productName, currentStock, stockMin, reason } = event.payload;
+        logger.warn("[worker/domain-events] StockBajo", {
+          productId, productName, currentStock, stockMin, reason,
+        });
+        // Subscriber: notify owner via WhatsApp
+        await enqueueNotification({
+          type:      "whatsapp",
+          recipient: "OWNER",  // worker resolves this via tenant settings
+          message:   currentStock === 0
+            ? `⚠️ Stock AGOTADO: "${productName}" se quedó sin unidades. Reabastece urgente.`
+            : `⚠️ Stock bajo: "${productName}" tiene ${currentStock} unidades (mínimo ${stockMin}).`,
+          tenantId:  event.tenantId,
+          metadata:  { productId, reason, eventId: event.id },
+        });
+        break;
+      }
+
+      case "FacturaEmitida": {
+        const { facturaId, orderId, customerName, total, documentType } = event.payload;
+        logger.info("[worker/domain-events] FacturaEmitida", {
+          facturaId, orderId, customerName, total, documentType,
+        });
+        // Subscriber: email the customer with their invoice
+        // (Requires fetching customer email from the order — can be enriched later)
+        break;
+      }
+
+      default: {
+        // Exhaustiveness check — TypeScript will error if we add a new event type
+        // without handling it here.
+        const _exhaustive: never = event;
+        logger.warn("[worker/domain-events] Unknown event type", {
+          event: _exhaustive as unknown,
+        });
+      }
+    }
+  },
+  {
+    connection,
+    concurrency: 10,
+    limiter:     { max: 50, duration: 1000 },
+  },
+);
+
 // ── Graceful shutdown ───────────────────────────────────────────────────────────
 
-const workers = [emailWorker, pdfWorker, notificationWorker, activityLogWorker, stockSyncWorker];
+const workers = [
+  emailWorker,
+  pdfWorker,
+  notificationWorker,
+  activityLogWorker,
+  stockSyncWorker,
+  domainEventsWorker,
+];
 
 async function shutdown() {
   logger.info("[workers] Shutting down gracefully...");

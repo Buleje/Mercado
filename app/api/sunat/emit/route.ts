@@ -18,6 +18,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { sendInvoice } from "@/lib/sunat/nubefact-client";
 import { buildBoleta, buildFactura } from "@/lib/sunat/invoice-builder";
 import { calculateIGV } from "@/lib/sunat";
+import { DomainEvents } from "@/lib/domain-events";
 
 export const dynamic = "force-dynamic";
 
@@ -236,6 +237,20 @@ export async function POST(req: NextRequest) {
       invoice.id,
       auth.username,
     ).catch(() => {});
+
+    // Emit domain event — solo cuando SUNAT aceptó (ADR 007)
+    if (sunatStatus === "accepted") {
+      DomainEvents.facturaEmitida(tenantId, {
+        facturaId:        invoice.id,
+        orderId,
+        customerDocument: type === "factura" ? (customerRuc ?? "") : (customerDni ?? ""),
+        customerName:     order.customerName,
+        documentType:     type,
+        total:            +igvCalc.total.toFixed(2),
+        sunatHash:        nubefactResponse.nubefact_id ?? undefined,
+        cdrUrl:           nubefactResponse.enlace_del_pdf ?? undefined,
+      }).catch(() => {});
+    }
 
     return NextResponse.json(
       {
