@@ -15,6 +15,7 @@ import type { Tab } from "../_lib/tabs.types";
 export interface UseHiddenTabsResult {
   hiddenTabs: Set<Tab>;
   toggleHideTab: (id: Tab) => void;
+  clearAllHiddenTabs: () => void;
 }
 
 export function useHiddenTabs(): UseHiddenTabsResult {
@@ -40,5 +41,12 @@ export function useHiddenTabs(): UseHiddenTabsResult {
     });
   }, []);
 
-  return { hiddenTabs, toggleHideTab };
+  const clearAllHiddenTabs = useCallback(() => {
+    setHiddenTabs(new Set());
+    try {
+      localStorage.removeItem("admin_hidden_tabs");
+    } catch {}
+  }, []);
+
+  return { hiddenTabs, toggleHideTab, clearAllHiddenTabs };
 }
