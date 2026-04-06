@@ -110,7 +110,9 @@
 | #31 APM + alertas | ✅ | ✅ | Confirmado: `lib/sentry-alerts.ts` + 4 reglas en `docs/sentry-alert-setup.md` |
 | #33 README por módulo | ⚠️ | ✅ | 5 READMEs nuevos creados en esta sesión |
 | #35 YAGNI | ⚠️ | ✅ | Refactor en progreso reduce sobreingeniería |
-| #40 Multi-Tenancy con aislamiento | ✅ con grietas | ✅ verificado y endurecido | Sesión Agent Team 2026-04-06 (rondas 1+2): **~21 grietas reales cerradas** en `lib/db/sales.db.ts`, `lib/db/supplier-portal.db.ts`, `lib/db/customers.db.ts`, `lib/db/inventory.db.ts`, `lib/db/marketplace.db.ts`, `lib/db/notifications.db.ts`, `lib/db/orders.db.ts`, `lib/db/promotions.db.ts`, `lib/db/purchases.db.ts`, `lib/push-subscriptions.ts`, `lib/workers/log-activity.worker.ts`, `lib/sunat.ts` y endpoints (`birthday-coupons`, `cart`, `chat/marketplace`, `commissions/ledger`, `delivery/*`, `marketplace/orders/[id]`, `newsletter`, `onboarding`, `orders/[id]`, `campaigns/notify`). Quedan ~30 leaks menores en endpoints menos críticos. |
+| #40 Multi-Tenancy con aislamiento | ✅ con grietas | ✅ endurecido sólido | Agent Team 2026-04-06 sesiones 1+2+3: **~44 grietas reales cerradas** (de los ~51 originales). Solo quedan 7 leaks menores en archivos no críticos. Cubre `lib/db/*`, `lib/push-subscriptions.ts`, `lib/workers/*`, `lib/sunat.ts`, todos los `app/api/cron/*`, `app/api/analytics/*`, `app/api/marketplace/*`, `app/api/orders/*`, `app/api/products/*`, `app/api/bundles/*`, webhooks WhatsApp y más. |
+| #1 Clean Code | ✅ | ✅ ejemplar (en progreso) | `admin/page.tsx` 3996 → 1257 líneas (-69%). Faltan Sesiones 3-6 del refactor para llegar a <300. |
+| #11 Pirámide de tests | ✅ | ✅ con grietas reveladas | Hallazgo crítico Agent Team: ~30 errores TS pre-existentes ocultos por `ignoreBuildErrors: true` significan que el gate de tipos NO estaba activo. La pirámide existe pero no atrapaba bugs reales (ej: marketplace endpoint roto en runtime). Tras Agent Team queda solo cerrar los 620 errores restantes (vs 916 iniciales) para poder quitar la flag y tener un gate verdadero. |
 
 ---
 

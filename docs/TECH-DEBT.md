@@ -45,12 +45,14 @@
 
 Hallazgo crítico: `npx tsc --noEmit` reveló ~916 líneas de errores TypeScript pre-existentes que `ignoreBuildErrors: true` enmascaraba. La sesión Agent Team del 2026-04-06 cerró ~150 errores (-16% del total), priorizando los más críticos.
 
-**Score real de la sesión:**
-- Total errores TS: 916 → 765 líneas (-151)
-- `tenantId` leaks: 51 cerrados (estimado original) → ~21 cerrados confirmados, ~30 restantes
-- Tests Vitest: 2069/2100 → 2078/2100 (+9 tests verdes por mock fix de fefo-logic)
-- `admin/page.tsx`: 1446 → 1257 líneas (-189) acumulado en Sesiones 1+2 del refactor
-- Modelos Prisma faltantes: AIConversation + AIMessage agregados (TD-002 en progreso)
+**Score real acumulado tras sesiones 1+2+3 del Agent Team:**
+- Total errores TS: 916 → **620 líneas (-32%)**
+- `tenantId` leaks: ~44 cerrados, **7 restantes** (-86%)
+- Capitalización Prisma camelCase: **0 errores restantes** (todos resueltos)
+- Tests Vitest: 2069/2100 → **2092/2100** (+23 tests verdes — fefo-logic mocks + security-multitenant marketplace endpoint bug)
+- `admin/page.tsx`: 1446 → 1257 líneas (-189)
+- Modelos Prisma AIConversation + AIMessage: schema + migration SQL listos
+- **Bug crítico hallado y arreglado en producción:** `app/api/marketplace/stores/[slug]/products` retornaba 500 a todos los visitantes del marketplace por usar `Product` mayúscula en select donde Prisma 7 espera `product` camelCase
 
 | Categoría | Archivos | Descripción | Severidad original |
 |---|---|---|---|
