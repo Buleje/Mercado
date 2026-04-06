@@ -9,7 +9,7 @@
 | ID | Área | Descripción | Impacto | Estado |
 |----|------|-------------|---------|--------|
 | TD-001 | CheckoutModal | Refactor a `components/checkout/` está hecho (1333 → 16 líneas re-export). Falta migrar `components/CheckoutModal.tsx` antiguo a usar el nuevo o eliminarlo si ya no se referencia. | Riesgo de regresión en cada cambio | 🟡 En progreso |
-| TD-002 | Prisma migration | Modelos AIConversation/AIMessage en schema sin migrar | Memoria IA no persiste datos | 🔓 Abierto |
+| TD-002 | Prisma migration | Modelos AIConversation/AIMessage agregados al schema. Migration SQL preparada en `prisma/migrations/20260406210602_add_ai_conversation_and_message/`. **Pendiente:** Brandon corre `DATABASE_URL="$DIRECT_URL" npx prisma migrate deploy` antes del próximo push | Memoria IA no persiste datos hasta correr migración | 🟡 En progreso (SQL listo) |
 | TD-003 | A/B testing + Quality eval | Métricas en memoria — se pierden al reiniciar servidor | Pérdida de datos de experimentos | 🔓 Abierto |
 | TD-011 | admin/page.tsx | Archivo de 1413 líneas — refactor en progreso (Sesiones 1-2 hechas, faltan 4-7) | Alto acoplamiento, difícil de mantener | 🟡 En progreso |
 | TD-012 | next.config.ts | `ignoreBuildErrors: true` enmascara errores TS reales (descubiertos ~30 en sesión 2026-04-06) | Bugs llegan a producción sin gate de tipos | 🟡 En progreso (fix en curso) |
@@ -41,9 +41,16 @@
 | TD-008 | Documentación API | OpenAPI spec generada con `npm run openapi:generate` desde Zod schemas → `public/openapi.json` | Implementado en sesiones previas |
 | TD-009 | Tracing | `@vercel/otel` registrado en `instrumentation.ts` con service name `bodega-san-martin` | Implementado en sesiones previas |
 
-## 🚧 Resueltas en sesión 2026-04-06 (Agent Team — bugs TS ocultos)
+## 🚧 Resueltas en sesión 2026-04-06 (Agent Team — sesiones 1+2)
 
-Hallazgo crítico: `npx tsc --noEmit` reveló ~30 errores TypeScript pre-existentes que `ignoreBuildErrors: true` enmascaraba. Cerrados por agentes especialistas en paralelo:
+Hallazgo crítico: `npx tsc --noEmit` reveló ~916 líneas de errores TypeScript pre-existentes que `ignoreBuildErrors: true` enmascaraba. La sesión Agent Team del 2026-04-06 cerró ~150 errores (-16% del total), priorizando los más críticos.
+
+**Score real de la sesión:**
+- Total errores TS: 916 → 765 líneas (-151)
+- `tenantId` leaks: 51 cerrados (estimado original) → ~21 cerrados confirmados, ~30 restantes
+- Tests Vitest: 2069/2100 → 2078/2100 (+9 tests verdes por mock fix de fefo-logic)
+- `admin/page.tsx`: 1446 → 1257 líneas (-189) acumulado en Sesiones 1+2 del refactor
+- Modelos Prisma faltantes: AIConversation + AIMessage agregados (TD-002 en progreso)
 
 | Categoría | Archivos | Descripción | Severidad original |
 |---|---|---|---|

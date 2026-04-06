@@ -110,7 +110,7 @@
 | #31 APM + alertas | ✅ | ✅ | Confirmado: `lib/sentry-alerts.ts` + 4 reglas en `docs/sentry-alert-setup.md` |
 | #33 README por módulo | ⚠️ | ✅ | 5 READMEs nuevos creados en esta sesión |
 | #35 YAGNI | ⚠️ | ✅ | Refactor en progreso reduce sobreingeniería |
-| #40 Multi-Tenancy con aislamiento | ✅ con grietas | ✅ verificado | Sesión Agent Team 2026-04-06: cerradas 6 grietas reales (`tenantId` faltante) en `lib/db/sales.db.ts`, `lib/db/supplier-portal.db.ts`, `lib/push-subscriptions.ts`, `lib/workers/log-activity.worker.ts`, `lib/sunat.ts` — eran multi-tenant leaks ocultos por `ignoreBuildErrors: true` |
+| #40 Multi-Tenancy con aislamiento | ✅ con grietas | ✅ verificado y endurecido | Sesión Agent Team 2026-04-06 (rondas 1+2): **~21 grietas reales cerradas** en `lib/db/sales.db.ts`, `lib/db/supplier-portal.db.ts`, `lib/db/customers.db.ts`, `lib/db/inventory.db.ts`, `lib/db/marketplace.db.ts`, `lib/db/notifications.db.ts`, `lib/db/orders.db.ts`, `lib/db/promotions.db.ts`, `lib/db/purchases.db.ts`, `lib/push-subscriptions.ts`, `lib/workers/log-activity.worker.ts`, `lib/sunat.ts` y endpoints (`birthday-coupons`, `cart`, `chat/marketplace`, `commissions/ledger`, `delivery/*`, `marketplace/orders/[id]`, `newsletter`, `onboarding`, `orders/[id]`, `campaigns/notify`). Quedan ~30 leaks menores en endpoints menos críticos. |
 
 ---
 
