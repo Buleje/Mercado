@@ -6,6 +6,7 @@ import {
   verifyMPWebhookSignature,
 } from "@/lib/mercadopago";
 import { logger } from "@/lib/logger";
+import { reportCriticalError } from "@/lib/sentry-alerts";
 import { PLAN_ORDER, type PlanId } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
@@ -106,6 +107,11 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error("[MP Webhook] Error al obtener pago de MP", { dataId, err: msg });
+    reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+      module: "billing",
+      tags: { operation: "mp-webhook-payment-fetch" },
+      extra: { dataId },
+    });
     // Retornar 200 de todas formas: si retornamos 5xx MP reintentará indefinidamente
     return NextResponse.json({ received: true, error: "fetch_failed" });
   }
@@ -135,6 +141,12 @@ export async function POST(req: NextRequest) {
           dataId,
           tenantSlug,
           err: err instanceof Error ? err.message : String(err),
+        });
+        reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+          module: "billing",
+          tenantId: tenantSlug,
+          tags: { operation: "mp-webhook-payment-approved" },
+          extra: { dataId },
         });
       });
     }
@@ -301,6 +313,11 @@ async function handleSubscriptionNotification(opts: {
         dataId,
         err: err instanceof Error ? err.message : String(err),
       });
+      reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+        module: "billing",
+        tags: { operation: "mp-webhook-preapproval-resolution" },
+        extra: { dataId, type },
+      });
     }
   }
 
@@ -360,6 +377,12 @@ async function handleSubscriptionNotification(opts: {
       logger.error("[MP Webhook] Error consultando estado de Preapproval", {
         preapprovalId,
         err: err instanceof Error ? err.message : String(err),
+      });
+      reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+        module: "billing",
+        tenantId: tenant.slug,
+        tags: { operation: "mp-webhook-subscription-status" },
+        extra: { preapprovalId },
       });
     }
   }

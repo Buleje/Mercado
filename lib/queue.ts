@@ -266,3 +266,22 @@ export const queue = {
   enqueue,
   retry,
 } as const;
+
+// ── BullMQ Queue System (re-exports) ─────────────────────────────────────────
+// When REDIS_URL is set, these use BullMQ for durable processing with retries.
+// Without Redis, they fall back to fire-and-forget (same as the fetch-based system above).
+
+export {
+  enqueueEmail,
+  enqueuePdf,
+  enqueueNotification,
+  enqueueActivityLog,
+  enqueueStockSync,
+  isQueueEnabled,
+  QUEUE_NAMES,
+  type EmailJobData,
+  type PdfJobData,
+  type NotificationJobData,
+  type ActivityLogJobData,
+  type StockSyncJobData,
+} from "./queue/index";

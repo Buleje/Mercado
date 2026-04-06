@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { timingSafeCompare } from "@/lib/timing-safe";
 
@@ -198,7 +198,12 @@ export async function GET(req: NextRequest) {
     // Send alerts to SuperAdmin phone (from env)
     const adminPhone = process.env.SUPERADMIN_PHONE;
     if (adminPhone) {
-      sendWhatsAppText(adminPhone, message).catch(() => {});
+      enqueueNotification({
+        type: "whatsapp",
+        recipient: adminPhone,
+        message,
+        tenantId: "main",
+      }).catch(() => {});
       sendPushToPhone(adminPhone, {
         title: "Alerta de Aislamiento",
         body: `${failures.length} problema(s) detectado(s) en el aislamiento multi-tenant`,

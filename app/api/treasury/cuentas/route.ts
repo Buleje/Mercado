@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { TreasuryDB } from "@/lib/db/treasury.db";
 import { requireAdmin } from "@/lib/require-admin";
-import { logActivity } from "@/lib/activity-logger";
+import { enqueueActivityLog } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 
 const CreateCuentaSchema = z.object({
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       ...parsed.data,
     });
 
-    logActivity("Crear", "treasury", `Cuenta "${cuenta.nombre}" creada con saldo S/${cuenta.saldo.toFixed(2)}`, cuenta.id, auth.username).catch(() => {});
+    enqueueActivityLog({ action: "Crear", resource: "treasury", resourceId: cuenta.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Cuenta "${cuenta.nombre}" creada con saldo S/${cuenta.saldo.toFixed(2)}` }, timestamp: new Date().toISOString() }).catch(() => {});
 
     return NextResponse.json(cuenta, { status: 201 });
   } catch (e) {
@@ -97,7 +97,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Cuenta no encontrada" }, { status: 404 });
     }
 
-    logActivity("Editar", "treasury", `Cuenta "${cuenta.nombre}" actualizada`, cuenta.id, auth.username).catch(() => {});
+    enqueueActivityLog({ action: "Editar", resource: "treasury", resourceId: cuenta.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Cuenta "${cuenta.nombre}" actualizada` }, timestamp: new Date().toISOString() }).catch(() => {});
 
     return NextResponse.json(cuenta);
   } catch (e) {

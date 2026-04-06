@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { createMPSubscription } from "@/lib/mercadopago";
 import { logger } from "@/lib/logger";
+import { reportCriticalError } from "@/lib/sentry-alerts";
 import type { PlanId } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
@@ -89,6 +90,12 @@ export async function POST(req: NextRequest) {
       tenantId,
       plan,
       err: msg,
+    });
+    reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+      module: "billing",
+      tenantId,
+      tags: { operation: "mp-subscribe-create-preapproval" },
+      extra: { plan },
     });
     return NextResponse.json(
       { error: "Error al crear la suscripción con Mercado Pago. Inténtalo de nuevo." },

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 
@@ -108,7 +108,12 @@ export async function GET(req: NextRequest) {
             `_Gracias por confiar en Buleje_ 🙏`,
           ].join("\n");
 
-          sendWhatsAppText(customer.phone, message).catch(() => {});
+          enqueueNotification({
+            type: "whatsapp",
+            recipient: customer.phone,
+            message,
+            tenantId: customer.tenantId,
+          }).catch(() => {});
           sent++;
         } catch (err) {
           errors.push(`${customer.phone}: ${err instanceof Error ? err.message : "error"}`);

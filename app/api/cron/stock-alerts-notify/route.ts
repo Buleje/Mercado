@@ -6,7 +6,7 @@ import { withCronRetry } from "@/lib/cron-retry";
 import { ProductsDB } from "@/lib/db/products.db";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { sendPushToPhone } from "@/lib/push-sender";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
@@ -143,7 +143,12 @@ export async function GET(req: NextRequest) {
 
             lines.push(`📱 Revisa tu panel → Inventario`);
 
-            sendWhatsAppText(ownerPhone, lines.join("\n")).catch(() => {});
+            enqueueNotification({
+              type: "whatsapp",
+              recipient: ownerPhone,
+              message: lines.join("\n"),
+              tenantId: tenant.id,
+            }).catch(() => {});
 
             allResults.push({
               tenant: tenant.name,

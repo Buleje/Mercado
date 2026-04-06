@@ -2,10 +2,20 @@
  * Minimal stateless session using HMAC-SHA256 signed tokens.
  * Works in both Node.js runtime (API routes) and Edge runtime (middleware).
  * Does NOT import "server-only" — must remain edge-compatible.
+ *
+ * Token strategy:
+ *   - Access token  (bsm-admin-sess):    short-lived (15 min), used for auth on every request
+ *   - Refresh token (bsm-admin-refresh): long-lived (7 days), used only to rotate access tokens
+ *   - On each refresh, BOTH tokens are rotated (refresh token rotation prevents replay)
  */
 
 const COOKIE_NAME = "bsm-admin-sess";
-const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+const REFRESH_COOKIE_NAME = "bsm-admin-refresh";
+const ACCESS_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const REFRESH_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+/** @deprecated Use ACCESS_DURATION_MS — kept for backward compatibility */
+const SESSION_DURATION_MS = ACCESS_DURATION_MS;
 
 function getSecret(): string {
   const secret = process.env.AUTH_SECRET;
@@ -80,12 +90,72 @@ export async function createSessionToken(
     username,
     tenantId,
     name,
-    exp: Date.now() + SESSION_DURATION_MS,
+    type: "access",
+    exp: Date.now() + ACCESS_DURATION_MS,
   });
   const encoded = b64Encode(payload);
   const rawSig = await signHmac(getSecret(), encoded);
   const sig = btoa(String.fromCharCode(...rawSig));
   return `${encoded}.${sig}`;
+}
+
+/**
+ * Create a long-lived refresh token (7 days).
+ * Contains the same identity claims but with type "refresh" and longer expiry.
+ * Used only by /api/auth/refresh to issue new access + refresh token pairs.
+ */
+export async function createRefreshToken(
+  role: AdminRole = "admin",
+  username = "admin",
+  tenantId = "main",
+  name = ""
+): Promise<string> {
+  const payload = JSON.stringify({
+    role,
+    username,
+    tenantId,
+    name,
+    type: "refresh",
+    exp: Date.now() + REFRESH_DURATION_MS,
+  });
+  const encoded = b64Encode(payload);
+  const rawSig = await signHmac(getSecret(), encoded);
+  const sig = btoa(String.fromCharCode(...rawSig));
+  return `${encoded}.${sig}`;
+}
+
+/**
+ * Verify and decode a refresh token.
+ * Returns the session payload ONLY if the token is a valid refresh token (type === "refresh").
+ */
+export async function getRefreshPayload(token: string): Promise<SessionPayload | null> {
+  try {
+    const dotIdx = token.lastIndexOf(".");
+    if (dotIdx < 0) return null;
+    const encoded = token.slice(0, dotIdx);
+    const sig = token.slice(dotIdx + 1);
+    if (!(await verifyHmac(getSecret(), encoded, sig))) return null;
+    const payload = JSON.parse(b64Decode(encoded)) as {
+      exp: number;
+      role: AdminRole;
+      username: string;
+      tenantId?: string;
+      name?: string;
+      type?: string;
+    };
+    // MUST be a refresh token — reject access tokens used here
+    if (payload.type !== "refresh") return null;
+    if (!["admin", "cajero", "almacenero", "owner", "manager", "analista"].includes(payload.role)) return null;
+    if (payload.exp < Date.now()) return null;
+    return {
+      role: payload.role,
+      username: payload.username,
+      tenantId: payload.tenantId ?? "main",
+      name: payload.name,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function verifySessionToken(token: string): Promise<boolean> {
@@ -105,7 +175,10 @@ export async function getSessionPayload(token: string): Promise<SessionPayload |
       username: string;
       tenantId?: string;
       name?: string;
+      type?: string;
     };
+    // Reject refresh tokens — they must only be used via /api/auth/refresh
+    if (payload.type === "refresh") return null;
     if (!["admin", "cajero", "almacenero", "owner", "manager", "analista"].includes(payload.role)) return null;
     if (payload.exp < Date.now()) return null;
     return {
@@ -121,5 +194,10 @@ export async function getSessionPayload(token: string): Promise<SessionPayload |
 
 export const SESSION = {
   COOKIE_NAME,
-  MAX_AGE: Math.floor(SESSION_DURATION_MS / 1000),
+  MAX_AGE: Math.floor(ACCESS_DURATION_MS / 1000),
+} as const;
+
+export const REFRESH = {
+  COOKIE_NAME: REFRESH_COOKIE_NAME,
+  MAX_AGE: Math.floor(REFRESH_DURATION_MS / 1000),
 } as const;

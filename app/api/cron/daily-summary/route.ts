@@ -7,9 +7,9 @@ import { SalesDB, CashRegistersDB } from "@/lib/db/sales.db";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { ProductsDB } from "@/lib/db/products.db";
 import { logger } from "@/lib/logger";
-import { logActivity } from "@/lib/activity-logger";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueActivityLog } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
+import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -176,7 +176,7 @@ export async function GET(req: NextRequest) {
             });
             const ownerPhone = settings?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
             if (ownerPhone) {
-              sendWhatsAppText(ownerPhone, whatsappText).catch(() => {});
+              enqueueNotification({ type: "whatsapp", recipient: ownerPhone, message: whatsappText, tenantId: tenant.id, metadata: { purpose: "daily-summary" } }).catch(() => {});
               sendPushToPhone(ownerPhone, {
                 title: `📊 Resumen del día — ${tenant.name}`,
                 body: `S/ ${totalVentas.toFixed(2)} en ventas · ${totalPedidos} pedidos · ${productosStockBajo.length} alertas`,
@@ -188,13 +188,7 @@ export async function GET(req: NextRequest) {
 
         summaries.push({ tenant: tenant.name, totalVentas, totalPedidos });
 
-        logActivity(
-          "daily-summary",
-          "Report",
-          `[${tenant.name}] Resumen: S/ ${totalVentas.toFixed(2)} en ventas, ${totalPedidos} pedidos`,
-          undefined,
-          "cron"
-        ).catch(() => {});
+        enqueueActivityLog({ action: "daily-summary", resource: "Report", userId: "cron", tenantId: tenant.id, details: { description: `[${tenant.name}] Resumen: S/ ${totalVentas.toFixed(2)} en ventas, ${totalPedidos} pedidos` }, timestamp: new Date().toISOString() }).catch(() => {});
       }
 
       logger.info("[cron/daily-summary] Completado", { tenants: summaries.length });

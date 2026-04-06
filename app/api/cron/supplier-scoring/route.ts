@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
@@ -190,7 +190,12 @@ export async function GET(req: NextRequest) {
         const phone = settings?.businessPhone || process.env.NOTIFY_PHONE;
 
         if (phone) {
-          sendWhatsAppText(phone, message).catch(() => {});
+          enqueueNotification({
+            type: "whatsapp",
+            recipient: phone,
+            message,
+            tenantId: "main",
+          }).catch(() => {});
           sendPushToPhone(phone, {
             title: "📋 Ranking de proveedores",
             body: `${scored.length} proveedores evaluados. Mejor: ${scored[0]?.name ?? "—"} (${scored[0]?.avg ?? 0}/5)`,

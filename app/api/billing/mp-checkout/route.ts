@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { createMercadoPagoPreference } from "@/lib/mercadopago";
 import { logger } from "@/lib/logger";
+import { reportCriticalError } from "@/lib/sentry-alerts";
 import type { PlanId } from "@/lib/plans";
 
 export const dynamic = "force-dynamic";
@@ -81,6 +82,12 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.error("[MP Checkout] Error creando preferencia", { tenantId, plan, err: msg });
+    reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+      module: "billing",
+      tenantId,
+      tags: { operation: "mp-checkout-create-preference" },
+      extra: { plan },
+    });
     return NextResponse.json(
       { error: "Error al crear el pago con Mercado Pago. Inténtalo de nuevo." },
       { status: 502 },
@@ -97,6 +104,12 @@ export async function POST(req: NextRequest) {
     },
   }).catch((err) => {
     logger.error("[MP Checkout] Error guardando MpPendingPlan", { err: String(err) });
+    reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+      module: "billing",
+      tenantId,
+      tags: { operation: "mp-checkout-save-pending-plan" },
+      extra: { plan, preferenceId: result.id },
+    });
   });
 
   logger.info("[MP Checkout] Preferencia creada", {

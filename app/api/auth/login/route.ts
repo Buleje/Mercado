@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 import "server-only";
 import { NextResponse } from "next/server";
 import { SettingsDB } from "@/lib/jsondb";
-import { createSessionToken, SESSION } from "@/lib/session";
+import { createSessionToken, createRefreshToken, SESSION, REFRESH } from "@/lib/session";
 import type { AdminRole } from "@/lib/session";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
@@ -32,12 +32,22 @@ async function checkPassword(input: string, stored: string): Promise<boolean> {
   return input === stored;
 }
 
-function makeCookie() {
+function makeAccessCookie() {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict" as const,
     maxAge: SESSION.MAX_AGE,
+    path: "/",
+  };
+}
+
+function makeRefreshCookie() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict" as const,
+    maxAge: REFRESH.MAX_AGE,
     path: "/",
   };
 }
@@ -112,7 +122,10 @@ export async function POST(req: Request) {
   for (const u of dbUsers) {
     if (await checkPassword(password, u.passwordHash)) {
       // Always use the canonical Tenant ID (CUID) for the session
-      const token = await createSessionToken(u.role as AdminRole, u.username, tenantId, u.name);
+      const [token, refreshToken] = await Promise.all([
+        createSessionToken(u.role as AdminRole, u.username, tenantId, u.name),
+        createRefreshToken(u.role as AdminRole, u.username, tenantId, u.name),
+      ]);
       const onboardingPending = !u.onboardingCompletedAt;
       // Find the tenant slug for the active-tenant-slug cookie (used by admin UI)
       let tenantSlug = resolvedSlug;
@@ -125,7 +138,8 @@ export async function POST(req: Request) {
       } catch { /* use resolvedSlug */ }
 
       const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending, tenantId, tenantSlug });
-      response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
+      response.cookies.set(SESSION.COOKIE_NAME, token, makeAccessCookie());
+      response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
       // Set active-tenant cookie with the canonical Tenant ID for proxy.ts
       response.cookies.set("active-tenant", tenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
       // Set active-tenant-slug cookie for the admin UI (readable by client JS)
@@ -140,9 +154,13 @@ export async function POST(req: Request) {
     const candidates = username ? legacyUsers.filter((u) => u.username === username) : legacyUsers;
     for (const u of candidates) {
       if (await checkPassword(password, u.password)) {
-        const token = await createSessionToken(u.role, u.username, tenantId, u.name);
+        const [token, refreshToken] = await Promise.all([
+          createSessionToken(u.role, u.username, tenantId, u.name),
+          createRefreshToken(u.role, u.username, tenantId, u.name),
+        ]);
         const response = NextResponse.json({ ok: true, role: u.role, name: u.name, onboardingPending: true });
-        response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
+        response.cookies.set(SESSION.COOKIE_NAME, token, makeAccessCookie());
+        response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
         response.cookies.set("active-tenant", tenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
         return response;
       }
@@ -154,9 +172,13 @@ export async function POST(req: Request) {
     const settings = await SettingsDB.get(tenantId);
     const adminPassword = settings.adminPassword;
     if (adminPassword && await checkPassword(password, adminPassword)) {
-      const token = await createSessionToken("admin", "admin", tenantId, "Administrador");
+      const [token, refreshToken] = await Promise.all([
+        createSessionToken("admin", "admin", tenantId, "Administrador"),
+        createRefreshToken("admin", "admin", tenantId, "Administrador"),
+      ]);
       const response = NextResponse.json({ ok: true, role: "admin", name: "Administrador", onboardingPending: true });
-      response.cookies.set(SESSION.COOKIE_NAME, token, makeCookie());
+      response.cookies.set(SESSION.COOKIE_NAME, token, makeAccessCookie());
+      response.cookies.set(REFRESH.COOKIE_NAME, refreshToken, makeRefreshCookie());
       response.cookies.set("active-tenant", tenantId, { path: "/", maxAge: 7 * 24 * 60 * 60, sameSite: "lax", httpOnly: false });
       return response;
     }

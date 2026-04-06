@@ -5,7 +5,7 @@ import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
 import { sendPushToPhone } from "@/lib/push-sender";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 
@@ -159,7 +159,12 @@ export async function GET(req: NextRequest) {
             .filter(Boolean)
             .join("\n");
 
-          sendWhatsAppText(phone, msg).catch(() => {});
+          enqueueNotification({
+            type: "whatsapp",
+            recipient: phone,
+            message: msg,
+            tenantId: "main",
+          }).catch(() => {});
         }
 
         sent++;

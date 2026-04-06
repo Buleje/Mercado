@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { MarketplaceOrdersDB } from "@/lib/db/marketplace.db";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
@@ -107,9 +107,15 @@ export async function GET(req: NextRequest) {
         let sent = false;
         if (settings?.businessPhone) {
           try {
-            sent = await sendWhatsAppText(settings.businessPhone, text);
+            await enqueueNotification({
+              type: "whatsapp",
+              recipient: settings.businessPhone,
+              message: text,
+              tenantId: store.tenantId,
+            }).catch(() => {});
+            sent = true;
           } catch (err) {
-            logger.warn("[cron/marketplace-daily-summary] WhatsApp send failed", {
+            logger.warn("[cron/marketplace-daily-summary] WhatsApp enqueue failed", {
               store: store.name,
               error: err instanceof Error ? err.message : String(err),
             });

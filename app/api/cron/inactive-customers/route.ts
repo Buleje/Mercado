@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
@@ -114,7 +114,12 @@ export async function GET(req: NextRequest) {
           `Entra a nuestra tienda y haz tu pedido fácil 👉`;
 
         // Send WhatsApp (fire-and-forget)
-        sendWhatsAppText(phone, message).catch(() => {});
+        enqueueNotification({
+          type: "whatsapp",
+          recipient: phone,
+          message,
+          tenantId: lastOrder.tenantId,
+        }).catch(() => {});
 
         // Send Push (fire-and-forget)
         sendPushToPhone(phone, {

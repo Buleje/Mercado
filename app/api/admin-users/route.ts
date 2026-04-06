@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
 import { z } from "zod";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
-import { logActivity } from "@/lib/activity-logger";
+import { enqueueActivityLog } from "@/lib/queue";
 
 const CreateSchema = z.object({
   username: z.string().min(3).max(32).regex(/^[a-z0-9_.]+$/i, "Solo letras, números, punto y guión bajo"),
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     select: { id: true, username: true, role: true, name: true, active: true, createdAt: true },
   });
 
-  logActivity("Crear", "usuario_admin", `Usuario '${username}' creado con rol '${role}'`, user.id, auth.username).catch(() => {});
+  enqueueActivityLog({ action: "Crear", resource: "usuario_admin", resourceId: user.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${username}' creado con rol '${role}'` }, timestamp: new Date().toISOString() }).catch(() => {});
   return NextResponse.json(user, { status: 201 });
 }
 
@@ -103,12 +103,12 @@ export async function PATCH(req: NextRequest) {
   });
 
   if (parsed.data.role && parsed.data.role !== existing.role) {
-    logActivity("Cambiar rol", "usuario_admin", `Rol de '${existing.username}' cambiado de '${existing.role}' a '${parsed.data.role}'`, id, auth.username).catch(() => {});
+    enqueueActivityLog({ action: "Cambiar rol", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Rol de '${existing.username}' cambiado de '${existing.role}' a '${parsed.data.role}'` }, timestamp: new Date().toISOString() }).catch(() => {});
   } else if (parsed.data.active !== undefined && parsed.data.active !== existing.active) {
     const action = parsed.data.active ? "Activar" : "Desactivar";
-    logActivity(action, "usuario_admin", `Usuario '${existing.username}' ${parsed.data.active ? "activado" : "desactivado"}`, id, auth.username).catch(() => {});
+    enqueueActivityLog({ action, resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${existing.username}' ${parsed.data.active ? "activado" : "desactivado"}` }, timestamp: new Date().toISOString() }).catch(() => {});
   } else if (parsed.data.password) {
-    logActivity("Cambiar contraseña", "usuario_admin", `Contraseña de '${existing.username}' actualizada`, id, auth.username).catch(() => {});
+    enqueueActivityLog({ action: "Cambiar contraseña", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Contraseña de '${existing.username}' actualizada` }, timestamp: new Date().toISOString() }).catch(() => {});
   }
   return NextResponse.json(updated);
 }
@@ -126,6 +126,6 @@ export async function DELETE(req: NextRequest) {
   if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   await db.adminUser.delete({ where: { id } });
-  logActivity("Eliminar", "usuario_admin", `Usuario '${existing.username}' (rol: ${existing.role}) eliminado`, id, auth.username).catch(() => {});
+  enqueueActivityLog({ action: "Eliminar", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${existing.username}' (rol: ${existing.role}) eliminado` }, timestamp: new Date().toISOString() }).catch(() => {});
   return NextResponse.json({ ok: true });
 }

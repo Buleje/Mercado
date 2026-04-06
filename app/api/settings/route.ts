@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { SettingsDB, type DbSettings } from "@/lib/jsondb";
-import { logActivity } from "@/lib/activity-logger";
+import { enqueueActivityLog } from "@/lib/queue";
 import { requireAdmin } from "@/lib/require-admin";
 import { hash } from "bcryptjs";
 import { logger } from "@/lib/logger";
@@ -167,8 +167,7 @@ export async function PUT(req: NextRequest) {
       ...(body.storeTheme !== undefined && { storeTheme: body.storeTheme }),
     };
     const changed = Object.keys(body).filter(k => k !== "adminPassword").join(", ");
-    const requestId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("Editar", "configuracion", `Configuración actualizada: ${changed || "general"}`, undefined, "admin", requestId).catch(() => {});
+    enqueueActivityLog({ action: "Editar", resource: "configuracion", userId: "admin", tenantId: effectiveTenantId, details: { description: `Configuración actualizada: ${changed || "general"}` }, timestamp: new Date().toISOString() }).catch(() => {});
     return NextResponse.json(await SettingsDB.set(updated, tenantId));
   } catch (e) {
     logger.error("[settings] PUT error", { err: e instanceof Error ? e.message : String(e) });

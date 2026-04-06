@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { MarketplaceAbandonedCartsDB } from "@/lib/db/marketplace.db";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
         // Get store name
         const store = await prisma.store.findUnique({
           where: { slug: cart.storeSlug },
-          select: { name: true },
+          select: { name: true, tenantId: true },
         });
 
         const storeName = store?.name ?? cart.storeSlug;
@@ -83,15 +83,16 @@ export async function GET(req: NextRequest) {
         ].filter((line): line is string => line !== null).join("\n");
 
         try {
-          const wasSent = await sendWhatsAppText(cart.customerPhone, message);
-          if (wasSent) {
-            await MarketplaceAbandonedCartsDB.markReminderSent(cart.id);
-            sent++;
-          } else {
-            failed++;
-          }
+          await enqueueNotification({
+            type: "whatsapp",
+            recipient: cart.customerPhone,
+            message,
+            tenantId: store?.tenantId ?? cart.storeSlug,
+          }).catch(() => {});
+          await MarketplaceAbandonedCartsDB.markReminderSent(cart.id);
+          sent++;
         } catch (err) {
-          logger.warn("[cron/marketplace-abandoned-carts] WhatsApp send failed", {
+          logger.warn("[cron/marketplace-abandoned-carts] WhatsApp enqueue failed", {
             cartId: cart.id,
             error: err instanceof Error ? err.message : String(err),
           });

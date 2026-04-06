@@ -6,7 +6,7 @@ import { withCronRetry } from "@/lib/cron-retry";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "@/lib/create-notification";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 
 /**
  * GET /api/cron/abandoned-cart
@@ -161,7 +161,7 @@ export async function GET(req: NextRequest) {
           .catch(() => {});
 
         // WhatsApp recovery message al cliente
-        sendWhatsAppText(cart.customerPhone, cart.whatsappText).catch(() => {});
+        enqueueNotification({ type: "whatsapp", recipient: cart.customerPhone, message: cart.whatsappText, tenantId: "main", metadata: { purpose: "abandoned-cart-recovery" } }).catch(() => {});
 
         notificationsCreated++;
       }

@@ -1,5 +1,15 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
+  "rollingRelease": {
+    "enabled": true,
+    "advancementType": "manual-approval",
+    "stages": [
+      { "targetPercentage": 10, "waitDuration": "5m" },
+      { "targetPercentage": 50, "waitDuration": "15m" },
+      { "targetPercentage": 100 }
+    ]
+  },
   "buildCommand": "npx prisma generate && npm run build",
   "installCommand": "npm ci",
   "functions": {

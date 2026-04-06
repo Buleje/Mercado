@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
-import { logActivity } from "@/lib/activity-logger";
+import { enqueueActivityLog } from "@/lib/queue";
 import { toErrorPayload } from "@/lib/api-error";
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -61,8 +61,7 @@ export async function POST(req: NextRequest) {
       data: { ...parsed.data, tenantId: auth.tenantId },
     });
 
-    const requestId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("commission_rule_created", "commission", rule.id, `Regla de comisión creada para ${parsed.data.cashierId}`, auth.username, requestId).catch(() => {});
+    enqueueActivityLog({ action: "commission_rule_created", resource: "commission", resourceId: rule.id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión creada para ${parsed.data.cashierId}` }, timestamp: new Date().toISOString() }).catch(() => {});
 
     return NextResponse.json(rule, { status: 201 });
   } catch (err) {
@@ -92,8 +91,7 @@ export async function PATCH(req: NextRequest) {
 
     const updated = await prisma.commissionRule.update({ where: { id }, data: parsed.data });
 
-    const requestId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("commission_rule_updated", "commission", id, `Regla de comisión actualizada para ${existing.cashierId}`, auth.username, requestId).catch(() => {});
+    enqueueActivityLog({ action: "commission_rule_updated", resource: "commission", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión actualizada para ${existing.cashierId}` }, timestamp: new Date().toISOString() }).catch(() => {});
 
     return NextResponse.json(updated);
   } catch (err) {
@@ -117,8 +115,7 @@ export async function DELETE(req: NextRequest) {
 
     await prisma.commissionRule.delete({ where: { id } });
 
-    const requestId = req.headers.get("x-request-id") ?? undefined;
-    logActivity("commission_rule_deleted", "commission", id, `Regla de comisión eliminada para ${existing.cashierId}`, auth.username, requestId).catch(() => {});
+    enqueueActivityLog({ action: "commission_rule_deleted", resource: "commission", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Regla de comisión eliminada para ${existing.cashierId}` }, timestamp: new Date().toISOString() }).catch(() => {});
 
     return NextResponse.json({ ok: true });
   } catch (err) {

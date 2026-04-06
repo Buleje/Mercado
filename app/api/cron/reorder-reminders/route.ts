@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 
 /**
@@ -177,7 +177,12 @@ export async function GET(req: NextRequest) {
           `─────`,
           `Buleje 🏪`,
         ].join("\n");
-        sendWhatsAppText(phone, whatsappMsg).catch(() => {});
+        enqueueNotification({
+          type: "whatsapp",
+          recipient: phone,
+          message: whatsappMsg,
+          tenantId: "main",
+        }).catch(() => {});
 
         remindersSent++;
 

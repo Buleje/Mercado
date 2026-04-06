@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { logger } from "@/lib/logger";
@@ -145,7 +145,12 @@ export async function GET(req: NextRequest) {
           });
           const ownerPhone = settings?.businessPhone || process.env.NOTIFY_PHONE;
           if (ownerPhone) {
-            sendWhatsAppText(ownerPhone, whatsappMsg).catch(() => {});
+            enqueueNotification({
+              type: "whatsapp",
+              recipient: ownerPhone,
+              message: whatsappMsg,
+              tenantId: "main",
+            }).catch(() => {});
             sendPushToPhone(ownerPhone, {
               title: `📦 ${deadStock.length} productos sin ventas esta semana`,
               body: `Capital atado: S/ ${totalCapitalAtado.toFixed(2)} — revisa cuáles poner en oferta`,

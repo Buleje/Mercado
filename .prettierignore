@@ -1,0 +1,12 @@
+node_modules
+.next
+dist
+out
+coverage
+prisma/migrations
+*.min.js
+*.min.css
+public/openapi.json
+.vercel
+android
+ios

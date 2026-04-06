@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
@@ -173,7 +173,12 @@ export async function GET(req: NextRequest) {
           });
           const ownerPhone = settings?.businessPhone || process.env.NOTIFY_PHONE;
           if (ownerPhone) {
-            sendWhatsAppText(ownerPhone, whatsappMsg).catch(() => {});
+            enqueueNotification({
+              type: "whatsapp",
+              recipient: ownerPhone,
+              message: whatsappMsg,
+              tenantId: "main",
+            }).catch(() => {});
             sendPushToPhone(ownerPhone, {
               title: `🔥 Paquete del Día: ${selected.length} productos a S/ ${bundlePrice.toFixed(2)}`,
               body: `${DISCOUNT_PCT}% descuento sobre productos sin ventas esta semana`,

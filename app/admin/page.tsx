@@ -9,6 +9,7 @@ import { useScrollLock } from "@/hooks/use-scroll-lock";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useSwipe } from "@/hooks/use-swipe";
+import { useTokenRefresh } from "@/hooks/use-token-refresh";
 import { OnboardingTour } from "@/components/admin/OnboardingTour";
 import {
   Trash2, Check, X, AlertTriangle,
@@ -103,6 +104,7 @@ const PromocionesModule = dynamic(() => import("@/components/admin/PromocionesMo
 const ScoringCrediticioTab = dynamic(() => import("@/components/admin/ScoringCrediticioTab"), { loading: TabSpinner });
 const StoreCustomizer     = dynamic(() => import("@/components/admin/StoreCustomizer"),     { loading: TabSpinner });
 const MiPerfilTab         = dynamic(() => import("@/components/admin/MiPerfilTab"),         { loading: TabSpinner });
+const ColasTab            = dynamic(() => import("@/components/admin/ColasTab"),            { loading: TabSpinner });
 
 // ── Módulos de documentos ──
 const CotizacionesModule = dynamic(() => import("@/components/admin/CotizacionesModule"), { loading: TabSpinner });
@@ -2104,7 +2106,7 @@ function AdminPage() {
   }, []);
   const adminPath = (path: string) => `${tenantPrefix}${path}`;
 
-  const VALID_TABS: Tab[] = ["asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command","fiados","turnos","cotizaciones","guias-remision","notas-credito","contratos","sugerencias-ia","metas-logros","marketplace","delivery-partners","store-customizer"];
+  const VALID_TABS: Tab[] = ["asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command","fiados","turnos","cotizaciones","guias-remision","notas-credito","contratos","sugerencias-ia","metas-logros","marketplace","delivery-partners","store-customizer","colas"];
   const [tab, setTab] = useState<Tab>(() => {
     if (typeof window === "undefined") return "asistente-ia";
     // 0. Check URL search param first (e.g. /admin?tab=inventario)
@@ -2133,6 +2135,8 @@ function AdminPage() {
     return "asistente-ia";
   });
   const onboarding = useOnboarding();
+  // Silent token refresh — rotates access token every 12 min (expires at 15 min)
+  useTokenRefresh();
   const [storeMode, setStoreModeState] = useState<StoreMode>("whatsapp");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -2510,6 +2514,8 @@ function AdminPage() {
   useEffect(() => {
     // Never auto-start the tour when SuperAdmin is impersonating — it blocks all navigation
     try { if (localStorage.getItem("superadmin-impersonate-tenant")) return; } catch {}
+    // Also skip if accessing via /t/{slug}/admin (superadmin tenant path)
+    if (/\/t\/[^/]+\/admin/.test(window.location.pathname)) return;
     if (onboarding.isFirstVisit && !onboarding.isTourActive) {
       // Small delay so the sidebar renders first
       const t = setTimeout(() => onboarding.startTour(), 800);
@@ -2680,6 +2686,8 @@ function AdminPage() {
     { id: "delivery-partners" as Tab,  label: "Delivery Partners",    icon: Truck },
     // — MI TIENDA —
     { id: "store-customizer" as Tab,   label: "Mi Tienda",            icon: Palette },
+    // — SISTEMA —
+    { id: "colas" as Tab,              label: "Colas",                icon: Activity },
     { id: "mi-perfil" as Tab,          label: "Mi Perfil",            icon: CircleUser },
   ] as const;
 
@@ -3861,6 +3869,7 @@ function AdminPage() {
             {tab === "rendimiento" && <RendimientoModule />}
 
             {tab === "store-customizer" && <StoreCustomizer />}
+            {tab === "colas" && <ColasTab />}
             {tab === "mi-perfil" && <MiPerfilTab />}
           </motion.div>
         </AnimatePresence>

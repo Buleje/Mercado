@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { cancelMPSubscription } from "@/lib/mercadopago";
 import { logger } from "@/lib/logger";
+import { reportCriticalError } from "@/lib/sentry-alerts";
 
 export const dynamic = "force-dynamic";
 
@@ -60,6 +61,12 @@ export async function POST(req: NextRequest) {
       tenantId,
       preapprovalId: tenant.mpSubscriptionId,
       err: msg,
+    });
+    reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+      module: "billing",
+      tenantId,
+      tags: { operation: "mp-cancel-subscription" },
+      extra: { preapprovalId: tenant.mpSubscriptionId },
     });
     return NextResponse.json(
       { error: "Error al cancelar la suscripción en Mercado Pago. Inténtalo de nuevo." },

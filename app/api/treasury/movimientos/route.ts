@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { TreasuryDB } from "@/lib/db/treasury.db";
 import { requireAdmin } from "@/lib/require-admin";
-import { logActivity } from "@/lib/activity-logger";
+import { enqueueActivityLog } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 
 const CreateMovimientoSchema = z.object({
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       ? `Ingreso S/${parsed.data.monto.toFixed(2)} en ${mov.cuentaNombre ?? "cuenta"}`
       : `Egreso S/${parsed.data.monto.toFixed(2)} de ${mov.cuentaNombre ?? "cuenta"}`;
 
-    logActivity("Registrar", "treasury", label, mov.id, auth.username).catch(() => {});
+    enqueueActivityLog({ action: "Registrar", resource: "treasury", resourceId: mov.id, userId: auth.username, tenantId: auth.tenantId, details: { description: label }, timestamp: new Date().toISOString() }).catch(() => {});
 
     return NextResponse.json(mov, { status: 201 });
   } catch (e) {

@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prismaForTenant } from "@/lib/tenant";
 import { hash } from "bcryptjs";
 import { z } from "zod";
-import { logActivity } from "@/lib/activity-logger";
+import { enqueueActivityLog } from "@/lib/queue";
 import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 
 const UpdateSchema = z.object({
@@ -75,12 +75,12 @@ export async function PATCH(
     });
 
     if (parsed.data.role && parsed.data.role !== existing.role) {
-      logActivity("Cambiar rol", "usuario_admin", `Rol de '${existing.username}' cambiado de '${existing.role}' a '${parsed.data.role}'`, id, auth.username).catch(() => {});
+      enqueueActivityLog({ action: "Cambiar rol", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Rol de '${existing.username}' cambiado de '${existing.role}' a '${parsed.data.role}'` }, timestamp: new Date().toISOString() }).catch(() => {});
     } else if (parsed.data.active !== undefined && parsed.data.active !== existing.active) {
       const action = parsed.data.active ? "Activar" : "Desactivar";
-      logActivity(action, "usuario_admin", `Usuario '${existing.username}' ${parsed.data.active ? "activado" : "desactivado"}`, id, auth.username).catch(() => {});
+      enqueueActivityLog({ action, resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${existing.username}' ${parsed.data.active ? "activado" : "desactivado"}` }, timestamp: new Date().toISOString() }).catch(() => {});
     } else if (password) {
-      logActivity("Cambiar contraseña", "usuario_admin", `Contraseña de '${existing.username}' actualizada`, id, auth.username).catch(() => {});
+      enqueueActivityLog({ action: "Cambiar contraseña", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Contraseña de '${existing.username}' actualizada` }, timestamp: new Date().toISOString() }).catch(() => {});
     }
 
     return NextResponse.json(updated);
@@ -107,7 +107,7 @@ export async function DELETE(
     if (!existing) throw new NotFoundError("usuario_admin");
 
     await db.adminUser.delete({ where: { id } });
-    logActivity("Eliminar", "usuario_admin", `Usuario '${existing.username}' (rol: ${existing.role}) eliminado`, id, auth.username).catch(() => {});
+    enqueueActivityLog({ action: "Eliminar", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${existing.username}' (rol: ${existing.role}) eliminado` }, timestamp: new Date().toISOString() }).catch(() => {});
 
     return NextResponse.json({ ok: true });
   } catch (err) {

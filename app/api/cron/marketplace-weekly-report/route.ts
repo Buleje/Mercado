@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { prisma } from "@/lib/prisma";
-import { sendWhatsAppText } from "@/lib/whatsapp";
+import { enqueueNotification } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logger } from "@/lib/logger";
 
@@ -128,7 +128,12 @@ export async function GET(req: NextRequest) {
           `¡Sigue así! 💪`,
         ].join("\n");
 
-        sendWhatsAppText(phone, msg).catch(() => {});
+        enqueueNotification({
+          type: "whatsapp",
+          recipient: phone,
+          message: msg,
+          tenantId: store.tenantId,
+        }).catch(() => {});
         sendPushToPhone(phone, {
           title: `📊 Reporte semanal — ${store.name}`,
           body: `${orders.length} pedidos · S/${revenue.toFixed(2)} en ventas esta semana`,
@@ -167,7 +172,12 @@ export async function GET(req: NextRequest) {
           `Reportes enviados a ${sentCount} tienda(s).`,
         ].join("\n");
 
-        sendWhatsAppText(adminPhone, adminMsg).catch(() => {});
+        enqueueNotification({
+          type: "whatsapp",
+          recipient: adminPhone,
+          message: adminMsg,
+          tenantId: "main",
+        }).catch(() => {});
         sendPushToPhone(adminPhone, {
           title: "📊 Reporte semanal marketplace",
           body: `${stores.length} tiendas · ${totalMarketplaceOrders} pedidos · S/${totalMarketplaceRevenue.toFixed(2)}`,

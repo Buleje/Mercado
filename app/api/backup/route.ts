@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { ProductsDB, CustomersDB, OrdersDB, ReviewsDB, SettingsDB, SuppliersDB, PurchasesDB, SalesDB, PromotionsDB, PayablesDB } from "@/lib/jsondb";
-import { logActivity } from "@/lib/activity-logger";
+import { enqueueActivityLog } from "@/lib/queue";
 import { requireAdmin } from "@/lib/require-admin";
 
 export async function GET(req: NextRequest) {
@@ -27,8 +27,7 @@ export async function GET(req: NextRequest) {
     data: { products, customers, orders, reviews, settings, suppliers, purchases, sales, promotions, payables },
   };
 
-  const requestId = req.headers.get("x-request-id") ?? undefined;
-  logActivity("Backup", "configuracion", "Backup de datos descargado", undefined, "admin", requestId).catch(() => {});
+  enqueueActivityLog({ action: "Backup", resource: "configuracion", userId: "admin", tenantId: auth.tenantId, details: { description: "Backup de datos descargado" }, timestamp: new Date().toISOString() }).catch(() => {});
 
   return new NextResponse(JSON.stringify(backup, null, 2), {
     headers: {

@@ -11,6 +11,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { reportCriticalError } from "@/lib/sentry-alerts";
 import type Stripe from "stripe";
 
 /** Backoff delays (ms) per attempt index: 1 min, 5 min, 15 min, 1 h, 6 h */
@@ -47,6 +48,11 @@ export async function enqueueWebhookEvent(event: Stripe.Event, error: string): P
     logger.error("[webhook-queue] Failed to queue event — event may be lost", {
       stripeId: event.id,
       err: e instanceof Error ? e.message : String(e),
+    });
+    reportCriticalError(e instanceof Error ? e : new Error(String(e)), {
+      module: "billing",
+      tags: { operation: "webhook-queue-enqueue-event" },
+      extra: { stripeId: event.id, eventType: event.type },
     });
     return false;
   }
