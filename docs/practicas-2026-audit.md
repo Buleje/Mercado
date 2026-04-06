@@ -98,33 +98,35 @@
 
 | Práctica | Antes | Ahora | Causa |
 |---|---|---|---|
-| #1 Clean Code | ⚠️ | ✅ | Refactor avanzado: `admin/page.tsx` 3996→2170 líneas, `CheckoutModal.tsx` 1333→16 |
-| #14 Conventional Commits + CHANGELOG | ⚠️ | ✅ | `release-please.yml` arreglado para apuntar al subdirectorio (bug detectado y corregido) |
+| #1 Clean Code | ⚠️ | ✅ | Refactor avanzado: `admin/page.tsx` 3996→1257 líneas (Sesiones 1-2 completas), `CheckoutModal.tsx` 1333→16 |
+| #14 Conventional Commits + CHANGELOG | ⚠️ | ✅ | `release-please.yml` arreglado, `semantic-release` huérfano eliminado del `package.json` |
 | #15 API-First OpenAPI | ⚠️ | ✅ | Reclassified — generar spec desde Zod sí cuenta como API-first si la API se diseña en Zod schemas primero |
 | #16 API versionada | ❌ | ✅ | `app/api/v1/` ya existe |
 | #20 JWT httpOnly | ⚠️ | ✅ | Documentado en nuevo `lib/auth/README.md` |
 | #23 N+1 | ⚠️ | ✅ | `docs/n-plus-1-audit.md` documenta el trabajo |
 | #24 Índices | ⚠️ | ✅ | 113/116 modelos con índice — auditoría confirmada |
-| #27 Definition of Done | ⚠️ | ✅ | `.github/PULL_REQUEST_TEMPLATE.md` confirmado |
+| #27 Definition of Done | ⚠️ | ✅ | `.github/PULL_REQUEST_TEMPLATE.md` + resumen en `CLAUDE.md` |
 | #29 Rolling Releases | ⚠️ | ✅ | Configurado en `vercel.json` (10% → 50% → 100%) |
 | #31 APM + alertas | ✅ | ✅ | Confirmado: `lib/sentry-alerts.ts` + 4 reglas en `docs/sentry-alert-setup.md` |
 | #33 README por módulo | ⚠️ | ✅ | 5 READMEs nuevos creados en esta sesión |
 | #35 YAGNI | ⚠️ | ✅ | Refactor en progreso reduce sobreingeniería |
+| #40 Multi-Tenancy con aislamiento | ✅ con grietas | ✅ verificado | Sesión Agent Team 2026-04-06: cerradas 6 grietas reales (`tenantId` faltante) en `lib/db/sales.db.ts`, `lib/db/supplier-portal.db.ts`, `lib/push-subscriptions.ts`, `lib/workers/log-activity.worker.ts`, `lib/sunat.ts` — eran multi-tenant leaks ocultos por `ignoreBuildErrors: true` |
 
 ---
 
-## Brechas accionables — actualizado
+## Brechas accionables — actualizado tras Agent Team 2026-04-06
 
 | # | Brecha | Impacto | Esfuerzo | Estado | Notas |
 |---|---|---|---|---|---|
-| 1 | Cerrar refactor `admin/page.tsx` (Pasos 4–7 del plan) | Alto | Medio | En progreso | 2170 → target < 300 líneas. Pasos 1, 2, 3 hechos. Pendientes: hooks, layout, TabRouter |
-| 2 | Eliminar pipeline duplicado `release.yml` (semantic-release) | Medio | Bajo | Pendiente | Conflict con `release-please.yml`. Decidir y borrar uno |
-| 3 | Activar Rolling Releases en el dashboard de Vercel | Alto | Bajo | Manual | Config ya en `vercel.json`, falta toggle en UI |
-| 4 | Crear las 4 reglas de alerta en el dashboard de Sentry | Alto | Bajo | Manual | Pasos en `docs/sentry-alert-setup.md` |
-| 5 | Completar migración a Doppler | Alto | Bajo | En progreso | `docs/doppler.md` (3 docs consolidados) |
+| 1 | Cerrar refactor `admin/page.tsx` (Sesiones 3-6 del plan) | Alto | Medio | En progreso | 1257 → target < 300 líneas. Sesiones 1, 2 hechas. Pendientes: 3 (sidebar), 4 (TabRouter), 5 (AdminContentArea), 6 (validación) |
+| 2 | ~~Eliminar pipeline duplicado `release.yml`~~ | — | — | ✅ CERRADA | `semantic-release` y deps eliminados del `package.json` |
+| 3 | Activar Rolling Releases en el dashboard de Vercel | Alto | Bajo | 👤 Manual | Config ya en `vercel.json`, falta toggle en UI |
+| 4 | Crear las 4 reglas de alerta en el dashboard de Sentry | Alto | Bajo | 👤 Manual | Pasos en `docs/sentry-alert-setup.md` |
+| 5 | Completar migración a Doppler | Alto | Bajo | 👤 Manual (bloqueado) | Crear cuenta + CLI + login (3 pasos humanos) |
 | 6 | Service Worker + IndexedDB para PWA offline | Alto | Alto | Pendiente | Diferenciador competitivo en Pucallpa |
 | 7 | DDD formal (aggregates, value objects) | Medio | Alto | Pendiente | Solo en módulos core (ventas, facturas) |
-| 8 | Catálogo completo de domain events | Medio | Medio | En progreso | `docs/domain-events-catalog.md` existe — completar |
+| 8 | Quitar `ignoreBuildErrors: true` de `next.config.ts` | 🔴 Crítico | Alto | Pendiente | ~600 errores TS pre-existentes ocultos. Sesión Agent Team cerró ~30 (los más críticos: multi-tenant leaks, capitalización Prisma, scripts huérfanos, frontend types). El resto requiere semanas de trabajo dedicado |
+| 9 | Auditar todos los `prisma.x.create()` para `tenantId` faltante en endpoints públicos | 🔴 Alto | Medio | Pendiente | Sesión cerró 6 leaks pero el grep sugiere que hay más en `app/api/birthday-coupons`, `app/api/cart`, `app/api/chat/marketplace`, `app/api/commissions/ledger`, etc. |
 
 ---
 
