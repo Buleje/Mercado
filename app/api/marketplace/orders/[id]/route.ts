@@ -106,6 +106,7 @@ export async function PATCH(
       toStatus: parsed.data.status,
       changedBy: auth.username,
       note: parsed.data.cancelReason ?? null,
+      tenantId: auth.tenantId,
     },
   }).catch(() => {});
 

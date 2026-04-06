@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
         body: message,
         type: "promotion",
         read: false,
+        tenantId: auth.tenantId,
       })),
     });
   }

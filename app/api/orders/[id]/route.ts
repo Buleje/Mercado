@@ -103,6 +103,7 @@ export async function PATCH(
           toStatus: parsed.data.status as never,
           changedBy: "admin",
           note: parsed.data.cancelReason ?? null,
+          tenantId: auth.tenantId,
         },
       }).catch(() => {});
 

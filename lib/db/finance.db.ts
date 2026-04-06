@@ -66,13 +66,13 @@ export const PayablesDB = {
   async getBySupplierId(supplierId: string): Promise<DbPayable[]> {
     return (await prisma.payable.findMany({ where: { supplierId }, include: { payments: true }, orderBy: { createdAt: "desc" } })).map(mapPayable);
   },
-  async add(p: DbPayable): Promise<DbPayable> {
+  async add(p: DbPayable, tenantId = "main"): Promise<DbPayable> {
     const row = await prisma.payable.create({
       data: {
         id: p.id, supplierId: p.supplierId, supplierName: p.supplierName,
         purchaseOrderId: p.purchaseOrderId, description: p.description,
         amount: p.amount, paidAmount: p.paidAmount, status: p.status,
-        dueDate: new Date(p.dueDate),
+        dueDate: new Date(p.dueDate), tenantId,
       },
       include: { payments: true },
     });
@@ -122,8 +122,8 @@ export const ExpensesDB = {
   async getByDateRange(from: Date, to: Date): Promise<DbExpense[]> {
     return (await prisma.expense.findMany({ where: { date: { gte: from, lte: to } }, orderBy: { date: "desc" } })).map(mapExpense);
   },
-  async add(data: Omit<DbExpense, "id" | "createdAt">): Promise<DbExpense> {
-    const row = await prisma.expense.create({ data: { category: data.category, description: data.description, amount: data.amount, date: new Date(data.date), recurring: data.recurring } });
+  async add(data: Omit<DbExpense, "id" | "createdAt">, tenantId = "main"): Promise<DbExpense> {
+    const row = await prisma.expense.create({ data: { category: data.category, description: data.description, amount: data.amount, date: new Date(data.date), recurring: data.recurring, tenantId } });
     return mapExpense(row);
   },
   async delete(tenantId: string, id: string): Promise<void> {

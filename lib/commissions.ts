@@ -25,6 +25,7 @@ export async function recordCommission(params: {
   type: "marketplace_fee" | "delivery_fee" | "platform_fee";
   amount: number;
   rate: number;
+  tenantId?: string;
 }): Promise<void> {
   try {
     await prisma.commissionLedger.create({
@@ -36,6 +37,7 @@ export async function recordCommission(params: {
         amount: params.amount,
         rate: params.rate,
         status: "pending",
+        tenantId: params.tenantId ?? "main",
       },
     });
   } catch (err) {

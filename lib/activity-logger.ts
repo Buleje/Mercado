@@ -19,11 +19,12 @@ export async function logActivity(
   entityId?: string,
   user = "admin",
   requestId?: string,
+  tenantId = "main",
 ): Promise<void> {
   try {
     logger.info("[activity]", { action, entity, entityId, user, requestId });
     await prisma.activityLog.create({
-      data: { action, entity, entityId, detail, user },
+      data: { action, entity, entityId, detail, user, tenantId },
     });
   } catch {
     // Non-critical: never let logging errors break the caller

@@ -67,13 +67,13 @@ export const PromotionsDB = {
     if (tenantId) where.tenantId = tenantId;
     return (await prisma.promotion.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapPromotion);
   },
-  async add(p: DbPromotion): Promise<DbPromotion> {
+  async add(p: DbPromotion, tenantId = "main"): Promise<DbPromotion> {
     const row = await prisma.promotion.create({
       data: {
         id: p.id, name: p.name, description: p.description, discountPercent: p.discountPercent,
         minPurchase: p.minPurchase, imageUrl: p.imageUrl, message: p.message,
         targetType: p.targetType ?? "all", targetPhones: p.targetPhones,
-        active: p.active, expiresAt: p.expiresAt ? new Date(p.expiresAt) : null,
+        active: p.active, expiresAt: p.expiresAt ? new Date(p.expiresAt) : null, tenantId,
       },
     });
     return mapPromotion(row);
@@ -112,14 +112,14 @@ export const CouponsDB = {
     const row = await prisma.coupon.findFirst({ where: { code: code.toUpperCase().trim() } });
     return row ? mapCoupon(row) : null;
   },
-  async add(c: Omit<DbCoupon, "id" | "createdAt" | "usedCount">): Promise<DbCoupon> {
+  async add(c: Omit<DbCoupon, "id" | "createdAt" | "usedCount">, tenantId = "main"): Promise<DbCoupon> {
     const row = await prisma.coupon.create({
       data: {
         code: c.code.toUpperCase().trim(), description: c.description,
         discountType: c.discountType, discountValue: c.discountValue,
         balance: c.discountType === "giftcard" ? (c.balance ?? c.discountValue) : null,
         minPurchase: c.minPurchase, maxUses: c.maxUses,
-        active: c.active, expiresAt: c.expiresAt ? new Date(c.expiresAt) : null,
+        active: c.active, expiresAt: c.expiresAt ? new Date(c.expiresAt) : null, tenantId,
       },
     });
     return mapCoupon(row);

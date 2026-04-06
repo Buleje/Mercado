@@ -155,6 +155,7 @@ export async function POST(req: NextRequest) {
         phone: ownerPhone ?? "",
         email: ownerEmail,
         zone: "",
+        tenantId: tenant.id,
       },
     });
   } else {

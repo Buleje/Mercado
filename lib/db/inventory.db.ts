@@ -139,7 +139,7 @@ export const InventoryMovementsDB = {
 
     return { movements: items.map(mapInventoryMovement), nextCursor, total };
   },
-  async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string }): Promise<DbInventoryMovement> {
+  async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string; tenantId?: string }): Promise<DbInventoryMovement> {
     // Atomic: read current stock, compute new stock, update product, create movement
     const product = await prisma.product.findUnique({ where: { id: data.productId } });
     const prevStock = product?.stock ?? 0;
@@ -152,6 +152,7 @@ export const InventoryMovementsDB = {
         productId: data.productId, type: data.type, lossType: data.lossType, quantity: data.quantity,
         previousStock: prevStock, newStock: clampedNewStock,
         reference: data.reference, notes: data.notes,
+        tenantId: data.tenantId ?? (product as unknown as { tenantId?: string })?.tenantId ?? "main",
         ...(data.warehouseId ? { warehouseId: data.warehouseId } : {}),
         ...(data.createdBy ? { createdBy: data.createdBy } : {}),
       },
@@ -239,14 +240,16 @@ export const InventoryMovementsDB = {
     await refreshProductExpiresAt(productId);
   },
 
-  async adjust(productId: number, newStock: number, warehouseId?: string, notes?: string, createdBy?: string): Promise<DbInventoryMovement> {
+  async adjust(productId: number, newStock: number, warehouseId?: string, notes?: string, createdBy?: string, tenantId?: string): Promise<DbInventoryMovement> {
     const product = await prisma.product.findUnique({ where: { id: productId } });
     const prevStock = product?.stock ?? 0;
     const diff = newStock - prevStock;
     const type = diff >= 0 ? "ajuste_positivo" : "ajuste_negativo";
+    const resolvedTenantId = tenantId ?? (product as unknown as { tenantId?: string })?.tenantId ?? "main";
     await prisma.product.update({ where: { id: productId }, data: { stock: Math.max(0, newStock) } });
     const row = await prisma.inventoryMovement.create({
       data: { productId, type, quantity: Math.abs(diff), previousStock: prevStock, newStock: Math.max(0, newStock), notes,
+        tenantId: resolvedTenantId,
         ...(warehouseId ? { warehouseId } : {}),
         ...(createdBy ? { createdBy } : {}) },
     });
@@ -280,8 +283,8 @@ export const WarehousesDB = {
     const row = await prisma.warehouse.findUnique({ where: { id } });
     return row ? mapWarehouse(row) : null;
   },
-  async create(data: { name: string; code: string; type?: string; location?: string; manager?: string; capacity?: number }): Promise<DbWarehouse> {
-    const row = await prisma.warehouse.create({ data });
+  async create(data: { name: string; code: string; type?: string; location?: string; manager?: string; capacity?: number; tenantId?: string }): Promise<DbWarehouse> {
+    const row = await prisma.warehouse.create({ data: { ...data, tenantId: data.tenantId ?? "main" } });
     return mapWarehouse(row);
   },
   async update(id: string, data: Partial<{ name: string; location: string; manager: string; capacity: number; active: boolean }>): Promise<DbWarehouse | null> {
@@ -300,7 +303,7 @@ export const WarehousesDB = {
   async ensureDefault(): Promise<DbWarehouse[]> {
     const all = await this.getAll();
     if (all.length === 0) {
-      await prisma.warehouse.create({ data: { name: "Almacén Principal", code: "ALM-001", type: "principal", location: "Tienda San Martín" } });
+      await prisma.warehouse.create({ data: { name: "Almacén Principal", code: "ALM-001", type: "principal", location: "Tienda San Martín", tenantId: "main" } });
       return this.getAll();
     }
     return all;

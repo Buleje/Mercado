@@ -392,6 +392,7 @@ export const SurveyDB = {
     rating: number;
     comment?: string;
     type?: string;
+    tenantId?: string;
   }): Promise<DbSurveyResponse> {
     const r = await prisma.surveyResponse.upsert({
       where: { orderId_type: { orderId: data.orderId, type: data.type ?? "nps" } },
@@ -402,6 +403,7 @@ export const SurveyDB = {
         rating: data.rating,
         comment: data.comment ?? "",
         type: data.type ?? "nps",
+        tenantId: data.tenantId ?? "main",
       },
     });
     return mapSurvey(r);

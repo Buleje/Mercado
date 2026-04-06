@@ -55,10 +55,12 @@ export async function PUT(
     return NextResponse.json({ ok: true });
   }
 
+  // Derive tenantId from cookie set by middleware (public endpoint — best-effort)
+  const tenantId = req.cookies.get("active-tenant")?.value ?? "main";
   await prisma.savedCart.upsert({
     where: { customerPhone: clean },
     update: { itemsJson: JSON.stringify(items) },
-    create: { customerPhone: clean, itemsJson: JSON.stringify(items) },
+    create: { customerPhone: clean, itemsJson: JSON.stringify(items), tenantId },
   });
 
   return NextResponse.json({ ok: true });

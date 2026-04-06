@@ -72,8 +72,8 @@ export const NotificationLogsDB = {
       take: 100,
     })).map(mapNotificationLog);
   },
-  async add(data: Omit<DbNotificationLog, "id" | "createdAt">): Promise<DbNotificationLog> {
-    const row = await prisma.notificationLog.create({ data });
+  async add(data: Omit<DbNotificationLog, "id" | "createdAt">, tenantId = "main"): Promise<DbNotificationLog> {
+    const row = await prisma.notificationLog.create({ data: { ...data, tenantId } });
     return mapNotificationLog(row);
   },
 };
@@ -86,8 +86,8 @@ export const AdminChatDB = {
     if (tenantId) where.tenantId = tenantId;
     return (await prisma.adminMessage.findMany({ where, orderBy: { createdAt: "desc" }, take: limit })).map(mapAdminMessage).reverse();
   },
-  async add(sender: string, message: string): Promise<DbAdminMessage> {
-    const row = await prisma.adminMessage.create({ data: { sender, message } });
+  async add(sender: string, message: string, tenantId = "main"): Promise<DbAdminMessage> {
+    const row = await prisma.adminMessage.create({ data: { sender, message, tenantId } });
     return mapAdminMessage(row);
   },
 };
@@ -112,8 +112,8 @@ export const ChatDB = {
     }
     return Array.from(map.entries()).map(([phone, c]) => ({ phone, name: c.name, lastMessage: c.lastMessage, lastAt: toISO(c.lastAt), unread: c.unread }));
   },
-  async add(customerPhone: string, customerName: string, sender: "customer" | "admin", message: string): Promise<DbChatMessage> {
-    const row = await prisma.chatMessage.create({ data: { customerPhone, customerName, sender, message } });
+  async add(customerPhone: string, customerName: string, sender: "customer" | "admin", message: string, tenantId = "main"): Promise<DbChatMessage> {
+    const row = await prisma.chatMessage.create({ data: { customerPhone, customerName, sender, message, tenantId } });
     return mapChatMessage(row);
   },
   async markRead(customerPhone: string): Promise<void> {

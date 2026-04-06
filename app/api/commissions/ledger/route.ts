@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     }
 
     const commission = await prisma.commissionLedger.create({
-      data: parsed.data,
+      data: { ...parsed.data, tenantId: auth.tenantId },
     });
 
     logActivity(

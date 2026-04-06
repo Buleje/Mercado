@@ -23,8 +23,8 @@ export const ABTestDB = {
     return rows.map(r => ({ id: r.id, name: r.name, description: r.description, variants: r.variants as Variant[], active: r.active, createdAt: toISO(r.createdAt) }));
   },
 
-  async create(name: string, description: string, variants: Variant[]): Promise<ABTestDef> {
-    const row = await prisma.aBTest.create({ data: { name, description, variants } });
+  async create(name: string, description: string, variants: Variant[], tenantId = "main"): Promise<ABTestDef> {
+    const row = await prisma.aBTest.create({ data: { name, description, variants, tenantId } });
     return { id: row.id, name: row.name, description: row.description, variants: row.variants as Variant[], active: row.active, createdAt: toISO(row.createdAt) };
   },
 
@@ -55,8 +55,8 @@ export const ABTestDB = {
     return test.variants[0];
   },
 
-  async trackEvent(testId: string, variantId: string, visitorId: string, event: "impression" | "conversion", value?: number): Promise<void> {
-    await prisma.aBTestEvent.create({ data: { testId, variantId, visitorId, event, value } });
+  async trackEvent(testId: string, variantId: string, visitorId: string, event: "impression" | "conversion", value?: number, tenantId = "main"): Promise<void> {
+    await prisma.aBTestEvent.create({ data: { testId, variantId, visitorId, event, value, tenantId } });
   },
 
   async getResults(testId: string): Promise<{ variantId: string; impressions: number; conversions: number; totalValue: number; conversionRate: number }[]> {

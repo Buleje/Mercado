@@ -219,6 +219,7 @@ export const OrdersDB = {
           name: order.customer.name,
           location: order.customer.location ?? "",
           reference: order.customer.reference ?? "",
+          tenantId,
         },
         update: {
           name: order.customer.name,
@@ -342,10 +343,10 @@ export const DeliverySlotsDB = {
     const row = await prisma.deliverySlot.findUnique({ where: { orderId } });
     return row ? mapDeliverySlot(row) : null;
   },
-  async set(data: { orderId: string; date: string; slot: string; notes?: string }): Promise<DbDeliverySlot> {
+  async set(data: { orderId: string; date: string; slot: string; notes?: string; tenantId?: string }): Promise<DbDeliverySlot> {
     const row = await prisma.deliverySlot.upsert({
       where: { orderId: data.orderId },
-      create: data,
+      create: { orderId: data.orderId, date: data.date, slot: data.slot, notes: data.notes, tenantId: data.tenantId ?? "main" },
       update: { date: data.date, slot: data.slot, notes: data.notes },
     });
     return mapDeliverySlot(row);
@@ -360,13 +361,14 @@ export const ReturnsDB = {
     if (tenantId) where.tenantId = tenantId;
     return (await prisma.return.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapReturn);
   },
-  async add(r: { saleId?: string; orderId?: string; reason: string; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: Omit<DbReturnItem, "id">[] }): Promise<DbReturn> {
+  async add(r: { saleId?: string; orderId?: string; reason: string; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: Omit<DbReturnItem, "id">[]; tenantId?: string }): Promise<DbReturn> {
     const total = r.items.reduce((s, i) => s + i.price * i.quantity, 0);
     const row = await prisma.return.create({
       data: {
         saleId: r.saleId, orderId: r.orderId, reason: r.reason, total,
         photoUrl: r.photoUrl, customerPhone: r.customerPhone ? normalizePhone(r.customerPhone) : undefined,
         creditApplied: r.creditApplied ?? false,
+        tenantId: r.tenantId ?? "main",
         items: { create: r.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })) },
       },
       include: { items: true },

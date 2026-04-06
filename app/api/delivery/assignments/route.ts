@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     }
 
     const assignment = await prisma.deliveryAssignment.create({
-      data: { orderId, partnerId, fee },
+      data: { orderId, partnerId, fee, tenantId: auth.tenantId },
       include: {
         order: { select: { id: true, customerName: true, total: true, customerLocation: true } },
         partner: { select: { id: true, name: true, phone: true } },

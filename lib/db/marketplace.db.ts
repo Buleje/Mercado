@@ -585,13 +585,14 @@ export const MarketplaceOrdersDB = {
     // 4. Registrar comisión
     await prisma.commissionLedger.create({
       data: {
-        id:      crypto.randomUUID(),
-        orderId: `MKT-${orderId}`,
-        storeId: store.id,
-        type:    "sale",
-        amount:  commission,
-        rate:    store.commission,
-        status:  "pending",
+        id:       crypto.randomUUID(),
+        orderId:  `MKT-${orderId}`,
+        storeId:  store.id,
+        type:     "sale",
+        amount:   commission,
+        rate:     store.commission,
+        status:   "pending",
+        tenantId: store.tenantId,
       },
     });
 

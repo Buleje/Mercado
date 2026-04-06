@@ -18,9 +18,9 @@ export async function getMediaById(id: string) {
   });
 }
 
-export async function createMedia(data: MediaInput) {
+export async function createMedia(data: MediaInput, tenantId = "main") {
   return await prisma.media.create({
-    data,
+    data: { ...data, tenantId },
   });
 }
 

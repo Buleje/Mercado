@@ -80,9 +80,9 @@ export const SuppliersDB = {
     const row = await prisma.supplier.findUnique({ where: { id } });
     return row ? mapSupplier(row) : null;
   },
-  async add(s: DbSupplier): Promise<DbSupplier> {
+  async add(s: DbSupplier, tenantId = "main"): Promise<DbSupplier> {
     const row = await prisma.supplier.create({
-      data: { id: s.id, name: s.name, ruc: s.ruc, phone: s.phone, email: s.email, address: s.address, notes: s.notes },
+      data: { id: s.id, name: s.name, ruc: s.ruc, phone: s.phone, email: s.email, address: s.address, notes: s.notes, tenantId },
     });
     return mapSupplier(row);
   },
@@ -111,14 +111,14 @@ export const PurchasesDB = {
     const row = await prisma.purchaseOrder.findUnique({ where: { id }, include: { items: true } });
     return row ? mapPurchaseOrder(row) : null;
   },
-  async add(po: DbPurchaseOrder): Promise<DbPurchaseOrder> {
+  async add(po: DbPurchaseOrder, tenantId = "main"): Promise<DbPurchaseOrder> {
     const row = await prisma.purchaseOrder.create({
       data: {
         id: po.id, supplierId: po.supplierId, supplierName: po.supplierName,
         total: po.total, status: po.status as never, notes: po.notes,
         paymentMethod: po.paymentMethod ?? null,
         deliveryDate: po.deliveryDate ? new Date(po.deliveryDate) : null,
-        discount: po.discount ?? 0,
+        discount: po.discount ?? 0, tenantId,
         items: { create: po.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })) },
       },
       include: { items: true },
@@ -155,8 +155,8 @@ export const SupplierEvaluationsDB = {
     if (tenantId) where.tenantId = tenantId;
     return (await prisma.supplierEvaluation.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapSupplierEvaluation);
   },
-  async add(data: Omit<DbSupplierEvaluation, "id" | "createdAt">): Promise<DbSupplierEvaluation> {
-    const row = await prisma.supplierEvaluation.create({ data });
+  async add(data: Omit<DbSupplierEvaluation, "id" | "createdAt">, tenantId = "main"): Promise<DbSupplierEvaluation> {
+    const row = await prisma.supplierEvaluation.create({ data: { ...data, tenantId } });
     return mapSupplierEvaluation(row);
   },
   async getAverages(supplierId: string): Promise<{ punctuality: number; quality: number; price: number; count: number }> {

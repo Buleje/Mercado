@@ -24,11 +24,13 @@ export async function POST(req: Request) {
     }
     const { email } = parsed.data;
 
+    // Derive tenantId from middleware cookie (public endpoint — best-effort)
+    const tenantId = (req as Request & { cookies?: { get?: (k: string) => { value?: string } | undefined } }).cookies?.get?.("active-tenant")?.value ?? "main";
     // Upsert — don't fail if already subscribed
     await prisma.newsletterSubscriber.upsert({
       where: { email },
       update: { updatedAt: new Date() },
-      create: { email },
+      create: { email, tenantId },
     });
 
     return NextResponse.json({ ok: true });

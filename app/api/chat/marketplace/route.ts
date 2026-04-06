@@ -119,6 +119,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "senderType debe ser 'store' o 'customer'" }, { status: 400 });
     }
 
+    // Obtener tenantId de la tienda para aislamiento multi-tenant
+    const store = await prisma.store.findUnique({ where: { id: storeId }, select: { tenantId: true } });
+    const tenantId = store?.tenantId ?? "main";
+
     // Codificamos storeId en customerName para no alterar el schema
     const storePrefix = `store:${storeId}:${storeName}`;
     const dbSender = senderType === "store" ? "admin" : "customer";
@@ -129,6 +133,7 @@ export async function POST(req: NextRequest) {
         customerName: storePrefix,
         sender: dbSender,
         message: message.trim(),
+        tenantId,
       },
     });
 

@@ -154,7 +154,7 @@ export const CustomersDB = {
     const row = await prisma.customer.findUnique({ where: { phone: normalizePhone(phone) }, include: { locations: true } });
     return row ? mapCustomer(row) : null;
   },
-  async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">): Promise<DbCustomer> {
+  async upsert(data: Omit<DbCustomer, "createdAt" | "updatedAt">, tenantId = "main"): Promise<DbCustomer> {
     const locs = (data.locations ?? []).map((l) => ({ id: l.id, location: l.location, reference: l.reference }));
     const row = await prisma.customer.upsert({
       where: { phone: data.phone },
@@ -162,6 +162,7 @@ export const CustomersDB = {
         phone: data.phone, name: data.name,
         location: data.location ?? "", reference: data.reference ?? "",
         activeLocationId: data.activeLocationId ?? null,
+        tenantId,
         ...(data.birthday && { birthday: new Date(data.birthday) }),
         locations: { create: locs },
       },
@@ -269,11 +270,11 @@ export const ReviewsDB = {
       : { status: "approved" };
     return (await prisma.review.findMany({ where, orderBy: { date: "desc" } })).map(mapReview);
   },
-  async add(r: DbReview): Promise<DbReview> {
+  async add(r: DbReview, tenantId = "main"): Promise<DbReview> {
     const productIdVal = r.productId ?? null;
     const row = await prisma.review.upsert({
       where: { id: r.id },
-      create: { id: r.id, name: r.name, location: r.location, text: r.text, rating: r.rating, phone: r.phone, ...(productIdVal != null && { productId: productIdVal }), status: r.status ?? "pending", date: new Date(r.date) },
+      create: { id: r.id, name: r.name, location: r.location, text: r.text, rating: r.rating, phone: r.phone, ...(productIdVal != null && { productId: productIdVal }), status: r.status ?? "pending", date: new Date(r.date), tenantId },
       update: { name: r.name, location: r.location, text: r.text, rating: r.rating, phone: r.phone, ...(productIdVal != null && { productId: productIdVal }), status: r.status ?? "pending", date: new Date(r.date) },
     });
     return mapReview(row);
@@ -324,10 +325,11 @@ export const ShoppingListsDB = {
       orderBy: { updatedAt: "desc" },
     })).map(mapShoppingList);
   },
-  async add(data: { customerPhone: string; name: string; items: { productId: number; quantity: number }[] }): Promise<DbShoppingList> {
+  async add(data: { customerPhone: string; name: string; items: { productId: number; quantity: number }[]; tenantId?: string }): Promise<DbShoppingList> {
     const row = await prisma.shoppingList.create({
       data: {
         customerPhone: normalizePhone(data.customerPhone), name: data.name,
+        tenantId: data.tenantId ?? "main",
         items: { create: data.items },
       },
       include: { items: true },

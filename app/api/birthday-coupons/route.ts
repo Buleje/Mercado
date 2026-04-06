@@ -13,7 +13,7 @@ async function checkAndCreateBirthdayCoupons() {
   // Find customers whose birthday month/day matches today
   const allCustomers = await prisma.customer.findMany({
     where: { birthday: { not: null } },
-    select: { phone: true, name: true, birthday: true, notifPromotions: true },
+    select: { phone: true, name: true, birthday: true, notifPromotions: true, tenantId: true },
   });
 
   const birthdayCustomers = allCustomers.filter((c) => {
@@ -44,6 +44,7 @@ async function checkAndCreateBirthdayCoupons() {
         maxUses: 1,
         active: true,
         expiresAt,
+        tenantId: customer.tenantId,
       },
     });
 

@@ -68,6 +68,7 @@ export async function POST(req: NextRequest) {
         phone,
         email,
         zone,
+        tenantId: auth.tenantId,
         ...(vehicleType && { vehicleType }),
         ...(fee !== undefined && { fee }),
       },
