@@ -22,6 +22,7 @@ import {
   Clock,
   Gauge,
   HeartPulse,
+  Wrench,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -47,6 +48,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"          },
   { label: "Analytics",       icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"       },
   { label: "Salud",           icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"          },
+  { label: "Setup Pendiente", icon: <Wrench          className="w-5 h-5 shrink-0" />, href: "/superadmin/setup"           },
   { label: "Actividad",       icon: <Activity        className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"        },
   { label: "Config",          icon: <Settings        className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"        },
 ];
@@ -58,6 +60,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/superadmin/stores":          "Marketplace",
   "/superadmin/analytics":       "Analytics",
   "/superadmin/health":          "Salud del Sistema",
+  "/superadmin/setup":           "Setup Pendiente",
   "/superadmin/activity":        "Actividad",
   "/superadmin/settings":        "Config",
   "/superadmin":                 "Dashboard",
