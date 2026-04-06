@@ -1,7 +1,17 @@
 import { PrismaClient } from "../lib/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { hash } from "bcryptjs";
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) throw new Error("DATABASE_URL is not set");
+
+const isLocal = connectionString.includes("localhost") || connectionString.includes("127.0.0.1");
+const resolvedUrl = !isLocal && !connectionString.includes("pgbouncer=true")
+  ? connectionString + (connectionString.includes("?") ? "&" : "?") + "pgbouncer=true"
+  : connectionString;
+
+const adapter = new PrismaPg({ connectionString: resolvedUrl, ssl: isLocal ? false : { rejectUnauthorized: false } });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const h = await hash("test1234", 10);

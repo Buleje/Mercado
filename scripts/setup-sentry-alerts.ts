@@ -478,3 +478,5 @@ main().catch((err) => {
   console.error("\n[FATAL]", err instanceof Error ? err.message : err);
   process.exit(1);
 });
+
+export {};
