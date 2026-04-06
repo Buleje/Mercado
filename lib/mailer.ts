@@ -122,6 +122,7 @@ export async function sendCashSummaryEmail(summary: {
   if (!smtpUser || !smtpPass) return;
 
   const notifyEmail = process.env.NOTIFY_EMAIL || smtpUser;
+  const senderName = "Mi Tienda";
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 587,
@@ -138,7 +139,7 @@ export async function sendCashSummaryEmail(summary: {
   };
 
   await transporter.sendMail({
-    from: `"${tenantName}" <${smtpUser}>`,
+    from: `"${senderName}" <${smtpUser}>`,
     to: notifyEmail,
     subject: `🏦 Cierre de caja — ${fmtDate(summary.closedAt)} — ${fmt(summary.closingAmount)}`,
     html: `

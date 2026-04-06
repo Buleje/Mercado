@@ -52,7 +52,7 @@ export async function requireAdmin(
   if (headerTenantId && headerTenantId !== payload.tenantId) {
     // Tenant mismatch: middleware says one tenant, JWT says another.
     // Only admin/superadmin may cross-tenant (e.g. superadmin managing another store).
-    if (payload.role === "admin" || payload.role === "superadmin") {
+    if (payload.role === "admin") {
       logger.info("[AUTH] Tenant override", {
         username: payload.username,
         role: payload.role,
