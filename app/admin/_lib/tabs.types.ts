@@ -41,3 +41,36 @@ export type Tab =
   | "rendimiento"
   // BullMQ Bull Board — monitoreo de colas
   | "colas";
+
+/**
+ * Subconjunto de Tabs cuya navegación directa por URL/hash/localStorage
+ * está permitida. Cualquier valor fuera de esta lista cae a "asistente-ia"
+ * en `useAdminTabs`. Mantener sincronizado con `Tab` cuando se agreguen
+ * tabs visibles desde el sidebar.
+ */
+export const VALID_TABS: readonly Tab[] = [
+  "asistente-ia",
+  "ventas-caja",
+  "inventario",
+  "productos",
+  "compras",
+  "plata",
+  "clientes",
+  "config",
+  "pedidos",
+  "plan",
+  "analytics-pro",
+  "ai-command",
+  "fiados",
+  "turnos",
+  "cotizaciones",
+  "guias-remision",
+  "notas-credito",
+  "contratos",
+  "sugerencias-ia",
+  "metas-logros",
+  "marketplace",
+  "delivery-partners",
+  "store-customizer",
+  "colas",
+] as const;
