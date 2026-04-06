@@ -44,6 +44,13 @@ vi.mock("@/lib/api-error", () => ({
   NotFoundError,
 }));
 
+// ── Mock: cache — passthrough para que los tests no dependan de estado cacheado ─
+vi.mock("@/lib/cache", () => ({
+  getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
+  invalidate: vi.fn(),
+  invalidateByPrefix: vi.fn(),
+}));
+
 // ── Mock: prisma con registros de MÚLTIPLES tenants ───────────────────────────
 const { mockStoreFindMany, mockStoreFindUnique, mockStoreProductFindMany } = vi.hoisted(() => ({
   mockStoreFindMany:        vi.fn(),
@@ -133,7 +140,7 @@ const PRODUCT_PUBLICA = {
   wholesalePrice: 3.0,
   minOrderQty:    1,
   isActive:       true,
-  Product: { id: "prod-1", name: "Arroz", image: "/arroz.png", category: "Abarrotes", unit: "kg", description: "", stock: 10 },
+  product: { id: "prod-1", name: "Arroz", image: "/arroz.png", category: "Abarrotes", unit: "kg", description: "", stock: 10 },
 };
 
 // Productos de tienda rival (tenant diferente)

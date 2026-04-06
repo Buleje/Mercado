@@ -65,19 +65,19 @@ const SP_ARROZ = {
   id:          "sp-uuid-1",
   retailPrice: 3.5,
   minOrderQty: 1,
-  Product: { id: 1, name: "Arroz Extra", image: "/arroz.png", category: "Abarrotes", unit: "kg", stock: 20 },
+  product: { id: 1, name: "Arroz Extra", image: "/arroz.png", category: "Abarrotes", unit: "kg", stock: 20 },
 };
 const SP_ACEITE = {
   id:          "sp-uuid-2",
   retailPrice: 8.0,
   minOrderQty: 1,
-  Product: { id: 2, name: "Aceite Vegetal", image: "/aceite.png", category: "Abarrotes", unit: "L", stock: 10 },
+  product: { id: 2, name: "Aceite Vegetal", image: "/aceite.png", category: "Abarrotes", unit: "L", stock: 10 },
 };
 const SP_GASEOSA = {
   id:          "sp-uuid-3",
   retailPrice: 2.5,
   minOrderQty: 6,
-  Product: { id: 3, name: "Gaseosa Cola", image: "/cola.png", category: "Bebidas", unit: "L", stock: 50 },
+  product: { id: 3, name: "Gaseosa Cola", image: "/cola.png", category: "Bebidas", unit: "L", stock: 50 },
 };
 
 function makeReq(url: string): NextRequest {
@@ -144,8 +144,8 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GET(makeReq("https://host/?category=Abarrotes"), makeParams("bodega-san-martin"));
 
     const where = mockStoreProductFindMany.mock.calls[0][0].where;
-    expect(where.Product).toMatchObject({ category: "Abarrotes" });
-    expect(where.Product.name).toBeUndefined();
+    expect(where.product).toMatchObject({ category: "Abarrotes" });
+    expect(where.product.name).toBeUndefined();
   });
 
   // ── Filtro por search ───────────────────────────────────────────────────────
@@ -156,8 +156,8 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GET(makeReq("https://host/?search=arroz"), makeParams("bodega-san-martin"));
 
     const where = mockStoreProductFindMany.mock.calls[0][0].where;
-    expect(where.Product.name).toMatchObject({ contains: "arroz", mode: "insensitive" });
-    expect(where.Product.category).toBeUndefined();
+    expect(where.product.name).toMatchObject({ contains: "arroz", mode: "insensitive" });
+    expect(where.product.category).toBeUndefined();
   });
 
   // ── Colisión de filtros (regresión) ─────────────────────────────────────────
@@ -171,18 +171,18 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
 
     const where = mockStoreProductFindMany.mock.calls[0][0].where;
 
-    // Un solo Product filter con AMBAS claves — no dos objetos separados
-    expect(where.Product).toMatchObject({
+    // Un solo product filter con AMBAS claves — no dos objetos separados
+    expect(where.product).toMatchObject({
       category: "Abarrotes",
       name: { contains: "arroz", mode: "insensitive" },
     });
   });
 
-  it("sin filtros — no hay clave Product en el where", async () => {
+  it("sin filtros — no hay clave product en el where", async () => {
     await GET(makeReq("https://host/"), makeParams("bodega-san-martin"));
 
     const where = mockStoreProductFindMany.mock.calls[0][0].where;
-    expect(where.Product).toBeUndefined();
+    expect(where.product).toBeUndefined();
   });
 
   // ── Cursor pagination ───────────────────────────────────────────────────────

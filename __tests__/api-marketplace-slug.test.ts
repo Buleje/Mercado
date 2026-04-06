@@ -45,6 +45,13 @@ vi.mock("@/lib/api-error", () => ({
   NotFoundError,
 }));
 
+// ── Mock: cache — passthrough para que los tests no dependan de estado cacheado ─
+vi.mock("@/lib/cache", () => ({
+  getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
+  invalidate: vi.fn(),
+  invalidateByPrefix: vi.fn(),
+}));
+
 // ── Mock: prisma ───────────────────────────────────────────────────────────────
 const { mockStoreFindUnique, mockStoreProductFindMany, mockStoreFindUniqueForProducts } = vi.hoisted(() => ({
   mockStoreFindUnique:             vi.fn(),
@@ -105,7 +112,7 @@ const PRODUCT_ARROZ = {
   retailPrice:    3.5,
   wholesalePrice: 3.0,
   minOrderQty:    1,
-  Product: {
+  product: {
     id:       "prod-1",
     name:     "Arroz Extra",
     image:    "/arroz.png",
@@ -120,7 +127,7 @@ const PRODUCT_ACEITE = {
   retailPrice:    8.5,
   wholesalePrice: 7.0,
   minOrderQty:    1,
-  Product: {
+  product: {
     id:       "prod-2",
     name:     "Aceite Vegetal",
     image:    "/aceite.png",
@@ -238,7 +245,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?category=Abarrotes"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.Product.category).toBe("Abarrotes");
+    expect(callArgs.where.product.category).toBe("Abarrotes");
   });
 
   it("filtra por search (nombre de producto insensitive)", async () => {
@@ -248,7 +255,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?search=arroz"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.Product.name).toMatchObject({ contains: "arroz", mode: "insensitive" });
+    expect(callArgs.where.product.name).toMatchObject({ contains: "arroz", mode: "insensitive" });
   });
 
   it("ordena por precio ascendente con sort=price_asc", async () => {
@@ -258,7 +265,8 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_asc"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.orderBy).toMatchObject({ retailPrice: "asc" });
+    // orderBy es un array con tiebreaker — verificar que retailPrice:asc está presente
+    expect(callArgs.orderBy).toEqual(expect.arrayContaining([{ retailPrice: "asc" }]));
   });
 
   it("ordena por precio descendente con sort=price_desc", async () => {
@@ -268,7 +276,8 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_desc"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.orderBy).toMatchObject({ retailPrice: "desc" });
+    // orderBy es un array con tiebreaker — verificar que retailPrice:desc está presente
+    expect(callArgs.orderBy).toEqual(expect.arrayContaining([{ retailPrice: "desc" }]));
   });
 
   it("retorna 400 si sort tiene valor inválido", async () => {
