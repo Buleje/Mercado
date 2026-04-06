@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const { supplierId, supplierName } = supplier;
+    const { supplierId, supplierName, tenantId } = supplier;
 
     const body = await req.json().catch(() => ({}));
     const parsed = createOfferSchema.safeParse(body);
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const offer = await SupplierOfferDB.create({
+    const offer = await SupplierOfferDB.create(tenantId, {
       supplierId,
       title: parsed.data.title,
       description: parsed.data.description,

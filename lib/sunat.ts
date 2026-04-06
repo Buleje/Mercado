@@ -126,11 +126,11 @@ export async function generateCorrelativo(
   await prisma.activityLog.create({
     data: {
       tenantId,
-      userId: "system",
+      user: "system",
       action: "sunat_correlativo",
       entity: serie,
       entityId: String(siguiente),
-      metadata: JSON.stringify({ key, serie, correlativo: siguiente }),
+      detail: JSON.stringify({ key, serie, correlativo: siguiente }),
     },
   });
 

@@ -13,11 +13,11 @@ export type StoredSubscription = {
 };
 
 export const PushSubscriptionsStore = {
-  async save(sub: Omit<StoredSubscription, "createdAt">): Promise<void> {
+  async save(tenantId: string, sub: Omit<StoredSubscription, "createdAt">): Promise<void> {
     await prisma.pushSubscription.upsert({
       where: { endpoint: sub.endpoint },
       update: { p256dh: sub.keys.p256dh, auth: sub.keys.auth, phone: sub.phone ?? null },
-      create: { endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth, phone: sub.phone ?? null },
+      create: { tenantId, endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth, phone: sub.phone ?? null },
     });
   },
 

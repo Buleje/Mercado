@@ -28,6 +28,7 @@ export async function handleLogActivity(envelope: JobEnvelope): Promise<void> {
   try {
     await prisma.activityLog.create({
       data: {
+        tenantId,
         action,
         entity,
         entityId,

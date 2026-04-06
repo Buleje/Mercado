@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       if (open) {
         return NextResponse.json({ error: "Ya hay una caja abierta" }, { status: 400 });
       }
-      const reg = await CashRegistersDB.open(openingAmount, body.notes);
+      const reg = await CashRegistersDB.open(auth.tenantId, openingAmount, body.notes);
       return NextResponse.json(reg, { status: 201 });
     }
 

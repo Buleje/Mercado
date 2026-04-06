@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
 import webpush from "web-push";
 import { PushSubscriptionsStore } from "@/lib/push-subscriptions";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 function initWebPush() {
@@ -26,7 +27,8 @@ export async function POST(req: NextRequest) {
     if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
       return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
     }
-    await PushSubscriptionsStore.save({ endpoint: subscription.endpoint, keys: subscription.keys, phone });
+    const tenantId = getTenantIdFromRequest(req);
+    await PushSubscriptionsStore.save(tenantId, { endpoint: subscription.endpoint, keys: subscription.keys, phone });
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("[push/subscribe] error:", e);

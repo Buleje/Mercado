@@ -127,7 +127,7 @@ export async function PUT(req: NextRequest) {
       if (!product) continue;
 
       // Registrar versión de precio histórica
-      await SupplierPriceVersionDB.create({
+      await SupplierPriceVersionDB.create(tenantId, {
         supplierId,
         productName: product.name,
         sku: update.sku ?? product.barcode ?? undefined,

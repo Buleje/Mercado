@@ -68,9 +68,10 @@ export const SupplierPriceVersionDB = {
     }));
   },
 
-  async create(data: Omit<DbSupplierPriceVersion, "id" | "createdAt" | "effectiveDate">): Promise<DbSupplierPriceVersion> {
+  async create(tenantId: string, data: Omit<DbSupplierPriceVersion, "id" | "createdAt" | "effectiveDate">): Promise<DbSupplierPriceVersion> {
     const row = await prisma.supplierPriceVersion.create({
       data: {
+        tenantId,
         supplierId: data.supplierId,
         productName: data.productName,
         sku: data.sku ?? null,
@@ -217,9 +218,10 @@ export const SupplierOfferDB = {
     return rows.map(mapOffer);
   },
 
-  async create(data: Omit<DbSupplierOffer, "id" | "createdAt">): Promise<DbSupplierOffer> {
+  async create(tenantId: string, data: Omit<DbSupplierOffer, "id" | "createdAt">): Promise<DbSupplierOffer> {
     const row = await prisma.supplierOffer.create({
       data: {
+        tenantId,
         supplierId: data.supplierId,
         title: data.title,
         description: data.description ?? null,

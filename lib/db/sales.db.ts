@@ -100,7 +100,7 @@ export const SalesDB = {
     const row = await prisma.sale.findUnique({ where: { id }, include: { items: true } });
     return row ? mapSale(row) : null;
   },
-  async add(sale: DbSale): Promise<DbSale> {
+  async add(tenantId: string, sale: DbSale): Promise<DbSale> {
     // Pre-validate product IDs to avoid FK violations (products may have been deleted since the sale was queued offline)
     const requestedIds = [...new Set(sale.items.map(i => i.productId))];
     const existingProducts = await prisma.product.findMany({
@@ -112,6 +112,7 @@ export const SalesDB = {
 
     const row = await prisma.sale.create({
       data: {
+        tenantId,
         id: sale.id, total: sale.total, totalCogs: sale.totalCogs ?? null, payment: sale.payment,
         amountPaid: sale.amountPaid, change: sale.change, customerPhone: sale.customerPhone ?? null, cashierId: sale.cashierId ?? null,
         // Comprobante fields
@@ -162,9 +163,10 @@ export const CashRegistersDB = {
     const row = await prisma.cashRegister.findUnique({ where: { id }, include: { movements: { orderBy: { createdAt: "desc" } } } });
     return row ? mapCashRegister(row) : null;
   },
-  async open(openingAmount: number, notes?: string): Promise<DbCashRegister> {
+  async open(tenantId: string, openingAmount: number, notes?: string): Promise<DbCashRegister> {
     const row = await prisma.cashRegister.create({
       data: {
+        tenantId,
         openingAmount, notes,
         movements: { create: { type: "apertura", amount: openingAmount, method: "efectivo", description: "Apertura de caja" } },
       },
