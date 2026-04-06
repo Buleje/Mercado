@@ -110,11 +110,29 @@ export function validateEnv(): void {
   }
 
   if (missing.length > 0) {
-    throw new Error(
-      "\n\n🚨 Missing required environment variables:\n\n" +
-        missing.join("\n") +
-        "\n\nSet these in your .env.local file (dev) or Vercel project settings (prod).\n",
-    );
+    // SOFT-FAIL en producción en lugar de THROW: la app arranca y los
+    // endpoints específicos que necesitan estas vars fallan cuando se llaman.
+    //
+    // Antes: throw → crashea TODOS los endpoints (incluso /superadmin/login
+    //                que no necesita las vars que están missing)
+    // Ahora: error log estructurado → permite que páginas estáticas rendericen.
+    //
+    // Esto evita "todo el sitio en HTTP 500" cuando falta una env var
+    // específica (p. ej. STRIPE_SECRET_KEY que solo necesita /api/billing).
+    const errorMessage =
+      "\n\n🚨 Missing required environment variables (app puede arrancar pero algunos endpoints fallarán):\n\n" +
+      missing.join("\n") +
+      "\n\nSet these in your .env.local file (dev) or Vercel project settings (prod).\n";
+
+    if (isProd) {
+      logger.error("[env] CRITICAL: missing required env vars in production", {
+        missing: missing.map((m) => m.replace(/^.+❌\s+/, "").split(" — ")[0]),
+        message: errorMessage,
+      });
+    } else {
+      // En dev seguimos throw para que el dev se entere de inmediato
+      throw new Error(errorMessage);
+    }
   }
 }
 
