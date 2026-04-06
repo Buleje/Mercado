@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
     // Asegurar que el Customer existe (upsert)
     await prisma.customer.upsert({
       where: { phone: resolvedPhone },
-      create: { phone: resolvedPhone, name: `Cliente ${resolvedPhone.slice(-4)}` },
+      create: { phone: resolvedPhone, name: `Cliente ${resolvedPhone.slice(-4)}`, tenantId: auth.tenantId },
       update: {},
     });
 

@@ -132,6 +132,7 @@ export async function POST(req: NextRequest) {
       const created = await tx.sale.create({
         data: {
           id,
+          tenantId: auth.tenantId,
           total: finalTotal,
           totalCogs: totalCogs ?? null,
           payment: data.payment ?? "efectivo",
