@@ -12,6 +12,7 @@ export type InventoryMovementType = "compra" | "venta" | "venta_online" | "devol
 export type DbInventoryMovement = {
   id: string;
   productId: number;
+  productName?: string;
   type: InventoryMovementType;
   lossType?: string;
   quantity: number;
@@ -46,9 +47,15 @@ function toISO(d: Date): string {
 
 // ── Mappers ───────────────────────────────────────────────────────────────────
 
-function mapInventoryMovement(m: PInventoryMovement): DbInventoryMovement {
+type PMovementWithProduct = PInventoryMovement & {
+  product?: { id: number; name: string } | null;
+};
+
+function mapInventoryMovement(m: PMovementWithProduct): DbInventoryMovement {
   return {
-    id: m.id, productId: m.productId, type: m.type as InventoryMovementType,
+    id: m.id, productId: m.productId,
+    ...(m.product?.name != null && { productName: m.product.name }),
+    type: m.type as InventoryMovementType,
     ...(m.lossType != null && { lossType: m.lossType }),
     quantity: m.quantity, previousStock: m.previousStock, newStock: m.newStock,
     ...(m.reference != null && { reference: m.reference }),
@@ -81,10 +88,55 @@ export const InventoryMovementsDB = {
   async getAll(tenantId?: string, limit = 200): Promise<DbInventoryMovement[]> {
     const where: Record<string, unknown> = {};
     if (tenantId) where.tenantId = tenantId;
-    return (await prisma.inventoryMovement.findMany({ where, orderBy: { createdAt: "desc" }, take: limit })).map(mapInventoryMovement);
+    return (await prisma.inventoryMovement.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      include: { product: { select: { id: true, name: true } } },
+    })).map(mapInventoryMovement);
   },
   async getByProduct(productId: number): Promise<DbInventoryMovement[]> {
-    return (await prisma.inventoryMovement.findMany({ where: { productId }, orderBy: { createdAt: "desc" } })).map(mapInventoryMovement);
+    return (await prisma.inventoryMovement.findMany({
+      where: { productId },
+      orderBy: { createdAt: "desc" },
+      include: { product: { select: { id: true, name: true } } },
+    })).map(mapInventoryMovement);
+  },
+
+  /**
+   * Cursor-based paginated listing of inventory movements.
+   * Returns up to `limit` rows plus the cursor for the next page.
+   */
+  async getPage(opts: {
+    tenantId?: string;
+    cursor?: string;
+    limit?: number;
+    productId?: number;
+    type?: string;
+  } = {}): Promise<{ movements: DbInventoryMovement[]; nextCursor: string | null; total: number }> {
+    const limit = Math.min(Math.max(opts.limit ?? 50, 1), 500);
+
+    const where: Record<string, unknown> = {};
+    if (opts.tenantId) where.tenantId = opts.tenantId;
+    if (opts.productId) where.productId = opts.productId;
+    if (opts.type) where.type = opts.type;
+
+    const [rows, total] = await prisma.$transaction([
+      prisma.inventoryMovement.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: limit + 1,
+        ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),
+        include: { product: { select: { id: true, name: true } } },
+      }),
+      prisma.inventoryMovement.count({ where }),
+    ]);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+    return { movements: items.map(mapInventoryMovement), nextCursor, total };
   },
   async record(data: { productId: number; type: string; lossType?: string; quantity: number; reference?: string; warehouseId?: string; notes?: string; createdBy?: string }): Promise<DbInventoryMovement> {
     // Atomic: read current stock, compute new stock, update product, create movement

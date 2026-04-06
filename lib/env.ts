@@ -59,6 +59,28 @@ const REQUIRED: EnvSpec[] = [
   },
 ];
 
+// ── Optional variables (documented for discoverability, not validated) ────────
+//
+// Google OAuth 2.0 (customer login):
+//   GOOGLE_CLIENT_ID       — OAuth client ID from Google Cloud Console
+//   GOOGLE_CLIENT_SECRET   — OAuth client secret from Google Cloud Console
+//   Enable via feature flag: FEATURE_OAUTH_GOOGLE=true
+//
+// Redis:
+//   REDIS_URL              — Redis connection URL for distributed cache
+//
+// Email (SMTP):
+//   SMTP_USER, SMTP_PASS   — Nodemailer credentials
+//
+// Push notifications:
+//   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
+//
+// WhatsApp:
+//   WHATSAPP_API_URL, WHATSAPP_API_TOKEN
+//
+// Analytics:
+//   NEXT_PUBLIC_GA_MEASUREMENT_ID — Google Analytics 4
+
 // ── Validation logic ──────────────────────────────────────────────────────────
 
 let validated = false;

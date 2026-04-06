@@ -73,11 +73,52 @@ function mapBundle(b: PBundle & { items: PBundleItem[] }): DbBundle {
 
 export const ProductsDB = {
   async getAll(tenantId?: string): Promise<DbProduct[]> {
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { deletedAt: null };
     if (tenantId) where.tenantId = tenantId;
-    const allRows = await prisma.product.findMany({ where, orderBy: { id: "asc" } });
-    const rows = allRows.filter(r => (r as Record<string, unknown>).deletedAt == null);
+    const rows = await prisma.product.findMany({ where, orderBy: { id: "asc" } });
     return rows.map(mapProduct);
+  },
+
+  /**
+   * Cursor-based paginated listing of products.
+   * Returns up to `limit` products plus the cursor for the next page.
+   */
+  async getPage(opts: {
+    tenantId?: string;
+    cursor?: number;
+    limit?: number;
+    category?: string;
+    search?: string;
+    active?: boolean;
+  } = {}): Promise<{ products: DbProduct[]; nextCursor: number | null; total: number }> {
+    const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
+
+    const where: Record<string, unknown> = { deletedAt: null };
+    if (opts.tenantId) where.tenantId = opts.tenantId;
+    if (opts.category) where.category = opts.category;
+    if (opts.active !== undefined) where.active = opts.active;
+    if (opts.search) {
+      where.OR = [
+        { name: { contains: opts.search, mode: "insensitive" } },
+        { barcode: { contains: opts.search, mode: "insensitive" } },
+      ];
+    }
+
+    const [rows, total] = await prisma.$transaction([
+      prisma.product.findMany({
+        where,
+        orderBy: { id: "asc" },
+        take: limit + 1,
+        ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+    return { products: items.map(mapProduct), nextCursor, total };
   },
   async getById(id: number): Promise<DbProduct | null> {
     const p = await prisma.product.findUnique({ where: { id } });

@@ -111,6 +111,45 @@ export const CustomersDB = {
     const rows = await prisma.customer.findMany({ where, include: { locations: true }, orderBy: { updatedAt: "desc" } });
     return rows.map(mapCustomer);
   },
+
+  /**
+   * Cursor-based paginated listing of customers.
+   * Uses phone as the cursor since it's the PK. Returns up to `limit` rows.
+   */
+  async getPage(opts: {
+    tenantId?: string;
+    cursor?: string;
+    limit?: number;
+    search?: string;
+  } = {}): Promise<{ customers: DbCustomer[]; nextCursor: string | null; total: number }> {
+    const limit = Math.min(Math.max(opts.limit ?? 50, 1), 500);
+
+    const where: Record<string, unknown> = {};
+    if (opts.tenantId) where.tenantId = opts.tenantId;
+    if (opts.search) {
+      where.OR = [
+        { name: { contains: opts.search, mode: "insensitive" } },
+        { phone: { contains: opts.search } },
+      ];
+    }
+
+    const [rows, total] = await prisma.$transaction([
+      prisma.customer.findMany({
+        where,
+        include: { locations: true },
+        orderBy: { updatedAt: "desc" },
+        take: limit + 1,
+        ...(opts.cursor ? { skip: 1, cursor: { phone: opts.cursor } } : {}),
+      }),
+      prisma.customer.count({ where }),
+    ]);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? items[items.length - 1].phone : null;
+
+    return { customers: items.map(mapCustomer), nextCursor, total };
+  },
   async getByPhone(phone: string): Promise<DbCustomer | null> {
     const row = await prisma.customer.findUnique({ where: { phone: normalizePhone(phone) }, include: { locations: true } });
     return row ? mapCustomer(row) : null;

@@ -20,9 +20,9 @@ Cada ADR sigue esta estructura:
 
 | # | Decisión | Estado | Fecha |
 |---|----------|--------|-------|
-| 001 | Usar Prisma + Supabase PostgreSQL | ✅ Aceptada | 2024-01 |
-| 002 | Next.js App Router sobre Pages Router | ✅ Aceptada | 2024-01 |
-| 003 | DB classes en vez de Prisma directo | ✅ Aceptada | 2024-03 |
-| 004 | Multi-tenant con tenantId por fila | ✅ Aceptada | 2024-03 |
-| 005 | Groq API (Llama 3.3) para IA | ✅ Aceptada | 2025-06 |
+| 001 | Multi-tenancy con tenantId por fila | ✅ Aceptada | 2024 |
+| 002 | JWT stateless con HMAC-SHA256 | ✅ Aceptada | 2024 |
+| 003 | Migración de fire-and-forget a BullMQ | ✅ Aceptada | 2026-04 |
+| 004 | Dual tenant resolution (server + client) | ✅ Aceptada | 2025 |
+| 005 | Feature flags via env vars | ✅ Aceptada | 2026-04 |
 | 006 | Strategy Pattern para descuentos | ✅ Aceptada | 2026-04 |

@@ -36,6 +36,8 @@ export type DbBatchFilters = {
   expiringDays?: number;
   page?: number;
   limit?: number;
+  /** Cursor ID for cursor-based pagination (takes precedence over page when provided) */
+  cursor?: string;
 };
 
 export type DbBatchPage = {
@@ -44,6 +46,8 @@ export type DbBatchPage = {
   page: number;
   limit: number;
   totalPages: number;
+  /** Cursor for the next page (present only with cursor-based pagination) */
+  nextCursor?: string;
 };
 
 export type DbBatchStats = {
@@ -145,7 +149,6 @@ export const BatchesDB = {
   async getAll(tenantId: string, filters: DbBatchFilters = {}): Promise<DbBatchPage> {
     const page = Math.max(filters.page ?? 1, 1);
     const limit = Math.min(Math.max(filters.limit ?? 20, 1), 200);
-    const skip = (page - 1) * limit;
     const now = new Date();
 
     // Construir where clause
@@ -181,16 +184,36 @@ export const BatchesDB = {
       where.quantity = { lte: 0 };
     }
 
+    // Cursor-based pagination when cursor is provided; offset otherwise (backward compat)
+    const useCursor = !!filters.cursor;
+    const skip = useCursor ? 1 : (page - 1) * limit;
+
     const [rows, total] = await prisma.$transaction([
       prisma.batch.findMany({
         where,
         orderBy: { expiryDate: "asc" },
-        skip,
-        take: limit,
+        take: useCursor ? limit + 1 : limit,
+        ...(useCursor
+          ? { skip: 1, cursor: { id: filters.cursor } }
+          : { skip }),
         include: { product: { select: { id: true, name: true } } },
       }),
       prisma.batch.count({ where }),
     ]);
+
+    if (useCursor) {
+      const hasMore = rows.length > limit;
+      const items = hasMore ? rows.slice(0, limit) : rows;
+      const nextCursor = hasMore ? items[items.length - 1].id : null;
+      return {
+        data: items.map(mapBatch),
+        total,
+        page: 0, // Not meaningful for cursor pagination
+        limit,
+        totalPages: Math.ceil(total / limit),
+        ...(nextCursor && { nextCursor }),
+      };
+    }
 
     return {
       data: rows.map(mapBatch),
@@ -222,6 +245,7 @@ export const BatchesDB = {
         ...(onlyWithStock && { quantity: { gt: 0 } }),
       },
       orderBy: { expiryDate: "asc" },
+      include: { product: { select: { id: true, name: true } } },
     });
     return rows.map(mapBatch);
   },
@@ -337,6 +361,7 @@ export const BatchesDB = {
     });
     const row = await prisma.batch.findFirst({
       where: { id, tenantId },
+      include: { product: { select: { id: true, name: true } } },
     });
 
     propagateExpiresAt(existing.productId).catch(() => {});
