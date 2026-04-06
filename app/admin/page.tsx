@@ -22,6 +22,7 @@ import {
   Zap, Tag, RefreshCw, CreditCard, Landmark,
   ClipboardList, Power, RotateCcw,
   Palette, CircleUser, ArrowUpDown, Globe, Pencil, Plus,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
@@ -29,8 +30,9 @@ import { MODULE_PERMISSIONS } from "@/lib/module-permissions";
 import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import { ShortcutsModal, ClearDataModal } from "@/components/admin/AdminModals";
 import type { Tab } from "./_lib/tabs.types";
-import { TAB_MIGRATION } from "./_lib/tab-migration";
 import { TabSpinner } from "./_lib/tab-spinner";
+import { useAdminTabs } from "./_hooks/useAdminTabs";
+import { useAdminModals } from "./_hooks/useAdminModals";
 import { NavDefaultTabsConfig } from "@/components/admin/NavDefaultTabsConfig";
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
@@ -301,34 +303,7 @@ function AdminPage() {
   }, []);
   const adminPath = (path: string) => `${tenantPrefix}${path}`;
 
-  const VALID_TABS: Tab[] = ["asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command","fiados","turnos","cotizaciones","guias-remision","notas-credito","contratos","sugerencias-ia","metas-logros","marketplace","delivery-partners","store-customizer","colas"];
-  const [tab, setTab] = useState<Tab>(() => {
-    if (typeof window === "undefined") return "asistente-ia";
-    // 0. Check URL search param first (e.g. /admin?tab=inventario)
-    const urlTab = new URLSearchParams(window.location.search).get("tab");
-    if (urlTab) {
-      const migrated = TAB_MIGRATION[urlTab];
-      if (migrated) return migrated;
-      if (VALID_TABS.includes(urlTab as Tab)) return urlTab as Tab;
-    }
-    // 1. Check URL hash (e.g. /admin#inventario)
-    const hash = window.location.hash.slice(1); // remove #
-    if (hash) {
-      const migrated = TAB_MIGRATION[hash];
-      if (migrated) return migrated;
-      if (VALID_TABS.includes(hash as Tab)) return hash as Tab;
-    }
-    // 2. Fallback to localStorage
-    try {
-      const saved = localStorage.getItem("admin_active_tab");
-      if (saved) {
-        const migrated = TAB_MIGRATION[saved];
-        if (migrated) return migrated;
-        if (VALID_TABS.includes(saved as Tab)) return saved as Tab;
-      }
-    } catch {}
-    return "asistente-ia";
-  });
+  // Estado de tab (URL/hash/localStorage + TAB_MIGRATION) → useAdminTabs (más abajo, requiere addRecent)
   const onboarding = useOnboarding();
   // Silent token refresh — rotates access token every 12 min (expires at 15 min)
   useTokenRefresh();
@@ -341,14 +316,23 @@ function AdminPage() {
     focusMode, toggleFocusMode,
     presentationMode, setPresentationMode,
   } = useAdminLayout();
-  const [showShortcuts, setShowShortcuts] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
+  // showShortcuts/searchOpen/showModuleManager/showCierreDiario/showChangelog → useAdminModals (más abajo)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // null = "Todas"
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState("");
   const [showModuleHelp, setShowModuleHelp] = useState(false);
   // favoriteTabs/recentTabs/toggleFavorite/addRecent → useFavoritesAndRecent
   const { favoriteTabs, toggleFavorite, recentTabs, addRecent } = useFavoritesAndRecent();
+  // Estado de tab activa + navegación (URL/hash/localStorage + TAB_MIGRATION) → useAdminTabs
+  const { tab, setTab, navigateTab } = useAdminTabs(addRecent);
+  // Modals globales (atajos, búsqueda, gestor de módulos, cierre diario, changelog) → useAdminModals
+  const {
+    showShortcuts, setShowShortcuts,
+    searchOpen, setSearchOpen,
+    showModuleManager, setShowModuleManager,
+    showCierreDiario, setShowCierreDiario,
+    showChangelog, setShowChangelog,
+  } = useAdminModals();
   const [recentCollapsed, setRecentCollapsed] = useState(true);
   // Clear data wizard state → useClearDataFlow
   // (seedingData borrado: estaba declarado pero nunca usado)
@@ -367,23 +351,19 @@ function AdminPage() {
   const { hiddenTabs, toggleHideTab, clearAllHiddenTabs } = useHiddenTabs();
   // clearedDemoTabs/demoClearing/clearDemoData → useDemoCleanup (dismissDemoTab no se usa fuera del hook)
   const { clearedDemoTabs, demoClearing, clearDemoData } = useDemoCleanup(DEMO_DATA_MODULES);
-  const [showModuleManager, setShowModuleManager] = useState(false);
   // categoryOrder/saveCategoryOrder → useCategoryOrder
   const { categoryOrder, saveCategoryOrder } = useCategoryOrder();
-  const [showCierreDiario, setShowCierreDiario] = useState(false);
-  const [showChangelog, setShowChangelog] = useState(false);
   // showOnboarding → useOnboardingTrigger
   const { showOnboarding, setShowOnboarding } = useOnboardingTrigger();
   // changelogHasNew (badge de novedades) — variable mantenida por si se reactiva el badge
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const changelogHasNew = useChangelogBadge();
 
-  // ── Open module manager from Settings via custom event ──────────────────
+  // Cierra el panel "module help" inline cuando cambia la tab activa
+  // (antes vivía dentro de navigateTab; ahora declarativo y desacoplado del hook)
   useEffect(() => {
-    const handler = () => setShowModuleManager(true);
-    window.addEventListener("open-module-manager", handler);
-    return () => window.removeEventListener("open-module-manager", handler);
-  }, []);
+    setShowModuleHelp(false);
+  }, [tab]);
 
   // userRole/userName/authReady/savedRolePerms/storeMode → useAdminAuth
   const onUnauth = useCallback(() => {
@@ -415,20 +395,7 @@ function AdminPage() {
   const webhookPendingCount = useWebhookPendingCount(userRole);
 
   // toggleFavorite ahora vive en useFavoritesAndRecent
-  // navigateTab compone setTab + URL update + addRecent (de useFavoritesAndRecent)
-  const navigateTab = useCallback((id: Tab) => {
-    setTab(id);
-    setShowModuleHelp(false);
-    try { localStorage.setItem("admin_active_tab", id); } catch {}
-    // Persist active tab in URL hash + search param so deep-linking and reloading works
-    try {
-      const url = new URL(window.location.href);
-      url.searchParams.set("tab", id);
-      url.hash = id;
-      window.history.replaceState(null, "", url.toString());
-    } catch {}
-    addRecent(id);
-  }, [addRecent]);
+  // navigateTab ahora vive en useAdminTabs (incluye URL/hash/localStorage + addRecent)
 
   // Listener evento admin:navigate → useAdminNavigateEvent
   useAdminNavigateEvent(navigateTab);
