@@ -91,22 +91,20 @@ const SETUP_ITEMS: SetupItem[] = [
   },
   {
     id: "fix-vercel-deploy-error",
-    title: "Investigar deploys del feature branch en ERROR",
+    title: "✅ ARREGLADO — deploys del feature branch en ERROR",
     description:
-      "Los últimos 2 deploys del feature branch fallaron en Vercel. Hay que ver los logs y arreglar el build antes de mergear el PR.",
-    priority: "critical",
+      "Causa: vercel.json tenía 'rollingRelease' (feature Pro) + 5 crons multi-diarios — Hobby los rechaza. Fix en commit fac06a1 (quitar rollingRelease + normalizar crons a 1x día). Deploy verificado READY.",
+    priority: "low",
     category: "vercel",
-    estimatedMinutes: 10,
+    estimatedMinutes: 0,
     link: {
       url: "https://vercel.com/brandon-luis-projects-9cf56555/mercado/deployments?environment=preview",
-      label: "Ver deployments",
+      label: "Ver deploy verde",
     },
     steps: [
-      "Abre el deployment más reciente del feature branch",
-      "Revisa los build logs para ver el error real",
-      "Si es por env vars faltantes, agregarlas en Settings → Environment Variables",
-      "Si es por código, hacer fix y push",
-      "Verificar que el siguiente deploy es READY",
+      "Ya no requiere acción humana — solo marcar como hecho",
+      "El fix está en commit fac06a1 del feature branch",
+      "Deploy de prueba: dpl_Gs9VKYSHph7yQvYaDFbNBZgnrVZx (READY)",
     ],
   },
   {
@@ -211,6 +209,66 @@ const SETUP_ITEMS: SetupItem[] = [
       "GitHub repo → Settings → Secrets → Actions → New repository secret",
       "Name: GH_PAT, Value: el token",
       "release-please-action lo usará automáticamente si no hay GITHUB_TOKEN",
+    ],
+  },
+  {
+    id: "verificar-release-please",
+    title: "Verificar que release-please corrió tras mergear PR #3",
+    description:
+      "Una vez mergees el PR #3 a master, GitHub Actions debería ejecutar el workflow Release Please automáticamente. Crea un PR de release con CHANGELOG generado.",
+    priority: "high",
+    category: "github",
+    estimatedMinutes: 2,
+    link: {
+      url: "https://github.com/Buleje/Mercado/actions/workflows/release-please.yml",
+      label: "Ver workflow",
+    },
+    steps: [
+      "Después del merge del PR #3, esperar ~30 segundos",
+      "Abrir el link → debería verse un run nuevo en la lista",
+      "Si el run falla, revisar logs (probablemente permisos o config)",
+      "Si pasa, ver el nuevo PR de release en /pulls",
+    ],
+  },
+  {
+    id: "agregar-env-vars-vercel",
+    title: "Agregar env vars críticas a Vercel (DATABASE_URL, AUTH_SECRET, etc)",
+    description:
+      "Vercel solo tiene 2 env vars (las de Supabase). Faltan DATABASE_URL, AUTH_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, CRON_SECRET. El build pasa pero el runtime fallará si lib/env.ts las valida en producción.",
+    priority: "high",
+    category: "vercel",
+    estimatedMinutes: 5,
+    link: {
+      url: "https://vercel.com/brandon-luis-projects-9cf56555/mercado/settings/environment-variables",
+      label: "Vercel Env Vars",
+    },
+    steps: [
+      "Settings → Environment Variables",
+      "Agregar DATABASE_URL (Supabase pooler URL)",
+      "Agregar AUTH_SECRET (32+ bytes, generar con openssl rand -hex 32)",
+      "Agregar STRIPE_SECRET_KEY (sk_test_ o sk_live_)",
+      "Agregar STRIPE_WEBHOOK_SECRET (whsec_)",
+      "Agregar CRON_SECRET (32+ bytes)",
+      "(Alternativa: avísame con 'agrega env vars X=Y a Vercel' y lo hago via API)",
+    ],
+  },
+  {
+    id: "verificar-pr3-deploy",
+    title: "Verificar que el último deploy del PR #3 sale READY",
+    description:
+      "Después del fix de vercel.json (commit fac06a1), el siguiente deploy del feature branch debe pasar. Confirmar antes de mergear.",
+    priority: "high",
+    category: "vercel",
+    estimatedMinutes: 1,
+    link: {
+      url: "https://vercel.com/brandon-luis-projects-9cf56555/mercado/deployments?environment=preview",
+      label: "Ver deployments",
+    },
+    steps: [
+      "Abrir el link",
+      "Buscar deploy del commit fac06a1 (o más reciente)",
+      "Confirmar status = READY (no ERROR)",
+      "Si está READY, mergear PR #3 con confianza",
     ],
   },
 ];
