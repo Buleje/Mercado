@@ -10,25 +10,23 @@ import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
 import { OnboardingTour } from "@/components/admin/OnboardingTour";
 import {
-  Trash2, Check, X, AlertTriangle,
-  Users, Star, LogOut, ShoppingBasket, ShoppingCart,
+  Check, X,
+  Users, Star, ShoppingBasket, ShoppingCart,
   Loader2, Truck, FileText, Settings, Menu, Store,
-  MapPin, Clock, Phone, ExternalLink, Search,
+  Clock, Search,
   Eye, EyeOff, Activity,
   Brain,
-  Package, Printer, FlaskConical,
-  DollarSign, Layers, Sun, Moon, Download,
-  Shield, ChevronDown, ChevronUp,
-  CheckCircle, SlidersHorizontal, Sparkles,
+  Package, FlaskConical,
+  DollarSign, Layers,
+  ChevronDown, ChevronUp,
+  CheckCircle, SlidersHorizontal,
   Maximize2, Minimize2, Zap, Tag, RefreshCw, CreditCard, Landmark,
   ClipboardList, Power, RotateCcw,
   Palette, CircleUser, ArrowUpDown, Globe, Pencil, Plus,
 } from "lucide-react";
-import type { StoreMode } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
 import { MODULE_PERMISSIONS } from "@/lib/module-permissions";
-import { AdminStatsMobile, AdminStatsDesktop } from "@/components/admin/AdminStats";
 import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import { ShortcutsModal, ClearDataModal } from "@/components/admin/AdminModals";
 import type { Tab } from "./_lib/tabs.types";
@@ -338,7 +336,7 @@ function AdminPage() {
   // extraído a useAdminLayout — ver app/admin/_hooks/useAdminLayout.ts
   const {
     mobileNavOpen, setMobileNavOpen,
-    compactMode, toggleCompact,
+    compactMode,
     focusMode, toggleFocusMode,
     presentationMode, setPresentationMode,
   } = useAdminLayout();
@@ -366,8 +364,8 @@ function AdminPage() {
   const flyoutTimerRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
   // hiddenTabs/toggleHideTab → useHiddenTabs
   const { hiddenTabs, toggleHideTab } = useHiddenTabs();
-  // clearedDemoTabs/demoClearing/dismissDemoTab/clearDemoData → useDemoCleanup
-  const { clearedDemoTabs, demoClearing, dismissDemoTab, clearDemoData } = useDemoCleanup(DEMO_DATA_MODULES);
+  // clearedDemoTabs/demoClearing/clearDemoData → useDemoCleanup (dismissDemoTab no se usa fuera del hook)
+  const { clearedDemoTabs, demoClearing, clearDemoData } = useDemoCleanup(DEMO_DATA_MODULES);
   const [showModuleManager, setShowModuleManager] = useState(false);
   // categoryOrder/saveCategoryOrder → useCategoryOrder
   const { categoryOrder, saveCategoryOrder } = useCategoryOrder();
@@ -375,7 +373,8 @@ function AdminPage() {
   const [showChangelog, setShowChangelog] = useState(false);
   // showOnboarding → useOnboardingTrigger
   const { showOnboarding, setShowOnboarding } = useOnboardingTrigger();
-  // changelogHasNew → useChangelogBadge
+  // changelogHasNew (badge de novedades) — variable mantenida por si se reactiva el badge
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const changelogHasNew = useChangelogBadge();
 
   // ── Open module manager from Settings via custom event ──────────────────
@@ -401,7 +400,6 @@ function AdminPage() {
     isSuperAdminImpersonating,
     activeTenantName,
     activeTenantSlug,
-    activeTenantType,
     activeTenantLogo,
     handleExit: handleExitImpersonation,
   } = useImpersonation();
@@ -411,7 +409,8 @@ function AdminPage() {
   const { permission, requestPermission, sendNotification, hasAsked } = useNotifications();
 
   // Auth + settings inicial → useAdminAuth (arriba)
-  // webhookPendingCount → useWebhookPendingCount
+  // webhookPendingCount → useWebhookPendingCount (badge sidebar — se reserva para reactivar el UI badge)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const webhookPendingCount = useWebhookPendingCount(userRole);
 
   // toggleFavorite ahora vive en useFavoritesAndRecent
@@ -457,8 +456,8 @@ function AdminPage() {
     return qi === nq.length;
   }, []);
 
-  // alerts + quickStats + fetchAlerts (polling + SSE) → useAdminAlerts
-  const { alerts, quickStats, fetchAlerts } = useAdminAlerts(authReady);
+  // alerts + quickStats (polling + SSE) → useAdminAlerts (fetchAlerts queda interno al hook)
+  const { alerts, quickStats } = useAdminAlerts(authReady);
 
   // Push notification cuando aumentan los pedidos pendientes → useNewOrderNotification
   useNewOrderNotification(quickStats, permission, sendNotification);
@@ -576,13 +575,11 @@ function AdminPage() {
 
   // Sidebar shortcuts → useSidebarShortcuts
   const {
-    sidebarShortcuts, editingShortcuts, setEditingShortcuts,
+    editingShortcuts, setEditingShortcuts,
     showAddShortcut, setShowAddShortcut,
     removeShortcut, addShortcut, moveShortcut,
     resolvedShortcuts, availableForShortcut,
   } = useSidebarShortcuts(ALL_TABS, allowedTabs);
-
-  const currentTab = filteredTabs.find(t => t.id === tab) ?? filteredTabs[0];
 
   // Command palette items (Cmd+K) → useCommandItems
   const commandItems = useCommandItems(navigateTab);
