@@ -38,6 +38,9 @@ import { TabSpinner } from "./_lib/tab-spinner";
 import { NavDefaultTabsConfig } from "@/components/admin/NavDefaultTabsConfig";
 import { useKeyboardShortcuts } from "./_hooks/useKeyboardShortcuts";
 import { useAdminLayout } from "./_hooks/useAdminLayout";
+import { useFavoritesAndRecent } from "./_hooks/useFavoritesAndRecent";
+import { useImpersonation } from "./_hooks/useImpersonation";
+import { useDemoCleanup } from "./_hooks/useDemoCleanup";
 
 // Lazy-load heavy admin tabs for better initial load performance
 // ── Unified Module Imports (8 consolidated modules) ──
@@ -327,14 +330,8 @@ function AdminPage() {
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState("");
   const [showModuleHelp, setShowModuleHelp] = useState(false);
-  const [favoriteTabs, setFavoriteTabs] = useState<Set<Tab>>(() => {
-    if (typeof window === "undefined") return new Set<Tab>();
-    try { const s = localStorage.getItem("admin_fav_tabs"); return s ? new Set<Tab>(JSON.parse(s)) : new Set<Tab>(); } catch { return new Set<Tab>(); }
-  });
-  const [recentTabs, setRecentTabs] = useState<Tab[]>(() => {
-    if (typeof window === "undefined") return [];
-    try { const s = localStorage.getItem("admin_recent_tabs"); return s ? JSON.parse(s) : []; } catch { return []; }
-  });
+  // favoriteTabs/recentTabs/toggleFavorite/addRecent → useFavoritesAndRecent
+  const { favoriteTabs, toggleFavorite, recentTabs, addRecent } = useFavoritesAndRecent();
   const [recentCollapsed, setRecentCollapsed] = useState(true);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearConfirmStep, setClearConfirmStep] = useState<1 | 2 | 3>(1);
@@ -361,10 +358,8 @@ function AdminPage() {
       return next;
     });
   };
-  const [clearedDemoTabs, setClearedDemoTabs] = useState<Set<Tab>>(() => {
-    if (typeof window === "undefined") return new Set<Tab>();
-    try { const s = localStorage.getItem("admin_demo_cleared"); return s ? new Set<Tab>(JSON.parse(s)) : new Set<Tab>(); } catch { return new Set<Tab>(); }
-  });
+  // clearedDemoTabs/demoClearing/dismissDemoTab/clearDemoData → useDemoCleanup
+  const { clearedDemoTabs, demoClearing, dismissDemoTab, clearDemoData } = useDemoCleanup(DEMO_DATA_MODULES);
   const [showModuleManager, setShowModuleManager] = useState(false);
   // Sidebar category ordering — persisted in localStorage
   const [categoryOrder, setCategoryOrder] = useState<string[]>(() => {
@@ -409,67 +404,21 @@ function AdminPage() {
       }
     } catch {}
   }, []);
-  const [demoClearing, setDemoClearing] = useState<Tab | null>(null);
-  const dismissDemoTab = (id: Tab) => {
-    setClearedDemoTabs(prev => {
-      const next = new Set(prev);
-      next.add(id);
-      try { localStorage.setItem("admin_demo_cleared", JSON.stringify(Array.from(next))); } catch {}
-      return next;
-    });
-  };
-  const clearDemoData = async (id: Tab) => {
-    const meta = DEMO_DATA_MODULES[id];
-    if (!meta?.api) { dismissDemoTab(id); return; }
-    setDemoClearing(id);
-    try {
-      const res = await fetch(meta.api, { method: "DELETE" });
-      if (res.ok) dismissDemoTab(id);
-    } catch { /* ignore */ }
-    setDemoClearing(null);
-  };
+  // demoClearing, dismissDemoTab, clearDemoData → ahora viven en useDemoCleanup
   const [userRole, setUserRole] = useState<"admin" | "cajero" | "almacenero">("admin");
   const [userName, setUserName] = useState("Admin");
   const [authReady, setAuthReady] = useState(false);
   const [savedRolePerms, setSavedRolePerms] = useState<Record<string, string[]> | null>(null);
 
-  // SuperAdmin impersonation + tenant name in header
-  const [isSuperAdminImpersonating, setIsSuperAdminImpersonating] = useState(false);
-  const [activeTenantName, setActiveTenantName] = useState<string | null>(null);
-  const [activeTenantSlug, setActiveTenantSlug] = useState<string | null>(null);
-  const [activeTenantType, setActiveTenantType] = useState<"tienda" | "proveedor" | "delivery">("tienda");
-  const [activeTenantLogo, setActiveTenantLogo] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Detectar impersonación de SuperAdmin
-    const impersonateSlug = localStorage.getItem("superadmin-impersonate-tenant");
-    const tenantSlug = localStorage.getItem("active-tenant-slug");
-    const slug = impersonateSlug ?? tenantSlug;
-    if (impersonateSlug) setIsSuperAdminImpersonating(true);
-    if (slug && slug !== "main") {
-      setActiveTenantSlug(slug);
-      // Fetch del nombre de la tienda — no enviar x-tenant-id header,
-      // el proxy resuelve el tenant desde la cookie de sesión (canonical ID)
-      fetch("/api/settings")
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (d?.businessName) setActiveTenantName(d.businessName);
-          if (d?.logoUrl) setActiveTenantLogo(d.logoUrl);
-          // Detectar tipo de tenant por storeMode o flag
-          if (d?.storeType === "proveedor" || d?.mode === "proveedor") setActiveTenantType("proveedor");
-          else if (d?.storeType === "delivery" || d?.mode === "delivery") setActiveTenantType("delivery");
-          else setActiveTenantType("tienda");
-        })
-        .catch(() => {});
-    }
-  }, []);
-
-  const handleExitImpersonation = () => {
-    localStorage.removeItem("superadmin-impersonate-tenant");
-    localStorage.removeItem("active-tenant-slug");
-    setIsSuperAdminImpersonating(false);
-    window.location.href = "/superadmin";
-  };
+  // SuperAdmin impersonation + tenant info → useImpersonation
+  const {
+    isSuperAdminImpersonating,
+    activeTenantName,
+    activeTenantSlug,
+    activeTenantType,
+    activeTenantLogo,
+    handleExit: handleExitImpersonation,
+  } = useImpersonation();
 
   // useScrollLock + handlers Escape/Resize → ahora viven en useAdminLayout
   const { toggle: toggleTheme } = useTheme();
@@ -532,16 +481,8 @@ function AdminPage() {
     setPresentationMode,
   });
 
-  // ── Favorites & recent tabs ────────────────────────────────────────
-  const toggleFavorite = useCallback((id: Tab) => {
-    setFavoriteTabs(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      localStorage.setItem("admin_fav_tabs", JSON.stringify([...next]));
-      return next;
-    });
-  }, []);
-
+  // toggleFavorite ahora vive en useFavoritesAndRecent
+  // navigateTab compone setTab + URL update + addRecent (de useFavoritesAndRecent)
   const navigateTab = useCallback((id: Tab) => {
     setTab(id);
     setShowModuleHelp(false);
@@ -553,12 +494,8 @@ function AdminPage() {
       url.hash = id;
       window.history.replaceState(null, "", url.toString());
     } catch {}
-    setRecentTabs(prev => {
-      const next = [id, ...prev.filter(t => t !== id)].slice(0, 5);
-      localStorage.setItem("admin_recent_tabs", JSON.stringify(next));
-      return next;
-    });
-  }, []);
+    addRecent(id);
+  }, [addRecent]);
 
   // ── Navigate from notification hub alerts ──
   useEffect(() => {
