@@ -171,12 +171,12 @@ export default function PLTab() {
     if (!summary) return;
     exportToCSV([
       { concepto: "Ingresos brutos", importe: summary.revenue },
-      { concepto: "Costo de mercadería (COGS)", importe: -summary.cogs },
+      { concepto: "Costo de lo vendido", importe: -summary.cogs },
       { concepto: "Utilidad bruta", importe: summary.grossProfit },
       ...Object.entries(summary.expenses).map(([cat, val]) => ({ concepto: `Gasto: ${cat}`, importe: -val })),
       { concepto: "Total gastos operativos", importe: -summary.totalExpenses },
       { concepto: "UTILIDAD NETA", importe: summary.netProfit },
-    ], `P&L-${summary.period.replace(" ", "-")}`);
+    ], `ganancias-perdidas-${summary.period.replace(" ", "-")}`);
   };
 
   return (
@@ -186,9 +186,9 @@ export default function PLTab() {
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
             <DollarSign className="h-6 w-6 text-primary" />
-            Estado de Resultados (P&amp;L)
+            Ganancias y Pérdidas del Mes
           </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Ingresos, costos y utilidad neta del período</p>
+          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Cuánto entró, cuánto salió y cuánto quedó de ganancia</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <select
@@ -209,7 +209,7 @@ export default function PLTab() {
             <RefreshCw className="h-4 w-4 text-gray-500 dark:text-muted" />
           </button>
           <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-            <Download className="h-4 w-4" /> Exportar
+            <Download className="h-4 w-4" /> Descargar
           </button>
         </div>
       </div>
@@ -248,16 +248,16 @@ export default function PLTab() {
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
             <div className="px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border flex items-center justify-between">
               <h2 className="font-bold text-gray-900 dark:text-foreground text-sm">
-                Estado de Resultados — {summary.period}
+                Ganancias y Pérdidas — {summary.period}
               </h2>
               <span className={cn("text-xs font-bold px-3 py-1 rounded-full", summary.netProfit >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600")}>
-                {summary.netProfit >= 0 ? "RENTABLE" : "PÉRDIDA"}
+                {summary.netProfit >= 0 ? "GANANDO" : "PERDIENDO"}
               </span>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-card-border">
               {/* Revenue */}
               <PLRow label="(+) Ingresos por ventas" value={summary.revenue} bold highlight="blue" />
-              <PLRow label="(−) Costo de mercadería vendida (COGS)" value={-summary.cogs} sub="~55% de ventas estimado" />
+              <PLRow label="(−) Costo de lo vendido" value={-summary.cogs} sub="~55% de ventas estimado" />
               <PLRow label="= Utilidad Bruta" value={summary.grossProfit} bold highlight={summary.grossProfit >= 0 ? "green" : "red"} showPct pctOf={summary.revenue} />
 
               {/* Expenses breakdown */}

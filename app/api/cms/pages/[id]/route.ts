@@ -8,7 +8,6 @@ import {
   deletePage
 } from "@/lib/cms-db/pages";
 import { PageSchema } from "@/lib/cms/types";
-import { z } from "zod";
 
 // ═══════════════════════════════════════════════════════
 // GET /api/cms/pages/:id - Get single page
@@ -54,19 +53,19 @@ export async function PUT(
   const { id } = await params;
   try {
     const body = await req.json();
-    const validated = PageSchema.partial().parse(body);
+    const parsed = PageSchema.partial().safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Datos inválidos" },
+        { status: 400 }
+      );
+    }
+    const validated = parsed.data;
 
     const page = await updatePage(id, validated);
 
     return NextResponse.json(page);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Datos inválidos", details: error.issues },
-        { status: 400 }
-      );
-    }
-
     console.error("[cms/pages/id] PUT error:", error);
     return NextResponse.json(
       { error: "Error al actualizar página" },

@@ -8,7 +8,6 @@ import type {
 } from "@/lib/generated/prisma/client";
 import {
   type DbSale,
-  type DbSaleItem,
 } from "./misc.db";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
@@ -56,6 +55,13 @@ function mapSale(s: PSale & { items: PSaleItem[] }): DbSale {
     ...(s.customerPhone != null && { customerPhone: s.customerPhone }),
     ...(s.cashierId != null && { cashierId: s.cashierId }),
     createdAt: toISO(s.createdAt),
+    // Mejora 1 & 4: new fields
+    ...(s.comprobanteTipo != null && { comprobanteTipo: s.comprobanteTipo }),
+    ...(s.comprobanteRuc != null && { comprobanteRuc: s.comprobanteRuc }),
+    ...(s.descuentoMonto != null && { descuentoMonto: Number(s.descuentoMonto) }),
+    ...(s.descuentoPorcentaje != null && { descuentoPorcentaje: Number(s.descuentoPorcentaje) }),
+    // Pago mixto / fiado
+    ...(s.paymentDetails != null && { paymentDetails: s.paymentDetails }),
   };
 }
 
@@ -85,19 +91,40 @@ function mapCashRegister(r: PCashRegister & { movements: PCashMovement[] }): DbC
 // ── POS Sales DB ──────────────────────────────────────────────────────────────
 
 export const SalesDB = {
-  async getAll(): Promise<DbSale[]> {
-    return (await prisma.sale.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapSale);
+  async getAll(tenantId?: string): Promise<DbSale[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.sale.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapSale);
   },
   async getById(id: string): Promise<DbSale | null> {
     const row = await prisma.sale.findUnique({ where: { id }, include: { items: true } });
     return row ? mapSale(row) : null;
   },
   async add(sale: DbSale): Promise<DbSale> {
+    // Pre-validate product IDs to avoid FK violations (products may have been deleted since the sale was queued offline)
+    const requestedIds = [...new Set(sale.items.map(i => i.productId))];
+    const existingProducts = await prisma.product.findMany({
+      where: { id: { in: requestedIds } },
+      select: { id: true },
+    });
+    const validIds = new Set(existingProducts.map(p => p.id));
+    const validItems = sale.items.filter(i => validIds.has(i.productId));
+
     const row = await prisma.sale.create({
       data: {
         id: sale.id, total: sale.total, totalCogs: sale.totalCogs ?? null, payment: sale.payment,
-        amountPaid: sale.amountPaid, change: sale.change, customerPhone: sale.customerPhone, cashierId: sale.cashierId ?? null,
-        items: { create: sale.items.map((i) => ({ productId: i.productId, name: i.name, price: i.price, costPrice: i.costPrice ?? null, quantity: i.quantity, unit: i.unit })) },
+        amountPaid: sale.amountPaid, change: sale.change, customerPhone: sale.customerPhone ?? null, cashierId: sale.cashierId ?? null,
+        // Comprobante fields
+        comprobanteTipo: sale.comprobanteTipo ?? "ticket",
+        comprobanteRuc: sale.comprobanteRuc ?? null,
+        // Descuento global fields
+        descuentoMonto: sale.descuentoMonto ?? null,
+        descuentoPorcentaje: sale.descuentoPorcentaje ?? null,
+        // Pago mixto / fiado
+        paymentDetails: sale.paymentDetails ?? null,
+        items: validItems.length > 0
+          ? { create: validItems.map((i) => ({ productId: i.productId, name: i.name, price: i.price, costPrice: i.costPrice ?? null, quantity: i.quantity, unit: i.unit ?? "" })) }
+          : undefined,
       },
       include: { items: true },
     });
@@ -111,8 +138,10 @@ export const SalesDB = {
 // ── Cash Registers DB ─────────────────────────────────────────────────────────
 
 export const CashRegistersDB = {
-  async getAll(): Promise<DbCashRegister[]> {
-    return (await prisma.cashRegister.findMany({ include: { movements: { orderBy: { createdAt: "desc" } } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
+  async getAll(tenantId?: string): Promise<DbCashRegister[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" } } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
   },
   async getAllPaginated(limit = 25, cursor?: string): Promise<{ items: DbCashRegister[]; nextCursor: string | null }> {
     const rows = await prisma.cashRegister.findMany({

@@ -7,9 +7,9 @@ allowed-tools: Bash, Read, Grep, Glob, Edit, Write
 argument-hint: [nombre-de-feature]
 ---
 
-# New Feature — Bodega San Martin
+# New Feature — Buleje
 
-Iniciar una nueva feature con branch aislada en el proyecto Bodega San Martin.
+Iniciar una nueva feature con branch aislada en el proyecto Buleje.
 
 ## Argumentos
 
@@ -31,7 +31,7 @@ Normalizar el nombre:
 ### 2. Crear branch desde master actualizado
 
 ```bash
-cd bodega-san-martin
+cd buleje
 git checkout master
 git pull origin master
 git checkout -b feat/$ARGUMENTS

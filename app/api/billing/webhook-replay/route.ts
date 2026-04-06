@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
+import { reportCriticalError } from "@/lib/sentry-alerts";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import {
   getPendingWebhookEvents,
@@ -62,6 +63,11 @@ export async function GET(req: NextRequest) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       logger.warn("[webhook-replay] Replay attempt failed", {
         stripeId: record.stripeId, attempts: record.attempts + 1, err: errorMsg,
+      });
+      reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+        module: "billing",
+        tags: { operation: "webhook-replay-process-event" },
+        extra: { stripeId: record.stripeId, eventType: record.eventType, attempts: record.attempts + 1 },
       });
       await recordReplayFailure(record.id, record.attempts, errorMsg);
       failed++;

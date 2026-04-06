@@ -60,8 +60,10 @@ function mapChatMessage(m: PChatMessage): DbChatMessage {
 // ── Notification Logs DB ──────────────────────────────────────────────────────
 
 export const NotificationLogsDB = {
-  async getAll(): Promise<DbNotificationLog[]> {
-    return (await prisma.notificationLog.findMany({ orderBy: { createdAt: "desc" }, take: 200 })).map(mapNotificationLog);
+  async getAll(tenantId?: string): Promise<DbNotificationLog[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.notificationLog.findMany({ where, orderBy: { createdAt: "desc" }, take: 200 })).map(mapNotificationLog);
   },
   async getByRecipient(phone: string): Promise<DbNotificationLog[]> {
     return (await prisma.notificationLog.findMany({
@@ -79,8 +81,10 @@ export const NotificationLogsDB = {
 // ── Admin Chat DB ─────────────────────────────────────────────────────────────
 
 export const AdminChatDB = {
-  async getAll(limit = 100): Promise<DbAdminMessage[]> {
-    return (await prisma.adminMessage.findMany({ orderBy: { createdAt: "desc" }, take: limit })).map(mapAdminMessage).reverse();
+  async getAll(tenantId?: string, limit = 100): Promise<DbAdminMessage[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.adminMessage.findMany({ where, orderBy: { createdAt: "desc" }, take: limit })).map(mapAdminMessage).reverse();
   },
   async add(sender: string, message: string): Promise<DbAdminMessage> {
     const row = await prisma.adminMessage.create({ data: { sender, message } });

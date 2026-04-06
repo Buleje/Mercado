@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { createBillingPortalSession } from "@/lib/stripe";
 
+export const dynamic = "force-dynamic";
+
 // POST /api/billing/portal
 // Opens the Stripe Customer Portal for managing subscription / payment method
 export async function POST(req: NextRequest) {
@@ -11,7 +13,7 @@ export async function POST(req: NextRequest) {
 
   const { tenantId } = auth;
 
-  const tenant = await prisma.tenant.findFirst({ where: { slug: tenantId } });
+  const tenant = await prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] } });
   if (!tenant) return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
 
   if (!tenant.stripeCustomerId) {

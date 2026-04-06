@@ -2,6 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,6 @@ export async function PATCH(
     },
   }).catch(() => {});
 
-  console.log(`[SuperAdmin] ${session.username} updated tenant ${slug}:`, updates);
+  logger.info("[SuperAdmin] Tenant updated", { username: session.username, slug, updates });
   return NextResponse.json({ tenant });
 }

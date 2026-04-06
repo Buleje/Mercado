@@ -4,6 +4,8 @@ import { prismaForTenant } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { getPlanDef, getPlanLimits } from "@/lib/plans";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/plan — returns current tenant plan + usage stats
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -13,7 +15,7 @@ export async function GET(req: NextRequest) {
   const db = prismaForTenant(tenantId);
 
   // Fetch tenant metadata
-  const tenant = await prisma.tenant.findFirst({ where: { slug: tenantId } });
+  const tenant = await prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] } });
   const plan = tenant?.plan ?? "free";
   const planDef = getPlanDef(plan);
   const limits = getPlanLimits(plan);

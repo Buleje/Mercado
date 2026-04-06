@@ -11,7 +11,7 @@ export default defineConfig({
     include: ["__tests__/**/*.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "lcov", "html"],
+      reporter: ["text", "text-summary", "lcov", "html"],
       include: ["lib/**/*.ts", "app/**/*.ts", "app/**/*.tsx", "components/**/*.tsx", "hooks/**/*.ts"],
       exclude: [
         "lib/generated/**",
@@ -21,10 +21,10 @@ export default defineConfig({
         "app/**/not-found.tsx",
       ],
       thresholds: {
-        lines: 50,
-        functions: 50,
-        statements: 50,
-        branches: 40,
+        statements: 80,
+        branches: 70,
+        functions: 75,
+        lines: 80,
       },
     },
   },

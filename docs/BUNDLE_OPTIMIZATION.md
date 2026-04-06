@@ -1,7 +1,7 @@
 # Bundle Optimization Report
 
 ## Overview
-Bundle optimization implementation for Bodega San Martín Next.js application.
+Bundle optimization implementation for Buleje Next.js application.
 
 ## Tools Installed
 - ✅ **@next/bundle-analyzer** - Webpack bundle analysis

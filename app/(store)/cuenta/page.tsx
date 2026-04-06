@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useCustomer } from "@/contexts/customer-context";
 import { useCart } from "@/contexts/cart-context";
+import { useTenantSlug, tenantKey } from "@/contexts/tenant-context";
 import { useFavorites } from "@/contexts/favorites-context";
 import { usePromotions } from "@/contexts/promotions-context";
 import { cn } from "@/lib/utils";
@@ -22,9 +23,11 @@ import type { Product } from "@/data/products";
 import type { SavedLocation } from "@/contexts/customer-context";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
+import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
 const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
+const CustomerMetricsPanel = dynamic(() => import("@/components/store/CustomerMetricsPanel"));
 
 /* ── Types ───────────────────────────────────────────────────────── */
 
@@ -74,6 +77,7 @@ function fmtDate(iso: string) {
 
 const TABS = [
   { id: "pedidos",     label: "Pedidos",   icon: Receipt      },
+  { id: "metricas",   label: "Metricas",  icon: TrendingUp   },
   { id: "favoritos",  label: "Favoritos",  icon: Heart        },
   { id: "listas",     label: "Listas",    icon: ListChecks   },
   { id: "puntos",     label: "Puntos",    icon: Award        },
@@ -89,6 +93,7 @@ type TabId = (typeof TABS)[number]["id"];
 export default function CuentaPage() {
   const router = useRouter();
   const { customer, openModal: openCustomerModal } = useCustomer();
+  const slug = useTenantSlug();
 
   const [phone, setPhone] = useState("");
   const [orders, setOrders] = useState<Order[] | null>(null);
@@ -151,10 +156,10 @@ export default function CuentaPage() {
       id: i.productId!, name: i.name, price: i.price, image: i.image, unit: i.unit, category: "", quantity: i.quantity,
     }));
     if (reorderItems.length === 0) return;
-    localStorage.setItem("bsm-reorder", JSON.stringify(reorderItems));
+    localStorage.setItem(tenantKey(slug, "reorder"), JSON.stringify(reorderItems));
     setReorderMsg(`${reorderItems.length} productos agregados al carrito`);
     setTimeout(() => router.push("/"), 800);
-  }, [router]);
+  }, [router, slug]);
 
   const totalSpent = orders?.filter(o => o.status !== "cancelado").reduce((a, o) => a + (o.total ?? 0), 0) ?? 0;
   const orderCount = orders?.filter(o => o.status !== "cancelado").length ?? 0;
@@ -162,6 +167,13 @@ export default function CuentaPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-background">
+      {/* ── SEO Breadcrumbs ─────────────────────────────────────── */}
+      <BreadcrumbSchema
+        items={[
+          { name: "Inicio", url: "https://www.buleje.pe/" },
+          { name: "Mi Cuenta", url: "https://www.buleje.pe/cuenta" },
+        ]}
+      />
       {/* ── Main site navigation ─────────────────────────────────── */}
       <AnnouncementBar />
       <Header />
@@ -169,7 +181,7 @@ export default function CuentaPage() {
       {/* ── Hero header — matches site gradient ──────────────────── */}
       <div
         className="pt-32 sm:pt-36 pb-10 sm:pb-14"
-        style={{ background: "linear-gradient(135deg, #245c43 0%, #2d6a4f 50%, #40916c 100%)" }}
+        style={{ background: "linear-gradient(135deg, #009690 0%, #00B4A6 50%, #33C4B8 100%)" }}
       >
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="flex items-center gap-3 mb-6">
@@ -181,7 +193,7 @@ export default function CuentaPage() {
             </Link>
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white leading-tight">Mi Panel</h1>
-              <p className="text-xs text-white/60 mt-0.5">Bodega San Martín · Pucallpa</p>
+              <p className="text-xs text-white/60 mt-0.5">Buleje</p>
             </div>
             {identified && loyalty && (
               <div className="shrink-0 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/15 flex items-center gap-1.5">
@@ -293,6 +305,9 @@ export default function CuentaPage() {
               <QuickAction icon={Gift} label="Ofertas" onClick={() => setActiveTab("ofertas")} />
             </div>
 
+            {/* IDEA 8: Credito Social — Score de confianza visible para el cliente */}
+            <CreditScoreCard phone={phone} />
+
             {/* Tab Bar */}
             <div className="flex gap-1 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-1 overflow-x-auto no-scrollbar">
               {TABS.map((tab) => {
@@ -316,6 +331,7 @@ export default function CuentaPage() {
               {activeTab === "pedidos" && (
                 <PedidosTab orders={orders ?? []} activeOrders={activeOrders} onReorder={handleReorder} />
               )}
+              {activeTab === "metricas" && <CustomerMetricsPanel phone={phone} />}
               {activeTab === "favoritos" && <FavoritosTab />}
               {activeTab === "listas" && <ListasTab phone={phone} />}
               {activeTab === "puntos" && <PuntosTab loyalty={loyalty} orders={orders ?? []} />}
@@ -360,6 +376,123 @@ function QuickAction({ icon: Icon, label, href, onClick }: {
   const cls = "flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white dark:bg-card border border-gray-100 dark:border-card-border text-xs font-medium text-gray-600 dark:text-foreground/70 hover:border-primary/30 hover:text-primary transition-colors whitespace-nowrap";
   if (href) return <Link href={href} className={cls}><Icon className="h-3.5 w-3.5" />{label}</Link>;
   return <button onClick={onClick} className={cls}><Icon className="h-3.5 w-3.5" />{label}</button>;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   IDEA 8: Credit Score Card — Score de confianza del cliente
+   ══════════════════════════════════════════════════════════════════ */
+
+const CREDIT_TIERS = [
+  { min: 5, label: "Cliente Diamante", stars: 5, credit: "ilimitado", bg: "from-sky-400 to-blue-600", textColor: "text-sky-700 dark:text-sky-300", borderColor: "border-sky-200 dark:border-sky-700" },
+  { min: 4, label: "Cliente Oro", stars: 4, credit: "S/ 500", bg: "from-yellow-400 to-amber-500", textColor: "text-yellow-700 dark:text-yellow-300", borderColor: "border-yellow-200 dark:border-yellow-700" },
+  { min: 3, label: "Cliente Plata", stars: 3, credit: "S/ 200", bg: "from-gray-400 to-gray-500", textColor: "text-gray-600 dark:text-gray-300", borderColor: "border-gray-200 dark:border-gray-600" },
+  { min: 2, label: "Cliente Bronce", stars: 2, credit: "S/ 50", bg: "from-amber-400 to-orange-500", textColor: "text-amber-700 dark:text-amber-300", borderColor: "border-amber-200 dark:border-amber-700" },
+  { min: 0, label: "Cliente Nuevo", stars: 1, credit: "Solo efectivo", bg: "from-gray-300 to-gray-400", textColor: "text-gray-500 dark:text-gray-400", borderColor: "border-gray-200 dark:border-gray-600" },
+];
+
+function CreditScoreCard({ phone }: { phone: string }) {
+  const [scoreData, setScoreData] = useState<{
+    score: number;
+    pagosATiempo: number;
+    pagosTotal: number;
+    deudaActual: number;
+    loaded: boolean;
+  }>({ score: 0, pagosATiempo: 0, pagosTotal: 0, deudaActual: 0, loaded: false });
+
+  useEffect(() => {
+    if (!phone) return;
+    const clean = phone.replace(/\D/g, "");
+    if (clean.length < 6) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/fiados?customerPhone=${encodeURIComponent(clean)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const fiados = Array.isArray(data) ? data : data.fiados ?? [];
+        if (fiados.length === 0) { setScoreData({ score: 1, pagosATiempo: 0, pagosTotal: 0, deudaActual: 0, loaded: true }); return; }
+
+        const pagados = fiados.filter((f: { status: string }) => f.status === "PAGADO");
+        let pagosATiempo = 0;
+        let totalDias = 0;
+
+        for (const f of pagados) {
+          const creado = new Date(f.createdAt).getTime();
+          const actualizado = new Date(f.updatedAt).getTime();
+          const dias = Math.max(0, Math.floor((actualizado - creado) / 86400000));
+          totalDias += dias;
+          if (f.fechaVence) {
+            if (actualizado <= new Date(f.fechaVence).getTime()) pagosATiempo++;
+          } else if (dias < 30) pagosATiempo++;
+        }
+
+        const pct = pagados.length > 0 ? (pagosATiempo / pagados.length) * 100 : 0;
+        const avgDias = pagados.length > 0 ? totalDias / pagados.length : 0;
+
+        let score = 1;
+        if (pct > 90 && avgDias < 7) score = 5;
+        else if (pct > 75 && avgDias < 15) score = 4;
+        else if (pct > 50 && avgDias < 30) score = 3;
+        else if (pct > 25) score = 2;
+
+        const activos = fiados.filter((f: { status: string; saldo: number }) => f.status === "ACTIVO" || f.status === "VENCIDO");
+        const deudaActual = activos.reduce((s: number, f: { saldo: number }) => s + (f.saldo ?? 0), 0);
+
+        setScoreData({ score, pagosATiempo, pagosTotal: pagados.length, deudaActual, loaded: true });
+      } catch { setScoreData(prev => ({ ...prev, loaded: true })); }
+    })();
+  }, [phone]);
+
+  if (!scoreData.loaded) return null;
+
+  const tier = CREDIT_TIERS.find(t => scoreData.score >= t.min) ?? CREDIT_TIERS[CREDIT_TIERS.length - 1];
+  const stars = Array.from({ length: 5 }, (_, i) => i < tier.stars);
+
+  return (
+    <div className={cn("bg-white dark:bg-card rounded-2xl border shadow-sm overflow-hidden", tier.borderColor)}>
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Tu Score de Confianza</p>
+          <div className="flex gap-0.5">
+            {stars.map((filled, i) => (
+              <Star key={i} className={cn("h-4 w-4", filled ? "text-amber-400 fill-amber-400" : "text-gray-200 dark:text-gray-700")} />
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br text-white font-bold text-lg", tier.bg)}>
+            {tier.stars}
+          </div>
+          <div className="flex-1">
+            <p className={cn("text-sm font-extrabold", tier.textColor)}>{tier.label}</p>
+            <p className="text-xs text-gray-500 dark:text-muted">
+              Credito disponible: <span className="font-bold">{tier.credit}</span>
+            </p>
+          </div>
+        </div>
+        {scoreData.pagosTotal > 0 && (
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border grid grid-cols-3 gap-2 text-center">
+            <div>
+              <p className="text-lg font-bold text-[#00B4A6]">{scoreData.pagosATiempo}</p>
+              <p className="text-[10px] text-gray-400">A tiempo</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-gray-700 dark:text-foreground">{scoreData.pagosTotal}</p>
+              <p className="text-[10px] text-gray-400">Total fiados</p>
+            </div>
+            <div>
+              <p className="text-lg font-bold text-amber-600">{fmt(scoreData.deudaActual)}</p>
+              <p className="text-[10px] text-gray-400">Deuda actual</p>
+            </div>
+          </div>
+        )}
+        {tier.stars < 5 && (
+          <p className="text-[10px] text-gray-400 mt-2 text-center italic">
+            Paga a tiempo para subir de nivel y obtener mas credito
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /* ══════════════════════════════════════════════════════════════════
@@ -596,20 +729,24 @@ function ListasTab({ phone }: { phone: string }) {
   const createList = async () => {
     if (!newName.trim()) return;
     const clean = phone.replace(/\D/g, "");
-    const res = await fetch("/api/shopping-lists", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ customerPhone: clean, name: newName.trim(), items: [] }),
-    });
-    if (res.ok) {
+    try {
+      const res = await fetch("/api/shopping-lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerPhone: clean, name: newName.trim(), items: [] }),
+      });
+      if (!res.ok) throw new Error("Error al crear lista");
       const list: ShoppingList = await res.json();
       startTransition(() => { setLists(prev => [list, ...prev]); setCreating(false); setNewName(""); setEditingId(list.id); });
-    }
+    } catch { /* silent — UI stays in current state */ }
   };
 
   const deleteList = async (id: string) => {
-    await fetch(`/api/shopping-lists/${id}`, { method: "DELETE" });
-    startTransition(() => setLists(prev => prev.filter(l => l.id !== id)));
+    try {
+      const res = await fetch(`/api/shopping-lists/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Error al eliminar lista");
+      startTransition(() => setLists(prev => prev.filter(l => l.id !== id)));
+    } catch { /* silent — list stays visible */ }
   };
 
   const addProductToList = async (listId: string, productId: number) => {
@@ -619,30 +756,32 @@ function ListasTab({ phone }: { phone: string }) {
     const newItems = existing
       ? list.items.map(i => i.productId === productId ? { ...i, quantity: i.quantity + 1 } : i)
       : [...list.items, { id: 0, productId, quantity: 1 }];
-    const res = await fetch(`/api/shopping-lists/${listId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: newItems.map(i => ({ productId: i.productId, quantity: i.quantity })) }),
-    });
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/shopping-lists/${listId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: newItems.map(i => ({ productId: i.productId, quantity: i.quantity })) }),
+      });
+      if (!res.ok) throw new Error("Error al agregar producto");
       const updated: ShoppingList = await res.json();
       startTransition(() => setLists(prev => prev.map(l => l.id === listId ? updated : l)));
-    }
+    } catch { /* silent — list stays unchanged */ }
   };
 
   const removeProductFromList = async (listId: string, productId: number) => {
     const list = lists.find(l => l.id === listId);
     if (!list) return;
     const newItems = list.items.filter(i => i.productId !== productId);
-    const res = await fetch(`/api/shopping-lists/${listId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items: newItems.map(i => ({ productId: i.productId, quantity: i.quantity })) }),
-    });
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/shopping-lists/${listId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: newItems.map(i => ({ productId: i.productId, quantity: i.quantity })) }),
+      });
+      if (!res.ok) throw new Error("Error al quitar producto");
       const updated: ShoppingList = await res.json();
       startTransition(() => setLists(prev => prev.map(l => l.id === listId ? updated : l)));
-    }
+    } catch { /* silent — list stays unchanged */ }
   };
 
   const addAllToCart = (list: ShoppingList) => {
@@ -817,7 +956,7 @@ function PuntosTab({ loyalty, orders }: { loyalty: LoyaltyData | null; orders: O
           {/* Top row */}
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] font-semibold tracking-widest uppercase opacity-70">Bodega San Martín</p>
+              <p className="text-[10px] font-semibold tracking-widest uppercase opacity-70">Buleje</p>
               <p className="text-base font-bold tracking-wide capitalize mt-0.5">{loyalty?.loyaltyTier ?? "bronce"}</p>
             </div>
             <div className="flex flex-col items-center gap-1">
@@ -1343,18 +1482,19 @@ function ResenasTab({ phone, orders }: { phone: string; orders: Order[] }) {
     const body = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       name: customer?.name ?? "Cliente",
-      location: customer?.location ?? "Pucallpa",
+      location: customer?.location ?? "",
       text: text.trim(),
       rating,
       phone: clean,
       date: new Date().toISOString(),
     };
-    const res = await fetch("/api/reviews", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (res.ok) {
+    try {
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("Error al enviar reseña");
       const review: ReviewData = await res.json();
       startTransition(() => {
         setReviews(prev => [review, ...prev]);
@@ -1364,7 +1504,7 @@ function ResenasTab({ phone, orders }: { phone: string; orders: Order[] }) {
         setSuccess("¡Gracias por tu reseña!");
       });
       setTimeout(() => setSuccess(""), 3000);
-    }
+    } catch { /* silent — form stays visible for retry */ }
     setSubmitting(false);
   };
 
@@ -1418,7 +1558,7 @@ function ResenasTab({ phone, orders }: { phone: string; orders: Order[] }) {
             className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border dark:bg-background dark:text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none" />
           <div className="flex items-center justify-between text-xs text-gray-400">
             <span>{text.length}/500</span>
-            <span>{customer?.name ?? "Cliente"} &middot; {customer?.location ?? "Pucallpa"}</span>
+            <span>{customer?.name ?? "Cliente"} &middot; {customer?.location ?? ""}</span>
           </div>
           <div className="flex gap-2">
             <button onClick={() => { setWriting(false); setText(""); setRating(5); }}

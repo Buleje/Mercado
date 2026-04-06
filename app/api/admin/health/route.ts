@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { cacheStore } from "@/lib/cache";
+import { isQueueEnabled } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 
 export type HealthService = {
@@ -93,6 +94,9 @@ export async function GET(req: NextRequest) {
       .count({ where: { createdAt: { gte: new Date(Date.now() - 3_600_000) } } })
       .catch(() => -1);
 
+    const hasRedis = !!process.env.REDIS_URL;
+    const queuesActive = isQueueEnabled();
+
     const services: HealthService[] = [
       {
         id: "database",
@@ -105,12 +109,36 @@ export async function GET(req: NextRequest) {
       },
       {
         id: "cache",
-        name: "Cache (in-process)",
+        name: hasRedis ? "Cache (Redis write-through)" : "Cache (in-process)",
         status: serviceStatus(cache.ok, cache.latencyMs),
         responseTime: cache.latencyMs,
         uptime: cache.ok ? "100%" : "—",
         lastCheck: checkedAt,
-        description: "MemoryStore TTL cache (Redis-ready)",
+        description: hasRedis
+          ? "RedisStore write-through + MemoryStore local"
+          : "MemoryStore TTL cache (Redis-ready)",
+      },
+      {
+        id: "redis",
+        name: "Redis",
+        status: hasRedis ? "operativo" : "degradado",
+        responseTime: 0,
+        uptime: hasRedis ? "—" : "—",
+        lastCheck: checkedAt,
+        description: hasRedis
+          ? "REDIS_URL configurado — cache distribuido activo"
+          : "No configurado — usando fallback en memoria (ver docs/redis-activation-guide.md)",
+      },
+      {
+        id: "queues",
+        name: "Colas BullMQ",
+        status: queuesActive ? "operativo" : "degradado",
+        responseTime: 0,
+        uptime: queuesActive ? "—" : "—",
+        lastCheck: checkedAt,
+        description: queuesActive
+          ? "BullMQ activo — emails, PDFs, notificaciones con reintentos"
+          : "Fire-and-forget — sin reintentos (activar Redis para colas durables)",
       },
       {
         id: "api",
@@ -163,6 +191,15 @@ export async function GET(req: NextRequest) {
         id: "db-slow",
         title: `Base de datos lenta (${db.latencyMs}ms)`,
         severity: "warning",
+        status: "open",
+        createdAt: checkedAt,
+      });
+    }
+    if (!hasRedis) {
+      incidents.push({
+        id: "redis-missing",
+        title: "Redis no configurado — cache y colas en modo degradado",
+        severity: "info",
         status: "open",
         createdAt: checkedAt,
       });

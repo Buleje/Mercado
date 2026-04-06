@@ -3,11 +3,11 @@
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { ShoppingCart, Sparkles, Tag, Package, Minus, Plus } from "lucide-react";
-import { products, categories } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
-import type { Product } from "@/data/products";
+import type { Product, Category } from "@/data/products";
 
 type Combo = {
   id: string;
@@ -103,7 +103,7 @@ function buildCombos(liveProducts: Product[], templates: ComboTemplate[] = COMBO
   }).filter((c) => c.products.length >= 2); // Only show combos with at least 2 products
 }
 
-function ComboCard({ combo }: { combo: Combo }) {
+function ComboCard({ combo, categories }: { combo: Combo; categories: Category[] }) {
   const { addItem, items: cartItems, updateQty } = useCart();
   const { showToast } = useToast();
   const [adding, setAdding] = useState(false);
@@ -117,7 +117,7 @@ function ComboCard({ combo }: { combo: Combo }) {
       id: comboId,
       name: `${combo.emoji} ${combo.name}`,
       price: combo.comboPrice,
-      image: combo.products[0]?.image ?? "",
+      image: combo.products[0]?.image || "/placeholder-product.png",
       unit: "combo",
       category: "combos",
       badge: `-${combo.discountPercent}%` as const,
@@ -158,6 +158,7 @@ function ComboCard({ combo }: { combo: Combo }) {
               )}
             </div>
           ))}
+
         </div>
       </div>
 
@@ -224,8 +225,7 @@ function ComboCard({ combo }: { combo: Combo }) {
 }
 
 export default function CombosSection() {
-  const [combos, setCombos] = useState<Combo[]>([]);
-  const [liveProducts, setLiveProducts] = useState<Product[]>(products);
+  const { products: liveProducts, categories, isLoading } = useStoreProducts();
   const [settingsTemplates, setSettingsTemplates] = useState<ComboTemplate[] | null>(null);
 
   // Load settings combo templates from admin configuration
@@ -240,27 +240,14 @@ export default function CombosSection() {
       .catch(() => {});
   }, []);
 
-  // Use live products from API if available
-  useEffect(() => {
-    fetch("/api/products")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: Array<Product & { active?: boolean }> | null) => {
-        if (Array.isArray(data) && data.length > 0) {
-          const active = data.filter((p) => p.active !== false);
-          setLiveProducts(active);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  // Build combos from available products (use useMemo to keep stable between renders)
-  const stableCombos = useMemo(
+  // Build combos from available products
+  const combos = useMemo(
     () => buildCombos(liveProducts, settingsTemplates ?? COMBO_TEMPLATES),
     [liveProducts, settingsTemplates]
   );
-  useEffect(() => { setCombos(stableCombos); }, [stableCombos]);
 
-  if (combos.length === 0) return null;
+  // No render while loading or if no combos — prevents blank gaps
+  if (isLoading || liveProducts.length === 0 || combos.length === 0) return null;
 
   return (
     <section className="py-16 sm:py-20 bg-white dark:bg-background">
@@ -282,7 +269,7 @@ export default function CombosSection() {
         {/* Combos Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {combos.map((combo) => (
-            <ComboCard key={combo.id} combo={combo} />
+            <ComboCard key={combo.id} combo={combo} categories={categories} />
           ))}
         </div>
       </div>

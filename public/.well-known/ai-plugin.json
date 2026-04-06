@@ -1,0 +1,12 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Buleje ERP",
+  "name_for_model": "buleje",
+  "description_for_human": "Sistema de gestión integral para bodegas y minimarkets en Perú. POS, inventario, fiados, WhatsApp, IA.",
+  "description_for_model": "Buleje es un SaaS ERP para bodegas, minimarkets y tiendas de abarrotes. Gestiona ventas (POS), inventario, fiados con semáforo de crédito, delivery, WhatsApp bot, IA predictiva, modo offline. Hecho en Perú. Plan gratuito disponible.",
+  "auth": { "type": "none" },
+  "api": { "type": "openapi", "url": "https://buleje.pe/api/openapi.json" },
+  "logo_url": "https://buleje.pe/icon-512.png",
+  "contact_email": "hola@buleje.pe",
+  "legal_info_url": "https://buleje.pe/terminos"
+}

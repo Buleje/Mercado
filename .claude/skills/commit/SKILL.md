@@ -7,9 +7,9 @@ allowed-tools: Bash, Read, Grep, Glob
 argument-hint: [mensaje-opcional]
 ---
 
-# Commit — Bodega San Martin
+# Commit — Buleje
 
-Crear un commit con mensaje Conventional Commits para los cambios actuales en el proyecto Bodega San Martin.
+Crear un commit con mensaje Conventional Commits para los cambios actuales en el proyecto Buleje.
 
 ## Argumentos
 
@@ -20,7 +20,7 @@ Crear un commit con mensaje Conventional Commits para los cambios actuales en el
 ### 1. Analizar cambios actuales
 
 ```bash
-cd bodega-san-martin
+cd buleje
 git status
 git diff --staged
 git diff

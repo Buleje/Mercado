@@ -3,13 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { categories } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import { cn } from "@/lib/utils";
 import { useInView } from "@/hooks/use-in-view";
 
-const realCategories = categories.filter((c) => c.id !== "todos");
-
 export default function CategoryBubbles() {
+  const { categories, isLoading } = useStoreProducts();
+  const realCategories = categories.filter((c) => c.id !== "todos");
   const [ref, inView] = useInView({ threshold: 0.2 });
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -42,6 +42,8 @@ export default function CategoryBubbles() {
       window.removeEventListener("resize", updateScrollState);
     };
   }, [updateScrollState]);
+
+  if (isLoading || realCategories.length === 0) return null;
 
   return (
     <section

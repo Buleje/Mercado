@@ -10,7 +10,7 @@ import { ShoppingCart, ArrowRight, Truck, Star } from "lucide-react";
 
 // ─── Schema & Types ─────────────────────────────────────
 export const HeroBlockSchema = z.object({
-  title: z.string().min(1).default("Bienvenido a Bodega San Martín"),
+  title: z.string().min(1).default("Bienvenido a Buleje"),
   subtitle: z.string().default("Productos frescos, precios justos"),
   description: z.string().optional(),
   ctaText: z.string().default("Ver productos"),
@@ -32,7 +32,7 @@ export type HeroBlockProps = z.infer<typeof HeroBlockSchema>;
 // ─── Component ──────────────────────────────────────────
 export default function HeroBlock(props: Partial<HeroBlockProps>) {
   const {
-    title = "Bienvenido a Bodega San Martín",
+    title = "Bienvenido a Buleje",
     subtitle = "Productos frescos, precios justos",
     description,
     ctaText = "Ver productos",
@@ -231,6 +231,6 @@ export const HeroBlockMetadata = {
   description: "Sección hero con título, CTAs y animaciones",
   category: "landing" as const,
   icon: "Sparkles",
-  defaultProps: HeroBlockSchema.parse({}),
+  defaultProps: (() => { const parsed = HeroBlockSchema.safeParse({}); return parsed.success ? parsed.data : { title: "Bienvenido a Buleje", subtitle: "Productos frescos, precios justos", ctaText: "Ver productos", ctaLink: "/productos", secondaryCTAText: "Hacer pedido", showBadge: true, badgeText: "Envio gratis desde S/ 50", showStats: true, backgroundColor: "#312e81", textColor: "#ffffff", accentColor: "#3b82f6", showAnimations: true }; })(),
   propsSchema: HeroBlockSchema,
 };

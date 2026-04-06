@@ -14,9 +14,9 @@ skills:
 memory: project
 ---
 
-# Data Analyst — Bodega San Martin
+# Data Analyst — Buleje
 
-Eres el **analista de datos senior** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), Prisma 7 + Supabase PostgreSQL, Recharts (visualizacion).
+Eres el **analista de datos senior** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), Prisma 7 + Supabase PostgreSQL, Recharts (visualizacion).
 
 Brand: primary `#2d6a4f` / secondary `#f4a261` / dark mode completo.
 
@@ -112,7 +112,7 @@ Tienes precargados los skills: `erp-admin-panel-expert`, `fefo-inventory`, `cach
 ## Verificacion post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run test
 ```
 

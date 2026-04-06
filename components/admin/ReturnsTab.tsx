@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { RotateCcw, Plus, Loader2, Check, X, Package, Camera, CreditCard, Image } from "lucide-react";
+import { RotateCcw, Plus, Loader2, Check, X, Package, Camera, CreditCard, Image as ImageIcon } from "lucide-react";
 import type { Sale } from "@/types/erp";
 
 type ReturnItem = { id?: string; productId: number; productName: string; quantity: number; price: number; unit: string };
@@ -23,7 +23,7 @@ export default function ReturnsTab() {
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
-    fetch("/api/returns").then(r => r.json()).then(setReturns).catch(() => {}).finally(() => setLoading(false));
+    fetch("/api/returns").then(r => r.ok ? r.json() : []).then(d => setReturns(Array.isArray(d) ? d : d?.returns ?? [])).catch(() => {}).finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -136,7 +136,7 @@ export default function ReturnsTab() {
                 </label>
                 <input ref={photoInputRef} type="file" accept="image/*" capture="environment" onChange={handlePhotoChange} className="hidden" />
                 <button type="button" onClick={() => photoInputRef.current?.click()} className="mt-1 flex flex-wrap items-center gap-2 px-3 py-2 border border-dashed border-gray-300 dark:border-card-border rounded-xl text-sm text-gray-500 dark:text-muted hover:border-primary hover:text-primary transition w-full justify-center">
-                  <Image className="h-4 w-4" />{photoDataUrl ? "Cambiar foto" : "Seleccionar / tomar foto"}
+                  <ImageIcon className="h-4 w-4" />{photoDataUrl ? "Cambiar foto" : "Seleccionar / tomar foto"}
                 </button>
                 {photoDataUrl && (
                   <div className="mt-2 relative inline-block">

@@ -2,10 +2,10 @@
 
 import { useMemo, useRef, useCallback } from "react";
 import Image from "next/image";
-import { ShoppingCart, TrendingUp, Minus, Plus } from "lucide-react";
-import { products } from "@/data/products";
+import { ShoppingCart, TrendingUp, Minus, Plus, Package } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import type { Product } from "@/data/products";
 
 // Tiny 4×4 gray placeholder for blur-up effect while images load
@@ -18,8 +18,8 @@ const RANK_STYLES = [
 ];
 
 /* Simulate popularity order: products with badge "Popular" first, then "Oferta", rest shuffled deterministically */
-function getPopularProducts() {
-  const scored = products
+function getPopularProducts(allProducts: Product[]) {
+  const scored = allProducts
     .filter((p) => !(p.stock != null && p.stock <= 0))
     .map((p) => {
       let score = 0;
@@ -36,7 +36,8 @@ function getPopularProducts() {
 export default function PopularProducts() {
   const { addItem, items, updateQty } = useCart();
   const [ref, inView] = useInView({ threshold: 0.1 });
-  const popular = useMemo(() => getPopularProducts(), []);
+  const { products, isLoading } = useStoreProducts();
+  const popular = useMemo(() => getPopularProducts(products), [products]);
   const lastClickRef = useRef(0);
   const guardedAdd = useCallback((p: Product) => {
     const now = Date.now();
@@ -44,6 +45,9 @@ export default function PopularProducts() {
     lastClickRef.current = now;
     addItem(p);
   }, [addItem]);
+
+  // No render while loading or if empty — prevents blank gaps
+  if (isLoading || popular.length === 0) return null;
 
   return (
     <section ref={ref} className="py-14 sm:py-20 bg-surface">
@@ -96,21 +100,27 @@ export default function PopularProducts() {
 
                 {/* Image */}
                 <div className="relative aspect-square bg-gray-50 dark:bg-white/5 overflow-hidden">
-                  <Image
-                    src={product.image}
-                    alt={product.name}
-                    fill
-                    sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 16vw"
-                    className="object-cover group-hover:scale-108 transition-transform duration-500"
-                    placeholder="blur"
-                    blurDataURL={BLUR_DATA_URL}
-                    {...(i < 2 ? { priority: true } : { loading: "lazy" as const })}
-                  />
+                  {product.image ? (
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 16vw"
+                      className="object-cover group-hover:scale-108 transition-transform duration-500"
+                      placeholder="blur"
+                      blurDataURL={BLUR_DATA_URL}
+                      {...(i < 2 ? { priority: true } : { loading: "lazy" as const })}
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-gray-300">
+                      <Package className="h-10 w-10" />
+                    </div>
+                  )}
                   {/* Badge — bottom right to avoid overlap with rank */}
                   {product.badge && (
                     <span
                       className="absolute bottom-2 right-2 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md"
-                      style={{ background: product.badge === "Popular" ? "#2d6a4f" : product.badge === "Oferta" ? "#ef4444" : product.badge === "Fresco" ? "#10b981" : "#6b7280" }}
+                      style={{ background: product.badge === "Popular" ? "#00B4A6" : product.badge === "Oferta" ? "#ef4444" : product.badge === "Fresco" ? "#10b981" : "#6b7280" }}
                     >
                       {product.badge}
                     </span>

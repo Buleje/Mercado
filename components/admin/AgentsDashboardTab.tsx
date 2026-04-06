@@ -141,7 +141,9 @@ export default function AgentsDashboardTab() {
 
   // ── Execute task state ──────────────────────────────────────────────────
   const [execDomain, setExecDomain] = useState<AgentDomain>("inventory");
-  const [execAction, setExecAction] = useState(DOMAIN_ACTIONS["inventory"][0]);
+  // execActionOverride se guarda por dominio para que al cambiar de dominio se auto-seleccione la primera acción
+  const [execActionOverride, setExecActionOverride] = useState<Partial<Record<AgentDomain, string>>>({});
+  const execAction = execActionOverride[execDomain] ?? DOMAIN_ACTIONS[execDomain]?.[0] ?? "";
   const [executing, setExecuting] = useState(false);
   const [execResult, setExecResult] = useState<AgentTask | null>(null);
   const [execError, setExecError] = useState<string | null>(null);
@@ -240,13 +242,6 @@ export default function AgentsDashboardTab() {
     };
   }, [recentTasks, fetchRecentTasks]);
 
-  // Reset action when domain changes
-  useEffect(() => {
-    const actions = DOMAIN_ACTIONS[execDomain];
-    if (actions && actions.length > 0) {
-      setExecAction(actions[0]);
-    }
-  }, [execDomain]);
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -300,7 +295,7 @@ export default function AgentsDashboardTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-            <Activity className="h-6 w-6 text-[#2d6a4f]" />
+            <Activity className="h-6 w-6 text-[#00B4A6]" />
             Dashboard de Agentes
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">
@@ -397,7 +392,7 @@ export default function AgentsDashboardTab() {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Server className="h-4 w-4 text-[#2d6a4f]" />
+                        <Server className="h-4 w-4 text-[#00B4A6]" />
                         <span className="font-bold text-gray-900 dark:text-foreground text-sm">
                           {DOMAIN_LABELS[agent.domain]}
                         </span>
@@ -468,7 +463,7 @@ export default function AgentsDashboardTab() {
               </label>
               <select
                 value={execAction}
-                onChange={(e) => setExecAction(e.target.value)}
+                onChange={(e) => setExecActionOverride(prev => ({ ...prev, [execDomain]: e.target.value }))}
                 className="w-full text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
               >
                 {(DOMAIN_ACTIONS[execDomain] ?? []).map((action) => (
@@ -486,7 +481,7 @@ export default function AgentsDashboardTab() {
                 disabled={executing}
                 className={cn(
                   "flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold text-white transition-colors disabled:opacity-50",
-                  "bg-[#2d6a4f] hover:bg-[#245a42] dark:bg-[#2d6a4f] dark:hover:bg-[#3a7d5e]"
+                  "bg-[#00B4A6] hover:bg-[#009690] dark:bg-[#00B4A6] dark:hover:bg-[#3a7d5e]"
                 )}
               >
                 {executing ? (
@@ -742,7 +737,7 @@ export default function AgentsDashboardTab() {
 
 const PRIORITY_LABELS: Record<TaskPriority, { label: string; color: string }> = {
   critical: { label: "Crítica",  color: "text-red-600 font-bold" },
-  high:     { label: "Alta",     color: "text-[#f4a261] font-semibold" },
+  high:     { label: "Alta",     color: "text-[#f97316] font-semibold" },
   normal:   { label: "Normal",   color: "text-gray-600 dark:text-gray-400" },
   low:      { label: "Baja",     color: "text-gray-400" },
 };

@@ -1,0 +1,76 @@
+export const dynamic = "force-dynamic";
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
+
+const TENANT = "main";
+
+const DiscountRuleSchema = z.object({
+  nombre:      z.string().min(1).max(200),
+  tipo:        z.enum(["porcentaje", "2x1", "3x2", "combo", "monto_fijo"]),
+  valor:       z.number().min(0).default(0),
+  categorias:  z.array(z.string()).default([]),
+  condicion:   z.string().max(500).optional(),
+  fechaInicio: z.string().min(1),
+  fechaFin:    z.string().min(1),
+  activa:      z.boolean().default(true),
+});
+
+function mapRule(r: { id: string; nombre: string; tipo: string; valor: number; categorias: string; condicion: string | null; fechaInicio: Date; fechaFin: Date; activa: boolean; tenantId: string; createdAt: Date }) {
+  return {
+    ...r,
+    categorias:  (() => { try { return JSON.parse(r.categorias); } catch { return []; } })(),
+    fechaInicio: r.fechaInicio.toISOString().slice(0, 10),
+    fechaFin:    r.fechaFin.toISOString().slice(0, 10),
+  };
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const auth = await requireAdmin(req, ["admin", "cajero"]);
+    if (auth instanceof NextResponse) return auth;
+
+    const rules = await prisma.discountRule.findMany({
+      where: { tenantId: TENANT },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(rules.map(mapRule));
+  } catch (e) {
+    logger.error("[discount-rules] GET error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Error al obtener reglas de descuento" }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
+
+    const raw = await req.json();
+    const parsed = DiscountRuleSchema.safeParse(raw);
+    if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
+
+    const d = parsed.data;
+    const rule = await prisma.discountRule.create({
+      data: {
+        nombre:      d.nombre,
+        tipo:        d.tipo,
+        valor:       d.valor,
+        categorias:  JSON.stringify(d.categorias),
+        condicion:   d.condicion,
+        fechaInicio: new Date(d.fechaInicio),
+        fechaFin:    new Date(d.fechaFin),
+        activa:      d.activa,
+        tenantId:    TENANT,
+      },
+    });
+
+    return NextResponse.json(mapRule(rule), { status: 201 });
+  } catch (e) {
+    logger.error("[discount-rules] POST error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Error al crear regla de descuento" }, { status: 500 });
+  }
+}

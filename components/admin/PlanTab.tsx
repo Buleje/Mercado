@@ -3,10 +3,25 @@
 import { useEffect, useState } from "react";
 import {
   Zap, ShoppingBag, Users, ShoppingCart, Globe, BarChart2,
-  CheckCircle2, XCircle, Crown, Loader2, AlertTriangle, ArrowRight, CreditCard,
+  CheckCircle2, XCircle, Crown, Loader2, AlertTriangle, CreditCard,
   Link, Trash2, RefreshCw,
 } from "lucide-react";
 import { PLANS, type PlanId, type PlanDef, type PlanLimits } from "@/lib/plans";
+
+// ─── Icono SVG de Mercado Pago ────────────────────────────
+function MercadoPagoIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 28 28"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M14 0C6.268 0 0 6.268 0 14s6.268 14 14 14 14-6.268 14-14S21.732 0 14 0zm6.576 10.164c-.394 2.61-2.07 4.76-4.34 5.875l2.43 5.797H15.29l-2.13-5.07h-1.498v5.07H8.28V7.164h5.688c2.942 0 5.014 1.274 6.608 3zm-6.608-.558h-2.256v4.046h2.256c1.38 0 2.34-.87 2.34-2.024 0-1.152-.96-2.022-2.34-2.022z" />
+    </svg>
+  );
+}
 
 // ─── Types ───────────────────────────────────────────────
 interface PlanStatus {
@@ -123,13 +138,23 @@ function FeatureRow({ label, available }: { label: string; available: boolean })
 
 // ─── PlanCard ─────────────────────────────────────────────
 function PlanCard({
-  def, isActive, onSelect,
+  def,
+  isActive,
+  onSelectStripe,
+  onSelectMP,
+  loadingStripe,
+  loadingMP,
 }: {
   def: PlanDef;
   isActive: boolean;
-  onSelect?: () => void;
+  onSelectStripe?: () => void;
+  onSelectMP?: () => void;
+  loadingStripe?: boolean;
+  loadingMP?: boolean;
 }) {
   const limits = def.limits;
+  const isPaid = def.priceMonthly > 0;
+
   return (
     <div
       className={`rounded-2xl border-2 p-3 sm:p-5 space-y-4 transition-all ${
@@ -182,14 +207,43 @@ function PlanCard({
         <FeatureRow label="SLA garantizado" available={limits.sla} />
       </div>
 
-      {/* CTA */}
-      {!isActive && (
-        <button
-          onClick={onSelect}
-          className="w-full py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 flex items-center justify-center gap-1"
-        >
-          Cambiar a {def.name} <ArrowRight className="w-4 h-4" />
-        </button>
+      {/* CTAs — solo si no es el plan actual y es de pago */}
+      {!isActive && isPaid && (
+        <div className="space-y-2">
+          {/* Stripe */}
+          <button
+            onClick={onSelectStripe}
+            disabled={loadingStripe || loadingMP}
+            className="w-full py-2 rounded-xl bg-primary text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-1.5 min-h-[44px]"
+          >
+            {loadingStripe ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <CreditCard className="w-4 h-4" />
+            )}
+            Tarjeta / Stripe
+          </button>
+
+          {/* Mercado Pago */}
+          <button
+            onClick={onSelectMP}
+            disabled={loadingStripe || loadingMP}
+            className="w-full py-2 rounded-xl text-white text-sm font-semibold hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-1.5 min-h-[44px]"
+            style={{ backgroundColor: loadingStripe || loadingMP ? "#009ee3cc" : "#009ee3" }}
+          >
+            {loadingMP ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <MercadoPagoIcon className="w-4 h-4" />
+            )}
+            Yape / BCP / MP
+          </button>
+        </div>
+      )}
+
+      {/* Plan gratuito sin botones de pago */}
+      {!isActive && !isPaid && (
+        <p className="text-xs text-muted text-center">Plan base — sin costo</p>
       )}
     </div>
   );
@@ -200,6 +254,7 @@ export default function PlanTab() {
   const [status, setStatus] = useState<PlanStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
+  const [redirectingMP, setRedirectingMP] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [now] = useState(() => Date.now());
 
@@ -216,12 +271,34 @@ export default function PlanTab() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  // Leer mp_status al regresar del checkout de Mercado Pago
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const mpStatus = params.get("mp_status");
+    if (mpStatus === "approved") {
+      showToast("Pago con Mercado Pago aprobado. Tu plan se actualizará en breve.");
+    } else if (mpStatus === "pending") {
+      showToast("Pago pendiente. Te notificaremos cuando se confirme.", true);
+    } else if (mpStatus === "failure") {
+      showToast("El pago con Mercado Pago no se completó. Intenta de nuevo.", false);
+    }
+    // Limpiar el parámetro de la URL sin recargar la página
+    if (mpStatus) {
+      const cleanUrl = window.location.pathname + (window.location.search.replace(/[?&]mp_status=[^&]*/g, "").replace(/^&/, "?") || "");
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, []);
+
   useEffect(() => {
     fetch("/api/plan")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("not ok");
+        return r.json();
+      })
       .then((data: PlanStatus) => {
         setStatus(data);
-        setDomainInput(data.tenant.customDomain ?? "");
+        setDomainInput(data.tenant?.customDomain ?? "");
       })
       .catch(() => showToast("Error al cargar el plan", false))
       .finally(() => setLoading(false));
@@ -299,6 +376,27 @@ export default function PlanTab() {
       showToast("Error de red. Intenta de nuevo.", false);
     } finally {
       setRedirecting(false);
+    }
+  };
+
+  const handleUpgradeMP = async (planId: PlanId) => {
+    setRedirectingMP(true);
+    try {
+      const res = await fetch("/api/billing/mp-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+      const data = await res.json() as { init_point?: string; error?: string };
+      if (!res.ok || !data.init_point) {
+        showToast(data.error ?? "No se pudo iniciar el pago con Mercado Pago", false);
+        return;
+      }
+      window.location.href = data.init_point;
+    } catch {
+      showToast("Error de red. Intenta de nuevo.", false);
+    } finally {
+      setRedirectingMP(false);
     }
   };
 
@@ -542,17 +640,29 @@ export default function PlanTab() {
               key={def.id}
               def={def}
               isActive={def.id === plan}
-              onSelect={() => handleUpgrade(def.id)}
+              onSelectStripe={() => handleUpgrade(def.id)}
+              onSelectMP={() => handleUpgradeMP(def.id)}
+              loadingStripe={redirecting}
+              loadingMP={redirectingMP}
             />
           ))}
         </div>
+
+        {/* Mensajes de redirección */}
         {redirecting && (
           <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-sm text-muted">
             <Loader2 className="w-4 h-4 animate-spin" /> Redirigiendo a Stripe…
           </div>
         )}
+        {redirectingMP && (
+          <div className="flex flex-wrap items-center justify-center gap-2 mt-4 text-sm text-muted">
+            <Loader2 className="w-4 h-4 animate-spin" style={{ color: "#009ee3" }} />
+            <span>Redirigiendo a Mercado Pago…</span>
+          </div>
+        )}
+
         <p className="text-xs text-muted mt-4 text-center">
-          Los pagos son procesados de forma segura por Stripe. Puedes cancelar en cualquier momento.
+          Paga con Stripe (tarjeta internacional) o Mercado Pago (Yape, BCP, Plin y más).
         </p>
       </div>
     </div>

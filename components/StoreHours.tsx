@@ -26,6 +26,7 @@ export default function StoreHours() {
   }, []);
 
   if (!now) return null;
+  if (!deliveryConfig.hours || deliveryConfig.hours.length === 0) return null;
 
   const jsDay = now.getDay();
   const currentHour = now.getHours() + now.getMinutes() / 60;
@@ -38,6 +39,8 @@ export default function StoreHours() {
   );
   const closesAt = todayEntry?.close ?? "--:--";
   const opensAt = todayEntry?.open ?? "--:--";
+  const closingSoon = isOpen && todayEntry ? (parseHour(todayEntry.close) - currentHour) <= 1 : false;
+  const minutesLeft = isOpen && todayEntry ? Math.round((parseHour(todayEntry.close) - currentHour) * 60) : 0;
 
   // Sort by natural week order, show all entries
   const sortedHours = [...deliveryConfig.hours].sort(
@@ -70,7 +73,9 @@ export default function StoreHours() {
 
           {/* Live status banner */}
           <div className="relative flex items-center justify-between px-6 sm:px-8 py-5" style={{
-            background: isOpen
+            background: closingSoon
+              ? "linear-gradient(90deg, #422006, #713f12)"
+              : isOpen
               ? "linear-gradient(90deg, #052e16, #14532d)"
               : "linear-gradient(90deg, #1c0505, #450a0a)",
           }}>
@@ -80,15 +85,19 @@ export default function StoreHours() {
             }} />
             <div className="relative flex items-center gap-3">
               <span className="relative flex h-3.5 w-3.5">
-                <span className={`absolute inset-0 rounded-full ${isOpen ? "bg-emerald-400 animate-ping" : "bg-red-400"} opacity-75`} />
-                <span className={`relative inline-flex h-3.5 w-3.5 rounded-full ${isOpen ? "bg-emerald-400" : "bg-red-500"}`} />
+                <span className={`absolute inset-0 rounded-full ${closingSoon ? "bg-amber-400 animate-ping" : isOpen ? "bg-emerald-400 animate-ping" : "bg-red-400"} opacity-75`} />
+                <span className={`relative inline-flex h-3.5 w-3.5 rounded-full ${closingSoon ? "bg-amber-400" : isOpen ? "bg-emerald-400" : "bg-red-500"}`} />
               </span>
               <span className="text-white font-bold text-base">
-                {isOpen ? "Abierto ahora" : "Cerrado"}
+                {closingSoon ? "Cierra pronto" : isOpen ? "Abierto ahora" : "Cerrado"}
               </span>
             </div>
-            <span className="relative text-xs font-semibold" style={{ color: "rgba(255,255,255,0.6)" }}>
-              {isOpen ? `Cierra a las ${closesAt}` : `Abre a las ${opensAt}`}
+            <span className="relative text-xs font-semibold" style={{ color: "rgba(255,255,255,0.7)" }}>
+              {closingSoon
+                ? `Quedan ${minutesLeft} min - Cierra a las ${closesAt}`
+                : isOpen
+                ? `Cierra a las ${closesAt}`
+                : `Abre a las ${opensAt}`}
             </span>
           </div>
 
@@ -142,7 +151,7 @@ export default function StoreHours() {
               <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/15">
                 <MapPin className="w-4 h-4 text-primary" />
               </div>
-              <p className="text-sm text-muted">Jr. Ucayali 450, Pucallpa, Ucayali — Perú</p>
+              <p className="text-sm text-muted">Jr. Ucayali 450, Ucayali — Perú</p>
             </div>
             <a
               href="tel:+51916409675"

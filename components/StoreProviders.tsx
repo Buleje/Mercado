@@ -13,27 +13,34 @@ import { SettingsProvider } from "@/contexts/settings-context";
 import { PromotionsProvider } from "@/contexts/promotions-context";
 import { FavoritesProvider } from "@/contexts/favorites-context";
 import { CompareProvider } from "@/contexts/compare-context";
+import { TenantSlugProvider } from "@/contexts/tenant-context";
+import ThemeInjector from "@/components/store/ThemeInjector";
 
 export default function StoreProviders({
   children,
+  tenantSlug = "main",
 }: {
   children: React.ReactNode;
+  tenantSlug?: string;
 }) {
   return (
-    <ToastProvider>
-      <ReviewsProvider>
-        <SettingsProvider>
-          <PromotionsProvider>
-            <CartProvider>
-              <FavoritesProvider>
-                <CompareProvider>
-                  <CustomerProvider>{children}</CustomerProvider>
-                </CompareProvider>
-              </FavoritesProvider>
-            </CartProvider>
-          </PromotionsProvider>
-        </SettingsProvider>
-      </ReviewsProvider>
-    </ToastProvider>
+    <TenantSlugProvider slug={tenantSlug}>
+      <ToastProvider>
+        <ReviewsProvider>
+          <SettingsProvider>
+            <ThemeInjector />
+            <PromotionsProvider>
+              <CartProvider tenantSlug={tenantSlug}>
+                <FavoritesProvider>
+                  <CompareProvider>
+                    <CustomerProvider>{children}</CustomerProvider>
+                  </CompareProvider>
+                </FavoritesProvider>
+              </CartProvider>
+            </PromotionsProvider>
+          </SettingsProvider>
+        </ReviewsProvider>
+      </ToastProvider>
+    </TenantSlugProvider>
   );
 }

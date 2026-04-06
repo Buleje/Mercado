@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { verifySessionToken, SESSION } from "@/lib/session";
 
+export const dynamic = "force-dynamic";
+
 // ─── Validation ───────────────────────────────────────────
 const VisitorSchema = z.object({
   name: z.string().min(1).max(100).trim(),
@@ -71,10 +73,11 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
-  const data = rows.map((r) => ({
-    ...r,
-    devices: JSON.parse(r.devices) as string[],
-  }));
+  const data = rows.map((r) => {
+    let devices: string[] = [];
+    try { devices = JSON.parse(r.devices) as string[]; } catch { /* corrupted data */ }
+    return { ...r, devices };
+  });
 
   return NextResponse.json({ data, total, page, limit });
 }

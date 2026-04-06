@@ -51,14 +51,14 @@ function ModuleTooltip() {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative inline-block">
-      <button type="button" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} className="text-gray-400 hover:text-primary transition-colors focus:outline-none" aria-label="Ayuda sobre Mermas">
+      <button type="button" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} className="text-gray-400 hover:text-primary transition-colors focus:outline-none" aria-label="Ayuda sobre Pérdidas">
         <Info className="h-4 w-4" />
       </button>
       {open && (
         <div className="pointer-events-none absolute left-6 top-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 text-xs leading-relaxed shadow-xl dark:border-card-border dark:bg-card">
-          <p className="mb-2 text-sm font-extrabold text-gray-900 dark:text-foreground">Mermas</p>
-          <p className="mb-3 text-gray-600 dark:text-muted">Aqui registras perdida de stock por vencimiento, rotura, robo o errores de inventario, y el sistema descuenta el stock automaticamente.</p>
-          <p className="text-gray-500 dark:text-muted">Ejemplo: si se vencen 3 yogures, registras la merma, queda el motivo guardado y el inventario baja en 3 unidades.</p>
+          <p className="mb-2 text-sm font-extrabold text-gray-900 dark:text-foreground">Pérdidas</p>
+          <p className="mb-3 text-gray-600 dark:text-muted">Aquí registras lo que se perdió (por vencimiento, rotura, robo o errores al contar), y el sistema baja las existencias automáticamente.</p>
+          <p className="text-gray-500 dark:text-muted">Ejemplo: si se vencen 3 yogures, registras la pérdida, queda el motivo guardado y el inventario baja en 3 unidades.</p>
         </div>
       )}
     </div>
@@ -140,18 +140,18 @@ export default function ShrinkageTab() {
       <div className="flex flex-col gap-2 sm:gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="flex flex-wrap items-center gap-2 text-xl font-extrabold text-gray-900 dark:text-foreground">
-            <Package className="h-6 w-6 text-red-500" /> Mermas <ModuleTooltip />
+            <Package className="h-6 w-6 text-red-500" /> Pérdidas <ModuleTooltip />
           </h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-muted">Registro real de perdidas de stock y costo</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-muted">Registra lo que se perdió y cuánto costó</p>
         </div>
         <button onClick={() => exportToCSV(records.map((record) => ({ Fecha: record.date, Producto: record.product, Categoria: record.category, Cantidad: record.quantity, CostoUnitario: record.unitCost, Perdida: record.totalLoss, Motivo: record.cause, Estado: record.status })), "mermas")} className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-white px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold transition-colors hover:bg-gray-50 dark:border-card-border dark:bg-card dark:hover:bg-accent">
-          <Download className="h-4 w-4" /> Exportar
+          <Download className="h-4 w-4" /> Descargar
         </button>
       </div>
 
       <div className="grid gap-2 sm:gap-4 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
-          <div className="mb-4 flex flex-wrap items-center gap-2 text-sm font-extrabold text-gray-900 dark:text-foreground"><Plus className="h-4 w-4 text-primary" /> Registrar merma</div>
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-sm font-extrabold text-gray-900 dark:text-foreground"><Plus className="h-4 w-4 text-primary" /> Registrar pérdida</div>
           <div className="grid gap-3 sm:grid-cols-2">
             <select value={form.productId} onChange={(event) => setForm((prev) => ({ ...prev, productId: event.target.value }))} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm dark:border-card-border dark:bg-surface">
               <option value="">Selecciona producto</option>
@@ -169,7 +169,7 @@ export default function ShrinkageTab() {
             <textarea value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} placeholder="Notas" rows={3} className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm sm:col-span-2 dark:border-card-border dark:bg-surface" />
           </div>
           <button onClick={handleAdd} disabled={saving || !form.productId || !form.quantity} className="mt-4 rounded-xl bg-primary px-2 sm:px-4 py-1.5 sm:py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90 disabled:opacity-50">
-            {saving ? "Guardando..." : "Registrar merma"}
+            {saving ? "Guardando..." : "Registrar pérdida"}
           </button>
         </div>
 
@@ -179,7 +179,7 @@ export default function ShrinkageTab() {
           <div className="col-span-2 rounded-2xl border border-gray-200 bg-white p-3 sm:p-5 dark:border-card-border dark:bg-card">
             <p className="text-xs font-semibold uppercase text-gray-500 dark:text-muted">Motivo principal</p>
             <p className="mt-2 text-lg font-extrabold text-gray-900 dark:text-foreground">{stats.topCause ? CAUSE_META[stats.topCause[0] as ShrinkageCause]?.label : "Sin datos"}</p>
-            <p className="mt-1 text-sm text-gray-500 dark:text-muted">{stats.topCause ? `${fmt(stats.topCause[1])} acumulados` : "Aun no hay mermas registradas."}</p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-muted">{stats.topCause ? `${fmt(stats.topCause[1])} acumulados` : "Aún no hay pérdidas registradas."}</p>
           </div>
         </div>
       </div>
@@ -215,10 +215,10 @@ export default function ShrinkageTab() {
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-card-border">
               {loading && (
-                <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-gray-400 dark:text-muted"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Cargando mermas...</td></tr>
+                <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-gray-400 dark:text-muted"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" /> Cargando pérdidas...</td></tr>
               )}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-gray-400 dark:text-muted">No hay mermas registradas.</td></tr>
+                <tr><td colSpan={7} className="px-5 py-8 text-center text-sm text-gray-400 dark:text-muted">No hay pérdidas registradas.</td></tr>
               )}
               {filtered.map((record) => (
                 <tr key={record.id} className="hover:bg-gray-50 dark:hover:bg-surface">
@@ -250,7 +250,7 @@ export default function ShrinkageTab() {
           <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-3 sm:p-6 dark:border-card-border dark:bg-card">
             <div className="mb-4 flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">Detalle de merma</h3>
+                <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">Detalle de la pérdida</h3>
                 <p className="text-sm text-gray-500 dark:text-muted">{detail.product}</p>
               </div>
               <button onClick={() => setDetail(null)} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-4 w-4" /></button>
@@ -274,7 +274,7 @@ export default function ShrinkageTab() {
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
           <div>
             <h3 className="text-sm font-extrabold text-amber-800 dark:text-amber-300">Impacto acumulado</h3>
-            <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">Las mermas registradas acumulan {fmt(stats.totalLoss)}. Usa este modulo para detectar causas repetidas y cortar perdidas.</p>
+            <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">Las pérdidas registradas acumulan {fmt(stats.totalLoss)}. Usa esta sección para detectar causas repetidas y reducir lo que se pierde.</p>
           </div>
         </div>
       )}

@@ -5,8 +5,14 @@ Sentry.init({
 
   enabled: process.env.NODE_ENV === "production",
 
-  // Capture 10% of transactions for performance tracing
-  tracesSampleRate: 0.1,
+  // Capture 25% of transactions for better performance visibility
+  tracesSampleRate: 0.25,
+
+  // Sample 10% of transactions for continuous profiling
+  profilesSampleRate: 0.1,
+
+  // Enable Spotlight for local Sentry debugging in development
+  spotlight: process.env.NODE_ENV === "development",
 
   /**
    * Attach the x-request-id header (injected by middleware) to every Sentry

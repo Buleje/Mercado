@@ -9,9 +9,9 @@ import { useSettings } from "@/contexts/settings-context";
 
 /* Visual defaults per slot (icon, accent, glow). Text & stats come from settings. */
 const SLOT_DEFAULTS = [
-  { icon: Truck, accent: "#3b82f6", glow: "rgba(59,130,246,0.25)", title: "Delivery Rápido", description: "Entrega a domicilio en toda la zona urbana de Pucallpa.", back: "Tiempo estimado: ~30 min en zona urbana.", stat: 30, statSuffix: " min", statLabel: "entrega promedio" },
+  { icon: Truck, accent: "#3b82f6", glow: "rgba(59,130,246,0.25)", title: "Delivery Rápido", description: "Entrega a domicilio en toda tu zona urbana.", back: "Tiempo estimado: ~30 min en zona urbana.", stat: 30, statSuffix: " min", statLabel: "entrega promedio" },
   { icon: BadgePercent, accent: "#f59e0b", glow: "rgba(245,158,11,0.25)", title: "Pago con Yape o Efectivo", description: "Paga fácil con Yape o en efectivo contra entrega.", back: "Sin tarjetas, sin cargos, sin complicaciones.", stat: 0, statSuffix: " comisiones", statLabel: "sin comisiones extra" },
-  { icon: ShieldCheck, accent: "#2d6a4f", glow: "rgba(45,106,79,0.25)", title: "Calidad Garantizada", description: "Productos seleccionados y verificados para tu familia.", back: "Si no estás satisfecho, te devolvemos tu dinero.", stat: 100, statSuffix: "%", statLabel: "satisfacción" },
+  { icon: ShieldCheck, accent: "#00B4A6", glow: "rgba(45,106,79,0.25)", title: "Calidad Garantizada", description: "Productos seleccionados y verificados para tu familia.", back: "Si no estás satisfecho, te devolvemos tu dinero.", stat: 100, statSuffix: "%", statLabel: "satisfacción" },
   { icon: Leaf, accent: "#8b5cf6", glow: "rgba(139,92,246,0.25)", title: "Productos Frescos", description: "Carne, pollo, frutas y verduras frescas todos los días.", back: "Stock renovado cada mañana. Proveedores locales.", stat: 500, statSuffix: "+", statLabel: "productos en stock" },
 ];
 
@@ -89,7 +89,7 @@ export default function Benefits() {
             ?
           </h2>
           <p className="mt-5 text-base sm:text-lg text-muted max-w-2xl mx-auto">
-            Tu tienda virtual de productos de consumo en Pucallpa con delivery rápido y pago fácil.
+            Tu tienda virtual de productos de consumo con delivery rápido y pago fácil.
           </p>
         </div>
 

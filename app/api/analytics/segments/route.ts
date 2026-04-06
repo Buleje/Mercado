@@ -3,6 +3,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import type { PrismaClient } from "@/lib/generated/prisma/client";
 
+export const dynamic = "force-dynamic";
+
 export type SegmentLabel = "vip" | "regular" | "en_riesgo" | "nuevo" | "dormido";
 
 export type SegmentedCustomer = {

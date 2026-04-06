@@ -62,8 +62,10 @@ function mapCoupon(c: PCoupon): DbCoupon {
 // ── Promotions DB ─────────────────────────────────────────────────────────────
 
 export const PromotionsDB = {
-  async getAll(): Promise<DbPromotion[]> {
-    return (await prisma.promotion.findMany({ orderBy: { createdAt: "desc" } })).map(mapPromotion);
+  async getAll(tenantId?: string): Promise<DbPromotion[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.promotion.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapPromotion);
   },
   async add(p: DbPromotion): Promise<DbPromotion> {
     const row = await prisma.promotion.create({
@@ -101,8 +103,10 @@ export const PromotionsDB = {
 // ── Coupons DB ────────────────────────────────────────────────────────────────
 
 export const CouponsDB = {
-  async getAll(): Promise<DbCoupon[]> {
-    return (await prisma.coupon.findMany({ orderBy: { createdAt: "desc" } })).map(mapCoupon);
+  async getAll(tenantId?: string): Promise<DbCoupon[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.coupon.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapCoupon);
   },
   async getByCode(code: string): Promise<DbCoupon | null> {
     const row = await prisma.coupon.findFirst({ where: { code: code.toUpperCase().trim() } });

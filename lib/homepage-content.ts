@@ -52,6 +52,51 @@ export type HomepageContent = {
   exitPromoMinAmount: number;
 };
 
+/**
+ * Defaults genéricos para tiendas nuevas (tenants que no son "main").
+ * No contiene datos de Pucallpa, FAQs específicas ni métricas inventadas.
+ */
+export const NEW_STORE_DEFAULTS: HomepageContent = {
+  heroGreetingEnabled: true,
+  heroTitle: "Bienvenido a",
+  heroTitleAccent: "nuestra tienda",
+  heroSubtitle: "Explora nuestros productos. Delivery disponible. ¡Haz tu pedido!",
+  heroCta1Text: "Ver Productos",
+  heroCta1Link: "/tienda",
+  heroCta2Text: "Contactar",
+  heroCta2Link: "#contacto",
+  heroBadgeText: "",
+  heroBadgeSubtext: "",
+  statProducts: "0",
+  statClients: "0",
+  statOrders: "0",
+  statRating: "5.0/5",
+  previewBadge: "Destacados",
+  previewTitle: "Nuestros",
+  previewTitleAccent: "productos",
+  previewSubtitle: "Encuentra todo lo que necesitas en un solo lugar.",
+  previewCtaText: "Ver todos los productos",
+  footerDescription: "Tu tienda online. Compra fácil y rápido.",
+  footerWhatsApp: "",
+  footerFacebook: "",
+  footerInstagram: "",
+  footerRating: "Nuevo",
+  footerClients: "0",
+  announcementMessages: [],
+  announcementEnabled: false,
+  countdownEnabled: false,
+  countdownTitle: "OFERTAS DEL DÍA",
+  countdownSubtitle: "¡Aprovecha antes de la medianoche!",
+  countdownCtaText: "Ver ofertas",
+  flashDealIds: [],
+  flashDealDiscount: 0,
+  exitPromoCode: "",
+  exitPromoMinAmount: 0,
+  faqItems: [],
+  benefitItems: [],
+  testimonialItems: [],
+};
+
 export const DEFAULT_HOMEPAGE: HomepageContent = {
   heroGreetingEnabled: true,
   heroTitle: "Tus abarrotes",

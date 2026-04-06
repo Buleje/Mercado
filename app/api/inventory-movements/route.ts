@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { InventoryMovementsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { toErrorPayload } from "@/lib/api-error";
 
 const AdjustSchema = z.object({
   action: z.literal("adjust"),
@@ -35,73 +36,83 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const { searchParams } = new URL(req.url);
-  const productId = searchParams.get("productId");
+  try {
+    const { searchParams } = new URL(req.url);
+    const productId = searchParams.get("productId");
 
-  if (productId) {
-    const movements = await InventoryMovementsDB.getByProduct(Number(productId));
-    return NextResponse.json(movements);
+    if (productId) {
+      const movements = await InventoryMovementsDB.getByProduct(Number(productId));
+      return NextResponse.json(movements);
+    }
+
+    return NextResponse.json(await InventoryMovementsDB.getAll(auth.tenantId));
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err);
+    return NextResponse.json(payload, { status });
   }
-
-  return NextResponse.json(await InventoryMovementsDB.getAll());
 }
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json();
+  try {
+    const raw = await req.json();
 
-  if (raw.action === "adjust") {
-    const parsed = AdjustSchema.safeParse(raw);
+    if (raw.action === "adjust") {
+      const parsed = AdjustSchema.safeParse(raw);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+          { status: 400 }
+        );
+      }
+      const { productId, newStock, warehouseId, notes } = parsed.data;
+      const movement = await InventoryMovementsDB.adjust(productId, newStock, warehouseId, notes, auth.username);
+      return NextResponse.json(movement, { status: 201 });
+    }
+
+    if (raw.action === "bulk-adjust") {
+      const parsed = BulkAdjustSchema.safeParse(raw);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+          { status: 400 }
+        );
+      }
+      const results = await Promise.allSettled(
+        parsed.data.items.map((item) => InventoryMovementsDB.adjust(item.productId, item.newStock, undefined, item.notes, auth.username))
+      );
+      const succeeded = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.filter((r) => r.status === "rejected").length;
+      const succeededIds = parsed.data.items
+        .filter((_, i) => results[i].status === "fulfilled")
+        .map((item) => item.productId);
+      return NextResponse.json({ ok: true, succeeded, failed, succeededIds }, { status: 201 });
+    }
+
+    // Default: record a movement
+    const parsed = MovementSchema.safeParse(raw);
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
         { status: 400 }
       );
     }
-    const { productId, newStock, warehouseId, notes } = parsed.data;
-    const movement = await InventoryMovementsDB.adjust(productId, newStock, warehouseId, notes, auth.username);
+    const { productId, type, lossType, quantity, reference, warehouseId, notes } = parsed.data;
+    const movement = await InventoryMovementsDB.record({
+      productId,
+      type,
+      lossType,
+      quantity,
+      reference,
+      warehouseId,
+      notes,
+      createdBy: auth.username,
+    });
     return NextResponse.json(movement, { status: 201 });
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err);
+    return NextResponse.json(payload, { status });
   }
-
-  if (raw.action === "bulk-adjust") {
-    const parsed = BulkAdjustSchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
-        { status: 400 }
-      );
-    }
-    const results = await Promise.allSettled(
-      parsed.data.items.map((item) => InventoryMovementsDB.adjust(item.productId, item.newStock, undefined, item.notes, auth.username))
-    );
-    const succeeded = results.filter((r) => r.status === "fulfilled").length;
-    const failed = results.filter((r) => r.status === "rejected").length;
-    const succeededIds = parsed.data.items
-      .filter((_, i) => results[i].status === "fulfilled")
-      .map((item) => item.productId);
-    return NextResponse.json({ ok: true, succeeded, failed, succeededIds }, { status: 201 });
-  }
-
-  // Default: record a movement
-  const parsed = MovementSchema.safeParse(raw);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
-      { status: 400 }
-    );
-  }
-  const { productId, type, lossType, quantity, reference, warehouseId, notes } = parsed.data;
-  const movement = await InventoryMovementsDB.record({
-    productId,
-    type,
-    lossType,
-    quantity,
-    reference,
-    warehouseId,
-    notes,
-    createdBy: auth.username,
-  });
-  return NextResponse.json(movement, { status: 201 });
 }

@@ -10,7 +10,7 @@ import { MapPin, Phone, Clock, MessageCircle } from "lucide-react";
 // ─── Schema & Types ─────────────────────────────────────
 export const ContactBlockSchema = z.object({
   badge: z.string().default("Contacto"),
-  title: z.string().default("Delivery de Abarrotes en Pucallpa"),
+  title: z.string().default("Delivery de Abarrotes a Domicilio"),
   subtitle: z.string().default("Haz tu pedido online o escríbenos por WhatsApp. Entrega rápida y segura."),
   contactInfo: z.array(z.object({
     icon: z.string(),
@@ -21,7 +21,7 @@ export const ContactBlockSchema = z.object({
     {
       icon: "MapPin",
       label: "Dirección",
-      value: "Jr. Ucayali 450, Pucallpa, Ucayali",
+      value: "Jr. Ucayali 450, Ucayali",
     },
     {
       icon: "Phone",
@@ -63,7 +63,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 export default function ContactBlock(props: Partial<ContactBlockProps>) {
   const {
     badge = "Contacto",
-    title = "Delivery de Abarrotes en Pucallpa",
+    title = "Delivery de Abarrotes a Domicilio",
 subtitle,
     contactInfo = [],
     ctaTitle,
@@ -131,7 +131,7 @@ subtitle,
           {ctaTitle && (
             <div
               className="rounded-2xl p-8 sm:p-10 text-white shadow-xl"
-              style={{ background: "linear-gradient(135deg, #2d6a4f, #245c43)" }}
+              style={{ background: "linear-gradient(135deg, #00B4A6, #009690)" }}
             >
               <h3 className="text-2xl sm:text-3xl font-extrabold mb-4">
                 {ctaTitle}
@@ -167,6 +167,6 @@ export const ContactBlockMetadata = {
   description: "Información de contacto y formulario",
   category: "informativo" as const,
   icon: "Phone",
-  defaultProps: ContactBlockSchema.parse({}),
+  defaultProps: (() => { const parsed = ContactBlockSchema.safeParse({}); return parsed.success ? parsed.data : { badge: "Contacto", title: "Delivery de Abarrotes a Domicilio", subtitle: "", contactInfo: [], ctaTitle: "¿Listo para pedir?", ctaDescription: "", ctaSteps: [] }; })(),
   propsSchema: ContactBlockSchema,
 };

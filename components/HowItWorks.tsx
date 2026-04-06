@@ -29,8 +29,8 @@ const STEPS = [
     num: 3,
     icon: Truck,
     title: "Recibe en tu puerta",
-    desc: "Te llevamos tu pedido a domicilio en Pucallpa en menos de 30 minutos.",
-    color: "#2d6a4f",
+    desc: "Te llevamos tu pedido a domicilio en menos de 30 minutos.",
+    color: "#00B4A6",
     shadow: "rgba(45,106,79,0.3)",
     emoji: "🚚",
   },
@@ -177,7 +177,7 @@ export default function HowItWorks() {
             ?
           </h2>
           <p className="mt-5 text-base sm:text-lg text-muted max-w-2xl mx-auto">
-            Comprar en Bodega San Martín es rápido, seguro y sin complicaciones.
+            Comprar en Buleje es rápido, seguro y sin complicaciones.
           </p>
         </div>
 
@@ -194,7 +194,7 @@ export default function HowItWorks() {
               <linearGradient id="connGrad" x1="0" y1="0" x2="1" y2="0">
                 <stop offset="0%" stopColor="#3b82f6" />
                 <stop offset="50%" stopColor="#f59e0b" />
-                <stop offset="100%" stopColor="#2d6a4f" />
+                <stop offset="100%" stopColor="#00B4A6" />
               </linearGradient>
             </defs>
             <path
@@ -207,7 +207,7 @@ export default function HowItWorks() {
             />
             {/* Arrow heads */}
             <polygon points="184,8 196,12 184,16" fill="#f59e0b" opacity="0.6" />
-            <polygon points="384,8 396,12 384,16" fill="#2d6a4f" opacity="0.6" />
+            <polygon points="384,8 396,12 384,16" fill="#00B4A6" opacity="0.6" />
           </svg>
 
           {STEPS.map((step, i) => (

@@ -12,7 +12,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 
 type ActionResult = { ok: boolean; message: string; data?: unknown };
 
-async function executeAction(action: { type: string; payload: Record<string, unknown> }): Promise<ActionResult> {
+async function executeAction(action: { type: string; payload: Record<string, unknown> }, tenantId: string): Promise<ActionResult> {
   switch (action.type) {
     // ── Product actions ────────────────────────────────────────────────────
     case "update_price": {
@@ -55,7 +55,7 @@ async function executeAction(action: { type: string; payload: Record<string, unk
       if (!p.name || !p.category || !p.price) {
         return { ok: false, message: "name, category y price son requeridos." };
       }
-      const all = await ProductsDB.getAll();
+      const all = await ProductsDB.getAll(tenantId);
       const maxId = all.reduce((m, x) => Math.max(m, x.id), 0);
       const newProduct = await ProductsDB.upsert({
         id: maxId + 1,
@@ -101,6 +101,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Se requiere { action: { type, payload } }" }, { status: 400 });
   }
 
-  const result = await executeAction(body.action);
+  const result = await executeAction(body.action, auth.tenantId);
   return NextResponse.json(result, { status: result.ok ? 200 : 400 });
 }

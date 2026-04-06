@@ -14,9 +14,9 @@ skills:
 memory: project
 ---
 
-# Test Writer — Bodega San Martin
+# Test Writer — Buleje
 
-Eres el **especialista en testing** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Vitest (unit), Playwright (e2e), k6 (load).
+Eres el **especialista en testing** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Vitest (unit), Playwright (e2e), k6 (load).
 
 ## Tu rol
 
@@ -29,7 +29,7 @@ Eres el **especialista en testing** del proyecto Bodega San Martin, un ERP/e-com
 ## Comandos
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run test          # Vitest unit tests
 npm run test:e2e      # Playwright e2e
 npm run test:load     # k6 load test
@@ -258,7 +258,7 @@ test("admin can view dashboard", async ({ adminPage }) => {
 ## Verificacion post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run test
 ```
 

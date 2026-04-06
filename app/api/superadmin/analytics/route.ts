@@ -112,14 +112,37 @@ export async function GET(req: NextRequest) {
     monthlyRevenue.push({ month: label, revenue });
   }
 
+  // Churn rate: tenants que cancelaron (cancelAtPeriodEnd o inactive con plan free que antes pagaban)
+  // Usamos como proxy: tenants cancelando + tenants inactivos / total tenants
+  const cancelingTenants = allTenants.filter((t) => t.cancelAtPeriodEnd).length;
+  const inactiveTenants = allTenants.filter((t) => !t.active).length;
+  const totalTenants = allTenants.length;
+  const churnRate = totalTenants > 0
+    ? Math.round(((cancelingTenants + inactiveTenants) / totalTenants) * 100 * 10) / 10
+    : 0;
+
+  // Trial conversion rate
+  const activeTenants = allTenants.filter((t) => t.active);
+  const convertedFromTrial = activeTenants.filter(
+    (t) => t.plan !== "free" && t.trialEndsAt,
+  ).length;
+  const totalTrials = allTenants.filter((t) => t.trialEndsAt).length;
+  const trialConversionRate = totalTrials > 0
+    ? Math.round((convertedFromTrial / totalTrials) * 100 * 10) / 10
+    : 0;
+
   return NextResponse.json({
     overview: {
-      totalTenants: allTenants.length,
-      activeTenants: allTenants.filter((t) => t.active).length,
-      payingTenants: allTenants.filter((t) => t.plan !== "free" && t.active).length,
+      totalTenants,
+      activeTenants: activeTenants.length,
+      inactiveTenants,
+      payingTenants: activeTenants.filter((t) => t.plan !== "free").length,
       mrr,
       arr: mrr * 12,
-      arpu: allTenants.length > 0 ? Math.round(mrr / allTenants.length) : 0,
+      arpu: totalTenants > 0 ? Math.round(mrr / totalTenants) : 0,
+      churnRate,
+      trialConversionRate,
+      cancelingTenants,
     },
     growth: {
       tenantsThisMonth,

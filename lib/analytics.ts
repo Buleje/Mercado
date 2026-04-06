@@ -1,5 +1,5 @@
 /**
- * Type-safe analytics tracking for Bodega San Martín
+ * Type-safe analytics tracking for Buleje
  * 
  * Integrates with:
  * - Google Analytics 4 (via gtag)
@@ -43,6 +43,14 @@ export type AnalyticsEvent =
   | "login"
   | "signup"
   | "profile_update"
+  // Registration funnel events
+  | "registration_start"
+  | "registration_step_1_complete"
+  | "registration_step_2_complete"
+  | "registration_step_3_complete"
+  | "registration_complete"
+  | "registration_error"
+  | "registration_step_back"
   // Error events
   | "error_occurred";
 
@@ -67,6 +75,7 @@ export interface EventParams {
   // Custom params
   source?: string;
   destination?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Generic event params
   [key: string]: any;
 }
 
@@ -74,6 +83,7 @@ export interface EventParams {
 
 function isAnalyticsLoaded(): boolean {
   if (typeof window === "undefined") return false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Browser global check
   return typeof window.gtag === "function" || typeof (window as any).dataLayer !== "undefined";
 }
 
@@ -87,7 +97,9 @@ export function trackEvent(
   params?: EventParams
 ): void {
   if (!isAnalyticsLoaded()) {
-    console.log("[Analytics] Event would be tracked:", eventName, params);
+    if (process.env.NODE_ENV === "development") {
+      console.log("[Analytics] Event would be tracked:", eventName, params);
+    }
     return;
   }
 
@@ -98,7 +110,9 @@ export function trackEvent(
     }
 
     // Microsoft Clarity custom tags
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Clarity global is untyped
     if (typeof (window as any).clarity === "function") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Clarity global is untyped
       (window as any).clarity("set", eventName, JSON.stringify(params || {}));
     }
 
@@ -138,6 +152,7 @@ export function trackConversion(
     value?: number;
     currency?: string;
     transactionId?: string | number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Conversion data is dynamic
     [key: string]: any;
   }
 ): void {
@@ -357,8 +372,10 @@ declare global {
     gtag?: (
       command: "config" | "event" | "set",
       targetId: string,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GA4 params are untyped
       params?: Record<string, any>
     ) => void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GA4 dataLayer is untyped
     dataLayer?: any[];
   }
 }

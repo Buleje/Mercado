@@ -1,6 +1,11 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { TrendingUp, Sliders, Sun, GitCompare } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import AdminDateFilter from "@/components/admin/shared/AdminDateFilter";
+import type { DatePreset } from "@/components/admin/shared/AdminDateFilter";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -12,31 +17,34 @@ const ScenarioSimulatorTab = dynamic(() => import("@/components/admin/ScenarioSi
 const SeasonalityTab = dynamic(() => import("@/components/admin/SeasonalityTab"), { loading: S });
 const PeriodComparatorTab = dynamic(() => import("@/components/admin/PeriodComparatorTab"), { loading: S });
 
+const MODULE_ID = "proyecciones";
+
 const TABS = [
-  { id: "simulador" as const, label: "Simulador" },
-  { id: "estacionalidad" as const, label: "Estacionalidad" },
-  { id: "comparador" as const, label: "Comparador" },
+  { id: "simulador", label: "Simulador", icon: Sliders },
+  { id: "estacionalidad", label: "Estacionalidad", icon: Sun },
+  { id: "comparador", label: "Comparador", icon: GitCompare },
 ];
 
 export default function ProyeccionesModule() {
   const [sub, setSub] = useState(TABS[0].id);
+  const [datePreset, setDatePreset] = useState<DatePreset>("month");
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none border-b border-gray-200 dark:border-card-border -mx-1 px-1">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSub(t.id)}
-            className={`shrink-0 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${
-              sub === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Proyecciones"
+        description="Simulador de escenarios, estacionalidad y comparador de periodos"
+        icon={TrendingUp}
+      >
+        <AdminDateFilter value={datePreset} onChange={setDatePreset} />
+      </AdminModuleHeader>
+
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId={MODULE_ID}
+      />
+
       {sub === "simulador" && <ScenarioSimulatorTab />}
       {sub === "estacionalidad" && <SeasonalityTab />}
       {sub === "comparador" && <PeriodComparatorTab />}

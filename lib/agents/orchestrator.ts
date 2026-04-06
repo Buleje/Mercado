@@ -203,6 +203,67 @@ class Orchestrator {
   }
 
   /**
+   * Execute a task synchronously — waits for the result.
+   * Used by LLM function calling to get agent results inline.
+   * Bypasses the async queue for immediate execution.
+   */
+  async executeSync(input: SubmitTaskInput): Promise<{
+    success: boolean;
+    data?: unknown;
+    error?: string;
+  }> {
+    const agent = agentRegistry.get(input.domain);
+    if (!agent) {
+      return { success: false, error: `No agent for domain "${input.domain}"` };
+    }
+
+    if (!agent.actions.includes(input.action)) {
+      return {
+        success: false,
+        error: `Agent "${input.domain}" does not support "${input.action}". Available: ${agent.actions.join(", ")}`,
+      };
+    }
+
+    const taskId = this.generateId();
+    const traceId = input.traceId ?? newTraceId();
+    const task: AgentTask = {
+      id: taskId,
+      domain: input.domain,
+      action: input.action,
+      payload: input.payload,
+      priority: input.priority ?? "normal",
+      status: "running",
+      tenantId: input.tenantId,
+      createdAt: new Date().toISOString(),
+      startedAt: new Date().toISOString(),
+      traceId,
+    };
+
+    const ctx = createAgentContext(task);
+
+    try {
+      const result = await withCircuitBreaker(
+        `agent:${task.domain}`,
+        () => agent.execute(task, ctx),
+      );
+
+      return {
+        success: result.success,
+        data: result.data,
+        error: result.error,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error("Orchestrator: executeSync failed", {
+        domain: input.domain,
+        action: input.action,
+        error: message,
+      });
+      return { success: false, error: message };
+    }
+  }
+
+  /**
    * Clear all state (useful for tests).
    */
   reset(): void {

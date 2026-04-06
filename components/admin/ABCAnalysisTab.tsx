@@ -5,10 +5,10 @@ import { Loader2, BarChart2, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ABCProduct } from "@/app/api/analytics/abc/route";
 
-const CLASS_STYLES: Record<"A" | "B" | "C", { badge: string; row: string; label: string }> = {
-  A: { badge: "bg-emerald-100 text-emerald-700", row: "bg-emerald-50/30", label: "A — Crítico" },
-  B: { badge: "bg-amber-100 text-amber-700",   row: "bg-amber-50/20",   label: "B — Importante" },
-  C: { badge: "bg-gray-100 text-gray-600",      row: "",                 label: "C — Bajo impacto" },
+const CLASS_STYLES: Record<"A" | "B" | "C", { badge: string; row: string; label: string; border: string }> = {
+  A: { badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", row: "bg-emerald-50/30 dark:bg-emerald-900/10", label: "A — Critico", border: "border-l-4 border-l-green-500" },
+  B: { badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",   row: "bg-amber-50/20 dark:bg-amber-900/10",   label: "B — Importante", border: "border-l-4 border-l-amber-500" },
+  C: { badge: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",      row: "",                 label: "C — Bajo impacto", border: "border-l-4 border-l-red-500" },
 };
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
@@ -61,17 +61,18 @@ export default function ABCAnalysisTab() {
             key={cls}
             onClick={() => setFilter(f => f === cls ? "all" : cls)}
             className={cn(
-              "text-left p-4 rounded-2xl border-2 transition-all",
-              filter === cls ? "border-primary shadow-md" : "border-gray-200 dark:border-card-border",
+              "text-left p-4 rounded-2xl border-2 transition-all hover:shadow-md",
+              CLASS_STYLES[cls].border,
+              filter === cls ? "border-primary shadow-md ring-2 ring-primary/20" : "border-gray-200 dark:border-card-border",
               CLASS_STYLES[cls].row
             )}
           >
             <div className="flex items-center justify-between mb-2">
-              <span className={cn("px-2 py-0.5 rounded-full text-xs font-bold", CLASS_STYLES[cls].badge)}>Clase {cls}</span>
+              <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-bold", CLASS_STYLES[cls].badge)}>Clase {cls}</span>
               <span className="text-sm font-extrabold text-gray-900 dark:text-foreground">{counts[cls]} productos</span>
             </div>
-            <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{fmt(revenue[cls])}</p>
-            <p className="text-xs text-gray-500 dark:text-muted">{totalRevenue > 0 ? ((revenue[cls] / totalRevenue) * 100).toFixed(1) : 0}% del ingreso total · {CLASS_STYLES[cls].label}</p>
+            <p className="text-xl font-mono font-extrabold text-gray-900 dark:text-foreground">{fmt(revenue[cls])}</p>
+            <p className="text-xs text-gray-500 dark:text-muted mt-1">{totalRevenue > 0 ? ((revenue[cls] / totalRevenue) * 100).toFixed(1) : 0}% del ingreso total -- {CLASS_STYLES[cls].label}</p>
           </button>
         ))}
       </div>

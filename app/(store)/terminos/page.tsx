@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Términos y Condiciones | Bodega San Martín",
-  description: "Términos y condiciones de uso del servicio de delivery de Bodega San Martín en Pucallpa.",
+  title: "Términos y Condiciones | Buleje",
+  description: "Términos y condiciones de uso del servicio de delivery de Buleje.",
 };
 
 export default function TerminosPage() {
@@ -19,7 +19,7 @@ export default function TerminosPage() {
         <section>
           <h2 className="text-xl font-bold">1. Aceptación de los términos</h2>
           <p>
-            Al utilizar el sitio web y los servicios de Bodega San Martín, aceptas estos términos y condiciones. 
+            Al utilizar el sitio web y los servicios de Buleje, aceptas estos términos y condiciones. 
             Si no estás de acuerdo, por favor no utilices nuestros servicios.
           </p>
         </section>
@@ -27,7 +27,7 @@ export default function TerminosPage() {
         <section>
           <h2 className="text-xl font-bold">2. Servicio de delivery</h2>
           <ul className="list-disc pl-5 space-y-1">
-            <li>El servicio de delivery está disponible únicamente dentro de la zona de cobertura en Pucallpa, Ucayali.</li>
+            <li>El servicio de delivery está disponible únicamente dentro de nuestra zona de cobertura.</li>
             <li>Los horarios de delivery están sujetos a disponibilidad y pueden variar según la demanda.</li>
             <li>El tiempo estimado de entrega puede variar según la distancia y condiciones del tráfico.</li>
             <li>Nos reservamos el derecho de rechazar pedidos fuera de nuestra zona de cobertura.</li>
@@ -73,7 +73,7 @@ export default function TerminosPage() {
         <section>
           <h2 className="text-xl font-bold">7. Limitación de responsabilidad</h2>
           <p>
-            Bodega San Martín no será responsable por retrasos causados por condiciones climáticas extremas, 
+            Buleje no será responsable por retrasos causados por condiciones climáticas extremas, 
             problemas viales, desastres naturales u otras circunstancias fuera de nuestro control.
           </p>
         </section>
@@ -102,7 +102,7 @@ export default function TerminosPage() {
           </p>
           <ul className="list-disc pl-5 space-y-1">
             <li>WhatsApp: 916 409 675</li>
-            <li>Dirección: Jr. Ucayali 450, Pucallpa, Ucayali, Perú</li>
+            <li>Dirección: Jr. Ucayali 450, Ucayali, Perú</li>
           </ul>
         </section>
       </div>

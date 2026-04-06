@@ -4,35 +4,59 @@ import { useRef, useState } from "react";
 import { useFavorites } from "@/contexts/favorites-context";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
-import { products } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import Image from "next/image";
-import { Heart, ShoppingCart, Plus, Minus, Package, Trash2, ClipboardList, MessageCircle } from "lucide-react";
+import { Heart, ShoppingCart, Plus, Minus, Package, Trash2, ClipboardList, MessageCircle, Share2 } from "lucide-react";
 
 export default function FavoritesSection() {
   const { favorites, toggle } = useFavorites();
   const { addItem, items: cartItems, updateQty } = useCart();
   const { showToast } = useToast();
+  const { products, isLoading } = useStoreProducts();
 
   const sectionRef = useRef<HTMLElement>(null);
 
   /* Y2: Export favorites as text list */
   const [copied, setCopied] = useState(false);
 
+  if (isLoading) return null;
   const favProducts = products.filter((p) => favorites.has(String(p.id)));
   if (favProducts.length === 0) return null;
 
+  const totalFavorites = favProducts.reduce((s, p) => s + p.price, 0);
+
   const buildListText = () => {
     const lines = favProducts.map((p, i) => `${i + 1}. ${p.name} — S/${p.price.toFixed(2)}`);
-    return `🛒 Mi lista de compras (Bodega San Martín)\n${lines.join("\n")}\nTotal: S/${favProducts.reduce((s, p) => s + p.price, 0).toFixed(2)}`;
+    return `🛒 Mi lista de compras (Buleje)\n${lines.join("\n")}\nTotal: S/${totalFavorites.toFixed(2)}`;
+  };
+
+  const buildShareText = () => {
+    const lines = favProducts.map((p, i) => ` ${i + 1}. ${p.name} — S/${p.price.toFixed(2)}`);
+    const storeUrl = typeof window !== "undefined" ? window.location.origin : "";
+    return `⭐ *Mis productos favoritos en Buleje*\n${lines.join("\n")}\n─────\n💰 Total: S/${totalFavorites.toFixed(2)}\n🛒 Compra aquí: ${storeUrl}`;
   };
 
   const shareWhatsApp = () => {
-    const url = `https://wa.me/?text=${encodeURIComponent(buildListText())}`;
+    const url = `https://wa.me/?text=${encodeURIComponent(buildShareText())}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const exportFavorites = () => {
+  const shareFavorites = async () => {
+    const text = buildShareText();
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: "Mis favoritos — Buleje", text });
+        return;
+      } catch { /* user cancelled or not supported */ }
+    }
+    // Fallback: copy to clipboard
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }).catch(() => {});
+  };
 
+  const exportFavorites = () => {
     navigator.clipboard.writeText(buildListText()).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
@@ -60,6 +84,15 @@ export default function FavoritesSection() {
             </span>
           </div>
           <div className="flex items-center gap-2">
+            {/* Share via Web Share API or clipboard */}
+            <button
+              onClick={shareFavorites}
+              className="flex items-center gap-2 bg-[#f97316] text-white rounded-xl px-4 py-2.5 text-sm font-bold hover:opacity-90 active:scale-95 transition-all"
+              aria-label="Compartir mis favoritos"
+            >
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:inline">{copied ? "¡Copiado!" : "Compartir"}</span>
+            </button>
             {/* Y2: Share via WhatsApp */}
             <button
               onClick={shareWhatsApp}
@@ -81,7 +114,7 @@ export default function FavoritesSection() {
               onClick={addAll}
               className="flex items-center gap-2 bg-primary text-white rounded-xl px-4 py-2.5 text-sm font-bold hover:bg-primary-dark active:scale-95 transition-all shadow-md"
             >
-              <ShoppingCart className="h-4 w-4" />
+              <ShoppingCart className="h-5 w-5" />
               <span className="hidden sm:inline">Agregar todos</span>
             </button>
           </div>
@@ -123,10 +156,10 @@ export default function FavoritesSection() {
                   ) : (
                     <button
                       onClick={() => { addItem(product); showToast(product.name, product.image); }}
-                      className="flex items-center justify-center h-9 w-9 rounded-full bg-primary text-white shadow-md hover:bg-primary-dark active:scale-95 transition-all"
+                      className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-primary text-white shadow-md hover:bg-primary-dark active:scale-95 transition-all"
                       aria-label={`Agregar ${product.name}`}
                     >
-                      <ShoppingCart className="h-4 w-4" />
+                      <ShoppingCart className="h-5 w-5" />
                     </button>
                   ); })()}
                 </div>

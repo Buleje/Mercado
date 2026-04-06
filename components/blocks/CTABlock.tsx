@@ -11,7 +11,7 @@ import { ArrowRight, Phone } from "lucide-react";
 export const CTABlockSchema = z.object({
   layout: z.enum(["centered", "split", "gradient"]).default("centered"),
   title: z.string().default("¿Listo para hacer tu pedido?"),
-  subtitle: z.string().default("Delivery rápido en toda Pucallpa. Paga con Yape o efectivo."),
+  subtitle: z.string().default("Delivery rápido en tu zona. Paga con Yape o efectivo."),
   primaryCTA: z.object({
     text: z.string(),
     link: z.string(),
@@ -30,9 +30,9 @@ export const CTABlockSchema = z.object({
     link: "https://wa.me/51916409675",
     show: true,
   }),
-  backgroundColor: z.string().default("#1b4332"),
+  backgroundColor: z.string().default("#007A72"),
   textColor: z.string().default("#ffffff"),
-  primaryButtonColor: z.string().default("#22c55e"),
+  primaryButtonColor: z.string().default("#00D4C8"),
   showPattern: z.boolean().default(true),
 });
 
@@ -46,9 +46,9 @@ export default function CTABlock(props: Partial<CTABlockProps>) {
     subtitle,
     primaryCTA = { text: "Ver Productos", link: "/tienda", icon: "arrow" },
     secondaryCTA = { text: "Contactar por WhatsApp", link: "https://wa.me/51916409675", show: true },
-    backgroundColor = "#1b4332",
+    backgroundColor = "#007A72",
     textColor = "#ffffff",
-    primaryButtonColor = "#22c55e",
+    primaryButtonColor = "#00D4C8",
     showPattern = true,
   } = props;
 
@@ -211,6 +211,6 @@ export const CTABlockMetadata = {
   description: "Sección de CTA con botones y diseño flexible",
   category: "marketing" as const,
   icon: "Megaphone",
-  defaultProps: CTABlockSchema.parse({}),
+  defaultProps: (() => { const parsed = CTABlockSchema.safeParse({}); return parsed.success ? parsed.data : { layout: "centered" as const, title: "¿Listo para hacer tu pedido?", subtitle: "", primaryCTA: { text: "Ver Productos", link: "/tienda", icon: "arrow" as const }, secondaryCTA: { text: "Contactar por WhatsApp", link: "https://wa.me/51916409675", show: true }, backgroundColor: "#007A72", textColor: "#ffffff", primaryButtonColor: "#00D4C8", showPattern: true }; })(),
   propsSchema: CTABlockSchema,
 };

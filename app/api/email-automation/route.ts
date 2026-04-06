@@ -38,14 +38,14 @@ export async function GET(req: NextRequest) {
 
       // Check if welcome notification already sent
       const existing = await prisma.customerNotification.findFirst({
-        where: { customerPhone, title: "¡Bienvenido a Bodega San Martín!" },
+        where: { customerPhone, title: "¡Bienvenido a Buleje!" },
       });
       if (existing) continue;
 
       await prisma.customerNotification.create({
         data: {
           customerPhone,
-          title: "¡Bienvenido a Bodega San Martín!",
+          title: "¡Bienvenido a Buleje!",
           body: "Gracias por tu primer pedido. Como cliente nuevo, disfruta envío gratis en tu próxima compra. ¡Esperamos verte pronto! 🎉",
           type: "promotion",
         },

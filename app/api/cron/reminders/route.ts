@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
+import { logger } from "@/lib/logger";
+
+export const dynamic = "force-dynamic";
 
 /**
  * GET /api/cron/reminders
@@ -32,7 +35,7 @@ export async function GET(req: NextRequest) {
         data: { status: "vencido" },
       });
 
-      console.log(`[cron/reminders] Marked ${count} reminder(s) as vencido at ${now.toISOString()}`);
+      logger.info("[cron/reminders] Marked reminders as vencido", { count, processedAt: now.toISOString() });
 
       return { ok: true, markedVencido: count, processedAt: now.toISOString() };
     });

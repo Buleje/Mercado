@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { PrismaClient } from "@/lib/generated/prisma/client";
 
-const BASE_URL = "https://www.bodegasanmartin.pe";
-const STORE_NAME = "Bodega San Martín";
+export const dynamic = "force-dynamic";
+
+const BASE_URL = "https://www.buleje.pe";
+const STORE_NAME = "Buleje";
 
 function esc(str: string): string {
   return str
@@ -14,7 +16,7 @@ function esc(str: string): string {
     .replace(/'/g, "&#39;");
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const db = prisma as unknown as PrismaClient;
 
   const products = await db.product.findMany({

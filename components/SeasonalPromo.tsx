@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Tag, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useStoreProducts } from "@/hooks/use-store-products";
 
 interface Promo {
   emoji: string;
@@ -14,7 +15,7 @@ interface Promo {
   accent: string;
 }
 
-const PROMOS: Promo[] = [
+const ALL_PROMOS: Promo[] = [
   {
     emoji: "🍊",
     title: "Frutas de Temporada",
@@ -27,7 +28,7 @@ const PROMOS: Promo[] = [
   {
     emoji: "🥩",
     title: "Carnes Premium",
-    subtitle: "Cortes selectos al mejor precio de Pucallpa",
+    subtitle: "Cortes selectos al mejor precio de la zona",
     cta: "Ver Carnes",
     category: "carnes",
     gradient: "linear-gradient(to right, #dc2626, #fb7185)",
@@ -48,7 +49,25 @@ const PROMOS: Promo[] = [
     subtitle: "Leche, yogurt y quesos siempre frescos",
     cta: "Ver Lácteos",
     category: "lacteos",
-    gradient: "linear-gradient(to right, #2d6a4f, #40916c)",
+    gradient: "linear-gradient(to right, #00B4A6, #33C4B8)",
+    accent: "bg-blue-600",
+  },
+  {
+    emoji: "🏪",
+    title: "Abarrotes",
+    subtitle: "Arroz, fideos, aceite y todo lo esencial",
+    cta: "Ver Abarrotes",
+    category: "abarrotes",
+    gradient: "linear-gradient(to right, #f59e0b, #d97706)",
+    accent: "bg-amber-600",
+  },
+  {
+    emoji: "🥤",
+    title: "Bebidas",
+    subtitle: "Gaseosas, jugos, agua y más para refrescarte",
+    cta: "Ver Bebidas",
+    category: "bebidas",
+    gradient: "linear-gradient(to right, #3b82f6, #6366f1)",
     accent: "bg-blue-600",
   },
 ];
@@ -59,9 +78,19 @@ export default function SeasonalPromo() {
   const ref = useRef<HTMLElement>(null);
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  const { products, isLoading } = useStoreProducts();
 
-  const next = useCallback(() => setIdx((i) => (i + 1) % PROMOS.length), []);
-  const prev = useCallback(() => setIdx((i) => (i - 1 + PROMOS.length) % PROMOS.length), []);
+  // Only show promos for categories that have at least 1 product
+  const PROMOS = useMemo(() => {
+    if (products.length === 0) return [];
+    const activeCats = new Set(
+      products.map(p => (p.category || "").toLowerCase().replace(/\s+/g, "-")).filter(Boolean)
+    );
+    return ALL_PROMOS.filter(promo => activeCats.has(promo.category));
+  }, [products]);
+
+  const next = useCallback(() => setIdx((i) => PROMOS.length > 0 ? (i + 1) % PROMOS.length : 0), [PROMOS.length]);
+  const prev = useCallback(() => setIdx((i) => PROMOS.length > 0 ? (i - 1 + PROMOS.length) % PROMOS.length : 0), [PROMOS.length]);
 
   useEffect(() => {
     if (paused) return;
@@ -69,7 +98,12 @@ export default function SeasonalPromo() {
     return () => clearInterval(t);
   }, [paused, next]);
 
-  const promo = PROMOS[idx];
+  // Don't render if loading or no matching promos for actual products
+  if (isLoading || PROMOS.length === 0) return null;
+
+  // Clamp idx to valid range
+  const safeIdx = idx % PROMOS.length;
+  const promo = PROMOS[safeIdx];
 
   const handleCta = () => {
     const el = document.getElementById("productos");
@@ -162,7 +196,7 @@ export default function SeasonalPromo() {
             aria-label={`Promoción ${i + 1}`}
             className={cn(
               "h-2 rounded-full transition-all duration-300",
-              i === idx ? "w-6 bg-white" : "w-2 bg-white/40 hover:bg-white/60"
+              i === safeIdx ? "w-6 bg-white" : "w-2 bg-white/40 hover:bg-white/60"
             )}
           />
         ))}

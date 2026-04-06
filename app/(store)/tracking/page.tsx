@@ -1,0 +1,26 @@
+import type { Metadata } from "next";
+import TrackingForm from "./TrackingForm";
+
+export const metadata: Metadata = {
+  title: "Seguir mi pedido | Buleje",
+  description:
+    "Rastrea el estado de tu pedido en Buleje. Ingresa tu numero de pedido y ve en tiempo real donde esta tu delivery.",
+};
+
+export default function TrackingPage() {
+  return (
+    <main className="min-h-screen bg-background dark:bg-background">
+      <div className="mx-auto max-w-2xl px-4 py-12">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-foreground dark:text-foreground">
+            Seguir mi pedido
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground dark:text-muted">
+            Ingresa tu numero de pedido para ver el estado de tu delivery
+          </p>
+        </div>
+        <TrackingForm />
+      </div>
+    </main>
+  );
+}

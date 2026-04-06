@@ -1,72 +1,83 @@
 export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
-import { InventoryMovementsDB } from "@/lib/jsondb";
-import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { MermasDB } from "@/lib/db";
+
+// ── Schemas ───────────────────────────────────────────────────────────────────
+
+const LossTypeEnum = z.enum(["damages", "theft", "expiry", "obsolescence"]);
 
 const CreateSchema = z.object({
-  productId: z.number().positive(),
-  quantity: z.number().positive(),
-  cause: z.enum(["vencimiento", "rotura", "robo", "deterioro", "error-inventario", "daño-transporte"]),
-  notes: z.string().max(300).optional(),
-  reportedBy: z.string().max(80).optional(),
+  productId: z.number().int().positive(),
+  quantity: z.number().int().positive(),
+  lossType: LossTypeEnum,
+  batchId: z.string().optional(),
+  notes: z.string().max(1000).optional(),
+  warehouseId: z.string().optional(),
+  registeredBy: z.string().max(100).optional(),
 });
 
-function buildRecord(movement: { id: string; productId: number; quantity: number; lossType?: string; notes?: string; createdAt: string }, product: { name: string; category: string; costPrice: number | null } | undefined) {
-  const unitCost = product?.costPrice ?? 0;
-  const noteText = movement.notes || "";
-  const reportedByMatch = noteText.match(/reportado por:([^|]+)/i);
-  return {
-    id: movement.id,
-    date: movement.createdAt,
-    productId: movement.productId,
-    product: product?.name || `Producto ${movement.productId}`,
-    category: product?.category || "General",
-    quantity: movement.quantity,
-    unitCost,
-    totalLoss: movement.quantity * unitCost,
-    cause: (movement.lossType || "error-inventario") as "vencimiento" | "rotura" | "robo" | "deterioro" | "error-inventario" | "daño-transporte",
-    status: "registrado",
-    notes: noteText,
-    reportedBy: reportedByMatch?.[1]?.trim() || "Sistema",
-  };
-}
+const GetSchema = z.object({
+  page: z.coerce.number().int().min(1).optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+  productId: z.coerce.number().int().positive().optional(),
+  lossType: LossTypeEnum.optional(),
+  warehouseId: z.string().optional(),
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+});
+
+// ── GET /api/mermas ───────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin", "almacenero"]);
+  const auth = await requireAdmin(req, ["admin", "cajero", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const movements = (await InventoryMovementsDB.getAll(500)).filter((movement) => movement.type === "merma");
-  const productIds = [...new Set(movements.map((movement) => movement.productId))];
-  const products = productIds.length > 0
-    ? await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, name: true, category: true, costPrice: true } })
-    : [];
-  const productMap = new Map(products.map((product) => [product.id, product]));
+  const parsed = GetSchema.safeParse(Object.fromEntries(req.nextUrl.searchParams));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Parámetros inválidos", issues: parsed.error.issues },
+      { status: 400 }
+    );
+  }
 
-  return NextResponse.json(movements.map((movement) => buildRecord(movement, productMap.get(movement.productId))));
+  try {
+    const result = await MermasDB.getAll(auth.tenantId, parsed.data);
+    return NextResponse.json(result);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error interno";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
+
+// ── POST /api/mermas ──────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const raw = await req.json();
-  const parsed = CreateSchema.safeParse(raw);
+  const rl = applyRateLimit(req, "MODERATE", "mermas");
+  if (rl) return rl;
+
+  const body = await req.json().catch(() => null);
+  if (!body) return NextResponse.json({ error: "Body inválido" }, { status: 400 });
+
+  const parsed = CreateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Datos invalidos", issues: parsed.error.issues.map((issue) => issue.message) }, { status: 400 });
+    return NextResponse.json(
+      { error: "Datos inválidos", issues: parsed.error.issues },
+      { status: 400 }
+    );
   }
 
-  const { productId, quantity, cause, notes, reportedBy } = parsed.data;
-  const movement = await InventoryMovementsDB.record({
-    productId,
-    type: "merma",
-    lossType: cause,
-    quantity,
-    notes: [notes, reportedBy ? `reportado por: ${reportedBy}` : ""].filter(Boolean).join(" | "),
-  });
-
-  const product = await prisma.product.findUnique({ where: { id: productId }, select: { name: true, category: true, costPrice: true } });
-  return NextResponse.json(buildRecord(movement, product ?? undefined), { status: 201 });
+  try {
+    const merma = await MermasDB.create(auth.tenantId, parsed.data);
+    return NextResponse.json(merma, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error interno";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

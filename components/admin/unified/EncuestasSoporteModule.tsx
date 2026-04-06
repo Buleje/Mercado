@@ -1,6 +1,9 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { HelpCircle, BarChart3, ClipboardList, Headphones } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -12,31 +15,31 @@ const NPSTab = dynamic(() => import("@/components/admin/NPSTab"), { loading: S }
 const SurveysTab = dynamic(() => import("@/components/admin/SurveysTab"), { loading: S });
 const SupportTicketsTab = dynamic(() => import("@/components/admin/SupportTicketsTab"), { loading: S });
 
+const MODULE_ID = "encuestas-soporte";
+
 const TABS = [
-  { id: "nps" as const, label: "NPS" },
-  { id: "encuestas" as const, label: "Encuestas" },
-  { id: "soporte" as const, label: "Tickets" },
+  { id: "nps", label: "NPS", icon: BarChart3 },
+  { id: "encuestas", label: "Encuestas", icon: ClipboardList },
+  { id: "soporte", label: "Tickets", icon: Headphones },
 ];
 
 export default function EncuestasSoporteModule() {
   const [sub, setSub] = useState(TABS[0].id);
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none border-b border-gray-200 dark:border-card-border -mx-1 px-1">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSub(t.id)}
-            className={`shrink-0 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${
-              sub === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Encuestas & Soporte"
+        description="Índice NPS, encuestas de satisfacción y tickets de soporte"
+        icon={HelpCircle}
+      />
+
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId={MODULE_ID}
+      />
+
       {sub === "nps" && <NPSTab />}
       {sub === "encuestas" && <SurveysTab />}
       {sub === "soporte" && <SupportTicketsTab />}

@@ -1,12 +1,18 @@
 export const dynamic = 'force-dynamic'
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { NotificationLogsDB, OrdersDB, SettingsDB } from "@/lib/jsondb";
+import { requireAdmin } from "@/lib/require-admin";
 
-export async function GET() {
-  return NextResponse.json(await NotificationLogsDB.getAll());
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+  return NextResponse.json(await NotificationLogsDB.getAll(auth.tenantId));
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+
   const body = await req.json();
   if (!body.phone || !body.orderId) {
     return NextResponse.json({ error: "phone and orderId required" }, { status: 400 });
@@ -15,8 +21,8 @@ export async function POST(req: Request) {
   const order = await OrdersDB.getById(body.orderId);
   if (!order) return NextResponse.json({ error: "order not found" }, { status: 404 });
 
-  const settings = await SettingsDB.get();
-  const storeName = settings?.businessName ?? "Bodega San Martín";
+  const settings = await SettingsDB.get(auth.tenantId);
+  const storeName = settings?.businessName ?? "Buleje";
 
   const STATUS_MSGS: Record<string, string> = {
     pendiente: `ðŸ›’ ¡Hola! Tu pedido #${order.id.slice(-6)} en ${storeName} ha sido recibido. Te confirmaremos pronto. Total: S/${order.total.toFixed(2)}`,

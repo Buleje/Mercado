@@ -73,12 +73,17 @@ export default function RecommendedProducts() {
               className="snap-start shrink-0 w-44 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="aspect-square relative bg-gray-50 dark:bg-card">
-                <img
-                  src={p.image}
-                  alt={p.name}
-                  loading="lazy"
-                  className="w-full h-full object-cover"
-                />
+                {p.image ? (
+                  /* eslint-disable-next-line @next/next/no-img-element -- External product images with dynamic URLs */
+                  <img
+                    src={p.image}
+                    alt={p.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-3xl bg-gray-100 dark:bg-card">📦</div>
+                )}
                 <span className="absolute top-2 left-2 text-[10px] font-bold bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 px-1.5 py-0.5 rounded-full">
                   {p.category}
                 </span>
@@ -94,10 +99,10 @@ export default function RecommendedProducts() {
                   </span>
                   <button
                     onClick={() => handleAdd(p)}
-                    className="p-1.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                    className="flex items-center justify-center h-10 w-10 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-colors"
                     title="Agregar al carrito"
                   >
-                    <ShoppingCart className="h-3.5 w-3.5" />
+                    <ShoppingCart className="h-5 w-5" />
                   </button>
                 </div>
               </div>

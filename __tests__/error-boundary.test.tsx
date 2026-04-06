@@ -176,6 +176,7 @@ describe("ErrorBoundary", () => {
     const originalLocation = window.location;
     // @ts-expect-error jsdom allows deleting window.location
     delete window.location;
+    // @ts-expect-error jsdom allows reassigning window.location after delete
     window.location = { ...originalLocation, href: "http://localhost:3000/admin" } as Location;
 
     render(
@@ -190,6 +191,7 @@ describe("ErrorBoundary", () => {
     expect(window.location.href).toBe("/");
 
     // Restore
+    // @ts-expect-error restoring original window.location
     window.location = originalLocation;
   });
 });

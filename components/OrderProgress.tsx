@@ -120,7 +120,7 @@ export default function OrderProgress() {
   const printReceipt = useCallback(() => {
     if (!order) return;
     const now = new Date().toLocaleString("es-PE");
-    const html = `<html><head><title>Recibo</title><style>body{font-family:monospace;width:280px;margin:0 auto;padding:16px;color:#1a1a1a}h3{text-align:center;margin:0 0 4px}p{margin:2px 0;font-size:11px}.line{border-top:1px dashed #999;margin:8px 0}.total{font-size:14px;font-weight:bold;text-align:right}@media print{body{padding:8px}}</style></head><body><h3>🛒 Bodega San Martín</h3><p style="text-align:center;color:#666">Recibo de pedido</p><div class="line"></div><p><b>Pedido:</b> #${order.id.slice(-6)}</p><p><b>Fecha:</b> ${now}</p>${order.customerName ? `<p><b>Cliente:</b> ${order.customerName}</p>` : ""}<div class="line"></div><p class="total">¡Gracias por tu compra!</p></body></html>`;
+    const html = `<html><head><title>Recibo</title><style>body{font-family:monospace;width:280px;margin:0 auto;padding:16px;color:#1a1a1a}h3{text-align:center;margin:0 0 4px}p{margin:2px 0;font-size:11px}.line{border-top:1px dashed #999;margin:8px 0}.total{font-size:14px;font-weight:bold;text-align:right}@media print{body{padding:8px}}</style></head><body><h3>🛒 Buleje</h3><p style="text-align:center;color:#666">Recibo de pedido</p><div class="line"></div><p><b>Pedido:</b> #${order.id.slice(-6)}</p><p><b>Fecha:</b> ${now}</p>${order.customerName ? `<p><b>Cliente:</b> ${order.customerName}</p>` : ""}<div class="line"></div><p class="total">¡Gracias por tu compra!</p></body></html>`;
     const w = window.open("", "_blank", "width=320,height=400");
     if (w) { w.document.write(html); w.document.close(); w.print(); }
   }, [order]);

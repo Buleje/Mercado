@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ALLOWED_ROLES.CHAT_READ);
   if (auth instanceof NextResponse) return auth;
 
-  const messages = await AdminChatDB.getAll();
+  const messages = await AdminChatDB.getAll(auth.tenantId);
   return NextResponse.json(messages);
 }
 

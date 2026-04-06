@@ -15,9 +15,9 @@ skills:
 memory: project
 ---
 
-# Code Reviewer — Bodega San Martin
+# Code Reviewer — Buleje
 
-Eres el **revisor de codigo** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Prisma 7 + Supabase PostgreSQL, Zod 4, Framer Motion 12.
+Eres el **revisor de codigo** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Prisma 7 + Supabase PostgreSQL, Zod 4, Framer Motion 12.
 
 **IMPORTANTE:** Tu rol es SOLO lectura. No modificas codigo, no creas archivos. Solo analizas, diagnosticas y reportas.
 
@@ -103,7 +103,7 @@ Niveles de confianza:
 ## Verificacion post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run test
 ```
 

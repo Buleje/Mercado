@@ -2,16 +2,16 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
   const localBusinessSchema = {
     "@context": "https://schema.org",
     "@type": "GroceryStore",
-    "@id": "https://www.bodegasanmartin.pe/#grocery-store",
-    name: "Bodega San Martín",
-    alternateName: "Bodega San Martín - Tienda Virtual de Abarrotes en Pucallpa",
+    "@id": "https://www.buleje.pe/#grocery-store",
+    name: "Buleje",
+    alternateName: "Buleje - Tienda Virtual de Abarrotes",
     description:
-      "Tienda virtual de abarrotes en Pucallpa. Venta online de bebidas, golosinas, carne, pollo, productos de limpieza y artículos de consumo diario. Delivery rápido. Pago con Yape o efectivo.",
-    url: "https://www.bodegasanmartin.pe",
+      "Tienda virtual de abarrotes. Venta online de bebidas, golosinas, carne, pollo, productos de limpieza y artículos de consumo diario. Delivery rápido. Pago con Yape o efectivo.",
+    url: "https://www.buleje.pe",
     telephone: "+51916409675",
-    email: "contacto@bodegasanmartin.pe",
+    email: "contacto@buleje.pe",
     foundingDate: "2011",
-    slogan: "Tu bodega de confianza en Pucallpa — delivery rápido, pago fácil",
+    slogan: "Tu bodega de confianza — delivery rápido, pago fácil",
     knowsLanguage: "es",
     address: {
       "@type": "PostalAddress",
@@ -56,11 +56,11 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     priceRange: "$",
     currenciesAccepted: "PEN",
     paymentAccepted: "Yape, Plin, Efectivo",
-    image: "https://www.bodegasanmartin.pe/og-image.jpg",
-    logo: "https://www.bodegasanmartin.pe/og-image.jpg",
+    image: "https://www.buleje.pe/og-image.jpg",
+    logo: "https://www.buleje.pe/og-image.jpg",
     sameAs: [
-      "https://www.facebook.com/bodegasanmartin",
-      "https://www.instagram.com/bodegasanmartin",
+      "https://www.facebook.com/buleje",
+      "https://www.instagram.com/buleje",
     ],
     aggregateRating: {
       "@type": "AggregateRating",
@@ -94,7 +94,7 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     ],
     hasOfferCatalog: {
       "@type": "OfferCatalog",
-      name: "Productos de Bodega San Martín",
+      name: "Productos de Buleje",
       itemListElement: [
         { "@type": "OfferCatalog", name: "Abarrotes" },
         { "@type": "OfferCatalog", name: "Bebidas" },
@@ -109,10 +109,10 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
     makesOffer: {
       "@type": "Offer",
       name: "Delivery gratis en compras desde S/50",
-      description: "Entrega gratuita a domicilio en toda Pucallpa para pedidos desde S/50.",
+      description: "Entrega gratuita a domicilio para pedidos desde S/50.",
       eligibleRegion: {
         "@type": "Place",
-        name: "Pucallpa, Ucayali, Perú",
+        name: "Ucayali, Perú",
       },
     },
     contactPoint: {
@@ -128,11 +128,11 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Bodega San Martín",
-    url: "https://www.bodegasanmartin.pe",
-    logo: "https://www.bodegasanmartin.pe/og-image.jpg",
+    name: "Buleje",
+    url: "https://www.buleje.pe",
+    logo: "https://www.buleje.pe/og-image.jpg",
     description:
-      "Tienda virtual de abarrotes en Pucallpa con delivery rápido. Bebidas, golosinas, carne, pollo, limpieza y más. Pago con Yape o efectivo.",
+      "Tienda virtual de abarrotes con delivery rápido. Bebidas, golosinas, carne, pollo, limpieza y más. Pago con Yape o efectivo.",
     telephone: "+51916409675",
     address: {
       "@type": "PostalAddress",
@@ -143,8 +143,8 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
       addressCountry: "PE",
     },
     sameAs: [
-      "https://www.facebook.com/bodegasanmartin",
-      "https://www.instagram.com/bodegasanmartin",
+      "https://www.facebook.com/buleje",
+      "https://www.instagram.com/buleje",
     ],
     contactPoint: {
       "@type": "ContactPoint",
@@ -158,15 +158,15 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "Bodega San Martín",
-    alternateName: "Tienda Virtual de Abarrotes en Pucallpa",
-    url: "https://www.bodegasanmartin.pe",
+    name: "Buleje",
+    alternateName: "Tienda Virtual de Abarrotes",
+    url: "https://www.buleje.pe",
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
         urlTemplate:
-          "https://www.bodegasanmartin.pe/buscar?q={search_term_string}",
+          "https://www.buleje.pe/buscar?q={search_term_string}",
       },
       "query-input": "required name=search_term_string",
     },
@@ -180,7 +180,7 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
         "@type": "ListItem",
         position: 1,
         name: "Inicio",
-        item: "https://www.bodegasanmartin.pe",
+        item: "https://www.buleje.pe",
       },
     ],
   };
@@ -197,12 +197,12 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
       "Contacto",
     ],
     url: [
-      "https://www.bodegasanmartin.pe",
-      "https://www.bodegasanmartin.pe/tienda",
-      "https://www.bodegasanmartin.pe/tienda#categorias",
-      "https://www.bodegasanmartin.pe/#ofertas",
-      "https://www.bodegasanmartin.pe/#preguntas",
-      "https://www.bodegasanmartin.pe/#contacto",
+      "https://www.buleje.pe",
+      "https://www.buleje.pe/tienda",
+      "https://www.buleje.pe/tienda#categorias",
+      "https://www.buleje.pe/#ofertas",
+      "https://www.buleje.pe/#preguntas",
+      "https://www.buleje.pe/#contacto",
     ],
   };
 

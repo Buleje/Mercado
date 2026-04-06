@@ -1,14 +1,23 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { PurchasesDB, InventoryMovementsDB } from "@/lib/jsondb";
+import { PurchasesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
+import { withDbRetry } from "@/lib/db-retry";
+
+const DiferenciaSchema = z.object({
+  productoId: z.number().int().positive(),
+  cantidadEsperada: z.number().min(0),
+  cantidadRecibida: z.number().min(0),
+  motivo: z.string().max(500).optional(),
+});
 
 const PatchSchema = z.object({
   status: z.enum(["pendiente", "recibido", "cancelado"]).optional(),
   notes: z.string().max(1000).optional(),
+  diferencias: z.array(DiferenciaSchema).optional(),
 });
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -17,7 +26,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params;
   try {
-    const po = await PurchasesDB.getById(id);
+    const po = await withDbRetry(() => PurchasesDB.getById(id));
     if (!po) return NextResponse.json({ error: "Orden no encontrada" }, { status: 404 });
     return NextResponse.json(po);
   } catch (e) {
@@ -45,43 +54,72 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!updated) return NextResponse.json({ error: "Error updating" }, { status: 500 });
 
     if (statusChanged && updated.status === "recibido") {
+      // Build a map of diferencias by productoId for quick lookup
+      const difMap = new Map<number, { cantidadRecibida: number; motivo?: string }>();
+      if (parsed.data.diferencias) {
+        for (const dif of parsed.data.diferencias) {
+          difMap.set(dif.productoId, { cantidadRecibida: dif.cantidadRecibida, motivo: dif.motivo });
+        }
+      }
+
       try {
         await prisma.$transaction(async (tx) => {
           for (const item of updated.items) {
             const product = await tx.product.findUnique({ where: { id: item.productId } });
             if (!product) continue;
-            
+
+            // Use cantidadRecibida from diferencias if available, otherwise use item.quantity
+            const dif = difMap.get(item.productId);
+            const quantityReceived = dif ? dif.cantidadRecibida : item.quantity;
+
+            if (quantityReceived <= 0) continue; // Nothing received for this item
+
             const prevStock = product.stock ?? 0;
-            const newStock = prevStock + item.quantity;
-            
+            const newStock = prevStock + quantityReceived;
+
             let avgCost = item.unitCost;
             if (prevStock > 0) {
               const oldVal = prevStock * (product.costPrice ?? 0);
-              const newVal = item.quantity * item.unitCost;
+              const newVal = quantityReceived * item.unitCost;
               avgCost = (oldVal + newVal) / newStock;
             }
 
             // Update Product
-            await tx.product.update({ 
-               where: { id: product.id }, 
-               data: { stock: newStock, costPrice: avgCost } 
+            await tx.product.update({
+               where: { id: product.id },
+               data: { stock: newStock, costPrice: avgCost }
             });
 
-            // Insert Movement atomicly
+            // Insert Movement atomically
+            const diffNote = dif
+              ? ` (esperado: ${item.quantity}, recibido: ${quantityReceived}${dif.motivo ? `, motivo: ${dif.motivo}` : ""})`
+              : "";
             await tx.inventoryMovement.create({
               data: {
                 productId: product.id,
                 type: "compra",
-                quantity: item.quantity,
+                quantity: quantityReceived,
                 previousStock: prevStock,
                 newStock: newStock,
                 reference: updated.id,
-                notes: `Recepción de OC ${updated.id}`,
+                notes: `Recepción de OC ${updated.id}${diffNote}`,
                 createdBy: auth.username,
               }
             });
           }
         });
+
+        // Store diferencias as JSON note on the purchase
+        if (parsed.data.diferencias && parsed.data.diferencias.length > 0) {
+          const difNotes = parsed.data.diferencias
+            .map((d) => `Producto ${d.productoId}: esperado ${d.cantidadEsperada}, recibido ${d.cantidadRecibida}${d.motivo ? ` (${d.motivo})` : ""}`)
+            .join("; ");
+          const currentNotes = updated.notes ?? "";
+          const newNotes = currentNotes
+            ? `${currentNotes}\n[DIFERENCIAS] ${difNotes}`
+            : `[DIFERENCIAS] ${difNotes}`;
+          await PurchasesDB.update(id, { notes: newNotes } as Record<string, unknown>);
+        }
       } catch (err) {
         console.error("Transaction failed:", err);
         return NextResponse.json({ error: "Fallo de transacción al actualizar stock" }, { status: 500 });

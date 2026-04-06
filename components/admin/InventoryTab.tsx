@@ -1,14 +1,19 @@
-﻿﻿"use client";
+﻿"use client";
 
-import { useState, useEffect, useCallback, useRef, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, type FormEvent } from "react";
 import {
   Package, AlertTriangle, ArrowUp, ArrowDown, RefreshCw,
   Search, Loader2, ClipboardList, Plus, Pencil, Trash2,
   ScanBarcode, X, Camera, Download, CheckSquare,
-  TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle,
+  TrendingUp, PackagePlus, Eye, EyeOff, Layers, ChevronRight, Upload, CheckCircle, BookOpen,
+  Warehouse,
 } from "lucide-react";
+import EmptyState from "@/components/admin/shared/EmptyState";
 import Image from "next/image";
 import { cn, exportToCSV } from "@/lib/utils";
+import { exportToExcel } from "@/lib/export-excel";
+import KardexModal from "./KardexModal";
+import PriceSparkline from "./inventario/PriceSparkline";
 import { categories } from "@/data/products";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import type { DbProduct, DbInventoryMovement } from "@/lib/jsondb";
@@ -36,10 +41,55 @@ const MOVEMENT_LABELS: Record<string, { label: string; color: string }> = {
   devolucion: { label: "Devolución", color: "text-cyan-600 bg-cyan-50" },
   ajuste_positivo: { label: "Ajuste +", color: "text-emerald-600 bg-emerald-50" },
   ajuste_negativo: { label: "Ajuste −", color: "text-red-600 bg-red-50" },
-  merma: { label: "Merma", color: "text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent" },
+  merma: { label: "Pérdida", color: "text-gray-600 dark:text-muted bg-gray-100 dark:bg-accent" },
 };
 
 const realCategories = categories.filter(c => c.id !== "todos");
+
+// Mejora 6: Rotation badge config
+type RotationLevel = "rapido" | "normal" | "lento" | "muerto";
+function getRotationInfo(salesPerWeek: number, stock: number): { level: RotationLevel; label: string; className: string } | null {
+  if (salesPerWeek > 10) return { level: "rapido", label: "Rapido", className: "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400" };
+  if (salesPerWeek >= 3) return null; // Normal — no badge
+  if (salesPerWeek >= 1) return { level: "lento", label: "Lento", className: "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400" };
+  if (stock > 0) return { level: "muerto", label: "Sin rotar", className: "bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400" };
+  return null;
+}
+
+// Mejora 7: Compute stock change from movements (últimos 30 días)
+function computeStockChange(productId: number, movements: DbInventoryMovement[]): number {
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  let net = 0;
+  for (const m of movements) {
+    if (m.productId !== productId) continue;
+    const ts = new Date(m.createdAt).getTime();
+    if (ts < thirtyDaysAgo) continue;
+    const qty = m.quantity ?? 0;
+    const type = (m.type ?? "").toLowerCase();
+    if (type === "compra" || type === "ajuste_positivo" || type === "devolucion") {
+      net += qty;
+    } else if (type === "venta" || type === "venta_online" || type === "ajuste_negativo" || type === "merma") {
+      net -= qty;
+    }
+  }
+  return net;
+}
+
+// Mejora 6: Compute sales per week from movements (últimos 30 días)
+function computeSalesPerWeek(productId: number, movements: DbInventoryMovement[]): number {
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  let totalSold = 0;
+  for (const m of movements) {
+    if (m.productId !== productId) continue;
+    const ts = new Date(m.createdAt).getTime();
+    if (ts < thirtyDaysAgo) continue;
+    const type = (m.type ?? "").toLowerCase();
+    if (type === "venta" || type === "venta_online") {
+      totalSold += Math.abs(m.quantity ?? 0);
+    }
+  }
+  return totalSold / 4.3; // ~4.3 weeks in 30 days
+}
 
 // Resize a File to max 800×800 JPEG via canvas (client-side, ~40–80 KB output)
 async function resizeImage(file: File, maxPx = 800, quality = 0.8): Promise<string> {
@@ -70,9 +120,18 @@ export default function InventoryTab() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("productos");
   const [search, setSearch] = useState("");
+  // Mejora visual: Placeholder rotativo en búsqueda
+  const searchPlaceholders = ["Buscar por nombre...", "Buscar por código...", "Buscar por categoría..."];
+  const [phIndex, setPhIndex] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setPhIndex(i => (i + 1) % searchPlaceholders.length), 3000);
+    return () => clearInterval(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [catFilter, setCatFilter] = useState("todos");
   const [lowOnly, setLowOnly] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+  // Mejora 8R2: Filtro sin imagen
+  const [noImageOnly, setNoImageOnly] = useState(false);
   const [expandedOC, setExpandedOC] = useState(false);
   const [generatingOC, setGeneratingOC] = useState(false);
 
@@ -100,16 +159,40 @@ export default function InventoryTab() {
   const [bulkField, setBulkField] = useState<"active" | "category" | "priceAdjust" | "pricePercent" | "stock">("active");
   const [bulkValue, setBulkValue] = useState("");
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Stocktaking
   const [stockCounts, setStockCounts] = useState<Record<number, string>>({});
+
+  // Mejora 5 nueva: Auto-reorden config
+  const [autoReorderConfigs, setAutoReorderConfigs] = useState<Record<number, { threshold: number; qty: number; supplierId: string }>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = localStorage.getItem("auto-reorder-configs");
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
+  const [showAutoReorder, setShowAutoReorder] = useState<number | null>(null);
+  const [arThreshold, setArThreshold] = useState("");
+  const [arQty, setArQty] = useState("");
+
+  // Mejora 6 nueva: QR modal
+  const [showQRProduct, setShowQRProduct] = useState<DbProduct | null>(null);
+
+  // Mejora visual: Toggle de columnas extendidas
+  const [showExtendedCols, setShowExtendedCols] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try { return localStorage.getItem("inv-extended-cols") === "true"; } catch { return false; }
+  });
 
   // CSV Import
   const csvImportRef = useRef<HTMLInputElement>(null);
   const [csvImporting, setCsvImporting] = useState(false);
   const [csvResult, setCsvResult] = useState<{ created: number; errors: string[] } | null>(null);
+  const [kardexProduct, setKardexProduct] = useState<{ id: number; name: string } | null>(null);
 
-  useScrollLock(!!(showAdd || editModalProduct || showScanner || bulkModal));
+  useScrollLock(!!(showAdd || editModalProduct || showScanner || bulkModal || bulkDeleteConfirm));
 
   const handleDbSearch = async () => {
     if (!dbQuery.trim()) return;
@@ -325,6 +408,23 @@ export default function InventoryTab() {
     load();
   };
 
+  const executeBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkDeleting(true);
+    try {
+      const ids = Array.from(selectedIds);
+      await fetch("/api/products/bulk", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+    } catch { /* ignore */ }
+    setBulkDeleting(false);
+    setBulkDeleteConfirm(false);
+    clearSelection();
+    load();
+  };
+
   // ── Purchase Order Auto-Suggestion ──────────────────────────────────────
 
   const lowStockProducts = products.filter(p => {
@@ -414,6 +514,27 @@ export default function InventoryTab() {
     setScanLoading(false);
   };
 
+  // Mejora 5 nueva: Save auto-reorder config
+  const saveAutoReorder = (productId: number) => {
+    const threshold = parseInt(arThreshold, 10) || 5;
+    const qty = parseInt(arQty, 10) || 10;
+    const updated = { ...autoReorderConfigs, [productId]: { threshold, qty, supplierId: "" } };
+    setAutoReorderConfigs(updated);
+    localStorage.setItem("auto-reorder-configs", JSON.stringify(updated));
+    setShowAutoReorder(null);
+    setArThreshold("");
+    setArQty("");
+  };
+
+  const removeAutoReorder = (productId: number) => {
+    const updated = { ...autoReorderConfigs };
+    delete updated[productId];
+    setAutoReorderConfigs(updated);
+    localStorage.setItem("auto-reorder-configs", JSON.stringify(updated));
+  };
+
+  const autoReorderCount = Object.keys(autoReorderConfigs).length;
+
   // ── Stats ──────────────────────────────────────────────────────────────────
 
   const isLowStock = (p: DbProduct) =>
@@ -436,12 +557,68 @@ export default function InventoryTab() {
     (s, p) => s + (p.stock ?? 0) * p.price, 0
   );
 
+  // ── Mejora P-7: Detectar productos duplicados por similitud de nombre ────
+
+  const duplicateWarning = useMemo(() => {
+    const slice = products.slice(0, 100);
+    const dupes: { a: string; b: string }[] = [];
+    for (let i = 0; i < slice.length; i++) {
+      for (let j = i + 1; j < slice.length; j++) {
+        const la = slice[i].name.toLowerCase().trim();
+        const lb = slice[j].name.toLowerCase().trim();
+        if (la === lb || ((la.includes(lb) || lb.includes(la)) && la.length / lb.length > 0.7 && la.length / lb.length < 1.4)) {
+          dupes.push({ a: slice[i].name, b: slice[j].name });
+        }
+      }
+      if (dupes.length >= 5) break;
+    }
+    return dupes;
+  }, [products]);
+
+  // ── Mejora P-8: Margen promedio por categoria ─────────────────────────────
+
+  const categoryMargins = useMemo(() => {
+    const catMap = new Map<string, { sum: number; count: number }>();
+    for (const p of products) {
+      if (!p.active || !p.costPrice || p.costPrice <= 0 || p.price <= 0) continue;
+      const cat = p.category || "otros";
+      const ex = catMap.get(cat) || { sum: 0, count: 0 };
+      ex.sum += ((p.price - p.costPrice) / p.price) * 100;
+      ex.count++;
+      catMap.set(cat, ex);
+    }
+    const result: { cat: string; margin: number }[] = [];
+    for (const [cat, data] of catMap) {
+      if (data.count >= 3) result.push({ cat, margin: data.sum / data.count });
+    }
+    return result.sort((a, b) => b.margin - a.margin);
+  }, [products]);
+
+  // ── Mejora QW-10i: Top 5 productos más rentables (por margen %) ─────────
+  const topRentables = useMemo(() => {
+    return products
+      .filter(p => p.active && p.costPrice && p.costPrice > 0 && p.price > 0 && p.price > p.costPrice)
+      .map(p => ({ id: p.id, margin: ((p.price - p.costPrice!) / p.price) * 100 }))
+      .sort((a, b) => b.margin - a.margin)
+      .slice(0, 5)
+      .map(p => p.id);
+  }, [products]);
+
+  // ── Mejora QW-10j: Productos con costo > precio (pérdida) ─────────────
+  const inconsistentes = useMemo(() => {
+    return products.filter(p => p.costPrice && p.price && p.costPrice > p.price);
+  }, [products]);
+
   // ── Filtered ───────────────────────────────────────────────────────────────
+
+  const noImageCount = products.filter(p => !p.image || p.image === "").length;
 
   const filteredProducts = products.filter(p => {
     if (!showInactive && !p.active) return false;
     if (catFilter !== "todos" && p.category !== catFilter) return false;
     if (lowOnly && !isLowStock(p)) return false;
+    // Mejora 8R2: Filtro sin imagen
+    if (noImageOnly && p.image && p.image !== "") return false;
     if (search) {
       const q = search.toLowerCase();
       return p.name.toLowerCase().includes(q) || (p.barcode && p.barcode.includes(q));
@@ -461,7 +638,7 @@ export default function InventoryTab() {
   const pgMovements = usePagination(filteredMovements, 50);
 
   // Reset pagination when filters change
-  useEffect(() => { pgProducts.reset(); }, [search, catFilter, lowOnly]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { pgProducts.reset(); }, [search, catFilter, lowOnly, noImageOnly]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { pgMovements.reset(); }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -507,7 +684,7 @@ export default function InventoryTab() {
             {totalProducts} productos · {activeProducts} activos
             {lowStockCount > 0 && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold">
-                <AlertTriangle className="h-3 w-3" /> {lowStockCount} bajo stock
+                <AlertTriangle className="h-3 w-3" /> {lowStockCount} con pocas existencias
               </span>
             )}
           </p>
@@ -524,7 +701,7 @@ export default function InventoryTab() {
                   view === v ? "bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm" : "text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
                 )}
               >
-                {v === "productos" ? "Productos" : v === "stock" ? "Stock" : v === "kanban" ? "Kanban" : v === "movimientos" ? "Movimientos" : v === "merma" ? "Mermas" : "Conteo"}
+                {v === "productos" ? "Productos" : v === "stock" ? "Existencias" : v === "kanban" ? "Vista rápida" : v === "movimientos" ? "Movimientos" : v === "merma" ? "Pérdidas" : "Conteo"}
               </button>
             ))}
           </div>
@@ -571,6 +748,37 @@ export default function InventoryTab() {
           <p className="text-xl font-extrabold text-primary mt-0.5">{fmt(totalStockValue)}</p>
         </div>
       </div>
+
+      {/* Mejora P-7: Duplicados detectados */}
+      {duplicateWarning.length > 0 && (
+        <div className="rounded-xl border border-amber-200 dark:border-amber-800/30 bg-amber-50 dark:bg-amber-900/20 px-4 py-2.5 flex flex-wrap items-center gap-2">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span className="text-xs text-amber-700 dark:text-amber-300">
+            Posibles duplicados: <span className="font-bold">{duplicateWarning[0].a}</span> y <span className="font-bold">{duplicateWarning[0].b}</span>
+            {duplicateWarning.length > 1 && <span className="text-amber-500"> (y {duplicateWarning.length - 1} mas)</span>}
+          </span>
+        </div>
+      )}
+
+      {/* Mejora P-8: Margen promedio por categoria */}
+      {categoryMargins.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[10px] text-gray-400 dark:text-muted font-medium mr-1">Margen:</span>
+          {categoryMargins.map(cm => (
+            <span
+              key={cm.cat}
+              className={cn(
+                "text-[10px] font-mono font-bold px-2 py-0.5 rounded-full",
+                cm.margin > 25 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                : cm.margin >= 15 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+              )}
+            >
+              {cm.cat}: {cm.margin.toFixed(0)}%
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* OC Alerts Section (IMPROVEMENT 1) */}
       {lowStockProducts.length > 0 && (
@@ -660,7 +868,7 @@ export default function InventoryTab() {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder={view === "movimientos" ? "Buscar movimiento..." : "Buscar producto o código..."}
+            placeholder={view === "movimientos" ? "Buscar movimiento..." : searchPlaceholders[phIndex]}
             className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-card-border text-sm text-gray-900 dark:text-foreground outline-none focus:border-primary transition-colors"
           />
         </div>
@@ -695,6 +903,26 @@ export default function InventoryTab() {
               {showInactive ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
               Mostrar inactivos
             </button>
+            {/* Mejora 8R2: Filtro sin foto */}
+            <button
+              onClick={() => setNoImageOnly(!noImageOnly)}
+              className={cn(
+                "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
+                noImageOnly ? "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/20 dark:text-violet-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+              )}
+            >
+              <Camera className="h-3.5 w-3.5" /> Sin foto ({noImageCount})
+            </button>
+            {/* Toggle columnas extendidas */}
+            <button
+              onClick={() => { const next = !showExtendedCols; setShowExtendedCols(next); try { localStorage.setItem("inv-extended-cols", String(next)); } catch {} }}
+              className={cn(
+                "flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border transition-colors",
+                showExtendedCols ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/20 dark:text-blue-400" : "border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+              )}
+            >
+              <Layers className="h-3.5 w-3.5" /> {showExtendedCols ? "Menos columnas" : "Mas columnas"}
+            </button>
             {view === "productos" && (
               <button
                 onClick={() => { setBulkField("pricePercent"); setBulkValue(""); setBulkModal(true); }}
@@ -720,9 +948,29 @@ export default function InventoryTab() {
                 })), `inventario_${new Date().toISOString().slice(0, 10)}.csv`);
               }}
               className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border border-gray-200 dark:border-card-border text-gray-500 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"
-              title="Exportar inventario filtrado como CSV"
+              title="Descargar inventario filtrado como CSV"
             >
               <Download className="h-3.5 w-3.5" /> CSV
+            </button>
+            {/* Excel Export */}
+            <button
+              onClick={() => {
+                const filtered = products.filter(p => {
+                  if (catFilter !== "todos" && p.category !== catFilter) return false;
+                  if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !(p.barcode ?? "").includes(search)) return false;
+                  return true;
+                });
+                exportToExcel(filtered.map(p => ({
+                  Nombre: p.name, Categoría: p.category, "Precio (S/)": p.price,
+                  "Costo (S/)": p.costPrice ?? "", Stock: p.stock ?? "",
+                  "Stock Mín": p.stockMin ?? "", "Stock Máx": p.stockMax ?? "",
+                  Unidad: p.unit, Código: p.barcode ?? "", Activo: p.active ? "Sí" : "No",
+                })), `inventario-${new Date().toISOString().slice(0, 10)}`, "Inventario");
+              }}
+              className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border border-emerald-300 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
+              title="Descargar inventario como Excel"
+            >
+              <Download className="h-3.5 w-3.5" /> Excel
             </button>
             {/* AB5: Import CSV */}
             <input ref={csvImportRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleCsvImport} />
@@ -730,13 +978,18 @@ export default function InventoryTab() {
               onClick={() => { setCsvResult(null); csvImportRef.current?.click(); }}
               disabled={csvImporting}
               className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-bold border border-emerald-200 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors disabled:opacity-50"
-              title="Importar productos desde CSV (columnas: nombre, precio, categoria, stock, costo, unidad, codigo)"
+              title="Subir productos desde CSV (columnas: nombre, precio, categoria, stock, costo, unidad, codigo)"
             >
-              {csvImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Importar
+              {csvImporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />} Subir
             </button>
           </>
         )}
       </div>
+
+      {/* Contador de resultados filtrados */}
+      {view !== "movimientos" && filteredProducts.length !== products.length && (
+        <p className="text-[10px] text-gray-400">Mostrando {filteredProducts.length} de {products.length} productos</p>
+      )}
 
       {/* Content */}
       {/* CSV import result feedback */}
@@ -748,6 +1001,25 @@ export default function InventoryTab() {
             {csvResult.errors.length > 0 && <ul className="mt-1 text-xs space-y-0.5">{csvResult.errors.slice(0, 5).map((e, i) => <li key={i}>• {e}</li>)}{csvResult.errors.length > 5 && <li>...y {csvResult.errors.length - 5} más</li>}</ul>}
           </div>
           <button onClick={() => setCsvResult(null)} className="text-gray-400 hover:text-gray-600 shrink-0"><X className="h-4 w-4" /></button>
+        </div>
+      )}
+      {/* Mejora QW-10j: Alerta precio inconsistente */}
+      {!loading && inconsistentes.length > 0 && (
+        <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-2">
+          <p className="text-sm font-bold text-red-700 dark:text-red-400 flex items-center gap-1.5 mb-1.5">
+            <AlertTriangle className="h-4 w-4" /> {inconsistentes.length} producto{inconsistentes.length !== 1 ? "s" : ""} se vende{inconsistentes.length !== 1 ? "n" : ""} por debajo del costo:
+          </p>
+          <ul className="space-y-0.5 mb-2">
+            {inconsistentes.slice(0, 5).map(p => (
+              <li key={p.id} className="text-xs text-red-600 dark:text-red-400">
+                {p.name}: costo S/{p.costPrice!.toFixed(2)} &gt; precio S/{p.price.toFixed(2)} (perdida S/{(p.costPrice! - p.price).toFixed(2)}/unid)
+              </li>
+            ))}
+            {inconsistentes.length > 5 && <li className="text-xs text-red-500">...y {inconsistentes.length - 5} mas</li>}
+          </ul>
+          <button onClick={() => { setView("productos"); setSearch(""); }} className="text-xs font-bold text-red-700 dark:text-red-400 hover:underline">
+            Corregir precios &rarr;
+          </button>
         </div>
       )}
       {loading ? (
@@ -787,7 +1059,12 @@ export default function InventoryTab() {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-900 dark:text-foreground text-sm leading-tight">{p.name}</p>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="font-bold text-gray-900 dark:text-foreground text-sm leading-tight">{p.name}</p>
+                        {topRentables.includes(p.id) && (
+                          <span className="inline-flex px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 text-[10px] font-bold">Alta rentabilidad</span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-400 dark:text-muted mt-0.5">{cat?.emoji} {cat?.label ?? p.category} · {p.unit}</p>
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <span className="font-extrabold text-primary text-base">S/{p.price.toFixed(2)}</span>
@@ -801,6 +1078,9 @@ export default function InventoryTab() {
                       </button>
                       <button onClick={() => deleteProduct(p.id)} className="p-2 rounded-xl bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-red-50 hover:text-red-500 transition-colors border border-gray-100 dark:border-card-border" title="Eliminar">
                         <Trash2 className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => setKardexProduct({ id: p.id, name: p.name })} className="p-2 rounded-xl bg-gray-50 dark:bg-surface text-gray-500 dark:text-muted hover:bg-blue-50 hover:text-blue-600 transition-colors border border-gray-100 dark:border-card-border" title="Ver Kardex">
+                        <BookOpen className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
@@ -833,25 +1113,34 @@ export default function InventoryTab() {
               );
             })}
             {filteredProducts.length === 0 && (
-              <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">No hay productos</div>
+              <EmptyState
+                icon={products.length === 0 ? Warehouse : Package}
+                title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
+                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
+              />
             )}
             <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
           </div>
 
-          {/* Desktop table */}
+          {/* Desktop table — UX Mejora 18: Sticky header */}
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hidden sm:block">
-            <div className="overflow-x-auto">
+            <div className="max-h-[65vh] overflow-y-auto overflow-x-auto">
               <table className="w-full min-w-[600px] text-sm">
-                <thead>
+                <thead className="sticky top-0 bg-white dark:bg-card z-10 shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
                   <tr className="border-b border-gray-100 dark:border-card-border text-left">
                     <th className="px-3 py-3 w-10">
                       <input type="checkbox" checked={filteredProducts.length > 0 && selectedIds.size === filteredProducts.length} onChange={toggleSelectAll} className="rounded border-gray-300 text-primary focus:ring-primary" />
                     </th>
+                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider w-12">Img</th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Producto</th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Categoría</th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Precio</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider hidden md:table-cell">Badge</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Historial</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Badge</th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Stock</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")} title="Basado en las ultimas compras">Costo Prom.</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Rotacion</th>
+                    <th className={cn("px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider", !showExtendedCols && "hidden")}>Cambio 30d</th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Estado</th>
                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider">Acciones</th>
                   </tr>
@@ -865,8 +1154,32 @@ export default function InventoryTab() {
                           <input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleSelect(p.id)} className="rounded border-gray-300 text-primary focus:ring-primary" />
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3">
+                          {p.image ? (
+                            <Image src={p.image} alt={p.name} width={40} height={40} className="w-10 h-10 rounded-md object-cover" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-md bg-gray-100 dark:bg-surface flex items-center justify-center">
+                              <Package className="h-4 w-4 text-gray-400 dark:text-muted" />
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-2 sm:px-4 py-2 sm:py-3">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-semibold text-gray-900 dark:text-foreground">{p.name}</span>
+                            {/* Mejora 5R2: Semaforo de stock */}
+                            {(() => {
+                              const stockMin = p.stockMin ?? 5;
+                              const stock = p.stock ?? 0;
+                              if (stock === 0) return <span className="w-2.5 h-2.5 rounded-full bg-black inline-block shrink-0" title="Sin stock" />;
+                              if (stock <= stockMin) return <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block shrink-0" title="Critico" />;
+                              if (stock <= stockMin * 2) return <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block shrink-0" title="Bajo" />;
+                              return <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block shrink-0" title="OK" />;
+                            })()}
+                            <span className="font-semibold text-gray-900 dark:text-foreground truncate-25">{p.name}</span>
+                            {/* Mejora QW-10i: Badge alta rentabilidad */}
+                            {topRentables.includes(p.id) && (
+                              <span className="inline-flex px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 text-[10px] font-bold">
+                                Alta rentabilidad
+                              </span>
+                            )}
                             {!p.active && (
                               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-[10px] font-bold">
                                 <EyeOff className="h-2.5 w-2.5" /> Inactivo
@@ -878,7 +1191,10 @@ export default function InventoryTab() {
                           {categories.find(c => c.id === p.category)?.emoji} {categories.find(c => c.id === p.category)?.label ?? p.category}
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-primary">S/{p.price.toFixed(2)}</td>
-                        <td className="px-2 sm:px-4 py-2 sm:py-3 hidden md:table-cell">
+                        <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
+                          <PriceSparkline productId={p.id} />
+                        </td>
+                        <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
                           {p.badge ? <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">{p.badge}</span> : <span className="text-gray-300 dark:text-muted">—</span>}
                         </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3">
@@ -902,6 +1218,36 @@ export default function InventoryTab() {
                             </div>
                           ) : <span className="text-gray-300 dark:text-muted">—</span>}
                         </td>
+                        {/* Mejora 6R2: Costo promedio ponderado */}
+                        <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
+                          {p.costPrice != null && p.costPrice > 0
+                            ? <span className="font-mono text-xs text-gray-900 dark:text-foreground" title="Basado en las ultimas compras">S/{p.costPrice.toFixed(2)}</span>
+                            : <span className="text-gray-300 dark:text-muted">&mdash;</span>
+                          }
+                        </td>
+                        {/* Mejora 6: Rotation indicator */}
+                        <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
+                          {(() => {
+                            const spw = computeSalesPerWeek(p.id, movements);
+                            const info = getRotationInfo(spw, p.stock ?? 0);
+                            if (!info) return <span className="text-[10px] text-gray-400 dark:text-muted">Normal</span>;
+                            return (
+                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold", info.className)}>
+                                {info.level === "rapido" && <TrendingUp className="h-2.5 w-2.5" />}
+                                {info.label}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        {/* Mejora 7: Stock change last 30 days */}
+                        <td className={cn("px-2 sm:px-4 py-2 sm:py-3", !showExtendedCols && "hidden")}>
+                          {(() => {
+                            const delta = computeStockChange(p.id, movements);
+                            if (delta > 0) return <span className="text-xs font-bold text-emerald-600"><ArrowUp className="h-3 w-3 inline" /> +{delta}</span>;
+                            if (delta < 0) return <span className="text-xs font-bold text-red-500"><ArrowDown className="h-3 w-3 inline" /> {delta}</span>;
+                            return <span className="text-xs text-gray-400 dark:text-muted">&#8594; 0</span>;
+                          })()}
+                        </td>
                         <td className="px-2 sm:px-4 py-2 sm:py-3">
                           <button
                             onClick={() => toggleActive(p)}
@@ -919,8 +1265,60 @@ export default function InventoryTab() {
                             <button onClick={() => openEditModal(p)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar">
                               <Pencil className="h-4 w-4" />
                             </button>
+                            {/* Mejora 7R2: Duplicar producto */}
+                            <button
+                              onClick={() => {
+                                setAddForm({
+                                  name: `${p.name} (Copia)`,
+                                  category: p.category,
+                                  price: String(p.price),
+                                  unit: p.unit,
+                                  badge: p.badge ?? "",
+                                  image: p.image ?? "",
+                                  barcode: "",
+                                  costPrice: p.costPrice != null ? String(p.costPrice) : "",
+                                  stock: "0",
+                                  stockMin: p.stockMin != null ? String(p.stockMin) : "",
+                                  stockMax: p.stockMax != null ? String(p.stockMax) : "",
+                                  expiryDate: "",
+                                  isVariant: false,
+                                  variantOf: "",
+                                  variantAttr: "",
+                                });
+                                setShowAdd(true);
+                              }}
+                              className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                              title="Duplicar"
+                            >
+                              <ClipboardList className="h-4 w-4" />
+                            </button>
                             <button onClick={() => deleteProduct(p.id)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar">
                               <Trash2 className="h-4 w-4" />
+                            </button>
+                            {/* Mejora 6 nueva: QR */}
+                            <button onClick={() => setShowQRProduct(p)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-violet-500 hover:bg-violet-50 transition-colors" title="QR">
+                              <ScanBarcode className="h-4 w-4" />
+                            </button>
+                            {/* Mejora 5 nueva: Auto-reorden toggle */}
+                            <button
+                              onClick={() => {
+                                if (autoReorderConfigs[p.id]) {
+                                  removeAutoReorder(p.id);
+                                } else {
+                                  setArThreshold(String(p.stockMin ?? 5));
+                                  setArQty(String((p.stockMax ?? (p.stockMin ?? 5) * 2) - (p.stock ?? 0)));
+                                  setShowAutoReorder(p.id);
+                                }
+                              }}
+                              className={cn(
+                                "p-1.5 rounded-lg transition-colors",
+                                autoReorderConfigs[p.id]
+                                  ? "text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
+                                  : "text-gray-400 dark:text-muted hover:text-emerald-500 hover:bg-emerald-50"
+                              )}
+                              title={autoReorderConfigs[p.id] ? "Auto-reorden activo (click para desactivar)" : "Configurar auto-reorden"}
+                            >
+                              <RefreshCw className="h-4 w-4" />
                             </button>
                           </div>
                         </td>
@@ -931,7 +1329,11 @@ export default function InventoryTab() {
               </table>
             </div>
             {filteredProducts.length === 0 && (
-              <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">No hay productos</div>
+              <EmptyState
+                icon={products.length === 0 ? Warehouse : Package}
+                title={products.length === 0 ? "Sin inventario" : "Sin resultados"}
+                description={products.length === 0 ? "Agrega productos y registra movimientos de stock." : "Prueba con otro filtro o búsqueda."}
+              />
             )}
             <Paginator page={pgProducts.page} totalPages={pgProducts.totalPages} total={pgProducts.total} pageSize={pgProducts.pageSize} onPage={pgProducts.setPage} onPageSize={pgProducts.setPageSize} />
           </div>
@@ -953,10 +1355,10 @@ export default function InventoryTab() {
                   <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 rounded-2xl p-4 flex flex-col gap-1">
                     <span className="text-[11px] font-bold uppercase tracking-wider text-red-500">Agotado</span>
                     <span className="text-xl sm:text-3xl font-extrabold text-red-600 dark:text-red-400">{agotado.length}</span>
-                    <span className="text-xs text-red-400">productos sin stock</span>
+                    <span className="text-xs text-red-400">productos agotados</span>
                   </div>
                   <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl p-4 flex flex-col gap-1">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-500">Stock Bajo</span>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-500">Pocas Existencias</span>
                     <span className="text-xl sm:text-3xl font-extrabold text-amber-600 dark:text-amber-400">{bajo.length}</span>
                     <span className="text-xs text-amber-400">bajo mínimo</span>
                   </div>
@@ -1099,7 +1501,7 @@ export default function InventoryTab() {
         (() => {
           const columns = [
             { key: "agotado", label: "Agotado", color: "border-red-400 bg-red-50 dark:bg-red-950/20", badgeColor: "bg-red-500", filter: (p: DbProduct) => (p.stock ?? 0) === 0 },
-            { key: "bajo", label: "Stock Bajo", color: "border-amber-400 bg-amber-50 dark:bg-amber-950/20", badgeColor: "bg-amber-500", filter: (p: DbProduct) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5) },
+            { key: "bajo", label: "Pocas Existencias", color: "border-amber-400 bg-amber-50 dark:bg-amber-950/20", badgeColor: "bg-amber-500", filter: (p: DbProduct) => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= (p.stockMin ?? 5) },
             { key: "normal", label: "Normal", color: "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20", badgeColor: "bg-emerald-500", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMin ?? 5) && (p.stock ?? 0) <= (p.stockMax ?? 999) },
             { key: "exceso", label: "Exceso", color: "border-blue-400 bg-blue-50 dark:bg-blue-950/20", badgeColor: "bg-blue-500", filter: (p: DbProduct) => (p.stock ?? 0) > (p.stockMax ?? 999) },
           ];
@@ -1471,7 +1873,7 @@ export default function InventoryTab() {
                   <input type="number" min="0" value={addForm.stock} onChange={(e) => setAddForm(f => ({ ...f, stock: e.target.value }))} placeholder="0" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Stock mínimo</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1" title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
                   <input type="number" min="0" value={addForm.stockMin} onChange={(e) => setAddForm(f => ({ ...f, stockMin: e.target.value }))} placeholder="5" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
@@ -1643,7 +2045,7 @@ export default function InventoryTab() {
                   <input type="number" min="0" value={editForm.stock ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stock: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Stock mínimo</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1" title="Cantidad mínima antes de generar alerta de stock bajo">Stock mínimo</label>
                   <input type="number" min="0" value={editForm.stockMin ?? ""} onChange={(e) => setEditForm(f => ({ ...f, stockMin: e.target.value !== "" ? Number(e.target.value) : undefined }))} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
@@ -1830,10 +2232,53 @@ export default function InventoryTab() {
           >
             <EyeOff className="h-3 w-3" /> Desactivar
           </button>
+          <button
+            onClick={() => setBulkDeleteConfirm(true)}
+            className="px-3 py-1.5 rounded-lg bg-red-500/80 hover:bg-red-500 text-xs font-semibold transition-colors flex items-center gap-1"
+          >
+            <Trash2 className="h-3 w-3" /> Eliminar
+          </button>
           <button onClick={clearSelection}
             className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-semibold transition-colors">
             Limpiar
           </button>
+        </div>
+      )}
+
+      {/* Bulk delete confirmation modal */}
+      {bulkDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden">
+            <div className="p-5 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-950/30">
+                  <Trash2 className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">Eliminar productos</h3>
+                  <p className="text-sm text-muted">Esta acción no se puede deshacer</p>
+                </div>
+              </div>
+              <p className="text-sm text-foreground">
+                ¿Estás seguro de eliminar <strong>{selectedIds.size}</strong> producto{selectedIds.size > 1 ? "s" : ""}? Se quitarán del catálogo y ya no aparecerán en la tienda.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setBulkDeleteConfirm(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={executeBulkDelete}
+                  disabled={bulkDeleting}
+                  className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                >
+                  {bulkDeleting ? "Eliminando…" : `Sí, eliminar ${selectedIds.size}`}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1901,7 +2346,114 @@ export default function InventoryTab() {
           </div>
         </div>
       )}
+
+      {/* Kardex Modal */}
+      {kardexProduct && (
+        <KardexModal
+          productId={kardexProduct.id}
+          productName={kardexProduct.name}
+          onClose={() => setKardexProduct(null)}
+        />
+      )}
+
+      {/* Mejora 6 nueva: QR Modal */}
+      {showQRProduct && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowQRProduct(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowQRProduct(null)}>
+            <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4 text-center">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">Codigo QR</h3>
+                <button onClick={() => setShowQRProduct(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent">
+                  <X className="h-4 w-4 text-gray-500" />
+                </button>
+              </div>
+              <img
+                src={`https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}`}
+                alt={`QR ${showQRProduct.name}`}
+                className="mx-auto"
+                width={200}
+                height={200}
+              />
+              <p className="font-bold text-gray-900 dark:text-foreground">{showQRProduct.name}</p>
+              <p className="text-lg font-extrabold text-primary">S/{showQRProduct.price.toFixed(2)}</p>
+              {showQRProduct.barcode && <p className="text-xs text-gray-400 dark:text-muted font-mono">SKU: {showQRProduct.barcode}</p>}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const w = window.open("", "_blank");
+                    if (w) {
+                      w.document.write(`<html><head><title>QR ${showQRProduct.name}</title><style>body{text-align:center;font-family:sans-serif;padding:40px}img{margin:20px auto}@media print{button{display:none}}</style></head><body><h2>${showQRProduct.name}</h2><img src="https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}" /><p style="font-size:24px;font-weight:bold;color:#00B4A6">S/${showQRProduct.price.toFixed(2)}</p><button onclick="window.print()">Imprimir</button></body></html>`);
+                      w.document.close();
+                    }
+                  }}
+                  className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-700 dark:text-foreground font-bold text-xs hover:bg-gray-50 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  Imprimir
+                </button>
+                <a
+                  href={`https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${encodeURIComponent(`PROD:${showQRProduct.id}|${showQRProduct.name}|S/${showQRProduct.price}`)}`}
+                  download={`qr-${showQRProduct.name.replace(/\s+/g, "-")}.png`}
+                  className="flex-1 py-2 rounded-lg bg-primary text-white font-bold text-xs hover:bg-primary-dark transition-colors flex items-center justify-center gap-1.5"
+                >
+                  Descargar
+                </a>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Mejora 5 nueva: Auto-reorden modal */}
+      {showAutoReorder !== null && (
+        <>
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowAutoReorder(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setShowAutoReorder(null)}>
+            <div className="w-full max-w-sm bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-foreground">Configurar Auto-Reorden</h3>
+                <button onClick={() => setShowAutoReorder(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent">
+                  <X className="h-4 w-4 text-gray-500" />
+                </button>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Reordenar cuando stock sea menor o igual a:</label>
+                <input
+                  type="number" min="1" value={arThreshold} onChange={e => setArThreshold(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="5"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Cantidad a pedir:</label>
+                <input
+                  type="number" min="1" value={arQty} onChange={e => setArQty(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="10"
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setShowAutoReorder(null)} className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors">
+                  Cancelar
+                </button>
+                <button onClick={() => saveAutoReorder(showAutoReorder)} className="flex-1 px-4 py-2 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-sm transition-colors">
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Mejora 5 nueva: Resumen de auto-reorden */}
+      {autoReorderCount > 0 && view === "productos" && (
+        <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-xl p-3 flex items-center gap-2">
+          <RefreshCw className="h-4 w-4 text-emerald-600 shrink-0" />
+          <p className="text-xs text-emerald-700 dark:text-emerald-400 font-bold">
+            {autoReorderCount} producto{autoReorderCount > 1 ? "s" : ""} con reorden automatico configurado
+          </p>
+        </div>
+      )}
     </div>
   );
 }
-

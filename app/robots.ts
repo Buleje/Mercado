@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = "https://www.bodegasanmartin.pe";
+  const baseUrl = "https://www.buleje.pe";
 
   // In non-production environments (Vercel previews, staging, local),
   // block ALL crawlers to avoid polluting search indexes.

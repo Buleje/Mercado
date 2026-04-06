@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ShoppingCart, Sparkles, Package } from "lucide-react";
@@ -9,6 +9,7 @@ import { useInView } from "@/hooks/use-in-view";
 import ProductSchema from "./ProductSchema";
 import { trackProductView } from "@/lib/analytics";
 import { useSettings } from "@/contexts/settings-context";
+import { useStoreProducts } from "@/hooks/use-store-products";
 
 function PreviewImage({ src, alt, eager }: { src: string; alt: string; eager: boolean }) {
   const [err, setErr] = useState(false);
@@ -38,19 +39,59 @@ function PreviewImage({ src, alt, eager }: { src: string; alt: string; eager: bo
 export default function ProductsPreview() {
   const [ref, inView] = useInView({ threshold: 0.1 });
   const { homepage: hp } = useSettings();
-  const [featured, setFeatured] = useState<Product[]>([]);
-  const [showcaseCategories, setShowcaseCategories] = useState<Category[]>([]);
+  const { products, categories, isLoading } = useStoreProducts();
 
-  // Lazy-load products data — avoids 32 KB in initial JS bundle
-  useEffect(() => {
-    void import("@/data/products").then(({ products, categories }) => {
-      setFeatured([
-        ...products.filter((p: Product) => p.badge),
-        ...products.filter((p: Product) => !p.badge),
-      ].slice(0, 8));
-      setShowcaseCategories(categories.filter((c: Category) => c.id !== "todos").slice(0, 4));
-    });
-  }, []);
+  const featured = useMemo<Product[]>(() => [
+    ...products.filter((p: Product) => p.badge),
+    ...products.filter((p: Product) => !p.badge),
+  ].slice(0, 8), [products]);
+
+  const showcaseCategories = useMemo<Category[]>(() =>
+    categories.filter((c: Category) => c.id !== "todos").slice(0, 4),
+  [categories]);
+
+  // Skeleton mientras carga
+  if (isLoading) {
+    return (
+      <section className="py-20 sm:py-28 bg-surface relative overflow-hidden">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-3 animate-pulse" />
+            <div className="h-10 w-64 bg-gray-200 dark:bg-gray-700 rounded-xl mx-auto mb-3 animate-pulse" />
+            <div className="h-4 w-80 bg-gray-100 dark:bg-gray-800 rounded-lg mx-auto animate-pulse" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-12">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm animate-pulse">
+                <div className="aspect-square bg-gray-200 dark:bg-gray-700" />
+                <div className="p-3 space-y-2">
+                  <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
+                  <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Empty state — mostrar invitación a explorar en vez de blanco
+  if (featured.length === 0) {
+    return (
+      <section className="py-20 sm:py-28 bg-surface relative overflow-hidden">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <Package className="h-16 w-16 text-primary/20 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-foreground mb-2">Cargando productos...</h2>
+          <p className="text-muted text-sm mb-6">Estamos preparando nuestro catálogo para ti</p>
+          <Link href="/tienda" className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm rounded-xl px-6 py-3 hover:bg-primary-dark transition-colors">
+            <ShoppingCart className="h-5 w-5" />
+            Ir a la tienda
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section ref={ref} className="py-20 sm:py-28 bg-surface relative overflow-hidden">
@@ -127,7 +168,7 @@ export default function ProductsPreview() {
                 {/* Hover overlay — "Ver en tienda" */}
                 <div className="absolute inset-0 bg-primary/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <span className="text-white text-sm font-bold flex items-center gap-1.5">
-                    <ShoppingCart className="h-4 w-4" />
+                    <ShoppingCart className="h-5 w-5" />
                     Ver en tienda
                   </span>
                 </div>

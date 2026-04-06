@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { PayablesDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { withDbRetry } from "@/lib/db-retry";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
@@ -10,8 +11,8 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const supplierId = searchParams.get("supplierId");
-    if (supplierId) return NextResponse.json(await PayablesDB.getBySupplierId(supplierId));
-    return NextResponse.json(await PayablesDB.getAll());
+    if (supplierId) return NextResponse.json(await withDbRetry(() => PayablesDB.getBySupplierId(supplierId)));
+    return NextResponse.json(await withDbRetry(() => PayablesDB.getAll(auth.tenantId)));
   } catch (e) {
     console.error("[payables] GET error:", e);
     return NextResponse.json({ error: "Database error" }, { status: 503 });

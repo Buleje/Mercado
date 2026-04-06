@@ -30,7 +30,7 @@ export default function ReportsTab() {
       "metricas-completas": ["/api/sales?limit=1000", "/api/products", "/api/customers", "/api/payables", "/api/suppliers", "/api/orders?limit=1000"],
       "informe-mensual": ["/api/sales?limit=500", "/api/orders?limit=500", "/api/products", "/api/customers", "/api/payables"],
     };
-    const results = await Promise.all(endpoints[type].map(url => fetch(url).then(r => r.json()).catch(() => [])));
+    const results = await Promise.all(endpoints[type].map(url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => [])));
     return results;
   }, []);
 
@@ -374,7 +374,7 @@ export default function ReportsTab() {
         </head>
         <body>
           <div class="header">
-            <h1>Bodega San Martín</h1>
+            <h1>Buleje</h1>
             <div class="date">${now}</div>
           </div>
       `;
@@ -543,7 +543,7 @@ export default function ReportsTab() {
         html += `
         <style>.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}.green{background:#dcfce7;color:#166534;}.red{background:#fee2e2;color:#991b1b;}.blue{background:#dbeafe;color:#1e40af;}.amber{background:#fef3c7;color:#92400e;}</style>
         <h2 style="color:#2563eb;font-size:22px;margin-bottom:5px;">📊 Informe Mensual de Gestión</h2>
-        <p style="color:#64748b;font-size:14px;margin-top:0;">${monthLabel} — Bodega San Martín</p>
+        <p style="color:#64748b;font-size:14px;margin-top:0;">${monthLabel} — Buleje</p>
         <hr style="border:none;border-top:2px solid #2563eb;margin:15px 0;" />
 
         <h3 style="color:#121f17;margin-top:20px;">💰 Resumen Financiero</h3>
@@ -575,7 +575,7 @@ export default function ReportsTab() {
           <div class="summary-item"><span class="summary-label">Nuevos este mes:</span><span class="summary-value" style="color:#2563eb;">${newThisMonthCustomers}</span></div>
         </div>
 
-        <p style="margin-top:30px;font-size:11px;color:#94a3b8;text-align:center;">Generado automáticamente por el panel Bodega San Martín · ${new Date().toLocaleString("es-PE")}</p>
+        <p style="margin-top:30px;font-size:11px;color:#94a3b8;text-align:center;">Generado automáticamente por el panel Buleje · ${new Date().toLocaleString("es-PE")}</p>
         `;
       }
 

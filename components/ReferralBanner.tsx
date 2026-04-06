@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, startTransition } from "react";
 import { Copy, Check, Share2, Users, Star } from "lucide-react";
@@ -36,7 +36,7 @@ export default function ReferralBanner() {
   const code = customer?.phone ? generateReferralCode(customer.phone) : "";
 
   const handleCopy = useCallback(() => {
-    const msg = `Â¡Compra en Bodega San MartÃ­n con mi cÃ³digo ${code} y ambos ganamos puntos extra! ðŸŽðŸ›’`;
+    const msg = `Â¡Compra en Buleje con mi cÃ³digo ${code} y ambos ganamos puntos extra! ðŸŽðŸ›’`;
     navigator.clipboard.writeText(msg).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
@@ -44,9 +44,9 @@ export default function ReferralBanner() {
   }, [code]);
 
   const handleShare = useCallback(async () => {
-    const msg = `Â¡Compra en Bodega San MartÃ­n con mi cÃ³digo ${code} y ambos ganamos puntos extra! ðŸŽðŸ›’`;
+    const msg = `Â¡Compra en Buleje con mi cÃ³digo ${code} y ambos ganamos puntos extra! ðŸŽðŸ›’`;
     if (navigator.share) {
-      try { await navigator.share({ title: "Bodega San MartÃ­n - Referido", text: msg }); } catch {}
+      try { await navigator.share({ title: "Buleje - Referido", text: msg }); } catch {}
     } else { handleCopy(); }
   }, [code, handleCopy]);
 
@@ -74,7 +74,7 @@ export default function ReferralBanner() {
 
         {/* Main card */}
         <div className="relative rounded-3xl overflow-hidden shadow-2xl" style={{
-          background: "linear-gradient(135deg, #1e1b4b 0%, #245c43 40%, #2d6a4f 70%, #245c43 100%)",
+          background: "linear-gradient(135deg, #1e1b4b 0%, #009690 40%, #00B4A6 70%, #009690 100%)",
         }}>
           {/* Decorative circles */}
           <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full pointer-events-none" style={{ background: "radial-gradient(circle, rgba(244,162,97,0.18) 0%, transparent 70%)" }} />

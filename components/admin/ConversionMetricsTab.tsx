@@ -54,16 +54,18 @@ export default function ConversionMetricsTab() {
   const [margins, setMargins] = useState<MarginProduct[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
+    setFetchError(null);
     try {
       const [statsRes, abcRes, marginsRes, segmentsRes] = await Promise.all([
-        fetch("/api/admin/stats").then((r) => r.json()),
-        fetch("/api/analytics/abc").then((r) => r.json()),
-        fetch("/api/analytics/margins").then((r) => r.json()),
-        fetch("/api/analytics/segments").then((r) => r.json()),
+        fetch("/api/admin/stats").then((r) => r.ok ? r.json() : {}),
+        fetch("/api/analytics/abc").then((r) => r.ok ? r.json() : []),
+        fetch("/api/analytics/margins").then((r) => r.ok ? r.json() : []),
+        fetch("/api/analytics/segments").then((r) => r.ok ? r.json() : []),
       ]);
       setStats(statsRes);
       setAbc(Array.isArray(abcRes) ? abcRes.slice(0, 20) : abcRes.products?.slice(0, 20) ?? []);
@@ -73,6 +75,7 @@ export default function ConversionMetricsTab() {
       setSegments(Array.isArray(segmentsRes) ? segmentsRes : segmentsRes.segments ?? []);
       setLastRefresh(new Date());
     } catch (e) {
+      setFetchError("Error al cargar métricas de conversión");
       console.error("Error fetching metrics:", e);
     } finally {
       setLoading(false);
@@ -150,6 +153,13 @@ export default function ConversionMetricsTab() {
           Refrescar
         </button>
       </div>
+
+      {fetchError && (
+        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400">
+          <span>{fetchError}</span>
+          <button onClick={fetchAll} className="ml-auto text-xs font-bold hover:underline">Reintentar</button>
+        </div>
+      )}
 
       {loading && !stats ? (
         <div className="text-center py-20 text-gray-500">Cargando métricas...</div>

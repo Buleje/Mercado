@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { getBlockComponent } from './block-registry';
+import { logger } from "@/lib/logger";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const BLOCK_COMPONENTS = new Map<string, React.ComponentType<any>>();
@@ -13,8 +14,11 @@ export interface RenderBlock {
   type: string;
   order: number;
   visible: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CMS block props are dynamic JSON
   props: Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CMS block styles are dynamic JSON
   styles?: Record<string, any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CMS block mobile props are dynamic JSON
   mobileProps?: Record<string, any>;
 }
 
@@ -38,7 +42,7 @@ export function RenderPage({ blocks, isMobile = false }: RenderPageProps) {
         const Component = getBlockComponent(block.type);
 
         if (!Component) {
-          console.warn(`[RenderEngine] Block type "${block.type}" not registered`);
+          logger.warn("[RenderEngine] Block type not registered", { blockType: block.type });
           return null;
         }
 
@@ -66,7 +70,7 @@ export function RenderBlock({ block, isMobile = false }: { block: RenderBlock; i
   const Resolved = BLOCK_COMPONENTS.get(block.type) ?? getBlockComponent(block.type);
 
   if (!Resolved) {
-    console.warn(`[RenderEngine] Block type "${block.type}" not registered`);
+    logger.warn("[RenderEngine] Block type not registered", { blockType: block.type });
     return null;
   }
 

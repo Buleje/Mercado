@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   FolderOpen, Download, Search, Plus, X,
   Eye, Trash2, FileText, FileCheck, AlertCircle, Clock,
+  RefreshCw, FileSignature, ExternalLink, Loader2,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
@@ -22,12 +23,31 @@ type Doc = {
   size: string;
   relatedTo: string;
   notes: string;
+  isContrato?: boolean;
+  contratoNumero?: string;
+  contratoMonto?: number;
 };
+
+interface ContratoAPI {
+  id: string;
+  numero: string;
+  tipo: string;
+  estado: string;
+  clienteNombre: string;
+  clienteDoc: string;
+  descripcion: string;
+  monto: number;
+  moneda: string;
+  fecha: string;
+  fechaVencimiento: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDate(iso: string) {
-  if (!iso) return "—";
+  if (!iso) return "\u2014";
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
   catch { return iso; }
 }
@@ -65,6 +85,94 @@ export default function DocumentManagerTab() {
   const [detail, setDetail] = useState<Doc | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", category: "factura" as DocCategory, expiryDate: "", relatedTo: "", notes: "" });
+  const [loadingContratos, setLoadingContratos] = useState(false);
+  const [renewingId, setRenewingId] = useState<string | null>(null);
+
+  // Fetch contratos from API and merge into docs
+  const fetchContratos = useCallback(async () => {
+    setLoadingContratos(true);
+    try {
+      const res = await fetch("/api/contratos");
+      if (res.ok) {
+        const data = await res.json();
+        const contratos: ContratoAPI[] = data.contratos || [];
+        const now = new Date();
+
+        const contratoDocs: Doc[] = contratos
+          .filter((c) => c.estado !== "ANULADO")
+          .map((c) => {
+            let status: DocStatus = "vigente";
+            if (c.fechaVencimiento) {
+              const days = daysUntil(c.fechaVencimiento);
+              if (days < 0) status = "vencido";
+              else if (days <= 30) status = "por-vencer";
+            }
+            if (c.estado === "VENCIDO") status = "vencido";
+
+            const monedaSymbol = c.moneda === "USD" ? "US$" : "S/";
+
+            return {
+              id: c.id,
+              name: `${c.numero} - ${c.tipo} - ${c.clienteNombre}`,
+              category: "contrato" as DocCategory,
+              status,
+              uploadDate: c.createdAt?.split("T")[0] || "",
+              expiryDate: c.fechaVencimiento || "",
+              size: `${monedaSymbol}${c.monto.toFixed(2)}`,
+              relatedTo: c.clienteNombre,
+              notes: c.descripcion?.substring(0, 100) || "",
+              isContrato: true,
+              contratoNumero: c.numero,
+              contratoMonto: c.monto,
+            };
+          });
+
+        // Merge: replace existing contrato docs and add new ones
+        setDocs((prev) => {
+          const nonContratoDocs = prev.filter((d) => !d.isContrato);
+          return [...nonContratoDocs, ...contratoDocs];
+        });
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingContratos(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchContratos();
+  }, [fetchContratos]);
+
+  // Renewal handler
+  const handleRenew = async (doc: Doc) => {
+    if (!doc.isContrato) return;
+    setRenewingId(doc.id);
+    try {
+      // Extend the contract by 1 year from current expiry or today
+      const currentExpiry = doc.expiryDate ? new Date(doc.expiryDate) : new Date();
+      const newExpiry = new Date(currentExpiry);
+      newExpiry.setFullYear(newExpiry.getFullYear() + 1);
+
+      const res = await fetch(`/api/contratos/${doc.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          estado: "ACTIVO",
+          fechaVencimiento: newExpiry.toISOString().split("T")[0],
+        }),
+      });
+
+      if (res.ok) {
+        // Refresh contratos list
+        await fetchContratos();
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setRenewingId(null);
+    }
+  };
 
   const filtered = useMemo(() => {
     let list = [...docs];
@@ -81,7 +189,9 @@ export default function DocumentManagerTab() {
     const vigentes = docs.filter(d => d.status === "vigente").length;
     const porVencer = docs.filter(d => d.status === "por-vencer").length;
     const vencidos = docs.filter(d => d.status === "vencido").length;
-    return { total: docs.length, vigentes, porVencer, vencidos };
+    const contratosActivos = docs.filter(d => d.isContrato && (d.status === "vigente" || d.status === "por-vencer")).length;
+    const contratosPorVencer = docs.filter(d => d.isContrato && d.status === "por-vencer").length;
+    return { total: docs.length, vigentes, porVencer, vencidos, contratosActivos, contratosPorVencer };
   }, [docs]);
 
   function addDoc() {
@@ -89,7 +199,7 @@ export default function DocumentManagerTab() {
     const now = new Date().toISOString().split("T")[0];
     const newDoc: Doc = {
       id: `d${Date.now()}`, name: form.name.trim(), category: form.category, status: "vigente",
-      uploadDate: now, expiryDate: form.expiryDate, size: "— KB", relatedTo: form.relatedTo.trim(), notes: form.notes.trim(),
+      uploadDate: now, expiryDate: form.expiryDate, size: "\u2014 KB", relatedTo: form.relatedTo.trim(), notes: form.notes.trim(),
     };
     setDocs(prev => [newDoc, ...prev]);
     setForm({ name: "", category: "factura", expiryDate: "", relatedTo: "", notes: "" });
@@ -106,27 +216,32 @@ export default function DocumentManagerTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-            <FolderOpen className="h-6 w-6 text-primary" /> Gestión Documental
+            <FolderOpen className="h-6 w-6 text-primary" /> Gestion Documental
           </h1>
           <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Repositorio central de documentos de la empresa</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <button onClick={() => fetchContratos()} disabled={loadingContratos} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400 text-sm font-semibold hover:bg-violet-100 dark:hover:bg-violet-950/50 transition-colors disabled:opacity-50">
+            {loadingContratos ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSignature className="h-4 w-4" />}
+            Sync contratos
+          </button>
           <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors">
             <Plus className="h-4 w-4" /> Agregar
           </button>
-          <button onClick={() => exportToCSV(filtered.map(d => ({ nombre: d.name, categoria: d.category, estado: d.status, fecha_carga: d.uploadDate, vencimiento: d.expiryDate || "—", tamaño: d.size, relacionado: d.relatedTo, notas: d.notes })), "documentos")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <button onClick={() => exportToCSV(filtered.map(d => ({ nombre: d.name, categoria: d.category, estado: d.status, fecha_carga: d.uploadDate, vencimiento: d.expiryDate || "\u2014", tamano: d.size, relacionado: d.relatedTo, notas: d.notes })), "documentos")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
             <Download className="h-4 w-4" /> Exportar
           </button>
         </div>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
           { label: "Total docs", value: String(stats.total), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
           { label: "Vigentes", value: String(stats.vigentes), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
           { label: "Por vencer", value: String(stats.porVencer), color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Vencidos", value: String(stats.vencidos), color: "text-red-500", bg: "bg-red-50 dark:bg-red-950/30" },
+          { label: "Contratos activos", value: String(stats.contratosActivos), color: "text-violet-600", bg: "bg-violet-50 dark:bg-violet-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-2xl p-4", bg)}>
             <p className="text-xs font-semibold text-gray-500 dark:text-muted mb-1">{label}</p>
@@ -140,10 +255,16 @@ export default function DocumentManagerTab() {
         <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-wrap items-start gap-3">
           <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold text-amber-700 dark:text-amber-400 text-sm">Documentos que necesitan atención</p>
+            <p className="font-bold text-amber-700 dark:text-amber-400 text-sm">Documentos que necesitan atencion</p>
             <p className="text-xs text-amber-600 dark:text-amber-300 mt-0.5">
-              {stats.porVencer > 0 && <span>{stats.porVencer} próximo(s) a vencer. </span>}
+              {stats.porVencer > 0 && <span>{stats.porVencer} proximo(s) a vencer. </span>}
               {stats.vencidos > 0 && <span className="font-bold">{stats.vencidos} vencido(s) — renovar o archivar.</span>}
+              {stats.contratosPorVencer > 0 && (
+                <span className="block mt-1 font-bold text-violet-600 dark:text-violet-400">
+                  <FileSignature className="h-3 w-3 inline mr-0.5" />
+                  {stats.contratosPorVencer} contrato(s) por vencer — usa la accion "Renovar" para extenderlos.
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -176,7 +297,7 @@ export default function DocumentManagerTab() {
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Nombre, entidad..." className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
         </div>
         <select value={filterCat} onChange={e => setFilterCat(e.target.value as DocCategory | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
-          <option value="todos">Todas las categorías</option>
+          <option value="todos">Todas las categorias</option>
           {(Object.keys(CATEGORY_META) as DocCategory[]).map(c => <option key={c} value={c}>{CATEGORY_META[c].label}</option>)}
         </select>
         <select value={filterSt} onChange={e => setFilterSt(e.target.value as DocStatus | "todos")} className="text-sm border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
@@ -192,7 +313,7 @@ export default function DocumentManagerTab() {
             <thead className="bg-gray-50 dark:bg-surface/50 border-b border-gray-200 dark:border-card-border">
               <tr>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Documento</th>
-                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoría</th>
+                <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Categoria</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Estado</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Subido</th>
                 <th className="px-2 sm:px-4 py-2 sm:py-3 text-left text-xs font-bold text-gray-500 dark:text-muted uppercase">Vencimiento</th>
@@ -207,15 +328,28 @@ export default function DocumentManagerTab() {
                 const st = STATUS_META[d.status];
                 const StIcon = st.icon;
                 const daysTilExpiry = daysUntil(d.expiryDate);
+                const isContratoPorVencer = d.isContrato && (d.status === "por-vencer" || d.status === "vencido");
                 return (
-                  <tr key={d.id} className="hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
+                  <tr key={d.id} className={cn(
+                    "hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors",
+                    isContratoPorVencer && "bg-amber-50/30 dark:bg-amber-950/10"
+                  )}>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        <FileText className="h-4 w-4 text-gray-400 shrink-0" />
+                        {d.isContrato ? (
+                          <FileSignature className="h-4 w-4 text-violet-500 shrink-0" />
+                        ) : (
+                          <FileText className="h-4 w-4 text-gray-400 shrink-0" />
+                        )}
                         <div>
                           <p className="font-semibold text-gray-800 dark:text-foreground text-sm">{d.name}</p>
                           <p className="text-xs text-gray-400">{d.size}</p>
                         </div>
+                        {isContratoPorVencer && (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 animate-pulse">
+                            {d.status === "vencido" ? "VENCIDO" : `${daysTilExpiry}d`}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", cat.color)}>{cat.label}</span></td>
@@ -226,13 +360,30 @@ export default function DocumentManagerTab() {
                         <span className={cn("font-semibold", daysTilExpiry < 0 ? "text-red-500" : daysTilExpiry < 30 ? "text-amber-600" : "text-gray-500")}>
                           {fmtDate(d.expiryDate)} {daysTilExpiry < 0 ? "(vencido)" : daysTilExpiry < 30 ? `(${daysTilExpiry}d)` : ""}
                         </span>
-                      ) : <span className="text-gray-400">—</span>}
+                      ) : <span className="text-gray-400">{"\u2014"}</span>}
                     </td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-600 dark:text-muted">{d.relatedTo}</td>
                     <td className="px-2 sm:px-4 py-2 sm:py-3">
                       <div className="flex flex-wrap gap-1">
                         <button onClick={() => setDetail(d)} className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/20"><Eye className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => removeDoc(d.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"><Trash2 className="h-3.5 w-3.5" /></button>
+                        {/* Renew button for contracts about to expire */}
+                        {d.isContrato && (d.status === "por-vencer" || d.status === "vencido") && (
+                          <button
+                            onClick={() => handleRenew(d)}
+                            disabled={renewingId === d.id}
+                            className="p-1.5 rounded-lg text-violet-500 hover:text-violet-700 hover:bg-violet-50 dark:hover:bg-violet-950/20 disabled:opacity-50"
+                            title="Renovar contrato (+1 anio)"
+                          >
+                            {renewingId === d.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        )}
+                        {!d.isContrato && (
+                          <button onClick={() => removeDoc(d.id)} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"><Trash2 className="h-3.5 w-3.5" /></button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -248,15 +399,18 @@ export default function DocumentManagerTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setDetail(null)}>
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm">Detalle del documento</h3>
+              <h3 className="font-extrabold text-gray-900 dark:text-foreground text-sm flex items-center gap-1.5">
+                {detail.isContrato && <FileSignature className="h-4 w-4 text-violet-500" />}
+                Detalle del documento
+              </h3>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>
             </div>
             <div className="space-y-2 text-sm">
               {[
-                ["Nombre", detail.name], ["Categoría", CATEGORY_META[detail.category].label],
+                ["Nombre", detail.name], ["Categoria", CATEGORY_META[detail.category].label],
                 ["Estado", STATUS_META[detail.status].label], ["Subido", fmtDate(detail.uploadDate)],
-                ["Vencimiento", detail.expiryDate ? fmtDate(detail.expiryDate) : "—"], ["Tamaño", detail.size],
-                ["Relacionado", detail.relatedTo || "—"], ["Notas", detail.notes || "—"],
+                ["Vencimiento", detail.expiryDate ? fmtDate(detail.expiryDate) : "\u2014"], ["Tamano/Monto", detail.size],
+                ["Relacionado", detail.relatedTo || "\u2014"], ["Notas", detail.notes || "\u2014"],
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-wrap justify-between gap-2 sm:gap-4">
                   <span className="text-gray-500 dark:text-muted">{k}</span>
@@ -264,6 +418,19 @@ export default function DocumentManagerTab() {
                 </div>
               ))}
             </div>
+            {/* Quick actions for contratos */}
+            {detail.isContrato && (
+              <div className="pt-2 border-t border-gray-100 dark:border-card-border flex flex-wrap gap-2">
+                {(detail.status === "por-vencer" || detail.status === "vencido") && (
+                  <button
+                    onClick={() => { handleRenew(detail); setDetail(null); }}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 text-xs font-bold hover:bg-violet-200 transition-colors"
+                  >
+                    <RefreshCw className="h-3 w-3" /> Renovar (+1 anio)
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

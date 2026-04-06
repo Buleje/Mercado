@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   function rid() {
     return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
   }
-  function pick(arr: any[]) {
+  function pick<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
   }
   function rand(min: number, max: number) {
@@ -111,12 +111,49 @@ export async function POST(req: NextRequest) {
       { name: "Pilas Duracell AA x2", category: "Varios", price: 6.00, costPrice: 4.00, unit: "paquete", stock: 20, stockMin: 5, stockMax: 30 },
       { name: "Frugo Néctar 1L", category: "Bebidas", price: 4.50, costPrice: 3.20, unit: "caja", stock: 32, stockMin: 8, stockMax: 50 },
       { name: "Mantequilla Laive 200g", category: "Lácteos", price: 6.80, costPrice: 5.00, unit: "barra", stock: 14, stockMin: 4, stockMax: 25 },
+      // ── Frutas y verduras ──
+      { name: "Tomates Frescos 1kg", category: "Frutas y Verduras", price: 3.50, costPrice: 2.00, unit: "kg", stock: 30, stockMin: 5, stockMax: 40 },
+      { name: "Cebollas Rojas 1kg", category: "Frutas y Verduras", price: 3.00, costPrice: 1.80, unit: "kg", stock: 25, stockMin: 5, stockMax: 35 },
+      { name: "Papas Nativas 1kg", category: "Frutas y Verduras", price: 4.00, costPrice: 2.50, unit: "kg", stock: 30, stockMin: 5, stockMax: 40 },
+      { name: "Plátanos de Seda 1kg", category: "Frutas y Verduras", price: 2.50, costPrice: 1.50, unit: "kg", stock: 20, stockMin: 5, stockMax: 30 },
+      { name: "Palta Hass", category: "Frutas y Verduras", price: 5.00, costPrice: 3.50, unit: "unidad", stock: 15, stockMin: 3, stockMax: 25 },
+      { name: "Zanahoria 1kg", category: "Frutas y Verduras", price: 2.50, costPrice: 1.50, unit: "kg", stock: 20, stockMin: 5, stockMax: 30 },
+      { name: "Limones 1kg", category: "Frutas y Verduras", price: 5.00, costPrice: 3.00, unit: "kg", stock: 30, stockMin: 5, stockMax: 40 },
+      // ── Carnes ──
+      { name: "Pollo Entero", category: "Carnes", price: 12.00, costPrice: 9.00, unit: "kg", stock: 8, stockMin: 3, stockMax: 15 },
+      { name: "Carne de Res 1kg", category: "Carnes", price: 28.00, costPrice: 22.00, unit: "kg", stock: 5, stockMin: 2, stockMax: 10 },
+      // ── Más abarrotes ──
+      { name: "Arroz Extra 1kg", category: "Abarrotes", price: 5.50, costPrice: 4.20, unit: "bolsa", stock: 80, stockMin: 15, stockMax: 120 },
+      { name: "Avena 3 Ositos 500g", category: "Abarrotes", price: 4.50, costPrice: 3.20, unit: "bolsa", stock: 25, stockMin: 5, stockMax: 40 },
+      { name: "Sillao Kikko 500ml", category: "Abarrotes", price: 4.50, costPrice: 3.00, unit: "botella", stock: 15, stockMin: 3, stockMax: 25 },
+      { name: "Huevos x30", category: "Abarrotes", price: 15.00, costPrice: 11.00, unit: "bandeja", stock: 10, stockMin: 3, stockMax: 20 },
+      { name: "Pan Integral 500g", category: "Panadería", price: 5.00, costPrice: 3.50, unit: "paquete", stock: 15, stockMin: 3, stockMax: 25 },
+      { name: "Café Instantáneo Nescafé 200g", category: "Abarrotes", price: 12.00, costPrice: 9.00, unit: "frasco", stock: 10, stockMin: 3, stockMax: 20 },
+      // ── Más bebidas ──
+      { name: "Chicha Morada Naturale 1L", category: "Bebidas", price: 5.00, costPrice: 3.50, unit: "botella", stock: 20, stockMin: 5, stockMax: 35 },
+      { name: "Cerveza Cusqueña 620ml", category: "Bebidas", price: 7.50, costPrice: 5.50, unit: "botella", stock: 36, stockMin: 8, stockMax: 60 },
+      // ── Más limpieza ──
+      { name: "Detergente Bolívar 2kg", category: "Limpieza", price: 15.00, costPrice: 11.00, unit: "bolsa", stock: 20, stockMin: 5, stockMax: 35 },
+      { name: "Lavavajillas Ayudín 500ml", category: "Limpieza", price: 5.50, costPrice: 3.80, unit: "botella", stock: 15, stockMin: 3, stockMax: 25 },
+      // ── Más snacks ──
+      { name: "Galletas Oreo 6pk", category: "Snacks", price: 4.50, costPrice: 3.20, unit: "paquete", stock: 25, stockMin: 5, stockMax: 40 },
+      { name: "Chocolate Sublime", category: "Snacks", price: 2.50, costPrice: 1.80, unit: "unidad", stock: 30, stockMin: 8, stockMax: 50 },
+      // ── Cuidado personal ──
+      { name: "Shampoo Head & Shoulders 375ml", category: "Cuidado Personal", price: 16.50, costPrice: 12.00, unit: "botella", stock: 10, stockMin: 3, stockMax: 20 },
+      { name: "Pasta Dental Colgate 75ml", category: "Cuidado Personal", price: 4.50, costPrice: 3.00, unit: "tubo", stock: 18, stockMin: 5, stockMax: 30 },
+      { name: "Jabón Camay 120g", category: "Cuidado Personal", price: 2.50, costPrice: 1.60, unit: "barra", stock: 25, stockMin: 5, stockMax: 40 },
+      // ── Condimentos ──
+      { name: "Ajinomoto 100g", category: "Abarrotes", price: 2.50, costPrice: 1.70, unit: "bolsa", stock: 35, stockMin: 8, stockMax: 50 },
+      { name: "Ají Panca Molido 80g", category: "Abarrotes", price: 3.00, costPrice: 2.00, unit: "sobre", stock: 20, stockMin: 5, stockMax: 30 },
+      { name: "Comino Molido 50g", category: "Abarrotes", price: 2.00, costPrice: 1.20, unit: "sobre", stock: 25, stockMin: 5, stockMax: 35 },
     ];
+
+    const tenantId = auth.tenantId;
 
     const products = await Promise.all(
       productData.map((p) =>
         prisma.product.create({
-          data: { ...p, image: "", active: true, barcode: `7750${randInt(100000, 999999)}` },
+          data: { ...p, tenantId, image: "", active: true, barcode: `7750${randInt(100000, 999999)}` },
         })
       )
     );
@@ -143,6 +180,7 @@ export async function POST(req: NextRequest) {
         prisma.customer.create({
           data: {
             ...c,
+            tenantId,
             loyaltyPoints: randInt(0, 500),
             loyaltyTier: pick(tiers),
             totalSpent: rand(50, 3000),
@@ -161,11 +199,11 @@ export async function POST(req: NextRequest) {
     ];
 
     const suppliers = await Promise.all(
-      supplierData.map((s) => prisma.supplier.create({ data: s }))
+      supplierData.map((s) => prisma.supplier.create({ data: { ...s, tenantId } }))
     );
 
     // ── Orders (last 30 days) ───────────────────────────
-    const statuses: ("pendiente" | "confirmado" | "en_camino" | "entregado" | "cancelado")[] = ["pendiente", "confirmado", "en_camino", "entregado", "cancelado"];
+    const _statuses = ["pendiente", "confirmado", "en_camino", "entregado", "cancelado"] as const;
     const payMethods = ["efectivo", "yape", "plin"];
 
     const orders = [];
@@ -198,6 +236,7 @@ export async function POST(req: NextRequest) {
       const order = await prisma.order.create({
         data: {
           id: `ORD-${rid()}`,
+          tenantId,
           customerName: customer.name,
           customerPhone: customer.phone,
           customerLocation: customer.location,
@@ -242,6 +281,7 @@ export async function POST(req: NextRequest) {
       await prisma.sale.create({
         data: {
           id: `SALE-${rid()}`,
+          tenantId,
           total: Math.round(total * 100) / 100,
           totalCogs: Math.round(totalCogs * 100) / 100,
           payment: method,
@@ -278,6 +318,7 @@ export async function POST(req: NextRequest) {
       await prisma.purchaseOrder.create({
         data: {
           id: `PO-${rid()}`,
+          tenantId,
           supplierId: supplier.id,
           supplierName: supplier.name,
           total: Math.round(total * 100) / 100,
@@ -305,6 +346,7 @@ export async function POST(req: NextRequest) {
       await prisma.review.create({
         data: {
           id: rid(),
+          tenantId,
           name: c.name,
           location: c.location.split(",")[0],
           text: reviewTexts[i],
@@ -319,24 +361,25 @@ export async function POST(req: NextRequest) {
     // ── Promotions ──────────────────────────────────────
     await prisma.promotion.createMany({
       data: [
-        { id: rid(), name: "Descuento Fin de Semana", description: "10% en compras mayores a S/50", discountPercent: 10, minPurchase: 50, active: true, createdAt: daysAgo(5) },
-        { id: rid(), name: "2x1 en Bebidas", description: "Lleva 2 y paga 1 en gaseosas seleccionadas", discountPercent: 50, active: true, createdAt: daysAgo(3) },
-        { id: rid(), name: "Promo Abarrotes", description: "15% en abarrotes comprando 3 o más", discountPercent: 15, minPurchase: 30, active: false, createdAt: daysAgo(20) },
+        { id: rid(), tenantId, name: "Descuento Fin de Semana", description: "10% en compras mayores a S/50", discountPercent: 10, minPurchase: 50, active: true, createdAt: daysAgo(5) },
+        { id: rid(), tenantId, name: "2x1 en Bebidas", description: "Lleva 2 y paga 1 en gaseosas seleccionadas", discountPercent: 50, active: true, createdAt: daysAgo(3) },
+        { id: rid(), tenantId, name: "Promo Abarrotes", description: "15% en abarrotes comprando 3 o más", discountPercent: 15, minPurchase: 30, active: false, createdAt: daysAgo(20) },
       ],
     });
 
     // ── Coupons ─────────────────────────────────────────
     await prisma.coupon.createMany({
       data: [
-        { code: "BIENVENIDO10", description: "10% de descuento para nuevos clientes", discountType: "percent", discountValue: 10, minPurchase: 30, maxUses: 100, usedCount: 23, active: true },
-        { code: "BODEGA20", description: "S/20 de descuento en compras mayores a S/100", discountType: "fixed", discountValue: 20, minPurchase: 100, maxUses: 50, usedCount: 8, active: true },
-        { code: "DELIVERY5", description: "S/5 de descuento en delivery", discountType: "fixed", discountValue: 5, maxUses: 200, usedCount: 45, active: true },
+        { tenantId, code: "BIENVENIDO10", description: "10% de descuento para nuevos clientes", discountType: "percent", discountValue: 10, minPurchase: 30, maxUses: 100, usedCount: 23, active: true },
+        { tenantId, code: "BODEGA20", description: "S/20 de descuento en compras mayores a S/100", discountType: "fixed", discountValue: 20, minPurchase: 100, maxUses: 50, usedCount: 8, active: true },
+        { tenantId, code: "DELIVERY5", description: "S/5 de descuento en delivery", discountType: "fixed", discountValue: 5, maxUses: 200, usedCount: 45, active: true },
       ],
     });
 
     // ── Cash Register ───────────────────────────────────
-    const register = await prisma.cashRegister.create({
+    await prisma.cashRegister.create({
       data: {
+        tenantId,
         openedAt: daysAgo(0),
         openingAmount: 200,
         status: "abierta",
@@ -356,6 +399,7 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < 10; i++) {
       await prisma.expense.create({
         data: {
+          tenantId,
           category: pick(expenseCategories),
           description: pick(["Luz del mes", "Agua del mes", "Sueldo ayudante", "Gasolina motokar", "Productos de limpieza", "Alquiler mensual", "Internet", "Celular"]),
           amount: rand(20, 800),
@@ -368,6 +412,7 @@ export async function POST(req: NextRequest) {
     // ── Bundles (Combos) ────────────────────────────────
     await prisma.bundle.create({
       data: {
+        tenantId,
         name: "Combo Desayuno",
         description: "Pan + Leche + Huevos",
         price: 19.90,
@@ -383,6 +428,7 @@ export async function POST(req: NextRequest) {
     });
     await prisma.bundle.create({
       data: {
+        tenantId,
         name: "Combo Bebidas Familiar",
         description: "Coca-Cola + Inca Kola + Agua",
         price: 16.50,
@@ -403,6 +449,7 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < 15; i++) {
       await prisma.activityLog.create({
         data: {
+          tenantId,
           action: pick(actions),
           entity: pick(entities),
           detail: pick(["Producto actualizado", "Nuevo pedido creado", "Cliente registrado", "Venta completada", "Inicio de sesión", "Precio modificado"]),
@@ -416,6 +463,7 @@ export async function POST(req: NextRequest) {
     for (const sup of suppliers) {
       await prisma.supplierEvaluation.create({
         data: {
+          tenantId,
           supplierId: sup.id,
           punctuality: randInt(2, 5),
           quality: randInt(3, 5),

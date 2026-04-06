@@ -11,7 +11,6 @@ import {
   duplicateBlock,
 } from "@/lib/cms-db/pages";
 import { BlockSchema } from "@/lib/cms/types";
-import { z } from "zod";
 
 // ═══════════════════════════════════════════════════════
 // GET /api/cms/pages/:id/blocks - Get all blocks
@@ -62,18 +61,18 @@ export async function POST(
     }
 
     // Create new block
-    const validated = BlockSchema.parse(body);
+    const parsed = BlockSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Datos inválidos" },
+        { status: 400 }
+      );
+    }
+    const validated = parsed.data;
     const block = await createBlock(id, validated);
 
     return NextResponse.json(block, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Datos inválidos", details: error.issues },
-        { status: 400 }
-      );
-    }
-
     console.error("[cms/blocks] POST error:", error);
     return NextResponse.json(
       { error: "Error al crear bloque" },
@@ -103,18 +102,18 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const validated = BlockSchema.partial().parse(body);
+    const parsed = BlockSchema.partial().safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Datos inválidos" },
+        { status: 400 }
+      );
+    }
+    const validated = parsed.data;
     const block = await updateBlock(blockId, validated);
 
     return NextResponse.json(block);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Datos inválidos", details: error.issues },
-        { status: 400 }
-      );
-    }
-
     console.error("[cms/blocks] PUT error:", error);
     return NextResponse.json(
       { error: "Error al actualizar bloque" },

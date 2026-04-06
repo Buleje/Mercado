@@ -3,15 +3,16 @@
 import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import { Star, ShoppingCart, Zap, Timer } from "lucide-react";
-import { products } from "@/data/products";
 import type { Product } from "@/data/products";
 import { useCart } from "@/contexts/cart-context";
 import { useInView } from "@/hooks/use-in-view";
+import { useStoreProducts } from "@/hooks/use-store-products";
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=400&fit=crop&q=80";
 
 /* Pick a different in-stock product each day using day-of-year */
-function getDailyProduct(): Product {
+function getDailyProduct(products: Product[]): Product | null {
+  if (products.length === 0) return null;
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 0);
   const diff = now.getTime() - start.getTime();
@@ -49,10 +50,13 @@ function useCountdown() {
 
 export default function DailySpecial() {
   const { addItem, items } = useCart();
+  const { products, isLoading } = useStoreProducts();
   const [ref, inView] = useInView({ threshold: 0.15 });
   const [imgError, setImgError] = useState(false);
-  const product = useMemo(() => getDailyProduct(), []);
+  const product = useMemo(() => getDailyProduct(products), [products]);
   const countdown = useCountdown();
+
+  if (isLoading || !product) return null;
 
   const inCart = items.find((i) => i.id === product.id);
   const qty = inCart?.quantity ?? 0;

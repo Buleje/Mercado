@@ -16,8 +16,8 @@ export default function AdminBottomNav({ currentTab, setTab, toggleSidebar }: Ad
   const navItems = [
     { id: "panel-principal", label: "Inicio", icon: LayoutDashboard },
     { id: "pedidos", label: "Pedidos", icon: ShoppingCart },
-    { id: "inventario-almacenes", label: "Invent.", icon: Package },
-    { id: "pos-caja", label: "POS", icon: Monitor },
+    { id: "inventario-almacenes", label: "Mi stock", icon: Package },
+    { id: "pos-caja", label: "Caja", icon: Monitor },
   ];
 
   return (

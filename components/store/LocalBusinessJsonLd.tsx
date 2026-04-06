@@ -1,0 +1,96 @@
+/**
+ * JSON-LD structured data for Local Business SEO.
+ * Dinámico: lee datos del negocio desde Settings de la DB.
+ * Server component — no "use client" needed.
+ */
+
+import { SettingsDB } from "@/lib/jsondb";
+import { headers } from "next/headers";
+
+export default async function LocalBusinessJsonLd() {
+  let name = "Mi Tienda";
+  let description = "Tienda online con delivery a domicilio.";
+  let phone = "";
+  let address = "";
+  let logo = "/logo.png";
+  let lat = -8.3791;
+  let lon = -74.5539;
+
+  try {
+    const hdrs = await headers();
+    const tenantId = hdrs.get("x-tenant-id") ?? "main";
+    const s = await SettingsDB.get(tenantId);
+    name = s.businessName ?? name;
+    description = s.description ?? description;
+    phone = s.businessPhone ?? phone;
+    address = s.businessAddress ?? address;
+    logo = s.logoUrl ?? logo;
+    lat = s.businessLat ?? lat;
+    lon = s.businessLon ?? lon;
+  } catch { /* use defaults */ }
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "GroceryStore",
+    name,
+    alternateName: `${name} - Abarrotes Delivery`,
+    description,
+    url: baseUrl,
+    telephone: phone ? `+51${phone}` : undefined,
+    image: logo.startsWith("http") ? logo : `${baseUrl}${logo}`,
+    logo: logo.startsWith("http") ? logo : `${baseUrl}${logo}`,
+    priceRange: "S/1 - S/200",
+    currenciesAccepted: "PEN",
+    paymentAccepted: "Efectivo, Yape, Plin",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: address,
+      addressLocality: "Pucallpa",
+      addressRegion: "Ucayali",
+      postalCode: "25001",
+      addressCountry: "PE",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: lat,
+      longitude: lon,
+    },
+    areaServed: {
+      "@type": "City",
+      name: "Pucallpa",
+    },
+    openingHoursSpecification: [
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        opens: "07:00",
+        closes: "22:00",
+      },
+      {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: "Sunday",
+        opens: "08:00",
+        closes: "20:00",
+      },
+    ],
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Productos de bodega",
+      itemListElement: [
+        { "@type": "Offer", itemOffered: { "@type": "Product", name: "Abarrotes" } },
+        { "@type": "Offer", itemOffered: { "@type": "Product", name: "Bebidas" } },
+        { "@type": "Offer", itemOffered: { "@type": "Product", name: "Limpieza" } },
+      ],
+    },
+    sameAs: [],
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
+}

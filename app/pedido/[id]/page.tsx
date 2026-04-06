@@ -153,12 +153,12 @@ export default function PedidoPage() {
   if (error || !order) {
     return (
       <div className="min-h-screen bg-linear-to-br from-red-50 to-orange-50 flex items-center justify-center p-6">
-        <div className="max-w-sm w-full bg-white rounded-2xl shadow-lg p-8 text-center">
-          <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+        <div className="max-w-sm w-full bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 text-center">
+          <div className="h-16 w-16 rounded-full bg-red-100 dark:bg-red-950/30 flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="h-8 w-8 text-red-500" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Pedido no encontrado</h2>
-          <p className="text-gray-500 text-sm">{error ?? "No se encontró el pedido."}</p>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Pedido no encontrado</h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">{error ?? "No se encontró el pedido."}</p>
         </div>
       </div>
     );
@@ -168,14 +168,14 @@ export default function PedidoPage() {
   if (order.status === "cancelado") {
     return (
       <div className="min-h-screen bg-linear-to-br from-red-50 to-orange-50 flex items-center justify-center p-6">
-        <div className="max-w-sm w-full bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="max-w-sm w-full bg-white dark:bg-gray-900 rounded-2xl shadow-lg overflow-hidden">
           <div className="bg-red-500 px-6 py-5 text-white text-center">
             <XCircle className="h-12 w-12 mx-auto mb-2" />
             <h2 className="text-xl font-bold">Pedido cancelado</h2>
             <p className="text-red-100 text-sm mt-1">Nº {order.id}</p>
           </div>
           <div className="p-6 text-center">
-            <p className="text-gray-500 text-sm">Este pedido fue cancelado. Si tienes dudas, contáctanos.</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">Este pedido fue cancelado. Si tienes dudas, contáctanos.</p>
           </div>
         </div>
       </div>
@@ -188,15 +188,15 @@ export default function PedidoPage() {
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, rgba(45,106,79,0.05), #d1fae5)" }}>
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b shadow-sm sticky top-0 z-10">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm dark:shadow-gray-900/20 sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
               <ShoppingBag className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="font-extrabold text-gray-900 text-sm leading-tight">Bodega San Martín</p>
-              <p className="text-[11px] text-gray-400">Seguimiento de pedido</p>
+              <p className="font-extrabold text-gray-900 dark:text-gray-100 text-sm leading-tight">Buleje</p>
+              <p className="text-[11px] text-gray-400 dark:text-gray-500">Seguimiento de pedido</p>
             </div>
           </div>
           {lastUpdated && (
@@ -212,12 +212,12 @@ export default function PedidoPage() {
 
         {/* ── Status hero card ──────────────────────────────────────────── */}
         <div className={`rounded-2xl p-6 text-center shadow-sm ${currentStep.bg}`}>
-          <div className={`h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-3 bg-white shadow-sm`}>
+          <div className={`h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-3 bg-white dark:bg-gray-900 shadow-sm dark:shadow-gray-900/20`}>
             <currentStep.icon className={`h-8 w-8 ${currentStep.color}`} />
           </div>
           <h1 className={`text-2xl font-extrabold ${currentStep.color}`}>{currentStep.label}</h1>
-          <p className="text-gray-600 text-sm mt-1">{currentStep.desc}</p>
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">{currentStep.desc}</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-3">
             Actualizado: {formatDate(order.updatedAt)} · {formatTime(order.updatedAt)}
           </p>
           {/* P2 — ETA estimado */}
@@ -239,8 +239,8 @@ export default function PedidoPage() {
         </div>
 
         {/* ── Progress stepper ──────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl shadow-sm p-5">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Estado del pedido</h2>
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm dark:shadow-gray-900/20 p-5">
+          <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">Estado del pedido</h2>
           <div className="space-y-0">
             {STEPS.map((step, i) => {
               const done = i < currentStepIndex;
@@ -255,7 +255,7 @@ export default function PedidoPage() {
                         ? "bg-primary"
                         : active
                         ? `${step.bg} ring-4 ring-primary/20`
-                        : "bg-gray-100"
+                        : "bg-gray-100 dark:bg-gray-800"
                     }`}>
                       <step.icon className={`h-4 w-4 ${
                         done
@@ -272,7 +272,7 @@ export default function PedidoPage() {
                   {/* Label */}
                   <div className="pt-1.5 pb-6 last:pb-0 flex-1">
                     <p className={`text-sm font-bold ${
-                      done ? "text-primary" : active ? "text-gray-900" : "text-gray-300"
+                      done ? "text-primary" : active ? "text-gray-900 dark:text-gray-100" : "text-gray-300 dark:text-gray-600"
                     }`}>
                       {step.label}
                       {active && (
@@ -282,7 +282,7 @@ export default function PedidoPage() {
                         </span>
                       )}
                     </p>
-                    <p className={`text-xs mt-0.5 ${pending ? "text-gray-200" : "text-gray-400"}`}>{step.desc}</p>
+                    <p className={`text-xs mt-0.5 ${pending ? "text-gray-200 dark:text-gray-700" : "text-gray-400 dark:text-gray-500"}`}>{step.desc}</p>
                   </div>
                 </div>
               );
@@ -291,23 +291,23 @@ export default function PedidoPage() {
         </div>
 
         {/* ── Order info ────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Detalles del pedido</h2>
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm dark:shadow-gray-900/20 p-5 space-y-3">
+          <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Detalles del pedido</h2>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Número de pedido</span>
+            <span className="text-gray-500 dark:text-gray-400">Número de pedido</span>
             <span className="font-mono font-bold text-primary text-xs">{order.id}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Cliente</span>
-            <span className="font-semibold text-gray-900">{order.customerName}</span>
+            <span className="text-gray-500 dark:text-gray-400">Cliente</span>
+            <span className="font-semibold text-gray-900 dark:text-gray-100">{order.customerName}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">Fecha del pedido</span>
-            <span className="font-semibold text-gray-900">{formatDate(order.createdAt)}, {formatTime(order.createdAt)}</span>
+            <span className="text-gray-500 dark:text-gray-400">Fecha del pedido</span>
+            <span className="font-semibold text-gray-900 dark:text-gray-100">{formatDate(order.createdAt)}, {formatTime(order.createdAt)}</span>
           </div>
           {order.paymentMethod && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Pago</span>
+              <span className="text-gray-500 dark:text-gray-400">Pago</span>
               <span className={`font-semibold text-xs px-2.5 py-1 rounded-full ${
                 order.paymentMethod === "yape"
                   ? "bg-purple-100 text-purple-700"
@@ -319,25 +319,25 @@ export default function PedidoPage() {
           )}
           {order.deliverySlot && order.deliverySlot !== "lo-antes-posible" && (
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Entrega programada</span>
-              <span className="font-semibold text-gray-900">{order.deliverySlot}</span>
+              <span className="text-gray-500 dark:text-gray-400">Entrega programada</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{order.deliverySlot}</span>
             </div>
           )}
           {order.notes && (
-            <div className="pt-1 border-t">
-              <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Notas</p>
-              <p className="text-sm text-gray-600">{order.notes}</p>
+            <div className="pt-1 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider mb-1">Notas</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{order.notes}</p>
             </div>
           )}
         </div>
 
         {/* ── Timeline ──────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl shadow-sm p-5">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm dark:shadow-gray-900/20 p-5">
+          <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">
             Historial
           </h2>
           <div className="relative pl-6 space-y-4">
-            <div className="absolute left-2.25 top-1 bottom-1 w-0.5 bg-gray-200" />
+            <div className="absolute left-2.25 top-1 bottom-1 w-0.5 bg-gray-200 dark:bg-gray-700" />
 
             {/* Current status */}
             {(() => {
@@ -349,8 +349,8 @@ export default function PedidoPage() {
                     <Icon className={`w-3 h-3 ${currentStep?.color ?? "text-gray-500"}`} />
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">{currentStep?.label ?? order.status}</p>
-                    <p className="text-xs text-gray-400">{formatDate(order.updatedAt)}, {formatTime(order.updatedAt)}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{currentStep?.label ?? order.status}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(order.updatedAt)}, {formatTime(order.updatedAt)}</p>
                   </div>
                 </div>
               );
@@ -358,26 +358,26 @@ export default function PedidoPage() {
 
             {/* Order created */}
             <div className="relative flex items-start gap-3">
-              <span className="absolute -left-6 top-0.5 w-4.5 h-4.5 rounded-full flex items-center justify-center bg-gray-100">
-                <ShoppingBag className="w-3 h-3 text-gray-500" />
+              <span className="absolute -left-6 top-0.5 w-4.5 h-4.5 rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                <ShoppingBag className="w-3 h-3 text-gray-500 dark:text-gray-400" />
               </span>
               <div>
-                <p className="text-sm font-semibold text-gray-900">Pedido creado</p>
-                <p className="text-xs text-gray-400">{formatDate(order.createdAt)}, {formatTime(order.createdAt)}</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pedido creado</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(order.createdAt)}, {formatTime(order.createdAt)}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* ── Items ─────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl shadow-sm p-5">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm dark:shadow-gray-900/20 p-5">
+          <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
             Productos ({order.items.length})
           </h2>
           <div className="space-y-3">
             {order.items.map((item) => (
               <div key={item.id} className="flex items-center gap-3">
-                <div className="relative h-12 w-12 rounded-lg overflow-hidden bg-gray-50 border border-gray-100 shrink-0">
+                <div className="relative h-12 w-12 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shrink-0">
                   <Image
                     src={item.image}
                     alt={item.name}
@@ -387,20 +387,20 @@ export default function PedidoPage() {
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 line-clamp-1">{item.name}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">{item.name}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
                     S/{(item.price ?? 0).toFixed(2)} / {item.unit} · x{item.quantity}
                   </p>
                 </div>
-                <p className="font-bold text-gray-900 text-sm shrink-0">
+                <p className="font-bold text-gray-900 dark:text-gray-100 text-sm shrink-0">
                   S/{((item.price ?? 0) * item.quantity).toFixed(2)}
                 </p>
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-between pt-3 mt-3 border-t">
-            <span className="text-sm font-semibold text-gray-500">Subtotal</span>
-            <span className="text-sm font-bold text-gray-900">
+          <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+            <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">Subtotal</span>
+            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
               S/{((order.total ?? 0) + (order.couponDiscount ?? 0) + (order.discountAmount ?? 0)).toFixed(2)}
             </span>
           </div>
@@ -416,8 +416,8 @@ export default function PedidoPage() {
               <span className="text-sm font-bold text-emerald-600">-S/{(order.discountAmount ?? 0).toFixed(2)}</span>
             </div>
           )}
-          <div className="flex items-center justify-between pt-2 mt-1 border-t">
-            <span className="text-sm font-semibold text-gray-500">Total</span>
+          <div className="flex items-center justify-between pt-2 mt-1 border-t border-gray-200 dark:border-gray-700">
+            <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">Total</span>
             <span className="text-xl font-extrabold text-primary">S/{(order.total ?? 0).toFixed(2)}</span>
           </div>
         </div>
@@ -428,13 +428,13 @@ export default function PedidoPage() {
         {/* ── Receipt link ──────────────────────────────────────────────── */}
         <a
           href={`/pedido/${order.id}/recibo`}
-          className="block text-center bg-white rounded-2xl shadow-sm p-4 text-sm font-semibold text-primary hover:bg-primary/5 transition-colors"
+          className="block text-center bg-white dark:bg-gray-900 rounded-2xl shadow-sm dark:shadow-gray-900/20 p-4 text-sm font-semibold text-primary hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors"
         >
           🧾 Ver comprobante / Imprimir recibo
         </a>
 
         {/* ── Footer info ───────────────────────────────────────────────── */}
-        <p className="text-center text-xs text-gray-400 pb-6">
+        <p className="text-center text-xs text-gray-400 dark:text-gray-500 pb-6">
           Esta página se actualiza automáticamente cada 5 segundos
         </p>
       </div>
@@ -485,9 +485,9 @@ function PostDeliveryReview({ orderId, customerName }: { orderId: string; custom
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-5 space-y-3">
-      <h3 className="text-sm font-bold text-gray-900 text-center">¿Cómo estuvo tu pedido?</h3>
-      <p className="text-xs text-gray-400 text-center">Tu opinión nos ayuda a mejorar 🙏</p>
+    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm dark:shadow-gray-900/20 p-5 space-y-3">
+      <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 text-center">¿Cómo estuvo tu pedido?</h3>
+      <p className="text-xs text-gray-400 dark:text-gray-500 text-center">Tu opinión nos ayuda a mejorar 🙏</p>
 
       {/* Star rating */}
       <div className="flex justify-center gap-1">
@@ -503,14 +503,14 @@ function PostDeliveryReview({ orderId, customerName }: { orderId: string; custom
               className={`h-8 w-8 transition-colors ${
                 (hover || rating) >= n
                   ? "text-amber-400 fill-amber-400"
-                  : "text-gray-200"
+                  : "text-gray-200 dark:text-gray-700"
               }`}
             />
           </button>
         ))}
       </div>
       {rating > 0 && (
-        <p className="text-center text-xs text-gray-500">
+        <p className="text-center text-xs text-gray-500 dark:text-gray-400">
           {rating <= 2 ? "Lo sentimos, mejoraremos 💪" : rating <= 3 ? "¡Gracias por tu feedback!" : rating <= 4 ? "¡Muy bien! 👍" : "¡Excelente! 🎉"}
         </p>
       )}
@@ -520,7 +520,7 @@ function PostDeliveryReview({ orderId, customerName }: { orderId: string; custom
         value={text}
         onChange={e => setText(e.target.value)}
         placeholder="Cuéntanos más sobre tu experiencia (opcional)..."
-        className="w-full rounded-xl border border-gray-200 p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+        className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
         rows={2}
         maxLength={500}
       />

@@ -41,6 +41,7 @@ vi.mock("@/lib/mailer", () => ({
 vi.mock("@/lib/whatsapp", () => ({
   sendWhatsAppNotification: vi.fn(async () => {}),
   getWhatsAppLink: vi.fn(() => "https://wa.me/fake"),
+  sendWhatsAppText: vi.fn(async () => {}),
 }));
 
 // ── Mock: push-sender — no-op ────────────────────────────────────────────────
@@ -63,6 +64,30 @@ vi.mock("@/lib/plans", () => ({
 // ── Mock: cache — pass-through (execute the fn immediately) ──────────────────
 vi.mock("@/lib/cache", () => ({
   getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
+}));
+
+// ── Mock: db-retry — pass-through (execute immediately, no retries) ─────────
+vi.mock("@/lib/db-retry", () => ({
+  withDbRetry: vi.fn(async <T>(fn: () => Promise<T>) => fn()),
+}));
+
+// ── Mock: receipt-whatsapp — no-op ──────────────────────────────────────────
+vi.mock("@/lib/receipt-whatsapp", () => ({
+  sendReceiptByWhatsApp: vi.fn(async () => {}),
+}));
+
+// ── Mock: inventory.db — no-op (fire-and-forget FEFO decrement) ─────────────
+vi.mock("@/lib/db/inventory.db", () => ({
+  InventoryMovementsDB: {
+    decrementFEFO: vi.fn(async () => {}),
+  },
+}));
+
+// ── Mock: discount-strategies — no automatic discounts ──────────────────────
+vi.mock("@/lib/pricing/discount-strategies", () => ({
+  createDefaultDiscountEngine: vi.fn(() => ({
+    apply: vi.fn(() => ({ bestDiscount: null, allResults: [] })),
+  })),
 }));
 
 // ── Mock: require-admin — default: authenticated ─────────────────────────────
@@ -125,6 +150,7 @@ vi.mock("@/lib/prisma", () => ({
     },
     tenant: {
       findFirst: mockTenantFindFirst,
+      findUnique: vi.fn().mockResolvedValue(null),
     },
     product: {
       findMany: mockProductFindMany,
@@ -207,10 +233,11 @@ describe("POST /api/orders", () => {
     vi.clearAllMocks();
     // Default prisma returns: no idempotency duplicate, free tenant, no products, customer allows notifs
     mockOrderFindFirst.mockResolvedValue(null);
+    mockOrderCount.mockResolvedValue(0);
     mockTenantFindFirst.mockResolvedValue({ plan: "free" });
     mockProductFindMany.mockResolvedValue([]);
     mockCustomerFindUnique.mockResolvedValue(null);
-    mockCustomerNotifCreate.mockResolvedValue({});
+    mockCustomerNotifCreate.mockResolvedValue(undefined);
     // Default OrdersDB mocks
     mockOrdersAdd.mockResolvedValue(SAVED_ORDER);
     mockOrdersGetByCustomerPhone.mockResolvedValue([SAVED_ORDER]);

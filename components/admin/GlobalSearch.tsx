@@ -1,103 +1,576 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, X, Package, Users, ShoppingCart, FileText, ShoppingBasket, Tag, AlertTriangle, TrendingUp, Loader2 } from "lucide-react";
+import {
+  Search, X, Package, Users, ShoppingCart, FileText,
+  ShoppingBasket, Tag, AlertTriangle, TrendingUp, Loader2,
+  LayoutDashboard, Monitor, Boxes, Truck, MapPin, RotateCcw,
+  BarChart3, DollarSign, UserCog, MessageSquare, Bell, Shield,
+  Settings, Bot, Star, Zap, Heart, ClipboardList, Target,
+  BookOpen, Calculator, ArrowRight,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type SearchResult = {
+// ── Tipos ─────────────────────────────────────────────────────────────────────
+
+type ResultType =
+  | "modulo"
+  | "producto"
+  | "cliente"
+  | "pedido"
+  | "accion";
+
+interface SearchResult {
   id: string;
-  type: "producto" | "cliente" | "pedido" | "proveedor" | "cupon" | "promocion";
+  type: ResultType;
   title: string;
   subtitle: string;
   badge?: string;
   badgeColor?: string;
-  tab: string;
-};
+  tab?: string;
+  /** Para módulos: navegar directo al tab */
+  navigateTo?: string;
+  /** Para acciones: callback directo */
+  action?: () => void;
+  /** Texto original para highlight */
+  matchText?: string;
+}
 
-const TYPE_META: Record<SearchResult["type"], { icon: React.ElementType; color: string; label: string }> = {
-  producto:   { icon: Package,       color: "text-blue-500",   label: "Producto"   },
-  cliente:    { icon: Users,         color: "text-violet-500", label: "Cliente"    },
-  pedido:     { icon: ShoppingCart,  color: "text-amber-500",  label: "Pedido"     },
-  proveedor:  { icon: ShoppingBasket,color: "text-emerald-500",label: "Proveedor"  },
-  cupon:      { icon: Tag,           color: "text-pink-500",   label: "Cupón"      },
-  promocion:  { icon: TrendingUp,    color: "text-orange-500", label: "Promoción"  },
-};
+interface GroupedResults {
+  modulos: SearchResult[];
+  productos: SearchResult[];
+  clientes: SearchResult[];
+  pedidos: SearchResult[];
+  acciones: SearchResult[];
+}
+
+// ── Índice de módulos y tabs (hardcoded) ──────────────────────────────────────
+
+interface ModuleEntry {
+  tab: string;
+  label: string;
+  icon: React.ElementType;
+  keywords: string[];
+  subtabs?: { id: string; label: string; keywords?: string[] }[];
+}
+
+const MODULE_INDEX: ModuleEntry[] = [
+  {
+    tab: "panel-principal",
+    label: "Panel Principal",
+    icon: LayoutDashboard,
+    keywords: ["panel", "dashboard", "inicio", "principal", "ejecutivo", "resumen", "kpi", "métricas", "agentes", "changelog"],
+    subtabs: [
+      { id: "panel-principal", label: "Panel principal", keywords: ["dashboard", "inicio", "ventas"] },
+      { id: "panel-principal", label: "Ejecutivo", keywords: ["ejecutivo", "gerencia", "resumen"] },
+      { id: "panel-principal", label: "Agentes IA", keywords: ["agentes", "ia", "inteligencia"] },
+      { id: "panel-principal", label: "Changelog", keywords: ["changelog", "versiones", "cambios"] },
+    ],
+  },
+  {
+    tab: "pos-caja",
+    label: "POS & Caja",
+    icon: Monitor,
+    keywords: ["pos", "caja", "punto de venta", "venta", "turno", "arqueo", "registradora", "cobro"],
+    subtabs: [
+      { id: "pos-caja", label: "Caja", keywords: ["pos", "venta", "cobrar"] },
+      { id: "pos-caja", label: "Caja registradora", keywords: ["caja", "registradora"] },
+      { id: "pos-caja", label: "Turnos", keywords: ["turno", "apertura", "cierre"] },
+      { id: "pos-caja", label: "Arqueo de caja", keywords: ["arqueo", "conteo", "efectivo"] },
+    ],
+  },
+  {
+    tab: "inventario-almacenes",
+    label: "Inventario & Almacenes",
+    icon: Boxes,
+    keywords: ["inventario", "stock", "almacén", "almacenes", "kardex", "lotes", "mermas", "ubicaciones", "transferencias", "reorden", "predicción"],
+    subtabs: [
+      { id: "inventario-almacenes", label: "Mi stock", keywords: ["stock", "existencias"] },
+      { id: "inventario-almacenes", label: "Kardex", keywords: ["kardex", "movimientos"] },
+      { id: "inventario-almacenes", label: "Vencimientos", keywords: ["lotes", "batch", "vencimiento", "fefo"] },
+      { id: "inventario-almacenes", label: "Perdidas", keywords: ["mermas", "pérdidas", "desperdicios"] },
+      { id: "inventario-almacenes", label: "Almacenes", keywords: ["almacenes", "bodega"] },
+      { id: "inventario-almacenes", label: "Ubicaciones", keywords: ["ubicaciones", "pasillo", "estante"] },
+      { id: "inventario-almacenes", label: "Transferencias", keywords: ["transferencias", "traslado"] },
+      { id: "inventario-almacenes", label: "Reorden", keywords: ["reorden", "reposición", "mínimo"] },
+      { id: "inventario-almacenes", label: "Prediccion IA", keywords: ["predicción", "demanda", "forecast"] },
+      { id: "inventario-almacenes", label: "Conteo fisico", keywords: ["conteo", "físico", "inventario físico"] },
+    ],
+  },
+  {
+    tab: "reposicion",
+    label: "Reposición Inteligente",
+    icon: RotateCcw,
+    keywords: ["reposición", "reorden", "auto-reorden", "reabastecimiento"],
+  },
+  {
+    tab: "pedidos",
+    label: "Pedidos",
+    icon: ShoppingCart,
+    keywords: ["pedidos", "órdenes", "orders", "entrega", "delivery", "pendiente", "confirmado"],
+  },
+  {
+    tab: "catalogo-tienda",
+    label: "Catálogo & Tienda",
+    icon: BookOpen,
+    keywords: ["catálogo", "tienda", "categorías", "combos", "kits", "bundles", "página inicio"],
+    subtabs: [
+      { id: "catalogo-tienda", label: "Categorías", keywords: ["categorías", "clasificación"] },
+      { id: "catalogo-tienda", label: "Combos & Kits", keywords: ["combos", "kits", "bundles", "paquetes"] },
+      { id: "catalogo-tienda", label: "Página de Inicio", keywords: ["página inicio", "home", "banner"] },
+    ],
+  },
+  {
+    tab: "precios-promos",
+    label: "Precios & Promociones",
+    icon: Tag,
+    keywords: ["precios", "promociones", "cupones", "descuentos", "benchmark", "ab test", "historial precios"],
+    subtabs: [
+      { id: "precios-promos", label: "Benchmark", keywords: ["benchmark", "competencia"] },
+      { id: "precios-promos", label: "Historial de Precios", keywords: ["historial", "precio"] },
+      { id: "precios-promos", label: "Promociones", keywords: ["promociones", "ofertas"] },
+      { id: "precios-promos", label: "Cupones", keywords: ["cupones", "descuentos", "código"] },
+      { id: "precios-promos", label: "A/B Tests", keywords: ["ab test", "experimento"] },
+    ],
+  },
+  {
+    tab: "compras",
+    label: "Compras",
+    icon: ShoppingBasket,
+    keywords: ["compras", "órdenes de compra", "cotizaciones", "rfq", "recepción", "aprobación"],
+    subtabs: [
+      { id: "compras", label: "Plan de compras", keywords: ["plan compras"] },
+      { id: "compras", label: "Cotizaciones", keywords: ["cotizaciones", "rfq"] },
+      { id: "compras", label: "Aprobacion", keywords: ["aprobación", "aprobar"] },
+      { id: "compras", label: "Recepcion", keywords: ["recepción", "recibir"] },
+    ],
+  },
+  {
+    tab: "compras",
+    label: "Mis proveedores",
+    icon: Truck,
+    keywords: ["proveedores", "proveedor", "portal proveedor", "evaluación", "calidad proveedor", "pagos proveedor"],
+  },
+  {
+    tab: "logistica",
+    label: "Logística",
+    icon: MapPin,
+    keywords: ["logística", "delivery", "entregas", "rutas", "flota", "envíos", "tracking", "costos envío"],
+    subtabs: [
+      { id: "logistica", label: "Calendario de entregas", keywords: ["calendario", "entregas"] },
+      { id: "logistica", label: "Rutas de delivery", keywords: ["rutas", "delivery"] },
+      { id: "logistica", label: "Seguimiento de envios", keywords: ["seguimiento", "tracking"] },
+      { id: "logistica", label: "Flota", keywords: ["flota", "vehículos", "moto"] },
+    ],
+  },
+  {
+    tab: "devoluciones-calidad",
+    label: "Devoluciones & Calidad",
+    icon: RotateCcw,
+    keywords: ["devoluciones", "calidad", "anomalías", "retorno", "reclamo"],
+  },
+  {
+    tab: "ventas-marketing",
+    label: "Ventas & Marketing",
+    icon: TrendingUp,
+    keywords: ["ventas", "marketing", "forecast", "campañas", "referidos", "conversión"],
+  },
+  {
+    tab: "crm-clientes",
+    label: "Mis clientes",
+    icon: Users,
+    keywords: ["crm", "clientes", "segmentos", "clv", "cliente 360", "segmentación"],
+    subtabs: [
+      { id: "crm-clientes", label: "Mis clientes", keywords: ["crm", "clientes"] },
+      { id: "crm-clientes", label: "Vista 360°", keywords: ["cliente 360", "360"] },
+      { id: "crm-clientes", label: "Segmentos", keywords: ["segmentos", "grupos"] },
+    ],
+  },
+  {
+    tab: "fidelizacion",
+    label: "Clientes frecuentes",
+    icon: Heart,
+    keywords: ["fidelización", "puntos", "loyalty", "wish list", "recompensas", "frecuentes"],
+  },
+  {
+    tab: "encuestas-soporte",
+    label: "Opiniones & Soporte",
+    icon: Star,
+    keywords: ["encuestas", "soporte", "nps", "tickets", "satisfacción", "reseñas", "opiniones"],
+  },
+  {
+    tab: "analytics-bi",
+    label: "Reportes avanzados",
+    icon: BarChart3,
+    keywords: ["analytics", "bi", "análisis", "mapa calor", "abc", "pareto", "bcg", "kpi", "cesta", "reportes"],
+  },
+  {
+    tab: "proyecciones",
+    label: "Proyecciones",
+    icon: TrendingUp,
+    keywords: ["proyecciones", "simulador", "estacionalidad", "períodos", "escenarios"],
+  },
+  {
+    tab: "finanzas",
+    label: "Finanzas",
+    icon: DollarSign,
+    keywords: ["finanzas", "p&g", "balance", "flujo caja", "presupuestos", "rentabilidad", "márgenes", "plata que entra", "ganancias"],
+  },
+  {
+    tab: "finanzas",
+    label: "Tesoreria",
+    icon: Calculator,
+    keywords: ["tesorería", "liquidez", "cheques", "conciliación", "cuentas cobrar", "me deben"],
+  },
+  {
+    tab: "finanzas",
+    label: "Facturacion",
+    icon: FileText,
+    keywords: ["facturación", "e-factura", "impuestos", "cuentas pagar", "les debo"],
+  },
+  {
+    tab: "finanzas",
+    label: "Gastos y activos",
+    icon: DollarSign,
+    keywords: ["gastos", "centros costo", "activos fijos", "seguros", "egresos"],
+  },
+  {
+    tab: "rrhh",
+    label: "Mi equipo",
+    icon: UserCog,
+    keywords: ["rrhh", "recursos humanos", "nómina", "sucursales", "personal", "empleados", "equipo"],
+  },
+  {
+    tab: "proyectos-tareas",
+    label: "Proyectos & Tareas",
+    icon: Target,
+    keywords: ["proyectos", "tareas", "kanban", "metas", "tablero"],
+  },
+  {
+    tab: "comunicaciones",
+    label: "Comunicaciones",
+    icon: MessageSquare,
+    keywords: ["comunicaciones", "chat", "plantillas", "notificaciones", "hub"],
+  },
+  {
+    tab: "alertas-automatizacion",
+    label: "Alertas y automatizacion",
+    icon: Bell,
+    keywords: ["alertas", "automatización", "recordatorios", "flujos", "reglas negocio"],
+  },
+  {
+    tab: "reportes-documentos",
+    label: "Reportes y documentos",
+    icon: FileText,
+    keywords: ["reportes", "documentos", "exportar", "importar", "informe"],
+  },
+  {
+    tab: "agenda-utilidades",
+    label: "Agenda y utilidades",
+    icon: ClipboardList,
+    keywords: ["agenda", "calendario", "notas", "filtros guardados"],
+  },
+  {
+    tab: "seguridad",
+    label: "Seguridad y auditoria",
+    icon: Shield,
+    keywords: ["seguridad", "usuarios", "roles", "permisos", "auditoría", "logs", "cumplimiento"],
+  },
+  {
+    tab: "sistema",
+    label: "Ajustes del sistema",
+    icon: Settings,
+    keywords: ["sistema", "backups", "webhooks", "salud sistema", "restaurar", "ajustes", "configuracion"],
+  },
+  {
+    tab: "agentes",
+    label: "Agentes IA",
+    icon: Bot,
+    keywords: ["agentes", "ia", "inteligencia artificial", "automatización ia", "orquestador"],
+  },
+];
+
+// ── Acciones rápidas ──────────────────────────────────────────────────────────
+
+interface QuickAction {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  navigateTo: string;
+  keywords: string[];
+}
+
+const QUICK_ACTIONS: QuickAction[] = [
+  { id: "nuevo-producto",  label: "Nuevo producto",    icon: Package,      navigateTo: "inventario-almacenes", keywords: ["nuevo producto", "agregar producto", "crear producto"] },
+  { id: "nueva-orden",     label: "Nueva orden",       icon: ShoppingCart, navigateTo: "pos-caja",             keywords: ["nueva orden", "nueva venta", "crear pedido", "nuevo pedido"] },
+  { id: "cerrar-caja",     label: "Cerrar caja",       icon: Monitor,      navigateTo: "pos-caja",             keywords: ["cerrar caja", "arqueo", "cierre turno"] },
+  { id: "hacer-backup",    label: "Hacer backup",      icon: Shield,       navigateTo: "sistema",              keywords: ["backup", "respaldo", "copia seguridad"] },
+  { id: "nueva-compra",    label: "Nueva orden compra", icon: ShoppingBasket, navigateTo: "compras",           keywords: ["nueva compra", "orden compra"] },
+  { id: "registrar-merma", label: "Registrar merma",   icon: Zap,          navigateTo: "inventario-almacenes", keywords: ["merma", "pérdida", "registro merma"] },
+  { id: "nuevo-cliente",   label: "Nuevo cliente",     icon: Users,        navigateTo: "crm-clientes",         keywords: ["nuevo cliente", "agregar cliente", "crear cliente"] },
+  { id: "nuevo-cupon",     label: "Nuevo cupón",       icon: Tag,          navigateTo: "precios-promos",       keywords: ["nuevo cupón", "crear cupón", "descuento"] },
+];
+
+// ── Highlight de texto coincidente ───────────────────────────────────────────
+
+function HighlightText({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <span>{text}</span>;
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+  const parts = text.split(regex);
+  return (
+    <span>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 rounded px-0.5">
+            {part}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </span>
+  );
+}
+
+// ── Skeleton de carga ─────────────────────────────────────────────────────────
+
+function ResultSkeleton() {
+  return (
+    <div className="px-4 py-3 space-y-3 animate-pulse">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-surface shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3.5 bg-gray-200 dark:bg-surface rounded w-2/3" />
+            <div className="h-3 bg-gray-200 dark:bg-surface rounded w-1/3" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Búsqueda local en módulos ─────────────────────────────────────────────────
+
+function searchModules(q: string): SearchResult[] {
+  const results: SearchResult[] = [];
+  const lower = q.toLowerCase();
+
+  for (const mod of MODULE_INDEX) {
+    const labelMatch = mod.label.toLowerCase().includes(lower);
+    const kwMatch = mod.keywords.some(k => k.includes(lower));
+
+    if (labelMatch || kwMatch) {
+      results.push({
+        id: `modulo-${mod.tab}-${mod.label}`,
+        type: "modulo",
+        title: mod.label,
+        subtitle: "Módulo",
+        navigateTo: mod.tab,
+        tab: mod.tab,
+      });
+    }
+
+    // Buscar en subtabs
+    if (mod.subtabs) {
+      for (const sub of mod.subtabs) {
+        const subMatch =
+          sub.label.toLowerCase().includes(lower) ||
+          (sub.keywords ?? []).some(k => k.includes(lower));
+        if (subMatch && !labelMatch) {
+          results.push({
+            id: `subtab-${mod.tab}-${sub.label}`,
+            type: "modulo",
+            title: sub.label,
+            subtitle: `Tab en ${mod.label}`,
+            navigateTo: sub.id,
+            tab: sub.id,
+          });
+        }
+      }
+    }
+  }
+
+  return results.slice(0, 5);
+}
+
+function searchActions(q: string, onNavigate: (tab: string) => void, onClose: () => void): SearchResult[] {
+  const lower = q.toLowerCase();
+  return QUICK_ACTIONS
+    .filter(a =>
+      a.label.toLowerCase().includes(lower) ||
+      a.keywords.some(k => k.includes(lower))
+    )
+    .slice(0, 5)
+    .map(a => ({
+      id: `accion-${a.id}`,
+      type: "accion" as ResultType,
+      title: a.label,
+      subtitle: "Acción rápida",
+      navigateTo: a.navigateTo,
+      tab: a.navigateTo,
+      action: () => { onNavigate(a.navigateTo); onClose(); },
+    }));
+}
+
+// ── Props ─────────────────────────────────────────────────────────────────────
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  onOpen?: () => void;
   onNavigate: (tab: string) => void;
 }
 
-export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
+// ── Metadatos de grupos ───────────────────────────────────────────────────────
+
+const GROUP_META: Record<keyof GroupedResults, { label: string; icon: React.ElementType; color: string }> = {
+  modulos:   { label: "Módulos",         icon: LayoutDashboard, color: "text-primary" },
+  productos: { label: "Productos",       icon: Package,         color: "text-blue-500" },
+  clientes:  { label: "Clientes",        icon: Users,           color: "text-violet-500" },
+  pedidos:   { label: "Pedidos",         icon: ShoppingCart,    color: "text-amber-500" },
+  acciones:  { label: "Acciones rápidas",icon: Zap,             color: "text-emerald-500" },
+};
+
+const GROUP_ORDER: (keyof GroupedResults)[] = ["modulos", "productos", "clientes", "pedidos", "acciones"];
+
+// ── Acceso rápido (estado vacío) ──────────────────────────────────────────────
+
+const QUICK_ACCESS = [
+  { label: "Nuevo pedido",    tab: "pedidos",              icon: ShoppingCart,   color: "text-amber-500 bg-amber-50 dark:bg-amber-900/20" },
+  { label: "Mi stock",        tab: "inventario-almacenes", icon: Boxes,          color: "text-blue-500 bg-blue-50 dark:bg-blue-900/20" },
+  { label: "Mis clientes",    tab: "crm-clientes",         icon: Users,          color: "text-violet-500 bg-violet-50 dark:bg-violet-900/20" },
+  { label: "Caja",            tab: "pos-caja",             icon: Monitor,        color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20" },
+  { label: "Reportes",        tab: "reportes-documentos",  icon: FileText,       color: "text-gray-500 bg-gray-50 dark:bg-surface" },
+  { label: "Promociones",     tab: "precios-promos",       icon: TrendingUp,     color: "text-orange-500 bg-orange-50 dark:bg-orange-900/20" },
+];
+
+// ── Componente principal ──────────────────────────────────────────────────────
+
+export default function GlobalSearch({ open, onClose, onOpen, onNavigate }: Props) {
+  const [query, setQuery]       = useState("");
+  const [grouped, setGrouped]   = useState<GroupedResults>({ modulos: [], productos: [], clientes: [], pedidos: [], acciones: [] });
+  const [loading, setLoading]   = useState(false);
   const [selected, setSelected] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+
+  const inputRef    = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Focus input when opened
+  // Atajo global Ctrl+K / Cmd+K
+  useEffect(() => {
+    const handleGlobalKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        if (open) {
+          onClose();
+        } else {
+          onOpen?.();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKey);
+    return () => window.removeEventListener("keydown", handleGlobalKey);
+  }, [open, onClose, onOpen]);
+
+  // Focus al abrir
   useEffect(() => {
     if (open) {
       setQuery("");
-      setResults([]);
+      setGrouped({ modulos: [], productos: [], clientes: [], pedidos: [], acciones: [] });
       setSelected(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [open]);
 
+  // Búsqueda combinada
   const search = useCallback(async (q: string) => {
-    if (q.trim().length < 2) { setResults([]); return; }
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q.trim())}`);
-      if (res.ok) {
-        const data = await res.json();
-        setResults(data.results ?? []);
-      }
-    } catch { /* silent */ }
-    setLoading(false);
-  }, []);
+    if (q.trim().length < 2) {
+      setGrouped({ modulos: [], productos: [], clientes: [], pedidos: [], acciones: [] });
+      return;
+    }
 
+    setLoading(true);
+
+    // Búsquedas locales (síncronas) — módulos y acciones
+    const modulos  = searchModules(q);
+    const acciones = searchActions(q, onNavigate, onClose);
+
+    // Búsquedas remotas en paralelo
+    const [apiRes] = await Promise.allSettled([
+      fetch(`/api/search?q=${encodeURIComponent(q.trim())}`).then(r => r.ok ? r.json() : { results: [] }),
+    ]);
+
+    const apiResults: SearchResult[] = apiRes.status === "fulfilled"
+      ? (apiRes.value?.results ?? [])
+      : [];
+
+    const productos: SearchResult[] = apiResults
+      .filter((r: SearchResult) => r.type === "producto")
+      .slice(0, 5);
+    const clientes: SearchResult[] = apiResults
+      .filter((r: SearchResult) => r.type === "cliente")
+      .slice(0, 5);
+    const pedidos: SearchResult[] = apiResults
+      .filter((r: SearchResult) => r.type === "pedido")
+      .slice(0, 5);
+
+    setGrouped({ modulos, productos, clientes, pedidos, acciones });
+    setLoading(false);
+  }, [onNavigate, onClose]);
+
+  // Debounce
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => search(query), 300);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query, search]);
 
-  // Keyboard navigation
+  // Lista plana para navegación por teclado
+  const flatResults = GROUP_ORDER.flatMap(g => grouped[g]);
+  const totalResults = flatResults.length;
+
+  // Navegación por teclado
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown") { e.preventDefault(); setSelected(s => Math.min(s + 1, results.length - 1)); }
+      if (e.key === "ArrowDown") { e.preventDefault(); setSelected(s => Math.min(s + 1, totalResults - 1)); }
       if (e.key === "ArrowUp")   { e.preventDefault(); setSelected(s => Math.max(s - 1, 0)); }
-      if (e.key === "Enter" && results[selected]) { handleSelect(results[selected]); }
+      if (e.key === "Enter" && flatResults[selected]) {
+        const r = flatResults[selected];
+        if (r.action) { r.action(); }
+        else if (r.navigateTo) { onNavigate(r.navigateTo); onClose(); }
+      }
       if (e.key === "Escape") { onClose(); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, results, selected]);
+  }, [open, flatResults, selected, totalResults]);
 
-  const handleSelect = (result: SearchResult) => {
-    onNavigate(result.tab);
-    onClose();
+  const handleSelect = (r: SearchResult) => {
+    if (r.action) { r.action(); }
+    else if (r.navigateTo) { onNavigate(r.navigateTo); onClose(); }
   };
 
   if (!open) return null;
 
+  const hasResults = totalResults > 0;
+  const isSearching = query.trim().length >= 2;
+
+  // Índice global para resaltar selección por teclado
+  let globalIdx = 0;
+
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-start justify-center pt-[15vh] bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-start justify-center pt-[12vh] bg-black/50 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-xl mx-4 overflow-hidden border border-gray-200 dark:border-card-border"
+        className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden border border-gray-200 dark:border-card-border"
         onClick={e => e.stopPropagation()}
       >
-        {/* Search input */}
-        <div className="flex flex-wrap items-center gap-3 px-2 sm:px-4 py-2 sm:py-3.5 border-b border-gray-100 dark:border-card-border">
+        {/* ── Input de búsqueda ── */}
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-card-border">
           {loading
             ? <Loader2 className="h-5 w-5 text-gray-400 shrink-0 animate-spin" />
             : <Search className="h-5 w-5 text-gray-400 dark:text-muted shrink-0" />
@@ -105,92 +578,135 @@ export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Buscar productos, clientes, pedidos…"
+            placeholder="Buscar módulos, productos, clientes, pedidos…"
             value={query}
             onChange={e => { setQuery(e.target.value); setSelected(0); }}
             className="flex-1 bg-transparent text-sm text-gray-900 dark:text-foreground placeholder:text-gray-400 dark:placeholder:text-muted outline-none"
           />
-          {query && (
-            <button onClick={() => setQuery("")} className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-surface transition-colors">
-              <X className="h-4 w-4 text-gray-400" />
-            </button>
-          )}
-          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-surface border border-gray-200 dark:border-card-border">
-            Esc
-          </kbd>
+          <div className="flex items-center gap-2 shrink-0">
+            {query && (
+              <button
+                onClick={() => { setQuery(""); setSelected(0); }}
+                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-surface transition-colors"
+              >
+                <X className="h-4 w-4 text-gray-400" />
+              </button>
+            )}
+            <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-surface border border-gray-200 dark:border-card-border">
+              Esc
+            </kbd>
+          </div>
         </div>
 
-        {/* Results */}
-        {query.trim().length >= 2 && (
-          <div className="max-h-96 overflow-y-auto">
-            {results.length === 0 && !loading && (
-              <div className="flex flex-wrap items-center gap-3 px-4 py-8 text-gray-400 dark:text-muted text-sm justify-center">
+        {/* ── Resultados ── */}
+        {isSearching && (
+          <div className="max-h-[60vh] overflow-y-auto">
+            {loading && <ResultSkeleton />}
+
+            {!loading && !hasResults && (
+              <div className="flex items-center gap-3 px-4 py-8 text-gray-400 dark:text-muted text-sm justify-center">
                 <AlertTriangle className="h-5 w-5" />
                 Sin resultados para &ldquo;{query}&rdquo;
               </div>
             )}
-            {results.map((r, i) => {
-              const meta = TYPE_META[r.type];
-              const Icon = meta.icon;
+
+            {!loading && hasResults && GROUP_ORDER.map(groupKey => {
+              const items = grouped[groupKey];
+              if (items.length === 0) return null;
+              const meta = GROUP_META[groupKey];
+              const GroupIcon = meta.icon;
+
               return (
-                <button
-                  key={r.id}
-                  onClick={() => handleSelect(r)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-2 sm:px-4 py-2 sm:py-3 text-left hover:bg-gray-50 dark:hover:bg-surface transition-colors border-b border-gray-50 dark:border-card-border last:border-0",
-                    i === selected && "bg-primary/5 dark:bg-primary/10"
-                  )}
-                >
-                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-gray-100 dark:bg-surface", meta.color)}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">{r.title}</p>
-                    <p className="text-xs text-gray-400 dark:text-muted truncate">{r.subtitle}</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    {r.badge && (
-                      <span
-                        className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
-                        style={{ background: r.badgeColor ?? "#6b7280" }}
-                      >
-                        {r.badge}
-                      </span>
-                    )}
-                    <span className="text-[10px] text-gray-300 dark:text-muted font-medium uppercase tracking-wide">
+                <div key={groupKey}>
+                  {/* Cabecera de grupo */}
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
+                    <GroupIcon className={cn("h-3.5 w-3.5", meta.color)} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-muted">
                       {meta.label}
                     </span>
                   </div>
-                </button>
+
+                  {items.map(r => {
+                    const itemIdx = globalIdx++;
+                    const isSelected = itemIdx === selected;
+                    const Icon = (() => {
+                      if (groupKey === "modulos") {
+                        const mod = MODULE_INDEX.find(m => m.tab === r.navigateTo || m.tab === r.tab);
+                        return mod?.icon ?? LayoutDashboard;
+                      }
+                      if (groupKey === "productos") return Package;
+                      if (groupKey === "clientes")  return Users;
+                      if (groupKey === "pedidos")   return ShoppingCart;
+                      const action = QUICK_ACTIONS.find(a => `accion-${a.id}` === r.id);
+                      return action?.icon ?? Zap;
+                    })();
+
+                    return (
+                      <button
+                        key={r.id}
+                        onClick={() => handleSelect(r)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-b border-gray-50 dark:border-card-border last:border-0",
+                          isSelected
+                            ? "bg-primary/5 dark:bg-primary/10"
+                            : "hover:bg-gray-50 dark:hover:bg-surface"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-gray-100 dark:bg-surface",
+                          meta.color
+                        )}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">
+                            <HighlightText text={r.title} query={query} />
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-muted truncate">{r.subtitle}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {r.badge && (
+                            <span
+                              className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white"
+                              style={{ background: r.badgeColor ?? "#6b7280" }}
+                            >
+                              {r.badge}
+                            </span>
+                          )}
+                          {isSelected && (
+                            <ArrowRight className="h-3.5 w-3.5 text-primary" />
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               );
             })}
           </div>
         )}
 
-        {/* Quick actions when empty */}
-        {query.trim().length < 2 && (
-          <div className="px-2 sm:px-4 py-2 sm:py-3">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-2">Acceso rápido</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {[
-                { label: "Nuevo Pedido",    tab: "pedidos",    icon: ShoppingCart,  color: "text-amber-500 bg-amber-50" },
-                { label: "Inventario",      tab: "inventario", icon: Package,       color: "text-blue-500 bg-blue-50" },
-                { label: "Clientes",        tab: "clientes",   icon: Users,         color: "text-violet-500 bg-violet-50" },
-                { label: "Punto de Venta",  tab: "pos",        icon: ShoppingBasket,color: "text-emerald-500 bg-emerald-50" },
-                { label: "Reportes",        tab: "reportes",   icon: FileText,      color: "text-gray-500 bg-gray-50" },
-                { label: "Promociones",     tab: "promociones",icon: TrendingUp,    color: "text-orange-500 bg-orange-50" },
-              ].map(item => {
+        {/* ── Acceso rápido (estado vacío) ── */}
+        {!isSearching && (
+          <div className="px-4 py-3">
+            <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-2">
+              Acceso rápido
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {QUICK_ACCESS.map(item => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={item.tab}
                     onClick={() => { onNavigate(item.tab); onClose(); }}
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-gray-100 dark:border-card-border hover:border-gray-200 dark:hover:border-card-border/80 transition-colors"
+                    className="flex items-center gap-2.5 p-2.5 rounded-xl border border-gray-100 dark:border-card-border hover:border-gray-200 dark:hover:border-card-border/80 hover:bg-gray-50 dark:hover:bg-surface transition-colors text-left"
                   >
-                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", item.color)}>
-                      <Icon className="h-4 w-4" />
+                    <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", item.color)}>
+                      <Icon className="h-3.5 w-3.5" />
                     </div>
-                    <span className="text-[10px] font-semibold text-gray-600 dark:text-muted text-center leading-tight">{item.label}</span>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-foreground leading-tight">
+                      {item.label}
+                    </span>
                   </button>
                 );
               })}
@@ -198,15 +714,30 @@ export default function GlobalSearch({ open, onClose, onNavigate }: Props) {
           </div>
         )}
 
-        <div className="px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border flex items-center justify-between">
-          <div className="flex flex-wrap items-center gap-3 text-[10px] text-gray-400 dark:text-muted">
-            <span className="flex items-center gap-1"><kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">↑↓</kbd> navegar</span>
-            <span className="flex items-center gap-1"><kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">Enter</kbd> ir</span>
+        {/* ── Footer ── */}
+        <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-t border-gray-100 dark:border-card-border flex items-center justify-between">
+          <div className="flex items-center gap-3 text-[10px] text-gray-400 dark:text-muted">
+            <span className="flex items-center gap-1">
+              <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">↑↓</kbd>
+              navegar
+            </span>
+            <span className="flex items-center gap-1">
+              <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">Enter</kbd>
+              ir
+            </span>
+            <span className="flex items-center gap-1">
+              <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">Esc</kbd>
+              cerrar
+            </span>
           </div>
-          <span className="text-[10px] text-gray-300 dark:text-muted">Ctrl + K para abrir</span>
+          <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-muted">
+            <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">Ctrl</kbd>
+            <span>+</span>
+            <kbd className="bg-white dark:bg-card border border-gray-200 dark:border-card-border px-1 rounded font-mono">K</kbd>
+            <span className="ml-0.5">abrir/cerrar</span>
+          </span>
         </div>
       </div>
     </div>
   );
 }
-

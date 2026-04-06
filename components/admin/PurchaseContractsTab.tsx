@@ -30,7 +30,7 @@ function fmtDate(iso: string) {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
   catch { return iso; }
 }
-function addDays(d: number): string {
+function _addDays(d: number): string {
   const dt = new Date(); dt.setDate(dt.getDate() + d);
   return dt.toISOString().slice(0, 10);
 }

@@ -5,6 +5,9 @@
  * Extracted so they can be unit-tested without needing the Edge runtime.
  */
 
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+
 // ── Request ID generation ──────────────────────────────────────────────────────
 
 export function generateRequestId(): string {
@@ -47,7 +50,30 @@ export function isProtectedAdmin(pathname: string): boolean {
 
 // ── Edge rate limiter (in-memory, per-instance) ───────────────────────────────
 
+const WINDOW_MS = 60_000;
+const MAX_REQUESTS = 60;
+
 export type RateLimitEntry = { count: number; resetAt: number };
+
+export const rlStore = new Map<string, RateLimitEntry>();
+let lastCleanup = Date.now();
+
+function rlCleanup() {
+  const now = Date.now();
+  if (now - lastCleanup < 300_000) return;
+  lastCleanup = now;
+  for (const [k, v] of rlStore) {
+    if (v.resetAt < now) rlStore.delete(k);
+  }
+}
+
+export function getIP(req: NextRequest): string {
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown"
+  );
+}
 
 export function checkEdgeRateLimit(
   map: Map<string, RateLimitEntry>,
@@ -66,6 +92,24 @@ export function checkEdgeRateLimit(
   return true;
 }
 
+export function checkRateLimit(req: NextRequest): NextResponse | null {
+  rlCleanup();
+  const ip = getIP(req);
+  const now = Date.now();
+  const allowed = checkEdgeRateLimit(rlStore, ip, MAX_REQUESTS, WINDOW_MS, now);
+  if (!allowed) {
+    const entry = rlStore.get(ip)!;
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes. Intente de nuevo en un minuto." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((entry.resetAt - now) / 1000)) },
+      },
+    );
+  }
+  return null;
+}
+
 // ── Content-Security-Policy ───────────────────────────────────────────────────
 
 /**
@@ -82,21 +126,21 @@ export function buildCSP(pathname: string, nonce?: string): string {
     pathname.startsWith("/admin") || pathname.startsWith("/superadmin");
 
   const scriptSrc = nonce
-    ? `'self' 'nonce-${nonce}' 'unsafe-eval'`
-    : `'self' 'unsafe-inline' 'unsafe-eval'`;
+    ? `'self' 'nonce-${nonce}' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`
+    : `'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vitals.vercel-insights.com`;
 
   const directives: Record<string, string> = {
-    "default-src":              "'self'",
-    "script-src":               scriptSrc,
-    "style-src":                "'self' 'unsafe-inline'",
-    "img-src":                  "* data: blob:",
-    "font-src":                 "'self' data:",
-    "connect-src":              "* data:",
-    "media-src":                "'self'",
-    "object-src":               "'none'",
-    "base-uri":                 "'self'",
-    "form-action":              "'self'",
-    "frame-ancestors":          isAdminRoute ? "'none'" : "'self'",
+    "default-src":               "'self'",
+    "script-src":                scriptSrc,
+    "style-src":                 "'self' 'unsafe-inline'",
+    "img-src":                   "* data: blob:",
+    "font-src":                  "'self' data:",
+    "connect-src":               "'self' data: https://*.supabase.co wss://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://clarity.ms https://*.clarity.ms https://nominatim.openstreetmap.org https://va.vercel-scripts.com https://vitals.vercel-insights.com https://api.apis.net.pe https://eldni.com",
+    "media-src":                 "'self'",
+    "object-src":                "'none'",
+    "base-uri":                  "'self'",
+    "form-action":               "'self'",
+    "frame-ancestors":           isAdminRoute ? "'none'" : "'self'",
     "upgrade-insecure-requests": "",
   };
 

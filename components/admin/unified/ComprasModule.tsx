@@ -1,6 +1,22 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
+import {
+  Lightbulb, ClipboardList, Users, PackageCheck,
+  Truck, BarChart3,
+  ShoppingCart, ShoppingBasket, Clock, DollarSign, Building2, AlertTriangle, CreditCard,
+  TrendingUp, CheckCircle2, RefreshCw, FileDown, Maximize2, X as XIcon,
+} from "lucide-react";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
+import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import { cn } from "@/lib/utils";
+import { ChartTooltip } from "@/lib/chart-tooltip";
+import {
+  PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area,
+  ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Legend, ReferenceLine,
+} from "recharts";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -8,47 +24,568 @@ const S = () => (
   </div>
 );
 
-const PurchaseOrdersTab = dynamic(() => import("@/components/admin/PurchaseOrdersTab"), { loading: S });
-const PurchasePlanningTab = dynamic(() => import("@/components/admin/PurchasePlanningTab"), { loading: S });
-const PurchaseApprovalTab = dynamic(() => import("@/components/admin/PurchaseApprovalTab"), { loading: S });
-const PurchaseContractsTab = dynamic(() => import("@/components/admin/PurchaseContractsTab"), { loading: S });
-const RFQTab = dynamic(() => import("@/components/admin/RFQTab"), { loading: S });
-const ReceivingTab = dynamic(() => import("@/components/admin/ReceivingTab"), { loading: S });
+export const TabError = () => (
+  <div className="text-center py-12">
+    <p className="text-sm text-red-500">Error al cargar el módulo</p>
+    <button onClick={() => window.location.reload()} className="mt-2 text-xs text-[#00B4A6] hover:underline">Recargar página</button>
+  </div>
+);
 
-const TABS = [
-  { id: "ordenes" as const, label: "Órdenes" },
-  { id: "planificacion" as const, label: "Planificación" },
-  { id: "aprobaciones" as const, label: "Aprobaciones" },
-  { id: "contratos" as const, label: "Contratos" },
-  { id: "cotizaciones" as const, label: "Cotizaciones (RFQ)" },
-  { id: "recepcion" as const, label: "Recepción" },
+const SugerenciasCompraTab = dynamic(() => import("@/components/admin/compras/SugerenciasCompraTab"), { loading: S });
+const PurchaseOrdersTab = dynamic(() => import("@/components/admin/PurchaseOrdersTab"), { loading: S });
+const SuppliersTab = dynamic(() => import("@/components/admin/SuppliersTab"), { loading: S });
+const ReceivingTab = dynamic(() => import("@/components/admin/ReceivingTab"), { loading: S });
+const PuntoCompraView = dynamic(() => import("@/components/admin/pos/PuntoCompraView"), { loading: S });
+const SupplierComparator = dynamic(() => import("@/components/admin/SupplierComparator"), { ssr: false, loading: S });
+
+const MODULE_ID = "compras";
+
+const CHART_COLORS = ['#00B4A6', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653', '#6b705c'];
+
+const TABS: AdminTab[] = [
+  { id: "punto-compra", label: "Punto de Compra", icon: ShoppingBasket },
+  { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+  { id: "sugerencias", label: "Sugerencias", icon: Lightbulb },
+  { id: "ordenes-compra", label: "Ordenes", icon: ClipboardList },
+  { id: "proveedores", label: "Proveedores", icon: Users },
+  { id: "recepcion", label: "Recepcion", icon: PackageCheck },
+  { id: "comparador", label: "Comparador", icon: BarChart3 },
 ];
 
-export default function ComprasModule() {
-  const [sub, setSub] = useState(TABS[0].id);
-  return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none border-b border-gray-200 dark:border-card-border -mx-1 px-1">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSub(t.id)}
-            className={`shrink-0 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${
-              sub === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
+// ── Dashboard de Compras ────────────────────────────────────────────────────
+
+// Mejora 5: Favoritos Compras
+function useComprasFavCharts(key: string) {
+  const [favs, setFavs] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try { return JSON.parse(localStorage.getItem(`fav-charts-${key}`) || "[]"); } catch { return []; }
+  });
+  const toggle = (id: string) => setFavs(prev => {
+    const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
+    try { localStorage.setItem(`fav-charts-${key}`, JSON.stringify(next)); } catch { /* SSR or quota */ }
+    return next;
+  });
+  return { favs, toggle, isFav: (id: string) => favs.includes(id) };
+}
+function ComprasFavStar({ id, favs }: { id: string; favs: ReturnType<typeof useComprasFavCharts> }) {
+  return <button onClick={() => favs.toggle(id)} className="p-1 hover:bg-gray-100 rounded transition-colors text-sm">{favs.isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300">&#9734;</span>}</button>;
+}
+
+function ComprasDashboard() {
+  const [data, setData] = useState<any>({ purchases: [], suppliers: [], payables: [] });
+  const [loading, setLoading] = useState(true);
+  // Mejora 12: Click-to-filter PieChart proveedores
+  const [pieFilter, setPieFilter] = useState<string | null>(null);
+  // Mejora 13: Expand chart
+  const [expandedChart, setExpandedChart] = useState<string | null>(null);
+  // Mejora 1: Period selector
+  const [period, setPeriod] = useState<"today" | "7d" | "30d" | "month">("30d");
+  // Mejora 3: Auto-refresh
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [minAgo, setMinAgo] = useState(0);
+  // Mejora 5: Favoritos
+  const compFavs = useComprasFavCharts("compras");
+
+  useEffect(() => {
+    Promise.allSettled([
+      fetch('/api/purchases').then(r => r.ok ? r.json() : []),
+      fetch('/api/suppliers').then(r => r.ok ? r.json() : []),
+      fetch('/api/payables').then(r => r.ok ? r.json() : []),
+    ]).then(([pRes, sRes, paRes]) => {
+      setData({
+        purchases: pRes.status === 'fulfilled' ? (Array.isArray(pRes.value) ? pRes.value : pRes.value?.purchases || pRes.value?.data || []) : [],
+        suppliers: sRes.status === 'fulfilled' ? (Array.isArray(sRes.value) ? sRes.value : sRes.value?.suppliers || sRes.value?.data || []) : [],
+        payables: paRes.status === 'fulfilled' ? (Array.isArray(paRes.value) ? paRes.value : paRes.value?.payables || paRes.value?.data || []) : [],
+      });
+      setLoading(false);
+      setLastRefresh(new Date());
+    });
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setMinAgo(Math.floor((Date.now() - lastRefresh.getTime()) / 60000)), 60000);
+    return () => clearInterval(id);
+  }, [lastRefresh]);
+
+  /* ── KPIs ── */
+  const kpis = useMemo(() => {
+    const totalOC = data.purchases.length;
+    const ocPendientes = data.purchases.filter((p: any) => p.status !== 'completed' && p.status !== 'recibido' && p.status !== 'cancelado').length;
+    const totalGastado = data.purchases.reduce((s: number, p: any) => s + (p.total || p.grandTotal || 0), 0);
+    const totalProveedores = data.suppliers.length;
+    const deudaTotal = data.payables.reduce((s: number, p: any) => s + (p.amount || p.balance || 0), 0);
+    const now = new Date();
+    const deudaVencida = data.payables
+      .filter((p: any) => p.status !== 'pagado' && p.status !== 'paid' && p.dueDate && new Date(p.dueDate) < now)
+      .reduce((s: number, p: any) => s + (p.amount || p.balance || 0), 0);
+    return { totalOC, ocPendientes, totalGastado, totalProveedores, deudaTotal, deudaVencida };
+  }, [data]);
+
+  /* ── Compras por mes ── */
+  const purchasesByMonth = useMemo(() => {
+    const months: Record<string, { total: number; count: number }> = {};
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    // Initialize last 6 months
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      months[key] = { total: 0, count: 0 };
+    }
+    data.purchases.forEach((p: any) => {
+      const d = new Date(p.createdAt || p.date || p.orderDate || Date.now());
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (months[key]) {
+        months[key].total += (p.total || p.grandTotal || 0);
+        months[key].count += 1;
+      }
+    });
+    return Object.entries(months).map(([key, val]) => {
+      const [y, m] = key.split('-');
+      return { mes: monthNames[parseInt(m) - 1], total: Math.round(val.total), count: val.count };
+    });
+  }, [data.purchases]);
+
+  /* ── Gasto por proveedor ── */
+  const supplierSpend = useMemo(() => {
+    const g: Record<string, { name: string; total: number; count: number }> = {};
+    data.purchases.forEach((p: any) => {
+      const name = p.supplierName || p.supplier?.name || p.supplier || 'Sin proveedor';
+      const id = name;
+      if (!g[id]) g[id] = { name, total: 0, count: 0 };
+      g[id].total += (p.total || p.grandTotal || 0);
+      g[id].count += 1;
+    });
+    return Object.values(g).sort((a, b) => b.total - a.total).slice(0, 8);
+  }, [data.purchases]);
+
+  const totalSpend = useMemo(() => supplierSpend.reduce((s, v) => s + v.total, 0), [supplierSpend]);
+
+  /* ── Estado de OC por mes (stacked) ── */
+  const statusByMonth = useMemo(() => {
+    const months: Record<string, Record<string, number>> = {};
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${monthNames[d.getMonth()]}`;
+      months[key] = { Pendiente: 0, 'En proceso': 0, Recibido: 0, Cancelado: 0 };
+    }
+    data.purchases.forEach((p: any) => {
+      const d = new Date(p.createdAt || p.date || p.orderDate || Date.now());
+      const key = monthNames[d.getMonth()];
+      if (!months[key]) return;
+      const st = p.status || 'pendiente';
+      if (st === 'pendiente' || st === 'pending' || st === 'draft') months[key].Pendiente += 1;
+      else if (st === 'en_proceso' || st === 'processing' || st === 'ordered' || st === 'enviado') months[key]['En proceso'] += 1;
+      else if (st === 'completed' || st === 'recibido' || st === 'received') months[key].Recibido += 1;
+      else if (st === 'cancelado' || st === 'cancelled' || st === 'canceled') months[key].Cancelado += 1;
+      else months[key].Pendiente += 1;
+    });
+    return Object.entries(months).map(([mes, vals]) => ({ mes, ...vals }));
+  }, [data.purchases]);
+
+  /* ── Deuda por proveedor ── */
+  const debtBySupplier = useMemo(() => {
+    const g: Record<string, { name: string; total: number; vencida: number; dueDate: string }> = {};
+    const now = new Date();
+    data.payables.forEach((p: any) => {
+      const name = p.supplierName || p.supplier?.name || p.supplier || 'Sin nombre';
+      if (!g[name]) g[name] = { name, total: 0, vencida: 0, dueDate: '' };
+      const amt = p.amount || p.balance || 0;
+      g[name].total += amt;
+      if (p.dueDate && new Date(p.dueDate) < now && p.status !== 'pagado' && p.status !== 'paid') {
+        g[name].vencida += amt;
+      }
+      if (!g[name].dueDate || (p.dueDate && p.dueDate > g[name].dueDate)) {
+        g[name].dueDate = p.dueDate || '';
+      }
+    });
+    return Object.values(g).sort((a, b) => b.total - a.total).slice(0, 8);
+  }, [data.payables]);
+
+  /* ── Proximos pagos ── */
+  const nextPayments = useMemo(() => {
+    const now = new Date();
+    return [...data.payables]
+      .filter((p: any) => p.status !== 'pagado' && p.status !== 'paid')
+      .sort((a: any, b: any) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime())
+      .slice(0, 5)
+      .map((p: any) => {
+        const due = new Date(p.dueDate || Date.now());
+        const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        return {
+          name: p.supplierName || p.supplier?.name || p.supplier || 'Proveedor',
+          amount: p.amount || p.balance || 0,
+          dueDate: p.dueDate,
+          days: diffDays,
+          id: p.id,
+        };
+      });
+  }, [data.payables]);
+
+  /* ── Tendencia con promedio movil ── */
+  const trendData = useMemo(() => {
+    return purchasesByMonth.map((m, i, arr) => {
+      const windowSize = Math.min(3, i + 1);
+      const avg = arr.slice(Math.max(0, i - windowSize + 1), i + 1).reduce((s, v) => s + v.total, 0) / windowSize;
+      return { ...m, promedio: Math.round(avg) };
+    });
+  }, [purchasesByMonth]);
+
+  /* ── Cambio real mes anterior vs mes actual ── */
+  const kpiChanges = useMemo(() => {
+    if (purchasesByMonth.length < 2) return { gastado: undefined, oc: undefined };
+    const current = purchasesByMonth[purchasesByMonth.length - 1];
+    const previous = purchasesByMonth[purchasesByMonth.length - 2];
+    return {
+      gastado: previous.total > 0 ? ((current.total - previous.total) / previous.total) * 100 : undefined,
+      oc: previous.count > 0 ? ((current.count - previous.count) / previous.count) * 100 : undefined,
+    };
+  }, [purchasesByMonth]);
+
+  /* ── Skeleton loading ── */
+  if (loading) return (
+    <div className="space-y-6 animate-pulse">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-24 bg-gray-200 rounded-2xl" />
         ))}
       </div>
-      {sub === "ordenes" && <PurchaseOrdersTab />}
-      {sub === "planificacion" && <PurchasePlanningTab />}
-      {sub === "aprobaciones" && <PurchaseApprovalTab />}
-      {sub === "contratos" && <PurchaseContractsTab />}
-      {sub === "cotizaciones" && <RFQTab />}
+      <div className="h-72 bg-gray-200 rounded-2xl" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="h-72 bg-gray-200 rounded-2xl" />
+        <div className="h-72 bg-gray-200 rounded-2xl" />
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="h-64 bg-gray-200 rounded-2xl" />
+        <div className="h-64 bg-gray-200 rounded-2xl" />
+      </div>
+    </div>
+  );
+
+  const kpiCards = [
+    { label: "OC totales", value: kpis.totalOC, icon: ShoppingCart, color: "#457b9d", borderColor: "border-l-[#457b9d]", change: kpiChanges.oc != null ? Math.round(kpiChanges.oc * 10) / 10 : undefined },
+    { label: "OC pendientes", value: kpis.ocPendientes, icon: Clock, color: "#f97316", borderColor: "border-l-[#f97316]" },
+    { label: "Total gastado", value: `S/ ${kpis.totalGastado.toLocaleString()}`, icon: DollarSign, color: "#00B4A6", borderColor: "border-l-[#00B4A6]", change: kpiChanges.gastado != null ? Math.round(kpiChanges.gastado * 10) / 10 : undefined },
+    { label: "Proveedores", value: kpis.totalProveedores, icon: Building2, color: "#9b5de5", borderColor: "border-l-[#9b5de5]" },
+    { label: "Deuda total", value: `S/ ${kpis.deudaTotal.toLocaleString()}`, icon: CreditCard, color: "#f97316", borderColor: "border-l-[#f97316]" },
+    { label: "Deuda vencida", value: `S/ ${kpis.deudaVencida.toLocaleString()}`, icon: AlertTriangle, color: "#e63946", borderColor: "border-l-[#e63946]", bad: kpis.deudaVencida > 0 },
+  ];
+
+  return (
+    <div className="space-y-6">
+
+      {/* === Controls: Period + Refresh + Export === */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-1.5">
+          {([{ id: "today" as const, label: "Hoy" }, { id: "7d" as const, label: "7 dias" }, { id: "30d" as const, label: "30 dias" }, { id: "month" as const, label: "Este mes" }]).map(p => (
+            <button key={p.id} onClick={() => setPeriod(p.id)} className={cn("px-3 py-1 rounded-full text-xs font-medium transition-colors", period === p.id ? "bg-[#00B4A6] text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200")}>{p.label}</button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 text-xs text-gray-400">
+            <span>Actualizado hace {minAgo} min</span>
+            <button onClick={() => { setLastRefresh(new Date()); setMinAgo(0); }} className="p-1 hover:bg-gray-100 rounded transition-colors"><RefreshCw className="h-3 w-3" /></button>
+          </div>
+          <button onClick={() => window.print()} className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 hover:bg-gray-100 transition-colors"><FileDown className="h-3 w-3" /> Exportar</button>
+        </div>
+      </div>
+
+      {/* === Alertas Compras === */}
+      {(kpis.ocPendientes > 0 || kpis.deudaVencida > 0) && (
+        <div className="flex flex-wrap gap-2">
+          {kpis.ocPendientes > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700"><AlertTriangle className="h-3 w-3" /> {kpis.ocPendientes} ordenes pendientes</span>}
+          {kpis.deudaVencida > 0 && <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-700"><AlertTriangle className="h-3 w-3" /> S/ {kpis.deudaVencida.toLocaleString()} deuda vencida</span>}
+        </div>
+      )}
+
+      {/* === KPIs (6 cards) === */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {kpiCards.map((k, i) => {
+          const Icon = k.icon;
+          return (
+            <div key={i} className={cn("bg-white rounded-2xl shadow-sm p-4 border-l-[3px] border border-gray-100", k.borderColor)}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
+                  <div className="flex items-center gap-1">
+                    <p className={cn("text-2xl font-mono font-bold mt-1", (k as any).bad ? "text-red-600" : "text-gray-900")}>{k.value}</p>
+                  </div>
+                  {(k as any).change != null && (
+                    <p className={cn("text-[10px] font-medium mt-0.5", (k as any).change >= 0 ? "text-emerald-600" : "text-red-500")}>
+                      {(k as any).change >= 0 ? "+" : ""}{(k as any).change}% vs mes ant.
+                    </p>
+                  )}
+                </div>
+                <div className="h-9 w-9 rounded-full flex items-center justify-center shrink-0" style={{ backgroundColor: `${k.color}15` }}>
+                  <Icon className="h-4.5 w-4.5" style={{ color: k.color }} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* === Compras por Mes (AreaChart) === */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <div className="flex items-center gap-2 mb-4"><ComprasFavStar id="compras-mes" favs={compFavs} /><h3 className="text-sm font-bold text-gray-900">Compras por mes (ultimos 6 meses)</h3></div>
+        <ResponsiveContainer width="100%" height={280}>
+          <AreaChart data={purchasesByMonth}>
+            <defs>
+              <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#00B4A6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#00B4A6" stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
+            <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
+            <Tooltip content={({ active, payload, label }: any) => {
+              if (!active || !payload?.length) return null;
+              return (
+                <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3">
+                  <p className="text-xs font-semibold text-gray-900">{label}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    S/ {(payload[0]?.value || 0).toLocaleString()} ({payload[0]?.payload?.count || 0} OCs)
+                  </p>
+                </div>
+              );
+            }} />
+            <Area type="monotone" dataKey="total" stroke="#00B4A6" strokeWidth={2.5} fill="url(#areaGradient)" name="Total compras" />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* === Distribucion por Proveedor (PieChart + tabla) === */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-gray-900">Gasto por proveedor</h3>
+            <div className="flex items-center gap-2">
+              {pieFilter && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#00B4A6]/10 text-[#00B4A6] text-xs font-bold">
+                  {pieFilter}
+                  <button onClick={() => setPieFilter(null)} className="hover:bg-[#00B4A6]/20 rounded-full p-0.5 transition-colors"><XIcon className="h-3 w-3" /></button>
+                </span>
+              )}
+              <button onClick={() => setExpandedChart("proveedor")} className="p-1 hover:bg-gray-100 rounded transition-colors" title="Expandir"><Maximize2 className="h-3.5 w-3.5 text-gray-400" /></button>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <PieChart>
+              <Pie data={supplierSpend} innerRadius={55} outerRadius={90} dataKey="total" paddingAngle={2} className="cursor-pointer"
+                label={({ name, percent }: any) => `${(name || "").substring(0, 10)} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                onClick={(_: unknown, idx: number) => setPieFilter(prev => prev === supplierSpend[idx]?.name ? null : supplierSpend[idx]?.name ?? null)}
+              >
+                {supplierSpend.map((_, i) => (
+                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip content={<ChartTooltip />} />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-900 mb-4">Ranking de proveedores</h3>
+          <div className="space-y-3 overflow-y-auto max-h-[280px]">
+            {supplierSpend.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-8">Sin datos de proveedores</p>
+            ) : (
+              supplierSpend.map((s, i) => {
+                const pct = totalSpend > 0 ? (s.total / totalSpend) * 100 : 0;
+                return (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-xs font-mono font-bold w-5 text-gray-400 shrink-0">#{i + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-gray-800 truncate">{s.name}</span>
+                        <span className="text-xs font-mono font-bold text-gray-900 shrink-0 ml-2">S/ {s.total.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
+                        </div>
+                        <span className="text-[10px] text-gray-400 shrink-0 w-10 text-right">{pct.toFixed(0)}%</span>
+                        <span className="text-[10px] text-gray-400 shrink-0">{s.count} OCs</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* === Estado de OC (BarChart stacked) === */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-900 mb-4">Estado de ordenes por mes</h3>
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart data={statusByMonth}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
+            <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
+            <YAxis tick={{ fontSize: 11 }} className="fill-gray-500" />
+            <Tooltip content={<ChartTooltip />} />
+            <Legend iconType="circle" formatter={(value: any) => <span className="text-xs text-gray-600">{value}</span>} />
+            <Bar dataKey="Pendiente" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
+            <Bar dataKey="En proceso" stackId="a" fill="#457b9d" />
+            <Bar dataKey="Recibido" stackId="a" fill="#00B4A6" />
+            <Bar dataKey="Cancelado" stackId="a" fill="#e63946" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* === Deuda por Proveedor (horizontal) + Proximos Pagos === */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-900 mb-4">Deuda por proveedor</h3>
+          {debtBySupplier.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-12">Sin deudas registradas</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={debtBySupplier} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(0,0,0,0.06)" />
+                <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
+                <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10 }} className="fill-gray-600" />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="total" name="Deuda total" radius={[0, 6, 6, 0]} barSize={14}>
+                  {debtBySupplier.map((d, i) => (
+                    <Cell key={i} fill={d.vencida > 0 ? "#e63946" : d.total > 500 ? "#f97316" : "#00B4A6"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+
+        <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-900 mb-4">Proximos pagos</h3>
+          {nextPayments.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-12">Sin pagos pendientes</p>
+          ) : (
+            <div className="space-y-3">
+              {nextPayments.map((p, i) => {
+                const isOverdue = p.days < 0;
+                const isUrgent = p.days >= 0 && p.days <= 7;
+                const badgeColor = isOverdue
+                  ? "bg-red-100 text-red-700"
+                  : isUrgent
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-green-100 text-green-700";
+                const dotColor = isOverdue ? "bg-red-500" : isUrgent ? "bg-amber-500" : "bg-green-500";
+
+                return (
+                  <div key={p.id || i} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50/50">
+                    <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", dotColor)} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
+                      <p className="text-lg font-mono font-bold text-gray-900">S/ {p.amount.toLocaleString()}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className={cn("text-[10px] font-medium px-2 py-0.5 rounded-full", badgeColor)}>
+                        {isOverdue ? `Vencido ${Math.abs(p.days)}d` : p.days === 0 ? "Hoy" : `En ${p.days}d`}
+                      </span>
+                      <button className="text-[10px] font-semibold text-[#00B4A6] hover:underline flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> Pagado
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* === Tendencia de Gastos vs Promedio Movil (ComposedChart) === */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-900 mb-1">Tendencia de gastos</h3>
+        <p className="text-[10px] text-gray-400 mb-4">Gasto real vs promedio movil 3 meses</p>
+        <ResponsiveContainer width="100%" height={260}>
+          <ComposedChart data={trendData}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
+            <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
+            <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
+            <Tooltip content={<ChartTooltip />} />
+            <Legend iconType="circle" formatter={(value: any) => <span className="text-xs text-gray-600">{value}</span>} />
+            <Bar dataKey="total" fill="#00B4A6" radius={[6, 6, 0, 0]} name="Gasto real" barSize={28} fillOpacity={0.85} />
+            <Line type="monotone" dataKey="promedio" stroke="#f97316" strokeWidth={2.5} dot={{ r: 4, fill: "#f97316", strokeWidth: 0 }} name="Prom. movil 3m" />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Mejora 13: Expand chart modal */}
+      {expandedChart && (
+        <div className="fixed inset-0 z-50 bg-white p-8 overflow-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-bold text-gray-900">Gasto por proveedor</h2>
+            <button onClick={() => setExpandedChart(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors"><XIcon className="h-5 w-5 text-gray-500" /></button>
+          </div>
+          <div style={{ height: 500 }}>
+            <ResponsiveContainer width="100%" height={500}>
+              <PieChart>
+                <Pie data={supplierSpend} innerRadius={100} outerRadius={200} dataKey="total" paddingAngle={2} label>
+                  {supplierSpend.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                </Pie>
+                <Tooltip content={<ChartTooltip />} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Componente principal ────────────────────────────────────────────────────
+
+export default function ComprasModule() {
+  const [sub, setSub] = useState(() => {
+    if (typeof window === "undefined") return TABS[0].id;
+    return localStorage.getItem(`admin-last-tab-${MODULE_ID}`) || TABS[0].id;
+  });
+  useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
+
+  // Escuchar evento de navegación desde PuntoCompraView (botón "Ver en Órdenes")
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const tabId = (e as CustomEvent).detail;
+      if (tabId && TABS.some(t => t.id === tabId)) setSub(tabId);
+    };
+    window.addEventListener("compras-navigate-tab", handler);
+    return () => window.removeEventListener("compras-navigate-tab", handler);
+  }, []);
+
+
+
+  return (
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Compras"
+        description="Pedidos a proveedores, recepción y cuentas por pagar"
+        icon={Truck}
+      />
+
+
+
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId="compras"
+      />
+
+      {sub === "punto-compra" && <PuntoCompraView />}
+      {sub === "dashboard" && <ComprasDashboard />}
+      {sub === "sugerencias" && <SugerenciasCompraTab />}
+      {sub === "ordenes-compra" && <PurchaseOrdersTab />}
+      {sub === "proveedores" && <SuppliersTab />}
       {sub === "recepcion" && <ReceivingTab />}
+      {sub === "comparador" && <SupplierComparator />}
     </div>
   );
 }

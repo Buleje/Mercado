@@ -8,7 +8,6 @@ import {
   searchMedia,
 } from "@/lib/cms-db/media";
 import { MediaSchema } from "@/lib/cms/types";
-import { z } from "zod";
 
 // ═══════════════════════════════════════════════════════
 // GET /api/cms/media - List all media
@@ -45,19 +44,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const validated = MediaSchema.parse(body);
+    const parsed = MediaSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Datos inválidos" },
+        { status: 400 }
+      );
+    }
+    const validated = parsed.data;
 
     const media = await createMedia(validated);
 
     return NextResponse.json(media, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Datos inválidos", details: error.issues },
-        { status: 400 }
-      );
-    }
-
     console.error("[cms/media] POST error:", error);
     return NextResponse.json(
       { error: "Error al crear medio" },

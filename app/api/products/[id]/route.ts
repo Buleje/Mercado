@@ -75,14 +75,14 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
     }
 
     const requestId = req.headers.get("x-request-id") ?? undefined;
-    await logActivity(
+    logActivity(
       "Editar",
       "producto",
       `Producto actualizado: ${updated.name} (S/${updated.price})`,
       String(updated.id),
       "admin",
       requestId,
-    );
+    ).catch(() => {});
     invalidate(`dashboard:${auth.tenantId}`);
     return NextResponse.json(updated);
   } catch (e) {
@@ -106,7 +106,7 @@ export async function DELETE(req: NextRequest, ctx: RouteCtx) {
 
     await ProductsDB.delete(numId);
     const requestId = req.headers.get("x-request-id") ?? undefined;
-    await logActivity("Eliminar", "producto", `Producto eliminado: ${existing.name}`, String(numId), "admin", requestId);
+    logActivity("Eliminar", "producto", `Producto eliminado: ${existing.name}`, String(numId), "admin", requestId).catch(() => {});
     invalidate(`dashboard:${auth.tenantId}`);
     return NextResponse.json({ ok: true });
   } catch (e) {

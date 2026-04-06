@@ -20,7 +20,7 @@ test.describe("Registro → Checkout Flow", () => {
     await expect(page.getByText("Crea tu tienda")).toBeVisible();
 
     // Fill store info
-    await page.getByPlaceholder("Bodega San Martín").fill(STORE_NAME);
+    await page.getByPlaceholder("Buleje").fill(STORE_NAME);
     // Wait for slug auto-generation and availability check
     await page.waitForTimeout(700);
 
@@ -67,7 +67,7 @@ test.describe("Registro → Checkout Flow", () => {
 
     // Navigate to step 2 with minimal valid data
     const uniquePro = Date.now().toString(36);
-    await page.getByPlaceholder("Bodega San Martín").fill(`Pro Store ${uniquePro}`);
+    await page.getByPlaceholder("Buleje").fill(`Pro Store ${uniquePro}`);
     await page.waitForTimeout(700);
     await page.getByPlaceholder("correo@ejemplo.com").fill(`pro-${uniquePro}@example.com`);
     await page.getByRole("button", { name: /Siguiente/i }).click();
@@ -94,7 +94,7 @@ test.describe("Registro → Checkout Flow", () => {
     // Navigate to step 3 with valid data
     const uniqueVal = Date.now().toString(36);
     await page.goto("/registro");
-    await page.getByPlaceholder("Bodega San Martín").fill(`Val Store ${uniqueVal}`);
+    await page.getByPlaceholder("Buleje").fill(`Val Store ${uniqueVal}`);
     await page.waitForTimeout(700);
     await page.getByPlaceholder("correo@ejemplo.com").fill(`val-${uniqueVal}@example.com`);
     await page.getByRole("button", { name: /Siguiente/i }).click();
@@ -117,7 +117,7 @@ test.describe("Registro → Checkout Flow", () => {
     await page.goto("/registro");
 
     // Fill Step 1
-    await page.getByPlaceholder("Bodega San Martín").fill(`Nav Store ${uniqueNav}`);
+    await page.getByPlaceholder("Buleje").fill(`Nav Store ${uniqueNav}`);
     await page.waitForTimeout(700);
     await page.getByPlaceholder("correo@ejemplo.com").fill(`nav-${uniqueNav}@example.com`);
 
@@ -138,7 +138,7 @@ test.describe("Registro → Checkout Flow", () => {
 
     // Go back to Step 1 — store name should be preserved
     await page.getByRole("button", { name: /Atrás/i }).click();
-    await expect(page.getByPlaceholder("Bodega San Martín")).toHaveValue(`Nav Store ${uniqueNav}`);
+    await expect(page.getByPlaceholder("Buleje")).toHaveValue(`Nav Store ${uniqueNav}`);
   });
 
   test("paid plan shows checkout link on success", async ({ page }) => {
@@ -147,7 +147,7 @@ test.describe("Registro → Checkout Flow", () => {
     const uniquePaid = Date.now().toString(36);
 
     await page.goto("/registro?plan=pro");
-    await page.getByPlaceholder("Bodega San Martín").fill(`Paid Store ${uniquePaid}`);
+    await page.getByPlaceholder("Buleje").fill(`Paid Store ${uniquePaid}`);
     await page.waitForTimeout(700);
     await page.getByPlaceholder("correo@ejemplo.com").fill(`paid-${uniquePaid}@example.com`);
     await page.getByRole("button", { name: /Siguiente/i }).click();

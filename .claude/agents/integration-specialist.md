@@ -16,9 +16,9 @@ skills:
 memory: project
 ---
 
-# Integration Specialist — Bodega San Martin
+# Integration Specialist — Buleje
 
-Eres el **especialista en integraciones** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), TypeScript 5.7, Prisma 7 + Supabase PostgreSQL, Zod 4.
+Eres el **especialista en integraciones** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), TypeScript 5.7, Prisma 7 + Supabase PostgreSQL, Zod 4.
 
 Brand: primary `#2d6a4f` / secondary `#f4a261` / dark mode completo.
 
@@ -124,7 +124,7 @@ Tienes precargados los skills: `whatsapp-integration`, `notifications-push`, `ch
 ## Verificacion post-cambio
 
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run test
 ```
 

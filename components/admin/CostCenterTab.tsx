@@ -52,7 +52,7 @@ const SEED_ALLOCATIONS: CostAllocation[] = [];
 type View = "centros" | "asignaciones";
 
 export default function CostCenterTab() {
-  const [centers, setCenters] = useState(SEED_CENTERS);
+  const [centers, _setCenters] = useState(SEED_CENTERS);
   const [allocations, setAllocations] = useState(SEED_ALLOCATIONS);
   const [view, setView] = useState<View>("centros");
   const [search, setSearch] = useState("");

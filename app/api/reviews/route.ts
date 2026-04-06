@@ -1,10 +1,14 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { ReviewsDB } from "@/lib/jsondb";
+import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
+  const limited = applyRateLimit(req, "MODERATE", "reviews");
+  if (limited) return limited;
+
   try {
     const { searchParams } = new URL(req.url);
     const all = searchParams.get("all") === "1";
@@ -12,7 +16,9 @@ export async function GET(req: NextRequest) {
     const productId = productIdParam ? Number(productIdParam) : undefined;
 
     if (all) {
-      const reviews = await ReviewsDB.getAll();
+      const auth = await requireAdmin(req);
+      if (auth instanceof NextResponse) return auth;
+      const reviews = await ReviewsDB.getAll(auth.tenantId);
       return NextResponse.json(reviews);
     }
 

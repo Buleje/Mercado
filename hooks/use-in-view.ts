@@ -21,6 +21,7 @@ export function useInView<T extends Element = HTMLDivElement>(
 
     observer.observe(el);
     return () => observer.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- options is an object literal from call site; adding it would cause infinite re-renders
   }, [isInView]);
 
   return [ref, isInView] as const;

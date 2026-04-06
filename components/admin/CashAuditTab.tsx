@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect, startTransition } from "react";
 import {
   Calculator, Download, X, Eye,
   CheckCircle2, AlertTriangle, TrendingDown, TrendingUp,
-  Banknote, Coins, Info, RefreshCw, ExternalLink,
+  Banknote, Coins, Info, RefreshCw, ExternalLink, PlusCircle,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
@@ -96,8 +96,8 @@ function ModuleTooltip() {
       </button>
       {open && (
         <div className="absolute left-6 top-0 z-50 w-72 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-xl p-4 text-xs leading-relaxed pointer-events-none">
-          <p className="font-bold text-gray-900 dark:text-foreground mb-2 text-sm flex items-center gap-1.5"><Calculator className="h-4 w-4 text-primary" /> ¿Qué es el Arqueo de Caja?</p>
-          <p className="text-gray-600 dark:text-muted mb-3">Compara el <strong>dinero esperado</strong> (fondo + ventas efectivo) con el <strong>dinero contado físicamente</strong> al cerrar cada turno.</p>
+          <p className="font-bold text-gray-900 dark:text-foreground mb-2 text-sm flex items-center gap-1.5"><Calculator className="h-4 w-4 text-primary" /> ¿Qué es Cuadrar la Caja?</p>
+          <p className="text-gray-600 dark:text-muted mb-3">Compara el <strong>dinero que debería haber</strong> (fondo + ventas en efectivo) con el <strong>dinero que realmente cuentas</strong> al cerrar cada turno.</p>
           <p className="font-semibold text-gray-700 dark:text-foreground mb-1">Ejemplo:</p>
           <p className="text-gray-500 dark:text-muted mb-3">Valentina abre caja con S/200. Vende S/350 en efectivo. Al cerrar se esperan S/550. Si cuenta S/540 → <span className="text-red-500 font-semibold">faltante S/10</span>.</p>
           <div className="space-y-1 border-t border-gray-100 dark:border-card-border pt-2">
@@ -105,7 +105,197 @@ function ModuleTooltip() {
             <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Tabla</span> — cada fila = un turno cerrado con su diferencia.</p>
             <p className="text-gray-500 dark:text-muted"><span className="font-semibold text-gray-700 dark:text-foreground">Ojo (👁)</span> — detalle del turno y desglose de billetes.</p>
           </div>
-          <p className="mt-2 text-gray-400 italic">Los arqueos se generan automáticamente al cerrar turnos en <strong>Control de Turnos</strong>.</p>
+          <p className="mt-2 text-gray-400 italic">Los cuadres se generan automáticamente al cerrar turnos en <strong>Control de Turnos</strong>.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Cash Counter ──────────────────────────────────────────────────────────────
+
+const BILLETES: { value: number; label: string }[] = [
+  { value: 200, label: "S/ 200" },
+  { value: 100, label: "S/ 100" },
+  { value: 50,  label: "S/ 50"  },
+  { value: 20,  label: "S/ 20"  },
+  { value: 10,  label: "S/ 10"  },
+];
+const MONEDAS: { value: number; label: string }[] = [
+  { value: 5,    label: "S/ 5"    },
+  { value: 2,    label: "S/ 2"    },
+  { value: 1,    label: "S/ 1"    },
+  { value: 0.50, label: "S/ 0.50" },
+  { value: 0.20, label: "S/ 0.20" },
+  { value: 0.10, label: "S/ 0.10" },
+];
+
+type CounterState = Record<string, number>;
+
+function makeKey(type: "billete" | "moneda", value: number) {
+  return `${type}-${value}`;
+}
+
+function CashCounter({ expectedAmount }: { expectedAmount: number }) {
+  const [counts, setCounts] = useState<CounterState>({});
+  const [open, setOpen] = useState(false);
+
+  const counted = useMemo(() => {
+    let total = 0;
+    for (const b of BILLETES) total += (counts[makeKey("billete", b.value)] ?? 0) * b.value;
+    for (const m of MONEDAS)  total += (counts[makeKey("moneda", m.value)] ?? 0) * m.value;
+    return Math.round(total * 100) / 100;
+  }, [counts]);
+
+  const difference = Math.round((counted - expectedAmount) * 100) / 100;
+  const hasCount   = Object.values(counts).some(v => v > 0);
+
+  function setCount(key: string, raw: string) {
+    const v = Math.max(0, parseInt(raw, 10) || 0);
+    setCounts(prev => ({ ...prev, [key]: v }));
+  }
+
+  return (
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-surface/50 transition-colors"
+      >
+        <span className="flex items-center gap-2 font-bold text-gray-900 dark:text-foreground text-sm">
+          <Coins className="h-4 w-4 text-primary" />
+          Conteo de efectivo manual
+        </span>
+        <PlusCircle className={cn("h-4 w-4 text-primary transition-transform", open && "rotate-45")} />
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-4 border-t border-gray-100 dark:border-card-border pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {/* Billetes */}
+            <div>
+              <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-2 flex items-center gap-1">
+                <Banknote className="h-3.5 w-3.5" /> Billetes
+              </p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-gray-400 dark:text-muted">
+                    <th className="text-left pb-1">Denominación</th>
+                    <th className="text-center pb-1">Cantidad</th>
+                    <th className="text-right pb-1">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-card-border">
+                  {BILLETES.map(b => {
+                    const key = makeKey("billete", b.value);
+                    const qty = counts[key] ?? 0;
+                    return (
+                      <tr key={key}>
+                        <td className="py-1.5 font-semibold text-gray-700 dark:text-foreground">{b.label}</td>
+                        <td className="py-1.5 px-2">
+                          <input
+                            type="number"
+                            min={0}
+                            value={qty || ""}
+                            onChange={e => setCount(key, e.target.value)}
+                            placeholder="0"
+                            className="w-16 text-center text-sm border border-gray-200 dark:border-card-border rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          />
+                        </td>
+                        <td className="py-1.5 text-right font-bold text-gray-800 dark:text-foreground">
+                          {qty > 0 ? fmt(qty * b.value) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Monedas */}
+            <div>
+              <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide mb-2 flex items-center gap-1">
+                <Coins className="h-3.5 w-3.5" /> Monedas
+              </p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-xs text-gray-400 dark:text-muted">
+                    <th className="text-left pb-1">Denominación</th>
+                    <th className="text-center pb-1">Cantidad</th>
+                    <th className="text-right pb-1">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50 dark:divide-card-border">
+                  {MONEDAS.map(m => {
+                    const key = makeKey("moneda", m.value);
+                    const qty = counts[key] ?? 0;
+                    return (
+                      <tr key={key}>
+                        <td className="py-1.5 font-semibold text-gray-700 dark:text-foreground">{m.label}</td>
+                        <td className="py-1.5 px-2">
+                          <input
+                            type="number"
+                            min={0}
+                            value={qty || ""}
+                            onChange={e => setCount(key, e.target.value)}
+                            placeholder="0"
+                            className="w-16 text-center text-sm border border-gray-200 dark:border-card-border rounded-lg px-2 py-1 bg-white dark:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/30"
+                          />
+                        </td>
+                        <td className="py-1.5 text-right font-bold text-gray-800 dark:text-foreground">
+                          {qty > 0 ? fmt(qty * m.value) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Resumen */}
+          <div className="grid grid-cols-3 gap-3 pt-2 border-t border-gray-100 dark:border-card-border">
+            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center">
+              <p className="text-[10px] text-gray-400 dark:text-muted font-semibold uppercase">Esperado</p>
+              <p className="font-extrabold text-gray-800 dark:text-foreground text-sm">{fmt(expectedAmount)}</p>
+            </div>
+            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3 text-center">
+              <p className="text-[10px] text-gray-400 dark:text-muted font-semibold uppercase">Contado</p>
+              <p className={cn("font-extrabold text-sm", hasCount ? "text-gray-800 dark:text-foreground" : "text-gray-400")}>
+                {hasCount ? fmt(counted) : "—"}
+              </p>
+            </div>
+            <div className={cn(
+              "rounded-xl p-3 text-center",
+              !hasCount ? "bg-gray-50 dark:bg-surface" :
+              difference === 0 ? "bg-emerald-50 dark:bg-emerald-900/20" :
+              difference > 0 ? "bg-blue-50 dark:bg-blue-900/20" :
+              "bg-red-50 dark:bg-red-900/20"
+            )}>
+              <p className="text-[10px] font-semibold uppercase text-gray-400 dark:text-muted">Diferencia</p>
+              <p className={cn(
+                "font-extrabold text-sm",
+                !hasCount ? "text-gray-400" :
+                difference === 0 ? "text-emerald-600" :
+                difference > 0 ? "text-blue-600" :
+                "text-red-600"
+              )}>
+                {hasCount
+                  ? (difference === 0
+                      ? "Conforme"
+                      : (difference > 0 ? "+" : "") + fmt(difference) + (difference > 0 ? " sobrante" : " faltante"))
+                  : "—"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setCounts({})}
+            className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+          >
+            Limpiar conteo
+          </button>
         </div>
       )}
     </div>
@@ -150,10 +340,10 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-            <Calculator className="h-6 w-6 text-primary" /> Arqueo de Caja Digital
+            <Calculator className="h-6 w-6 text-primary" /> Cuadrar la Caja
             <ModuleTooltip />
           </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Conteo automático, discrepancias y cierre de turno</p>
+          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Cuenta el dinero, compara con lo esperado y cierra el turno</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {onNavigateToTurnos && (
@@ -165,14 +355,14 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
             <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
           </button>
           <button onClick={() => exportToCSV(audits.map(a => ({ fecha: a.date, turno: a.shift, cajero: a.cashier, esperado: a.expectedAmount, contado: a.countedAmount, diferencia: a.difference, estado: STATUS_MAP[a.status].label, ventas: a.salesCount, cerrado_por: a.closedBy || "-" })), "arqueo-caja")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-            <Download className="h-4 w-4" /> Exportar
+            <Download className="h-4 w-4" /> Descargar
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: "Arqueos totales", value: String(stats.totalAudits), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: Calculator },
+          { label: "Cuadres totales", value: String(stats.totalAudits), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: Calculator },
           { label: "Conformes", value: String(stats.conformes), color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30", icon: CheckCircle2 },
           { label: "Total faltantes", value: fmt(stats.totalShortage), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30", icon: TrendingDown },
           { label: "Total sobrantes", value: fmt(stats.totalSurplus), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30", icon: TrendingUp },
@@ -187,6 +377,9 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
         ))}
       </div>
 
+      {/* Cash Counter */}
+      <CashCounter expectedAmount={audits.length > 0 ? audits[0].expectedAmount : 0} />
+
       {/* Table */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden">
         {loading ? (
@@ -194,7 +387,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
         ) : audits.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-400 dark:text-muted">
             <Calculator className="h-8 w-8 mx-auto mb-2 opacity-30" />
-            <p>No hay arqueos registrados aún.</p>
+            <p>No hay cuadres de caja registrados aún.</p>
             {onNavigateToTurnos && (
               <button onClick={onNavigateToTurnos} className="mt-2 text-primary hover:underline font-semibold text-xs">Ir a Control de Turnos para abrir el primer turno →</button>
             )}
@@ -231,7 +424,7 @@ export default function CashAuditTab({ onNavigateToTurnos }: Props) {
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-3 sm:p-6 w-full max-w-md space-y-4 max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-extrabold text-gray-900 dark:text-foreground">Arqueo — {detail.date} {detail.shift}</h3>
+                <h3 className="font-extrabold text-gray-900 dark:text-foreground">Cuadre — {detail.date} {detail.shift}</h3>
                 <p className="text-xs text-gray-400">{detail.cashier}{detail.closedBy ? ` · Cerrado por: ${detail.closedBy}` : " · Turno abierto"}</p>
               </div>
               <button onClick={() => setDetail(null)}><X className="h-4 w-4 text-gray-400" /></button>

@@ -123,6 +123,44 @@ export async function PATCH(
       LoyaltyDB.accruePoints(updated.customer.phone, updated.total).catch(() => {});
     }
 
+    // Auto-coupon "Vuelve pronto" 5% on delivery (fire-and-forget)
+    if (statusChanged && parsed.data.status === "entregado") {
+      const suffix = id.slice(-5).toUpperCase();
+      const couponCode = `VUELVE${suffix}`;
+      prisma.coupon.create({
+        data: {
+          code: couponCode,
+          tenantId: auth.tenantId,
+          description: "¡Vuelve pronto! 5% de descuento en tu próxima compra",
+          discountType: "percent",
+          discountValue: 5,
+          maxUses: 1,
+          usedCount: 0,
+          active: true,
+          expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 días
+        },
+      }).then(() => {
+        // Notify customer about coupon via push + WhatsApp
+        if (updated.customer.phone) {
+          sendPushToPhone(updated.customer.phone, {
+            title: "🎁 ¡Tienes un cupón de regalo!",
+            body: `Usa el código ${couponCode} y obtén 5% de descuento en tu próxima compra. Válido por 15 días.`,
+            url: "/",
+          }).catch(() => {});
+          sendWhatsAppNotification({
+            id: updated.id,
+            customerName: updated.customer.name,
+            customerPhone: updated.customer.phone,
+            total: updated.total,
+            status: "entregado",
+            paymentMethod: updated.paymentMethod,
+            deliverySlot: updated.deliverySlot,
+            items: updated.items,
+          }).catch(() => {});
+        }
+      }).catch(() => {});
+    }
+
     // Check customer notification preferences for order updates
     const custPrefs = (statusChanged && updated.customer.phone)
       ? await prisma.customer.findUnique({

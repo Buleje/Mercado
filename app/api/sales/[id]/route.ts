@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { withDbRetry } from "@/lib/db-retry";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -24,7 +25,8 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    return NextResponse.json(await SalesDB.getAll());
+    const data = await withDbRetry(() => SalesDB.getAll(auth.tenantId));
+    return NextResponse.json(data);
   } catch (e) {
     console.error("[sales] GET error:", e);
     return NextResponse.json({ error: "Database error" }, { status: 503 });

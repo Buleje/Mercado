@@ -8,6 +8,8 @@ import {
 import type { DbPayable, DbSupplier, PaymentMethod } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import EmptyState from "@/components/admin/shared/EmptyState";
+import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 
 const PAY_STATUS_LABELS = { pendiente: "Pendiente", parcial: "Parcial", pagado: "Pagado" } as const;
 const PAY_STATUS_COLORS = {
@@ -162,11 +164,14 @@ export default function PayablesTab() {
 
       {/* Payables list */}
       {loading ? (
-        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">Cargando…</div>
+        <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl" />
       ) : filtered.length === 0 ? (
-        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
-          {filterSupplier ? "Este proveedor no tiene cuentas" : "No hay cuentas por pagar"}
-        </div>
+        <EmptyState
+          icon={CreditCard}
+          title={filterSupplier ? "Sin cuentas para este proveedor" : "Sin cuentas por pagar"}
+          description={filterSupplier ? "Este proveedor no tiene deudas registradas." : "No tienes deudas con proveedores. ¡Excelente!"}
+          className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl"
+        />
       ) : (
         <div className="space-y-3">
           {filtered.map((p) => {

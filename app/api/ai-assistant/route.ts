@@ -3,19 +3,30 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ProductsDB, OrdersDB, CustomersDB, SalesDB, PayablesDB, PurchasesDB, ReviewsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logger } from "@/lib/logger";
+import { processSafeInput, buildInjectionGuard, detectPromptInjection, moderateLLMOutput } from "@/lib/ai-safety";
+import { getCachedLLMResponse, setCachedLLMResponse } from "@/lib/llm-cache";
+import { ALL_AGENT_TOOLS, resolveToolCall } from "@/lib/agents/tool-definitions";
+import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
+import { fetchGroqWithRetry, type GroqUsage } from "@/lib/groq-fetch";
+import { checkTokenBudget, recordTokenUsage } from "@/lib/ai-usage-tracker";
+import { recordAIFailure, recordAISuccess } from "@/lib/ai-failure-monitor";
+import { getOrCreateConversation, loadConversationHistory, saveMessage } from "@/lib/ai-conversation-memory";
+import { getPromptVariant, recordVariantUsage } from "@/lib/ai-ab-testing";
+import { evaluateResponse } from "@/lib/ai-quality-evaluator";
 
 // ── Snapshot cache (5 min TTL) ────────────────────────────────────────────────
 
 let cachedSnapshot: { text: string; metrics: Record<string, unknown>; ts: number } | null = null;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-async function getBusinessSnapshot() {
+async function getBusinessSnapshot(tenantId: string) {
   const now = Date.now();
   if (cachedSnapshot && now - cachedSnapshot.ts < CACHE_TTL) return cachedSnapshot;
 
   const [products, orders, customers, sales, payables, purchases, reviews] = await Promise.all([
-    ProductsDB.getAll(), OrdersDB.getAll(), CustomersDB.getAll(),
-    SalesDB.getAll(), PayablesDB.getAll(), PurchasesDB.getAll(), ReviewsDB.getAll(),
+    ProductsDB.getAll(tenantId), OrdersDB.getAll(tenantId), CustomersDB.getAll(tenantId),
+    SalesDB.getAll(tenantId), PayablesDB.getAll(tenantId), PurchasesDB.getAll(tenantId), ReviewsDB.getAll(tenantId),
   ]);
 
   const d = new Date();
@@ -29,22 +40,22 @@ async function getBusinessSnapshot() {
 
   const validOrders = orders.filter(o => o.status !== "cancelado");
   const todayOrders = validOrders.filter(o => o.createdAt?.slice(0, 10) === today);
-  const weekOrders = validOrders.filter(o => o.createdAt?.slice(0, 10)! >= weekAgo);
-  const monthOrders = validOrders.filter(o => o.createdAt?.slice(0, 10)! >= monthAgo);
+  const weekOrders = validOrders.filter(o => (o.createdAt?.slice(0, 10) ?? "") >= weekAgo);
+  const monthOrders = validOrders.filter(o => (o.createdAt?.slice(0, 10) ?? "") >= monthAgo);
 
   const todaySales = sales.filter(s => s.createdAt?.slice(0, 10) === today);
-  const weekSales = sales.filter(s => s.createdAt?.slice(0, 10)! >= weekAgo);
+  const weekSales = sales.filter(s => (s.createdAt?.slice(0, 10) ?? "") >= weekAgo);
 
   const todayRevenue = todayOrders.reduce((s, o) => s + o.total, 0) + todaySales.reduce((s, sl) => s + sl.total, 0);
   const weekRevenue = weekOrders.reduce((s, o) => s + o.total, 0) + weekSales.reduce((s, sl) => s + sl.total, 0);
-  const monthRevenue = monthOrders.reduce((s, o) => s + o.total, 0) + sales.filter(s => s.createdAt?.slice(0, 10)! >= monthAgo).reduce((s, sl) => s + sl.total, 0);
+  const monthRevenue = monthOrders.reduce((s, o) => s + o.total, 0) + sales.filter(s => (s.createdAt?.slice(0, 10) ?? "") >= monthAgo).reduce((s, sl) => s + sl.total, 0);
 
   const pendingOrders = orders.filter(o => o.status === "pendiente").length;
-  const cancelledMonth = orders.filter(o => o.status === "cancelado" && o.createdAt?.slice(0, 10)! >= monthAgo).length;
+  const cancelledMonth = orders.filter(o => o.status === "cancelado" && (o.createdAt?.slice(0, 10) ?? "") >= monthAgo).length;
 
   const costMap: Record<string, number> = {};
   products.forEach(p => { if (p.costPrice) costMap[p.id] = p.costPrice; });
-  const monthCost = [...monthOrders.flatMap(o => o.items), ...sales.filter(s => s.createdAt?.slice(0, 10)! >= monthAgo).flatMap(s => s.items)]
+  const monthCost = [...monthOrders.flatMap(o => o.items), ...sales.filter(s => (s.createdAt?.slice(0, 10) ?? "") >= monthAgo).flatMap(s => s.items)]
     .reduce((s, i) => s + (costMap["id" in i ? i.id : i.productId] ?? 0) * i.quantity, 0);
   const monthProfit = monthRevenue - monthCost;
   const margin = monthRevenue > 0 ? ((monthProfit / monthRevenue) * 100).toFixed(1) : "0";
@@ -101,12 +112,28 @@ COMPRAS:
 - Total compras registradas: ${purchases.length}
 `.trim();
 
-  const metrics = { todayRevenue, weekRevenue, pendingOrders, outOfStock: outOfStock.length, lowStock: lowStock.length, overdueCount, totalDebt };
+  const metrics: Record<string, unknown> = {
+    todayRevenue: +todayRevenue.toFixed(2),
+    weekRevenue: +weekRevenue.toFixed(2),
+    monthRevenue: +monthRevenue.toFixed(2),
+    monthProfit: +monthProfit.toFixed(2),
+    margin,
+    pendingOrders,
+    outOfStockCount: outOfStock.length,
+    lowStockCount: lowStock.length,
+    activeProducts: activeProducts.length,
+    totalCustomers: customers.length,
+    avgRating,
+    pendingPayables: pendingPayables.length,
+    totalDebt: +totalDebt.toFixed(2),
+    overdueCount,
+    topProductName: top10[0]?.name ?? "N/A",
+  };
   cachedSnapshot = { text, metrics, ts: now };
   return cachedSnapshot;
 }
 
-const SYSTEM_PROMPT_TEMPLATE = (snapshot: string) => `Eres el Asistente Ejecutivo IA de "Bodega San Martín", una tienda de abarrotes premium en Pucallpa, Perú.
+const SYSTEM_PROMPT_TEMPLATE = (snapshot: string) => `Eres el Asistente Ejecutivo IA de "Buleje", una tienda de abarrotes premium en Pucallpa, Perú.
 
 PERSONALIDAD:
 - Profesional, directo, estratégico — como un gerente general millonario que domina retail y ventas
@@ -172,7 +199,43 @@ Tipos de acción disponibles:
 - update_order_status: {"orderId":"abc","status":"confirmado"} — Cambiar estado de pedido
 
 Solo sugiere acciones cuando el usuario pida explícitamente hacer algo (crear, cambiar, activar, etc).
-Máximo 3 acciones por mensaje.`;
+Máximo 3 acciones por mensaje.
+
+HERRAMIENTAS DE DATOS:
+Tienes acceso a herramientas (tools/functions) que puedes llamar para obtener datos en tiempo real del negocio.
+Úsalas cuando necesites información más detallada que el snapshot inicial.
+Por ejemplo: para ver segmentación de clientes, auditar vencimientos, analizar márgenes por producto, ver tendencias, etc.
+Las herramientas te devuelven datos reales de la base de datos — úsalos para dar respuestas precisas.`;
+
+// ── Rule-based fallback (no AI needed) ──────────────────────────────────────
+
+function generateRuleBasedResponse(query: string, metrics: Record<string, unknown>): string {
+  const q = query.toLowerCase();
+
+  if (q.includes("venta") && (q.includes("hoy") || q.includes("dia")))
+    return `Ventas de hoy: S/ ${metrics.todayRevenue ?? 0}. Tienes ${metrics.pendingOrders ?? 0} pedidos pendientes.`;
+
+  if (q.includes("stock") || q.includes("inventario"))
+    return `Tienes ${metrics.outOfStockCount ?? 0} productos agotados y ${metrics.lowStockCount ?? 0} con stock bajo. Productos activos: ${metrics.activeProducts ?? 0}.`;
+
+  if (q.includes("debe") || q.includes("deuda") || q.includes("fiao"))
+    return `Deuda total: S/ ${metrics.totalDebt ?? 0}. Tienes ${metrics.pendingPayables ?? 0} pagos pendientes a proveedores y ${metrics.overdueCount ?? 0} facturas vencidas.`;
+
+  if (q.includes("pedido"))
+    return `Hay ${metrics.pendingOrders ?? 0} pedidos pendientes. Ventas de hoy: S/ ${metrics.todayRevenue ?? 0}.`;
+
+  if (q.includes("cliente"))
+    return `Tienes ${metrics.totalCustomers ?? 0} clientes registrados. Rating promedio: ${metrics.avgRating ?? "N/A"}.`;
+
+  if (q.includes("producto") && q.includes("vend"))
+    return `Top producto: ${metrics.topProductName ?? "N/A"}. Productos activos: ${metrics.activeProducts ?? 0}.`;
+
+  if (q.includes("ganancia") || q.includes("utilidad") || q.includes("margen"))
+    return `Utilidad del mes: S/ ${metrics.monthProfit ?? 0}. Margen: ${metrics.margin ?? 0}%. Ingresos del mes: S/ ${metrics.monthRevenue ?? 0}.`;
+
+  // Default: business summary
+  return `Resumen: Ventas hoy S/ ${metrics.todayRevenue ?? 0}, ${metrics.pendingOrders ?? 0} pedidos pendientes, ${metrics.outOfStockCount ?? 0} sin stock, ${metrics.lowStockCount ?? 0} stock bajo. Deuda: S/ ${metrics.totalDebt ?? 0}.`;
+}
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
@@ -182,28 +245,90 @@ export async function POST(req: NextRequest) {
   const rateLimited = applyRateLimit(req, "MODERATE", "ai-assistant");
   if (rateLimited) return rateLimited;
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "GROQ_API_KEY no configurada. Obtén una clave GRATUITA en console.groq.com y agrégala en tu .env" },
-      { status: 503 }
-    );
-  }
-
   const body = await req.json().catch(() => ({ message: "", history: [] }));
-  const userMessage = (body.message ?? "").trim();
-  const history: { role: string; content: string }[] = body.history ?? [];
+  const rawMessage = (body.message ?? "").trim();
+  let history: { role: string; content: string }[] = body.history ?? [];
   const wantStream = body.stream !== false; // default: stream
+  const conversationId = body.conversationId as string | undefined;
 
-  if (!userMessage) {
+  if (!rawMessage) {
     return NextResponse.json({ error: "Mensaje requerido" }, { status: 400 });
   }
 
-  // ── Build snapshot (cached 5 min) ───────────────────────────────────────────
-  const snapshot = await getBusinessSnapshot();
+  // ── Prompt injection protection ─────────────────────────────────────────────
+  const safetyCheck = processSafeInput(rawMessage);
+  if (!safetyCheck.safe) {
+    logger.warn("[ai-assistant] Prompt injection blocked", { user: auth.username });
+    return NextResponse.json({ response: safetyCheck.reason, mode: "blocked" as const });
+  }
+  const userMessage = safetyCheck.input;
+  const injectionCheck = detectPromptInjection(userMessage);
+  if (injectionCheck.severity === "medium") {
+    logger.warn("[ai-assistant] Possible injection attempt", { user: auth.username, pattern: injectionCheck.matchedPattern });
+  }
 
-  const messages = [
-    { role: "system" as const, content: SYSTEM_PROMPT_TEMPLATE(snapshot.text) },
+  // ── Build snapshot (cached 5 min) ───────────────────────────────────────────
+  const snapshot = await getBusinessSnapshot(auth.tenantId);
+
+  // ── Helper: return rule-based fallback (always 200) ────────────────────────
+  const returnRuleBased = () => {
+    const response = generateRuleBasedResponse(userMessage, snapshot.metrics);
+    return NextResponse.json({
+      response,
+      mode: "rule-based" as const,
+      snapshot: snapshot.metrics,
+    });
+  };
+
+  // ── If no API key, use rule-based immediately ─────────────────────────────
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    logger.warn("[ai-assistant] GROQ_API_KEY not configured — using rule-based fallback");
+    return returnRuleBased();
+  }
+
+  // ── Token budget check — prevent overspending on AI ──────────────────────
+  const budget = checkTokenBudget(auth.tenantId);
+  if (!budget.allowed) {
+    return NextResponse.json({
+      response: budget.warning,
+      mode: "budget-exceeded" as const,
+      usage: { percentUsed: budget.percentUsed, limit: budget.limit },
+      snapshot: snapshot.metrics,
+    });
+  }
+
+  // ── LLM response cache (skip if streaming or has history context) ────────
+  const isSimpleQuery = history.length === 0 && !conversationId;
+
+  // ── Multi-turn memory: load conversation history if no explicit history ───
+  let activeConversationId: string | undefined;
+  if (history.length === 0) {
+    activeConversationId = conversationId
+      ?? await getOrCreateConversation(auth.tenantId, auth.username, "assistant");
+    const savedHistory = await loadConversationHistory(activeConversationId);
+    if (savedHistory.length > 0) {
+      history = savedHistory;
+    }
+  }
+
+  if (isSimpleQuery) {
+    const cached = getCachedLLMResponse(auth.tenantId, "assistant", userMessage);
+    if (cached) {
+      return NextResponse.json({
+        response: cached.response,
+        mode: "ai" as const,
+        cached: true,
+        snapshot: snapshot.metrics,
+      });
+    }
+  }
+  // ── A/B testing: select prompt variant ───────────────────────────────────
+  const abVariant = getPromptVariant("assistant-detail", auth.tenantId);
+  const abModifier = abVariant ? `\n\nINSTRUCCIÓN ADICIONAL: ${abVariant.promptModifier}` : "";
+
+  const messages: { role: "system" | "user" | "assistant" | "tool"; content: string; tool_call_id?: string }[] = [
+    { role: "system" as const, content: buildInjectionGuard() + "\n\n" + SYSTEM_PROMPT_TEMPLATE(snapshot.text) + abModifier },
     ...history.slice(-8).map(m => ({
       role: m.role as "user" | "assistant",
       content: m.content,
@@ -211,86 +336,445 @@ export async function POST(req: NextRequest) {
     { role: "user" as const, content: userMessage },
   ];
 
+  // ── Ensure domain agents are registered for function calling ──────────────
+  await ensureAgentsRegistered();
+
   try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
+    // ── First LLM call (with tools) ─────────────────────────────────────────
+    const groqPayload: Record<string, unknown> = {
+      model: "llama-3.3-70b-versatile",
+      messages,
+      temperature: 0.6,
+      max_tokens: 1500,
+      stream: false, // Function calling requires non-streaming first pass
+      tools: ALL_AGENT_TOOLS,
+      tool_choice: "auto",
+    };
+
+    let totalUsage: GroqUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+
+    const res = await fetchGroqWithRetry(apiKey, groqPayload, "ai-assistant");
+
+    if (!res.ok) {
+      console.error("[ai-assistant] Groq API error:", res.error);
+      recordAIFailure("ai-assistant", res.error ?? "unknown");
+      return returnRuleBased();
+    }
+
+    if (res.usage) {
+      totalUsage = { ...res.usage };
+    }
+
+    const data = res.data!;
+    const choice = (data.choices as { message: Record<string, unknown> }[])?.[0];
+    const assistantMessage = choice?.message;
+
+    // ── Handle tool calls from the LLM ──────────────────────────────────────
+    if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
+      logger.info("[ai-assistant] LLM requested tool calls", {
+        count: assistantMessage.tool_calls.length,
+        tools: assistantMessage.tool_calls.map((tc: { function: { name: string } }) => tc.function.name),
+      });
+
+      // If streaming, pipe tool progress + final response as SSE
+      if (wantStream) {
+        const encoder = new TextEncoder();
+        const capturedMessages = [...messages];
+
+        // Add the assistant's tool_calls message
+        capturedMessages.push({
+          role: "assistant" as const,
+          content: assistantMessage.content ?? "",
+          ...({ tool_calls: assistantMessage.tool_calls } as Record<string, unknown>),
+        });
+
+        const toolCalls = assistantMessage.tool_calls.slice(0, 5);
+
+        const stream = new ReadableStream({
+          async start(controller) {
+            try {
+              // Execute tools with progress events
+              for (const toolCall of toolCalls) {
+                const toolName = toolCall.function?.name;
+
+                // Send progress event
+                controller.enqueue(
+                  encoder.encode(`data: ${JSON.stringify({ toolProgress: getToolLabel(toolName), tool: toolName })}\n\n`)
+                );
+
+                const mapping = resolveToolCall(toolName);
+                let toolResult: string;
+
+                if (!mapping) {
+                  toolResult = JSON.stringify({ error: `Herramienta "${toolName}" no reconocida` });
+                } else {
+                  let args: Record<string, unknown> = {};
+                  try { args = JSON.parse(toolCall.function.arguments || "{}"); } catch { args = {}; }
+
+                  const result = await orchestrator.executeSync({
+                    domain: mapping.domain,
+                    action: mapping.action,
+                    payload: args,
+                    tenantId: auth.tenantId,
+                  });
+
+                  toolResult = JSON.stringify(result.success ? result.data : { error: result.error });
+                }
+
+                capturedMessages.push({
+                  role: "tool" as const,
+                  content: toolResult,
+                  tool_call_id: toolCall.id,
+                });
+              }
+
+              // Send "generating response" progress
+              controller.enqueue(
+                encoder.encode(`data: ${JSON.stringify({ toolProgress: "Generando respuesta...", tool: "_final" })}\n\n`)
+              );
+
+              // Second LLM call — stream the response
+              const followUpRes = await fetchGroqWithRetry(apiKey, {
+                model: "llama-3.3-70b-versatile",
+                messages: capturedMessages,
+                temperature: 0.6,
+                max_tokens: 1500,
+                stream: true,
+              }, "ai-assistant-followup");
+
+              if (!followUpRes.ok || !followUpRes.body) {
+                recordAIFailure("ai-assistant-followup", followUpRes.error ?? "unknown");
+                const fallback = generateRuleBasedResponse(userMessage, snapshot.metrics);
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: fallback })}\n\n`));
+                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                controller.close();
+                return;
+              }
+
+              recordAISuccess("ai-assistant");
+              if (followUpRes.usage) {
+                totalUsage.promptTokens += followUpRes.usage.promptTokens;
+                totalUsage.completionTokens += followUpRes.usage.completionTokens;
+                totalUsage.totalTokens += followUpRes.usage.totalTokens;
+                recordTokenUsage(auth.tenantId, followUpRes.usage.totalTokens);
+              }
+
+              // Pipe the Groq stream through
+              const reader = followUpRes.body.getReader();
+              const decoder = new TextDecoder();
+              let buffer = "";
+
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                buffer = lines.pop() ?? "";
+
+                for (const line of lines) {
+                  const trimmed = line.trim();
+                  if (!trimmed || !trimmed.startsWith("data: ")) continue;
+                  const payload = trimmed.slice(6);
+                  if (payload === "[DONE]") {
+                    controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                    controller.close();
+                    return;
+                  }
+                  try {
+                    const json = JSON.parse(payload);
+                    const content = json.choices?.[0]?.delta?.content;
+                    if (content) {
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+                    }
+                  } catch { /* skip */ }
+                }
+              }
+
+              controller.close();
+            } catch (err) {
+              controller.error(err);
+            }
+          },
+        });
+
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+            Connection: "keep-alive",
+          },
+        });
+      }
+
+      // ── Non-streaming tool call path ──────────────────────────────────────
+
+      // Add the assistant's tool_calls message to conversation
+      messages.push({
+        role: "assistant" as const,
+        content: assistantMessage.content ?? "",
+        ...({ tool_calls: assistantMessage.tool_calls } as Record<string, unknown>),
+      });
+
+      // Execute each tool call via the orchestrator
+      const MAX_TOOL_CALLS = 5; // safety limit
+      const toolCalls = assistantMessage.tool_calls.slice(0, MAX_TOOL_CALLS);
+
+      for (const toolCall of toolCalls) {
+        const toolName = toolCall.function?.name;
+        const mapping = resolveToolCall(toolName);
+
+        let toolResult: string;
+
+        if (!mapping) {
+          toolResult = JSON.stringify({ error: `Herramienta "${toolName}" no reconocida` });
+        } else {
+          let args: Record<string, unknown> = {};
+          try {
+            args = JSON.parse(toolCall.function.arguments || "{}");
+          } catch {
+            args = {};
+          }
+
+          const result = await orchestrator.executeSync({
+            domain: mapping.domain,
+            action: mapping.action,
+            payload: args,
+            tenantId: auth.tenantId,
+          });
+
+          toolResult = JSON.stringify(
+            result.success ? result.data : { error: result.error },
+          );
+        }
+
+        // Add tool result to the conversation
+        messages.push({
+          role: "tool" as const,
+          content: toolResult,
+          tool_call_id: toolCall.id,
+        });
+      }
+
+      // ── Second LLM call with tool results ─────────────────────────────────
+      const followUpRes = await fetchGroqWithRetry(apiKey, {
         model: "llama-3.3-70b-versatile",
         messages,
         temperature: 0.6,
         max_tokens: 1500,
         stream: wantStream,
-      }),
+      }, "ai-assistant-followup");
+
+      if (!followUpRes.ok) {
+        console.error("[ai-assistant] Groq follow-up error:", followUpRes.error);
+        recordAIFailure("ai-assistant-followup", followUpRes.error ?? "unknown");
+        return returnRuleBased();
+      }
+
+      if (followUpRes.usage) {
+        totalUsage.promptTokens += followUpRes.usage.promptTokens;
+        totalUsage.completionTokens += followUpRes.usage.completionTokens;
+        totalUsage.totalTokens += followUpRes.usage.totalTokens;
+      }
+
+      // ── Stream the follow-up response if requested ──────────────────────
+      if (wantStream && followUpRes.body) {
+        return streamGroqResponse(followUpRes.body);
+      }
+
+      const followUpData = followUpRes.data!;
+      const rawReply = (followUpData.choices as { message: { content: string } }[])?.[0]?.message?.content ?? "No pude generar una respuesta.";
+
+      // ── Output moderation ───────────────────────────────────────────────
+      const moderation = moderateLLMOutput(rawReply);
+      if (!moderation.safe) {
+        logger.warn("[ai-assistant] Output moderation triggered", { violations: moderation.violations });
+      }
+      const reply = moderation.output;
+
+      if (isSimpleQuery && reply.length > 20) {
+        setCachedLLMResponse(auth.tenantId, "assistant", userMessage, reply);
+      }
+
+      logger.info("[ai-assistant] Token usage", { ...totalUsage, attempts: followUpRes.attempts });
+      recordAISuccess("ai-assistant");
+      recordTokenUsage(auth.tenantId, totalUsage.totalTokens);
+      if (abVariant) recordVariantUsage("assistant-detail", abVariant.id, { tokensUsed: totalUsage.totalTokens });
+
+      // ── Auto quality evaluation (fire-and-forget) ──────────────────────────────
+      const qualityScore = evaluateResponse(userMessage, reply, "assistant");
+
+      // ── Save to conversation memory (fire-and-forget) ───────────────────
+      if (activeConversationId) {
+        saveMessage(activeConversationId, "user", userMessage).catch(() => {});
+        saveMessage(activeConversationId, "assistant", reply, {
+          mode: "ai",
+          tokensUsed: totalUsage.totalTokens,
+        }).catch(() => {});
+      }
+
+      return NextResponse.json({
+        response: reply,
+        mode: "ai" as const,
+        conversationId: activeConversationId,
+        abVariant: abVariant?.id ?? null,
+        agentToolsUsed: toolCalls.map((tc: { function: { name: string } }) => tc.function.name),
+        tokensUsed: totalUsage.totalTokens,
+        budgetWarning: budget.warning,
+        qualityScore: qualityScore.overall,
+        snapshot: snapshot.metrics,
+      });
+    }
+
+    // ── No tool calls — direct response ─────────────────────────────────────
+    const rawDirectReply = (assistantMessage?.content as string) ?? "No pude generar una respuesta.";
+
+    // If streaming was requested but we got a non-streaming first pass,
+    // re-call with streaming since no tools were needed
+    if (wantStream) {
+      const streamRes = await fetchGroqWithRetry(apiKey, {
+        model: "llama-3.3-70b-versatile",
+        messages,
+        temperature: 0.6,
+        max_tokens: 1500,
+        stream: true,
+      }, "ai-assistant-stream");
+
+      if (streamRes.ok && streamRes.body) {
+        return streamGroqResponse(streamRes.body);
+      }
+    }
+
+    // ── Output moderation ───────────────────────────────────────────────────
+    const directModeration = moderateLLMOutput(rawDirectReply);
+    if (!directModeration.safe) {
+      logger.warn("[ai-assistant] Output moderation triggered (direct)", { violations: directModeration.violations });
+    }
+    const directReply = directModeration.output;
+
+    if (isSimpleQuery && directReply.length > 20) {
+      setCachedLLMResponse(auth.tenantId, "assistant", userMessage, directReply);
+    }
+
+    logger.info("[ai-assistant] Token usage (direct)", { ...totalUsage, attempts: res.attempts });
+    recordAISuccess("ai-assistant");
+    recordTokenUsage(auth.tenantId, totalUsage.totalTokens);
+    if (abVariant) recordVariantUsage("assistant-detail", abVariant.id, { tokensUsed: totalUsage.totalTokens });
+
+    // ── Auto quality evaluation (fire-and-forget) ────────────────────────────────
+    const qualityScore = evaluateResponse(userMessage, directReply, "assistant");
+
+    // ── Save to conversation memory (fire-and-forget) ─────────────────────
+    if (activeConversationId) {
+      saveMessage(activeConversationId, "user", userMessage).catch(() => {});
+      saveMessage(activeConversationId, "assistant", directReply, {
+        mode: "ai",
+        tokensUsed: totalUsage.totalTokens,
+      }).catch(() => {});
+    }
+
+    return NextResponse.json({
+      response: directReply,
+      mode: "ai" as const,
+      conversationId: activeConversationId,
+      abVariant: abVariant?.id ?? null,
+      tokensUsed: totalUsage.totalTokens,
+      budgetWarning: budget.warning,
+      qualityScore: qualityScore.overall,
+      snapshot: snapshot.metrics,
     });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("Groq AI assistant error:", errText);
-      return NextResponse.json({ error: `Error IA: ${res.status}` }, { status: 502 });
-    }
-
-    // ── Streaming response ────────────────────────────────────────────────────
-    if (wantStream && res.body) {
-      const encoder = new TextEncoder();
-      const decoder = new TextDecoder();
-
-      const stream = new ReadableStream({
-        async start(controller) {
-          const reader = res.body!.getReader();
-          let buffer = "";
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              buffer += decoder.decode(value, { stream: true });
-
-              const lines = buffer.split("\n");
-              buffer = lines.pop() ?? "";
-
-              for (const line of lines) {
-                const trimmed = line.trim();
-                if (!trimmed || !trimmed.startsWith("data: ")) continue;
-                const payload = trimmed.slice(6);
-                if (payload === "[DONE]") {
-                  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                  controller.close();
-                  return;
-                }
-                try {
-                  const json = JSON.parse(payload);
-                  const content = json.choices?.[0]?.delta?.content;
-                  if (content) {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
-                  }
-                } catch { /* skip malformed chunk */ }
-              }
-            }
-            controller.close();
-          } catch (err) {
-            controller.error(err);
-          }
-        },
-      });
-
-      return new Response(stream, {
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        },
-      });
-    }
-
-    // ── Non-streaming fallback ────────────────────────────────────────────────
-    const data = await res.json();
-    const reply = data.choices?.[0]?.message?.content ?? "No pude generar una respuesta.";
-
-    return NextResponse.json({ reply, snapshot: snapshot.metrics });
-  } catch {
-    return NextResponse.json({ error: "Error al conectar con la IA" }, { status: 502 });
+  } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("[ai-assistant] Fetch error:", errMsg);
+    recordAIFailure("ai-assistant", errMsg);
+    return returnRuleBased();
   }
+}
+
+// ── Stream helper ─────────────────────────────────────────────────────────────
+
+/** Human-friendly labels for tool progress messages */
+const TOOL_LABELS: Record<string, string> = {
+  inventory_check_stock: "Revisando stock...",
+  inventory_fefo_audit: "Auditando vencimientos...",
+  inventory_reorder_suggestions: "Calculando reposición...",
+  inventory_stock_valuation: "Valuando inventario...",
+  inventory_movement_summary: "Analizando movimientos...",
+  orders_pending_summary: "Revisando pedidos pendientes...",
+  orders_delivery_schedule: "Verificando entregas...",
+  orders_returns_analysis: "Analizando devoluciones...",
+  orders_status_overview: "Resumen de estados...",
+  orders_daily_sales_report: "Generando reporte de ventas...",
+  customers_segmentation: "Segmentando clientes...",
+  customers_top_customers: "Buscando mejores clientes...",
+  customers_churn_risk: "Detectando clientes en riesgo...",
+  customers_birthday_upcoming: "Revisando cumpleaños...",
+  customers_customer_360: "Generando perfil completo...",
+  analytics_daily_kpis: "Calculando KPIs del día...",
+  analytics_product_performance: "Analizando productos...",
+  analytics_margin_analysis: "Calculando márgenes...",
+  analytics_sales_trend: "Revisando tendencias...",
+  analytics_category_breakdown: "Desglose por categorías...",
+  notifications_send_stock_alert: "Enviando alertas de stock...",
+  notifications_send_expiry_warning: "Avisando vencimientos...",
+  notifications_send_promotion: "Enviando promoción...",
+  notifications_digest_pending: "Preparando resumen...",
+  pricing_margin_check: "Verificando márgenes...",
+  pricing_promotion_candidates: "Buscando candidatos a promo...",
+  pricing_bundle_suggestions: "Buscando combos...",
+  pricing_price_history: "Revisando historial de precios...",
+};
+
+function getToolLabel(toolName: string): string {
+  return TOOL_LABELS[toolName] ?? `Ejecutando ${toolName.replace(/_/g, " ")}...`;
+}
+
+function streamGroqResponse(body: ReadableStream<Uint8Array>): Response {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const reader = body.getReader();
+      let buffer = "";
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith("data: ")) continue;
+            const payload = trimmed.slice(6);
+            if (payload === "[DONE]") {
+              controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+              controller.close();
+              return;
+            }
+            try {
+              const json = JSON.parse(payload);
+              const content = json.choices?.[0]?.delta?.content;
+              if (content) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+              }
+            } catch { /* skip malformed chunk */ }
+          }
+        }
+        controller.close();
+      } catch (err) {
+        controller.error(err);
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
 }

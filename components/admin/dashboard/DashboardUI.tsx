@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { cn, formatCurrency} from "@/lib/utils";
@@ -32,12 +32,12 @@ export function Sparkline({ data, color }: { data: number[]; color: string }) {
     "emerald-500": "#10b981",
     "blue-500": "#3b82f6",
     "violet-500": "#8b5cf6",
-    "indigo-500": "#2d6a4f",
+    "indigo-500": "#00B4A6",
     "cyan-500": "#06b6d4",
     "amber-500": "#f59e0b",
     "red-500": "#ef4444",
   };
-  const strokeColor = colorMap[color] || "#2d6a4f";
+  const strokeColor = colorMap[color] || "#00B4A6";
   
   return (
     <svg width="80" height="24" className="opacity-60">

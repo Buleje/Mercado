@@ -139,11 +139,11 @@ export function useToast() {
   }, []);
   
   const success = useCallback((message: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'message' | 'createdAt'>>) => {
-    return add({ type: 'success', message, ...options });
+    return add({ type: 'success', message, duration: 2000, ...options });
   }, [add]);
-  
+
   const error = useCallback((message: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'message' | 'createdAt'>>) => {
-    return add({ type: 'error', message, duration: 7000, ...options });
+    return add({ type: 'error', message, duration: 4000, ...options });
   }, [add]);
   
   const warning = useCallback((message: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'message' | 'createdAt'>>) => {
@@ -208,10 +208,10 @@ export function useToast() {
  */
 export const toast = {
   success: (message: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'message' | 'createdAt'>>) =>
-    toastStore.add({ type: 'success', message, ...options }),
-  
+    toastStore.add({ type: 'success', message, duration: 2000, ...options }),
+
   error: (message: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'message' | 'createdAt'>>) =>
-    toastStore.add({ type: 'error', message, duration: 7000, ...options }),
+    toastStore.add({ type: 'error', message, duration: 4000, ...options }),
   
   warning: (message: string, options?: Partial<Omit<Toast, 'id' | 'type' | 'message' | 'createdAt'>>) =>
     toastStore.add({ type: 'warning', message, ...options }),
@@ -247,7 +247,7 @@ export const toast = {
       const errorMessage = typeof messages.error === 'function'
         ? messages.error(err)
         : messages.error;
-      toastStore.add({ type: 'error', message: errorMessage, duration: 7000 });
+      toastStore.add({ type: 'error', message: errorMessage, duration: 4000 });
       throw err;
     }
   },

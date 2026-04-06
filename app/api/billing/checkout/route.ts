@@ -8,6 +8,8 @@ import {
 } from "@/lib/stripe";
 import type { PlanId } from "@/lib/plans";
 
+export const dynamic = "force-dynamic";
+
 // POST /api/billing/checkout
 // Body: { plan: "pro" | "business" }
 // Creates a Stripe Checkout Session and returns { url }
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const tenant = await prisma.tenant.findFirst({ where: { slug: tenantId } });
+  const tenant = await prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] } });
   if (!tenant) return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
 
   // Already on this plan
@@ -41,12 +43,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ya estás en este plan" }, { status: 409 });
   }
 
-  const origin = req.headers.get("origin") ?? `https://${tenantId}.${process.env.ROOT_DOMAIN ?? "localhost:3000"}`;
+  const origin = req.headers.get("origin") ?? `https://${tenant.slug}.${process.env.ROOT_DOMAIN ?? "localhost:3000"}`;
 
   // Create or reuse Stripe customer
   const stripeCustomerId = await getOrCreateStripeCustomer({
     stripeCustomerId: tenant.stripeCustomerId ?? null,
-    tenantSlug: tenantId,
+    tenantSlug: tenant.slug,
     email: tenant.ownerEmail ?? null,
     name: tenant.name,
   });
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
   // Save stripeCustomerId if new
   if (!tenant.stripeCustomerId) {
     await prisma.tenant.update({
-      where: { slug: tenantId },
+      where: { id: tenant.id },
       data: { stripeCustomerId },
     });
   }
@@ -62,7 +64,7 @@ export async function POST(req: NextRequest) {
   const url = await createCheckoutSession({
     customerId: stripeCustomerId,
     priceId,
-    tenantSlug: tenantId,
+    tenantSlug: tenant.slug,
     successUrl: `${origin}/admin?tab=plan&upgraded=1`,
     cancelUrl: `${origin}/admin?tab=plan`,
   });

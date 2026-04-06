@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 import type {
   Settings as PSettings,
 } from "@/lib/generated/prisma/client";
@@ -9,17 +10,21 @@ import {
   type NavLinkItem,
 } from "./misc.db";
 
+// ── JSON parse helper ─────────────────────────────────────────────────────────
+function safeJson<T>(raw: string | null | undefined, fallback?: T): T | undefined {
+  if (!raw) return fallback;
+  try { return JSON.parse(raw) as T; } catch { return fallback; }
+}
+
+function spreadJson<T>(raw: string | null | undefined, key: string, fallback?: T): Record<string, T> {
+  const val = safeJson<T>(raw, fallback);
+  return val !== undefined ? { [key]: val } : {};
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function mapSettings(s: PSettings): DbSettings {
-  let navLinks: NavLinkItem[] | undefined;
-  if (s.navLinksJson) {
-    try { navLinks = JSON.parse(s.navLinksJson); } catch { /* ignore */ }
-  }
-  let parsedComboTemplates: DbSettings["comboTemplates"] | undefined;
-  if ((s as Record<string, unknown>).comboTemplatesJson) {
-    try { parsedComboTemplates = JSON.parse((s as Record<string, unknown>).comboTemplatesJson as string); } catch { /* ignore */ }
-  }
+  const r = s as Record<string, unknown>;
   return {
     mode: s.mode as StoreMode,
     ...(s.businessName != null && { businessName: s.businessName }),
@@ -36,30 +41,137 @@ function mapSettings(s: PSettings): DbSettings {
     ...(s.yapeName != null && { yapeName: s.yapeName }),
     ...(s.yapePhone != null && { yapePhone: s.yapePhone }),
     cashEnabled: s.cashEnabled,
-    ...(navLinks && { navLinks }),
+    ...spreadJson<NavLinkItem[]>(s.navLinksJson, 'navLinks'),
     ...(s.adminPassword != null && { adminPassword: s.adminPassword }),
     maintenanceMode: s.maintenanceMode,
     ...(s.maintenanceMessage != null && { maintenanceMessage: s.maintenanceMessage }),
     adminBypassLogin: s.adminBypassLogin,
-    ...(parsedComboTemplates && { comboTemplates: parsedComboTemplates }),
+    ...spreadJson(r.comboTemplatesJson as string, 'comboTemplates'),
+
+    // ── Datos del negocio ──
+    ...(r.razonSocial != null && { razonSocial: r.razonSocial as string }),
+    ...(r.ruc != null && { ruc: r.ruc as string }),
+    ...(r.businessEmail != null && { businessEmail: r.businessEmail as string }),
+    ...(r.currency != null && { currency: r.currency as string }),
+    ...(r.timezone != null && { timezone: r.timezone as string }),
+    ...(r.businessType != null && { businessType: r.businessType as string }),
+    ...spreadJson(r.socialLinksJson as string, 'socialLinks'),
+
+    // ── Apariencia ──
+    ...(r.primaryColor != null && { primaryColor: r.primaryColor as string }),
+    ...(r.secondaryColor != null && { secondaryColor: r.secondaryColor as string }),
+    ...(r.slogan != null && { slogan: r.slogan as string }),
+
+    // ── Sistema ──
+    ...(r.dateFormat != null && { dateFormat: r.dateFormat as string }),
+    ...(r.timeFormat != null && { timeFormat: r.timeFormat as string }),
+    ...(r.decimals != null && { decimals: r.decimals as number }),
+    ...(r.taxRate != null && { taxRate: r.taxRate as number }),
+    ...(r.fiscalYearStart != null && { fiscalYearStart: r.fiscalYearStart as number }),
+
+    // ── Ventas y comprobantes ──
+    ...spreadJson(r.invoiceSeriesJson as string, 'invoiceSeries'),
+    ...spreadJson(r.invoiceStartJson as string, 'invoiceStart'),
+    ...(r.enabledDocTypes != null && { enabledDocTypes: r.enabledDocTypes as string }),
+    ...(r.roundingMode != null && { roundingMode: r.roundingMode as string }),
+    ...(r.maxDiscountPercent != null && { maxDiscountPercent: r.maxDiscountPercent as number }),
+    ...(r.discountRequiresAuth != null && { discountRequiresAuth: r.discountRequiresAuth as boolean }),
+    ...(r.invoiceFooterText != null && { invoiceFooterText: r.invoiceFooterText as string }),
+    ...(r.sunatRuc != null && { sunatRuc: r.sunatRuc as string }),
+    ...(r.sunatDenominacion != null && { sunatDenominacion: r.sunatDenominacion as string }),
+    ...(r.sunatDireccion != null && { sunatDireccion: r.sunatDireccion as string }),
+
+    // ── Inventario ──
+    ...(r.defaultUnit != null && { defaultUnit: r.defaultUnit as string }),
+    ...(r.globalMinStock != null && { globalMinStock: r.globalMinStock as number }),
+    ...(r.stockAlertChannels != null && { stockAlertChannels: r.stockAlertChannels as string }),
+    ...spreadJson<string[]>(r.adjustReasonsJson as string, 'adjustReasons'),
+    ...(r.fefoEnabled != null && { fefoEnabled: r.fefoEnabled as boolean }),
+    ...(r.fefoAlertDays != null && { fefoAlertDays: r.fefoAlertDays as number }),
+    ...(r.inventoryCountFreq != null && { inventoryCountFreq: r.inventoryCountFreq as string }),
+
+    // ── Caja y pagos ──
+    ...(r.cashOpeningAmount != null && { cashOpeningAmount: r.cashOpeningAmount as number }),
+    ...(r.cashAlertMax != null && { cashAlertMax: r.cashAlertMax as number }),
+    ...(r.returnPolicyDays != null && { returnPolicyDays: r.returnPolicyDays as number }),
+    ...(r.returnMaxNoAuth != null && { returnMaxNoAuth: r.returnMaxNoAuth as number }),
+    ...(r.autoCloseTime != null && { autoCloseTime: r.autoCloseTime as string }),
+
+    // ── Delivery ──
+    ...spreadJson(r.deliveryZonesJson as string, 'deliveryZones'),
+    ...(r.freeDeliveryMin != null && { freeDeliveryMin: r.freeDeliveryMin as number }),
+    ...(r.deliveryMaxRadius != null && { deliveryMaxRadius: r.deliveryMaxRadius as number }),
+    ...spreadJson(r.deliveryHoursJson as string, 'deliveryHours'),
+    ...spreadJson(r.ridersJson as string, 'riders'),
+
+    // ── Notificaciones ──
+    ...(r.smtpHost != null && { smtpHost: r.smtpHost as string }),
+    ...(r.smtpPort != null && { smtpPort: r.smtpPort as number }),
+    ...(r.smtpUser != null && { smtpUser: r.smtpUser as string }),
+    ...(r.smtpPass != null && { smtpPass: r.smtpPass as string }),
+    ...(r.smtpFrom != null && { smtpFrom: r.smtpFrom as string }),
+    ...(r.whatsappApiToken != null && { whatsappApiToken: r.whatsappApiToken as string }),
+    ...(r.whatsappBusinessNum != null && { whatsappBusinessNum: r.whatsappBusinessNum as string }),
+    ...(r.whatsappWebhookUrl != null && { whatsappWebhookUrl: r.whatsappWebhookUrl as string }),
+    ...spreadJson(r.notifChannelsJson as string, 'notifChannels'),
+    ...(r.reorderReminderDays != null && { reorderReminderDays: r.reorderReminderDays as number }),
+
+    // ── Integraciones ──
+    ...(r.plinEnabled != null && { plinEnabled: r.plinEnabled as boolean }),
+    ...(r.plinImage != null && { plinImage: r.plinImage as string }),
+    ...(r.plinName != null && { plinName: r.plinName as string }),
+    ...(r.plinPhone != null && { plinPhone: r.plinPhone as string }),
+    ...(r.sunatProvider != null && { sunatProvider: r.sunatProvider as string }),
+    ...(r.sunatApiKey != null && { sunatApiKey: r.sunatApiKey as string }),
+    ...(r.googleAnalyticsId != null && { googleAnalyticsId: r.googleAnalyticsId as string }),
+    ...(r.googleTagManagerId != null && { googleTagManagerId: r.googleTagManagerId as string }),
+
+    // ── Auditoría ──
+    ...(r.logRetentionDays != null && { logRetentionDays: r.logRetentionDays as number }),
+    ...(r.logActions != null && { logActions: r.logActions as string }),
+
+    // ── Respaldo ──
+    ...(r.backupSchedule != null && { backupSchedule: r.backupSchedule as string }),
+    ...(r.lastBackupAt != null && { lastBackupAt: (r.lastBackupAt as Date).toISOString() }),
+
+    // ── Suscripción ──
+    ...(r.planName != null && { planName: r.planName as string }),
+    ...(r.planExpiresAt != null && { planExpiresAt: (r.planExpiresAt as Date).toISOString() }),
+    ...(r.maxProducts != null && { maxProducts: r.maxProducts as number }),
+    ...(r.maxUsers != null && { maxUsers: r.maxUsers as number }),
+    ...(r.maxBranches != null && { maxBranches: r.maxBranches as number }),
+    ...spreadJson<string[]>(r.enabledModulesJson as string, 'enabledModules'),
+
+    // ── Métodos de pago adicionales ──
+    ...(r.transferEnabled != null && { transferEnabled: r.transferEnabled as boolean }),
+    ...(r.transferBankName != null && { transferBankName: r.transferBankName as string }),
+    ...(r.transferAccountNum != null && { transferAccountNum: r.transferAccountNum as string }),
+    ...(r.transferAccountHolder != null && { transferAccountHolder: r.transferAccountHolder as string }),
+
+    // ── StoreCustomizer ──
+    ...spreadJson(r.storeThemeJson as string, 'storeTheme'),
   };
 }
 
 // ── Settings DB ───────────────────────────────────────────────────────────────
 
 export const SettingsDB = {
-  async get(): Promise<DbSettings> {
+  async get(tenantId?: string): Promise<DbSettings> {
     try {
-      const row = await prisma.settings.findUnique({ where: { id: 1 } });
+      const tid = tenantId ?? "main";
+      // Try by tenantId first (multi-tenant), fallback to id:1 (legacy)
+      const row = await prisma.settings.findUnique({ where: { tenantId: tid } })
+        ?? (tid === "main" ? await prisma.settings.findUnique({ where: { id: 1 } }) : null);
       if (!row) return { mode: "whatsapp", adminBypassLogin: false };
       return mapSettings(row);
     } catch (error) {
-      console.warn("[settings] falling back to defaults:", error instanceof Error ? error.message : String(error));
+      logger.warn("[settings] falling back to defaults", { error: error instanceof Error ? error.message : String(error) });
       return { mode: "whatsapp", adminBypassLogin: false };
     }
   },
-  async set(s: DbSettings): Promise<DbSettings> {
-    const d = {
+  async set(s: DbSettings, tenantId?: string): Promise<DbSettings> {
+    const tid = tenantId ?? "main";
+    const d: Record<string, unknown> = {
       mode: s.mode, businessName: s.businessName, businessPhone: s.businessPhone,
       businessAddress: s.businessAddress, logoUrl: s.logoUrl, description: s.description,
       hours: s.hours, deliveryZone: s.deliveryZone, yapeEnabled: s.yapeEnabled ?? false,
@@ -73,8 +185,115 @@ export const SettingsDB = {
       ...(s.maintenanceMessage !== undefined && { maintenanceMessage: s.maintenanceMessage }),
       ...(s.adminBypassLogin !== undefined && { adminBypassLogin: s.adminBypassLogin }),
       ...(s.comboTemplates !== undefined && { comboTemplatesJson: JSON.stringify(s.comboTemplates) }),
+
+      // ── Datos del negocio ──
+      ...(s.razonSocial !== undefined && { razonSocial: s.razonSocial }),
+      ...(s.ruc !== undefined && { ruc: s.ruc }),
+      ...(s.businessEmail !== undefined && { businessEmail: s.businessEmail }),
+      ...(s.currency !== undefined && { currency: s.currency }),
+      ...(s.timezone !== undefined && { timezone: s.timezone }),
+      ...(s.businessType !== undefined && { businessType: s.businessType }),
+      ...(s.socialLinks !== undefined && { socialLinksJson: JSON.stringify(s.socialLinks) }),
+
+      // ── Apariencia ──
+      ...(s.primaryColor !== undefined && { primaryColor: s.primaryColor }),
+      ...(s.secondaryColor !== undefined && { secondaryColor: s.secondaryColor }),
+      ...(s.slogan !== undefined && { slogan: s.slogan }),
+
+      // ── Sistema ──
+      ...(s.dateFormat !== undefined && { dateFormat: s.dateFormat }),
+      ...(s.timeFormat !== undefined && { timeFormat: s.timeFormat }),
+      ...(s.decimals !== undefined && { decimals: s.decimals }),
+      ...(s.taxRate !== undefined && { taxRate: s.taxRate }),
+      ...(s.fiscalYearStart !== undefined && { fiscalYearStart: s.fiscalYearStart }),
+
+      // ── Ventas y comprobantes ──
+      ...(s.invoiceSeries !== undefined && { invoiceSeriesJson: JSON.stringify(s.invoiceSeries) }),
+      ...(s.invoiceStart !== undefined && { invoiceStartJson: JSON.stringify(s.invoiceStart) }),
+      ...(s.enabledDocTypes !== undefined && { enabledDocTypes: s.enabledDocTypes }),
+      ...(s.roundingMode !== undefined && { roundingMode: s.roundingMode }),
+      ...(s.maxDiscountPercent !== undefined && { maxDiscountPercent: s.maxDiscountPercent }),
+      ...(s.discountRequiresAuth !== undefined && { discountRequiresAuth: s.discountRequiresAuth }),
+      ...(s.invoiceFooterText !== undefined && { invoiceFooterText: s.invoiceFooterText }),
+      ...(s.sunatRuc !== undefined && { sunatRuc: s.sunatRuc }),
+      ...(s.sunatDenominacion !== undefined && { sunatDenominacion: s.sunatDenominacion }),
+      ...(s.sunatDireccion !== undefined && { sunatDireccion: s.sunatDireccion }),
+
+      // ── Inventario ──
+      ...(s.defaultUnit !== undefined && { defaultUnit: s.defaultUnit }),
+      ...(s.globalMinStock !== undefined && { globalMinStock: s.globalMinStock }),
+      ...(s.stockAlertChannels !== undefined && { stockAlertChannels: s.stockAlertChannels }),
+      ...(s.adjustReasons !== undefined && { adjustReasonsJson: JSON.stringify(s.adjustReasons) }),
+      ...(s.fefoEnabled !== undefined && { fefoEnabled: s.fefoEnabled }),
+      ...(s.fefoAlertDays !== undefined && { fefoAlertDays: s.fefoAlertDays }),
+      ...(s.inventoryCountFreq !== undefined && { inventoryCountFreq: s.inventoryCountFreq }),
+
+      // ── Caja y pagos ──
+      ...(s.cashOpeningAmount !== undefined && { cashOpeningAmount: s.cashOpeningAmount }),
+      ...(s.cashAlertMax !== undefined && { cashAlertMax: s.cashAlertMax }),
+      ...(s.returnPolicyDays !== undefined && { returnPolicyDays: s.returnPolicyDays }),
+      ...(s.returnMaxNoAuth !== undefined && { returnMaxNoAuth: s.returnMaxNoAuth }),
+      ...(s.autoCloseTime !== undefined && { autoCloseTime: s.autoCloseTime }),
+
+      // ── Delivery ──
+      ...(s.deliveryZones !== undefined && { deliveryZonesJson: JSON.stringify(s.deliveryZones) }),
+      ...(s.freeDeliveryMin !== undefined && { freeDeliveryMin: s.freeDeliveryMin }),
+      ...(s.deliveryMaxRadius !== undefined && { deliveryMaxRadius: s.deliveryMaxRadius }),
+      ...(s.deliveryHours !== undefined && { deliveryHoursJson: JSON.stringify(s.deliveryHours) }),
+      ...(s.riders !== undefined && { ridersJson: JSON.stringify(s.riders) }),
+
+      // ── Notificaciones ──
+      ...(s.smtpHost !== undefined && { smtpHost: s.smtpHost }),
+      ...(s.smtpPort !== undefined && { smtpPort: s.smtpPort }),
+      ...(s.smtpUser !== undefined && { smtpUser: s.smtpUser }),
+      ...(s.smtpPass !== undefined && { smtpPass: s.smtpPass }),
+      ...(s.smtpFrom !== undefined && { smtpFrom: s.smtpFrom }),
+      ...(s.whatsappApiToken !== undefined && { whatsappApiToken: s.whatsappApiToken }),
+      ...(s.whatsappBusinessNum !== undefined && { whatsappBusinessNum: s.whatsappBusinessNum }),
+      ...(s.whatsappWebhookUrl !== undefined && { whatsappWebhookUrl: s.whatsappWebhookUrl }),
+      ...(s.notifChannels !== undefined && { notifChannelsJson: JSON.stringify(s.notifChannels) }),
+      ...(s.reorderReminderDays !== undefined && { reorderReminderDays: s.reorderReminderDays }),
+
+      // ── Integraciones ──
+      ...(s.plinEnabled !== undefined && { plinEnabled: s.plinEnabled }),
+      ...(s.plinImage !== undefined && { plinImage: s.plinImage }),
+      ...(s.plinName !== undefined && { plinName: s.plinName }),
+      ...(s.plinPhone !== undefined && { plinPhone: s.plinPhone }),
+      ...(s.sunatProvider !== undefined && { sunatProvider: s.sunatProvider }),
+      ...(s.sunatApiKey !== undefined && { sunatApiKey: s.sunatApiKey }),
+      ...(s.googleAnalyticsId !== undefined && { googleAnalyticsId: s.googleAnalyticsId }),
+      ...(s.googleTagManagerId !== undefined && { googleTagManagerId: s.googleTagManagerId }),
+
+      // ── Auditoría ──
+      ...(s.logRetentionDays !== undefined && { logRetentionDays: s.logRetentionDays }),
+      ...(s.logActions !== undefined && { logActions: s.logActions }),
+
+      // ── Respaldo ──
+      ...(s.backupSchedule !== undefined && { backupSchedule: s.backupSchedule }),
+      ...(s.lastBackupAt !== undefined && { lastBackupAt: new Date(s.lastBackupAt) }),
+
+      // ── Suscripción ──
+      ...(s.planName !== undefined && { planName: s.planName }),
+      ...(s.planExpiresAt !== undefined && { planExpiresAt: new Date(s.planExpiresAt) }),
+      ...(s.maxProducts !== undefined && { maxProducts: s.maxProducts }),
+      ...(s.maxUsers !== undefined && { maxUsers: s.maxUsers }),
+      ...(s.maxBranches !== undefined && { maxBranches: s.maxBranches }),
+      ...(s.enabledModules !== undefined && { enabledModulesJson: JSON.stringify(s.enabledModules) }),
+
+      // ── Métodos de pago adicionales ──
+      ...(s.transferEnabled !== undefined && { transferEnabled: s.transferEnabled }),
+      ...(s.transferBankName !== undefined && { transferBankName: s.transferBankName }),
+      ...(s.transferAccountNum !== undefined && { transferAccountNum: s.transferAccountNum }),
+      ...(s.transferAccountHolder !== undefined && { transferAccountHolder: s.transferAccountHolder }),
+
+      // ── StoreCustomizer ──
+      ...(s.storeTheme !== undefined && { storeThemeJson: JSON.stringify(s.storeTheme) }),
     };
-    const row = await prisma.settings.upsert({ where: { id: 1 }, create: { id: 1, ...d }, update: d });
+    const row = await prisma.settings.upsert({
+      where: { tenantId: tid },
+      create: { tenantId: tid, ...d },
+      update: d,
+    });
     return mapSettings(row);
   },
 };

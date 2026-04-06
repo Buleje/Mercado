@@ -5,10 +5,12 @@ import { OrdersDB, CouponsDB, PromotionsDB } from "@/lib/jsondb";
 import type { DbOrder } from "@/lib/jsondb";
 import { emitAdminSSE } from "@/lib/sse-emitter";
 import { sendOrderNotification } from "@/lib/mailer";
-import { sendWhatsAppNotification, getWhatsAppLink } from "@/lib/whatsapp";
+import { sendWhatsAppNotification, getWhatsAppLink, sendWhatsAppText } from "@/lib/whatsapp";
+import { sendReceiptByWhatsApp } from "@/lib/receipt-whatsapp";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logActivity } from "@/lib/activity-logger";
 import { requireAdmin } from "@/lib/require-admin";
+import { withDbRetry } from "@/lib/db-retry";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 import { InventoryMovementsDB } from "@/lib/db/inventory.db";
@@ -16,6 +18,8 @@ import { resolveTenantSlug } from "@/lib/resolve-tenant";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { logger } from "@/lib/logger";
 import { getOrSet } from "@/lib/cache";
+import { createDefaultDiscountEngine } from "@/lib/pricing/discount-strategies";
+import type { OrderContext } from "@/lib/pricing/discount-strategies";
 
 const OrderItemSchema = z.object({
   id: z.number(),
@@ -50,26 +54,6 @@ const OrderPostSchema = z.object({
   deuda: z.boolean().optional(),
 });
 
-/** Retry a DB operation up to `retries` times with exponential backoff on connection errors. */
-async function withDbRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
-  for (let i = 0; i < retries; i++) {
-    try {
-      return await fn();
-    } catch (err: unknown) {
-      const isConnectionError =
-        err instanceof Error &&
-        (err.message.includes("Connection") ||
-          err.message.includes("ECONNREFUSED") ||
-          err.message.includes("ETIMEDOUT") ||
-          err.message.includes("connection") ||
-          err.message.includes("timeout"));
-      if (!isConnectionError || i === retries - 1) throw err;
-      await new Promise(r => setTimeout(r, 300 * Math.pow(2, i))); // 300ms, 600ms
-    }
-  }
-  throw new Error("Unreachable");
-}
-
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
@@ -97,6 +81,7 @@ export async function GET(req: NextRequest) {
           status: statusFilter ?? undefined,
           since:  sinceParam  ?? undefined,
           phone:  phoneParam  ?? undefined,
+          tenantId: auth.tenantId,
         })
       );
       return NextResponse.json(orders, {
@@ -116,6 +101,7 @@ export async function GET(req: NextRequest) {
         status:  statusFilter  ?? undefined,
         since:   sinceParam    ?? undefined,
         phone:   phoneParam    ?? undefined,
+        tenantId: auth.tenantId,
       })
     );
 
@@ -171,7 +157,7 @@ export async function POST(req: NextRequest) {
   const tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
 
   // Fetch tenant plan and enforce maxOrdersPerMonth
-  const tenantRow = await prisma.tenant.findFirst({ where: { slug: tenantId }, select: { plan: true } });
+  const tenantRow = await prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] }, select: { plan: true } });
   const limits = getPlanLimits(tenantRow?.plan ?? "free");
   if (!withinLimit(0, limits.maxOrdersPerMonth)) {
     // maxOrdersPerMonth === 0 means fully blocked (shouldn't happen in real configs)
@@ -240,7 +226,7 @@ export async function POST(req: NextRequest) {
     let promoDiscount = 0;
     let verifiedPromoId: string | undefined;
     if (body.appliedPromoId) {
-      const promo = await PromotionsDB.getAll().then(all => all.find(p => p.id === body.appliedPromoId));
+      const promo = await PromotionsDB.getAll(tenantId).then(all => all.find(p => p.id === body.appliedPromoId));
       const now = new Date();
       const promoValid =
         promo &&
@@ -253,7 +239,37 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const computedTotal = Math.max(0, itemsTotal - serverCouponDiscount - promoDiscount);
+    // ── Strategy-based discounts (volume, loyalty, first purchase) ───────────
+    // Uses the discount engine to compute the best automatic discount
+    let engineDiscount = 0;
+    let engineDiscountReason = "";
+    const totalItemCount = body.items.reduce((sum, i) => sum + i.quantity, 0);
+    const customerPhone = body.customer.phone;
+    let customerTotalPurchases = 0;
+    let isFirstPurchase = true;
+
+    if (customerPhone) {
+      customerTotalPurchases = await prisma.order.count({
+        where: { tenantId, customerPhone },
+      }).catch(() => 0);
+      isFirstPurchase = customerTotalPurchases === 0;
+    }
+
+    const discountCtx: OrderContext = {
+      subtotal: itemsTotal,
+      itemCount: totalItemCount,
+      customerTotalPurchases,
+      isFirstPurchase,
+    };
+    const discountEngine = createDefaultDiscountEngine();
+    const engineResult = discountEngine.apply(discountCtx);
+
+    if (engineResult.bestDiscount && engineResult.bestDiscount.discountAmount > 0) {
+      engineDiscount = engineResult.bestDiscount.discountAmount;
+      engineDiscountReason = engineResult.bestDiscount.reason;
+    }
+
+    const computedTotal = Math.max(0, itemsTotal - serverCouponDiscount - promoDiscount - engineDiscount);
     // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     const now = new Date().toISOString();
@@ -303,6 +319,10 @@ export async function POST(req: NextRequest) {
         appliedPromoId: verifiedPromoId,
         discountAmount: promoDiscount,
       }),
+      ...(engineDiscount > 0 && {
+        autoDiscount: engineDiscount,
+        autoDiscountReason: engineDiscountReason,
+      }),
       createdAt: now,
       updatedAt: now,
     };
@@ -329,6 +349,7 @@ export async function POST(req: NextRequest) {
       total: saved.total,
       paymentMethod: saved.paymentMethod,
       items: saved.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })),
+      tenantId,
     }).catch(() => {});
 
     // Auto-send WhatsApp order received notification (fire-and-forget)
@@ -354,6 +375,26 @@ export async function POST(req: NextRequest) {
           // API not configured — generate link for manual use (logged but not returned)
           getWhatsAppLink(orderInfo);
         });
+
+        // Enviar recibo por WhatsApp solo si el cliente tiene alertasWhatsapp activo
+        const custWa = await prisma.customer.findUnique({
+          where: { phone: saved.customer.phone },
+          select: { alertasWhatsapp: true },
+        }).catch(() => null);
+        if (custWa?.alertasWhatsapp !== false) {
+          sendReceiptByWhatsApp(
+            {
+              id: saved.id,
+              items: saved.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })),
+              total: saved.total,
+              paymentMethod: saved.paymentMethod,
+              createdAt: saved.createdAt,
+            },
+            saved.customer.phone,
+            saved.customer.name,
+          ).catch(() => {});
+        }
+
         // Push notification for new order
         sendPushToPhone(saved.customer.phone, {
           title: "📋 ¡Pedido recibido!",
@@ -373,6 +414,33 @@ export async function POST(req: NextRequest) {
       total: saved.total,
       paymentMethod: saved.paymentMethod,
     });
+
+    // ── Notify store OWNER/VENDOR via WhatsApp + Push (fire-and-forget) ────
+    (async () => {
+      try {
+        const tenant = await prisma.tenant.findUnique({
+          where: { slug: tenantId },
+          select: { ownerPhone: true, name: true },
+        });
+        if (!tenant?.ownerPhone) return;
+        const ownerPhone = tenant.ownerPhone;
+        const itemsSummary = saved.items.slice(0, 5).map((i: { quantity: number; name: string }) => `${i.quantity}× ${i.name}`).join(", ");
+        const moreItems = saved.items.length > 5 ? ` y ${saved.items.length - 5} más` : "";
+        const vendorMsg = `🔔 *Nuevo pedido en ${tenant.name}*\n\n` +
+          `👤 Cliente: ${saved.customer.name}\n` +
+          `📦 Productos: ${itemsSummary}${moreItems}\n` +
+          `💰 Total: S/${saved.total.toFixed(2)}\n` +
+          `💳 Pago: ${saved.paymentMethod === "yape" ? "Yape" : saved.paymentMethod === "efectivo" ? "Efectivo" : saved.paymentMethod ?? "—"}\n\n` +
+          `Revisa tu panel de administración para confirmar el pedido.`;
+        sendWhatsAppText(ownerPhone, vendorMsg).catch(() => {});
+        sendPushToPhone(ownerPhone, {
+          title: `🔔 Nuevo pedido — S/${saved.total.toFixed(2)}`,
+          body: `${saved.customer.name} hizo un pedido: ${itemsSummary}${moreItems}`,
+          url: `/admin?tab=pedidos`,
+        }).catch(() => {});
+      } catch { /* non-critical — never block the response */ }
+    })();
+    // ───────────────────────────────────────────────────────────────────────
 
     // ── Loyalty milestone: auto-generate a reward coupon ───────────────────
     // Check every 5th completed order for the customer (5, 10, 15…)

@@ -1,0 +1,18 @@
+{
+  "version": "0.2",
+  "language": "en,es",
+  "words": [
+    "almacenero",
+    "Turbopack",
+    "tenantId",
+    "upsert",
+    "prisma",
+    "supabase"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    ".next",
+    "dist",
+    "prisma/migrations"
+  ]
+}

@@ -85,12 +85,12 @@ export default function ProfitabilityTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-primary" /> Análisis de Rentabilidad
+            <TrendingUp className="h-6 w-6 text-primary" /> Cuánto Gano por Producto
           </h1>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Márgenes y rentabilidad por producto y categoría</p>
+          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Mira cuánto ganas con cada producto y categoría</p>
         </div>
-        <button onClick={() => exportToCSV(filtered.map(l => ({ producto: l.product, categoria: l.category, unidades: l.unitsSold, ingresos: l.revenue, costo: l.cogs, margen_bruto: l.grossMargin, margen_pct: l.marginPct.toFixed(1) + "%" })), "rentabilidad")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
-          <Download className="h-4 w-4" /> Exportar
+        <button onClick={() => exportToCSV(filtered.map(l => ({ producto: l.product, categoria: l.category, unidades: l.unitsSold, ingresos: l.revenue, costo: l.cogs, margen_bruto: l.grossMargin, margen_pct: l.marginPct.toFixed(1) + "%" })), "ganancias-producto")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm font-semibold text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-accent transition-colors">
+          <Download className="h-4 w-4" /> Descargar
         </button>
       </div>
 
@@ -112,7 +112,7 @@ export default function ProfitabilityTab() {
 
       {/* Category bar chart */}
       <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
-        <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4">Margen bruto por categoría</h3>
+        <h3 className="font-bold text-sm text-gray-900 dark:text-foreground mb-4">Ganancia por categoría</h3>
         <div className="space-y-3">
           {catSummary.map(([cat, data]) => {
             const pctFill = maxCatMargin > 0 ? (data.margin / maxCatMargin) * 100 : 0;

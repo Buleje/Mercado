@@ -1,4 +1,5 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "buildCommand": "npx prisma generate && npm run build",
   "installCommand": "npm ci",
@@ -59,6 +60,122 @@
     {
       "path": "/api/cron/agent-tasks",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/batch-expiry-alerts",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/auto-close-register",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/daily-summary",
+      "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/cron/stock-alerts-notify",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/auto-reorder-check",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/expiry-discounts",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/auto-backup",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/fiados-reminder",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/first-purchase-coupon",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/abandoned-cart",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/prestamos/cron/mora",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/prestamos/cron/recordatorios",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/settle-commissions",
+      "schedule": "0 0 * * 0"
+    },
+    {
+      "path": "/api/cron/monthly-report",
+      "schedule": "0 6 1 * *"
+    },
+    {
+      "path": "/api/cron/cleanup-demos",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/reorder-reminders",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/ai-history-cleanup",
+      "schedule": "0 3 * * 0"
+    },
+    {
+      "path": "/api/cron/marketplace-daily-summary",
+      "schedule": "0 21 * * *"
+    },
+    {
+      "path": "/api/cron/marketplace-abandoned-carts",
+      "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/cron/dead-stock-report",
+      "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/cron/daily-deal-bundle",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/price-drop-alerts",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/category-margins-report",
+      "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/supplier-scoring",
+      "schedule": "0 8 1 * *"
+    },
+    {
+      "path": "/api/cron/marketplace-weekly-report",
+      "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/zone-offers-push",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/inactive-customers",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/isolation-monitor",
+      "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/cron/churn-score",
+      "schedule": "0 2 * * *"
     }
   ]
 }

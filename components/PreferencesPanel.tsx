@@ -119,12 +119,13 @@ export function PreferencesPanel() {
           value={preferences.theme || "system"}
           onChange={(value) => {
               updatePreference("theme", value as UserPreferences["theme"]);
-              setTheme(value as "light" | "dark" | "system");
+              setTheme(value as "light" | "dark" | "system" | "auto");
             }}
           options={[
             { value: "light", label: "Claro" },
             { value: "dark", label: "Oscuro" },
             { value: "system", label: "Sistema" },
+            { value: "auto", label: "Automatico (7pm-6am oscuro)" },
           ]}
         />
         <Select

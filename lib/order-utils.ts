@@ -1,17 +1,17 @@
-﻿import type { Customer } from "@/contexts/customer-context";
+import type { Customer } from "@/contexts/customer-context";
 import type { CartItem } from "@/contexts/cart-context";
 
 /** Minimal item shape required by order utilities — superset of CartItem without requiring category */
 type OrderItem = { id: number; name: string; price: number; quantity: number; unit: string; image: string };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 type _CartItemCompat = CartItem extends OrderItem ? true : false; // compile-time check
 
 // Theme colors
 const PC = {
-  primaryDark: "#245c43",
-  primary: "#2d6a4f",
-  secondary: "#f4a261",
+  primaryDark: "#009690",
+  primary: "#00B4A6",
+  secondary: "#f97316",
   bgLight: "#F0FDF4",
   border: "#D1FAE5",
   text: "#111827",
@@ -37,7 +37,7 @@ export function formatWhatsAppMessage(
     .map((i) => `  - ${i.name} x${i.quantity}  =>  S/ ${(i.price * i.quantity).toFixed(2)}`)
     .join("\n");
   return (
-    `*Nuevo Pedido - Bodega San Martin*\n\n` +
+    `*Nuevo Pedido - Buleje*\n\n` +
     `*Cliente:* ${customer.name}\n` +
     `*Ubicacion:* ${customer.location}\n` +
     `*Ver en Maps:* ${googleMapsUrl(customer.location)}\n` +
@@ -139,7 +139,7 @@ export async function generateReceiptBlob(
   ctx.font = `bold 26px ${FONT}`;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText("Bodega San Martin", PAD + 10, TOP_BAR_H / 2 - 9);
+  ctx.fillText("Buleje", PAD + 10, TOP_BAR_H / 2 - 9);
   ctx.fillStyle = "rgba(255,255,255,0.55)";
   ctx.font = `15px ${FONT}`;
   ctx.fillText(`${items.length} producto${items.length !== 1 ? "s" : ""}`, PAD + 10, TOP_BAR_H / 2 + 15);

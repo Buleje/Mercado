@@ -6,14 +6,14 @@ import { useInView } from "@/hooks/use-in-view";
 
 const faqs = [
   {
-    question: "¿Hacen delivery de abarrotes en todo Pucallpa?",
+    question: "¿Hacen delivery de abarrotes en toda la zona?",
     answer:
-      "Sí, realizamos delivery de abarrotes en toda la zona urbana de Pucallpa, incluyendo Callería, Yarinacocha, Manantay, Campo Verde y alrededores. Nuestro servicio de entrega a domicilio cubre la mayoría de barrios y urbanizaciones. Consulta por WhatsApp si tienes dudas sobre la cobertura en tu zona.",
+      "Sí, realizamos delivery de abarrotes en toda nuestra zona de cobertura, incluyendo Callería, Yarinacocha, Manantay, Campo Verde y alrededores. Nuestro servicio de entrega a domicilio cubre la mayoría de barrios y urbanizaciones. Consulta por WhatsApp si tienes dudas sobre la cobertura en tu zona.",
   },
   {
     question: "¿Se puede pagar con Yape?",
     answer:
-      "¡Por supuesto! Aceptamos pagos con Yape y Plin para tu comodidad. También puedes pagar en efectivo contra entrega. Somos una tienda con Yape en Pucallpa para que compres de forma fácil y segura.",
+      "¡Por supuesto! Aceptamos pagos con Yape y Plin para tu comodidad. También puedes pagar en efectivo contra entrega. Compra de forma fácil y segura.",
   },
   {
     question: "¿También aceptan efectivo contra entrega?",
@@ -33,22 +33,22 @@ const faqs = [
   {
     question: "¿Tienen productos de limpieza?",
     answer:
-      "Sí, ofrecemos una variedad completa de productos de limpieza: detergente, lejía, jabón, limpiadores multiusos, desinfectantes y más. Todo con delivery en Pucallpa.",
+      "Sí, ofrecemos una variedad completa de productos de limpieza: detergente, lejía, jabón, limpiadores multiusos, desinfectantes y más. Todo con delivery.",
   },
   {
     question: "¿Cómo hago mi pedido online?",
     answer:
-      "Es muy fácil: navega por nuestro catálogo de productos en bodegasanmartin.pe, agrega lo que necesites al carrito y completa tu pedido. También puedes escribirnos directamente por WhatsApp al 916 409 675. Aceptamos pagos por Yape o efectivo contra entrega.",
+      "Es muy fácil: navega por nuestro catálogo de productos en buleje.pe, agrega lo que necesites al carrito y completa tu pedido. También puedes escribirnos directamente por WhatsApp al 916 409 675. Aceptamos pagos por Yape o efectivo contra entrega.",
   },
   {
-    question: "¿Cuánto demora el delivery en Pucallpa?",
+    question: "¿Cuánto demora el delivery?",
     answer:
-      "Nuestro delivery en Pucallpa tiene un tiempo estimado de 30 minutos en zona urbana. Generalmente realizamos la entrega el mismo día. Para pedidos urgentes, contáctanos por WhatsApp y coordinamos la entrega más rápida posible.",
+      "Nuestro delivery tiene un tiempo estimado de 30 minutos en zona urbana. Generalmente realizamos la entrega el mismo día. Para pedidos urgentes, contáctanos por WhatsApp y coordinamos la entrega más rápida posible.",
   },
   {
     question: "¿El delivery es gratis?",
     answer:
-      "Sí, el delivery es totalmente gratis para pedidos mayores a S/50 en toda la zona urbana de Pucallpa. Para pedidos menores, consulta el costo de envío por WhatsApp.",
+      "Sí, el delivery es totalmente gratis para pedidos mayores a S/50 en toda nuestra zona de cobertura. Para pedidos menores, consulta el costo de envío por WhatsApp.",
   },
   {
     question: "¿Puedo devolver un producto si no estoy satisfecho?",
@@ -56,9 +56,9 @@ const faqs = [
       "¡Claro! Si recibiste un producto en mal estado o diferente al pedido, te lo cambiamos o devolvemos tu dinero. Revisamos cada pedido antes de enviarlo para asegurar la mejor calidad. Avísanos dentro de las 24 horas de recibido tu pedido.",
   },
   {
-    question: "¿Desde cuándo opera Bodega San Martín?",
+    question: "¿Desde cuándo opera Buleje?",
     answer:
-      "Bodega San Martín opera desde 2011 en Pucallpa, Ucayali. Somos un negocio familiar con más de 13 años de experiencia atendiendo a familias de Pucallpa y alrededores con productos de calidad y delivery rápido.",
+      "Buleje opera desde 2011. Somos un negocio familiar con más de 13 años de experiencia atendiendo a familias con productos de calidad y delivery rápido.",
   },
   {
     question: "¿Atienden los domingos?",
@@ -104,7 +104,7 @@ export default function FAQ() {
             </span>
           </h2>
           <p className="mt-5 text-base text-muted max-w-xl mx-auto">
-            Todo lo que necesitas saber sobre nuestra tienda y delivery en Pucallpa.
+            Todo lo que necesitas saber sobre nuestra tienda y delivery.
           </p>
         </div>
 

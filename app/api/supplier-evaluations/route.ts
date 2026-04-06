@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     ]);
     return NextResponse.json({ evaluations, averages });
   }
-  const evaluations = await SupplierEvaluationsDB.getAll();
+  const evaluations = await SupplierEvaluationsDB.getAll(auth.tenantId);
   return NextResponse.json(evaluations);
 }
 

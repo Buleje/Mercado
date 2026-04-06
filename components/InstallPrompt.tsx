@@ -18,6 +18,11 @@ export default function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
+    // Never show install prompt inside admin/superadmin panel — it blocks navigation
+    if (window.location.pathname.startsWith("/admin") || window.location.pathname.startsWith("/superadmin")) {
+      return;
+    }
+
     // Check if user already dismissed the prompt
     const dismissed = localStorage.getItem("bsm-install-dismissed");
     if (dismissed === "1") {
@@ -80,10 +85,12 @@ export default function InstallPrompt() {
     // Wait for the user's response
     const { outcome } = await deferredPrompt.userChoice;
 
-    if (outcome === "accepted") {
-      console.log("[PWA] User accepted the install prompt");
-    } else {
-      console.log("[PWA] User dismissed the install prompt");
+    if (process.env.NODE_ENV === "development") {
+      if (outcome === "accepted") {
+        console.log("[PWA] User accepted the install prompt");
+      } else {
+        console.log("[PWA] User dismissed the install prompt");
+      }
     }
 
     // Clear the prompt
@@ -110,7 +117,7 @@ export default function InstallPrompt() {
               <Smartphone className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h3 className="text-white font-bold text-sm">Instalar Bodega San Martín</h3>
+              <h3 className="text-white font-bold text-sm">Instalar Buleje</h3>
               <p className="text-white/70 text-xs">Acceso rápido desde tu inicio</p>
             </div>
           </div>

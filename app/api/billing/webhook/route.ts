@@ -184,14 +184,33 @@ export async function processStripeEvent(event: Stripe.Event): Promise<void> {
       break;
     }
 
-    // ── Invoice payment failed → log ──────────────────
+    // ── Invoice payment failed → log + notify tenant ───
     case "invoice.payment_failed": {
       const invoice = event.data.object as Stripe.Invoice;
       const subDetails2 = invoice.parent?.subscription_details;
       const subRef2 = subDetails2?.subscription;
       const subId = typeof subRef2 === "string" ? subRef2 : subRef2?.id;
       if (!subId) break;
-      logger.warn("[Stripe] Payment failed for subscription", { subId });
+
+      const failedTenant = await prisma.tenant.findFirst({
+        where: { stripeSubscriptionId: subId },
+        select: { id: true, slug: true, plan: true },
+      });
+
+      logger.warn("[Stripe] Payment failed for subscription", { subId, tenant: failedTenant?.slug });
+
+      if (failedTenant) {
+        await prisma.activityLog.create({
+          data: {
+            action: "payment_failed",
+            entity: "tenant",
+            entityId: failedTenant.slug,
+            detail: `Pago fallido para suscripción ${subId}. Stripe reintentará automáticamente.`,
+            user: "stripe-webhook",
+            tenantId: failedTenant.slug,
+          },
+        }).catch(() => {});
+      }
       break;
     }
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- Playwright tests use require() for static imports in test blocks */
 import { test, expect, APIRequestContext } from "@playwright/test";
 
 // ─────────────────────────────────────────────────────────────────────────────

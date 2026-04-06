@@ -12,7 +12,7 @@ import { Truck, BadgePercent, ShieldCheck, Leaf, ArrowRight } from "lucide-react
 export const BenefitsBlockSchema = z.object({
   badge: z.string().default("Nuestras ventajas"),
   title: z.string().default("¿Por qué elegirnos?"),
-  subtitle: z.string().default("Tu tienda virtual de productos de consumo en Pucallpa con delivery rápido y pago fácil."),
+  subtitle: z.string().default("Tu tienda virtual de productos de consumo con delivery rápido y pago fácil."),
   benefits: z.array(z.object({
     icon: z.string().default("Truck"),
     title: z.string(),
@@ -22,7 +22,7 @@ export const BenefitsBlockSchema = z.object({
     {
       icon: "Truck",
       title: "Delivery Rápido",
-      description: "Entrega a domicilio en toda la zona urbana de Pucallpa.",
+      description: "Entrega a domicilio en toda tu zona.",
       iconBg: "bg-blue-500",
     },
     {
@@ -139,6 +139,6 @@ export const BenefitsBlockMetadata = {
   description: "Muestra las ventajas y beneficios del servicio",
   category: "marketing" as const,
   icon: "Gift",
-  defaultProps: BenefitsBlockSchema.parse({}),
+  defaultProps: (() => { const parsed = BenefitsBlockSchema.safeParse({}); return parsed.success ? parsed.data : { badge: "Nuestras ventajas", title: "¿Por qué elegirnos?", subtitle: "", benefits: [], showCTA: true, ctaText: "Empieza a comprar ahora", ctaLink: "/tienda" }; })(),
   propsSchema: BenefitsBlockSchema,
 };

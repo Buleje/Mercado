@@ -1,0 +1,419 @@
+"use client";
+/* eslint-disable react-hooks/set-state-in-effect */
+
+import { useState, useEffect, useCallback } from "react";
+import { Search, Copy, Check, Trash2, Clock, Hash, Eye } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+// ── Types ──────────────────────────────────────────────────────────────────
+
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  category?: string;
+};
+
+type PostType = "oferta" | "nuevo" | "receta" | "motivacional";
+
+type GeneratedPost = {
+  id: string;
+  text: string;
+  type: PostType;
+  productName: string;
+  hashtags: string;
+  createdAt: string;
+};
+
+// ── Constants ───────────────────────────────────────────────────────────────
+
+const POST_TYPES: { value: PostType; label: string }[] = [
+  { value: "oferta", label: "Oferta del dia" },
+  { value: "nuevo", label: "Nuevo producto" },
+  { value: "receta", label: "Receta / Uso" },
+  { value: "motivacional", label: "Motivacional" },
+];
+
+const HASHTAGS =
+  "#Buleje #Pucallpa #Ofertas #Abarrotes #Delivery #TiendaLocal";
+
+const TYPE_COLORS: Record<PostType, string> = {
+  oferta:
+    "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+  nuevo:
+    "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  receta:
+    "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  motivacional:
+    "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+};
+
+const LS_KEY = "bsm_post_history";
+
+// ── Template generator ──────────────────────────────────────────────────────
+
+function generateText(
+  type: PostType,
+  product: Product,
+  prevPrice: string,
+  customNote: string
+): string {
+  const prev = parseFloat(prevPrice);
+  switch (type) {
+    case "oferta":
+      return (
+        `OFERTA DEL DIA — ${product.name} a solo S/ ${product.price.toFixed(2)}!` +
+        (prev > 0 ? ` Antes S/ ${prev.toFixed(2)}.` : "") +
+        ` Solo en Buleje. Pide por WhatsApp!`
+      );
+    case "nuevo":
+      return `RECIEN LLEGADO — ${product.name}. Ya disponible en nuestra tienda. Ven a visitarnos o pide por WhatsApp!`;
+    case "receta":
+      return (
+        `SABIAS QUE... con ${product.name} puedes preparar platos deliciosos?` +
+        (customNote ? ` ${customNote}` : "") +
+        ` Consiguelo en Buleje, Pucallpa.`
+      );
+    case "motivacional":
+      return (
+        `Gracias por confiar en Buleje. Cada compra apoya a una familia pucallpina.` +
+        (customNote ? ` ${customNote}` : "") +
+        ` Los esperamos!`
+      );
+  }
+}
+
+// ── Component ───────────────────────────────────────────────────────────────
+
+export default function SocialPostGenerator() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [postType, setPostType] = useState<PostType>("oferta");
+  const [prevPrice, setPrevPrice] = useState("");
+  const [customNote, setCustomNote] = useState("");
+  const [generatedText, setGeneratedText] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [history, setHistory] = useState<GeneratedPost[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Load products
+  useEffect(() => {
+    setLoadingProducts(true);
+    fetch("/api/products?limit=200")
+      .then((r) => r.json())
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data.products ?? []);
+        setProducts(list);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingProducts(false));
+  }, []);
+
+  // Load history
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) setHistory(JSON.parse(raw));
+    } catch {}
+  }, []);
+
+  const saveHistory = useCallback((next: GeneratedPost[]) => {
+    setHistory(next);
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(next));
+    } catch {}
+  }, []);
+
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const handleGenerate = () => {
+    if (!selectedProduct && postType !== "motivacional") return;
+    const prod = selectedProduct ?? { id: 0, name: "Tienda", price: 0 };
+    const text = generateText(postType, prod, prevPrice, customNote);
+    setGeneratedText(text);
+  };
+
+  const handleCopy = () => {
+    if (!generatedText) return;
+    navigator.clipboard.writeText(generatedText + "\n\n" + HASHTAGS).then(
+      () => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+        // Save to history
+        const entry: GeneratedPost = {
+          id: Date.now().toString(),
+          text: generatedText,
+          type: postType,
+          productName: selectedProduct?.name ?? "—",
+          hashtags: HASHTAGS,
+          createdAt: new Date().toISOString(),
+        };
+        saveHistory([entry, ...history].slice(0, 20));
+      },
+      () => {}
+    );
+  };
+
+  const removeFromHistory = (id: string) => {
+    saveHistory(history.filter((h) => h.id !== id));
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Generador de Posts
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Crea contenido para redes sociales en segundos
+          </p>
+        </div>
+        <button
+          onClick={() => setShowHistory(!showHistory)}
+          className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+        >
+          <Clock className="h-4 w-4" />
+          Historial ({history.length})
+        </button>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Left: Form */}
+        <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+          {/* Post type */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Tipo de post
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {POST_TYPES.map((t) => (
+                <button
+                  key={t.value}
+                  onClick={() => setPostType(t.value)}
+                  className={cn(
+                    "rounded-lg border px-3 py-2 text-sm font-medium transition",
+                    postType === t.value
+                      ? "border-[#00B4A6] bg-[#00B4A6] text-white"
+                      : "border-gray-200 bg-gray-50 text-gray-700 hover:border-[#00B4A6]/50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Product search */}
+          {postType !== "motivacional" && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Producto
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar producto..."
+                  className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                />
+              </div>
+              {search && (
+                <div className="mt-1 max-h-40 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900">
+                  {loadingProducts ? (
+                    <p className="p-3 text-sm text-gray-500">Cargando...</p>
+                  ) : filteredProducts.length === 0 ? (
+                    <p className="p-3 text-sm text-gray-500">Sin resultados</p>
+                  ) : (
+                    filteredProducts.slice(0, 8).map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setSelectedProduct(p);
+                          setSearch(p.name);
+                        }}
+                        className="flex w-full items-center justify-between px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        <span className="text-gray-800 dark:text-gray-200">
+                          {p.name}
+                        </span>
+                        <span className="font-medium text-[#00B4A6]">
+                          S/ {p.price?.toFixed(2)}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+              {selectedProduct && (
+                <p className="mt-1 text-xs text-[#00B4A6]">
+                  Seleccionado: {selectedProduct.name} — S/{" "}
+                  {selectedProduct.price.toFixed(2)}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Prev price (oferta only) */}
+          {postType === "oferta" && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Precio anterior (opcional)
+              </label>
+              <input
+                type="number"
+                value={prevPrice}
+                onChange={(e) => setPrevPrice(e.target.value)}
+                placeholder="Ej: 5.50"
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+          )}
+
+          {/* Custom note */}
+          {(postType === "receta" || postType === "motivacional") && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Nota adicional
+              </label>
+              <textarea
+                value={customNote}
+                onChange={(e) => setCustomNote(e.target.value)}
+                rows={2}
+                placeholder="Agrega un detalle personal..."
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm focus:border-[#00B4A6] focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+          )}
+
+          <button
+            onClick={handleGenerate}
+            disabled={!selectedProduct && postType !== "motivacional"}
+            className="w-full rounded-lg bg-[#00B4A6] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#009690] disabled:opacity-50"
+          >
+            Generar post
+          </button>
+        </div>
+
+        {/* Right: Preview */}
+        <div className="space-y-4">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+            <div className="mb-3 flex items-center gap-2">
+              <Eye className="h-4 w-4 text-gray-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Preview — estilo Instagram
+              </span>
+            </div>
+            {generatedText ? (
+              <div className="rounded-xl border border-gray-100 bg-gradient-to-br from-[#00B4A6] to-[#1a3d2e] p-5 dark:border-gray-800">
+                <div className="mb-1 text-xs font-bold text-[#f97316]">
+                  Buleje
+                </div>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-white">
+                  {generatedText}
+                </p>
+                <p className="mt-3 text-xs text-emerald-300">{HASHTAGS}</p>
+              </div>
+            ) : (
+              <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+                <p className="text-sm text-gray-400">
+                  Genera un post para verlo aqui
+                </p>
+              </div>
+            )}
+          </div>
+
+          {generatedText && (
+            <button
+              onClick={handleCopy}
+              className={cn(
+                "flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition",
+                copied
+                  ? "bg-emerald-600 text-white"
+                  : "bg-[#f97316] text-white hover:bg-[#e08c4a]"
+              )}
+            >
+              {copied ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  Copiado al portapapeles
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  Copiar texto + hashtags
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Hashtags */}
+          <div className="flex flex-wrap gap-2">
+            {HASHTAGS.split(" ").map((tag) => (
+              <span
+                key={tag}
+                className="flex items-center gap-1 rounded-full bg-[#00B4A6]/10 px-2.5 py-1 text-xs text-[#00B4A6] dark:bg-[#00B4A6]/20 dark:text-emerald-400"
+              >
+                <Hash className="h-3 w-3" />
+                {tag.replace("#", "")}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* History */}
+      {showHistory && (
+        <div className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
+          <h3 className="mb-4 text-sm font-semibold text-gray-800 dark:text-white">
+            Historial de posts generados
+          </h3>
+          {history.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No hay posts en el historial.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {history.map((h) => (
+                <div
+                  key={h.id}
+                  className="flex items-start gap-3 rounded-lg border border-gray-100 p-3 dark:border-gray-800"
+                >
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
+                      TYPE_COLORS[h.type]
+                    )}
+                  >
+                    {POST_TYPES.find((t) => t.value === h.type)?.label}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-gray-700 dark:text-gray-300">
+                      {h.text}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-400">
+                      {h.productName} —{" "}
+                      {new Date(h.createdAt).toLocaleDateString("es-PE")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => removeFromHistory(h.id)}
+                    className="shrink-0 text-gray-400 hover:text-red-500"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

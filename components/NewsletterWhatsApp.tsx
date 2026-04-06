@@ -77,7 +77,7 @@ export default function NewsletterWhatsApp() {
             </h3>
 
             <p className="text-white/80 mt-4 text-base sm:text-lg max-w-lg mx-auto lg:mx-0 leading-relaxed">
-              Únete y recibe las mejores promociones de Bodega San Martín cada semana.
+              Únete y recibe las mejores promociones de Buleje cada semana.
               <strong className="text-white"> Sin spam, solo ahorro.</strong>
             </p>
 

@@ -50,8 +50,8 @@ export default function OrderConfirmModal() {
   const orderId = lastOrder?.id ?? "";
   const shortId = orderId ? `#${orderId.slice(-6).toUpperCase()}` : "";
   const CONFIRM_MSG = orderId
-    ? `Hola! Recibi con exito el pedido ${shortId}. Muchas gracias Bodega San Martin!`
-    : "Hola! Recibi con exito el pedido. Muchas gracias Bodega San Martin!";
+    ? `Hola! Recibi con exito el pedido ${shortId}. Muchas gracias Buleje!`
+    : "Hola! Recibi con exito el pedido. Muchas gracias Buleje!";
   const REJECT_MSG = orderId
     ? `Hola, tuve un problema con mi pedido ${shortId} y necesito asistencia.`
     : "Hola, tuve un problema con mi pedido y necesito asistencia.";
@@ -65,7 +65,7 @@ export default function OrderConfirmModal() {
     try { localStorage.removeItem("bsm-last-order"); } catch { /* ignore */ }
     closeConfirmModal();
     const name = customer?.name ?? "Cliente";
-    const loc = customer?.location ?? "Pucallpa";
+    const loc = customer?.location ?? "";
     setTimeout(() => openReviewModal(name, loc), 500);
   };
 
@@ -108,7 +108,7 @@ export default function OrderConfirmModal() {
           >
             <div className="pointer-events-auto w-full max-w-sm bg-white dark:bg-background rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-label="Confirmar recepción">
               {/* Header strip */}
-              <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(90deg, #245c43, #2d6a4f, #245c43)" }}>
+              <div className="px-6 py-4 flex items-center justify-between" style={{ background: "linear-gradient(90deg, #009690, #00B4A6, #009690)" }}>
                 <div className="flex items-center gap-3">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15">
                     <Clock className="h-5 w-5 text-white" />

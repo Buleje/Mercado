@@ -72,22 +72,53 @@ function mapBundle(b: PBundle & { items: PBundleItem[] }): DbBundle {
 // ── Products ──────────────────────────────────────────────────────────────────
 
 export const ProductsDB = {
-  async getAll(): Promise<DbProduct[]> {
-    const allRows = await prisma.product.findMany({ orderBy: { id: "asc" } });
-    const rows = allRows.filter(r => (r as Record<string, unknown>).deletedAt == null);
-    if (rows.length === 0) {
-      const { products } = await import("@/data/products");
-      for (const p of products) {
-        await prisma.product.upsert({
-          where: { id: p.id },
-          create: { id: p.id, name: p.name, category: p.category, price: p.price, image: p.image, description: p.description ?? null, unit: p.unit, badge: p.badge, active: true },
-          update: { image: p.image, description: p.description ?? null }, // keep image + description in sync
-        });
-      }
-      const seeded = await prisma.product.findMany({ orderBy: { id: "asc" } });
-      return seeded.filter(r => (r as Record<string, unknown>).deletedAt == null).map(mapProduct);
-    }
+  async getAll(tenantId?: string): Promise<DbProduct[]> {
+    const where: Record<string, unknown> = { deletedAt: null };
+    if (tenantId) where.tenantId = tenantId;
+    const rows = await prisma.product.findMany({ where, orderBy: { id: "asc" } });
     return rows.map(mapProduct);
+  },
+
+  /**
+   * Cursor-based paginated listing of products.
+   * Returns up to `limit` products plus the cursor for the next page.
+   */
+  async getPage(opts: {
+    tenantId?: string;
+    cursor?: number;
+    limit?: number;
+    category?: string;
+    search?: string;
+    active?: boolean;
+  } = {}): Promise<{ products: DbProduct[]; nextCursor: number | null; total: number }> {
+    const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
+
+    const where: Record<string, unknown> = { deletedAt: null };
+    if (opts.tenantId) where.tenantId = opts.tenantId;
+    if (opts.category) where.category = opts.category;
+    if (opts.active !== undefined) where.active = opts.active;
+    if (opts.search) {
+      where.OR = [
+        { name: { contains: opts.search, mode: "insensitive" } },
+        { barcode: { contains: opts.search, mode: "insensitive" } },
+      ];
+    }
+
+    const [rows, total] = await prisma.$transaction([
+      prisma.product.findMany({
+        where,
+        orderBy: { id: "asc" },
+        take: limit + 1,
+        ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),
+      }),
+      prisma.product.count({ where }),
+    ]);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? items[items.length - 1].id : null;
+
+    return { products: items.map(mapProduct), nextCursor, total };
   },
   async getById(id: number): Promise<DbProduct | null> {
     const p = await prisma.product.findUnique({ where: { id } });
@@ -104,7 +135,7 @@ export const ProductsDB = {
     };
     const row = await prisma.product.upsert({
       where: { id: product.id },
-      create: { id: product.id, ...d },
+      create: { id: product.id, ...d, ...(product.tenantId ? { tenantId: product.tenantId } : {}) },
       update: d,
     });
     return mapProduct(row);
@@ -117,6 +148,15 @@ export const ProductsDB = {
   /** Hard-delete: permanently removes the row (admin use only). */
   async hardDelete(id: number): Promise<void> {
     await prisma.product.delete({ where: { id } }).catch(() => {});
+  },
+  /** Bulk soft-delete: sets deletedAt on multiple products at once. */
+  async bulkDelete(ids: number[]): Promise<number> {
+    if (ids.length === 0) return 0;
+    const result = await prisma.product.updateMany({
+      where: { id: { in: ids }, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
+    return result.count;
   },
 };
 
@@ -139,8 +179,10 @@ export const PriceHistoryDB = {
 // ── Bundles ───────────────────────────────────────────────────────────────────
 
 export const BundlesDB = {
-  async getAll(): Promise<DbBundle[]> {
-    return (await prisma.bundle.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);
+  async getAll(tenantId?: string): Promise<DbBundle[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.bundle.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);
   },
   async getActive(): Promise<DbBundle[]> {
     return (await prisma.bundle.findMany({ where: { active: true }, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);

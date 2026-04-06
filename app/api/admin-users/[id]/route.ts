@@ -1,17 +1,12 @@
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
-import { prisma } from "@/lib/prisma";
+import { prismaForTenant } from "@/lib/tenant";
 import { hash } from "bcryptjs";
 import { z } from "zod";
-import { logActivity } from "@/lib/activity-logger";
-
-const CreateSchema = z.object({
-  username: z.string().min(3).max(32).regex(/^[a-z0-9_]+$/, "Solo letras minúsculas, números y guión bajo"),
-  password: z.string().min(8),
-  role: z.enum(["admin", "cajero", "almacenero"]),
-  name: z.string().min(1).max(64),
-});
+import { enqueueActivityLog } from "@/lib/queue";
+import { toErrorPayload, newTraceId, NotFoundError } from "@/lib/api-error";
 
 const UpdateSchema = z.object({
   name: z.string().min(1).max(64).optional(),
@@ -20,100 +15,103 @@ const UpdateSchema = z.object({
   active: z.boolean().optional(),
 });
 
-// GET /api/admin-users – list all admin users (passwords excluded)
-export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
+// GET /api/admin-users/[id] – obtener un usuario por id
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const traceId = newTraceId();
+  try {
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const users = await prisma.adminUser.findMany({
-    select: { id: true, username: true, role: true, name: true, active: true, createdAt: true, updatedAt: true },
-    orderBy: { createdAt: "asc" },
-  });
+    const { id } = await params;
+    const db = prismaForTenant(auth.tenantId);
 
-  return NextResponse.json(users);
+    const user = await db.adminUser.findFirst({
+      where: { id },
+      select: { id: true, username: true, role: true, name: true, active: true, createdAt: true, updatedAt: true },
+    });
+
+    if (!user) throw new NotFoundError("usuario_admin");
+
+    return NextResponse.json(user);
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err, traceId);
+    return NextResponse.json(payload, { status });
+  }
 }
 
-// POST /api/admin-users – create a new admin user
-export async function POST(req: NextRequest) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
-
-  const body = await req.json();
-  const parsed = CreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
-
-  const { username, password, role, name } = parsed.data;
-
-  const existing = await prisma.adminUser.findFirst({ where: { username, tenantId: auth.tenantId } });
-  if (existing) {
-    return NextResponse.json({ error: "El usuario ya existe" }, { status: 409 });
-  }
-
-  const passwordHash = await hash(password, 12);
-  const user = await prisma.adminUser.create({
-    data: { username, passwordHash, role, name, active: true, tenantId: auth.tenantId },
-    select: { id: true, username: true, role: true, name: true, active: true, createdAt: true },
-  });
-
-  logActivity("Crear", "usuario_admin", `Usuario '${username}' creado con rol '${role}'`, user.id, auth.username).catch(() => {});
-  return NextResponse.json(user, { status: 201 });
-}
-
-// PATCH /api/admin-users/[id] – update name, role, password, or active
+// PATCH /api/admin-users/[id] – actualizar nombre, rol, contraseña o estado
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
+  const traceId = newTraceId();
+  try {
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const { id } = await params;
-  const body = await req.json();
-  const parsed = UpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const { id } = await params;
+    const body = await req.json();
+    const parsed = UpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const db = prismaForTenant(auth.tenantId);
+
+    const existing = await db.adminUser.findFirst({ where: { id } });
+    if (!existing) throw new NotFoundError("usuario_admin");
+
+    const { password, ...rest } = parsed.data;
+    const updateData: Record<string, unknown> = { ...rest };
+    if (password) updateData.passwordHash = await hash(password, 12);
+
+    const updated = await db.adminUser.update({
+      where: { id },
+      data: updateData,
+      select: { id: true, username: true, role: true, name: true, active: true },
+    });
+
+    if (parsed.data.role && parsed.data.role !== existing.role) {
+      enqueueActivityLog({ action: "Cambiar rol", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Rol de '${existing.username}' cambiado de '${existing.role}' a '${parsed.data.role}'` }, timestamp: new Date().toISOString() }).catch(() => {});
+    } else if (parsed.data.active !== undefined && parsed.data.active !== existing.active) {
+      const action = parsed.data.active ? "Activar" : "Desactivar";
+      enqueueActivityLog({ action, resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${existing.username}' ${parsed.data.active ? "activado" : "desactivado"}` }, timestamp: new Date().toISOString() }).catch(() => {});
+    } else if (password) {
+      enqueueActivityLog({ action: "Cambiar contraseña", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Contraseña de '${existing.username}' actualizada` }, timestamp: new Date().toISOString() }).catch(() => {});
+    }
+
+    return NextResponse.json(updated);
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err, traceId);
+    return NextResponse.json(payload, { status });
   }
-
-  const existing = await prisma.adminUser.findFirst({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
-
-  const { password, ...rest } = parsed.data;
-  const updateData: Record<string, unknown> = { ...rest };
-  if (password) updateData.passwordHash = await hash(password, 12);
-
-  const updated = await prisma.adminUser.update({
-    where: { id },
-    data: updateData,
-    select: { id: true, username: true, role: true, name: true, active: true },
-  });
-
-  if (parsed.data.role && parsed.data.role !== existing.role) {
-    logActivity("Cambiar rol", "usuario_admin", `Rol de '${existing.username}' cambiado de '${existing.role}' a '${parsed.data.role}'`, id, auth.username).catch(() => {});
-  } else if (parsed.data.active !== undefined && parsed.data.active !== existing.active) {
-    const action = parsed.data.active ? "Activar" : "Desactivar";
-    logActivity(action, "usuario_admin", `Usuario '${existing.username}' ${parsed.data.active ? "activado" : "desactivado"}`, id, auth.username).catch(() => {});
-  } else if (password) {
-    logActivity("Cambiar contraseña", "usuario_admin", `Contraseña de '${existing.username}' actualizada`, id, auth.username).catch(() => {});
-  }
-  return NextResponse.json(updated);
 }
 
-// DELETE /api/admin-users/[id] – remove a team member
+// DELETE /api/admin-users/[id] – eliminar un miembro del equipo
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
+  const traceId = newTraceId();
+  try {
+    const auth = await requireAdmin(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
 
-  const { id } = await params;
-  const existing = await prisma.adminUser.findFirst({ where: { id } });
-  if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const { id } = await params;
+    const db = prismaForTenant(auth.tenantId);
 
-  await prisma.adminUser.delete({ where: { id } });
-  logActivity("Eliminar", "usuario_admin", `Usuario '${existing.username}' (rol: ${existing.role}) eliminado`, id, auth.username).catch(() => {});
-  return NextResponse.json({ ok: true });
+    const existing = await db.adminUser.findFirst({ where: { id } });
+    if (!existing) throw new NotFoundError("usuario_admin");
+
+    await db.adminUser.delete({ where: { id } });
+    enqueueActivityLog({ action: "Eliminar", resource: "usuario_admin", resourceId: id, userId: auth.username, tenantId: auth.tenantId, details: { description: `Usuario '${existing.username}' (rol: ${existing.role}) eliminado` }, timestamp: new Date().toISOString() }).catch(() => {});
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err, traceId);
+    return NextResponse.json(payload, { status });
+  }
 }
-

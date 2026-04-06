@@ -3,9 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   CreditCard, Loader2, Plus, X, RefreshCw, Download, AlertTriangle,
-  CheckCircle, Clock, Search,
+  CheckCircle, Clock, Search, MessageSquare, Users, TrendingUp, ShieldAlert,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import EmptyState from "@/components/admin/shared/EmptyState";
+import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -58,6 +61,18 @@ function getStatus(ar: AccountReceivable): ARStatus {
 
 const EMPTY_FORM = { customerName: "", customerPhone: "", description: "", totalAmount: "", dueDate: "", notes: "" };
 
+type RiskLevel = "bajo" | "medio" | "alto";
+function getRiskLevel(balance: number): RiskLevel {
+  if (balance > 200) return "alto";
+  if (balance >= 50) return "medio";
+  return "bajo";
+}
+const RISK_CONFIG: Record<RiskLevel, { label: string; color: string; bg: string; dot: string }> = {
+  bajo:  { label: "Bajo",  color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/20", dot: "bg-emerald-500" },
+  medio: { label: "Medio", color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-950/20",    dot: "bg-amber-500" },
+  alto:  { label: "Alto",  color: "text-red-600",     bg: "bg-red-50 dark:bg-red-950/20",        dot: "bg-red-500" },
+};
+
 // ── Seed mock data ─────────────────────────────────────────────────────────────
 
 function seedMock(): AccountReceivable[] {
@@ -82,12 +97,41 @@ export default function AccountsReceivableTab() {
   const [payMethod, setPayMethod] = useState<PaymentRecord["method"]>("efectivo");
   const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
 
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
     setLoading(true);
-    const data = seedMock();
-    // Recalculate statuses
-    const updated = data.map(ar => ({ ...ar, status: getStatus(ar) }));
-    setRecords(updated);
+    try {
+      // Cargar fiados REALES de la base de datos
+      const res = await fetch("/api/fiados");
+      if (res.ok) {
+        const fiados = await res.json();
+        const arr = Array.isArray(fiados) ? fiados : [];
+        // Mapear fiados de la DB al formato AccountReceivable
+        const mapped: AccountReceivable[] = arr.map((f: any) => ({
+          id: f.id,
+          customerName: f.customerName || f.customerId || "Cliente",
+          customerPhone: f.customerId || "",
+          description: f.descripcion || "Fiado desde punto de venta",
+          totalAmount: f.total ?? 0,
+          paidAmount: (f.total ?? 0) - (f.saldo ?? 0),
+          dueDate: f.fechaVence || new Date(Date.now() + 30 * 86400000).toISOString(),
+          issuedDate: f.createdAt || new Date().toISOString(),
+          status: "pendiente" as ARStatus,
+          notes: f.descripcion,
+        }));
+        const updated = mapped.map(ar => ({ ...ar, status: getStatus(ar) }));
+        setRecords(updated);
+      } else {
+        // Fallback a localStorage si la API falla
+        const data = seedMock();
+        const updated = data.map(ar => ({ ...ar, status: getStatus(ar) }));
+        setRecords(updated);
+      }
+    } catch {
+      // Fallback a localStorage
+      const data = seedMock();
+      const updated = data.map(ar => ({ ...ar, status: getStatus(ar) }));
+      setRecords(updated);
+    }
     setLoading(false);
   }, []);
 
@@ -102,28 +146,84 @@ export default function AccountsReceivableTab() {
   const handleCreate = async () => {
     if (!form.customerName.trim() || !form.totalAmount || !form.dueDate) return;
     setSaving(true);
-    const newAR: AccountReceivable = {
-      id: `ar-${Date.now()}`,
-      customerName: form.customerName.trim(),
-      customerPhone: form.customerPhone.trim(),
-      description: form.description.trim(),
-      totalAmount: parseFloat(form.totalAmount),
-      paidAmount: 0,
-      dueDate: form.dueDate,
-      issuedDate: new Date().toISOString().slice(0, 10),
-      status: "pendiente",
-      notes: form.notes,
-    };
-    persist([...records, newAR]);
-    setForm(EMPTY_FORM);
-    setShowForm(false);
+    try {
+      // Crear fiado REAL en la base de datos
+      const res = await fetch("/api/fiados", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerId: form.customerPhone.trim() || form.customerName.trim(),
+          total: parseFloat(form.totalAmount),
+          descripcion: form.description.trim() || `Cuenta por cobrar - ${form.customerName.trim()}`,
+          fechaVence: new Date(form.dueDate).toISOString(),
+        }),
+      });
+      if (res.ok) {
+        // Recargar desde la API para obtener datos reales
+        await load();
+        setForm(EMPTY_FORM);
+        setShowForm(false);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        // Fallback a localStorage si la API falla
+        const newAR: AccountReceivable = {
+          id: `ar-${Date.now()}`,
+          customerName: form.customerName.trim(),
+          customerPhone: form.customerPhone.trim(),
+          description: form.description.trim(),
+          totalAmount: parseFloat(form.totalAmount),
+          paidAmount: 0,
+          dueDate: form.dueDate,
+          issuedDate: new Date().toISOString().slice(0, 10),
+          status: "pendiente",
+          notes: err.error || form.notes,
+        };
+        persist([...records, newAR]);
+        setForm(EMPTY_FORM);
+        setShowForm(false);
+      }
+    } catch {
+      // Fallback local
+      const newAR: AccountReceivable = {
+        id: `ar-${Date.now()}`,
+        customerName: form.customerName.trim(),
+        customerPhone: form.customerPhone.trim(),
+        description: form.description.trim(),
+        totalAmount: parseFloat(form.totalAmount),
+        paidAmount: 0,
+        dueDate: form.dueDate,
+        issuedDate: new Date().toISOString().slice(0, 10),
+        status: "pendiente",
+        notes: form.notes,
+      };
+      persist([...records, newAR]);
+      setForm(EMPTY_FORM);
+      setShowForm(false);
+    }
     setSaving(false);
   };
 
-  const handleRegisterPayment = () => {
+  const handleRegisterPayment = async () => {
     if (!selected || !payAmount) return;
     const amount = parseFloat(payAmount);
     if (isNaN(amount) || amount <= 0) return;
+
+    // Registrar pago en la API de fiados (si el ID es de la DB, no local)
+    if (!selected.id.startsWith("ar-")) {
+      try {
+        await fetch(`/api/fiados/${selected.id}/pagar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ monto: amount }),
+        });
+        // Recargar datos reales
+        await load();
+        setPayAmount("");
+        return;
+      } catch { /* fallback a local */ }
+    }
+
+    // Fallback local
     const payment: PaymentRecord = { id: `pay-${Date.now()}`, arId: selected.id, amount, date: payDate, method: payMethod };
     setPayments(prev => [...prev, payment]);
     const updated = records.map(ar => {
@@ -238,12 +338,18 @@ export default function AccountsReceivableTab() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>
+        <TableSkeleton rows={5} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl" />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 sm:gap-4">
           {/* List */}
           <div className="lg:col-span-2 space-y-3">
-            {filtered.length === 0 && <p className="text-center py-10 text-gray-400 dark:text-muted text-sm">Sin registros encontrados.</p>}
+            {filtered.length === 0 && (
+              <EmptyState
+                icon={CreditCard}
+                title="Sin cuentas por cobrar"
+                description="No hay cuentas por cobrar pendientes."
+              />
+            )}
             {filtered.map(ar => {
               const balance = ar.totalAmount - ar.paidAmount;
               const pctPaid = (ar.paidAmount / ar.totalAmount) * 100;

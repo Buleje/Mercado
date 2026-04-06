@@ -13,12 +13,14 @@ const { mockRequireAdmin } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 
-const { mockFindMany, mockCreate, mockFindFirst, mockUpdate, mockDelete } = vi.hoisted(() => ({
+const { mockFindMany, mockCreate, mockFindFirst, mockUpdate, mockDelete, mockCount, mockTransaction } = vi.hoisted(() => ({
   mockFindMany: vi.fn(),
   mockCreate: vi.fn(),
   mockFindFirst: vi.fn(),
   mockUpdate: vi.fn(),
   mockDelete: vi.fn(),
+  mockCount: vi.fn(),
+  mockTransaction: vi.fn(),
 }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -27,8 +29,15 @@ vi.mock("@/lib/prisma", () => ({
       create: mockCreate,
       findFirst: mockFindFirst,
       update: mockUpdate,
+      updateMany: mockUpdate,
       delete: mockDelete,
+      deleteMany: mockDelete,
+      count: mockCount,
     },
+    product: {
+      update: vi.fn().mockResolvedValue({}),
+    },
+    $transaction: mockTransaction,
   },
 }));
 
@@ -74,21 +83,23 @@ describe("GET /api/batches", () => {
 
   it("returns empty array", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockFindMany.mockResolvedValue([]);
+    mockTransaction.mockResolvedValue([[], 0]);
     const res = await GET(makeReq("GET", "https://host/api/batches"));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual([]);
+    const body = await res.json();
+    expect(body.data).toEqual([]);
+    expect(body.total).toBe(0);
   });
 
   it("returns mapped batches with formatted dates", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockFindMany.mockResolvedValue([BASE_BATCH]);
+    mockTransaction.mockResolvedValue([[BASE_BATCH], 1]);
     const res = await GET(makeReq("GET", "https://host/api/batches"));
     const body = await res.json();
-    expect(body).toHaveLength(1);
-    expect(body[0].lote).toBe("LOT-001");
-    expect(body[0].entryDate).toBe("2026-01-01");
-    expect(body[0].expiryDate).toBe("2027-01-01");
+    expect(body.data).toHaveLength(1);
+    expect(body.data[0].lote).toBe("LOT-001");
+    expect(body.data[0].entryDate).toBe("2026-01-01");
+    expect(body.data[0].expiryDate).toBe("2027-01-01");
   });
 });
 
@@ -152,8 +163,11 @@ describe("PATCH /api/batches", () => {
 
   it("updates quantity and returns 200", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
-    mockFindFirst.mockResolvedValue(BASE_BATCH);
-    mockUpdate.mockResolvedValue({ ...BASE_BATCH, quantity: 50 });
+    // First findFirst: existence check; second findFirst: return updated batch
+    mockFindFirst
+      .mockResolvedValueOnce(BASE_BATCH)
+      .mockResolvedValueOnce({ ...BASE_BATCH, quantity: 50 });
+    mockUpdate.mockResolvedValue({ count: 1 });
     const res = await PATCH(makeReq("PATCH", "https://host/api/batches?id=b1", { quantity: 50 }));
     expect(res.status).toBe(200);
     expect((await res.json()).quantity).toBe(50);
@@ -181,7 +195,7 @@ describe("DELETE /api/batches", () => {
   it("deletes and returns { ok: true }", async () => {
     mockRequireAdmin.mockResolvedValue(AUTH);
     mockFindFirst.mockResolvedValue(BASE_BATCH);
-    mockDelete.mockResolvedValue({});
+    mockDelete.mockResolvedValue({ count: 1 });
     const res = await DELETE(makeReq("DELETE", "https://host/api/batches?id=b1"));
     expect(res.status).toBe(200);
     expect((await res.json()).ok).toBe(true);

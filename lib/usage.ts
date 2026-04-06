@@ -13,10 +13,19 @@ export async function getTenantUsage(tenantSlug: string): Promise<TenantUsage> {
   const now = new Date();
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
+  // Resolve tenant CUID — products/orders may use slug OR cuid as tenantId
+  const tenant = await prisma.tenant.findUnique({
+    where: { slug: tenantSlug },
+    select: { id: true },
+  });
+  const tenantIds = tenant
+    ? [tenantSlug, tenant.id].filter((v, i, a) => a.indexOf(v) === i) // dedupe if slug === id
+    : [tenantSlug];
+
   const [products, users, ordersThisMonth] = await Promise.all([
-    prisma.product.count({ where: { tenantId: tenantSlug, active: true } }),
-    prisma.adminUser.count({ where: { tenantId: tenantSlug, active: true } }),
-    prisma.order.count({ where: { tenantId: tenantSlug, createdAt: { gte: monthStart } } }),
+    prisma.product.count({ where: { tenantId: { in: tenantIds }, active: true } }),
+    prisma.adminUser.count({ where: { tenantId: { in: tenantIds }, active: true } }),
+    prisma.order.count({ where: { tenantId: { in: tenantIds }, createdAt: { gte: monthStart } } }),
   ]);
 
   return { products, users, ordersThisMonth };

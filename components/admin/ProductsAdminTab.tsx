@@ -5,14 +5,30 @@ import Image from "next/image";
 import {
   Plus, Pencil, Trash2, Search, X, Package, CheckCircle, XCircle,
   ChevronUp, ChevronDown, RefreshCw, Eye, EyeOff, Save, AlertTriangle,
-  ImageOff, LayoutGrid, List, Filter, Download, Upload,
+  ImageOff, LayoutGrid, List, Filter, Download, Upload, Tag,
+  Loader2, Globe, Camera,
 } from "lucide-react";
+import TagBadge, { TAG_COLORS, type TagColor, type Tag as TagType } from "./TagBadge";
 import { cn } from "@/lib/utils";
 import { categories } from "@/data/products";
 import type { Product } from "@/types/erp";
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import ExcelProductImporter from "./ExcelProductImporter";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+
+// Tags se manejan localmente como array; se serializan a JSON string en el campo badge
+// El campo badge sigue siendo el canal de persistencia (ya existe en el schema)
+// formato: si badge empieza con "[", se interpreta como JSON de tags;
+// si no, es el badge display legacy (string libre)
+function parseTags(badge?: string): TagType[] {
+  if (!badge) return [];
+  if (badge.startsWith("[")) {
+    try { return JSON.parse(badge) as TagType[]; } catch { return []; }
+  }
+  return [];
+}
 
 const DEFAULT_FORM: Omit<Product, "id"> = {
   name: "",
@@ -30,7 +46,6 @@ const DEFAULT_FORM: Omit<Product, "id"> = {
 
 const CATEGORY_OPTS = categories.filter((c) => c.id !== "todos");
 const UNIT_OPTS = ["kg", "unidad", "bolsa", "botella", "lata", "frasco", "caja", "paquete", "litro", "atado", "bandeja", "pack", "rollo", "barra", "bloque", "spray"];
-const BADGE_OPTS = ["", "Popular", "Oferta", "Nuevo", "Premium", "Fresco", "Temporada", "Peruano", "Ahorra más", "Amaz\u00f3nico", "Antibacterial", "Listo para cocinar"];
 
 // ── Notification Toast ───────────────────────────────────────────────────────
 
@@ -61,7 +76,110 @@ function ProductFormModal({
 }) {
   const [form, setForm] = useState(initial);
   const [imgError, setImgError] = useState(false);
+  const [nameDuplicate, setNameDuplicate] = useState(false);
+  const [nameChecking, setNameChecking] = useState(false);
+  const nameDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
+
+  // ── Tags state ──────────────────────────────────────────────────────────────
+  const [tags, setTags] = useState<TagType[]>(() => parseTags(initial.badge));
+  const [tagInput, setTagInput] = useState("");
+  const [tagColor, setTagColor] = useState<TagColor>("teal");
+  const [availableTags, setAvailableTags] = useState<TagType[]>([]);
+
+  useEffect(() => {
+    // Cargar tags disponibles para sugerir
+    fetch("/api/tags?entity=product")
+      .then(r => r.ok ? r.json() : [])
+      .then((data: Array<{ name: string; color: TagColor }>) => setAvailableTags(data))
+      .catch(() => {});
+  }, []);
+
+  const addTag = (name: string, color: TagColor) => {
+    const trimmed = name.trim();
+    if (!trimmed || tags.some(t => t.name.toLowerCase() === trimmed.toLowerCase())) return;
+    const newTags = [...tags, { name: trimmed, color }];
+    setTags(newTags);
+    // Sincronizar al campo badge como JSON
+    set("badge", JSON.stringify(newTags));
+    setTagInput("");
+  };
+
+  const removeTag = (name: string) => {
+    const newTags = tags.filter(t => t.name !== name);
+    setTags(newTags);
+    set("badge", newTags.length > 0 ? JSON.stringify(newTags) : "");
+  };
+
+  // ── National database search ──────────────────────────────────────────────
+  const [nationalQuery, setNationalQuery] = useState("");
+  const [nationalResults, setNationalResults] = useState<Array<{
+    name: string; brand: string; image: string; barcode: string;
+    category: string; quantity: string; unit: string;
+  }>>([]);
+  const [nationalLoading, setNationalLoading] = useState(false);
+  const [showNationalDropdown, setShowNationalDropdown] = useState(false);
+  const nationalDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Image upload ──────────────────────────────────────────────────────────
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const searchNational = useCallback((q: string) => {
+    if (nationalDebounceRef.current) clearTimeout(nationalDebounceRef.current);
+    if (q.trim().length < 2) {
+      setNationalResults([]);
+      setShowNationalDropdown(false);
+      return;
+    }
+    setNationalLoading(true);
+    nationalDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/products/search-national?q=${encodeURIComponent(q.trim())}&limit=8`);
+        if (res.ok) {
+          const data = await res.json();
+          setNationalResults(data.results || []);
+          setShowNationalDropdown(true);
+        }
+      } catch {
+        setNationalResults([]);
+      } finally {
+        setNationalLoading(false);
+      }
+    }, 350);
+  }, []);
+
+  const selectNationalProduct = (product: typeof nationalResults[0]) => {
+    set("name", product.name);
+    if (product.category) set("category", product.category);
+    if (product.image) set("image", product.image);
+    if (product.unit) set("unit", product.unit);
+    if (product.brand) {
+      set("description", `${product.brand}${product.quantity ? ` — ${product.quantity}` : ""}`);
+    }
+    setShowNationalDropdown(false);
+    setNationalQuery("");
+    setNationalResults([]);
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("folder", "products");
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (res.ok) {
+        const data = await res.json();
+        set("image", data.url);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     nameRef.current?.focus();
@@ -73,6 +191,30 @@ function ProductFormModal({
   const set = (k: keyof typeof form, v: unknown) => {
     setForm((f) => ({ ...f, [k]: v }));
     if (k === "image") setImgError(false);
+  };
+
+  const checkNameDuplicate = (name: string) => {
+    if (nameDebounceRef.current) clearTimeout(nameDebounceRef.current);
+    if (name.trim().length < 2) { setNameDuplicate(false); return; }
+    setNameChecking(true);
+    nameDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/products?search=${encodeURIComponent(name.trim())}`);
+        if (res.ok) {
+          const products: Product[] = await res.json();
+          const exists = products.some(
+            (p) =>
+              p.name.trim().toLowerCase() === name.trim().toLowerCase() &&
+              p.id !== initial.id
+          );
+          setNameDuplicate(exists);
+        }
+      } catch {
+        // Si falla la consulta, no bloqueamos
+      } finally {
+        setNameChecking(false);
+      }
+    }, 300);
   };
 
   const valid = form.name.trim().length >= 2 && form.price > 0 && form.unit.trim().length > 0;
@@ -97,23 +239,121 @@ function ProductFormModal({
         </div>
 
         <div className="p-6 space-y-4">
-          {/* Image preview */}
-          {form.image && !imgError ? (
-            <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-gray-50 dark:bg-surface border border-gray-200 dark:border-card-border">
-              <Image
-                src={form.image}
-                alt="Preview"
-                fill
-                className="object-cover"
-                onError={() => setImgError(true)}
-                unoptimized
-              />
-            </div>
-          ) : (
-            <div className="aspect-video w-full rounded-xl bg-gray-50 dark:bg-surface border border-dashed border-gray-300 dark:border-card-border flex items-center justify-center text-gray-300">
-              <ImageOff className="h-10 w-10" />
+          {/* National database search — only for new products */}
+          {!form.id && (
+            <div className="relative">
+              <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider flex items-center gap-1.5">
+                <Globe className="h-3 w-3" />
+                Buscar en base nacional
+              </label>
+              <div className="relative mt-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <input
+                  value={nationalQuery}
+                  onChange={(e) => {
+                    setNationalQuery(e.target.value);
+                    searchNational(e.target.value);
+                  }}
+                  onFocus={() => nationalResults.length > 0 && setShowNationalDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowNationalDropdown(false), 200)}
+                  placeholder="Ej: arroz, leche gloria, galletas..."
+                  className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-primary/30 bg-primary/5 dark:bg-primary/10 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+                {nationalLoading && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
+                )}
+                {nationalQuery && !nationalLoading && (
+                  <button
+                    type="button"
+                    onClick={() => { setNationalQuery(""); setNationalResults([]); setShowNationalDropdown(false); }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {showNationalDropdown && nationalResults.length > 0 && (
+                <div className="absolute z-50 left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border shadow-xl">
+                  {nationalResults.map((r, i) => (
+                    <button
+                      key={`${r.barcode}-${i}`}
+                      type="button"
+                      onClick={() => selectNationalProduct(r)}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0"
+                    >
+                      {r.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={r.image} alt="" className="h-10 w-10 rounded-lg object-cover bg-gray-100 shrink-0" />
+                      ) : (
+                        <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-surface flex items-center justify-center shrink-0">
+                          <Package className="h-5 w-5 text-gray-300" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">{r.name}</p>
+                        <p className="text-xs text-muted truncate">
+                          {r.brand && <span>{r.brand}</span>}
+                          {r.quantity && <span> · {r.quantity}</span>}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {showNationalDropdown && nationalResults.length === 0 && !nationalLoading && nationalQuery.length >= 2 && (
+                <div className="absolute z-50 left-0 right-0 mt-1 bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border shadow-xl p-4 text-center text-sm text-muted">
+                  No se encontraron productos para &ldquo;{nationalQuery}&rdquo;
+                </div>
+              )}
             </div>
           )}
+
+          {/* Image — upload + preview */}
+          <div>
+            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Imagen del producto</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = ""; }}
+            />
+            <div
+              className="mt-1 relative aspect-video w-full rounded-xl overflow-hidden bg-gray-50 dark:bg-surface border border-dashed border-gray-300 dark:border-card-border cursor-pointer group"
+              onClick={() => !uploading && fileInputRef.current?.click()}
+            >
+              {form.image && !imgError ? (
+                <>
+                  <Image src={form.image} alt="Preview" fill className="object-cover" onError={() => setImgError(true)} unoptimized />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/90 text-gray-700 text-sm font-semibold shadow-lg">
+                      <Camera className="h-4 w-4" />
+                      Cambiar imagen
+                    </div>
+                  </div>
+                </>
+              ) : uploading ? (
+                <div className="h-full flex flex-col items-center justify-center gap-2 text-primary">
+                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <span className="text-xs font-semibold">Subiendo imagen…</span>
+                </div>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center gap-2 text-gray-300 group-hover:text-primary transition-colors">
+                  <Camera className="h-10 w-10" />
+                  <span className="text-xs font-semibold text-gray-400 group-hover:text-primary">Click para subir imagen</span>
+                </div>
+              )}
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-[10px] text-muted shrink-0">o pega URL:</span>
+              <input
+                value={form.image ?? ""}
+                onChange={(e) => set("image", e.target.value)}
+                placeholder="https://..."
+                className="flex-1 px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+            </div>
+          </div>
 
           {/* Name */}
           <div>
@@ -121,10 +361,28 @@ function ProductFormModal({
             <input
               ref={nameRef}
               value={form.name}
-              onChange={(e) => set("name", e.target.value)}
+              onChange={(e) => {
+                set("name", e.target.value);
+                setNameDuplicate(false);
+              }}
+              onBlur={(e) => checkNameDuplicate(e.target.value)}
               placeholder="Ej: Arroz Extra 5kg"
-              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+              className={cn(
+                "mt-1 w-full px-3 py-2.5 rounded-xl border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:border-primary",
+                nameDuplicate
+                  ? "border-amber-400 dark:border-amber-500 focus:ring-amber-300"
+                  : "border-gray-200 dark:border-card-border focus:ring-primary/30"
+              )}
             />
+            {nameChecking && (
+              <p className="mt-1 text-xs text-gray-400">Verificando nombre...</p>
+            )}
+            {nameDuplicate && !nameChecking && (
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3 shrink-0" />
+                Ya existe un producto con este nombre
+              </p>
+            )}
           </div>
 
           {/* Category + Unit */}
@@ -206,37 +464,90 @@ function ProductFormModal({
             </div>
           </div>
 
-          {/* Image URL */}
+          {/* Tags personalizados */}
           <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">URL de Imagen</label>
-            <input
-              value={form.image ?? ""}
-              onChange={(e) => set("image", e.target.value)}
-              placeholder="https://images.unsplash.com/photo-..."
-              className="mt-1 w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-            />
-          </div>
-
-          {/* Badge */}
-          <div>
-            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider">Etiqueta</label>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {BADGE_OPTS.map((b) => (
-                <button
-                  key={b || "ninguna"}
-                  type="button"
-                  onClick={() => set("badge", b)}
-                  className={cn(
-                    "px-2.5 py-1 rounded-full text-xs font-semibold border transition-all",
-                    form.badge === b
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-gray-200 dark:border-card-border text-gray-500 hover:border-primary/50"
-                  )}
-                >
-                  {b || "Sin etiqueta"}
-                </button>
-              ))}
+            <label className="text-xs font-bold text-gray-600 dark:text-muted uppercase tracking-wider flex items-center gap-1.5">
+              <Tag className="h-3 w-3" />
+              Etiquetas
+            </label>
+            {/* Tags activos */}
+            {tags.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {tags.map(tag => (
+                  <TagBadge
+                    key={tag.name}
+                    tag={tag}
+                    onRemove={() => removeTag(tag.name)}
+                  />
+                ))}
+              </div>
+            )}
+            {/* Input nuevo tag */}
+            <div className="mt-2 flex gap-2 items-center">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addTag(tagInput, tagColor); } }}
+                  placeholder="Agregar etiqueta…"
+                  maxLength={30}
+                  list="tag-suggestions"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-surface text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+                {availableTags.length > 0 && (
+                  <datalist id="tag-suggestions">
+                    {availableTags
+                      .filter(t => !tags.some(at => at.name === t.name))
+                      .map(t => <option key={t.name} value={t.name} />)
+                    }
+                  </datalist>
+                )}
+              </div>
+              {/* Color picker */}
+              <div className="flex gap-1">
+                {(Object.keys(TAG_COLORS) as TagColor[]).map(c => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setTagColor(c)}
+                    title={c}
+                    className={cn(
+                      "h-5 w-5 rounded-full border-2 transition-transform",
+                      TAG_COLORS[c].dot,
+                      tagColor === c ? "border-gray-700 dark:border-white scale-110" : "border-transparent",
+                    )}
+                  />
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => addTag(tagInput, tagColor)}
+                disabled={!tagInput.trim()}
+                className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-40 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
             </div>
+            {/* Tags sugeridos */}
+            {availableTags.filter(t => !tags.some(at => at.name === t.name)).length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {availableTags
+                  .filter(t => !tags.some(at => at.name === t.name))
+                  .slice(0, 8)
+                  .map(t => (
+                    <button
+                      key={t.name}
+                      type="button"
+                      onClick={() => addTag(t.name, t.color)}
+                      className="px-2 py-0.5 rounded-full text-[10px] font-medium border border-dashed border-gray-300 dark:border-gray-600 text-gray-500 hover:border-primary/50 hover:text-primary transition-colors"
+                    >
+                      + {t.name}
+                    </button>
+                  ))
+                }
+              </div>
+            )}
           </div>
 
           {/* Description */}
@@ -292,33 +603,6 @@ function ProductFormModal({
   );
 }
 
-// ── Confirm Delete Modal ─────────────────────────────────────────────────────
-
-function ConfirmDelete({ name, onConfirm, onCancel }: { name: string; onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onCancel}>
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl p-3 sm:p-6 max-w-sm w-full border border-gray-200 dark:border-card-border" onClick={(e) => e.stopPropagation()}>
-        <div className="flex flex-wrap items-center gap-3 mb-4">
-          <div className="h-10 w-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
-          </div>
-          <div>
-            <h3 className="font-extrabold text-foreground">¿Eliminar producto?</h3>
-            <p className="text-xs text-muted">Esta acción no se puede deshacer</p>
-          </div>
-        </div>
-        <p className="text-sm text-muted bg-gray-50 dark:bg-surface rounded-xl px-2 sm:px-4 py-2 sm:py-3 mb-5">
-          <strong className="text-foreground">&ldquo;{name}&rdquo;</strong> será eliminado del catálogo.
-        </p>
-        <div className="flex flex-wrap gap-2 justify-end">
-          <button onClick={onCancel} className="px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-surface transition-colors">Cancelar</button>
-          <button onClick={onConfirm} className="px-5 py-2 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 active:scale-95 transition-all">Eliminar</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export default function ProductsAdminTab() {
@@ -332,6 +616,7 @@ export default function ProductsAdminTab() {
   const [sortBy, setSortBy] = useState<"name" | "price" | "stock">("name");
   const [sortAsc, setSortAsc] = useState(true);
   const [modal, setModal] = useState<null | "create" | { product: Product }>(null);
+  const [showExcelImporter, setShowExcelImporter] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<null | { msg: string; type: "success" | "error" }>(null);
@@ -521,6 +806,13 @@ export default function ProductsAdminTab() {
             title="Importar productos desde CSV"
           >
             <Upload className="h-4 w-4" /> {csvImporting ? "Importando…" : "Importar"}
+          </button>
+          <button
+            onClick={() => setShowExcelImporter(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-sm font-semibold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 transition-colors"
+            title="Importar productos desde Excel (.xlsx)"
+          >
+            <Upload className="h-4 w-4" /> Excel
           </button>
           <button
             onClick={() => setModal("create")}
@@ -715,20 +1007,46 @@ export default function ProductsAdminTab() {
       {/* Modals */}
       {modal !== null && (
         <ProductFormModal
-          initial={modal === "create" ? { ...DEFAULT_FORM } : { ...modal.product }}
+          initial={modal === "create" ? { ...DEFAULT_FORM } : { ...(modal.product as Omit<Product, "id"> & { id?: number }) }}
           onSave={handleSave}
           onClose={() => setModal(null)}
           saving={saving}
         />
       )}
-      {deleteTarget && (
-        <ConfirmDelete
-          name={deleteTarget.name}
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteTarget(null)}
-        />
-      )}
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="¿Eliminar producto?"
+        description={deleteTarget ? `"${deleteTarget.name}" será eliminado del catálogo. Esta acción no se puede deshacer.` : "Esta acción no se puede deshacer"}
+        confirmText="Sí, eliminar"
+        loading={saving}
+      />
       {toast && <Toast msg={toast.msg} type={toast.type} />}
+
+      {/* Excel importer modal */}
+      {showExcelImporter && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowExcelImporter(false)}
+        >
+          <div
+            className="bg-white dark:bg-card rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-card-border animate-[scaleIn_0.2s_ease-out] p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-extrabold text-foreground">Importar desde Excel</h2>
+              <button
+                onClick={() => { setShowExcelImporter(false); void fetchProducts(); }}
+                className="h-8 w-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-surface transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <ExcelProductImporter />
+          </div>
+        </div>
+      )}
     </>
   );
 }

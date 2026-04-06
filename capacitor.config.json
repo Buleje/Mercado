@@ -1,20 +1,23 @@
 {
-  "appId": "pe.bodegasanmartin.app",
-  "appName": "Bodega San Martín",
+  "appId": "pe.buleje.app",
+  "appName": "Buleje",
   "webDir": "out",
   "server": {
-    "url": "https://www.bodegasanmartin.pe",
+    "url": "https://www.buleje.pe",
     "cleartext": false
   },
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 2000,
-      "backgroundColor": "#6366f1",
+      "backgroundColor": "#0f766e",
       "showSpinner": true,
-      "spinnerColor": "#ffffff"
+      "spinnerColor": "#ffffff",
+      "launchAutoHide": true,
+      "androidSplashResourceName": "splash",
+      "splashImmersive": true
     },
     "StatusBar": {
-      "backgroundColor": "#6366f1",
+      "backgroundColor": "#0f766e",
       "style": "LIGHT"
     },
     "PushNotifications": {
@@ -27,10 +30,14 @@
   },
   "android": {
     "backgroundColor": "#ffffff",
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "appendUserAgent": "Buleje/Android",
+    "webContentsDebuggingEnabled": false
   },
   "ios": {
     "backgroundColor": "#ffffff",
-    "contentInset": "automatic"
+    "contentInset": "automatic",
+    "appendUserAgent": "Buleje/iOS",
+    "preferredContentMode": "mobile"
   }
 }

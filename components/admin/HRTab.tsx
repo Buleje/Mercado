@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import {
   Users, Plus, X, Download, Search, Calendar,
   CheckCircle, AlertTriangle, Clock, UserCheck,
-  Phone, Briefcase,
+  Phone, Briefcase, Loader2,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
@@ -93,6 +93,8 @@ export default function HRTab() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_EMP });
   const [attDate, setAttDate] = useState(D);
+  const [verifyingDni, setVerifyingDni] = useState(false);
+  const [dniMsg, setDniMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const departments = useMemo(() => [...new Set(employees.map(e => e.department))], [employees]);
 
@@ -126,6 +128,30 @@ export default function HRTab() {
     setEmployees(prev => [...prev, emp]);
     setShowForm(false);
     setForm({ ...EMPTY_EMP });
+    setDniMsg(null);
+  }
+
+  async function handleVerifyDni(dni: string) {
+    if (!/^\d{8}$/.test(dni)) return;
+    setVerifyingDni(true);
+    setDniMsg(null);
+    try {
+      const res = await fetch(`/api/reniec/dni/${encodeURIComponent(dni)}`);
+      const data = await res.json() as Record<string, string>;
+      if (!res.ok) {
+        setDniMsg({ ok: false, text: (data.error as string) ?? "No se pudo consultar RENIEC." });
+        return;
+      }
+      const nombreCompleto: string = data.nombreCompleto ?? "";
+      if (!form.name.trim() && nombreCompleto) {
+        setForm(p => ({ ...p, name: nombreCompleto }));
+      }
+      setDniMsg({ ok: true, text: nombreCompleto ? `✓ ${nombreCompleto}` : "DNI válido." });
+    } catch {
+      setDniMsg({ ok: false, text: "Error de conexión con RENIEC." });
+    } finally {
+      setVerifyingDni(false);
+    }
   }
 
   function updateAttendance(empId: string, status: AttendanceStatus) {
@@ -182,11 +208,39 @@ export default function HRTab() {
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-gray-900 dark:text-foreground text-sm flex flex-wrap items-center gap-2"><Plus className="h-4 w-4 text-primary" /> Registrar empleado</h3>
-            <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
+            <button onClick={() => { setShowForm(false); setDniMsg(null); }}><X className="h-4 w-4 text-gray-400" /></button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <EField label="Nombre completo *" value={form.name} onChange={v => setForm(p => ({ ...p, name: v }))} placeholder="Apellidos Nombres" span={2} />
-            <EField label="DNI *" value={form.dni} onChange={v => setForm(p => ({ ...p, dni: v }))} placeholder="00000000" />
+            <div>
+              <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">DNI *</label>
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={form.dni}
+                  onChange={e => { setForm(p => ({ ...p, dni: e.target.value.replace(/\D/g, "").slice(0, 8) })); setDniMsg(null); }}
+                  placeholder="00000000"
+                  maxLength={8}
+                  className="flex-1 min-w-0 text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                {form.dni.length === 8 && (
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyDni(form.dni)}
+                    disabled={verifyingDni}
+                    className="px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-40 flex items-center gap-1.5 shrink-0 hover:bg-primary/90 transition-colors"
+                  >
+                    {verifyingDni ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                    Verificar
+                  </button>
+                )}
+              </div>
+              {dniMsg && (
+                <p className={`mt-1 text-xs font-medium ${dniMsg.ok ? "text-emerald-600" : "text-red-500"}`}>
+                  {dniMsg.text}
+                </p>
+              )}
+            </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Estado</label>
               <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value as EmployeeStatus }))} className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground">
@@ -209,7 +263,7 @@ export default function HRTab() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2 justify-end">
-            <button onClick={() => setShowForm(false)} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
+            <button onClick={() => { setShowForm(false); setDniMsg(null); }} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border text-gray-600 dark:text-muted">Cancelar</button>
             <button onClick={handleAddEmployee} className="px-2 sm:px-4 py-1.5 sm:py-2 text-sm rounded-xl bg-primary text-white font-semibold hover:bg-primary/90">Registrar</button>
           </div>
         </div>

@@ -16,6 +16,61 @@ const TAB_ID = typeof crypto !== "undefined" ? crypto.randomUUID() : Math.random
 
 const MAX_QTY = 20;
 
+// ── Shared AudioContext (one single instance, not per-click) ──────────────────
+let _audioCtx: AudioContext | null = null;
+function getAudioCtx(): AudioContext | null {
+  try {
+    if (!_audioCtx || _audioCtx.state === "closed") {
+      _audioCtx = new AudioContext();
+    }
+    return _audioCtx;
+  } catch {
+    return null;
+  }
+}
+
+function playPopSound() {
+  const ac = getAudioCtx();
+  if (!ac) return;
+  // Resume if suspended (browser autoplay policy)
+  if (ac.state === "suspended") ac.resume().catch(() => {});
+  try {
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(880, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1400, ac.currentTime + 0.08);
+    gain.gain.setValueAtTime(0.15, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.12);
+    osc.start(ac.currentTime);
+    osc.stop(ac.currentTime + 0.12);
+  } catch { /* audio not available */ }
+}
+
+// ── Scoped BroadcastChannel (one per tenant slug) ────────────────────────────
+let _broadcastChannel: BroadcastChannel | null = null;
+let _broadcastSlug: string | null = null;
+function getBroadcastChannel(slug: string): BroadcastChannel | null {
+  if (typeof window === "undefined" || !("BroadcastChannel" in window)) return null;
+  try {
+    if (!_broadcastChannel || _broadcastSlug !== slug) {
+      if (_broadcastChannel) try { _broadcastChannel.close(); } catch { /* ok */ }
+      _broadcastChannel = new BroadcastChannel(`bsm-cart-sync-${slug}`);
+      _broadcastSlug = slug;
+    }
+    return _broadcastChannel;
+  } catch {
+    return null;
+  }
+}
+
+/** Build a tenant-scoped localStorage key: bsm-{slug}-{key} */
+function sk(slug: string, key: string): string {
+  return slug ? `bsm-${slug}-${key}` : `bsm-${key}`;
+}
+
 export type CartItem = Product & { quantity: number; note?: string };
 
 type CartState = {
@@ -147,25 +202,44 @@ const CartContext = createContext<CartCtx | null>(null);
 
 const defaultState: CartState = { items: [], isOpen: false, hasPendingOrder: false, confirmModalOpen: false, confirmFromCheckout: false, checkoutOpen: false };
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({ children, tenantSlug = "main" }: { children: ReactNode; tenantSlug?: string }) {
   const [state, dispatch] = useReducer(reducer, defaultState);
   const hydratedRef = useRef(false);
+  const slugRef = useRef(tenantSlug);
+  slugRef.current = tenantSlug;
 
   // Hydrate from localStorage after mount to avoid SSR/client mismatch
   useEffect(() => {
+    const s = slugRef.current;
     try {
-      const saved = localStorage.getItem("bsm-cart");
+      const saved = localStorage.getItem(sk(s, "cart"));
       const items = saved ? JSON.parse(saved) : [];
       if (Array.isArray(items) && items.length > 0) {
         dispatch({ type: "HYDRATE", payload: items });
+
+        // Validate cart items still exist in DB — remove stale/deleted products
+        fetch("/api/products?active=true")
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (!data) return;
+            const products: { id: number }[] = Array.isArray(data) ? data : [];
+            const validIds = new Set(products.map((p: { id: number }) => p.id));
+            const validItems = items.filter((item: CartItem) => validIds.has(item.product.id));
+            if (validItems.length !== items.length) {
+              // Some items were deleted — update cart
+              dispatch({ type: "HYDRATE", payload: validItems });
+              localStorage.setItem(sk(s, "cart"), JSON.stringify(validItems));
+            }
+          })
+          .catch(() => { /* silently ignore — cart stays as-is */ });
       }
-      if (localStorage.getItem("bsm-pending") === "1") {
+      if (localStorage.getItem(sk(s, "pending")) === "1") {
         dispatch({ type: "MARK_ORDER_PENDING" });
       }
       // Check for reorder items (set from /cuenta page)
-      const reorder = localStorage.getItem("bsm-reorder");
+      const reorder = localStorage.getItem(sk(s, "reorder"));
       if (reorder) {
-        localStorage.removeItem("bsm-reorder");
+        localStorage.removeItem(sk(s, "reorder"));
         const reorderItems = JSON.parse(reorder);
         if (Array.isArray(reorderItems) && reorderItems.length > 0) {
           dispatch({
@@ -186,11 +260,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // Multi-tab cart sync with BroadcastChannel API
   useEffect(() => {
-    if (typeof window === "undefined" || !("BroadcastChannel" in window)) {
-      return; // Skip on server or unsupported browsers
-    }
-
-    const channel = new BroadcastChannel("bsm-cart-sync");
+    const channel = getBroadcastChannel(slugRef.current);
+    if (!channel) return;
 
     // Listen to messages from other tabs (skip own messages to avoid self-echo loop)
     const handleMessage = (event: MessageEvent) => {
@@ -223,40 +294,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     return () => {
       channel.removeEventListener("message", handleMessage);
-      channel.close();
     };
   }, []);
 
   // Persist to localStorage — only after hydration to prevent overwriting saved cart
   useEffect(() => {
     if (!hydratedRef.current) return;
-    localStorage.setItem("bsm-cart", JSON.stringify(state.items));
+    const s = slugRef.current;
+    localStorage.setItem(sk(s, "cart"), JSON.stringify(state.items));
     // Track last-modified timestamp for abandoned-cart recovery
     if (state.items.length > 0) {
-      localStorage.setItem("bsm-cart-ts", Date.now().toString());
+      localStorage.setItem(sk(s, "cart-ts"), Date.now().toString());
     } else {
-      localStorage.removeItem("bsm-cart-ts");
-      localStorage.removeItem("bsm-cart-dismissed");
+      localStorage.removeItem(sk(s, "cart-ts"));
+      localStorage.removeItem(sk(s, "cart-dismissed"));
     }
 
-    // Broadcast cart changes to other tabs
-    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+    // Broadcast cart changes to other tabs (reuse shared channel)
+    const channel = getBroadcastChannel(s);
+    if (channel) {
       try {
-        const channel = new BroadcastChannel("bsm-cart-sync");
         channel.postMessage({ type: "CART_UPDATE", payload: state.items, tabId: TAB_ID });
-        channel.close();
-      } catch {
-        // Silently fail if BroadcastChannel fails
-      }
+      } catch { /* Silently fail */ }
     }
   }, [state.items]);
 
   // Sync cart to server when customer is identified (debounced)
   useEffect(() => {
     if (!hydratedRef.current) return;
+    const s = slugRef.current;
     const phone = (() => {
       try {
-        const c = localStorage.getItem("bsm-customer");
+        const c = localStorage.getItem(sk(s, "customer"));
         if (c) { const p = JSON.parse(c); return p?.phone?.replace(/\D/g, ""); }
       } catch { /* ignore */ }
       return null;
@@ -276,16 +345,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   // On mount: if customer is identified, try to restore from server if local is empty
   useEffect(() => {
+    const s = slugRef.current;
     const phone = (() => {
       try {
-        const c = localStorage.getItem("bsm-customer");
+        const c = localStorage.getItem(sk(s, "customer"));
         if (c) { const p = JSON.parse(c); return p?.phone?.replace(/\D/g, ""); }
       } catch { /* ignore */ }
       return null;
     })();
     if (!phone || phone.length < 6) return;
 
-    const localCart = localStorage.getItem("bsm-cart");
+    const localCart = localStorage.getItem(sk(s, "cart"));
     const localItems = localCart ? JSON.parse(localCart) : [];
     if (Array.isArray(localItems) && localItems.length > 0) return; // local has items, skip
 
@@ -300,17 +370,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("bsm-pending", state.hasPendingOrder ? "1" : "0");
+    const s = slugRef.current;
+    localStorage.setItem(sk(s, "pending"), state.hasPendingOrder ? "1" : "0");
 
-    // Broadcast pending status to other tabs
-    if (typeof window !== "undefined" && "BroadcastChannel" in window) {
+    // Broadcast pending status to other tabs (reuse shared channel)
+    const channel = getBroadcastChannel(s);
+    if (channel) {
       try {
-        const channel = new BroadcastChannel("bsm-cart-sync");
         channel.postMessage({ type: "PENDING_STATUS", payload: state.hasPendingOrder, tabId: TAB_ID });
-        channel.close();
-      } catch {
-        // Silently fail
-      }
+      } catch { /* Silently fail */ }
     }
   }, [state.hasPendingOrder]);
 
@@ -319,21 +387,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = useCallback((p: Product) => {
     dispatch({ type: "ADD_ITEM", payload: p });
-    /* W4: Play pop sound on add */
-    try {
-      const ac = new AudioContext();
-      const osc = ac.createOscillator();
-      const gain = ac.createGain();
-      osc.connect(gain);
-      gain.connect(ac.destination);
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(880, ac.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1400, ac.currentTime + 0.08);
-      gain.gain.setValueAtTime(0.18, ac.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.12);
-      osc.start(ac.currentTime);
-      osc.stop(ac.currentTime + 0.12);
-    } catch { /* audio not available */ }
+    playPopSound();
   }, []);
   const addMultiple = useCallback((items: { product: Product; quantity: number }[]) => dispatch({ type: "ADD_MULTIPLE", payload: items }), []);
   const removeItem = useCallback((id: number) => dispatch({ type: "REMOVE_ITEM", payload: id }), []);

@@ -47,6 +47,7 @@ const HEADERS = {
   Cookie: __ENV.SA_COOKIE || "sa_session=test-token",
 };
 
+// eslint-disable-next-line import/no-anonymous-default-export -- k6 requires anonymous default export
 export default function () {
   // 1. GET /api/superadmin/analytics
   {

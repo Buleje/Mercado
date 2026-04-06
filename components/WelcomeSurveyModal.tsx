@@ -74,7 +74,7 @@ export default function WelcomeSurveyModal() {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Proyecto Bodega San Martín — Versión 1 Beta"
+      aria-label="Proyecto Buleje — Versión 1 Beta"
       className="fixed inset-0 z-9999 flex items-center justify-center p-4"
     >
       {/* Backdrop */}
@@ -107,7 +107,7 @@ export default function WelcomeSurveyModal() {
           <p className="text-white/80 text-sm mt-1">
             {step === "thanks"
               ? "Tu feedback mejora el proyecto"
-              : "Bodega San Martín · Versión 1 Beta"}
+              : "Buleje · Versión 1 Beta"}
           </p>
         </div>
 

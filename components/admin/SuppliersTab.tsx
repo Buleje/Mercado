@@ -1,9 +1,16 @@
 ﻿﻿"use client";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
-import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, Pencil, Check, X, Plus, Phone, Mail, MapPin, AlertTriangle, Clock, DollarSign, ChevronDown, ChevronUp, Award } from "lucide-react";
 import type { DbSupplier } from "@/lib/jsondb";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import { cn } from "@/lib/utils";
+import EmptyState from "@/components/admin/shared/EmptyState";
+import TableSkeleton from "@/components/admin/shared/TableSkeleton";
+import WhatsAppButton from "./WhatsAppButton";
+import SupplierScorecard from "./compras/SupplierScorecard";
+import ProveedorFormModal from "./proveedores/ProveedorFormModal";
 
 type Payable = {
   id: string;
@@ -15,6 +22,7 @@ type Payable = {
   status: string;
   description: string;
   createdAt: string;
+  purchaseOrderId?: string;
 };
 
 export default function SuppliersTab() {
@@ -27,6 +35,11 @@ export default function SuppliersTab() {
   const [showAdd, setShowAdd] = useState(false);
   const [showAlerts, setShowAlerts] = useState(false);
   const [addForm, setAddForm] = useState({ name: "", ruc: "", phone: "", email: "", address: "", notes: "" });
+  const [deleteTarget, setDeleteTarget] = useState<DbSupplier | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [expandedScorecard, setExpandedScorecard] = useState<string | null>(null);
+  const [showProveedorModal, setShowProveedorModal] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState<DbSupplier | null>(null);
   useScrollLock(showAdd);
 
   const load = useCallback(async () => {
@@ -45,7 +58,7 @@ export default function SuppliersTab() {
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
-  const startEdit = (s: DbSupplier) => {
+  const _startEdit = (s: DbSupplier) => {
     setEditingId(s.id);
     setEditForm({ name: s.name, ruc: s.ruc, phone: s.phone, email: s.email, address: s.address, notes: s.notes });
   };
@@ -65,9 +78,12 @@ export default function SuppliersTab() {
     load();
   };
 
-  const deleteSupplier = async (id: string) => {
-    if (!confirm("¿Eliminar este proveedor permanentemente?")) return;
-    await fetch(`/api/suppliers/${id}`, { method: "DELETE" });
+  const deleteSupplier = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    await fetch(`/api/suppliers/${deleteTarget.id}`, { method: "DELETE" });
+    setDeleting(false);
+    setDeleteTarget(null);
     load();
   };
 
@@ -150,6 +166,18 @@ export default function SuppliersTab() {
     return { text: `Vence en ${diffDays} días`, overdue: false };
   };
 
+  // ── Mejora 14: Alerta proveedor sin compra ─────────────────────────────────
+  const getLastPurchaseInfo = (supplierId: string): { daysSince: number; label: string; color: string } | null => {
+    const supplierPayables = payables.filter(p => p.supplierId === supplierId);
+    if (supplierPayables.length === 0) return { daysSince: -1, label: "Sin historial", color: "bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400" };
+    const dates = supplierPayables.map(p => new Date(p.createdAt).getTime());
+    const lastDate = Math.max(...dates);
+    const daysSince = Math.floor((today.getTime() - lastDate) / (1000 * 60 * 60 * 24));
+    if (daysSince > 60) return { daysSince, label: `Sin compra hace ${daysSince}d`, color: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400" };
+    if (daysSince > 30) return { daysSince, label: `Ultima compra hace ${daysSince}d`, color: "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" };
+    return null; // Normal, no badge
+  };
+
   const getMonthlyHistory = (supplierId: string) => {
     const now = new Date();
     return Array.from({ length: 6 }, (_, i) => {
@@ -168,6 +196,17 @@ export default function SuppliersTab() {
     });
   };
 
+  // Mejora 15: Proveedor mas confiable — el que tiene mas OCs pagadas
+  const topSupplierId = (() => {
+    if (payables.length === 0) return null;
+    const counts: Record<string, number> = {};
+    for (const p of payables) {
+      if (p.status === "pagado" && p.supplierId) counts[p.supplierId] = (counts[p.supplierId] ?? 0) + 1;
+    }
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    return sorted[0]?.[1] >= 2 ? sorted[0][0] : null;
+  })();
+
   return (
     <div className="space-y-3 sm:space-y-6">
       <div className="flex items-center justify-between">
@@ -177,7 +216,7 @@ export default function SuppliersTab() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setShowAdd((v) => !v)}
+            onClick={() => { setEditingSupplier(null); setShowProveedorModal(true); }}
             className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors shadow-sm"
           >
             <Plus className="h-4 w-4" /> Nuevo proveedor
@@ -279,9 +318,15 @@ export default function SuppliersTab() {
 
       {/* Suppliers list */}
       {loading ? (
-        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">Cargando…</div>
+        <TableSkeleton rows={4} cols={4} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl" />
       ) : suppliers.length === 0 ? (
-        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">No hay proveedores registrados</div>
+        <EmptyState
+          icon={Plus}
+          title="Sin proveedores registrados"
+          description="No hay proveedores registrados. Agrega tu primer proveedor."
+          action={{ label: "Nuevo proveedor", onClick: () => { setEditingSupplier(null); setShowProveedorModal(true); } }}
+          className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl"
+        />
       ) : (
         <div className="space-y-3">
           {suppliers.map((s) => (
@@ -310,7 +355,26 @@ export default function SuppliersTab() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-gray-900 dark:text-foreground">{s.name}</span>
                       {s.ruc && <span className="text-xs font-mono text-gray-400 dark:text-muted bg-gray-100 dark:bg-accent px-2 py-0.5 rounded">RUC: {s.ruc}</span>}
-                      
+
+                      {/* Mejora 15: Proveedor mas confiable badge */}
+                      {topSupplierId === s.id && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700">
+                          Mas confiable
+                        </span>
+                      )}
+
+                      {/* Mejora 14: Alerta proveedor sin compra */}
+                      {(() => {
+                        const purchaseInfo = getLastPurchaseInfo(s.id);
+                        if (!purchaseInfo) return null;
+                        return (
+                          <span className={cn("inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded", purchaseInfo.color)}>
+                            <Clock className="h-3 w-3" />
+                            {purchaseInfo.label}
+                          </span>
+                        );
+                      })()}
+
                       {/* Per-Supplier Payment Status */}
                       {(() => {
                         const debt = getSupplierDebt(s.id);
@@ -374,12 +438,50 @@ export default function SuppliersTab() {
                         </div>
                       );
                     })()}
+
+                    {/* Scorecard toggle */}
+                    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-card-border">
+                      <button
+                        onClick={() => setExpandedScorecard(expandedScorecard === s.id ? null : s.id)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                        title="Evaluación del proveedor basada en entregas, precios y cumplimiento"
+                      >
+                        <Award className="h-3.5 w-3.5" />
+                        {expandedScorecard === s.id ? "Ocultar evaluacion" : "Ver evaluacion del proveedor"}
+                        {expandedScorecard === s.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </button>
+                      {expandedScorecard === s.id && (
+                        <div className="mt-3">
+                          <SupplierScorecard supplierId={s.id} />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <button onClick={() => startEdit(s)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar">
+                    {s.phone && (() => {
+                      const debt = getSupplierDebt(s.id);
+                      const pendingOrder = payables.find(p => p.supplierId === s.id && p.status !== "pagado" && p.purchaseOrderId);
+                      let waContext: import("./WhatsAppButton").WhatsAppContext;
+                      if (debt.totalDebt > 0) {
+                        waContext = { type: "payment_reminder", amount: debt.totalDebt };
+                      } else if (pendingOrder?.purchaseOrderId) {
+                        waContext = { type: "custom", message: `Hola, tengo un pedido pendiente (${pendingOrder.purchaseOrderId}). ¿Cuándo llega?` };
+                      } else {
+                        waContext = { type: "custom", message: "Hola, soy de Buleje. Quisiera hacer un pedido." };
+                      }
+                      return (
+                        <WhatsAppButton
+                          phone={s.phone}
+                          context={waContext}
+                          size="sm"
+                          label="WA"
+                        />
+                      );
+                    })()}
+                    <button onClick={() => { setEditingSupplier(s); setShowProveedorModal(true); }} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-primary hover:bg-primary/8 transition-colors" title="Editar ficha completa">
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button onClick={() => deleteSupplier(s.id)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar">
+                    <button onClick={() => setDeleteTarget(s)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-red-500 hover:bg-red-50 transition-colors" title="Eliminar">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -391,6 +493,16 @@ export default function SuppliersTab() {
       )}
 
       {/* ── Add supplier modal ── */}
+      <ConfirmDeleteDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={deleteSupplier}
+        title="¿Eliminar proveedor?"
+        description={deleteTarget ? `"${deleteTarget.name}" será eliminado permanentemente. Esta acción no se puede deshacer.` : "Esta acción no se puede deshacer"}
+        confirmText="Sí, eliminar"
+        loading={deleting}
+      />
+
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50" onClick={(e) => e.target === e.currentTarget && setShowAdd(false)}>
           <div className="bg-white dark:bg-card w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-y-auto max-h-[90dvh]">
@@ -401,7 +513,7 @@ export default function SuppliersTab() {
             <form onSubmit={addSupplier} className="p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Nombre / Razón social *</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Nombre / Razon social *</label>
                   <input required value={addForm.name} onChange={(e) => setAddForm(f => ({ ...f, name: e.target.value }))} placeholder="Distribuidora Lima S.A.C." className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
@@ -409,7 +521,7 @@ export default function SuppliersTab() {
                   <input value={addForm.ruc} onChange={(e) => setAddForm(f => ({ ...f, ruc: e.target.value }))} placeholder="20xxxxxxxxx" maxLength={11} className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm font-mono" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Teléfono</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Telefono</label>
                   <input value={addForm.phone} onChange={(e) => setAddForm(f => ({ ...f, phone: e.target.value }))} placeholder="999 999 999" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div>
@@ -417,24 +529,32 @@ export default function SuppliersTab() {
                   <input type="email" value={addForm.email} onChange={(e) => setAddForm(f => ({ ...f, email: e.target.value }))} placeholder="ventas@empresa.com" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Dirección</label>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Direccion</label>
                   <input value={addForm.address} onChange={(e) => setAddForm(f => ({ ...f, address: e.target.value }))} placeholder="Av. Colonial 1234, Lima" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm" />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-500 dark:text-muted mb-1">Notas</label>
-                  <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Información adicional…" className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none" />
+                  <textarea value={addForm.notes} onChange={(e) => setAddForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Informacion adicional..." className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-card-border text-gray-900 dark:text-foreground focus:border-primary outline-none text-sm resize-none" />
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
                 <button type="button" onClick={() => setShowAdd(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">Cancelar</button>
                 <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors disabled:opacity-60">
-                  {saving ? "Guardando…" : "Agregar proveedor"}
+                  {saving ? "Guardando..." : "Agregar proveedor"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Proveedor Form Modal (ficha completa) */}
+      <ProveedorFormModal
+        isOpen={showProveedorModal}
+        onClose={() => { setShowProveedorModal(false); setEditingSupplier(null); }}
+        onSaved={() => { setShowProveedorModal(false); setEditingSupplier(null); load(); }}
+        supplier={editingSupplier as Record<string, unknown> | null}
+      />
     </div>
   );
 }

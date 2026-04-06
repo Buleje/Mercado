@@ -6,11 +6,11 @@ import {
   useEffect,
   useState,
   useCallback,
-  startTransition,
   type ReactNode,
 } from "react";
 
-type Theme = "light" | "dark" | "system";
+// "auto-schedule": dark después de 18:00 (6pm), light antes de las 18:00
+type Theme = "light" | "dark" | "system" | "auto" | "auto-schedule";
 
 interface ThemeCtx {
   theme: Theme;
@@ -29,66 +29,34 @@ function getSystemTheme(): "light" | "dark" {
     : "light";
 }
 
+// Tema por hora (modo "auto"): oscuro desde las 19h hasta las 6am
+function getTimeBasedTheme(): "light" | "dark" {
+  const hour = new Date().getHours();
+  return hour >= 19 || hour < 6 ? "dark" : "light";
+}
+
+// Tema por horario configurado (modo "auto-schedule"): oscuro desde las 18h (6pm)
+function getScheduleBasedTheme(): "light" | "dark" {
+  const hour = new Date().getHours();
+  return hour >= 18 || hour < 6 ? "dark" : "light";
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("light");
   const [resolved, setResolved] = useState<"light" | "dark">("light");
 
-  // Hydrate from localStorage after mount to avoid SSR mismatch
+  // Always force light mode — dark mode toggle is only in Settings module
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const t = stored && ["light", "dark", "system"].includes(stored) ? stored : "light";
-    startTransition(() => {
-      setThemeState(t);
-      setResolved(t === "system" ? getSystemTheme() : t);
-    });
+    document.documentElement.classList.remove("dark");
   }, []);
 
-  // Resolve and apply
-  useEffect(() => {
-    const isMobile = window.innerWidth < 640;
-
-    const apply = () => {
-      // Force light mode on mobile/small screens
-      const r = isMobile ? "light" : theme === "system" ? getSystemTheme() : theme;
-      setResolved(r);
-      document.documentElement.classList.toggle("dark", r === "dark");
-    };
-
-    apply();
-
-    // Listen for system preference changes
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => {
-      if (theme === "system") apply();
-    };
-    mq.addEventListener("change", handler);
-
-    // Listen for resize — if user rotates phone or resizes browser
-    const resizeHandler = () => {
-      const nowMobile = window.innerWidth < 640;
-      if (nowMobile) {
-        setResolved("light");
-        document.documentElement.classList.remove("dark");
-      } else {
-        apply();
-      }
-    };
-    window.addEventListener("resize", resizeHandler);
-
-    return () => {
-      mq.removeEventListener("change", handler);
-      window.removeEventListener("resize", resizeHandler);
-    };
-  }, [theme]);
-
-  const setTheme = useCallback((t: Theme) => {
-    setThemeState(t);
-    localStorage.setItem(STORAGE_KEY, t);
+  const setTheme = useCallback((_t: Theme) => {
+    // no-op: theme is locked to light
   }, []);
 
   const toggle = useCallback(() => {
-    setTheme(resolved === "dark" ? "light" : "dark");
-  }, [resolved, setTheme]);
+    // no-op: theme is locked to light
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, resolved, setTheme, toggle }}>

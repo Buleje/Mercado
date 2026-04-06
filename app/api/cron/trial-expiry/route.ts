@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
+import { logger } from "@/lib/logger";
+
+export const dynamic = "force-dynamic";
 
 /**
  * GET /api/cron/trial-expiry
@@ -42,10 +45,10 @@ export async function GET(req: NextRequest) {
         data: { active: false },
       });
 
-      console.log(
-        `[cron/trial-expiry] Suspended ${expired.length} tenant(s):`,
-        expired.map((t) => t.slug)
-      );
+      logger.info("[cron/trial-expiry] Tenants suspended", {
+        count: expired.length,
+        slugs: expired.map((t) => t.slug),
+      });
 
       return {
         ok: true,

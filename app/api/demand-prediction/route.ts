@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
   const { period } = await req.json().catch(() => ({ period: "mes" }));
 
   // Gather data
-  const [sales, products] = await Promise.all([SalesDB.getAll(), ProductsDB.getAll()]);
+  const [sales, products] = await Promise.all([SalesDB.getAll(auth.tenantId), ProductsDB.getAll(auth.tenantId)]);
 
   const now = new Date();
   const cutoff = new Date(now);

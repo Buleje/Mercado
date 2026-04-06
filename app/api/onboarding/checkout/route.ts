@@ -8,6 +8,8 @@ import {
 } from "@/lib/stripe";
 import type { PlanId } from "@/lib/plans";
 
+export const dynamic = "force-dynamic";
+
 /**
  * POST /api/onboarding/checkout
  * Body: { tenantSlug: string, plan: "pro" | "business" | "enterprise" }
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://bodegasanmartin.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.com";
 
   const stripeCustomerId = await getOrCreateStripeCustomer({
     stripeCustomerId: tenant.stripeCustomerId ?? null,

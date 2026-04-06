@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { withDbRetry } from "@/lib/db-retry";
 
 /**
  * GET /api/admin/stats
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
       weekOrders,
       totalCustomers,
       overduePayables,
-    ] = await Promise.all([
+    ] = await withDbRetry(() => Promise.all([
       // Active pending orders
       prisma.order.count({ where: { status: "pendiente" } }),
 
@@ -67,13 +68,13 @@ export async function GET(req: NextRequest) {
 
       // Overdue payables (due before now and not fully paid)
       prisma.payable.count({ where: { dueDate: { lt: now }, status: { not: "pagado" } } }),
-    ]);
+    ]));
 
     // Low stock: Prisma doesn't support "fieldA <= fieldB" directly, use $queryRaw
-    const lowStockResult = await prisma.$queryRaw<{ count: bigint }[]>`
+    const lowStockResult = await withDbRetry(() => prisma.$queryRaw<{ count: bigint }[]>`
       SELECT COUNT(*) as count FROM "Product"
       WHERE active = true AND stock IS NOT NULL AND "stockMin" IS NOT NULL AND stock <= "stockMin"
-    `;
+    `);
     const lowStockCount = Number(lowStockResult[0]?.count ?? 0);
 
     // Suppress unused variable warning (the simple count was replaced by raw query)

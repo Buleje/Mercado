@@ -3,8 +3,8 @@ import { Home, ShoppingBag } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "404 — Página no encontrada | Bodega San Martín",
-  description: "La página que buscas no existe o fue movida. Vuelve al inicio de Bodega San Martín.",
+  title: "404 — Página no encontrada | Buleje",
+  description: "La página que buscas no existe o fue movida. Vuelve al inicio de Buleje.",
   robots: { index: false, follow: true },
 };
 
@@ -43,7 +43,7 @@ export default function NotFound() {
         </div>
 
         <p className="mt-10 text-xs text-muted">
-          Bodega San Martín — Pucallpa, Ucayali
+          Buleje — Pucallpa, Ucayali
         </p>
       </div>
     </main>

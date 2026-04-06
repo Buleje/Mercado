@@ -18,12 +18,16 @@
  *   del(key): void
  */
 
+import { logger } from "@/lib/logger";
+
 export interface CacheStore {
   get<T>(key: string): T | null;
   set<T>(key: string, value: T, ttlSec: number): void;
   del(key: string): void;
   /** Evict all keys that start with `prefix`. */
   delByPrefix?(prefix: string): void;
+  /** Evict ALL keys — nuclear reset. */
+  clearAll?(): void;
 }
 
 // ── In-memory store (single process, suitable for serverless warm instances) ──
@@ -55,6 +59,10 @@ class MemoryStore implements CacheStore {
     for (const key of this.store.keys()) {
       if (key.startsWith(prefix)) this.store.delete(key);
     }
+  }
+
+  clearAll(): void {
+    this.store.clear();
   }
 }
 
@@ -97,7 +105,7 @@ class RedisStore implements CacheStore {
         console.error("[cache/redis] connection error:", err.message);
       });
     } catch {
-      console.warn("[cache/redis] ioredis not installed — falling back to MemoryStore");
+      logger.warn("[cache/redis] ioredis not installed — falling back to MemoryStore");
       this.client = null;
     }
   }
@@ -146,6 +154,15 @@ class RedisStore implements CacheStore {
       }).catch(() => {});
     }
   }
+
+  clearAll(): void {
+    this.mem.clearAll();
+    if (this.client) {
+      this.client.keys("*").then((keys: string[]) => {
+        if (keys.length > 0) this.client.del(...keys).catch(() => {});
+      }).catch(() => {});
+    }
+  }
 }
 
 // ── Global singleton — survives across requests in the same serverless instance ─
@@ -187,4 +204,9 @@ export function invalidate(key: string): void {
 /** Evict ALL keys whose string representation starts with `prefix` */
 export function invalidateByPrefix(prefix: string): void {
   cacheStore.delByPrefix?.(prefix);
+}
+
+/** Nuclear: evict ALL cached keys (for full data purge) */
+export function invalidateAll(): void {
+  cacheStore.clearAll?.();
 }

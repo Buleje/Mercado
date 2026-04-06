@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { CustomersDB, normalizePhone } from "@/lib/jsondb";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { applyRateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const ApplySchema = z.object({
@@ -16,9 +16,8 @@ const ApplySchema = z.object({
  * Rate-limited per IP, no auth required (customer action).
  */
 export async function POST(req: NextRequest) {
-  const ip = getClientIp(req);
-  const { allowed } = rateLimit(`referral-apply:${ip}`, 5, 60);
-  if (!allowed) return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
+  const limited = applyRateLimit(req, "MODERATE", "referrals");
+  if (limited) return limited;
 
   let raw: unknown;
   try { raw = await req.json(); } catch {
@@ -41,9 +40,8 @@ export async function POST(req: NextRequest) {
  * Returns or generates the referral code for a customer.
  */
 export async function GET(req: NextRequest) {
-  const ip = getClientIp(req);
-  const { allowed } = rateLimit(`referral-get:${ip}`, 30, 60);
-  if (!allowed) return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
+  const limited = applyRateLimit(req, "MODERATE", "referrals");
+  if (limited) return limited;
 
   const phone = req.nextUrl.searchParams.get("phone");
   if (!phone) return NextResponse.json({ error: "phone requerido" }, { status: 400 });

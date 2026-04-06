@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 /**
  * POST /api/admin/clear-data
@@ -9,18 +10,6 @@ import { prisma } from "@/lib/prisma";
  * Settings and AdminUser rows are intentionally preserved.
  * Body: { confirm: "BORRAR_TODO", categories?: string[] }
  */
-
-// --------------------------------------------------------------------------
-// Safe per-model delete (each wrapped so one failure doesn't kill the batch)
-// --------------------------------------------------------------------------
-async function safeDeleteMany(model: keyof typeof prisma, label: string) {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (prisma[model] as any).deleteMany();
-  } catch (e) {
-    console.warn(`[CLEAR-DATA] skip ${label}:`, (e as Error).message);
-  }
-}
 
 // Delete order: children first, parents last (FK-safe)
 const FULL_DELETE_ORDER: Array<[keyof typeof prisma, string]> = [
@@ -149,7 +138,7 @@ export async function POST(req: NextRequest) {
           await (prisma[model] as any).deleteMany();
           deleted.push(label);
         } catch (e) {
-          console.warn(`[CLEAR-DATA] skip ${label}:`, (e as Error).message);
+          logger.warn("[CLEAR-DATA] skip", { label, error: (e as Error).message });
           failed.push(label);
         }
       }
@@ -164,7 +153,7 @@ export async function POST(req: NextRequest) {
             await (prisma[model] as any).deleteMany();
             deleted.push(label);
           } catch (e) {
-            console.warn(`[CLEAR-DATA] skip ${label}:`, (e as Error).message);
+            logger.warn("[CLEAR-DATA] skip", { label, error: (e as Error).message });
             failed.push(label);
           }
         }

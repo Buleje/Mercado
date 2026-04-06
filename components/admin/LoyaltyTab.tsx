@@ -185,7 +185,7 @@ export default function LoyaltyTab() {
   const generateWhatsAppMessage = (customer: Customer) => {
     const points = customer.loyaltyPoints;
     const value = (points * 0.1).toFixed(2);
-    return `🎁 ${customer.name}, tienes ${points} puntos en Bodega San Martín. ¡Canjéalos en tu próxima compra! Valor: S/${value}`;
+    return `🎁 ${customer.name}, tienes ${points} puntos en Buleje. ¡Canjéalos en tu próxima compra! Valor: S/${value}`;
   };
 
   const openWhatsApp = (phone: string, message: string) => {
@@ -515,10 +515,10 @@ export default function LoyaltyTab() {
                       <p className="text-xs text-gray-500">Mensaje para compartir:</p>
                       <div className="p-2 bg-gray-50 dark:bg-surface rounded-lg relative">
                         <p className="text-xs text-gray-700 dark:text-gray-300">
-                          ¡Únete a Bodega San Martín con mi código <span className="font-bold text-primary">{referralCode}</span>!
+                          ¡Únete a Buleje con mi código <span className="font-bold text-primary">{referralCode}</span>!
                         </p>
                         <button
-                          onClick={() => copyToClipboard(`¡Únete a Bodega San Martín con mi código ${referralCode}!`, 'referral-message')}
+                          onClick={() => copyToClipboard(`¡Únete a Buleje con mi código ${referralCode}!`, 'referral-message')}
                           className="absolute top-2 right-2 p-1 hover:bg-gray-200 dark:hover:bg-card rounded transition"
                         >
                           {copiedMessage === 'referral-message' ? (

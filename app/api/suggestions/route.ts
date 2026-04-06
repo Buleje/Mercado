@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, OrdersDB, CustomersDB } from "@/lib/jsondb";
 
+export const dynamic = "force-dynamic";
+
 type SuggestionType = "alerta" | "oportunidad" | "optimizacion" | "accion";
 interface Suggestion {
   id: string;
@@ -21,9 +23,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const [products, orders, customers] = await Promise.all([
-      ProductsDB.getAll().catch(() => []),
-      OrdersDB.getAll().catch(() => []),
-      CustomersDB.getAll().catch(() => []),
+      ProductsDB.getAll(auth.tenantId).catch(() => []),
+      OrdersDB.getAll(auth.tenantId).catch(() => []),
+      CustomersDB.getAll(auth.tenantId).catch(() => []),
     ]);
     void customers; // used in customer suggestions below
 

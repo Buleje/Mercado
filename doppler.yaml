@@ -1,0 +1,7 @@
+setup:
+  project: bodega-san-martin
+  config: dev
+
+# Environment mapping
+# Run: doppler setup
+# Then: doppler run -- npm run dev

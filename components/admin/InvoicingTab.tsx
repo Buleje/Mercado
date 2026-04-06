@@ -3,7 +3,7 @@
 import { useState } from "react";
 import {
   FileText, Plus, X, Download, Search, Printer,
-  CheckCircle, Clock, AlertTriangle, Send,
+  CheckCircle, Clock, AlertTriangle, Send, Loader2,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
@@ -78,7 +78,7 @@ export default function InvoicingTab() {
   const [invoices, setInvoices] = useState<Invoice[]>(SEED);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<InvoiceType | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<InvoiceStatus | "all">("all");
+  const [statusFilter, _setStatusFilter] = useState<InvoiceStatus | "all">("all");
   const [selected, setSelected] = useState<Invoice | null>(null);
   const [showForm, setShowForm] = useState(false);
 
@@ -94,6 +94,8 @@ export default function InvoicingTab() {
     notes: "",
   });
   const [formItems, setFormItems] = useState<InvoiceItem[]>([{ ...EMPTY_ITEM }]);
+  const [verifyingDni, setVerifyingDni] = useState(false);
+  const [dniMsg, setDniMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   const { subtotal, igv, total } = calcTotals(formItems);
 
@@ -103,6 +105,29 @@ export default function InvoicingTab() {
     const next = (existing.length + 1).toString().padStart(8, "0");
     return { serie, number: next };
   };
+
+  async function handleVerifyDni(doc: string) {
+    if (!/^\d{8}$/.test(doc)) return;
+    setVerifyingDni(true);
+    setDniMsg(null);
+    try {
+      const res = await fetch(`/api/reniec/dni/${encodeURIComponent(doc)}`);
+      const data = await res.json() as Record<string, string>;
+      if (!res.ok) {
+        setDniMsg({ ok: false, text: (data.error as string) ?? "No se pudo consultar RENIEC." });
+        return;
+      }
+      const nombreCompleto: string = data.nombreCompleto ?? "";
+      if (!form.customerName.trim() && nombreCompleto) {
+        setForm(p => ({ ...p, customerName: nombreCompleto }));
+      }
+      setDniMsg({ ok: true, text: nombreCompleto ? `✓ ${nombreCompleto}` : "DNI válido." });
+    } catch {
+      setDniMsg({ ok: false, text: "Error de conexión con RENIEC." });
+    } finally {
+      setVerifyingDni(false);
+    }
+  }
 
   const handleCreate = () => {
     if (!form.customerName.trim() || formItems.some(i => !i.description)) return;
@@ -128,6 +153,7 @@ export default function InvoicingTab() {
     setShowForm(false);
     setFormItems([{ ...EMPTY_ITEM }]);
     setForm(p => ({ ...p, customerName: "", customerDoc: "", customerEmail: "", customerAddress: "", notes: "" }));
+    setDniMsg(null);
   };
 
   const handleChangeStatus = (id: string, status: InvoiceStatus) => {
@@ -196,7 +222,7 @@ export default function InvoicingTab() {
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5 space-y-5">
           <div className="flex items-center justify-between">
             <h3 className="font-bold text-gray-900 dark:text-foreground text-sm">Nuevo comprobante</h3>
-            <button onClick={() => setShowForm(false)}><X className="h-4 w-4 text-gray-400" /></button>
+            <button onClick={() => { setShowForm(false); setDniMsg(null); }}><X className="h-4 w-4 text-gray-400" /></button>
           </div>
 
           {/* Type selector */}
@@ -223,7 +249,31 @@ export default function InvoicingTab() {
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Número doc.</label>
-              <input type="text" value={form.customerDoc} onChange={e => setForm(p => ({ ...p, customerDoc: e.target.value }))} placeholder="20XXXXXXXXX / 12345678" className="w-full text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground" />
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={form.customerDoc}
+                  onChange={e => { setForm(p => ({ ...p, customerDoc: e.target.value })); setDniMsg(null); }}
+                  placeholder="20XXXXXXXXX / 12345678"
+                  className="flex-1 min-w-0 text-sm border border-gray-200 dark:border-card-border rounded-lg px-3 py-2 bg-white dark:bg-surface text-gray-700 dark:text-foreground"
+                />
+                {form.customerDocType === "dni" && form.customerDoc.length === 8 && (
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyDni(form.customerDoc)}
+                    disabled={verifyingDni}
+                    className="px-3 py-1.5 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-40 flex items-center gap-1.5 shrink-0 hover:bg-primary/90 transition-colors"
+                  >
+                    {verifyingDni ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+                    Verificar
+                  </button>
+                )}
+              </div>
+              {form.customerDocType === "dni" && dniMsg && (
+                <p className={`mt-1 text-xs font-medium ${dniMsg.ok ? "text-emerald-600" : "text-red-500"}`}>
+                  {dniMsg.text}
+                </p>
+              )}
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">Email</label>

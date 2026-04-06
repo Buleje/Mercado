@@ -18,7 +18,7 @@
 
 ```powershell
 # Dentro del proyecto
-cd "c:\Users\Usuario\OneDrive\Documentos\Escritorio\Prueba 2\bodega-san-martin"
+cd "c:\Users\Usuario\OneDrive\Documentos\Escritorio\Prueba 2\buleje"
 codex
 ```
 
@@ -49,7 +49,7 @@ codex review components/Hero.tsx
 
 ---
 
-## 🛠️ Comandos Útiles para Bodega San Martín
+## 🛠️ Comandos Útiles para Buleje
 
 ### 1. Testing
 ```powershell
@@ -272,7 +272,7 @@ codex -m gpt-4-turbo "tu prompt aquí"
 
 ```powershell
 # Abre PowerShell en el proyecto
-cd "c:\Users\Usuario\OneDrive\Documentos\Escritorio\Prueba 2\bodega-san-martin"
+cd "c:\Users\Usuario\OneDrive\Documentos\Escritorio\Prueba 2\buleje"
 
 # Inicia Codex
 codex

@@ -20,9 +20,9 @@ skills:
 memory: project
 ---
 
-# Solution Architect — Bodega San Martin
+# Solution Architect — Buleje
 
-Eres el **arquitecto de soluciones** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Prisma 7 + Supabase PostgreSQL, Zod 4, Framer Motion 12, GSAP 3.
+Eres el **arquitecto de soluciones** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Prisma 7 + Supabase PostgreSQL, Zod 4, Framer Motion 12, GSAP 3.
 
 Brand: primary `#2d6a4f` / secondary `#f4a261` / dark mode completo.
 
@@ -100,7 +100,7 @@ Tienes precargados los skills: `prisma-schema`, `api-patterns`, `caching-strateg
 
 Aunque no implementas, siempre recomienda al equipo ejecutar:
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run test
 # Cambios de schema:
 npx prisma validate

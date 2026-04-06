@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { type HomepageContent, DEFAULT_HOMEPAGE } from "@/lib/homepage-content";
+import { type HomepageContent, DEFAULT_HOMEPAGE, NEW_STORE_DEFAULTS } from "@/lib/homepage-content";
 
 export type StoreMode = "whatsapp" | "checkout";
 
@@ -24,10 +24,58 @@ export type NavLinkItem = { id: string; visible: boolean };
 export const DEFAULT_NAV_LINKS: NavLinkItem[] = [
   { id: "inicio", visible: true },
   { id: "tienda", visible: true },
-  { id: "categorias", visible: true },
+  { id: "recetas", visible: true },
+  { id: "marketplace", visible: true },
+  { id: "historial", visible: false },
+  { id: "categorias", visible: false },
   { id: "beneficios", visible: true },
   { id: "contacto", visible: true },
 ];
+
+export type StoreTheme = {
+  name?: string;
+  slogan?: string;
+  description?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  backgroundColor?: string;
+  textColor?: string;
+  darkMode?: boolean;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  heroCTA?: string;
+  heroLink?: string;
+  heroBadge?: string;
+  fontFamily?: string;
+  borderRadius?: number;
+  spacing?: string;
+  whatsapp?: string;
+  whatsappMessage?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  logo?: string;
+  visibleSections?: string[];
+  // Estilos visuales avanzados
+  cardStyle?: "minimal" | "shadow" | "border" | "glass";
+  cartStyle?: "sidebar" | "modal" | "drawer";
+  buttonStyle?: "rounded" | "square" | "pill";
+  navbarStyle?: "solid" | "transparent" | "blur" | "minimal";
+  shadowLevel?: "none" | "soft" | "deep";
+  animations?: "none" | "subtle" | "dynamic";
+  backgroundPattern?: "none" | "dots" | "waves" | "gradient";
+  // Contenido editable
+  footerText?: string;
+  footerLinks?: { label: string; href: string }[];
+  socialLinks?: { facebook?: string; instagram?: string; tiktok?: string; youtube?: string };
+  welcomePopupEnabled?: boolean;
+  welcomePopupTitle?: string;
+  welcomePopupMessage?: string;
+  welcomePopupCoupon?: string;
+  // CSS personalizado
+  customCSS?: string;
+};
 
 type SettingsCtx = {
   mode: StoreMode;
@@ -37,6 +85,8 @@ type SettingsCtx = {
   navLinks: NavLinkItem[];
   homepage: HomepageContent;
   deliveryConfig: DeliveryConfig;
+  businessName: string;
+  storeTheme: StoreTheme | null;
   setMode: (m: StoreMode) => Promise<void>;
 };
 
@@ -74,13 +124,26 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [navLinks, setNavLinks] = useState<NavLinkItem[]>(DEFAULT_NAV_LINKS);
   const [homepage, setHomepage] = useState<HomepageContent>(DEFAULT_HOMEPAGE);
   const [deliveryConfig, setDeliveryConfig] = useState<DeliveryConfig>(DEFAULT_DELIVERY);
+  const [businessName, setBusinessName] = useState<string>("");
+  const [storeTheme, setStoreTheme] = useState<StoreTheme | null>(null);
 
   useEffect(() => {
-    fetch("/api/settings")
+    // Detectar si el tenant activo es "main" leyendo la cookie active-tenant
+    const tenantSlug =
+      typeof document !== "undefined"
+        ? (() => {
+            const m = document.cookie.match(/(?:^|;\s*)active-tenant=([^;]+)/);
+            return m ? decodeURIComponent(m[1]) : "main";
+          })()
+        : "main";
+    const isMainTenant = tenantSlug === "main";
+
+    fetch("/api/settings", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: Record<string, unknown> | null) => {
         if (data) {
           if (data.mode) setModeState(data.mode as StoreMode);
+          if (data.businessName) setBusinessName(data.businessName as string);
           setYape({
             enabled: !!data.yapeEnabled,
             image: (data.yapeImage as string) || "",
@@ -88,12 +151,51 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             phone: (data.yapePhone as string) || "",
           });
           if (data.cashEnabled !== undefined) setCashEnabled(!!data.cashEnabled);
-          if (Array.isArray(data.navLinks) && data.navLinks.length > 0) setNavLinks(data.navLinks as NavLinkItem[]);
+          if (Array.isArray(data.navLinks) && data.navLinks.length > 0) {
+            // Merge saved navLinks with defaults so new items (e.g. marketplace) appear
+            const saved = data.navLinks as NavLinkItem[];
+            const savedMap = new Map(saved.map(n => [n.id, n.visible]));
+            const merged = DEFAULT_NAV_LINKS.map(def => ({
+              ...def,
+              visible: savedMap.has(def.id) ? savedMap.get(def.id)! : def.visible,
+            }));
+            setNavLinks(merged);
+          }
           if (data.homepageContent && typeof data.homepageContent === "object") {
-            setHomepage({ ...DEFAULT_HOMEPAGE, ...(data.homepageContent as Partial<HomepageContent>) });
+            // Para el tenant "main" usar DEFAULT_HOMEPAGE como base; para otros usar NEW_STORE_DEFAULTS
+            const base = isMainTenant ? DEFAULT_HOMEPAGE : NEW_STORE_DEFAULTS;
+            setHomepage({ ...base, ...(data.homepageContent as Partial<HomepageContent>) });
+          } else if (!isMainTenant) {
+            // Tienda nueva sin homepage configurada → usar defaults genéricos
+            setHomepage(NEW_STORE_DEFAULTS);
           }
           if (data.deliveryConfig && typeof data.deliveryConfig === "object") {
             setDeliveryConfig({ ...DEFAULT_DELIVERY, ...(data.deliveryConfig as Partial<DeliveryConfig>) });
+          }
+          if (data.storeTheme && typeof data.storeTheme === "object") {
+            const raw = data.storeTheme as Record<string, unknown>;
+            setStoreTheme({
+              name: raw.storeName as string | undefined,
+              slogan: raw.slogan as string | undefined,
+              description: raw.description as string | undefined,
+              primaryColor: raw.primaryColor as string | undefined,
+              secondaryColor: raw.secondaryColor as string | undefined,
+              accentColor: raw.accentColor as string | undefined,
+              darkMode: raw.darkModeDefault as boolean | undefined,
+              heroTitle: raw.heroTitle as string | undefined,
+              heroSubtitle: raw.heroSubtitle as string | undefined,
+              heroCTA: raw.heroCTA as string | undefined,
+              heroLink: raw.heroLink as string | undefined,
+              fontFamily: raw.fontFamily as string | undefined,
+              borderRadius: raw.borderRadius as number | undefined,
+              spacing: raw.spacing as string | undefined,
+              whatsapp: raw.whatsapp as string | undefined,
+              email: raw.email as string | undefined,
+              phone: raw.phone as string | undefined,
+              address: raw.address as string | undefined,
+              logo: raw.logo as string | undefined,
+              visibleSections: Array.isArray(raw.sections) ? (raw.sections as string[]) : undefined,
+            });
           }
         }
       })
@@ -111,7 +213,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <SettingsContext.Provider value={{ mode, modeLoading, yape, cashEnabled, navLinks, homepage, deliveryConfig, setMode }}>
+    <SettingsContext.Provider value={{ mode, modeLoading, yape, cashEnabled, navLinks, homepage, deliveryConfig, businessName, storeTheme, setMode }}>
       {children}
     </SettingsContext.Provider>
   );

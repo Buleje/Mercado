@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck } from "lucide-react";
+import { Upload, Download, FileText, CheckCircle, AlertTriangle, Loader2, Package, Users, ShoppingCart, Truck, DollarSign } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 type ExportModule = { id: string; label: string; icon: React.ElementType };
@@ -11,6 +11,7 @@ const EXPORT_MODULES: ExportModule[] = [
   { id: "productos", label: "Productos", icon: Package },
   { id: "clientes", label: "Clientes", icon: Users },
   { id: "pedidos", label: "Pedidos", icon: ShoppingCart },
+  { id: "ventas", label: "Ventas", icon: DollarSign },
   { id: "inventario", label: "Movimientos Inventario", icon: Package },
   { id: "proveedores", label: "Proveedores", icon: Truck },
   { id: "gastos", label: "Gastos", icon: FileText },
@@ -66,6 +67,30 @@ async function fetchModuleData(moduleId: string): Promise<Record<string, unknown
       cantidad: m.quantity, notas: m.notes ?? "",
       fecha: m.createdAt ? String(m.createdAt).slice(0, 10) : "",
     }));
+  }
+  if (moduleId === "ventas") {
+    const res = await fetch("/api/sales");
+    if (!res.ok) return [];
+    const data = await res.json() as Record<string, unknown>[];
+    return data.map(s => {
+      const total = Number(s.total) || 0;
+      const totalCogs = Number(s.totalCogs) || 0;
+      const margin = total - totalCogs;
+      return {
+        id: s.id,
+        fecha: s.createdAt ? String(s.createdAt).slice(0, 10) : "",
+        num_productos: Array.isArray(s.items) ? s.items.length : 0,
+        total: total.toFixed(2),
+        costo_total: totalCogs.toFixed(2),
+        margen: margin.toFixed(2),
+        margen_pct: total > 0 ? ((margin / total) * 100).toFixed(1) + "%" : "0%",
+        metodo_pago: s.payment ?? "",
+        comprobante: s.comprobanteTipo ?? "ticket",
+        descuento: s.descuentoMonto ?? 0,
+        cajero: s.cashierId ?? "",
+        cliente: s.customerPhone ?? "",
+      };
+    });
   }
   // proveedores / gastos — no dedicated API yet, return empty
   return [];
@@ -143,13 +168,13 @@ export default function ImportExportTab() {
     <div className="space-y-3 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Upload className="h-6 w-6 text-primary" /> Importar / Exportar</h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Centro de importación y exportación masiva de datos</p>
+          <h2 className="text-xl font-extrabold text-gray-900 dark:text-foreground flex flex-wrap items-center gap-2"><Upload className="h-6 w-6 text-primary" /> Subir / Descargar Datos</h2>
+          <p className="text-sm text-gray-500 dark:text-muted mt-0.5">Descarga tus datos a Excel o sube archivos para cargar productos de golpe</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {(["export", "import", "history"] as const).map(v => (
             <button key={v} onClick={() => setView(v)} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === v ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>
-              {v === "export" ? "Exportar" : v === "import" ? "Importar" : "Historial"}
+              {v === "export" ? "Descargar" : v === "import" ? "Subir" : "Historial"}
             </button>
           ))}
         </div>
@@ -198,7 +223,7 @@ export default function ImportExportTab() {
         <div className="space-y-4">
           {/* Module selector */}
           <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-3 sm:p-5">
-            <h3 className="font-bold text-gray-900 dark:text-foreground mb-3">1. Selecciona módulo destino</h3>
+            <h3 className="font-bold text-gray-900 dark:text-foreground mb-3">1. Elige a dónde van los datos</h3>
             <div className="flex flex-wrap gap-2">
               {EXPORT_MODULES.map(m => (
                 <button key={m.id} onClick={() => setSelectedModule(m.id)} className={cn("px-3 py-2 rounded-xl text-xs font-bold transition-colors border", selectedModule === m.id ? "bg-primary text-white border-primary" : "bg-gray-50 dark:bg-surface text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary")}>
@@ -248,7 +273,7 @@ export default function ImportExportTab() {
             <div className="flex flex-wrap items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
               <div className="text-xs text-amber-700 dark:text-amber-400">
-                <p className="font-bold mb-1">Reglas de importación:</p>
+                <p className="font-bold mb-1">Reglas para subir archivos:</p>
                 <ul className="list-disc ml-4 space-y-0.5">
                   <li>La primera fila debe contener los encabezados</li>
                   <li>Los campos requeridos dependen del módulo seleccionado</li>
@@ -263,7 +288,7 @@ export default function ImportExportTab() {
 
       {view === "history" && (
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border overflow-y-hidden overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
+          <table className="w-full min-w-150 text-sm">
             <thead><tr className="bg-gray-50 dark:bg-surface text-left">
               <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Archivo</th>
               <th className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-500 dark:text-muted">Módulo</th>

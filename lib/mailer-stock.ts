@@ -40,7 +40,7 @@ export async function sendStockAlertEmail(products: LowStockProduct[]): Promise<
     .join("");
 
   await transporter.sendMail({
-    from: `"Bodega San Martín" <${smtpUser}>`,
+    from: `"Buleje" <${smtpUser}>`,
     to: notifyEmail,
     subject: `⚠️ Alerta de stock bajo — ${products.length} producto${products.length > 1 ? "s" : ""}`,
     html: `
@@ -63,13 +63,13 @@ export async function sendStockAlertEmail(products: LowStockProduct[]): Promise<
           </table>
         </div>
         <div style="padding:16px 24px;background:#fef2f2;text-align:center;">
-          <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://www.bodegasanmartin.pe"}/admin?tab=inventario"
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL || "https://www.buleje.pe"}/admin?tab=inventario"
              style="display:inline-block;background:#dc2626;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:bold;">
             Ver inventario
           </a>
         </div>
         <div style="padding:12px 24px;border-top:1px solid #eee;text-align:center;">
-          <p style="font-size:12px;color:#999;margin:0;">Bodega San Martín · Sistema automático de alertas</p>
+          <p style="font-size:12px;color:#999;margin:0;">Buleje · Sistema automático de alertas</p>
         </div>
       </div>
     `,

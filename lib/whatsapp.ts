@@ -37,7 +37,7 @@ const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
     const items = o.items?.length ? `\n\n*Tu pedido:*\n${renderItems(o.items)}\n\n` : "\n\n";
     const pay = o.paymentMethod ? `💳 Pago: ${PAYMENT_LABELS[o.paymentMethod] ?? o.paymentMethod}\n` : "";
     return (
-      `🏪 *Bodega San Martín*\n` +
+      `🏪 *Buleje*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `📋 *PEDIDO RECIBIDO*\n` +
       `Pedido #${shortId(o.id)}\n` +
@@ -48,7 +48,7 @@ const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
       pay +
       `⏳ Estamos procesando tu pedido. Te avisamos cuando sea confirmado.\n\n` +
       `📍 Seguimiento en tiempo real:\n${getTrackingUrl(o.id)}\n\n` +
-      `_Gracias por comprar en Bodega San Martín_ 🙏`
+      `_Gracias por comprar en Buleje_ 🙏`
     );
   },
 
@@ -57,7 +57,7 @@ const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
     const pay = o.paymentMethod ? `💳 Pago: ${PAYMENT_LABELS[o.paymentMethod] ?? o.paymentMethod}\n` : "";
     const slot = o.deliverySlot && o.deliverySlot !== "lo-antes-posible" ? `🕐 Entrega: ${o.deliverySlot}\n` : "🕐 Entrega: Lo antes posible\n";
     return (
-      `🏪 *Bodega San Martín*\n` +
+      `🏪 *Buleje*\n` +
       `━━━━━━━━━━━━━━━━━━━\n` +
       `✅ *PEDIDO CONFIRMADO*\n` +
       `Pedido #${shortId(o.id)}\n` +
@@ -74,7 +74,7 @@ const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
   },
 
   en_camino: (o) =>
-    `🏪 *Bodega San Martín*\n` +
+    `🏪 *Buleje*\n` +
     `━━━━━━━━━━━━━━━━━━━\n` +
     `🛵 *¡TU PEDIDO VA EN CAMINO!*\n` +
     `Pedido #${shortId(o.id)}\n` +
@@ -85,7 +85,7 @@ const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
     `_Llegamos pronto, ¡gracias por esperar!_`,
 
   entregado: (o) =>
-    `🏪 *Bodega San Martín*\n` +
+    `🏪 *Buleje*\n` +
     `━━━━━━━━━━━━━━━━━━━\n` +
     `🎉 *PEDIDO ENTREGADO*\n` +
     `Pedido #${shortId(o.id)}\n` +
@@ -96,14 +96,14 @@ const TEMPLATES: Record<string, (o: OrderInfo) => string> = {
     `_¡Hasta la próxima compra!_ 🛒`,
 
   cancelado: (o) =>
-    `🏪 *Bodega San Martín*\n` +
+    `🏪 *Buleje*\n` +
     `━━━━━━━━━━━━━━━━━━━\n` +
     `❌ Pedido *cancelado*\n` +
     `Pedido #${shortId(o.id)}\n` +
     `━━━━━━━━━━━━━━━━━━━\n` +
     `Hola *${o.customerName}*, lamentamos informarte que tu pedido fue cancelado.\n\n` +
     `Si tienes preguntas, escríbenos al: wa.me/51916409675\n\n` +
-    `_— Bodega San Martín_`,
+    `_— Buleje_`,
 };
 
 function getBaseUrl(): string {
@@ -146,14 +146,21 @@ export function getWhatsAppMessage(order: OrderInfo): string | null {
  * Returns true if sent, false if no API configured, throws on error.
  */
 export async function sendWhatsAppNotification(order: OrderInfo): Promise<boolean> {
+  const message = getWhatsAppMessage(order);
+  if (!message || !order.customerPhone) return false;
+  return sendWhatsAppText(order.customerPhone, message);
+}
+
+/**
+ * Send a generic WhatsApp text message to any phone number.
+ * Returns true if sent, false if no API configured, throws on error.
+ */
+export async function sendWhatsAppText(phone: string, message: string): Promise<boolean> {
   const apiUrl = process.env.WHATSAPP_API_URL;
   const apiToken = process.env.WHATSAPP_API_TOKEN;
-  if (!apiUrl || !apiToken || !order.customerPhone) return false;
+  if (!apiUrl || !apiToken || !phone) return false;
 
-  const message = getWhatsAppMessage(order);
-  if (!message) return false;
-
-  const phone = formatPhone(order.customerPhone);
+  const formatted = formatPhone(phone);
   const res = await fetch(apiUrl, {
     method: "POST",
     headers: {
@@ -162,7 +169,7 @@ export async function sendWhatsAppNotification(order: OrderInfo): Promise<boolea
     },
     body: JSON.stringify({
       messaging_product: "whatsapp",
-      to: phone,
+      to: formatted,
       type: "text",
       text: { body: message },
     }),

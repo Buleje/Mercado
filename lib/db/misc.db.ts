@@ -25,6 +25,10 @@ export type DbCustomer = {
   referralCode?: string;
   referredBy?: string;
   creditBalance: number;
+  creditLimit: number;
+  tags?: string | null;
+  lat?: number;
+  lng?: number;
   notifOrderUpdates: boolean;
   notifPromotions: boolean;
   notifRestock: boolean;
@@ -61,6 +65,7 @@ export type DbProduct = {
   stockMin?: number;
   stockMax?: number;
   active: boolean;
+  tenantId?: string;
 };
 
 export type DbOrderItem = {
@@ -137,6 +142,109 @@ export type DbSettings = {
   adminBypassLogin?: boolean;
   homepageContent?: Record<string, unknown>;
   comboTemplates?: Array<{ id: string; name: string; description: string; emoji: string; categories: string[]; size: number; discount: number }>;
+
+  // ── Datos del negocio ──
+  razonSocial?: string;
+  ruc?: string;
+  businessEmail?: string;
+  currency?: string;
+  timezone?: string;
+  businessType?: string;
+  socialLinks?: { facebook?: string; instagram?: string; tiktok?: string };
+
+  // ── Apariencia ──
+  primaryColor?: string;
+  secondaryColor?: string;
+  slogan?: string;
+
+  // ── Sistema ──
+  dateFormat?: string;
+  timeFormat?: string;
+  decimals?: number;
+  taxRate?: number;
+  fiscalYearStart?: number;
+
+  // ── Ventas y comprobantes ──
+  invoiceSeries?: Record<string, string>;
+  invoiceStart?: Record<string, number>;
+  enabledDocTypes?: string;
+  roundingMode?: string;
+  maxDiscountPercent?: number;
+  discountRequiresAuth?: boolean;
+  invoiceFooterText?: string;
+  sunatRuc?: string;
+  sunatDenominacion?: string;
+  sunatDireccion?: string;
+
+  // ── Inventario ──
+  defaultUnit?: string;
+  globalMinStock?: number;
+  stockAlertChannels?: string;
+  adjustReasons?: string[];
+  fefoEnabled?: boolean;
+  fefoAlertDays?: number;
+  inventoryCountFreq?: string;
+
+  // ── Caja y pagos ──
+  cashOpeningAmount?: number;
+  cashAlertMax?: number;
+  returnPolicyDays?: number;
+  returnMaxNoAuth?: number;
+  autoCloseTime?: string;
+
+  // ── Delivery ──
+  deliveryZones?: Array<{ name: string; fee: number; estimatedMin: number }>;
+  freeDeliveryMin?: number;
+  deliveryMaxRadius?: number;
+  deliveryHours?: { morning?: string; afternoon?: string; evening?: string };
+  riders?: Array<{ name: string; phone: string; zone: string }>;
+
+  // ── Notificaciones ──
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpUser?: string;
+  smtpPass?: string;
+  smtpFrom?: string;
+  whatsappApiToken?: string;
+  whatsappBusinessNum?: string;
+  whatsappWebhookUrl?: string;
+  notifChannels?: Record<string, boolean>;
+  reorderReminderDays?: number;
+
+  // ── Integraciones ──
+  plinEnabled?: boolean;
+  plinImage?: string;
+  plinName?: string;
+  plinPhone?: string;
+  sunatProvider?: string;
+  sunatApiKey?: string;
+  googleAnalyticsId?: string;
+  googleTagManagerId?: string;
+
+  // ── Auditoría ──
+  logRetentionDays?: number;
+  logActions?: string;
+
+  // ── Respaldo ──
+  backupSchedule?: string;
+  lastBackupAt?: string;
+
+  // ── Suscripción ──
+  planName?: string;
+  planExpiresAt?: string;
+  maxProducts?: number;
+  maxUsers?: number;
+  maxBranches?: number;
+  enabledModules?: string[];
+
+  // ── Métodos de pago adicionales ──
+  transferEnabled?: boolean;
+  transferBankName?: string;
+  transferAccountNum?: string;
+  transferAccountHolder?: string;
+
+  // ── StoreCustomizer ──
+  storeTheme?: Record<string, unknown>;
 };
 
 export type DbSupplier = {
@@ -150,7 +258,7 @@ export type DbSupplier = {
   createdAt: string;
 };
 
-export type PurchaseStatus = "pendiente" | "recibido" | "parcial" | "cancelado";
+export type PurchaseStatus = "pendiente" | "recibido" | "parcial" | "cancelado" | "auto_generated";
 
 export type DbPurchaseItem = {
   productId: number;
@@ -168,6 +276,9 @@ export type DbPurchaseOrder = {
   total: number;
   status: PurchaseStatus;
   notes?: string;
+  paymentMethod?: string;
+  deliveryDate?: string;
+  discount?: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -186,12 +297,20 @@ export type DbSale = {
   items: DbSaleItem[];
   total: number;
   totalCogs?: number;
-  payment: "efectivo" | "yape" | "plin" | "tarjeta";
+  payment: "efectivo" | "yape" | "plin" | "tarjeta" | "MIXTO" | "fiado";
   amountPaid: number;
   change: number;
   customerPhone?: string;
   cashierId?: string;
   createdAt: string;
+  // Mejora 1: Tipo de comprobante
+  comprobanteTipo?: string;
+  comprobanteRuc?: string;
+  // Mejora 4: Descuento global
+  descuentoMonto?: number;
+  descuentoPorcentaje?: number;
+  // Payment details for split/mixed payments
+  paymentDetails?: string;
 };
 
 export type DbPromotion = {
@@ -293,8 +412,11 @@ export const SurveyDB = {
     return r ? mapSurvey(r) : null;
   },
 
-  async getAll(limit = 100): Promise<DbSurveyResponse[]> {
+  async getAll(tenantId?: string, limit = 100): Promise<DbSurveyResponse[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
     const rows = await prisma.surveyResponse.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       take: limit,
     });

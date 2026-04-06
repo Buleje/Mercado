@@ -1,6 +1,9 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { FolderKanban, Briefcase, ClipboardList, LayoutGrid, Target, BarChart3 } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -14,33 +17,33 @@ const KanbanBoardTab = dynamic(() => import("@/components/admin/KanbanBoardTab")
 const GoalsTab = dynamic(() => import("@/components/admin/GoalsTab"), { loading: S });
 const GoalTrackerTab = dynamic(() => import("@/components/admin/GoalTrackerTab"), { loading: S });
 
+const MODULE_ID = "proyectos-tareas";
+
 const TABS = [
-  { id: "proyectos" as const, label: "Proyectos" },
-  { id: "tareas" as const, label: "Tareas" },
-  { id: "kanban" as const, label: "Kanban" },
-  { id: "metas" as const, label: "Metas & KPIs" },
-  { id: "tablero" as const, label: "Tablero Metas" },
+  { id: "proyectos", label: "Proyectos", icon: Briefcase },
+  { id: "tareas", label: "Tareas", icon: ClipboardList },
+  { id: "kanban", label: "Kanban", icon: LayoutGrid },
+  { id: "metas", label: "Metas & KPIs", icon: Target },
+  { id: "tablero", label: "Tablero Metas", icon: BarChart3 },
 ];
 
 export default function ProyectosTareasModule() {
   const [sub, setSub] = useState(TABS[0].id);
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none border-b border-gray-200 dark:border-card-border -mx-1 px-1">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSub(t.id)}
-            className={`shrink-0 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${
-              sub === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Proyectos & Tareas"
+        description="Gestión de proyectos, tareas, Kanban y metas del equipo"
+        icon={FolderKanban}
+      />
+
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId={MODULE_ID}
+      />
+
       {sub === "proyectos" && <ProjectsTab />}
       {sub === "tareas" && <TasksTab />}
       {sub === "kanban" && <KanbanBoardTab />}

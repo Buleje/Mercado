@@ -14,7 +14,9 @@ type Props = {
 
 export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Leaflet Map instance (dynamically imported)
   const mapRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Leaflet Marker instance (dynamically imported)
   const markerRef = useRef<any>(null);
 
   // Keep refs up-to-date to avoid stale closures in the init effect
@@ -67,6 +69,7 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
         const ro = new ResizeObserver(() => { if (!destroyed) map.invalidateSize(); });
         ro.observe(containerRef.current);
         // Store for cleanup
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Custom cleanup stored on Leaflet map instance
         (map as any)._roCleanup = () => ro.disconnect();
       }
 
@@ -82,7 +85,7 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
             const a = data.address ?? {};
             const road = a.road ?? a.pedestrian ?? a.path ?? "";
             const num = a.house_number ? ` ${a.house_number}` : "";
-            const city = a.city ?? a.town ?? a.village ?? "Pucallpa";
+            const city = a.city ?? a.town ?? a.village ?? "";
             const addr = road
               ? `${road}${num}, ${city} — GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`
               : `GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -92,6 +95,7 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
           }
         };
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Leaflet event type
         map.on("click", (e: any) => {
           marker.setLatLng(e.latlng);
           reverseGeocode(e.latlng.lat, e.latlng.lng);
@@ -107,6 +111,7 @@ export default function LeafletMap({ lat, lon, zoom = 15, height = 200, onPick }
     return () => {
       destroyed = true;
       if (mapRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Custom cleanup on Leaflet map instance
         (mapRef.current as any)._roCleanup?.();
         mapRef.current.remove();
         mapRef.current = null;

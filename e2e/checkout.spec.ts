@@ -192,4 +192,88 @@ test.describe('Checkout Flow', () => {
     );
     await expect(emptyMessage).toBeVisible({ timeout: 10000 });
   });
+
+  // Test e2e end-to-end del flujo completo: producto → carrito → checkout → completar datos
+  // Verifica que el modal refactorizado preserva el comportamiento original
+  // (data-testid="checkout-modal" se expone desde el shell extraído).
+  test('complete checkout flow - skip account, fill data, reach payment', async ({ page }) => {
+    // Mock APIs to avoid backend dependencies
+    await page.route('**/api/products/stock-check**', (route) =>
+      route.fulfill({ status: 200, body: '[]' })
+    );
+    await page.route('**/api/loyalty/**', (route) =>
+      route.fulfill({ status: 200, body: '{"loyaltyPoints":0}' })
+    );
+
+    // Step 0: agregar producto al carrito
+    const productCard = page.locator('[data-testid="product-card"]').first();
+    await productCard.waitFor({ state: 'visible', timeout: 30000 });
+    await productCard.getByRole('button', { name: /agregar/i }).click();
+
+    // Abrir cart si no está abierto
+    const cartSidebar = page.locator('[data-testid="cart-sidebar"]');
+    if (!(await cartSidebar.isVisible().catch(() => false))) {
+      const cartButton = page
+        .locator('[data-testid="cart-button"]')
+        .or(page.getByRole('button', { name: /carrito|cart/i }));
+      await cartButton.click();
+    }
+
+    // Abrir checkout
+    const checkoutButton = page
+      .locator('[data-testid="checkout-button"]')
+      .or(page.getByRole('button', { name: /pagar|checkout|finalizar|comprar|completar pedido/i }));
+    await checkoutButton.click();
+
+    // Verifica modal refactorizado se monta con su data-testid
+    const checkoutModal = page.locator('[data-testid="checkout-modal"]');
+    await expect(checkoutModal).toBeVisible({ timeout: 10000 });
+
+    // Step 1 (cuenta): saltar
+    const skipAccount = checkoutModal.getByRole('button', {
+      name: /continuar como invitado|saltar|sin cuenta/i,
+    });
+    if (await skipAccount.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await skipAccount.click();
+    }
+
+    // Step 2 (datos): llenar nombre + dirección
+    const nameInput = checkoutModal.locator('[data-testid="name-input"]').or(
+      checkoutModal.getByPlaceholder(/María García|nombre/i)
+    );
+    if (await nameInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await nameInput.fill('Brandon E2E');
+    }
+
+    const locationInput = checkoutModal
+      .locator('[data-testid="location-input"]')
+      .or(checkoutModal.getByPlaceholder(/Jr\. Ucayali/i));
+    if (await locationInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await locationInput.fill('Jr. Ucayali 450 e2e test');
+    }
+
+    const referenceInput = checkoutModal
+      .locator('[data-testid="reference-input"]')
+      .or(checkoutModal.getByPlaceholder(/casa azul/i));
+    if (await referenceInput.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await referenceInput.fill('Casa de prueba e2e');
+    }
+
+    // Continuar al pago (tip de geolocalización: aceptar y reenviar)
+    const submitDatos = checkoutModal.locator('[data-testid="datos-submit"]').or(
+      checkoutModal.getByRole('button', { name: /continuar al pago|pagar/i })
+    );
+    if (await submitDatos.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await submitDatos.click();
+      // El primer click puede mostrar un tip de GPS — re-enviar
+      const tip = checkoutModal.getByText(/Tip:.*GPS/i);
+      if (await tip.isVisible({ timeout: 1500 }).catch(() => false)) {
+        await submitDatos.click();
+      }
+    }
+
+    // Verificar que llegamos al paso de pago (botón continuar al pago ya no aparece, aparecen métodos)
+    const efectivo = checkoutModal.getByText(/efectivo/i).first();
+    await expect(efectivo).toBeVisible({ timeout: 10000 });
+  });
 });

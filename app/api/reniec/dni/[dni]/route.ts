@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { applyRateLimit } from "@/lib/rate-limit";
-import { lookupDniInReniec, ReniecConfigError } from "@/lib/reniec";
+import { lookupDniInReniec } from "@/lib/reniec";
 
 export async function GET(
   req: NextRequest,
@@ -22,11 +22,7 @@ export async function GET(
     const person = await lookupDniInReniec(normalized);
     return NextResponse.json(person);
   } catch (error) {
-    if (error instanceof ReniecConfigError) {
-      return NextResponse.json({ error: error.message }, { status: 503 });
-    }
-
-    const message = error instanceof Error ? error.message : "No se pudo consultar RENIEC.";
+    const message = error instanceof Error ? error.message : "No se pudo consultar el DNI.";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }

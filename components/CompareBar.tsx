@@ -4,8 +4,8 @@ import { useCompare } from "@/contexts/compare-context";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import Image from "next/image";
-import { X, GitCompareArrows, Plus, Package, Trash2 } from "lucide-react";
-import { categories } from "@/data/products";
+import { X, GitCompareArrows, Plus, Package, Trash2, Star } from "lucide-react";
+import { useStoreProducts } from "@/hooks/use-store-products";
 
 export default function CompareBar() {
   const { items, remove, clear, open, setOpen } = useCompare();
@@ -58,18 +58,23 @@ function CompareModal() {
   const { items, clear, setOpen } = useCompare();
   const { addItem } = useCart();
   const { showToast } = useToast();
+  const { categories } = useStoreProducts();
 
   const catLabel = (cat: string) => categories.find(c => c.id === cat)?.label ?? cat;
 
-  const rows: { label: string; values: string[] }[] = [
-    { label: "Precio", values: items.map(p => `S/${p.price.toFixed(2)}`) },
+  const rows: { label: string; values: string[]; type?: string }[] = [
+    { label: "Precio", values: items.map(p => `S/${p.price.toFixed(2)}`), type: "price" },
     { label: "Categoría", values: items.map(p => catLabel(p.category)) },
     { label: "Unidad", values: items.map(p => p.unit) },
+    { label: "Stock", values: items.map(p => p.stock != null ? (p.stock > 0 ? `${p.stock} disponibles` : "Agotado") : "—"), type: "stock" },
+    { label: "Calificación", values: items.map(p => p.rating != null && p.rating > 0 ? `${p.rating.toFixed(1)} (${p.reviewCount ?? 0})` : "Sin reseñas"), type: "rating" },
     { label: "Badge", values: items.map(p => p.badge ?? "—") },
   ];
 
   // Highlight cheapest
   const minPrice = Math.min(...items.map(p => p.price));
+  // Highlight best rated
+  const maxRating = Math.max(...items.map(p => p.rating ?? 0));
 
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
@@ -101,20 +106,38 @@ function CompareModal() {
 
           {/* Comparison rows */}
           {rows.map(row => (
-            <>
-              <div key={row.label} className="text-xs font-semibold text-muted flex items-center">{row.label}</div>
-              {row.values.map((val, i) => (
-                <div
-                  key={`${row.label}-${i}`}
-                  className={`text-sm font-semibold text-center text-foreground ${row.label === "Precio" && items[i].price === minPrice ? "text-emerald-600 dark:text-emerald-400" : ""}`}
-                >
-                  {val}
-                  {row.label === "Precio" && items[i].price === minPrice && (
-                    <span className="block text-xs text-emerald-500 font-bold">Más barato</span>
-                  )}
-                </div>
-              ))}
-            </>
+            <div key={row.label} className="contents">
+              <div className="text-xs font-semibold text-muted flex items-center">{row.label}</div>
+              {row.values.map((val, i) => {
+                const isBestPrice = row.type === "price" && items[i].price === minPrice;
+                const isBestRating = row.type === "rating" && (items[i].rating ?? 0) === maxRating && maxRating > 0;
+                const isOutOfStock = row.type === "stock" && items[i].stock != null && items[i].stock! <= 0;
+                return (
+                  <div
+                    key={`${row.label}-${i}`}
+                    className={`text-sm font-semibold text-center text-foreground ${isBestPrice ? "text-emerald-600 dark:text-emerald-400" : ""} ${isBestRating ? "text-amber-600 dark:text-amber-400" : ""} ${isOutOfStock ? "text-red-500" : ""}`}
+                  >
+                    {row.type === "rating" && (items[i].rating ?? 0) > 0 && (
+                      <div className="flex items-center justify-center gap-0.5 mb-0.5">
+                        {[1, 2, 3, 4, 5].map(s => (
+                          <Star
+                            key={s}
+                            className={`h-3 w-3 ${s <= Math.round(items[i].rating ?? 0) ? "text-amber-400 fill-amber-400" : "text-gray-200"}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {val}
+                    {isBestPrice && items.length > 1 && (
+                      <span className="block text-[10px] text-emerald-500 font-bold mt-0.5">Más barato</span>
+                    )}
+                    {isBestRating && items.length > 1 && (
+                      <span className="block text-[10px] text-amber-500 font-bold mt-0.5">Mejor valorado</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           ))}
 
           {/* Add to cart row */}

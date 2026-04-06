@@ -1,16 +1,43 @@
 import type { MetadataRoute } from "next";
 
-export default function manifest(): MetadataRoute.Manifest {
+/* ────────────────────────────────────────────────────────────────────────────
+ * PWA Web App Manifest — served at /manifest.webmanifest
+ *
+ * Uses dynamic imports so a failed DB connection never breaks the manifest.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  let name = "Mi Tienda - Delivery";
+  let shortName = "Tienda";
+  let description = "Compra online con delivery a domicilio.";
+  let themeColor = "#00B4A6";
+
+  try {
+    const [{ headers }, { SettingsDB }] = await Promise.all([
+      import("next/headers"),
+      import("@/lib/db/settings.db"),
+    ]);
+    const hdrs = await headers();
+    const tenantId = hdrs.get("x-tenant-id") ?? "main";
+    const s = await SettingsDB.get(tenantId);
+    if (s.businessName) {
+      name = `${s.businessName} - Delivery`;
+      shortName = s.businessName.slice(0, 12);
+    }
+    if (s.description) description = s.description;
+    if (s.primaryColor) themeColor = s.primaryColor;
+  } catch { /* use defaults */ }
+
   return {
-    name: "Bodega San Martín - Abarrotes Delivery Pucallpa",
-    short_name: "BSM",
-    description:
-      "Compra abarrotes online en Pucallpa: bebidas, golosinas, carnes, pollo, productos de limpieza y más. Delivery rápido, paga con Yape o efectivo.",
+    name,
+    short_name: shortName,
+    description,
+    id: "store-pwa",
     start_url: "/",
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",
-    theme_color: "#2d6a4f",
+    theme_color: themeColor,
     orientation: "portrait-primary",
     lang: "es",
     dir: "ltr",

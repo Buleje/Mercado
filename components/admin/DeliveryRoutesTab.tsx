@@ -1,11 +1,211 @@
-﻿"use client";
+"use client";
 
-import { useState, useMemo, useEffect, startTransition } from "react";
-import { MapPin, Clock, Navigation, ChevronDown, ChevronUp, Download, RefreshCw, Users } from "lucide-react";
+import { useState, useMemo, useEffect, useRef, startTransition } from "react";
+import { MapPin, Clock, Navigation, ChevronDown, ChevronUp, Download, RefreshCw, Users, Map as MapIcon } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
+import { haversineKm } from "@/lib/admin-helpers";
+import "leaflet/dist/leaflet.css";
+
+// ── Constantes de Pucallpa ───────────────────────────────────────────────────
+const PUCALLPA_LAT = -8.3791;
+const PUCALLPA_LON = -74.5539;
+
+// ── Zonas GPS por distancia desde el centro de Pucallpa ─────────────────────
+export type DeliveryGPSZone = {
+  name: string;
+  maxKm: number;
+  fee: number;
+  color: string;    // hex para el círculo en el mapa
+  available: boolean;
+};
+
+const GPS_ZONES: DeliveryGPSZone[] = [
+  { name: "Centro",           maxKm: 1.5, fee: 0,  color: "#00B4A6", available: true  },
+  { name: "Zona urbana",      maxKm: 3,   fee: 3,  color: "#f97316", available: true  },
+  { name: "Zona extendida",   maxKm: 5,   fee: 5,  color: "#ef4444", available: true  },
+  { name: "Fuera de cobertura", maxKm: Infinity, fee: 0, color: "#6b7280", available: false },
+];
+
+export function getDeliveryZone(lat: number, lng: number): DeliveryGPSZone {
+  const dist = haversineKm(PUCALLPA_LAT, PUCALLPA_LON, lat, lng);
+  return GPS_ZONES.find(z => dist < z.maxKm) ?? GPS_ZONES[GPS_ZONES.length - 1];
+}
 
 type Zone = { id: string; name: string; color: string; deliveryFee: number; estimatedMin: number; neighborhoods: string[] };
-type Route = { id: string; name: string; zone: string; rider: string; stops: number; status: "en-ruta" | "completada" | "pendiente" | "cancelada"; estimatedTime: number; actualTime: number | null; startTime: string | null; customerName?: string; customerPhone?: string; riderName?: string };
+type Route = { id: string; name: string; zone: string; rider: string; stops: number; status: "en-ruta" | "completada" | "pendiente" | "cancelada"; estimatedTime: number; actualTime: number | null; startTime: string | null; customerName?: string; customerPhone?: string; riderName?: string; lat?: number; lon?: number };
+
+// ── Mapa de pedidos con zonas ─────────────────────────────────────────────────
+type DeliveryMapProps = { routes: Route[]; onStatusChange: (id: string, s: Route["status"]) => void };
+
+function DeliveryMap({ routes, onStatusChange }: DeliveryMapProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    let destroyed = false;
+
+    import("leaflet").then((L) => {
+      if (destroyed || !containerRef.current) return;
+
+      // Evitar doble inicialización en strict mode
+      if (mapRef.current) return;
+
+      // Arreglar íconos rotos por bundler
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      });
+
+      const map = L.map(containerRef.current!).setView([PUCALLPA_LAT, PUCALLPA_LON], 13);
+      mapRef.current = map;
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19,
+      }).addTo(map);
+
+      // Dibujar zonas circulares (de afuera hacia adentro para que el centro quede visible)
+      const zonesForCircles = [...GPS_ZONES].filter(z => z.maxKm !== Infinity).reverse();
+      for (const zone of zonesForCircles) {
+        L.circle([PUCALLPA_LAT, PUCALLPA_LON], {
+          radius: zone.maxKm * 1000,
+          color: zone.color,
+          fillColor: zone.color,
+          fillOpacity: 0.08,
+          weight: 2,
+          dashArray: zone.name === "Centro" ? undefined : "6 4",
+        }).bindTooltip(`${zone.name} — ${zone.fee === 0 ? "Gratis" : `S/ ${zone.fee}`}`, { permanent: false }).addTo(map);
+      }
+
+      // Marcadores de pedidos
+      const markerColors: Record<Route["status"], string> = {
+        "pendiente":  "#f97316",
+        "en-ruta":    "#3b82f6",
+        "completada": "#22c55e",
+        "cancelada":  "#6b7280",
+      };
+
+      for (const route of routes) {
+        const lat = route.lat ?? PUCALLPA_LAT + (Math.random() - 0.5) * 0.04;
+        const lon = route.lon ?? PUCALLPA_LON + (Math.random() - 0.5) * 0.04;
+        const color = markerColors[route.status];
+        const icon = L.divIcon({
+          html: `<div style="background:${color};width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>`,
+          className: "",
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        });
+        const marker = L.marker([lat, lon], { icon }).addTo(map);
+        const horaTexto = route.startTime ? new Date(route.startTime).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : "—";
+        marker.bindPopup(
+          `<div style="min-width:160px;font-family:sans-serif;font-size:13px">
+            <strong>${route.name}</strong><br/>
+            ${route.customerName ? `<span style="color:#00B4A6">${route.customerName}</span><br/>` : ""}
+            <span style="color:#6b7280">${route.zone}</span><br/>
+            Hora: ${horaTexto}<br/>
+            <button onclick="window._deliveryMarkEnRoute?.('${route.id}')" style="margin-top:6px;padding:3px 8px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">En camino</button>
+            <button onclick="window._deliveryMarkDone?.('${route.id}')" style="margin-top:6px;margin-left:4px;padding:3px 8px;background:#22c55e;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px">Entregado</button>
+          </div>`
+        );
+      }
+
+      // Exponer callbacks para los botones del popup
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any)._deliveryMarkEnRoute = (id: string) => onStatusChange(id, "en-ruta");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any)._deliveryMarkDone = (id: string) => onStatusChange(id, "completada");
+
+      setTimeout(() => { if (!destroyed) map.invalidateSize(); }, 300);
+
+      if (containerRef.current && typeof ResizeObserver !== "undefined") {
+        const ro = new ResizeObserver(() => { if (!destroyed) map.invalidateSize(); });
+        ro.observe(containerRef.current);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (map as any)._ro = () => ro.disconnect();
+      }
+    });
+
+    return () => {
+      destroyed = true;
+      if (mapRef.current) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (mapRef.current as any)._ro?.();
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{ height: 280, width: "100%" }}
+      className="rounded-xl overflow-hidden border border-gray-200 dark:border-card-border shadow-sm bg-gray-100"
+    />
+  );
+}
+
+// ── Botón de geolocalización ─────────────────────────────────────────────────
+type GeoButtonProps = {
+  onLocated: (lat: number, lon: number, zone: DeliveryGPSZone, address: string) => void;
+};
+
+function GeoLocationButton({ onLocated }: GeoButtonProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleClick = () => {
+    if (!navigator.geolocation) { setError("Tu navegador no soporta GPS"); return; }
+    setLoading(true);
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const zone = getDeliveryZone(latitude, longitude);
+        let address = `GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=es`,
+            { headers: { "Accept-Language": "es" } }
+          );
+          const data = await res.json();
+          const a = data.address ?? {};
+          const road = a.road ?? a.pedestrian ?? a.path ?? "";
+          const num = a.house_number ? ` ${a.house_number}` : "";
+          const city = a.city ?? a.town ?? a.village ?? "Pucallpa";
+          if (road) address = `${road}${num}, ${city}`;
+        } catch { /* usar coordenadas como fallback */ }
+        setLoading(false);
+        onLocated(latitude, longitude, zone, address);
+      },
+      (err) => {
+        setLoading(false);
+        setError(err.code === 1 ? "Permiso de ubicación denegado" : "No se pudo obtener ubicación");
+      },
+      { timeout: 10000, maximumAge: 60000 }
+    );
+  };
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <button
+        onClick={handleClick}
+        disabled={loading}
+        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 disabled:opacity-50 transition-colors min-h-[44px]"
+      >
+        <MapPin className="h-4 w-4 shrink-0" />
+        {loading ? "Obteniendo ubicación…" : "Usar mi ubicación GPS"}
+      </button>
+      {error && <p className="text-xs text-red-500 font-semibold">{error}</p>}
+    </div>
+  );
+}
 
 const FALLBACK_ZONES: Zone[] = [
   { id: "z-1", name: "Zona Centro", color: "bg-blue-500", deliveryFee: 3, estimatedMin: 20, neighborhoods: ["Jr. Progreso", "Jr. Inmaculada", "Plaza de Armas", "Mercado Central"] },
@@ -30,6 +230,9 @@ export default function DeliveryRoutesTab() {
   const [riders, setRiders] = useState<Array<{ id: string; name: string; role: string }>>([]);
   const [assignedRiders, setAssignedRiders] = useState<Record<string, string>>({});
   const [filterRider, setFilterRider] = useState<string>("all");
+  const [showMap, setShowMap] = useState(true);
+  // Panel de geolocalización del nuevo pedido
+  const [geoResult, setGeoResult] = useState<{ lat: number; lon: number; zone: DeliveryGPSZone; address: string } | null>(null);
 
   const loadRoutes = () => {
     fetch("/api/admin/dashboard")
@@ -77,9 +280,16 @@ export default function DeliveryRoutesTab() {
   }, []);
 
   const updateRouteStatus = (routeId: string, newStatus: Route["status"]) => {
-    // Optimistic update
+    const deliveredAt = newStatus === "completada" ? new Date().toISOString() : undefined;
+    // Optimistic update: calcular actualTime si se marca como entregado
     startTransition(() => {
-      setRoutes(prev => prev.map(r => r.id === routeId ? { ...r, status: newStatus } : r));
+      setRoutes(prev => prev.map(r => {
+        if (r.id !== routeId) return r;
+        const actualTime = newStatus === "completada" && r.startTime
+          ? Math.round((Date.now() - new Date(r.startTime).getTime()) / 60000)
+          : r.actualTime;
+        return { ...r, status: newStatus, actualTime };
+      }));
     });
     // Map our status to the Order status enum
     const orderStatus = newStatus === "en-ruta" ? "en_camino"
@@ -89,7 +299,11 @@ export default function DeliveryRoutesTab() {
     fetch(`/api/orders/${routeId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: orderStatus, ...(assignedRiders[routeId] ? { riderName: assignedRiders[routeId] } : {}) }),
+      body: JSON.stringify({
+        status: orderStatus,
+        ...(assignedRiders[routeId] ? { riderName: assignedRiders[routeId] } : {}),
+        ...(deliveredAt ? { deliveredAt } : {}),
+      }),
     }).catch(() => {});
   };
 
@@ -128,6 +342,89 @@ export default function DeliveryRoutesTab() {
           <button onClick={() => setView("routes")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "routes" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Rutas</button>
           <button onClick={() => setView("zones")} className={cn("px-3 py-1.5 rounded-lg text-xs font-bold transition-colors", view === "zones" ? "bg-primary text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted")}>Zonas</button>
         </div>
+      </div>
+
+      {/* Toggle mapa (mobile) + mapa interactivo */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wide flex items-center gap-1.5">
+            <MapIcon className="h-3.5 w-3.5" /> Mapa de pedidos activos
+          </span>
+          <button
+            onClick={() => setShowMap(v => !v)}
+            className="text-xs font-semibold text-primary flex items-center gap-1"
+          >
+            {showMap ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            {showMap ? "Ocultar" : "Mostrar"}
+          </button>
+        </div>
+        {showMap && !loadingData && (
+          <DeliveryMap routes={routes} onStatusChange={updateRouteStatus} />
+        )}
+        {showMap && !loadingData && (
+          <div className="flex flex-wrap gap-3 text-[10px] font-semibold text-gray-500 dark:text-muted items-center">
+            {GPS_ZONES.filter(z => z.maxKm !== Infinity).map(z => (
+              <span key={z.name} className="flex items-center gap-1">
+                <span className="inline-block w-2.5 h-2.5 rounded-full border" style={{ background: z.color, borderColor: z.color }} />
+                {z.name} — {z.fee === 0 ? "Gratis" : `S/ ${z.fee}`} (&lt;{z.maxKm}km)
+              </span>
+            ))}
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-400 bg-blue-500" />
+              En camino
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-400 bg-amber-400" />
+              Pendiente
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="inline-block w-2.5 h-2.5 rounded-full border border-gray-400 bg-green-500" />
+              Entregado
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Panel de geolocalización para nuevo pedido */}
+      <div className="bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 space-y-3">
+        <p className="text-xs font-bold text-gray-700 dark:text-foreground flex items-center gap-1.5">
+          <Navigation className="h-3.5 w-3.5 text-primary" />
+          Calcular zona y tarifa del cliente
+        </p>
+        <GeoLocationButton
+          onLocated={(lat, lon, zone, address) =>
+            setGeoResult({ lat, lon, zone, address })
+          }
+        />
+        {geoResult && (
+          <div className={cn(
+            "rounded-lg border px-4 py-3 text-sm space-y-1",
+            geoResult.zone.available
+              ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800"
+              : "bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800"
+          )}>
+            <p className="font-bold text-gray-800 dark:text-foreground">{geoResult.address}</p>
+            <p className="text-xs text-gray-500 dark:text-muted">
+              Lat {geoResult.lat.toFixed(5)}, Lon {geoResult.lon.toFixed(5)} —
+              {" "}{haversineKm(PUCALLPA_LAT, PUCALLPA_LON, geoResult.lat, geoResult.lon).toFixed(2)} km del centro
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <span
+                className="text-xs font-bold px-2.5 py-1 rounded-full text-white"
+                style={{ background: geoResult.zone.color }}
+              >
+                {geoResult.zone.name}
+              </span>
+              {geoResult.zone.available ? (
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                  Tarifa: {geoResult.zone.fee === 0 ? "Delivery gratis" : `S/ ${geoResult.zone.fee}.00`}
+                </span>
+              ) : (
+                <span className="text-xs font-bold text-red-600 dark:text-red-400">Sin cobertura</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* KPIs */}

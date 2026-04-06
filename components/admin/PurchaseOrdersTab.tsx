@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, type FormEvent } from "react";
 import dynamic from "next/dynamic";
@@ -6,12 +6,19 @@ import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   Trash2, Plus, ChevronDown, ChevronUp, Package,
   X, Truck, FileText, ScanBarcode, History,
-  TrendingUp, BarChart3,
+  TrendingUp, BarChart3, Download, PackageCheck, Copy, RotateCcw, ShoppingBag,
 } from "lucide-react";
 import type { DbPurchaseOrder, DbSupplier, DbProduct, PurchaseStatus } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
+import { exportToExcel } from "@/lib/export-excel";
+import EmptyState from "@/components/admin/shared/EmptyState";
+import TableSkeleton from "@/components/admin/shared/TableSkeleton";
+import PurchaseOrderPDF from "./PurchaseOrderPDF";
+import OCPDFExport from "./compras/OCPDFExport";
+import SupplierPriceComparison, { QuotationComparator } from "./compras/SupplierPriceComparison";
 
 const BarcodeScanner = dynamic(() => import("./BarcodeScanner"), { ssr: false });
+const OCRecepcionModal = dynamic(() => import("./compras/OCRecepcionModal"), { ssr: false });
 
 const STATUS_LABELS: Record<PurchaseStatus, string> = {
   pendiente: "Pendiente",
@@ -25,6 +32,49 @@ const STATUS_COLORS: Record<PurchaseStatus, string> = {
   parcial: "bg-blue-100 text-blue-700",
   cancelado: "bg-red-100 text-red-500",
 };
+
+// ── Mejora 13: Progress bar visual de status OC ─────────────────────────────
+const STATUS_STEP: Record<string, number> = {
+  pendiente: 1,
+  parcial: 2,
+  cancelado: 1,
+  recibido: 4,
+};
+function OCProgressBar({ status }: { status: string }) {
+  const currentStep = STATUS_STEP[status] ?? 1;
+  const isCancelled = status === "cancelado";
+  const labels = ["Borr.", "Env.", "Conf.", "Rec."];
+  return (
+    <div className="flex flex-col gap-0.5 w-[160px]" title={STATUS_LABELS[status as PurchaseStatus] ?? status}>
+      <div className="flex items-center gap-0">
+        {[1, 2, 3, 4].map((step, idx) => {
+          const completed = !isCancelled && step <= currentStep;
+          return (
+            <div key={step} className="flex items-center" style={{ flex: idx < 3 ? 1 : 0 }}>
+              <div className={cn(
+                "w-3.5 h-3.5 rounded-full shrink-0 transition-colors",
+                isCancelled ? "bg-red-400" : completed ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
+              )} />
+              {idx < 3 && (
+                <div className={cn(
+                  "h-1 flex-1 transition-colors",
+                  isCancelled ? "bg-red-300" : (!isCancelled && step < currentStep) ? "bg-[#00B4A6]" : "bg-gray-300 dark:bg-gray-600"
+                )} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex justify-between px-0">
+        {labels.map((label, idx) => (
+          <span key={idx} className={cn("text-[8px] font-medium", !isCancelled && (idx + 1) <= currentStep ? "text-[#00B4A6] dark:text-emerald-400" : "text-gray-400")} style={{ width: idx < 3 ? undefined : "auto" }}>
+            {label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function formatDate(iso: string) {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
@@ -62,6 +112,59 @@ export default function PurchaseOrdersTab() {
   // Add item modal
   const [showAddItemModal, setShowAddItemModal] = useState(false);
 
+  // Reception modal
+  const [recepcionOC, setRecepcionOC] = useState<DbPurchaseOrder | null>(null);
+
+  // Mejora 19: Toast for duplicate
+  const [duplicateToast, setDuplicateToast] = useState<string | null>(null);
+
+  // Mejora 15: Pedido recurrente a proveedor
+  type RecurringOrder = { ocId: string; items: ItemDraft[]; supplierId: string; supplierName: string; intervalDays: number; nextDate: string; notifyDaysBefore: number };
+  const [recurringOrders, setRecurringOrders] = useState<RecurringOrder[]>([]);
+  const [showRecurringModal, setShowRecurringModal] = useState<DbPurchaseOrder | null>(null);
+  const [recurringInterval, setRecurringInterval] = useState(15);
+  const [recurringNotifyDays, setRecurringNotifyDays] = useState(2);
+
+  // Load recurring orders from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("recurring-orders");
+      if (stored) setRecurringOrders(JSON.parse(stored));
+    } catch { /* ignore */ }
+  }, []);
+
+  const saveRecurring = (updated: RecurringOrder[]) => {
+    setRecurringOrders(updated);
+    localStorage.setItem("recurring-orders", JSON.stringify(updated));
+  };
+
+  const addRecurringOrder = (oc: DbPurchaseOrder) => {
+    const sup = suppliers.find(s => s.id === oc.supplierId);
+    const nextDate = new Date(Date.now() + recurringInterval * 86400000).toISOString().slice(0, 10);
+    const newRecurring: RecurringOrder = {
+      ocId: oc.id,
+      items: oc.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })),
+      supplierId: oc.supplierId,
+      supplierName: sup?.name || oc.supplierName || "",
+      intervalDays: recurringInterval,
+      nextDate,
+      notifyDaysBefore: recurringNotifyDays,
+    };
+    const updated = [...recurringOrders.filter(r => r.ocId !== oc.id), newRecurring];
+    saveRecurring(updated);
+    setShowRecurringModal(null);
+  };
+
+  const removeRecurring = (ocId: string) => {
+    saveRecurring(recurringOrders.filter(r => r.ocId !== ocId));
+  };
+
+  // Upcoming recurring orders
+  const upcomingRecurring = recurringOrders.map(r => {
+    const daysUntil = Math.max(0, Math.ceil((new Date(r.nextDate).getTime() - Date.now()) / 86400000));
+    return { ...r, daysUntil };
+  }).sort((a, b) => a.daysUntil - b.daysUntil);
+
   useScrollLock(showCreate || showScanner || showAddItemModal);
   const [addItemMode, setAddItemMode] = useState<"search" | "new">("search");
   const [addItemSearch, setAddItemSearch] = useState("");
@@ -79,9 +182,9 @@ export default function PurchaseOrdersTab() {
         fetch("/api/suppliers"),
         fetch("/api/products"),
       ]);
-      if (poRes.ok) setOrders(await poRes.json());
-      if (supRes.ok) setSuppliers(await supRes.json());
-      if (prodRes.ok) setProducts((await prodRes.json()).filter((p: DbProduct) => p.active));
+      if (poRes.ok) { const d = await poRes.json(); setOrders(Array.isArray(d) ? d : d?.purchases ?? []); }
+      if (supRes.ok) { const d = await supRes.json(); setSuppliers(Array.isArray(d) ? d : d?.suppliers ?? []); }
+      if (prodRes.ok) { const d = await prodRes.json(); setProducts((Array.isArray(d) ? d : []).filter((p: DbProduct) => p.active)); }
     } catch {}
     setLoading(false);
   }, []);
@@ -169,7 +272,7 @@ export default function PurchaseOrdersTab() {
     await updateStatus(id, "recibido");
     const po = orders.find(o => o.id === id);
     if (po) {
-      const freshProds: DbProduct[] = await fetch("/api/products").then(r => r.json());
+      const freshProds: DbProduct[] = await fetch("/api/products").then(r => r.ok ? r.json() : []).then(d => Array.isArray(d) ? d : []);
       for (const item of po.items) {
         const prod = freshProds.find(p => p.id === item.productId);
         if (prod) {
@@ -197,6 +300,28 @@ export default function PurchaseOrdersTab() {
     if (!confirm("¿Eliminar esta orden de compra?")) return;
     await fetch(`/api/purchases/${id}`, { method: "DELETE" });
     load();
+  };
+
+  // Mejora 19: Duplicar OC
+  const duplicateOrder = async (o: DbPurchaseOrder) => {
+    try {
+      const sup = suppliers.find(s => s.id === o.supplierId);
+      const res = await fetch("/api/purchases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          supplierId: o.supplierId,
+          supplierName: sup?.name || o.supplierName || "",
+          items: o.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })),
+          notes: o.notes ? `(Duplicada) ${o.notes}` : "(Duplicada)",
+        }),
+      });
+      if (res.ok) {
+        setDuplicateToast("OC duplicada — revisa las cantidades antes de enviar");
+        setTimeout(() => setDuplicateToast(null), 4000);
+        load();
+      }
+    } catch { /* ignore */ }
   };
 
   const itemsTotal = items.reduce((s, i) => s + i.quantity * i.unitCost, 0);
@@ -273,11 +398,137 @@ export default function PurchaseOrdersTab() {
           <button onClick={() => setShowSupplierHistory(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-accent hover:bg-gray-200 dark:hover:bg-accent/80 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors">
             <History className="h-4 w-4" /> Historial
           </button>
+          <button
+            onClick={() => {
+              if (orders.length === 0) return;
+              const rows = orders.map(o => ({
+                ID: o.id,
+                Proveedor: suppliers.find(s => s.id === o.supplierId)?.name ?? o.supplierId,
+                Estado: STATUS_LABELS[o.status as PurchaseStatus] ?? o.status,
+                "Total (S/)": o.total,
+                Fecha: new Date(o.createdAt).toLocaleDateString("es-PE"),
+                Notas: o.notes ?? "",
+              }));
+              exportToExcel(rows, `compras-${new Date().toISOString().slice(0, 10)}`, "Compras");
+            }}
+            className="flex items-center gap-1.5 text-sm font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors"
+            title="Exportar compras a Excel"
+          >
+            <Download className="h-4 w-4" /> Excel
+          </button>
+          {/* Mejora 16: Comparar cotizaciones completas */}
+          <QuotationComparator orders={orders} suppliers={suppliers} />
           <button onClick={() => setShowCreate(v => !v)} className="flex items-center gap-1.5 text-sm font-bold text-white bg-primary hover:bg-primary-dark px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors shadow-sm">
             <Plus className="h-4 w-4" /> Nueva orden
           </button>
         </div>
       </div>
+
+      {/* Mejora 15 (R3): Resumen compras del mes */}
+      {!loading && orders.length > 0 && (() => {
+        const mesActual = new Date().toISOString().slice(0, 7);
+        const ocsMes = orders.filter(o => o.createdAt.startsWith(mesActual));
+        const totalMes = ocsMes.reduce((s, o) => s + o.total, 0);
+        const provMes = new Set(ocsMes.map(o => o.supplierId)).size;
+        return (
+          <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4 py-2.5 text-xs">
+            <span>Este mes: <strong>{ocsMes.length} OCs</strong></span>
+            <span>Total: <strong>S/{totalMes.toFixed(2)}</strong></span>
+            <span>{provMes} proveedor{provMes !== 1 ? "es" : ""}</span>
+          </div>
+        );
+      })()}
+
+      {/* Mejora 15: Badge y cards de pedidos recurrentes */}
+      {upcomingRecurring.length > 0 && (
+        <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+              <History className="h-3.5 w-3.5" /> {upcomingRecurring.length} pedido{upcomingRecurring.length > 1 ? "s" : ""} recurrente{upcomingRecurring.length > 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {upcomingRecurring.map(r => (
+              <div key={r.ocId} className="bg-white dark:bg-card rounded-xl border border-purple-100 dark:border-purple-800/30 p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-sm font-bold text-gray-900 dark:text-foreground truncate">OC a {r.supplierName}</p>
+                  <button onClick={() => removeRecurring(r.ocId)} className="text-gray-400 hover:text-red-500 transition-colors" title="Eliminar recurrencia">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-muted">
+                  {r.daysUntil === 0 ? "Hoy" : r.daysUntil === 1 ? "Manana" : `En ${r.daysUntil} dias`} · Cada {r.intervalDays}d
+                </p>
+                <button
+                  onClick={() => {
+                    const oc = orders.find(o => o.id === r.ocId);
+                    if (oc) duplicateOrder(oc);
+                  }}
+                  className="mt-2 w-full text-xs font-bold text-center py-1.5 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 hover:bg-purple-200 transition-colors"
+                >
+                  Crear OC ahora
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mejora 15: Modal de configuración recurrente */}
+      {showRecurringModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowRecurringModal(null)}>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-extrabold text-gray-900 dark:text-foreground">Hacer recurrente</h3>
+            <p className="text-sm text-gray-500 dark:text-muted">
+              OC para {suppliers.find(s => s.id === showRecurringModal.supplierId)?.name} · {showRecurringModal.items.length} productos
+            </p>
+            <div>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1.5 block">Repetir cada</label>
+              <div className="flex gap-2">
+                {[7, 15, 30].map(d => (
+                  <button
+                    key={d}
+                    onClick={() => setRecurringInterval(d)}
+                    className={cn(
+                      "flex-1 py-2 rounded-xl text-sm font-bold transition-colors",
+                      recurringInterval === d ? "bg-purple-600 text-white" : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-gray-400"
+                    )}
+                  >
+                    {d} dias
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1 block">Proximo pedido</label>
+              <p className="text-sm font-semibold text-gray-900 dark:text-foreground">
+                {new Date(Date.now() + recurringInterval * 86400000).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
+              </p>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1 block">Notificarme</label>
+              <select
+                value={recurringNotifyDays}
+                onChange={e => setRecurringNotifyDays(Number(e.target.value))}
+                className="w-full rounded-xl border border-gray-200 dark:border-card-border px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground"
+              >
+                <option value={1}>1 dia antes</option>
+                <option value={2}>2 dias antes</option>
+                <option value={3}>3 dias antes</option>
+                <option value={5}>5 dias antes</option>
+              </select>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setShowRecurringModal(null)} className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-surface text-sm font-bold text-gray-600 dark:text-gray-400">
+                Cancelar
+              </button>
+              <button onClick={() => addRecurringOrder(showRecurringModal)} className="flex-1 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-bold hover:bg-purple-700 transition-colors">
+                Guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Supplier History Cards */}
       {showSupplierHistory && (
@@ -536,11 +787,14 @@ export default function PurchaseOrdersTab() {
 
       {/* Orders list */}
       {loading ? (
-        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted">Cargando…</div>
+        <TableSkeleton rows={4} cols={5} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl" />
       ) : filteredOrders.length === 0 ? (
-        <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
-          {selectedSupplierId ? "No hay órdenes para este proveedor" : "No hay órdenes de compra"}
-        </div>
+        <EmptyState
+          icon={ShoppingBag}
+          title={selectedSupplierId ? "Sin órdenes para este proveedor" : "Sin órdenes de compra"}
+          description={selectedSupplierId ? "Este proveedor no tiene órdenes registradas." : "Crea órdenes de compra a tus proveedores."}
+          className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl"
+        />
       ) : (
         <div className="space-y-3">
           {filteredOrders.map((o) => (
@@ -549,7 +803,9 @@ export default function PurchaseOrdersTab() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-gray-900 dark:text-foreground">{o.supplierName}</span>
-                    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-xs font-bold", STATUS_COLORS[o.status])}>
+                    {/* Mejora 13: Progress bar visual */}
+                    <OCProgressBar status={o.status} />
+                    <span className={cn("inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold", STATUS_COLORS[o.status])}>
                       {STATUS_LABELS[o.status]}
                     </span>
                   </div>
@@ -569,13 +825,35 @@ export default function PurchaseOrdersTab() {
                       <option key={s} value={s}>{STATUS_LABELS[s]}</option>
                     ))}
                   </select>
-                  {o.status === "pendiente" && (
+                  {(o.status === "pendiente" || o.status === "parcial") && (
                     <button
-                      onClick={() => { if (confirm("¿Confirmar recepción de mercadería? El inventario se actualizará automáticamente.")) receiveOrder(o.id); }}
-                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 text-xs font-bold transition-colors"
-                      title="Registrar recepción"
+                      onClick={() => setRecepcionOC(o)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 text-xs font-bold transition-colors"
+                      title="Registrar recepcion"
                     >
-                      <Truck className="h-3.5 w-3.5" /> Recibir
+                      <PackageCheck className="h-3.5 w-3.5" /> Recibir
+                    </button>
+                  )}
+                  <OCPDFExport
+                    oc={o}
+                    supplier={suppliers.find(s => s.id === o.supplierId)}
+                  />
+                  {/* Mejora 19: Duplicar OC */}
+                  <button
+                    onClick={() => duplicateOrder(o)}
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-xs font-bold transition-colors"
+                    title="Duplicar orden"
+                  >
+                    <Copy className="h-3.5 w-3.5" /> Duplicar
+                  </button>
+                  {/* Mejora 15: Hacer recurrente */}
+                  {(o.status === "recibido" || o.status === "parcial") && (
+                    <button
+                      onClick={() => { setShowRecurringModal(o); setRecurringInterval(15); setRecurringNotifyDays(2); }}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 text-xs font-bold transition-colors"
+                      title="Hacer pedido recurrente"
+                    >
+                      <History className="h-3.5 w-3.5" /> Recurrente
                     </button>
                   )}
                   <button onClick={() => setExpanded(expanded === o.id ? null : o.id)} className="p-1.5 rounded-lg text-gray-400 dark:text-muted hover:text-gray-700 dark:hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent transition-colors">
@@ -592,24 +870,90 @@ export default function PurchaseOrdersTab() {
                 <div className="border-t border-gray-100 dark:border-card-border px-2 sm:px-4 py-2 sm:py-3 bg-gray-50 dark:bg-surface">
                   <p className="text-xs font-bold text-gray-400 dark:text-muted uppercase tracking-wide mb-2">Detalle de productos</p>
                   <div className="space-y-1.5">
-                    {o.items.map((item, i) => (
-                      <div key={i} className="flex justify-between items-center text-sm">
-                        <span className="text-gray-700 dark:text-foreground flex items-center gap-1.5">
-                          <Package className="h-3.5 w-3.5 text-gray-400 dark:text-muted" />
-                          {item.quantity}× {item.name} <span className="text-gray-400 dark:text-muted">({item.unit})</span>
-                        </span>
-                        <div className="text-right">
-                          <span className="text-gray-400 dark:text-muted text-xs mr-2">S/{item.unitCost.toFixed(2)} c/u</span>
-                          <span className="font-semibold text-gray-900 dark:text-foreground">S/{(item.quantity * item.unitCost).toFixed(2)}</span>
+                    {o.items.map((item, i) => {
+                      // Mejora 20: Buscar ultimo precio del mismo producto + mismo proveedor
+                      const prevOC = orders.find(po =>
+                        po.id !== o.id &&
+                        po.supplierId === o.supplierId &&
+                        new Date(po.createdAt) < new Date(o.createdAt) &&
+                        po.items.some(pi => pi.productId === item.productId)
+                      );
+                      const prevItem = prevOC?.items.find(pi => pi.productId === item.productId);
+                      const prevPrice = prevItem?.unitCost;
+                      const diff = prevPrice != null ? item.unitCost - prevPrice : null;
+                      const prevDateRelative = prevOC ? (() => {
+                        const days = Math.floor((Date.now() - new Date(prevOC.createdAt).getTime()) / 86400000);
+                        if (days === 0) return "hoy";
+                        if (days < 30) return `hace ${days}d`;
+                        return `hace ${Math.floor(days / 30)}m`;
+                      })() : null;
+
+                      return (
+                        <div key={i}>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-700 dark:text-foreground flex items-center gap-1.5">
+                              <Package className="h-3.5 w-3.5 text-gray-400 dark:text-muted" />
+                              {item.quantity}x {item.name} <span className="text-gray-400 dark:text-muted">({item.unit})</span>
+                            </span>
+                            <div className="text-right">
+                              <span className="text-gray-400 dark:text-muted text-xs mr-2">S/{item.unitCost.toFixed(2)} c/u</span>
+                              <span className="font-semibold text-gray-900 dark:text-foreground">S/{(item.quantity * item.unitCost).toFixed(2)}</span>
+                            </div>
+                          </div>
+                          {/* Mejora 20: Referencia de precio anterior */}
+                          {prevPrice != null && (
+                            <p className="text-xs text-gray-400 dark:text-gray-500 pl-5 mt-0.5">
+                              Ultima vez: S/{prevPrice.toFixed(2)} ({prevDateRelative})
+                              {diff != null && diff > 0 && <span className="text-red-500 ml-1">↑ S/{diff.toFixed(2)} mas caro</span>}
+                              {diff != null && diff < 0 && <span className="text-emerald-500 ml-1">↓ S/{Math.abs(diff).toFixed(2)} mas barato</span>}
+                              {diff != null && diff === 0 && <span className="text-gray-400 ml-1">= Mismo precio</span>}
+                            </p>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     <div className="flex justify-between items-center text-sm font-bold border-t border-gray-200 dark:border-card-border pt-1.5 mt-1">
                       <span className="text-gray-800 dark:text-foreground">Total</span>
                       <span className="text-primary">S/{o.total.toFixed(2)}</span>
                     </div>
                   </div>
                   <p className="text-xs text-gray-400 dark:text-muted mt-2">ID: {o.id}</p>
+
+                  {/* Mejora 14: Ahorro vs compra anterior del proveedor */}
+                  {(() => {
+                    const prevOCs = orders
+                      .filter(po => po.id !== o.id && po.supplierId === o.supplierId && new Date(po.createdAt) < new Date(o.createdAt) && po.status !== "cancelado")
+                      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                    const prevOC = prevOCs[0];
+                    if (!prevOC) return <p className="text-xs text-gray-400 dark:text-muted mt-1 italic">Primera compra a este proveedor</p>;
+                    const diff = o.total - prevOC.total;
+                    return (
+                      <div className={cn("mt-2 inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-lg",
+                        diff < 0
+                          ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400"
+                          : diff > 0
+                          ? "bg-orange-50 dark:bg-orange-950/20 text-orange-700 dark:text-orange-400"
+                          : "bg-gray-50 dark:bg-surface text-gray-500"
+                      )}>
+                        {diff < 0 ? `Ahorraste S/${Math.abs(diff).toFixed(2)} vs ultima compra` :
+                         diff > 0 ? `Pagaste S/${diff.toFixed(2)} mas vs ultima compra` :
+                         "Mismo total que la compra anterior"}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Price comparison for each product */}
+                  {o.items.length > 0 && (
+                    <div className="mt-4 space-y-3">
+                      {o.items.map((item) => (
+                        <SupplierPriceComparison
+                          key={item.productId}
+                          productId={item.productId}
+                          productName={item.name}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -799,6 +1143,31 @@ export default function PurchaseOrdersTab() {
                 </form>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reception modal */}
+      {recepcionOC && (
+        <OCRecepcionModal
+          ocId={recepcionOC.id}
+          items={recepcionOC.items}
+          onComplete={() => {
+            setRecepcionOC(null);
+            load();
+          }}
+          onClose={() => setRecepcionOC(null)}
+        />
+      )}
+
+      {/* Mejora 19: Toast de duplicacion */}
+      {duplicateToast && (
+        <div className="fixed bottom-4 right-4 z-50 bg-white dark:bg-card border border-emerald-200 dark:border-emerald-800 rounded-2xl shadow-2xl p-4 max-w-xs animate-in slide-in-from-bottom-5">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+              <Copy className="h-4 w-4 text-emerald-600" />
+            </div>
+            <p className="text-sm font-semibold text-gray-900 dark:text-foreground">{duplicateToast}</p>
           </div>
         </div>
       )}

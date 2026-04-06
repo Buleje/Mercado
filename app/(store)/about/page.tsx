@@ -1,213 +1,364 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
-  FlaskConical,
-  ShoppingCart,
-  BarChart3,
-  Shield,
-  Smartphone,
-  Zap,
-  Database,
-  Code2,
-  Globe,
-  GitBranch,
-  Package,
   CheckCircle2,
   Clock,
-  ExternalLink,
+  Truck,
+  DollarSign,
+  Smartphone,
+  MapPin,
+  Mail,
+  MessageCircle,
+  Phone,
+  Store,
+  Heart,
+  Users,
+  ShoppingCart,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Acerca del Proyecto · Bodega San Martín",
+  title: "Acerca de Nosotros — Buleje | Tu bodega de confianza",
   description:
-    "Bodega San Martín es un proyecto de software e-commerce en versión beta activa. Stack moderno: Next.js, React, TypeScript, Prisma y más.",
+    "Buleje es una bodega familiar que ofrece productos frescos, delivery rápido y precios justos. Conoce nuestra historia, horarios y cómo contactarnos.",
+  openGraph: {
+    title: "Acerca de Nosotros — Buleje",
+    description:
+      "Bodega familiar con productos frescos, delivery rápido y los mejores precios. Conoce nuestra historia.",
+    type: "website",
+    locale: "es_PE",
+    url: "https://www.buleje.pe/about",
+  },
 };
 
-const stack = [
-  { name: "Next.js 15", desc: "App Router + RSC + Turbopack", color: "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200" },
-  { name: "React 19", desc: "Server & Client Components", color: "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300" },
-  { name: "TypeScript", desc: "Tipado estricto completo", color: "bg-sky-100 dark:bg-sky-900/30 text-sky-800 dark:text-sky-300" },
-  { name: "Tailwind CSS 4", desc: "Utility-first + design tokens", color: "bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300" },
-  { name: "Prisma 7", desc: "ORM type-safe + PostgreSQL", color: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300" },
-  { name: "Framer Motion 12", desc: "Animaciones y transiciones", color: "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300" },
-  { name: "Stripe", desc: "Pagos online seguros", color: "bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300" },
-  { name: "Vercel / Edge", desc: "Hosting + Edge Runtime", color: "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300" },
-  { name: "Sentry", desc: "Monitoreo de errores", color: "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300" },
-  { name: "Vitest + Playwright", desc: "Testing unitario y E2E", color: "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300" },
+const porQueElegirnos = [
+  {
+    icon: CheckCircle2,
+    title: "Productos frescos",
+    desc: "Recibimos mercadería fresca todos los días para que siempre encuentres lo mejor.",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-900/20",
+  },
+  {
+    icon: Truck,
+    title: "Delivery rápido",
+    desc: "Entregamos en menos de 30 minutos en toda nuestra zona de cobertura.",
+    color: "text-blue-600 dark:text-blue-400",
+    bg: "bg-blue-50 dark:bg-blue-900/20",
+  },
+  {
+    icon: DollarSign,
+    title: "Precios justos",
+    desc: "Los mejores precios. Compramos directo al proveedor para darte el mejor precio.",
+    color: "text-amber-600 dark:text-amber-400",
+    bg: "bg-amber-50 dark:bg-amber-900/20",
+  },
+  {
+    icon: Smartphone,
+    title: "Paga como quieras",
+    desc: "Acepta Yape, Plin o efectivo. Tú eliges cómo pagar, sin complicaciones.",
+    color: "text-purple-600 dark:text-purple-400",
+    bg: "bg-purple-50 dark:bg-purple-900/20",
+  },
 ];
 
-const features = [
-  { icon: ShoppingCart, title: "Tienda Completa", desc: "Catálogo con 500+ productos, carrito, quick-view, filtros avanzados, favoritos y comparador.", color: "text-indigo-500" },
-  { icon: BarChart3, title: "Panel Admin 30+ módulos", desc: "POS, CRM, inventario, finanzas, logística, analytics BI, RRHH y mucho más.", color: "text-emerald-500" },
-  { icon: Smartphone, title: "PWA + Modo Offline", desc: "Service Worker, manifest PWA, soporte installable en móviles.", color: "text-sky-500" },
-  { icon: Shield, title: "Auth & Seguridad", desc: "Roles y permisos granulares, logs de auditoría, rate limiting, validaciones OWASP.", color: "text-amber-500" },
-  { icon: Zap, title: "Performance Optimizada", desc: "RSC streaming, lazy loading, react-window, Lighthouse 75+, imágenes Next/Image.", color: "text-yellow-500" },
-  { icon: Globe, title: "WhatsApp + Delivery", desc: "Pedidos por WhatsApp, tracking de envíos, rutas de delivery y horarios dinámicos.", color: "text-green-500" },
-];
+export default async function AboutPage() {
+  // Fetch store settings directly from DB (no circular fetch)
+  let settings: Record<string, string | number | null> = {};
+  try {
+    const { SettingsDB } = await import("@/lib/db/settings.db");
+    const data = await SettingsDB.get();
+    settings = data as unknown as Record<string, string | number | null>;
+  } catch {
+    // Settings unavailable — use defaults
+  }
 
-const timeline = [
-  { version: "v1.0.0-beta", date: "Mar 18, 2026", status: "current", items: ["Lanzamiento beta público", "Tienda con 500+ productos", "Panel admin con 30 módulos", "Sistema de fidelización y cupones", "PWA + Service Worker", "E2E tests con Playwright"] },
-  { version: "v1.1.0", date: "Próximamente", status: "planned", items: ["Checkout con Stripe integrado", "Notificaciones push", "Mejoras de accesibilidad (WCAG 2.1 AA)", "Redis cache para APIs frecuentes"] },
-  { version: "v2.0.0", date: "Futuro", status: "future", items: ["Multi-tienda / multi-sede", "App móvil nativa (Capacitor)", "IA generativa para recomendaciones", "Panel analytics con IA"] },
-];
+  const businessName = (settings.businessName as string) || "Buleje";
+  const address = (settings.businessAddress as string) || "Ucayali, Perú";
+  const phone = (settings.businessPhone as string) || "";
+  const email = (settings.businessEmail as string) || "";
+  const storyText =
+    (settings.storyText as string) ||
+    "Buleje nació de la necesidad de ofrecer productos frescos y de calidad a nuestros vecinos. Comenzamos como una pequeña tienda familiar y hoy atendemos a cientos de familias con el mismo cariño del primer día. Cada producto que ofrecemos es seleccionado cuidadosamente para garantizar frescura y el mejor precio para nuestros clientes.";
 
-export default function AboutPage() {
+  const weekdayHours = (settings.weekdayHours as string) || "6:00am - 10:00pm";
+  const weekendHours = (settings.weekendHours as string) || "7:00am - 10:00pm";
+
+  const whatsappNumber = phone.replace(/\D/g, "");
+  const whatsappLink = whatsappNumber
+    ? `https://wa.me/${whatsappNumber.startsWith("51") ? whatsappNumber : `51${whatsappNumber}`}?text=${encodeURIComponent("Hola, quisiera hacer un pedido")}`
+    : null;
+
+  const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+
   return (
     <>
       <Header />
       <main className="pt-20 sm:pt-24 min-h-screen bg-background" id="main-content">
 
-        {/* Hero */}
-        <section className="relative overflow-hidden py-16 sm:py-24"
-          style={{ background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #245c43 100%)" }}>
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #40916c 0%, transparent 50%), radial-gradient(circle at 80% 20%, #c084fc 0%, transparent 40%)" }} />
+        {/* ── HERO ────────────────────────────────────────────────────── */}
+        <section
+          className="relative overflow-hidden py-20 sm:py-28"
+          style={{
+            background: "linear-gradient(135deg, #007A72 0%, #00B4A6 50%, #33C4B8 100%)",
+          }}
+        >
+          <div className="absolute inset-0 opacity-10" style={{
+            backgroundImage:
+              "radial-gradient(circle at 30% 40%, #95d5b2 0%, transparent 50%), radial-gradient(circle at 70% 60%, #f97316 0%, transparent 40%)",
+          }} />
           <div className="relative mx-auto max-w-4xl px-4 sm:px-6 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold mb-6 bg-amber-400/20 text-amber-200 border border-amber-400/30">
-              <FlaskConical className="h-4 w-4" />
-              Proyecto en desarrollo · Versión 1 Beta
+            <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold mb-6 bg-white/15 text-white/90 border border-white/20 backdrop-blur-sm">
+              <Store className="h-4 w-4" />
+              Bodega familiar
             </div>
-            <h1 className="text-3xl sm:text-5xl font-extrabold text-white leading-tight mb-4">
-              Bodega San Martín<br />
-              <span className="text-indigo-300">E-commerce Platform</span>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-4">
+              {businessName}
             </h1>
-            <p className="text-lg text-white/70 max-w-2xl mx-auto mb-8">
-              Plataforma de comercio electrónico full-stack construida con tecnologías modernas.
-              Actualmente en versión beta activa — algunas funciones pueden estar en construcción.
+            <p className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-8">
+              Desde siempre sirviendo a nuestros vecinos con productos frescos,
+              precios justos y el cariño de una familia.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <Link href="/tienda"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white text-indigo-700 hover:bg-white/90 transition-all shadow-lg">
+              <Link
+                href="/tienda"
+                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white text-[#0f766e] hover:bg-white/90 transition-all shadow-lg"
+              >
                 <ShoppingCart className="h-4 w-4" /> Ver Tienda
               </Link>
-              <Link href="/admin"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all">
-                <BarChart3 className="h-4 w-4" /> Panel Admin
-              </Link>
+              {whatsappLink && (
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white/10 text-white border border-white/20 hover:bg-white/20 transition-all"
+                >
+                  <MessageCircle className="h-4 w-4" /> Contáctanos
+                </a>
+              )}
             </div>
           </div>
         </section>
 
-        {/* Status Banner */}
-        <div className="bg-amber-50 dark:bg-amber-950/30 border-y border-amber-200 dark:border-amber-700/30">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex flex-wrap items-center justify-center gap-4 text-sm">
-            <span className="flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-400">
-              <Clock className="h-4 w-4" /> Estado actual:
-              <span className="rounded-full px-2.5 py-0.5 bg-amber-500 text-white text-xs font-bold">Beta Activa</span>
-            </span>
-            <span className="text-amber-600 dark:text-amber-500">·</span>
-            <span className="text-amber-700/80 dark:text-amber-400/80">Última build: 18 de marzo, 2026</span>
-            <span className="text-amber-600 dark:text-amber-500">·</span>
-            <Link href="/admin?tab=changelog" className="flex items-center gap-1 text-amber-700 dark:text-amber-400 hover:underline font-medium">
-              Ver changelog <ExternalLink className="h-3 w-3" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Features */}
+        {/* ── NUESTRA HISTORIA ────────────────────────────────────────── */}
         <section className="py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground text-center mb-3">Funcionalidades</h2>
-            <p className="text-muted text-center mb-10 max-w-xl mx-auto">Todo lo que incluye la plataforma en su versión beta actual.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {features.map((f) => (
-                <div key={f.title}
-                  className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-6 hover:shadow-md transition-shadow">
-                  <f.icon className={`h-6 w-6 mb-3 ${f.color}`} />
-                  <h3 className="font-bold text-foreground mb-1.5">{f.title}</h3>
-                  <p className="text-sm text-muted leading-relaxed">{f.desc}</p>
+          <div className="mx-auto max-w-4xl px-4 sm:px-6">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <Heart className="h-5 w-5 text-[#f97316]" />
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+                  Nuestra Historia
+                </h2>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 sm:p-10 shadow-sm">
+              <p className="text-base sm:text-lg text-muted leading-relaxed text-center">
+                {storyText}
+              </p>
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-center">
+                <div>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-[#0f766e]">500+</p>
+                  <p className="text-xs text-muted font-medium mt-1">Productos</p>
                 </div>
-              ))}
+                <div className="h-10 w-px bg-gray-200 dark:bg-card-border hidden sm:block" />
+                <div>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-[#0f766e]">100+</p>
+                  <p className="text-xs text-muted font-medium mt-1">Familias atendidas</p>
+                </div>
+                <div className="h-10 w-px bg-gray-200 dark:bg-card-border hidden sm:block" />
+                <div>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-[#f97316]">30 min</p>
+                  <p className="text-xs text-muted font-medium mt-1">Delivery promedio</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Tech Stack */}
+        {/* ── POR QUÉ ELEGIRNOS ──────────────────────────────────────── */}
         <section className="py-16 sm:py-20 bg-gray-50 dark:bg-surface/30">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="flex items-center gap-2 mb-3 justify-center">
-              <Code2 className="h-5 w-5 text-primary" />
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">Stack Tecnológico</h2>
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <Users className="h-5 w-5 text-[#0f766e]" />
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+                  Por qué elegirnos
+                </h2>
+              </div>
+              <p className="text-muted max-w-lg mx-auto">
+                Todo lo que necesitas para tu hogar, con la confianza de siempre.
+              </p>
             </div>
-            <p className="text-muted text-center mb-10 max-w-xl mx-auto">Tecnologías modernas que potencian la plataforma.</p>
-            <div className="flex flex-wrap justify-center gap-3">
-              {stack.map((tech) => (
-                <div key={tech.name}
-                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 border border-transparent ${tech.color}`}>
-                  <span className="font-bold text-sm">{tech.name}</span>
-                  <span className="text-xs opacity-70 hidden sm:block">· {tech.desc}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Roadmap */}
-        <section className="py-16 sm:py-20">
-          <div className="mx-auto max-w-3xl px-4 sm:px-6">
-            <div className="flex items-center gap-2 mb-3 justify-center">
-              <GitBranch className="h-5 w-5 text-primary" />
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">Roadmap</h2>
-            </div>
-            <p className="text-muted text-center mb-10">Evolución planificada del proyecto.</p>
-            <div className="space-y-6">
-              {timeline.map((entry) => (
-                <div key={entry.version}
-                  className={`rounded-2xl border p-6 ${
-                    entry.status === "current"
-                      ? "border-indigo-300 dark:border-indigo-700 bg-indigo-50 dark:bg-indigo-950/30"
-                      : entry.status === "planned"
-                        ? "border-gray-200 dark:border-card-border bg-white dark:bg-card"
-                        : "border-dashed border-gray-200 dark:border-card-border bg-transparent"
-                  }`}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                        entry.status === "current" ? "bg-indigo-600 text-white" :
-                        entry.status === "planned" ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200" :
-                        "bg-gray-100 dark:bg-gray-800 text-gray-500"
-                      }`}>
-                        {entry.version}
-                      </span>
-                      {entry.status === "current" && (
-                        <span className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 font-semibold">
-                          <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse inline-block" />
-                          Actual
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs text-muted font-medium">{entry.date}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {porQueElegirnos.map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-6 hover:shadow-md transition-shadow text-center"
+                >
+                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl ${item.bg} mb-4`}>
+                    <item.icon className={`h-6 w-6 ${item.color}`} />
                   </div>
-                  <ul className="space-y-1.5">
-                    {entry.items.map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-sm text-muted">
-                        <CheckCircle2 className={`h-4 w-4 shrink-0 mt-0.5 ${entry.status === "current" ? "text-indigo-500" : "text-gray-300 dark:text-gray-600"}`} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                  <h3 className="font-bold text-foreground mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted leading-relaxed">{item.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* CTA */}
-        <section className="py-12 bg-linear-to-r from-indigo-600 to-violet-600 text-white text-center">
+        {/* ── HORARIOS ────────────────────────────────────────────────── */}
+        <section className="py-16 sm:py-20">
           <div className="mx-auto max-w-2xl px-4 sm:px-6">
-            <Package className="h-10 w-10 mx-auto mb-3 opacity-80" />
-            <h2 className="text-2xl font-extrabold mb-2">¿Tienes feedback?</h2>
-            <p className="text-white/70 mb-6 text-sm">Estamos en beta y cada opinión cuenta para mejorar el proyecto.</p>
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <Clock className="h-5 w-5 text-[#0f766e]" />
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+                  Horarios de atención
+                </h2>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 sm:p-8 shadow-sm">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-card-border">
+                  <span className="font-semibold text-foreground">Lunes a Sábado</span>
+                  <span className="text-sm font-bold text-[#0f766e] bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full">
+                    {weekdayHours}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-3">
+                  <span className="font-semibold text-foreground">Domingos</span>
+                  <span className="text-sm font-bold text-[#f97316] bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-full">
+                    {weekendHours}
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-muted text-center mt-4">
+                Horarios pueden variar en feriados. Consulta por WhatsApp.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── CONTACTO ────────────────────────────────────────────────── */}
+        <section className="py-16 sm:py-20 bg-gray-50 dark:bg-surface/30">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <Phone className="h-5 w-5 text-[#0f766e]" />
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+                  Contacto
+                </h2>
+              </div>
+              <p className="text-muted max-w-lg mx-auto">
+                Estamos para ayudarte. Escríbenos o visítanos.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {/* Dirección */}
+              <a
+                href={mapsLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-6 hover:shadow-md transition-shadow text-center group"
+              >
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-red-50 dark:bg-red-900/20 mb-4">
+                  <MapPin className="h-6 w-6 text-red-500" />
+                </div>
+                <h3 className="font-bold text-foreground mb-1">Dirección</h3>
+                <p className="text-sm text-muted leading-relaxed group-hover:text-primary transition-colors">
+                  {address}
+                </p>
+                <p className="text-xs text-primary font-semibold mt-2">Ver en Google Maps</p>
+              </a>
+
+              {/* WhatsApp */}
+              {phone && (
+                <a
+                  href={whatsappLink || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-6 hover:shadow-md transition-shadow text-center group"
+                >
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 mb-4">
+                    <MessageCircle className="h-6 w-6 text-emerald-600" />
+                  </div>
+                  <h3 className="font-bold text-foreground mb-1">WhatsApp</h3>
+                  <p className="text-sm text-muted leading-relaxed">{phone}</p>
+                  <p className="text-xs text-emerald-600 font-semibold mt-2">Enviar mensaje</p>
+                </a>
+              )}
+
+              {/* Email */}
+              {email && (
+                <a
+                  href={`mailto:${email}`}
+                  className="rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card p-6 hover:shadow-md transition-shadow text-center group"
+                >
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 mb-4">
+                    <Mail className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h3 className="font-bold text-foreground mb-1">Email</h3>
+                  <p className="text-sm text-muted leading-relaxed">{email}</p>
+                  <p className="text-xs text-blue-600 font-semibold mt-2">Enviar correo</p>
+                </a>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ── MAPA / UBICACIÓN ────────────────────────────────────────── */}
+        <section className="py-16 sm:py-20">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 mb-3">
+                <MapPin className="h-5 w-5 text-[#0f766e]" />
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+                  Encuéntranos
+                </h2>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-6 sm:p-8 shadow-sm text-center">
+              <p className="text-muted mb-4">
+                {address}
+              </p>
+              <a
+                href={mapsLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-[#0f766e] text-white hover:bg-[#0d5f58] transition-all shadow-md"
+              >
+                <MapPin className="h-4 w-4" /> Abrir en Google Maps
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* ── CTA FINAL ───────────────────────────────────────────────── */}
+        <section className="py-12 text-white text-center" style={{ background: "linear-gradient(135deg, #0f766e 0%, #0d9488 100%)" }}>
+          <div className="mx-auto max-w-2xl px-4 sm:px-6">
+            <ShoppingCart className="h-10 w-10 mx-auto mb-3 opacity-80" />
+            <h2 className="text-2xl font-extrabold mb-2">Haz tu pedido ahora</h2>
+            <p className="text-white/70 mb-6 text-sm">
+              Más de 500 productos con delivery. Paga con Yape o efectivo.
+            </p>
             <div className="flex flex-wrap items-center justify-center gap-3">
-              <Link href="/tienda"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white text-indigo-700 hover:bg-white/90 transition-all shadow-md">
+              <Link
+                href="/tienda"
+                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white text-[#0f766e] hover:bg-white/90 transition-all shadow-md"
+              >
                 <ShoppingCart className="h-4 w-4" /> Explorar la tienda
               </Link>
-              <Link href="/admin?tab=changelog"
-                className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white/15 border border-white/25 hover:bg-white/25 transition-all">
-                <Database className="h-4 w-4" /> Ver changelog
-              </Link>
+              {whatsappLink && (
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-bold bg-white/15 border border-white/25 hover:bg-white/25 transition-all"
+                >
+                  <MessageCircle className="h-4 w-4" /> Pedir por WhatsApp
+                </a>
+              )}
             </div>
           </div>
         </section>

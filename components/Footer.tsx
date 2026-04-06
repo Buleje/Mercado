@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import {
   Store,
   MapPin,
@@ -21,6 +22,7 @@ import { useSettings } from "@/contexts/settings-context";
 const quickLinks = [
   { href: "/", label: "Inicio" },
   { href: "/tienda", label: "Tienda" },
+  { href: "/recetas", label: "Recetario" },
   { href: "/#beneficios", label: "Beneficios" },
   { href: "/#preguntas", label: "Preguntas Frecuentes" },
   { href: "/#contacto", label: "Contacto" },
@@ -29,17 +31,139 @@ const quickLinks = [
 ];
 
 const categoryLinks = [
-  { href: "/tienda", label: "Abarrotes" },
-  { href: "/tienda", label: "Bebidas" },
-  { href: "/tienda", label: "Golosinas y Snacks" },
-  { href: "/tienda", label: "Carne y Pollo" },
-  { href: "/tienda", label: "Productos de Limpieza" },
-  { href: "/tienda", label: "Artículos para el Hogar" },
+  { href: "/tienda/categoria/abarrotes",   label: "Abarrotes" },
+  { href: "/tienda/categoria/bebidas",     label: "Bebidas" },
+  { href: "/tienda/categoria/golosinas",   label: "Golosinas y Snacks" },
+  { href: "/tienda/categoria/carnes",      label: "Carne y Pollo" },
+  { href: "/tienda/categoria/limpieza",    label: "Productos de Limpieza" },
+  { href: "/tienda/categoria/lacteos",     label: "Lácteos" },
+  { href: "/tienda",                       label: "Ver todas →" },
 ];
+
+// ── WhatsApp SVG Icon ─────────────────────────────────────────────
+
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
+  );
+}
+
+// ── WhatsApp Contact Section (embedded in page, not floating) ─────
+
+const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE ?? "51916409675";
+
+function getPageContextMessage(pathname: string): string {
+  if (pathname.startsWith("/tienda/producto/")) return "Hola, quiero consultar sobre un producto que vi en la tienda 🛒";
+  if (pathname.startsWith("/tienda/categoria/")) return "Hola, estoy viendo una categoría y tengo una consulta 📦";
+  if (pathname.startsWith("/tienda")) return "Hola, estoy viendo la tienda y necesito ayuda 🛒";
+  if (pathname.startsWith("/recetas")) return "Hola, vi una receta y quiero consultar sobre los ingredientes 🍳";
+  if (pathname.startsWith("/cuenta") || pathname.startsWith("/mis-pedidos")) return "Hola, tengo una consulta sobre mi cuenta o pedidos 📋";
+  if (pathname.startsWith("/puntos")) return "Hola, quiero saber más sobre mis puntos de fidelidad ⭐";
+  return "Hola, quiero hacer una consulta sobre la bodega 🛒";
+}
+
+function WhatsAppContactSection({
+  deliveryConfig,
+  storeTheme,
+  businessName,
+}: {
+  deliveryConfig: { hours: { day: string; open: string; close: string; enabled: boolean }[] };
+  storeTheme: { whatsapp?: string; phone?: string; name?: string } | null;
+  businessName: string;
+}) {
+  const pathname = usePathname();
+  const [showPulse, setShowPulse] = useState(false);
+
+  // Pulse animation for first 3 visits
+  useEffect(() => {
+    const visits = parseInt(sessionStorage.getItem("bsm-wa-visits") ?? "0", 10);
+    if (visits < 3) {
+      setShowPulse(true);
+      sessionStorage.setItem("bsm-wa-visits", String(visits + 1));
+    }
+  }, []);
+
+  // Resolve WhatsApp number: settings > env
+  const phone = storeTheme?.whatsapp?.replace(/\D/g, "") || storeTheme?.phone?.replace(/\D/g, "") || WHATSAPP_PHONE;
+  const message = encodeURIComponent(getPageContextMessage(pathname));
+  const waUrl = `https://wa.me/${phone}?text=${message}`;
+
+  // Business hours for today
+  const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+  const todayName = DAY_NAMES[new Date().getDay()];
+  const todayEntry = deliveryConfig.hours.find((h) => h.day === todayName);
+  const isOpenNow = (() => {
+    if (!todayEntry?.enabled) return false;
+    const now = new Date();
+    const [oh, om] = todayEntry.open.split(":").map(Number);
+    const [ch, cm] = todayEntry.close.split(":").map(Number);
+    const mins = now.getHours() * 60 + now.getMinutes();
+    return mins >= oh * 60 + om && mins <= ch * 60 + cm;
+  })();
+
+  const hoursLabel = todayEntry?.enabled
+    ? `Hoy: ${todayEntry.open} – ${todayEntry.close}`
+    : "Hoy: cerrado";
+
+  return (
+    <div className="bg-[#075E54] border-b border-white/10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-5">
+          {/* Left: Text */}
+          <div className="text-center sm:text-left">
+            <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2 justify-center sm:justify-start">
+              <WhatsAppIcon className="h-5 w-5 text-[#25D366]" />
+              Chatea con nosotros
+            </h3>
+            <p className="text-white/70 text-sm mt-1">
+              Escríbenos por WhatsApp y te atendemos al instante
+            </p>
+            <div className="flex items-center gap-3 mt-2 justify-center sm:justify-start">
+              <span className="flex items-center gap-1.5 text-xs text-white/60">
+                <Clock className="h-3 w-3" />
+                {hoursLabel}
+              </span>
+              {isOpenNow ? (
+                <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-300">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Abierto ahora
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5 text-xs text-amber-300/80">
+                  <span className="h-2 w-2 rounded-full bg-amber-400" />
+                  Cerrado
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Right: CTA button */}
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative inline-flex items-center gap-3 rounded-2xl px-6 py-3.5 text-base font-bold text-white transition-all hover:scale-[1.03] active:scale-[0.97] shadow-xl shadow-[#25D366]/25"
+            style={{ background: "#25D366" }}
+          >
+            {showPulse && (
+              <span className="absolute inset-0 rounded-2xl animate-ping bg-[#25D366]/30 pointer-events-none" style={{ animationDuration: "2s" }} />
+            )}
+            <WhatsAppIcon className="h-5 w-5" />
+            Iniciar chat
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Footer Component ──────────────────────────────────────────────
 
 export default function Footer() {
   const year = new Date().getFullYear();
-  const { homepage: hp, deliveryConfig } = useSettings();
+  const { homepage: hp, deliveryConfig, storeTheme } = useSettings();
   const [nlEmail, setNlEmail] = useState("");
   const [nlStatus, setNlStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
@@ -49,14 +173,16 @@ export default function Footer() {
   const hoursLabel = todayEntry?.enabled ? `Hoy: ${todayEntry.open} – ${todayEntry.close}` : "Hoy: cerrado";
 
   const perks = [
-    { icon: Truck, label: "Delivery Gratis en Pucallpa", color: "#40916c" },
+    { icon: Truck, label: "Delivery Gratis", color: "#00B4A6" },
     { icon: MessageCircle, label: "Pedidos por WhatsApp", color: "#25D366" },
-    { icon: Clock, label: hoursLabel, color: "#f4a261" },
+    { icon: Clock, label: hoursLabel, color: "#f97316" },
     { icon: ShieldCheck, label: "Pago con Yape o Efectivo", color: "#60a5fa" },
   ];
 
   return (
-    <footer style={{ background: "linear-gradient(180deg, #2d6a4f 0%, #1b4332 100%)" }} className="text-white">
+    <footer style={{ background: "linear-gradient(180deg, #00B4A6 0%, #007A72 100%)" }} className="text-white">
+      {/* ── WhatsApp Contact Section ─────────────────────────────────── */}
+      <WhatsAppContactSection deliveryConfig={deliveryConfig} storeTheme={storeTheme} businessName={hp.footerWhatsApp} />
       {/* Perks Bar */}
       <div className="border-b border-white/10">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
@@ -85,15 +211,15 @@ export default function Footer() {
               <div
                 className="flex h-11 w-11 items-center justify-center rounded-2xl"
                 style={{
-                  background: "linear-gradient(135deg, #2d6a4f 0%, #245c43 50%, #1b4332 100%)",
-                  boxShadow: "0 4px 12px rgba(45,106,79,0.35)",
+                  background: "linear-gradient(135deg, #00B4A6 0%, #009690 50%, #007A72 100%)",
+                  boxShadow: "0 4px 12px rgba(0,180,166,0.35)",
                 }}
               >
                 <Store className="h-5 w-5 text-white" />
               </div>
               <div>
-                <span className="text-lg font-extrabold block leading-tight">Bodega San Martín</span>
-                <span className="text-[11px] text-white/40 font-medium tracking-wide">Pucallpa · Ucayali</span>
+                <span className="text-lg font-extrabold block leading-tight">{storeTheme?.name || "Buleje"}</span>
+                <span className="text-[11px] text-white/40 font-medium tracking-wide">Ucayali</span>
               </div>
             </div>
             {/* Stars */}
@@ -104,12 +230,12 @@ export default function Footer() {
               <span className="text-white/60 text-xs ml-1.5">{hp.footerRating}</span>
             </div>
             <p className="text-white/50 text-sm leading-relaxed mb-5">
-              {hp.footerDescription}
+              {storeTheme?.description || hp.footerDescription}
             </p>
             {/* Social + WhatsApp */}
             <div className="flex items-center gap-2 flex-wrap">
               <a
-                href={`${hp.footerWhatsApp}${hp.footerWhatsApp.includes("?") ? "&" : "?"}text=${encodeURIComponent("Hola Bodega San Martín 👋, quiero hacer un pedido")}`}
+                href={`${storeTheme?.whatsapp || hp.footerWhatsApp}${(storeTheme?.whatsapp || hp.footerWhatsApp).includes("?") ? "&" : "?"}text=${encodeURIComponent(`Hola ${storeTheme?.name || "Buleje"} 👋, quiero hacer un pedido`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition-all hover:scale-[1.03] active:scale-[0.97] shadow-lg shadow-[#25D366]/20"
@@ -187,18 +313,46 @@ export default function Footer() {
               <li className="flex items-start gap-2.5">
                 <MapPin className="h-4 w-4 text-secondary mt-0.5 shrink-0" />
                 <span className="text-sm text-white/70">
-                  Jr. Ucayali 450, Pucallpa, Ucayali
+                  Jr. Ucayali 450, Ucayali
                 </span>
               </li>
-              <li className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 text-secondary shrink-0" />
-                <a
-                  href="tel:+51916409675"
-                  className="text-sm text-white/70 hover:text-secondary transition-colors"
-                >
-                  916 409 675
-                </a>
-              </li>
+              {(storeTheme?.phone || storeTheme?.email) && (
+                <li className="flex items-center gap-2.5">
+                  <Phone className="h-4 w-4 text-secondary shrink-0" />
+                  {storeTheme?.phone ? (
+                    <a
+                      href={`tel:${storeTheme.phone}`}
+                      className="text-sm text-white/70 hover:text-secondary transition-colors"
+                    >
+                      {storeTheme.phone}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-white/70">916 409 675</span>
+                  )}
+                </li>
+              )}
+              {!storeTheme?.phone && !storeTheme?.email && (
+                <li className="flex items-center gap-2.5">
+                  <Phone className="h-4 w-4 text-secondary shrink-0" />
+                  <a
+                    href="tel:+51916409675"
+                    className="text-sm text-white/70 hover:text-secondary transition-colors"
+                  >
+                    916 409 675
+                  </a>
+                </li>
+              )}
+              {storeTheme?.email && (
+                <li className="flex items-center gap-2.5">
+                  <Mail className="h-4 w-4 text-secondary shrink-0" />
+                  <a
+                    href={`mailto:${storeTheme.email}`}
+                    className="text-sm text-white/70 hover:text-secondary transition-colors"
+                  >
+                    {storeTheme.email}
+                  </a>
+                </li>
+              )}
               <li className="flex items-center gap-2.5">
                 <Clock className="h-4 w-4 text-secondary shrink-0" />
                 <span className="text-sm text-white/70">
@@ -287,7 +441,7 @@ export default function Footer() {
             </div>
             <div className="flex flex-col sm:flex-row items-center gap-2">
               <p className="flex items-center gap-1.5 text-xs text-white/35">
-                © {year} Bodega San Martín · Hecho con <Heart className="h-3 w-3 text-red-400 fill-red-400" aria-hidden="true" /> en Pucallpa
+                © {year} {storeTheme?.name || "Buleje"} · Hecho con <Heart className="h-3 w-3 text-red-400 fill-red-400" aria-hidden="true" /> en Perú
                 <span className="mx-1">·</span>
                 <a href="/privacidad" className="hover:text-white/60 transition-colors">Privacidad</a>
                 <span className="mx-0.5">·</span>

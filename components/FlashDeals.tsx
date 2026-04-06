@@ -6,7 +6,7 @@ import { Flame, ShoppingCart, Package, Zap, Minus, Plus } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useSettings } from "@/contexts/settings-context";
-import { products } from "@/data/products";
+import { useStoreProducts } from "@/hooks/use-store-products";
 import type { Product } from "@/data/products";
 
 // compute flash deal defaults – daily deals that reset every day at midnight
@@ -29,8 +29,8 @@ function pad(n: number) {
 }
 
 // Pick 4 random products as daily "flash deals" with fake discounts
-function pickDeals(discount: number): Array<Product & { originalPrice: number; discount: number }> {
-  const shuffled = [...products].filter((p) => !(p.stock != null && p.stock <= 0)).sort(() => Math.random() - 0.5);
+function pickDeals(allProducts: Product[], discount: number): Array<Product & { originalPrice: number; discount: number }> {
+  const shuffled = [...allProducts].filter((p) => !(p.stock != null && p.stock <= 0)).sort(() => Math.random() - 0.5);
   return shuffled.slice(0, 6).map((p) => ({
     ...p,
     originalPrice: +(p.price / (1 - discount / 100)).toFixed(2),
@@ -39,9 +39,9 @@ function pickDeals(discount: number): Array<Product & { originalPrice: number; d
 }
 
 // Build deals from admin-selected IDs, or fall back to random
-function buildAdminDeals(ids: number[], discount: number): Array<Product & { originalPrice: number; discount: number }> {
+function buildAdminDeals(allProducts: Product[], ids: number[], discount: number): Array<Product & { originalPrice: number; discount: number }> {
   const selected = ids
-    .map(id => products.find(p => p.id === id))
+    .map(id => allProducts.find(p => p.id === id))
     .filter((p): p is Product => Boolean(p) && !(p!.stock != null && p!.stock <= 0));
   if (selected.length === 0) return [];
   return selected.slice(0, 8).map(p => ({
@@ -54,17 +54,23 @@ function buildAdminDeals(ids: number[], discount: number): Array<Product & { ori
 const DEALS_KEY = "bsm-flash-deals";
 const DEALS_DATE_KEY = "bsm-flash-deals-date";
 
-function loadOrCreateDeals(discount: number) {
-  if (typeof window === "undefined") return pickDeals(discount);
+function loadOrCreateDeals(allProducts: Product[], discount: number) {
+  if (typeof window === "undefined") return pickDeals(allProducts, discount);
   const today = new Date().toDateString();
   const savedDate = localStorage.getItem(DEALS_DATE_KEY);
   if (savedDate === today) {
     try {
       const saved = JSON.parse(localStorage.getItem(DEALS_KEY) || "[]");
-      if (saved.length > 0) return saved;
+      // Validate that ALL saved deals still exist in current products
+      const currentIds = new Set(allProducts.map(p => p.id));
+      const validDeals = saved.filter((d: Product) => currentIds.has(d.id));
+      if (validDeals.length > 0) return validDeals;
     } catch {}
   }
-  const deals = pickDeals(discount);
+  // Clear stale localStorage and create fresh deals from current products
+  localStorage.removeItem(DEALS_KEY);
+  localStorage.removeItem(DEALS_DATE_KEY);
+  const deals = pickDeals(allProducts, discount);
   localStorage.setItem(DEALS_KEY, JSON.stringify(deals));
   localStorage.setItem(DEALS_DATE_KEY, today);
   return deals;
@@ -77,27 +83,31 @@ export default function FlashDeals() {
   const [time, setTime] = useState(getTimeLeft(endTime));
   const { addItem, items, updateQty } = useCart();
   const { showToast } = useToast();
+  const { products, isLoading } = useStoreProducts();
   const discount = hp.flashDealDiscount ?? 20;
 
   useEffect(() => {
+    // Solo construir deals cuando los productos ya cargaron
+    if (isLoading || products.length === 0) return;
     // Prefer admin-selected deals, fall back to random daily picks
     const adminIds = hp.flashDealIds ?? [];
-    const adminDeals = adminIds.length > 0 ? buildAdminDeals(adminIds, discount) : [];
-    startTransition(() => setDeals(adminDeals.length > 0 ? adminDeals : loadOrCreateDeals(discount)));
-  }, [hp.flashDealIds, discount]);
+    const adminDeals = adminIds.length > 0 ? buildAdminDeals(products, adminIds, discount) : [];
+    startTransition(() => setDeals(adminDeals.length > 0 ? adminDeals : loadOrCreateDeals(products, discount)));
+  }, [products, isLoading, hp.flashDealIds, discount]);
 
   useEffect(() => {
     const t = setInterval(() => setTime(getTimeLeft(endTime)), 1000);
     return () => clearInterval(t);
   }, [endTime]);
 
-  if (deals.length === 0) return null;
+  // No render while loading or if no deals — prevents blank gaps
+  if (isLoading || deals.length === 0) return null;
 
   /* JSON-LD Offer schema for flash deals */
   const flashOffersSchema = {
     "@context": "https://schema.org",
     "@type": "OfferCatalog",
-    name: "Ofertas Relámpago — Bodega San Martín",
+    name: "Ofertas Relámpago — Buleje",
     itemListElement: deals.map((d) => ({
       "@type": "Offer",
       name: d.name,
@@ -105,7 +115,7 @@ export default function FlashDeals() {
       priceCurrency: "PEN",
       availability: "https://schema.org/InStock",
       priceValidUntil: endTime.toISOString().split("T")[0],
-      eligibleRegion: { "@type": "Place", name: "Pucallpa, Ucayali, Perú" },
+      eligibleRegion: { "@type": "Place", name: "Ucayali, Perú" },
     })),
   };
 
@@ -169,9 +179,11 @@ function DealCard({ deal, qty, onAdd, onDec, onInc }: { deal: Product & { origin
   return (
     <div className="group relative bg-white dark:bg-card rounded-xl overflow-hidden border border-gray-100 dark:border-card-border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
       {/* Discount badge */}
-      <div className="absolute top-1.5 left-1.5 z-10 bg-red-500 text-white rounded px-1.5 py-0.5 text-[10px] font-extrabold">
-        -{deal.discount}%
-      </div>
+      {deal.discount > 0 && (
+        <div className="absolute top-1.5 left-1.5 z-10 bg-red-500 text-white rounded px-1.5 py-0.5 text-[10px] font-extrabold">
+          -{deal.discount}%
+        </div>
+      )}
 
       {/* Image */}
       <div className="relative aspect-square bg-gray-50 dark:bg-surface overflow-hidden">

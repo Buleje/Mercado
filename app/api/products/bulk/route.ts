@@ -3,9 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { ProductsDB } from "@/lib/db/products.db";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
+
+const BulkDeleteSchema = z.object({
+  ids: z.array(z.number().int().positive()).min(1).max(500),
+});
 
 const BulkUpdateSchema = z.object({
   ids: z.array(z.number().int().positive()).min(1).max(200),
@@ -89,6 +94,44 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, updated });
   } catch (e) {
     logger.error("[products/bulk] POST error", { err: e instanceof Error ? e.message : String(e) });
+    return NextResponse.json({ error: "Database error" }, { status: 503 });
+  }
+}
+
+// DELETE /api/products/bulk — bulk soft-delete products (admin only)
+export async function DELETE(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = BulkDeleteSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Datos inválidos", issues: parsed.error.issues.map((i) => i.message) },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const deleted = await ProductsDB.bulkDelete(parsed.data.ids);
+
+    const requestId = req.headers.get("x-request-id") ?? undefined;
+    logActivity(
+      "Eliminar", "producto",
+      `Eliminación masiva de ${deleted} producto(s)`,
+      undefined, "admin", requestId,
+    ).catch(() => {});
+    invalidate(`dashboard:${auth.tenantId}`);
+
+    return NextResponse.json({ ok: true, deleted });
+  } catch (e) {
+    logger.error("[products/bulk] DELETE error", { err: e instanceof Error ? e.message : String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

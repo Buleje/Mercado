@@ -77,6 +77,9 @@ export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
     return filtered.slice(0, maxProducts);
   }, [categoryFilter, maxProducts]);
 
+  // Don't render the block if there are no products
+  if (filteredProducts.length === 0) return null;
+
   const gridColsClass = {
     "2": "grid-cols-2",
     "3": "grid-cols-2 lg:grid-cols-3",
@@ -145,10 +148,10 @@ export default function ProductsBlock(props: Partial<ProductsBlockProps>) {
                         category: product.category,
                         badge: product.badge,
                       })}
-                      className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-9 w-9 rounded-full bg-white shadow-md flex items-center justify-center hover:bg-primary hover:text-white"
+                      className="absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 h-10 w-10 sm:h-11 sm:w-11 rounded-2xl bg-white shadow-md flex items-center justify-center hover:bg-primary hover:text-white"
                       aria-label={`Agregar ${product.name} al carrito`}
                     >
-                      <ShoppingCart className="h-4 w-4" />
+                      <ShoppingCart className="h-5 w-5" />
                     </button>
                   )}
                 </div>
@@ -201,6 +204,6 @@ export const ProductsBlockMetadata = {
   description: "Grid de productos con filtros y carrito",
   category: "producto" as const,
   icon: "ShoppingBag",
-  defaultProps: ProductsBlockSchema.parse({}),
+  defaultProps: (() => { const parsed = ProductsBlockSchema.safeParse({}); return parsed.success ? parsed.data : { badge: "Nuestros Productos", title: "Productos Frescos del Día", titleAccent: "Frescos", subtitle: "", categoryFilter: "todos", maxProducts: 8, gridCols: "4" as const, showBadges: true, showRatings: false, showAddToCart: true, ctaText: "Ver Tienda", ctaLink: "/tienda", showCTA: true }; })(),
   propsSchema: ProductsBlockSchema,
 };

@@ -2,6 +2,8 @@ import "server-only";
 import { NextRequest, NextResponse } from "next/server";
 import { createPlatformToken, getPlatformSession, maybeRotateToken, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { applyRateLimit } from "@/lib/rate-limit";
+import { logActivity } from "@/lib/activity-logger";
+import { is2FAEnabled, create2FAChallenge, verify2FACode } from "@/lib/superadmin-2fa";
 
 export const dynamic = "force-dynamic";
 
@@ -15,15 +17,30 @@ function cookieOpts(maxAge: number) {
   };
 }
 
-// POST /api/superadmin/auth  – login { username, password }
+// POST /api/superadmin/auth  – login { username, password } or verify 2FA { challengeId, code }
 // DELETE /api/superadmin/auth – logout
 export async function POST(req: NextRequest) {
   const limited = applyRateLimit(req, "AUTH", "superadmin:login");
   if (limited) return limited;
 
-  let body: { username?: string; password?: string };
+  let body: { username?: string; password?: string; challengeId?: string; code?: string };
   try { body = await req.json(); } catch { body = {}; }
 
+  // ── Step 2: Verify 2FA code ──────────────────────────────────────────────
+  if (body.challengeId && body.code) {
+    const result = verify2FACode(body.challengeId, body.code);
+    if (!result.valid || !result.username) {
+      logActivity("2fa_failed", "superadmin", `2FA fallido: challengeId=${body.challengeId}`, undefined, "superadmin").catch(() => {});
+      return NextResponse.json({ error: "Código inválido o expirado" }, { status: 401 });
+    }
+    const token = await createPlatformToken(result.username);
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, token, cookieOpts(PLATFORM_SESSION.MAX_AGE));
+    logActivity("login_success", "superadmin", `Login exitoso con 2FA: ${result.username}`, undefined, "superadmin").catch(() => {});
+    return res;
+  }
+
+  // ── Step 1: Verify username + password ───────────────────────────────────
   const { username, password } = body;
 
   const expectedUser = process.env.SUPERADMIN_USERNAME ?? "platform";
@@ -35,18 +52,29 @@ export async function POST(req: NextRequest) {
     password !== expectedPass ||
     !expectedPass
   ) {
+    logActivity("login_failed", "superadmin", `Intento fallido: ${username || "(vacío)"}`, undefined, "superadmin").catch(() => {});
     return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 });
   }
 
+  // If 2FA is enabled, generate challenge instead of granting session
+  if (is2FAEnabled()) {
+    const { challengeId } = create2FAChallenge(username);
+    logActivity("2fa_challenge", "superadmin", `Código 2FA enviado a ${username}`, undefined, "superadmin").catch(() => {});
+    return NextResponse.json({ requires2FA: true, challengeId });
+  }
+
+  // No 2FA — grant session directly
   const token = await createPlatformToken(username);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, token, cookieOpts(PLATFORM_SESSION.MAX_AGE));
+  logActivity("login_success", "superadmin", `Login exitoso: ${username}`, undefined, "superadmin").catch(() => {});
   return res;
 }
 
 export async function DELETE() {
   const res = NextResponse.json({ ok: true });
   res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, "", cookieOpts(0));
+  logActivity("logout", "superadmin", "SuperAdmin cerró sesión", undefined, "superadmin").catch(() => {});
   return res;
 }
 

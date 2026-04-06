@@ -13,7 +13,7 @@ export default function MaintenancePage({ message }: { message?: string }) {
         </p>
         <div className="flex items-center justify-center gap-2 text-primary">
           <ShoppingBasket className="h-5 w-5" />
-          <span className="font-bold text-sm">Bodega San Martín</span>
+          <span className="font-bold text-sm">Buleje</span>
         </div>
       </div>
     </div>

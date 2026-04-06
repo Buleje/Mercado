@@ -401,7 +401,7 @@ describe("Orchestrator", () => {
         actions: ["sync-stock"],
         execute: vi.fn(
           () => new Promise((resolve) => setTimeout(resolve, 500)),
-        ),
+        ) as unknown as DomainAgent["execute"],
       });
       agentRegistry.register(slowAgent);
 
@@ -519,7 +519,7 @@ describe("Orchestrator", () => {
         actions: ["cancelable"],
         execute: vi.fn(
           () => new Promise((resolve) => setTimeout(resolve, 5000)),
-        ),
+        ) as unknown as DomainAgent["execute"],
       });
       agentRegistry.register(slowAgent);
 
@@ -578,7 +578,7 @@ describe("Orchestrator", () => {
       const slowAgent = makeMockAgent({
         execute: vi.fn(
           () => new Promise((resolve) => setTimeout(resolve, 500)),
-        ),
+        ) as unknown as DomainAgent["execute"],
       });
       agentRegistry.register(slowAgent);
 
@@ -786,7 +786,7 @@ describe("Orchestrator", () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
 
       expect(executeFn).toHaveBeenCalledOnce();
-      const [taskArg, ctxArg] = executeFn.mock.calls[0] as [
+      const [taskArg, ctxArg] = executeFn.mock.calls[0] as unknown as [
         AgentTask,
         AgentContext,
       ];

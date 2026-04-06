@@ -3,6 +3,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { SettingsDB } from "@/lib/jsondb";
 import { createSessionToken, SESSION } from "@/lib/session";
+import { logger } from "@/lib/logger";
 
 /**
  * SECURITY: Bypass login endpoint.
@@ -28,7 +29,7 @@ export async function POST() {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    console.warn(`[SECURITY] Bypass login used in ${process.env.NODE_ENV} mode`);
+    logger.warn("[SECURITY] Bypass login used", { env: process.env.NODE_ENV });
     const token = await createSessionToken("admin", "Invitado", "main", "Invitado");
     const response = NextResponse.json({ ok: true, role: "admin", name: "Invitado" });
     response.cookies.set(SESSION.COOKIE_NAME, token, {

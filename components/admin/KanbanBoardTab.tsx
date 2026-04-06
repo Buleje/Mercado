@@ -17,7 +17,7 @@ const PRIORITY_CONFIG: Record<Priority, { label: string; color: string }> = {
   alta: { label: "Alta", color: "bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400" },
   urgente: { label: "Urgente", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
-const COL_CONFIG: Record<Column, { label: string; color: string; bg: string; icon: any }> = {
+const COL_CONFIG: Record<Column, { label: string; color: string; bg: string; icon: typeof Clock }> = {
   pendiente: { label: "📋 Pendiente", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/10", icon: Clock },
   "en-progreso": { label: "🔄 En Progreso", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/10", icon: ListChecks },
   completado: { label: "✅ Completado", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/10", icon: CheckCircle },

@@ -12,7 +12,7 @@ type Kit = {
 
 /* ── Seed Data ── */
 const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
-const nextId = 7;
+const _nextId = 7;
 const INITIAL_KITS: Kit[] = [];
 
 export default function KitManagerTab() {

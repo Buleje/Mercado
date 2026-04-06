@@ -16,6 +16,7 @@ export type Review = {
   text: string;
   rating: number;
   date: string; // ISO string
+  photo?: string; // base64 data URL
 };
 
 type ReviewModalState = { open: false } | { open: true; customerName: string; customerLocation: string };

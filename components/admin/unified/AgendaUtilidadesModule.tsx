@@ -1,6 +1,9 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
+import { CalendarDays, StickyNote, Filter } from "lucide-react";
+import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
+import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -12,31 +15,31 @@ const SharedCalendarTab = dynamic(() => import("@/components/admin/SharedCalenda
 const QuickNotesTab = dynamic(() => import("@/components/admin/QuickNotesTab"), { loading: S });
 const SavedFiltersTab = dynamic(() => import("@/components/admin/SavedFiltersTab"), { loading: S });
 
+const MODULE_ID = "agenda-utilidades";
+
 const TABS = [
-  { id: "calendario" as const, label: "Calendario" },
-  { id: "notas" as const, label: "Notas Rápidas" },
-  { id: "filtros" as const, label: "Filtros Guardados" },
+  { id: "calendario", label: "Calendario", icon: CalendarDays },
+  { id: "notas", label: "Notas Rápidas", icon: StickyNote },
+  { id: "filtros", label: "Filtros Guardados", icon: Filter },
 ];
 
 export default function AgendaUtilidadesModule() {
   const [sub, setSub] = useState(TABS[0].id);
   return (
-    <div className="space-y-3 sm:space-y-6">
-      <div className="flex gap-0.5 sm:gap-1 overflow-x-auto scrollbar-none border-b border-gray-200 dark:border-card-border -mx-1 px-1">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setSub(t.id)}
-            className={`shrink-0 px-2.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${
-              sub === t.id
-                ? "border-primary text-primary"
-                : "border-transparent text-gray-500 dark:text-muted hover:text-gray-700 dark:hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-4">
+      <AdminModuleHeader
+        title="Agenda & Utilidades"
+        description="Calendario compartido, notas rápidas y filtros guardados"
+        icon={CalendarDays}
+      />
+
+      <AdminTabBar
+        tabs={TABS}
+        activeTab={sub}
+        onTabChange={setSub}
+        moduleId={MODULE_ID}
+      />
+
       {sub === "calendario" && <SharedCalendarTab />}
       {sub === "notas" && <QuickNotesTab />}
       {sub === "filtros" && <SavedFiltersTab />}

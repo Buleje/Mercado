@@ -16,7 +16,7 @@ type Anomaly = {
 function fmt(n: number) { return `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`; }
 function fmtDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
 
-const TYPE_CONFIG: Record<AnomalyType, { label: string; color: string; icon: any }> = {
+const TYPE_CONFIG: Record<AnomalyType, { label: string; color: string; icon: typeof TrendingUp }> = {
   "venta-alta": { label: "Venta Inusual Alta", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400", icon: TrendingUp },
   "venta-baja": { label: "Venta Inusual Baja", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400", icon: TrendingDown },
   "stock-inusual": { label: "Stock Inusual", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400", icon: Boxes },

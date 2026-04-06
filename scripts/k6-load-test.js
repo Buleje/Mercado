@@ -1,5 +1,5 @@
 /**
- * k6 Load Test — Bodega San Martín
+ * k6 Load Test — Buleje
  *
  * Tests the two highest-traffic API endpoints:
  *   1. GET /api/products  — Product catalog (read-heavy)
@@ -7,7 +7,7 @@
  *
  * Usage:
  *   k6 run scripts/k6-load-test.js
- *   BASE_URL=https://staging.bodegasanmartin.pe k6 run scripts/k6-load-test.js
+ *   BASE_URL=https://staging.buleje.pe k6 run scripts/k6-load-test.js
  *
  * Install k6: https://k6.io/docs/get-started/installation/
  *
@@ -93,7 +93,7 @@ function testPostOrder() {
     tags: { name: "POST /api/orders" },
   });
 
-  const ok = check(res, {
+  check(res, {
     // 200 (success) or 429 (rate limited) or 409 (duplicate key) are all
     // expected during high-concurrency tests — 5xx is the real error.
     "orders: not 5xx": (r) => r.status < 500,
@@ -107,6 +107,7 @@ function testPostOrder() {
 
 // ── Main scenario ──────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line import/no-anonymous-default-export -- k6 requires anonymous default export
 export default function () {
   // 80% of traffic is read (catalog browsing), 20% is write (order creation)
   const rand = Math.random();

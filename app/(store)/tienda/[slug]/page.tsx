@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { products, slugify, getProductBySlug, categories } from "@/data/products";
+import { headers } from "next/headers";
+import { slugify, categories } from "@/data/products";
+import type { Product } from "@/data/products";
+import { ProductsDB } from "@/lib/db/products.db";
 import ProductDetailClient from "@/components/ProductDetailClient";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
@@ -8,37 +11,47 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
+// No pre-rendered pages — products are dynamic (DB-based)
 export async function generateStaticParams() {
-  return products.map((p) => ({ slug: slugify(p.name) }));
+  return [];
+}
+export const dynamicParams = true;
+
+async function getProductBySlugFromDB(slug: string): Promise<Product | null> {
+  const hdrs = await headers();
+  const tenantId = hdrs.get("x-tenant-id") ?? "main";
+  const products = await ProductsDB.getAll(tenantId);
+  const found = products.find((p) => slugify(p.name) === slug);
+  return found ? (found as unknown as Product) : null;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlugFromDB(slug);
   if (!product) return { title: "Producto no encontrado" };
 
   const category = categories.find((c) => c.id === product.category);
-  const productUrl = `https://www.bodegasanmartin.pe/tienda/${slug}`;
+  const productUrl = `https://www.buleje.pe/tienda/${slug}`;
 
   return {
-    title: `${product.name} — S/${product.price.toFixed(2)} | Bodega San Martín Pucallpa`,
-    description: `Compra ${product.name} a S/${product.price.toFixed(2)} por ${product.unit} en Pucallpa. ${category?.label ?? "Producto"} con delivery gratis desde S/50. Paga con Yape o efectivo. Bodega San Martín — tu bodega de confianza en Pucallpa, Ucayali.`,
+    title: `${product.name} — S/${product.price.toFixed(2)} | Buleje`,
+    description: `Compra ${product.name} a S/${product.price.toFixed(2)} por ${product.unit}. ${category?.label ?? "Producto"} con delivery gratis desde S/50. Paga con Yape o efectivo. Buleje — tu bodega de confianza.`,
     alternates: {
       canonical: productUrl,
     },
     openGraph: {
-      title: `${product.name} — S/${product.price.toFixed(2)} | Bodega San Martín`,
-      description: `${product.name} a S/${product.price.toFixed(2)}/${product.unit}. ${category?.label ?? ""} con delivery gratis en Pucallpa. Paga con Yape o efectivo.`,
+      title: `${product.name} — S/${product.price.toFixed(2)} | Buleje`,
+      description: `${product.name} a S/${product.price.toFixed(2)}/${product.unit}. ${category?.label ?? ""} con delivery gratis. Paga con Yape o efectivo.`,
       url: productUrl,
-      images: [{ url: product.image, width: 600, height: 600, alt: `${product.name} — compra online con delivery en Pucallpa` }],
+      images: [{ url: product.image, width: 600, height: 600, alt: `${product.name} — compra online con delivery` }],
       type: "website",
       locale: "es_PE",
-      siteName: "Bodega San Martín",
+      siteName: "Buleje",
     },
     twitter: {
       card: "summary_large_image",
       title: `${product.name} — S/${product.price.toFixed(2)}`,
-      description: `Compra ${product.name} con delivery en Pucallpa.`,
+      description: `Compra ${product.name} con delivery.`,
       images: [product.image],
     },
   };
@@ -46,19 +59,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductDetailPage({ params }: Props) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlugFromDB(slug);
 
   if (!product) notFound();
 
   const category = categories.find((c) => c.id === product.category);
 
   const breadcrumbs = [
-    { name: "Inicio", url: "https://www.bodegasanmartin.pe" },
-    { name: "Tienda", url: "https://www.bodegasanmartin.pe/tienda" },
+    { name: "Inicio", url: "https://www.buleje.pe" },
+    { name: "Tienda", url: "https://www.buleje.pe/tienda" },
     ...(category
-      ? [{ name: category.label, url: `https://www.bodegasanmartin.pe/tienda/categoria/${category.id}` }]
+      ? [{ name: category.label, url: `https://www.buleje.pe/tienda/categoria/${category.id}` }]
       : []),
-    { name: product.name, url: `https://www.bodegasanmartin.pe/tienda/${slug}` },
+    { name: product.name, url: `https://www.buleje.pe/tienda/${slug}` },
   ];
 
   return (
@@ -73,15 +86,15 @@ export default async function ProductDetailPage({ params }: Props) {
             name: product.name,
             image: product.image,
             sku: `BSM-${product.id}`,
-            description: `${product.name} — ${category?.label ?? "Producto"} disponible con delivery en Pucallpa. Paga con Yape o efectivo. Bodega San Martín.`,
+            description: `${product.name} — ${category?.label ?? "Producto"} disponible con delivery. Paga con Yape o efectivo. Buleje.`,
             category: category?.label,
             brand: {
               "@type": "Organization",
-              name: "Bodega San Martín",
+              name: "Buleje",
             },
             offers: {
               "@type": "Offer",
-              url: `https://www.bodegasanmartin.pe/tienda/${slug}`,
+              url: `https://www.buleje.pe/tienda/${slug}`,
               price: product.price.toFixed(2),
               priceCurrency: "PEN",
               priceValidUntil: new Date(new Date().getFullYear(), 11, 31).toISOString().split("T")[0],
@@ -91,7 +104,7 @@ export default async function ProductDetailPage({ params }: Props) {
               itemCondition: "https://schema.org/NewCondition",
               eligibleRegion: {
                 "@type": "Place",
-                name: "Pucallpa, Ucayali, Perú",
+                name: "Ucayali, Perú",
               },
               shippingDetails: {
                 "@type": "OfferShippingDetails",
@@ -113,7 +126,7 @@ export default async function ProductDetailPage({ params }: Props) {
               },
               seller: {
                 "@type": "Organization",
-                name: "Bodega San Martín",
+                name: "Buleje",
               },
             },
           }),

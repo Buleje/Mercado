@@ -57,7 +57,7 @@ const SEED: Campaign[] = [
     totalAudience: 67, delivered: 61, opened: 29, conversions: 8, revenue: 540, createdAt: "2026-03-11T09:00",
   },
   {
-    id: "c4", name: "Feliz Cumpleaños 🎂", message: "¡Feliz cumpleaños! 🎂 De parte de Bodega San Martín, tienes un regalo: 10% descuento hoy en toda tu compra.",
+    id: "c4", name: "Feliz Cumpleaños 🎂", message: "¡Feliz cumpleaños! 🎂 De parte de Buleje, tienes un regalo: 10% descuento hoy en toda tu compra.",
     segment: "cumpleanos", channel: "ambos", status: "activa", scheduledAt: null, sentAt: null,
     totalAudience: 12, delivered: 0, opened: 0, conversions: 0, revenue: 0, createdAt: "2026-03-17T08:00",
   },
@@ -400,7 +400,7 @@ export default function CampañasTab() {
     // Header
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text("Bodega San Martín", 14, 16);
+    doc.text("Buleje", 14, 16);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(100);

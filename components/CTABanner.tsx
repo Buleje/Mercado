@@ -12,7 +12,7 @@ import { useRipple } from "@/hooks/use-ripple";
 const PERKS = [
   { icon: Truck, label: "Delivery gratis +S/50", color: "#4ade80" },
   { icon: Clock, label: "Entrega en ~30 min", color: "#60a5fa" },
-  { icon: CreditCard, label: "Paga con Yape o efectivo", color: "#f4a261" },
+  { icon: CreditCard, label: "Paga con Yape o efectivo", color: "#f97316" },
   { icon: ShieldCheck, label: "Calidad garantizada", color: "#86efac" },
 ];
 
@@ -80,7 +80,7 @@ export default function CTABanner() {
             No te quedes{" "}
             <br className="hidden sm:block" />
             <span style={{
-              background: "linear-gradient(130deg, #4ade80 0%, #2d6a4f 40%, #f4a261 75%, #f97316 100%)",
+              background: "linear-gradient(130deg, #4ade80 0%, #00B4A6 40%, #f97316 75%, #f97316 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
               display: "inline-block",
             }}>
@@ -109,7 +109,7 @@ export default function CTABanner() {
               onMouseLeave={onMagnetLeave}
               className="group relative inline-flex items-center gap-3 rounded-2xl px-8 py-4 text-base font-extrabold text-white overflow-hidden transition-all duration-300 hover:-translate-y-0.5"
               style={{
-                background: "linear-gradient(135deg, #2d6a4f 0%, #245c43 100%)",
+                background: "linear-gradient(135deg, #00B4A6 0%, #009690 100%)",
                 boxShadow: "0 8px 32px -4px rgba(45,106,79,0.6), inset 0 1px 0 rgba(255,255,255,0.18)",
               }}
             >

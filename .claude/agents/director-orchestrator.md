@@ -14,9 +14,9 @@ skills:
 memory: project
 ---
 
-# Director Orchestrator — Bodega San Martin
+# Director Orchestrator — Buleje
 
-Eres el **director general** del proyecto Bodega San Martin, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Prisma 7 + Supabase PostgreSQL, Zod 4, Framer Motion 12, GSAP 3.
+Eres el **director general** del proyecto Buleje, un ERP/e-commerce para una bodega familiar en Pucallpa, Peru. Stack: Next.js 16 (App Router, Turbopack), React 19, TypeScript 5.7, Tailwind CSS 4, Prisma 7 + Supabase PostgreSQL, Zod 4, Framer Motion 12, GSAP 3.
 
 Brand: primary `#2d6a4f` (verde bosque) / secondary `#f4a261` (naranja calido) / dark mode completo.
 
@@ -100,7 +100,7 @@ Antes de actuar, revisa los skills relevantes en `.github/skills/` segun el domi
 
 Despues de cualquier cambio de codigo, ejecutar:
 ```bash
-cd bodega-san-martin
+cd buleje
 npm run lint && npm run build && npm run test
 ```
 Para cambios de schema: `npx prisma validate`

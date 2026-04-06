@@ -9,7 +9,6 @@ import type {
 import {
   type DbSupplier,
   type DbPurchaseOrder,
-  type DbPurchaseItem,
   type PurchaseStatus,
 } from "./misc.db";
 
@@ -52,6 +51,9 @@ function mapPurchaseOrder(po: PPurchaseOrder & { items: PPurchaseItem[] }): DbPu
     items: po.items.map((i: PPurchaseItem) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })),
     total: po.total, status: po.status as PurchaseStatus,
     ...(po.notes != null && { notes: po.notes }),
+    ...(po.paymentMethod != null && { paymentMethod: po.paymentMethod }),
+    ...(po.deliveryDate != null && { deliveryDate: toISO(po.deliveryDate) }),
+    ...(po.discount != null && { discount: po.discount }),
     createdAt: toISO(po.createdAt), updatedAt: toISO(po.updatedAt),
   };
 }
@@ -69,8 +71,10 @@ function mapSupplierEvaluation(e: PSupplierEvaluation): DbSupplierEvaluation {
 // ── Suppliers DB ──────────────────────────────────────────────────────────────
 
 export const SuppliersDB = {
-  async getAll(): Promise<DbSupplier[]> {
-    return (await prisma.supplier.findMany({ orderBy: { createdAt: "desc" } })).map(mapSupplier);
+  async getAll(tenantId?: string): Promise<DbSupplier[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.supplier.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapSupplier);
   },
   async getById(id: string): Promise<DbSupplier | null> {
     const row = await prisma.supplier.findUnique({ where: { id } });
@@ -85,7 +89,7 @@ export const SuppliersDB = {
   async update(id: string, patch: Partial<DbSupplier>): Promise<DbSupplier | null> {
     const existing = await prisma.supplier.findUnique({ where: { id } });
     if (!existing) return null;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const { id: _id, createdAt: _c, ...data } = patch;
     const row = await prisma.supplier.update({ where: { id }, data });
     return mapSupplier(row);
@@ -98,8 +102,10 @@ export const SuppliersDB = {
 // ── Purchase Orders DB ────────────────────────────────────────────────────────
 
 export const PurchasesDB = {
-  async getAll(): Promise<DbPurchaseOrder[]> {
-    return (await prisma.purchaseOrder.findMany({ include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapPurchaseOrder);
+  async getAll(tenantId?: string): Promise<DbPurchaseOrder[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.purchaseOrder.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapPurchaseOrder);
   },
   async getById(id: string): Promise<DbPurchaseOrder | null> {
     const row = await prisma.purchaseOrder.findUnique({ where: { id }, include: { items: true } });
@@ -110,6 +116,9 @@ export const PurchasesDB = {
       data: {
         id: po.id, supplierId: po.supplierId, supplierName: po.supplierName,
         total: po.total, status: po.status as never, notes: po.notes,
+        paymentMethod: po.paymentMethod ?? null,
+        deliveryDate: po.deliveryDate ? new Date(po.deliveryDate) : null,
+        discount: po.discount ?? 0,
         items: { create: po.items.map((i) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })) },
       },
       include: { items: true },
@@ -124,6 +133,9 @@ export const PurchasesDB = {
     if (patch.notes !== undefined) data.notes = patch.notes;
     if (patch.total !== undefined) data.total = patch.total;
     if (patch.supplierName !== undefined) data.supplierName = patch.supplierName;
+    if (patch.paymentMethod !== undefined) data.paymentMethod = patch.paymentMethod;
+    if (patch.deliveryDate !== undefined) data.deliveryDate = patch.deliveryDate ? new Date(patch.deliveryDate) : null;
+    if (patch.discount !== undefined) data.discount = patch.discount;
     const row = await prisma.purchaseOrder.update({ where: { id }, data, include: { items: true } });
     return mapPurchaseOrder(row);
   },
@@ -138,8 +150,10 @@ export const SupplierEvaluationsDB = {
   async getBySupplierId(supplierId: string): Promise<DbSupplierEvaluation[]> {
     return (await prisma.supplierEvaluation.findMany({ where: { supplierId }, orderBy: { createdAt: "desc" } })).map(mapSupplierEvaluation);
   },
-  async getAll(): Promise<DbSupplierEvaluation[]> {
-    return (await prisma.supplierEvaluation.findMany({ orderBy: { createdAt: "desc" } })).map(mapSupplierEvaluation);
+  async getAll(tenantId?: string): Promise<DbSupplierEvaluation[]> {
+    const where: Record<string, unknown> = {};
+    if (tenantId) where.tenantId = tenantId;
+    return (await prisma.supplierEvaluation.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapSupplierEvaluation);
   },
   async add(data: Omit<DbSupplierEvaluation, "id" | "createdAt">): Promise<DbSupplierEvaluation> {
     const row = await prisma.supplierEvaluation.create({ data });

@@ -1,9 +1,27 @@
 "use client";
-import { useState, useMemo } from "react";
-import { TrendingDown, AlertTriangle, CheckCircle, Download, X } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import {
+  TrendingDown, TrendingUp, AlertTriangle, CheckCircle,
+  Download, Loader2, RefreshCw, Target, Save,
+} from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
-/* ── types ──────────────────────────────────────────────────── */
+/* ── Types ──────────────────────────────────────────────────── */
+type ExpenseItem = {
+  id: string;
+  category: string;
+  description: string;
+  amount: number;
+  date: string;
+  recurring: boolean;
+};
+
+type SaleItem = {
+  id: string;
+  total: number;
+  createdAt: string;
+};
+
 type BudgetLine = {
   id: string;
   category: string;
@@ -13,79 +31,587 @@ type BudgetLine = {
   month: string;
 };
 
-const fmt = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+type BudgetConfig = {
+  month: string; // "YYYY-MM"
+  salesGoal: number;
+  expensesGoal: number;
+};
+
+/* ── Helpers ─────────────────────────────────────────────────── */
+const fmt = (n: number) =>
+  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtPct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
 
-/* ── seed data ──────────────────────────────────────────────── */
-const MONTHS = ["Ene 2025", "Feb 2025", "Mar 2025", "Abr 2025", "May 2025", "Jun 2025"];
-const BUDGET_DATA: BudgetLine[] = [];
+const MONTH_LABELS: Record<string, string> = {
+  "01": "Ene", "02": "Feb", "03": "Mar", "04": "Abr",
+  "05": "May", "06": "Jun", "07": "Jul", "08": "Ago",
+  "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dic",
+};
 
-const DEPARTMENTS = [...new Set(BUDGET_DATA.map(b => b.department))];
+function monthLabel(iso: string) {
+  const d = new Date(iso);
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const y = d.getFullYear();
+  return `${MONTH_LABELS[m] ?? m} ${y}`;
+}
 
-/* ── component ──────────────────────────────────────────────── */
+function currentYearMonth() {
+  const now = new Date();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  return `${now.getFullYear()}-${m}`;
+}
+
+function dayOfMonth() {
+  return new Date().getDate();
+}
+
+function daysInMonth() {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+}
+
+// Carga config desde localStorage
+function loadBudgetConfig(ym: string): BudgetConfig {
+  try {
+    const raw = localStorage.getItem("bodega-budget-config");
+    if (!raw) return { month: ym, salesGoal: 0, expensesGoal: 0 };
+    const parsed: BudgetConfig = JSON.parse(raw);
+    if (parsed.month === ym) return parsed;
+  } catch { /* noop */ }
+  return { month: ym, salesGoal: 0, expensesGoal: 0 };
+}
+
+function saveBudgetConfig(cfg: BudgetConfig) {
+  localStorage.setItem("bodega-budget-config", JSON.stringify(cfg));
+}
+
+// Agrupa gastos reales por categoría y mes
+function buildBudgetLines(expenses: ExpenseItem[]): BudgetLine[] {
+  const map = new Map<string, BudgetLine>();
+  expenses.forEach((e) => {
+    const month = monthLabel(e.date);
+    const key = `${e.category}__${month}`;
+    if (!map.has(key)) {
+      map.set(key, {
+        id: key,
+        category: e.category,
+        department: inferDept(e.category),
+        budgeted: estimateBudget(e.category),
+        actual: 0,
+        month,
+      });
+    }
+    map.get(key)!.actual += e.amount;
+  });
+  return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month));
+}
+
+function inferDept(cat: string): string {
+  const c = cat.toLowerCase();
+  if (c.includes("compra") || c.includes("inventar") || c.includes("product")) return "Operaciones";
+  if (c.includes("nómina") || c.includes("sueldo") || c.includes("personal")) return "RRHH";
+  if (c.includes("alquiler") || c.includes("local")) return "Administración";
+  if (c.includes("transport") || c.includes("flete")) return "Logística";
+  if (c.includes("market") || c.includes("publicidad")) return "Marketing";
+  return "General";
+}
+
+function estimateBudget(cat: string): number {
+  const c = cat.toLowerCase();
+  if (c.includes("compra") || c.includes("inventar")) return 8000;
+  if (c.includes("nómina") || c.includes("sueldo")) return 5000;
+  if (c.includes("alquiler")) return 1500;
+  if (c.includes("transport")) return 800;
+  if (c.includes("market")) return 600;
+  return 1000;
+}
+
+/* ── Barra de progreso con semáforo ─────────────────────────── */
+function ProgressBar({
+  label, current, goal, isSales,
+}: {
+  label: string;
+  current: number;
+  goal: number;
+  isSales: boolean;
+}) {
+  const pct = goal > 0 ? (current / goal) * 100 : 0;
+  const display = Math.min(pct, 100);
+
+  // Para ventas: verde >80%, amarillo 50-80%, rojo <50%
+  // Para gastos: verde <80%, amarillo 80-100%, rojo >100%
+  let color = "bg-emerald-500";
+  let textColor = "text-emerald-600 dark:text-emerald-400";
+  let bgLight = "bg-emerald-100 dark:bg-emerald-900/30";
+  if (isSales) {
+    if (pct >= 80) { color = "bg-emerald-500"; textColor = "text-emerald-600 dark:text-emerald-400"; bgLight = "bg-emerald-100 dark:bg-emerald-900/30"; }
+    else if (pct >= 50) { color = "bg-amber-400"; textColor = "text-amber-600 dark:text-amber-400"; bgLight = "bg-amber-100 dark:bg-amber-900/30"; }
+    else { color = "bg-red-500"; textColor = "text-red-600 dark:text-red-400"; bgLight = "bg-red-100 dark:bg-red-900/30"; }
+  } else {
+    if (pct < 80) { color = "bg-emerald-500"; textColor = "text-emerald-600 dark:text-emerald-400"; bgLight = "bg-emerald-100 dark:bg-emerald-900/30"; }
+    else if (pct <= 100) { color = "bg-amber-400"; textColor = "text-amber-600 dark:text-amber-400"; bgLight = "bg-amber-100 dark:bg-amber-900/30"; }
+    else { color = "bg-red-500"; textColor = "text-red-600 dark:text-red-400"; bgLight = "bg-red-100 dark:bg-red-900/30"; }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-semibold text-gray-700 dark:text-foreground">{label}</span>
+        <span className={cn("text-sm font-bold", textColor)}>
+          {pct.toFixed(0)}% {isSales ? "logrado" : "utilizado"}
+        </span>
+      </div>
+      <div className="w-full h-4 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+        <div
+          className={cn("h-full rounded-full transition-all duration-500", color)}
+          style={{ width: `${display}%` }}
+        />
+      </div>
+      <div className="flex items-center justify-between text-xs">
+        <span className={cn("font-bold px-2 py-0.5 rounded-full", bgLight, textColor)}>
+          Llevas {fmt(current)} de {fmt(goal)}
+        </span>
+        {goal > 0 && (
+          <span className="text-gray-400 dark:text-muted">
+            {isSales ? `Falta ${fmt(Math.max(goal - current, 0))}` : `Queda ${fmt(Math.max(goal - current, 0))}`}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Gráfico de barras por categoría (SVG-free, solo divs) ─── */
+function CategoryChart({
+  categories,
+}: {
+  categories: { label: string; budgeted: number; actual: number }[];
+}) {
+  const max = Math.max(...categories.flatMap((c) => [c.budgeted, c.actual]), 1);
+  return (
+    <div className="space-y-4">
+      {categories.map((c) => {
+        const variance = c.budgeted > 0 ? ((c.actual - c.budgeted) / c.budgeted) * 100 : 0;
+        const isOver = variance > 10;
+        const isUnder = variance < -10;
+        return (
+          <div key={c.label} className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-gray-700 dark:text-foreground truncate max-w-[140px] sm:max-w-none">
+                {c.label}
+              </span>
+              <span className={cn("font-bold", isOver ? "text-red-600" : isUnder ? "text-emerald-600" : "text-gray-500 dark:text-muted")}>
+                {fmtPct(variance)}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-gray-400 w-14 shrink-0">Presup.</span>
+              <div className="flex-1 h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-blue-300 dark:bg-blue-700"
+                  style={{ width: `${(c.budgeted / max) * 100}%` }}
+                />
+              </div>
+              <span className="text-[10px] text-gray-500 w-20 text-right shrink-0">{fmt(c.budgeted)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-gray-400 w-14 shrink-0">Real</span>
+              <div className="flex-1 h-3 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
+                <div
+                  className={cn("h-full rounded-full", isOver ? "bg-red-500" : isUnder ? "bg-emerald-500" : "bg-[#00B4A6]")}
+                  style={{ width: `${Math.min((c.actual / max) * 100, 100)}%` }}
+                />
+              </div>
+              <span className="text-[10px] font-bold text-gray-700 dark:text-foreground w-20 text-right shrink-0">
+                {fmt(c.actual)}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+      <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-gray-400">
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-blue-300 dark:bg-blue-700" /> Presupuestado</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-[#00B4A6]" /> Real (OK)</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-red-500" /> Real (exceso)</span>
+        <span className="flex items-center gap-1"><span className="w-3 h-2 rounded bg-emerald-500" /> Real (ahorro)</span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Component ───────────────────────────────────────────────── */
 export default function BudgetVsRealTab() {
+  const ym = currentYearMonth();
+
+  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
+  const [sales, setSales] = useState<SaleItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [search, setSearch] = useState("");
-  const [monthFilter, setMonthFilter] = useState("Jun 2025");
+  const [monthFilter, setMonthFilter] = useState<string>("all");
   const [deptFilter, setDeptFilter] = useState("all");
   const [alertFilter, setAlertFilter] = useState<"all" | "over" | "under" | "ok">("all");
-  const [detail, setDetail] = useState<BudgetLine | null>(null);
+
+  // Config de presupuesto
+  const [budgetConfig, setBudgetConfig] = useState<BudgetConfig>({ month: ym, salesGoal: 0, expensesGoal: 0 });
+  const [formSalesGoal, setFormSalesGoal] = useState("");
+  const [formExpensesGoal, setFormExpensesGoal] = useState("");
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  useEffect(() => {
+    const cfg = loadBudgetConfig(ym);
+    setBudgetConfig(cfg);
+    setFormSalesGoal(cfg.salesGoal > 0 ? String(cfg.salesGoal) : "");
+    setFormExpensesGoal(cfg.expensesGoal > 0 ? String(cfg.expensesGoal) : "");
+  }, [ym]);
+
+  const handleSaveConfig = () => {
+    const cfg: BudgetConfig = {
+      month: ym,
+      salesGoal: parseFloat(formSalesGoal) || 0,
+      expensesGoal: parseFloat(formExpensesGoal) || 0,
+    };
+    saveBudgetConfig(cfg);
+    setBudgetConfig(cfg);
+    setSavedFlash(true);
+    setTimeout(() => setSavedFlash(false), 2000);
+  };
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const [expRes, salesRes] = await Promise.all([
+        fetch("/api/expenses"),
+        fetch("/api/sales"),
+      ]);
+      const expData: ExpenseItem[] = expRes.ok ? await expRes.json() : [];
+      const salesData: SaleItem[] = salesRes.ok ? await salesRes.json() : [];
+      setExpenses(Array.isArray(expData) ? expData : []);
+      setSales(Array.isArray(salesData) ? salesData : []);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Ventas del mes actual
+  const currentMonthSales = useMemo(() => {
+    return sales
+      .filter((s) => s.createdAt?.startsWith(ym))
+      .reduce((sum, s) => sum + (s.total ?? 0), 0);
+  }, [sales, ym]);
+
+  // Gastos del mes actual
+  const currentMonthExpenses = useMemo(() => {
+    return expenses
+      .filter((e) => e.date?.startsWith(ym))
+      .reduce((sum, e) => sum + (e.amount ?? 0), 0);
+  }, [expenses, ym]);
+
+  // Proyección fin de mes
+  const projection = useMemo(() => {
+    const day = dayOfMonth();
+    const total = daysInMonth();
+    if (day === 0) return { sales: 0, expenses: 0 };
+    return {
+      sales: (currentMonthSales / day) * total,
+      expenses: (currentMonthExpenses / day) * total,
+    };
+  }, [currentMonthSales, currentMonthExpenses]);
+
+  const lines = useMemo(() => buildBudgetLines(expenses), [expenses]);
+
+  const MONTHS = useMemo(() => ["all", ...new Set(lines.map((b) => b.month))], [lines]);
+  const DEPARTMENTS = useMemo(() => [...new Set(lines.map((b) => b.department))], [lines]);
+
+  const effectiveMonthFilter = monthFilter === "all" && MONTHS.length > 1
+    ? MONTHS[MONTHS.length - 1]
+    : monthFilter;
 
   const filtered = useMemo(() => {
-    return BUDGET_DATA.filter(b => {
-      if (monthFilter && b.month !== monthFilter) return false;
+    return lines.filter((b) => {
+      if (effectiveMonthFilter !== "all" && b.month !== effectiveMonthFilter) return false;
       if (deptFilter !== "all" && b.department !== deptFilter) return false;
       if (search && !b.category.toLowerCase().includes(search.toLowerCase())) return false;
-      const variance = ((b.actual - b.budgeted) / b.budgeted) * 100;
+      const variance = b.budgeted > 0 ? ((b.actual - b.budgeted) / b.budgeted) * 100 : 0;
       if (alertFilter === "over" && variance <= 10) return false;
       if (alertFilter === "under" && variance >= -10) return false;
       if (alertFilter === "ok" && Math.abs(variance) > 10) return false;
       return true;
     });
-  }, [search, monthFilter, deptFilter, alertFilter]);
+  }, [lines, search, effectiveMonthFilter, deptFilter, alertFilter]);
 
   const totals = useMemo(() => {
     const budgeted = filtered.reduce((s, b) => s + b.budgeted, 0);
     const actual = filtered.reduce((s, b) => s + b.actual, 0);
-    return { budgeted, actual, variance: actual - budgeted, pct: budgeted > 0 ? ((actual - budgeted) / budgeted) * 100 : 0 };
+    return {
+      budgeted,
+      actual,
+      variance: actual - budgeted,
+      pct: budgeted > 0 ? ((actual - budgeted) / budgeted) * 100 : 0,
+    };
   }, [filtered]);
 
-  const overBudgetCount = filtered.filter(b => ((b.actual - b.budgeted) / b.budgeted) * 100 > 10).length;
-  const underBudgetCount = filtered.filter(b => ((b.actual - b.budgeted) / b.budgeted) * 100 < -10).length;
+  const overBudgetCount = filtered.filter(
+    (b) => b.budgeted > 0 && ((b.actual - b.budgeted) / b.budgeted) * 100 > 10
+  ).length;
+  const underBudgetCount = filtered.filter(
+    (b) => b.budgeted > 0 && ((b.actual - b.budgeted) / b.budgeted) * 100 < -10
+  ).length;
+
+  // Categorías principales para el gráfico (top 6)
+  const mainCategories = useMemo(() => {
+    const salesTotal = currentMonthSales;
+    const expTotal = currentMonthExpenses;
+    const netProfit = salesTotal - expTotal;
+
+    const expensesByDept: Record<string, { budgeted: number; actual: number }> = {};
+    lines
+      .filter((b) => b.month === (MONTHS[MONTHS.length - 1] ?? ""))
+      .forEach((b) => {
+        if (!expensesByDept[b.department]) expensesByDept[b.department] = { budgeted: 0, actual: 0 };
+        expensesByDept[b.department].budgeted += b.budgeted;
+        expensesByDept[b.department].actual += b.actual;
+      });
+
+    const cats = [
+      { label: "Ventas", budgeted: budgetConfig.salesGoal, actual: salesTotal },
+      { label: "Gastos totales", budgeted: budgetConfig.expensesGoal, actual: expTotal },
+      { label: "Ganancia neta", budgeted: Math.max(budgetConfig.salesGoal - budgetConfig.expensesGoal, 0), actual: netProfit },
+      ...Object.entries(expensesByDept)
+        .sort((a, b) => b[1].actual - a[1].actual)
+        .slice(0, 3)
+        .map(([dept, v]) => ({ label: dept, budgeted: v.budgeted, actual: v.actual })),
+    ];
+    return cats;
+  }, [lines, currentMonthSales, currentMonthExpenses, budgetConfig, MONTHS]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-[#00B4A6]" />
+        <p className="text-sm text-gray-500 dark:text-muted">Cargando datos...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4">
+        <AlertTriangle className="h-10 w-10 text-red-400" />
+        <p className="text-gray-500 dark:text-muted text-sm">Error cargando datos</p>
+        <button
+          onClick={load}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-semibold"
+        >
+          <RefreshCw className="h-4 w-4" /> Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  const monthName = MONTH_LABELS[ym.split("-")[1]] ?? "";
+  const yearNum = ym.split("-")[0];
+  const day = dayOfMonth();
+  const totalDays = daysInMonth();
 
   return (
-    <div className="space-y-3 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">Presupuesto vs Real</h2>
-          <p className="text-sm text-gray-500 dark:text-muted mt-1">Compara gastos presupuestados contra ejecución real por mes</p>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-foreground">
+            Meta vs Real
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-muted mt-1">
+            {monthName} {yearNum} · Día {day} de {totalDays}
+          </p>
         </div>
         <button
-          onClick={() => exportToCSV(filtered.map(b => ({ Categoría: b.category, Departamento: b.department, Presupuestado: b.budgeted, Real: b.actual, Variación: ((b.actual - b.budgeted) / b.budgeted * 100).toFixed(1) + "%" })), "presupuesto-vs-real")}
-          className="flex flex-wrap items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors shadow-md shadow-primary/20"
+          onClick={() =>
+            exportToCSV(
+              filtered.map((b) => ({
+                Categoría: b.category,
+                Departamento: b.department,
+                Mes: b.month,
+                Presupuestado: b.budgeted,
+                Real: b.actual,
+                Variación: b.budgeted > 0 ? fmtPct(((b.actual - b.budgeted) / b.budgeted) * 100) : "N/A",
+              })),
+              "meta-vs-real"
+            )
+          }
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00B4A6] text-white text-sm font-bold hover:bg-[#00B4A6]/90 transition-colors shadow-md shadow-[#00B4A6]/20 min-h-[44px]"
         >
           <Download className="h-4 w-4" /> Exportar
         </button>
       </div>
 
-      {/* KPIs */}
+      {/* ── 1. Configurador de metas mensuales ── */}
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+        <div className="flex items-center gap-2 mb-3">
+          <Target className="h-4 w-4 text-[#00B4A6]" />
+          <h3 className="text-sm font-bold text-gray-700 dark:text-foreground">
+            Mis metas de {monthName} {yearNum}
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">
+              Meta de ventas del mes (S/)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={formSalesGoal}
+              onChange={(e) => setFormSalesGoal(e.target.value)}
+              placeholder="Ej: 15000"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#00B4A6] transition-colors min-h-[44px]"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 dark:text-muted block mb-1">
+              Máximo de gastos del mes (S/)
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={formExpensesGoal}
+              onChange={(e) => setFormExpensesGoal(e.target.value)}
+              placeholder="Ej: 8000"
+              className="w-full px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#00B4A6] transition-colors min-h-[44px]"
+            />
+          </div>
+        </div>
+        <button
+          onClick={handleSaveConfig}
+          className={cn(
+            "mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all min-h-[44px]",
+            savedFlash
+              ? "bg-emerald-500 text-white"
+              : "bg-[#00B4A6] text-white hover:bg-[#00B4A6]/90"
+          )}
+        >
+          <Save className="h-4 w-4" />
+          {savedFlash ? "Guardado" : "Guardar metas"}
+        </button>
+      </div>
+
+      {/* ── 2. Barras de progreso ventas y gastos ── */}
+      {(budgetConfig.salesGoal > 0 || budgetConfig.expensesGoal > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {budgetConfig.salesGoal > 0 && (
+            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+              <ProgressBar
+                label="Ventas del mes"
+                current={currentMonthSales}
+                goal={budgetConfig.salesGoal}
+                isSales={true}
+              />
+            </div>
+          )}
+          {budgetConfig.expensesGoal > 0 && (
+            <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+              <ProgressBar
+                label="Gastos del mes"
+                current={currentMonthExpenses}
+                goal={budgetConfig.expensesGoal}
+                isSales={false}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── 4. Proyección fin de mes ── */}
+      {(currentMonthSales > 0 || currentMonthExpenses > 0) && (
+        <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+          <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-3">
+            Proyeccion al {totalDays} de {monthName}
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3">
+              <p className="text-xs text-gray-500 dark:text-muted font-semibold mb-1">Ventas proyectadas</p>
+              <div className="flex items-center gap-2">
+                {projection.sales >= (budgetConfig.salesGoal || projection.sales)
+                  ? <TrendingUp className="h-4 w-4 text-emerald-500 shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-amber-500 shrink-0" />}
+                <span className="text-lg font-extrabold text-gray-900 dark:text-foreground">
+                  {fmt(projection.sales)}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-muted mt-1">
+                Al ritmo actual ({fmt(currentMonthSales)} en {day} días)
+              </p>
+            </div>
+            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3">
+              <p className="text-xs text-gray-500 dark:text-muted font-semibold mb-1">Gastos proyectados</p>
+              <div className="flex items-center gap-2">
+                {projection.expenses > (budgetConfig.expensesGoal || projection.expenses)
+                  ? <TrendingUp className="h-4 w-4 text-red-500 shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-emerald-500 shrink-0" />}
+                <span className="text-lg font-extrabold text-gray-900 dark:text-foreground">
+                  {fmt(projection.expenses)}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-muted mt-1">
+                Al ritmo actual ({fmt(currentMonthExpenses)} en {day} días)
+              </p>
+            </div>
+            <div className="bg-gray-50 dark:bg-surface rounded-xl p-3">
+              <p className="text-xs text-gray-500 dark:text-muted font-semibold mb-1">Ganancia proyectada</p>
+              <div className="flex items-center gap-2">
+                {(projection.sales - projection.expenses) >= 0
+                  ? <TrendingUp className="h-4 w-4 text-emerald-500 shrink-0" />
+                  : <TrendingDown className="h-4 w-4 text-red-500 shrink-0" />}
+                <span className={cn(
+                  "text-lg font-extrabold",
+                  (projection.sales - projection.expenses) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                )}>
+                  {fmt(projection.sales - projection.expenses)}
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-muted mt-1">
+                Ventas menos gastos
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* KPIs de gastos */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Total presupuestado</p>
-          <p className="text-xl font-extrabold text-gray-900 dark:text-foreground mt-1">{fmt(totals.budgeted)}</p>
+          <p className="text-xl font-extrabold text-gray-900 dark:text-foreground mt-1">
+            {fmt(totals.budgeted)}
+          </p>
         </div>
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Total ejecutado</p>
-          <p className="text-xl font-extrabold text-gray-900 dark:text-foreground mt-1">{fmt(totals.actual)}</p>
+          <p className="text-xl font-extrabold text-gray-900 dark:text-foreground mt-1">
+            {fmt(totals.actual)}
+          </p>
         </div>
-        <div className={cn("bg-white dark:bg-card rounded-2xl border p-4 shadow-sm", totals.variance > 0 ? "border-red-200 dark:border-red-800" : "border-emerald-200 dark:border-emerald-800")}>
-          <p className="text-xs text-gray-500 dark:text-muted font-semibold">Desviación</p>
-          <p className={cn("text-xl font-extrabold mt-1", totals.variance > 0 ? "text-red-600" : "text-emerald-600")}>{totals.variance > 0 ? "+" : ""}{fmt(totals.variance)}</p>
-          <p className={cn("text-xs font-bold", totals.pct > 0 ? "text-red-500" : "text-emerald-600")}>{fmtPct(totals.pct)}</p>
+        <div className={cn(
+          "bg-white dark:bg-card rounded-2xl border p-4 shadow-sm",
+          totals.variance > 0 ? "border-red-200 dark:border-red-800" : "border-emerald-200 dark:border-emerald-800"
+        )}>
+          <p className="text-xs text-gray-500 dark:text-muted font-semibold">Desviación gastos</p>
+          <p className={cn("text-xl font-extrabold mt-1", totals.variance > 0 ? "text-red-600" : "text-emerald-600")}>
+            {totals.variance > 0 ? "+" : ""}{fmt(totals.variance)}
+          </p>
+          <p className={cn("text-xs font-bold", totals.pct > 0 ? "text-red-500" : "text-emerald-600")}>
+            {fmtPct(totals.pct)}
+          </p>
         </div>
         <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
           <p className="text-xs text-gray-500 dark:text-muted font-semibold">Alertas</p>
-          <div className="flex flex-wrap items-center gap-3 mt-1">
+          <div className="flex items-center gap-3 mt-1">
             <span className="text-red-600 font-extrabold text-lg">{overBudgetCount}</span>
             <span className="text-xs text-gray-400 dark:text-muted">sobre</span>
             <span className="text-emerald-600 font-extrabold text-lg">{underBudgetCount}</span>
@@ -94,100 +620,155 @@ export default function BudgetVsRealTab() {
         </div>
       </div>
 
+      {/* ── 3. Gráfico de barras por categoría principal ── */}
+      <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border p-4 shadow-sm">
+        <h3 className="text-sm font-bold text-gray-700 dark:text-foreground mb-4">
+          Ventas · Gastos · Ganancia · Por departamento
+        </h3>
+        {mainCategories.every((c) => c.actual === 0 && c.budgeted === 0) ? (
+          <p className="text-sm text-gray-400 dark:text-muted text-center py-6">
+            Sin datos para este mes. Registra ventas o gastos para ver el gráfico.
+          </p>
+        ) : (
+          <CategoryChart categories={mainCategories} />
+        )}
+      </div>
+
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <input
           type="text"
           placeholder="Buscar categoría..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary transition-colors w-48"
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-4 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#00B4A6] transition-colors w-48 min-h-[44px]"
         />
-        <select value={monthFilter} onChange={e => setMonthFilter(e.target.value)} className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary">
-          {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+        <select
+          value={effectiveMonthFilter}
+          onChange={(e) => setMonthFilter(e.target.value)}
+          className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#00B4A6] min-h-[44px]"
+        >
+          <option value="all">Todos los meses</option>
+          {MONTHS.filter((m) => m !== "all").map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))}
         </select>
-        <select value={deptFilter} onChange={e => setDeptFilter(e.target.value)} className="px-3 py-2.5 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-primary">
+        <select
+          value={deptFilter}
+          onChange={(e) => setDeptFilter(e.target.value)}
+          className="px-3 py-2 rounded-xl border-2 border-gray-200 dark:border-card-border bg-white dark:bg-surface text-gray-900 dark:text-foreground text-sm outline-none focus:border-[#00B4A6] min-h-[44px]"
+        >
           <option value="all">Todos los dptos</option>
-          {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
+          {DEPARTMENTS.map((d) => (
+            <option key={d} value={d}>{d}</option>
+          ))}
         </select>
         <div className="flex rounded-xl border border-gray-200 dark:border-card-border overflow-hidden">
-          {([["all", "Todos"], ["over", "Sobre"], ["under", "Bajo"], ["ok", "OK"]] as const).map(([val, lbl]) => (
-            <button key={val} onClick={() => setAlertFilter(val)} className={cn("px-3 py-2 text-sm font-semibold transition-colors", alertFilter === val ? "bg-primary text-white" : "text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface")}>{lbl}</button>
+          {(
+            [
+              ["all", "Todos"],
+              ["over", "Exceso"],
+              ["under", "Ahorro"],
+              ["ok", "OK"],
+            ] as const
+          ).map(([val, lbl]) => (
+            <button
+              key={val}
+              onClick={() => setAlertFilter(val)}
+              className={cn(
+                "px-3 py-2 text-sm font-semibold transition-colors min-h-[44px]",
+                alertFilter === val
+                  ? "bg-[#00B4A6] text-white"
+                  : "text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface"
+              )}
+            >
+              {lbl}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Table */}
+      {/* Tabla de detalle por categoría */}
       <div className="bg-white dark:bg-card rounded-2xl border border-gray-200 dark:border-card-border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
               <tr className="bg-gray-50 dark:bg-surface border-b border-gray-200 dark:border-card-border">
-                <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Categoría</th>
-                <th className="text-left px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Depto</th>
-                <th className="text-right px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Presupuesto</th>
-                <th className="text-right px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Real</th>
-                <th className="text-right px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Variación</th>
-                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Barra</th>
-                <th className="text-center px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted font-semibold">Estado</th>
+                <th className="text-left px-4 py-3 text-gray-500 dark:text-muted font-semibold">Categoría</th>
+                <th className="text-left px-4 py-3 text-gray-500 dark:text-muted font-semibold">Depto</th>
+                <th className="text-left px-4 py-3 text-gray-500 dark:text-muted font-semibold">Mes</th>
+                <th className="text-right px-4 py-3 text-gray-500 dark:text-muted font-semibold">Presupuesto</th>
+                <th className="text-right px-4 py-3 text-gray-500 dark:text-muted font-semibold">Real</th>
+                <th className="text-right px-4 py-3 text-gray-500 dark:text-muted font-semibold">Variación</th>
+                <th className="text-center px-4 py-3 text-gray-500 dark:text-muted font-semibold">Barra</th>
+                <th className="text-center px-4 py-3 text-gray-500 dark:text-muted font-semibold">Estado</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(b => {
+              {filtered.map((b) => {
                 const variance = b.budgeted > 0 ? ((b.actual - b.budgeted) / b.budgeted) * 100 : 0;
                 const pctUsed = b.budgeted > 0 ? Math.min((b.actual / b.budgeted) * 100, 150) : 0;
                 const status = Math.abs(variance) <= 10 ? "ok" : variance > 10 ? "over" : "under";
                 return (
-                  <tr key={b.id} onClick={() => setDetail(b)} className="border-b border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface cursor-pointer transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-gray-900 dark:text-foreground">{b.category}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-500 dark:text-muted">{b.department}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono text-gray-700 dark:text-foreground">{fmt(b.budgeted)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-mono font-bold text-gray-900 dark:text-foreground">{fmt(b.actual)}</td>
-                    <td className={cn("px-2 sm:px-4 py-2 sm:py-3 text-right font-bold", status === "over" ? "text-red-600" : status === "under" ? "text-emerald-600" : "text-gray-500 dark:text-muted")}>{fmtPct(variance)}</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3">
+                  <tr
+                    key={b.id}
+                    className="border-b border-gray-100 dark:border-card-border hover:bg-gray-50 dark:hover:bg-surface transition-colors"
+                  >
+                    <td className="px-4 py-3 font-semibold text-gray-900 dark:text-foreground">{b.category}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-muted">{b.department}</td>
+                    <td className="px-4 py-3 text-xs text-gray-400 dark:text-muted">{b.month}</td>
+                    <td className="px-4 py-3 text-right font-mono text-gray-700 dark:text-foreground">{fmt(b.budgeted)}</td>
+                    <td className="px-4 py-3 text-right font-mono font-bold text-gray-900 dark:text-foreground">{fmt(b.actual)}</td>
+                    <td className={cn(
+                      "px-4 py-3 text-right font-bold",
+                      status === "over" ? "text-red-600" : status === "under" ? "text-emerald-600" : "text-gray-500 dark:text-muted"
+                    )}>
+                      {fmtPct(variance)}
+                    </td>
+                    <td className="px-4 py-3">
                       <div className="w-full h-2.5 bg-gray-100 dark:bg-surface rounded-full overflow-hidden">
-                        <div className={cn("h-full rounded-full transition-all", status === "over" ? "bg-red-500" : status === "under" ? "bg-emerald-500" : "bg-blue-500")} style={{ width: `${Math.min(pctUsed, 100)}%` }} />
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all",
+                            status === "over" ? "bg-red-500" : status === "under" ? "bg-emerald-500" : "bg-blue-500"
+                          )}
+                          style={{ width: `${Math.min(pctUsed, 100)}%` }}
+                        />
                       </div>
                     </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      {status === "ok" && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold"><CheckCircle className="h-3 w-3" /> OK</span>}
-                      {status === "over" && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold"><AlertTriangle className="h-3 w-3" /> Exceso</span>}
-                      {status === "under" && <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold"><TrendingDown className="h-3 w-3" /> Ahorro</span>}
+                    <td className="px-4 py-3 text-center">
+                      {status === "ok" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold">
+                          <CheckCircle className="h-3 w-3" /> OK
+                        </span>
+                      )}
+                      {status === "over" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold">
+                          <AlertTriangle className="h-3 w-3" /> Exceso
+                        </span>
+                      )}
+                      {status === "under" && (
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold">
+                          <TrendingDown className="h-3 w-3" /> Ahorro
+                        </span>
+                      )}
                     </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-12 text-center text-gray-400 dark:text-muted">No se encontraron líneas presupuestarias</td></tr>
+                <tr>
+                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400 dark:text-muted">
+                    {expenses.length === 0
+                      ? "No hay gastos registrados aún. Registra gastos en el módulo de Egresos."
+                      : "No se encontraron líneas con los filtros seleccionados."}
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
-
-      {/* Detail modal */}
-      {detail && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-3 sm:px-6 py-4 border-b border-gray-100 dark:border-card-border">
-              <h3 className="font-extrabold text-gray-900 dark:text-foreground">{detail.category}</h3>
-              <button onClick={() => setDetail(null)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><X className="h-5 w-5" /></button>
-            </div>
-            <div className="px-3 sm:px-6 py-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                <div><p className="text-xs text-gray-500 dark:text-muted">Departamento</p><p className="font-bold text-gray-900 dark:text-foreground">{detail.department}</p></div>
-                <div><p className="text-xs text-gray-500 dark:text-muted">Mes</p><p className="font-bold text-gray-900 dark:text-foreground">{detail.month}</p></div>
-                <div><p className="text-xs text-gray-500 dark:text-muted">Presupuestado</p><p className="font-bold text-gray-900 dark:text-foreground">{fmt(detail.budgeted)}</p></div>
-                <div><p className="text-xs text-gray-500 dark:text-muted">Real</p><p className="font-bold text-gray-900 dark:text-foreground">{fmt(detail.actual)}</p></div>
-              </div>
-              <div className={cn("rounded-xl p-4 text-center", detail.actual > detail.budgeted ? "bg-red-50 dark:bg-red-950/20" : "bg-emerald-50 dark:bg-emerald-950/20")}>
-                <p className={cn("text-xl sm:text-2xl font-extrabold", detail.actual > detail.budgeted ? "text-red-600" : "text-emerald-600")}>{fmt(detail.actual - detail.budgeted)}</p>
-                <p className="text-xs text-gray-500 dark:text-muted mt-1">{detail.actual > detail.budgeted ? "Sobregasto" : "Ahorro"} ({fmtPct(((detail.actual - detail.budgeted) / detail.budgeted) * 100)})</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

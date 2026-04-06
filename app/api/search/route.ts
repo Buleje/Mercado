@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, CustomersDB, OrdersDB, SuppliersDB } from "@/lib/jsondb";
+import { applyRateLimit } from "@/lib/rate-limit";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const limited = applyRateLimit(req, "GENEROUS", "search");
+  if (limited) return limited;
+
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 
@@ -10,10 +16,10 @@ export async function GET(req: NextRequest) {
   if (q.length < 2) return NextResponse.json({ results: [] });
 
   const [products, customers, orders, suppliers] = await Promise.all([
-    ProductsDB.getAll().catch(() => []),
-    CustomersDB.getAll().catch(() => []),
-    OrdersDB.getAll().catch(() => []),
-    SuppliersDB.getAll().catch(() => []),
+    ProductsDB.getAll(auth.tenantId).catch(() => []),
+    CustomersDB.getAll(auth.tenantId).catch(() => []),
+    OrdersDB.getAll(auth.tenantId).catch(() => []),
+    SuppliersDB.getAll(auth.tenantId).catch(() => []),
   ]);
 
   type SearchResult = {
