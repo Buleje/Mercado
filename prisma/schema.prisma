@@ -2617,3 +2617,41 @@ model SupplierOffer {
   @@index([validUntil])
   @@index([tenantId])
 }
+
+// ─── AI Assistant — Conversation Memory ──────────────────
+// Multi-turn conversation history for AI assistant (support + coaching).
+// Allows the AI to remember context across multiple messages.
+model AIConversation {
+  id        String       @id @default(cuid())
+  tenantId  String       // Required — multi-tenant isolation
+  user      String       // Username of the user who started this conversation
+  channel   String       @default("assistant") // "assistant", "coach", "whatsapp"
+  title     String       @default("") // Auto-generated from first message or user-provided
+  updatedAt DateTime     @updatedAt
+  createdAt DateTime     @default(now())
+  messages  AIMessage[]
+
+  @@index([tenantId])
+  @@index([user])
+  @@index([channel])
+  @@index([updatedAt])
+}
+
+model AIMessage {
+  id             String   @id @default(cuid())
+  conversationId String
+  role           String   // "user" or "assistant"
+  content        String   @db.Text // Up to 10,000 chars for longer responses
+  feedback       String? // "up" or "down" — user rating of assistant response
+  feedbackNote   String? // User's comment on why they rated it
+  mode           String? // Execution mode (for debugging/analytics)
+  tokensUsed     Int? // For LLM cost tracking
+  latencyMs      Int? // Response latency in milliseconds
+  createdAt      DateTime @default(now())
+
+  conversation AIConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([role])
+  @@index([createdAt])
+}
