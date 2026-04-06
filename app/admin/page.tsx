@@ -19,10 +19,9 @@ import {
   DollarSign, Layers,
   ChevronDown, ChevronUp,
   SlidersHorizontal,
-  Zap, Tag, RefreshCw, CreditCard, Landmark,
-  ClipboardList, Power, RotateCcw,
+  Zap, Tag, RefreshCw, Landmark,
+  ClipboardList, Power,
   Palette, CircleUser, ArrowUpDown, Globe, Pencil, Plus,
-  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
@@ -31,6 +30,12 @@ import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import { ShortcutsModal, ClearDataModal } from "@/components/admin/AdminModals";
 import type { Tab } from "./_lib/tabs.types";
 import { TabSpinner } from "./_lib/tab-spinner";
+import {
+  DEMO_DATA_MODULES,
+  MODULE_INFO,
+  type TabCategory,
+  TAB_CATEGORIES,
+} from "./_lib/tab-categories";
 import { useAdminTabs } from "./_hooks/useAdminTabs";
 import { useAdminModals } from "./_hooks/useAdminModals";
 import { NavDefaultTabsConfig } from "@/components/admin/NavDefaultTabsConfig";
@@ -119,171 +124,9 @@ const MorningSummaryModal = dynamic(() => import("@/components/admin/MorningSumm
 const OnboardingWizard = dynamic(() => import("@/components/admin/OnboardingWizard"), { ssr: false });
 const ResumenGlobal = dynamic(() => import("@/components/admin/ResumenGlobal"), { ssr: false });
 
-// Modules that ship with auto-seeded demo data and their API cleanup endpoint
-const DEMO_DATA_MODULES: Partial<Record<Tab, { label: string; api?: string }>> = {
-  "inventario": { label: "24 productos de ejemplo cargados al inicio", api: "/api/admin/demo-products" },
-};
-
-// Rich metadata for every module: emoji, priority, description and a helpful tip
-const MODULE_INFO: Partial<Record<Tab, { emoji: string; priority: "core" | "high" | "medium" | "low"; desc: string; tip: string }>> = {
-  "asistente-ia":  { emoji: "🧠", priority: "core",   desc: "Dashboard IA, chat con asistente y centro de alertas del negocio.",     tip: "Empieza aquí cada mañana para tener el pulso del negocio." },
-  "ventas-caja":   { emoji: "🖥️", priority: "core",   desc: "Punto de venta, caja registradora, arqueo, pedidos y cuentas por cobrar.", tip: "Todo lo que necesitas para operar el mostrador en un solo lugar." },
-  "inventario":    { emoji: "📦", priority: "core",   desc: "Stock, Kardex, vencimientos, mermas y alertas de inventario.",           tip: "Control completo del inventario desde una sola vista." },
-  "productos":     { emoji: "🏪", priority: "high",   desc: "Catálogo, categorías, ofertas, cupones e historial de precios.",         tip: "Gestiona tu catálogo y optimiza precios." },
-  "compras":       { emoji: "📋", priority: "high",   desc: "Pedidos a proveedor, directorio de proveedores y recepción.",            tip: "Flujo completo de compras desde la cotización hasta la recepción." },
-  "plata":         { emoji: "💵", priority: "high",   desc: "Ingresos, egresos, gastos, ganancias, reportes y exportación.",          tip: "Visión financiera completa del negocio en un solo módulo." },
-  "clientes":      { emoji: "👥", priority: "high",   desc: "CRM, delivery, opiniones y programa de fidelización.",                   tip: "Conoce a tus clientes y personaliza la atención." },
-  "config":        { emoji: "⚙️", priority: "core",   desc: "Usuarios, permisos, plan y configuración de la página web.",             tip: "Configura esto primero para que todo funcione correctamente." },
-  "pedidos":       { emoji: "🛒", priority: "core",   desc: "Gestiona pedidos recibidos, su estado, asignación y entrega.",           tip: "Centraliza pedidos de WhatsApp, tienda online y mostrador." },
-  "plan":          { emoji: "⚡", priority: "medium", desc: "Tu plan actual, límites y opciones de mejora.",                          tip: "Revisa tu plan para aprovechar al máximo la plataforma." },
-  "fiados":        { emoji: "💰", priority: "high",   desc: "Control de créditos informales: registro, pagos y saldos pendientes.",  tip: "Lleva la cuenta de lo que te deben tus clientes de confianza." },
-  "turnos":        { emoji: "⏱️", priority: "high",   desc: "Apertura y cierre de turnos con conteo de efectivo.",                   tip: "Control de caja por turno para saber exactamente cuánto entró." },
-  "recetas":       { emoji: "🍳", priority: "medium", desc: "Recetas de producción con ingredientes y control de lotes.",            tip: "Calcula costos de producción y descuenta stock automáticamente." },
-  "prestamos":     { emoji: "🏦", priority: "medium", desc: "Préstamos a clientes con cuotas, interés y tabla de amortización.",     tip: "Gestiona préstamos con calculadora integrada y seguimiento de pagos." },
-};
-
-type TabCategory = {
-  id: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  tabs: Tab[];
-};
-
-// ── 7 módulos básicos + config ──────────────────────────────────────────────
-const BASIC_MODULES: TabCategory[] = [
-  {
-    id: "asistente-ia",
-    label: "IA & Analítica",
-    icon: Brain,
-    tabs: ["asistente-ia", "analytics-pro"],
-  },
-  {
-    id: "ventas-caja",
-    label: "Ventas & Caja",
-    icon: ShoppingCart,
-    tabs: ["ventas-caja", "pedidos"],
-  },
-  {
-    id: "inventario",
-    label: "Inventario",
-    icon: Package,
-    tabs: ["inventario"],
-  },
-  {
-    id: "productos",
-    label: "Productos & Precios",
-    icon: Tag,
-    tabs: ["productos"],
-  },
-  {
-    id: "compras-mod",
-    label: "Compras",
-    icon: Truck,
-    tabs: ["compras"],
-  },
-  {
-    id: "plata",
-    label: "Mi Plata",
-    icon: DollarSign,
-    tabs: ["plata"],
-  },
-  {
-    id: "clientes",
-    label: "Mis Clientes",
-    icon: Users,
-    tabs: ["clientes"],
-  },
-  {
-    id: "fiados",
-    label: "Fíados",
-    icon: CreditCard,
-    tabs: ["fiados"],
-  },
-  {
-    id: "turnos",
-    label: "Turnos",
-    icon: Clock,
-    tabs: ["turnos"],
-  },
-  {
-    id: "recetas",
-    label: "Recetas",
-    icon: FlaskConical,
-    tabs: ["recetas"],
-  },
-  {
-    id: "prestamos",
-    label: "Préstamos",
-    icon: Landmark,
-    tabs: ["prestamos"],
-  },
-  {
-    id: "auditoria",
-    label: "Auditoría",
-    icon: Shield,
-    tabs: ["auditoria"],
-  },
-  {
-    id: "devoluciones-proveedor",
-    label: "Devoluciones",
-    icon: RotateCcw,
-    tabs: ["devoluciones-proveedor"],
-  },
-  {
-    id: "tesoreria",
-    label: "Tesorería",
-    icon: Landmark,
-    tabs: ["tesoreria"],
-  },
-  {
-    id: "promociones",
-    label: "Promociones",
-    icon: Tag,
-    tabs: ["promociones"],
-  },
-  {
-    id: "scoring",
-    label: "Scoring Crédito",
-    icon: Shield,
-    tabs: ["scoring"],
-  },
-  {
-    id: "documentos",
-    label: "Documentos",
-    icon: FileText,
-    tabs: ["cotizaciones", "guias-remision", "notas-credito", "contratos"],
-  },
-  {
-    id: "marketplace-ops",
-    label: "Marketplace",
-    icon: Store,
-    tabs: ["marketplace", "delivery-partners"],
-  },
-];
-
-// ── Módulo Mi Tienda (personalización visual) ─────────────────────────────────
-const TIENDA_MODULE: TabCategory = {
-  id: "mi-tienda",
-  label: "Mi Tienda",
-  icon: Palette,
-  tabs: ["store-customizer"],
-};
-
-// ── Módulo Config (siempre visible) ──────────────────────────────────────────
-const CONFIG_MODULE: TabCategory = {
-  id: "config",
-  label: "Configuración",
-  icon: Settings,
-  tabs: ["config", "plan"],
-};
-
-// No PRO modules — all modules available to all plans
-
-// ── TAB_CATEGORIES: todos los módulos (Config y Plan accesibles desde dropdown de usuario) ──
-const TAB_CATEGORIES: TabCategory[] = [
-  ...BASIC_MODULES,
-  TIENDA_MODULE,
-];
+// DEMO_DATA_MODULES, MODULE_INFO, TabCategory, BASIC_MODULES, TIENDA_MODULE,
+// CONFIG_MODULE y TAB_CATEGORIES extraídos a ./_lib/tab-categories.ts
+// (Sesión 2 del refactor — ver docs/refactor-giant-files-plan.md)
 
 // ── OrdersTab extraído a components/admin/OrdersTab/ ────────────────────────
 const OrdersTab = dynamic(() => import("@/components/admin/OrdersTab"), { loading: TabSpinner });
@@ -750,7 +593,7 @@ function AdminPage() {
           <div className="mb-2 space-y-0.5">
             <div className="flex items-center justify-between px-4 mb-1">
               <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Accesos rápidos</p>
-              <button onClick={() => setEditingShortcuts(e => !e)} className="text-gray-400 hover:text-primary transition-colors" title="Editar accesos rápidos">
+              <button onClick={() => setEditingShortcuts(!editingShortcuts)} className="text-gray-400 hover:text-primary transition-colors" title="Editar accesos rápidos">
                 <Pencil className="h-3 w-3" />
               </button>
             </div>
@@ -781,7 +624,7 @@ function AdminPage() {
             {editingShortcuts && (
               <div className="relative">
                 <button
-                  onClick={() => setShowAddShortcut(v => !v)}
+                  onClick={() => setShowAddShortcut(!showAddShortcut)}
                   className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium text-primary/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
                 >
                   <Plus className="h-4 w-4" /> Agregar acceso
@@ -1026,7 +869,7 @@ function AdminPage() {
             <div className="mb-2 space-y-0.5">
               <div className="flex items-center justify-between px-4 mb-1">
                 <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Accesos rápidos</p>
-                <button onClick={() => setEditingShortcuts(e => !e)} className="text-gray-400 hover:text-primary transition-colors" title="Editar accesos rápidos">
+                <button onClick={() => setEditingShortcuts(!editingShortcuts)} className="text-gray-400 hover:text-primary transition-colors" title="Editar accesos rápidos">
                   {editingShortcuts ? <Check className="h-3 w-3 text-primary" /> : <Pencil className="h-3 w-3" />}
                 </button>
               </div>
@@ -1057,7 +900,7 @@ function AdminPage() {
               {editingShortcuts && (
                 <div className="relative">
                   <button
-                    onClick={() => setShowAddShortcut(v => !v)}
+                    onClick={() => setShowAddShortcut(!showAddShortcut)}
                     className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium text-primary/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
                   >
                     <Plus className="h-4 w-4" /> Agregar acceso
@@ -1174,7 +1017,7 @@ function AdminPage() {
         clearConfirmText={clearConfirmText}
         setClearConfirmText={setClearConfirmText}
         clearCategories={clearCategories}
-        setClearCategories={setClearCategories}
+        setClearCategories={(action) => setClearCategories(typeof action === "function" ? action(clearCategories) : action)}
         clearingData={clearingData}
         setClearingData={setClearingData}
         onClose={() => setShowClearConfirm(false)}
