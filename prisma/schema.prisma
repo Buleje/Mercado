@@ -2247,6 +2247,7 @@ model StoreProduct {
   volumePricingTiers  Json?   // [{ minQty: 10, discount: 5 }, ...]
   @@unique([storeId, productId])
   @@index([storeId])
+  @@index([productId])
 }
 
 model DeliveryPartner {
@@ -2311,6 +2312,8 @@ model WholesaleOrderItem {
   unitPrice        Float
   total            Float
   appliedDiscount  Float          @default(0) // porcentaje de descuento por volumen aplicado
+  @@index([wholesaleOrderId])
+  @@index([productId])
 }
 
 model StorePermission {
@@ -2324,6 +2327,7 @@ model StorePermission {
   createdAt   DateTime @default(now())
   @@unique([storeId, userId, userType])
   @@index([storeId])
+  @@index([userId])
 }
 
 model CommissionLedger {
@@ -2338,9 +2342,11 @@ model CommissionLedger {
   settledAt DateTime?
   tenantId  String
   createdAt DateTime  @default(now())
+  @@index([orderId])
   @@index([storeId])
   @@index([status])
   @@index([tenantId])
+  @@index([tenantId, status])
 }
 
 model SupplierPortal {
