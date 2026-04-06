@@ -16,9 +16,11 @@
 import { useMemo, useState } from "react";
 import {
   AlertCircle,
+  Bot,
   CheckCircle2,
   Circle,
   Clock,
+  CreditCard,
   ExternalLink,
   Filter,
   GitPullRequest,
@@ -26,14 +28,73 @@ import {
   Rocket,
   Shield,
   Sparkles,
+  TrendingUp,
   Wrench,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Priority = "critical" | "high" | "medium" | "low";
-type Category = "github" | "vercel" | "sentry" | "doppler" | "dev" | "manual";
+type Category = "github" | "vercel" | "sentry" | "doppler" | "stripe" | "dev" | "manual";
 type Status = "pending" | "done" | "blocked";
+
+// ─── Score de Buenas Prácticas (sesión 2026-04-06) ────────────────────────────
+//
+// Dos scoreboards independientes:
+//   1) Excel 2026 — 48 prácticas generales de código (Clean Code, SOLID, DDD, etc)
+//   2) Excel Agentes IA — 28 prácticas específicas para sistemas de agentes
+//
+// Fuente: docs/practicas-2026-audit.md (Excel 2026) + auditoría manual del
+// sistema de agentes en lib/agents/* + app/api/ai-assistant/* (Excel Agentes IA).
+
+interface ScoreSnapshot {
+  label: string;
+  total: number;
+  applied: number;       // ✅
+  partial: number;       // ⚠️
+  missing: number;       // ❌
+  na: number;            // ➖ (excluidas conscientemente)
+  link?: { url: string; label: string };
+}
+
+const SCORES: ScoreSnapshot[] = [
+  {
+    label: "Excel 2026 — Buenas prácticas de código (48)",
+    total: 48,
+    applied: 28,
+    partial: 13,
+    missing: 3,
+    na: 4,
+    link: {
+      url: "/superadmin/setup#practicas-2026",
+      label: "Ver detalle en docs/practicas-2026-audit.md",
+    },
+  },
+  {
+    label: "Excel Agentes IA — Prácticas para sistemas de agentes (28)",
+    total: 28,
+    applied: 10,
+    partial: 9,
+    missing: 9,
+    na: 0,
+    link: {
+      url: "/superadmin/setup#practicas-agentes-ia",
+      label: "Ver mapeo completo abajo",
+    },
+  },
+];
+
+function calcScore(s: ScoreSnapshot) {
+  const denom = s.total - s.na;
+  const solid = (s.applied + s.partial * 0.5) / denom;
+  const perfect = s.applied / denom;
+  return {
+    solidPct: Math.round(solid * 1000) / 10,
+    perfectPct: Math.round(perfect * 1000) / 10,
+    solidBar: "█".repeat(Math.round(solid * 20)) + "░".repeat(20 - Math.round(solid * 20)),
+    perfectBar: "█".repeat(Math.round(perfect * 20)) + "░".repeat(20 - Math.round(perfect * 20)),
+  };
+}
 
 interface SetupItem {
   id: string;
@@ -271,6 +332,98 @@ const SETUP_ITEMS: SetupItem[] = [
       "Si está READY, mergear PR #3 con confianza",
     ],
   },
+  // ── Pendientes de la sesión 2026-04-06 (sync env + audit Supabase) ────────
+  {
+    id: "stripe-keys-rotation",
+    title: "🔴 Rotar Stripe placeholders por keys reales (BLOQUEA PAGOS PROD)",
+    description:
+      "Vercel production tiene STRIPE_SECRET_KEY=sk_test_PLACEHOLDER_REEMPLAZAR_CON_REAL y STRIPE_WEBHOOK_SECRET=whsec_PLACEHOLDER_REEMPLAZAR_CON_REAL. Cualquier llamada a /api/billing crashea con 'Invalid API Key'. Hay un script que automatiza la rotación.",
+    priority: "critical",
+    category: "stripe",
+    estimatedMinutes: 5,
+    link: {
+      url: "https://dashboard.stripe.com/apikeys",
+      label: "Stripe Dashboard → API keys",
+    },
+    steps: [
+      "Abre el Stripe Dashboard y copia tu Secret key (sk_live_ o sk_test_)",
+      "Abre https://dashboard.stripe.com/webhooks → click endpoint → Reveal y copia el whsec_",
+      "Desde bodega-san-martin/ corre: bash scripts/rotate-stripe-keys.sh",
+      "Pega la secret key cuando te la pida (no se muestra en pantalla, read -rs)",
+      "Pega el webhook secret cuando te lo pida",
+      "El script actualiza Vercel (prod+preview+dev) + .env.local en una sola pasada",
+      "Trigger un deploy a producción para que las nuevas keys tomen efecto",
+    ],
+  },
+  {
+    id: "sentry-alert-rules-manual",
+    title: "Crear las 4 reglas de alerta en el dashboard de Sentry",
+    description:
+      "El script con SENTRY_AUTH_TOKEN crea las reglas automáticamente, pero si no quieres generar el token, las puedes crear a mano en 10 minutos. Doc completa con razones por regla en docs/sentry-alert-setup.md.",
+    priority: "high",
+    category: "sentry",
+    estimatedMinutes: 10,
+    link: {
+      url: "https://sentry.io/organizations/sentry/alerts/rules/",
+      label: "Sentry → Alerts",
+    },
+    steps: [
+      "Regla 1 (Error Rate Alto): Issue Alert → 'Number of events is more than 10 in 1 hour' → filtro is:unresolved → email + Slack #alertas-bsm",
+      "Regla 2 (Latencia P95 > 500ms): Metric Alert → transaction.duration P95 → warning 500ms / critical 1000ms → ventana 5 min",
+      "Regla 3 (Excepción No Manejada): Issue Alert → 'A new issue is created' → filtro handled:no → notif inmediata",
+      "Regla 4 (Tasa Fallos > 5%): Metric Alert → transaction.failure_rate → warning 5% / critical 10% → ventana 10 min",
+      "Prefijo de nombres: 'BSM —' (ej: BSM — Error Rate Alto)",
+      "Si no tienes Slack integration, cae a email-only por ahora",
+    ],
+  },
+  {
+    id: "next-session-sprint-c",
+    title: "📋 Próxima sesión: Sprint C — cerrar 469 TS errors",
+    description:
+      "Es el gate de calidad fundacional. Antes que A (admin refactor) y B (Float→Decimal). Plan exacto en docs/ts-errors-baseline-2026-04-06.md con 4 oleadas. 152 errores son TS7006 (implicit any) — mecánicos. Top 7 archivos = 167 errores (Dashboard family).",
+    priority: "high",
+    category: "dev",
+    estimatedMinutes: 0,
+    blockedReason: "Requiere sesión Agent Team dedicada (3-5 sesiones para llegar a 0)",
+    steps: [
+      "Comando exacto: /agent-team Sprint C: Wave 1 — cerrar 167 TS errors del Dashboard family según docs/ts-errors-baseline-2026-04-06.md",
+      "Re-medir baseline al final de cada wave: npx tsc --noEmit | grep -c \"error TS\"",
+      "Después del 0: flipear ignoreBuildErrors=false en next.config.ts",
+      "Crear ADR 008: docs/adr/008-typescript-strict-gate.md",
+      "Commit: feat(types): enable strict TypeScript gate (closes TD-012)",
+    ],
+  },
+  {
+    id: "next-session-sprint-a",
+    title: "📋 Sesión futura: Sprint A — refactor app/admin/page.tsx 4-7",
+    description:
+      "Después del Sprint C. Baseline actual: 1256 líneas (tras Sesiones 1-2 ya hechas). Target: <300 líneas. Plan exacto en docs/refactor-giant-files-plan.md (Pasos 4-7).",
+    priority: "medium",
+    category: "dev",
+    estimatedMinutes: 0,
+    blockedReason: "Bloqueado hasta cerrar Sprint C (sin gate de tipos los refactors meten regresiones invisibles)",
+    steps: [
+      "Pre-requisito: Sprint C debe estar en 0 TS errors",
+      "Comando: /agent-team Sprint A: refactor admin/page.tsx Pasos 4-7 según docs/refactor-giant-files-plan.md, baseline 1256, target <300",
+      "Estimado: 4-6 sesiones de Agent Team con frontend-engineer",
+    ],
+  },
+  {
+    id: "next-session-sprint-b",
+    title: "📋 Sesión futura: Sprint B — TD-018 Float→Decimal Strategy B",
+    description:
+      "Después de Sprints C y A. Plan del migration-planner: 47 campos MONEY, 22 DB classes, patrón toNum() ya existe en 4 clases (fiados, prestamos, recetas, turnos) — solo extender. Tablas vacías → data risk = 0. Riesgo regresión: ~5%.",
+    priority: "medium",
+    category: "dev",
+    estimatedMinutes: 0,
+    blockedReason: "Bloqueado hasta Sprints C + A (mismo set de archivos del dashboard se tocaría)",
+    steps: [
+      "Pre-requisito: Sprints C y A completos",
+      "Comando: /agent-team Sprint B: ejecutar TD-018 Float→Decimal Strategy B, 47 campos en 22 DB classes",
+      "Estimado: 3 días según migration-planner",
+      "Resuelve bug latente de SUNAT/IGV con redondeo Float",
+    ],
+  },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -287,6 +440,7 @@ const CATEGORY_ICON: Record<Category, React.ReactNode> = {
   vercel:  <Rocket className="w-4 h-4" />,
   sentry:  <Shield className="w-4 h-4" />,
   doppler: <KeyRound className="w-4 h-4" />,
+  stripe:  <CreditCard className="w-4 h-4" />,
   dev:     <Wrench className="w-4 h-4" />,
   manual:  <AlertCircle className="w-4 h-4" />,
 };
@@ -457,6 +611,116 @@ export default function SuperAdminSetupPage() {
           </div>
         </div>
       )}
+
+      {/* Score de Buenas Prácticas — Excel 2026 + Excel Agentes IA */}
+      <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+          <h2 className="text-sm font-bold text-gray-900 dark:text-white">
+            Score de Buenas Prácticas
+          </h2>
+          <span className="text-[10px] text-gray-400 uppercase tracking-wide ml-auto">
+            Actualizado 2026-04-06
+          </span>
+        </div>
+
+        <div className="space-y-4">
+          {SCORES.map((score) => {
+            const c = calcScore(score);
+            const isAgentIA = score.label.includes("Agentes IA");
+            return (
+              <div
+                key={score.label}
+                id={isAgentIA ? "practicas-agentes-ia" : "practicas-2026"}
+                className="border border-gray-100 dark:border-gray-900 rounded-xl p-4"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  {isAgentIA ? (
+                    <Bot className="w-4 h-4 text-purple-500" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4 text-teal-500" />
+                  )}
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                    {score.label}
+                  </span>
+                </div>
+
+                {/* Buckets */}
+                <div className="grid grid-cols-4 gap-2 mb-3">
+                  <div className="text-center">
+                    <div className="text-lg font-extrabold text-emerald-500">{score.applied}</div>
+                    <div className="text-[9px] text-gray-400 uppercase tracking-wide">✅ Aplicadas</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-extrabold text-amber-500">{score.partial}</div>
+                    <div className="text-[9px] text-gray-400 uppercase tracking-wide">⚠️ Parciales</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-extrabold text-red-500">{score.missing}</div>
+                    <div className="text-[9px] text-gray-400 uppercase tracking-wide">❌ Faltan</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-extrabold text-gray-400">{score.na}</div>
+                    <div className="text-[9px] text-gray-400 uppercase tracking-wide">➖ N/A</div>
+                  </div>
+                </div>
+
+                {/* Score sólido */}
+                <div className="mb-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      Score sólido (✅ + ⚠️×0.5)
+                    </span>
+                    <span className="text-xs font-bold text-teal-600 dark:text-teal-400">
+                      {c.solidPct}%
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-teal-500 to-emerald-500"
+                      style={{ width: `${c.solidPct}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Score perfecto */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      Score perfecto (solo ✅)
+                    </span>
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                      {c.perfectPct}%
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 to-indigo-500"
+                      style={{ width: `${c.perfectPct}%` }}
+                    />
+                  </div>
+                </div>
+
+                {score.link && (
+                  <a
+                    href={score.link.url}
+                    className="inline-flex items-center gap-1 text-[10px] text-teal-600 dark:text-teal-400 hover:underline mt-3"
+                  >
+                    {score.link.label}
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="text-[10px] text-gray-400 dark:text-gray-600 mt-3 leading-relaxed">
+          <strong>Techo realista del Excel 2026:</strong> 87.5% sólido / 77% perfecto (las 3 ❌ y 4 ➖ son decisiones conscientes de NO aplicar — Scrum, Service Mesh, Sharding, Monorepo, Factory DI, Hexagonal completa, Terraform).
+          <br />
+          <strong>Path al máximo Excel Agentes IA:</strong> faltan RAG vectorial, structured output JSON, modelo mixto (router LLM), temperaturas diferenciadas por agente, LangSmith/Helicone, LlamaGuard.
+        </p>
+      </div>
 
       {/* Filter */}
       <div className="flex items-center gap-2">
