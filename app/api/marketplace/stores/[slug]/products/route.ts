@@ -47,8 +47,11 @@ export async function GET(
 
       const sortDir = sort === "price_desc" ? "desc" as const : "asc" as const;
 
-      // Merge category + search into one Product filter object — spreading two
-      // separate `{ Product: ... }` keys causes the second to silently overwrite the first.
+      // Merge category + search into one product filter object — spreading two
+      // separate `{ product: ... }` keys causes the second to silently overwrite the first.
+      // NOTA: la relación se llama `product` (camelCase) en prisma/schema.prisma
+      // (StoreProduct.product). Antes este endpoint usaba `Product` con mayúscula
+      // y devolvía 500 en runtime — bug oculto por ignoreBuildErrors: true.
       const productFilter = {
         ...(category && { category }),
         ...(search   && { name: { contains: search, mode: "insensitive" as const } }),
@@ -58,13 +61,13 @@ export async function GET(
         where: {
           storeId:  store.id,
           isActive: true,
-          ...(Object.keys(productFilter).length > 0 && { Product: productFilter }),
+          ...(Object.keys(productFilter).length > 0 && { product: productFilter }),
         },
         select: {
           id:          true,
           retailPrice: true,
           minOrderQty: true,
-          Product: {
+          product: {
             select: {
               id:       true,
               name:     true,
@@ -86,15 +89,15 @@ export async function GET(
       const nextCursor = hasMore ? items[items.length - 1].id : null;
 
       const products = items.map((sp) => ({
-        id:             sp.Product.id,
+        id:             sp.product.id,
         storeProductId: sp.id,
-        name:           sp.Product.name,
+        name:           sp.product.name,
         price:          sp.retailPrice,
         minOrderQty:    sp.minOrderQty,
-        image:          sp.Product.image,
-        category:       sp.Product.category,
-        unit:           sp.Product.unit,
-        stock:          sp.Product.stock ?? 0,
+        image:          sp.product.image,
+        category:       sp.product.category,
+        unit:           sp.product.unit,
+        stock:          sp.product.stock ?? 0,
       }));
 
       return { products, nextCursor };

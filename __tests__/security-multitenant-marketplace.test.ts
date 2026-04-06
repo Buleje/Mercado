@@ -133,6 +133,11 @@ const TIENDA_RIVAL = {
 };
 
 // Productos de tienda pública
+// NOTA: la relación se llama `product` (camelCase) en el schema —
+// `model StoreProduct { product Product @relation(...) }` — y así la
+// retorna Prisma 7 en el `select`. Antes este test usaba `Product` con
+// mayúscula porque el endpoint también estaba mal (devolvía 500 en runtime
+// pero el bug estaba oculto por ignoreBuildErrors: true en next.config.ts).
 const PRODUCT_PUBLICA = {
   id:             "sp-pub-1",
   storeId:        "store-tenant-a",   // pertenece a TIENDA_PUBLICA
