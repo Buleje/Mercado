@@ -8,7 +8,7 @@
 
 | ID | Área | Descripción | Impacto | Estado |
 |----|------|-------------|---------|--------|
-| TD-001 | CheckoutModal | Refactor a `components/checkout/` está hecho (1333 → 16 líneas re-export). Falta migrar `components/CheckoutModal.tsx` antiguo a usar el nuevo o eliminarlo si ya no se referencia. | Riesgo de regresión en cada cambio | 🟡 En progreso |
+| ~~TD-001~~ | ~~CheckoutModal~~ | **RESUELTO 2026-04-06.** Verificado: `components/CheckoutModal.tsx` (16 líneas) es re-export intencional para preservar el path `@/components/CheckoutModal` usado por `StoreClientShell.tsx:6` vía `dynamic()`. Implementación real en `components/checkout/CheckoutModal.tsx` (238 líneas). **No hay duplicación de lógica** — la arquitectura es correcta. | — | ✅ Cerrado |
 | TD-002 | Prisma migration | Modelos AIConversation/AIMessage agregados al schema. Migration SQL preparada en `prisma/migrations/20260406210602_add_ai_conversation_and_message/`. **Pendiente:** Brandon corre `DATABASE_URL="$DIRECT_URL" npx prisma migrate deploy` antes del próximo push | Memoria IA no persiste datos hasta correr migración | 🟡 En progreso (SQL listo) |
 | TD-003 | A/B testing + Quality eval | Métricas en memoria — se pierden al reiniciar servidor | Pérdida de datos de experimentos | 🔓 Abierto |
 | TD-011 | admin/page.tsx | Archivo de 1413 líneas — refactor en progreso (Sesiones 1-2 hechas, faltan 4-7) | Alto acoplamiento, difícil de mantener | 🟡 En progreso |

@@ -15,10 +15,17 @@ function createPrismaClient(): PrismaClient {
     ? connectionString + (connectionString.includes("?") ? "&" : "?") + "pgbouncer=true"
     : connectionString;
 
+  // Pool sizing for Vercel Fluid Compute:
+  //   - Fluid Compute reuses warm function instances for concurrent requests
+  //     (no longer 1-request-per-instance like classic serverless).
+  //   - With max=3, all concurrent requests on a warm instance serialized on 3 conns.
+  //   - max=5 gives ~67% more concurrency without blowing Supabase Hobby's 60-conn cap
+  //     (estimated worst case: ~10 warm instances × 5 = 50 conns).
+  //   - URL param `connection_limit=1` is IGNORED by PrismaPg adapter — only this max applies.
   const adapter = new PrismaPg({
     connectionString: resolvedUrl,
     ssl: isLocal ? false : { rejectUnauthorized: false },
-    max: 3,
+    max: 5,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 15_000,
     keepAlive: true,
