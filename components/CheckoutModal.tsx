@@ -7,7 +7,7 @@ import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   X, ShoppingCart, User, MapPin, Home, Navigation,
   Loader2, CheckCircle2, ChevronRight, Phone,
-  Award, Tag, Hash, Clock, Banknote,
+  Award, Hash,
 } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useCustomer } from "@/contexts/customer-context";
@@ -17,7 +17,12 @@ import { cn } from "@/lib/utils";
 import { trackPurchase } from "@/lib/analytics";
 import type { DbOrderItem } from "@/lib/jsondb";
 import type { SavedLocation, Customer } from "@/contexts/customer-context";
-import { StepBar, YapePaymentPanel, CashChangeCalculator, type Step } from "@/components/checkout";
+import {
+  StepBar,
+  CheckoutAccountStep, CheckoutSuccessStep, CheckoutDeliverySchedule,
+  CheckoutOrderReview, CheckoutPaymentSection, CheckoutNotesField,
+  type Step,
+} from "@/components/checkout";
 
 const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 // const Confetti = dynamic(() => import("./Confetti"), { ssr: false });
@@ -25,10 +30,10 @@ const LeafletMap = dynamic(() => import("./LeafletMap"), { ssr: false });
 type PaymentMethod = "yape" | "efectivo";
 type DniLookupStatus = "idle" | "loading" | "success" | "error";
 
-function coordsFromLocation(loc: string) {
+function coordsFromLocation(loc: string, fallbackLat?: number | null, fallbackLon?: number | null) {
   const match = loc.match(/GPS:\s*([-\d.]+),\s*([-\d.]+)/);
   if (match) return { lat: parseFloat(match[1]), lon: parseFloat(match[2]) };
-  return { lat: -8.3791, lon: -74.5539 };
+  return { lat: fallbackLat ?? -8.3791, lon: fallbackLon ?? -74.5539 };
 }
 
 /* R3: Haversine distance for zone validation (~km) */
@@ -67,7 +72,9 @@ function getDeliveryETA(slotId: string): string {
 export default function CheckoutModal() {
   const { items, total, checkoutOpen, closeCheckout, clear, close: closeCart, markOrderPending } = useCart();
   const { customer, register, findByPhone, openOrderStatusModal } = useCustomer();
-  const { yape, cashEnabled, businessName, storeTheme } = useSettings();
+  const { yape, cashEnabled, businessName, businessLat, businessLon, businessAddress, storeTheme } = useSettings();
+  const storeLat = businessLat ?? -8.3791;
+  const storeLon = businessLon ?? -74.5539;
   const { getBestPromotion } = usePromotions();
 
   const [step, setStep] = useState<Step>("datos");
@@ -292,12 +299,12 @@ export default function CheckoutModal() {
         const activeLoc = locations.find((l) => l.id === activeId) ?? locations[0];
         setLocation(activeLoc.location);
         setReference(activeLoc.reference);
-        if (activeLoc.location) setMapCoords(coordsFromLocation(activeLoc.location));
+        if (activeLoc.location) setMapCoords(coordsFromLocation(activeLoc.location, businessLat, businessLon));
       } else {
         setSelectedLocId(null);
         setLocation(customer?.location ?? "");
         setReference(customer?.reference ?? "");
-        if (customer?.location) setMapCoords(coordsFromLocation(customer.location));
+        if (customer?.location) setMapCoords(coordsFromLocation(customer.location, businessLat, businessLon));
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -308,7 +315,7 @@ export default function CheckoutModal() {
     setUseNewAddress(false);
     setLocation(loc.location);
     setReference(loc.reference);
-    setMapCoords(coordsFromLocation(loc.location));
+    setMapCoords(coordsFromLocation(loc.location, businessLat, businessLon));
   };
 
   const handleNewAddress = () => {
@@ -489,11 +496,11 @@ export default function CheckoutModal() {
         const activeLoc = foundLocs.find((l) => l.id === activeId) ?? foundLocs[0];
         setLocation(activeLoc.location ?? "");
         setReference(activeLoc.reference ?? "");
-        setMapCoords(coordsFromLocation(activeLoc.location ?? ""));
+        setMapCoords(coordsFromLocation(activeLoc.location ?? "", businessLat, businessLon));
       } else {
         setLocation(found.location ?? "");
         setReference(found.reference ?? "");
-        if (found.location) setMapCoords(coordsFromLocation(found.location));
+        if (found.location) setMapCoords(coordsFromLocation(found.location, businessLat, businessLon));
       }
       setStep("datos");
     } else {
@@ -673,8 +680,8 @@ export default function CheckoutModal() {
       return;
     }
     /* R3: Zone validation */
-    const coords = coordsFromLocation(effectiveLoc);
-    const dist = haversineKm(STORE_LAT, STORE_LON, coords.lat, coords.lon);
+    const coords = coordsFromLocation(effectiveLoc, businessLat, businessLon);
+    const dist = haversineKm(storeLat, storeLon, coords.lat, coords.lon);
     if (effectiveLoc.includes("GPS:")) setDeliveryDistance(dist);
     if (effectiveLoc.includes("GPS:") && dist > MAX_DELIVERY_KM) {
       setDataError(`Tu ubicación está a ${dist.toFixed(1)} km. Solo entregamos hasta ${MAX_DELIVERY_KM} km.`);
@@ -888,86 +895,15 @@ export default function CheckoutModal() {
 
                   {/* ── Step: Cuenta ──────────────────────── */}
                   {step === "cuenta" && (
-                    <m.div key="cuenta" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>
-                      <div className="px-6 py-5 space-y-4">
-                        <div className="flex items-center gap-4 mb-1">
-                          <div className="h-11 w-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                            <User className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <h3 className="text-base font-extrabold text-gray-900 dark:text-foreground">¿Ya tienes cuenta?</h3>
-                            <p className="text-sm text-gray-400">Ingresa tu celular para cargar tus datos guardados.</p>
-                          </div>
-                        </div>
-
-                        {/* ── 2 columnas: buscar número | cliente nuevo ── */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                          {/* Col 1: Buscar número */}
-                          <div className="rounded-2xl border-2 border-gray-200 dark:border-zinc-700 p-5 flex flex-col gap-3">
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Buscar cuenta</p>
-                            <div className="relative">
-                              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                              <input
-                                type="tel"
-                                value={phoneQuery}
-                                onChange={(e) => { setPhoneQuery(e.target.value.replace(/[^\d]/g, "")); setPhoneNotFound(false); }}
-                                placeholder="987654321"
-                                maxLength={9}
-                                onKeyDown={(e) => e.key === "Enter" && handlePhoneSearch()}
-                                className={cn("w-full pl-9 pr-3 py-2.5 rounded-xl border text-gray-900 dark:text-foreground placeholder:text-gray-300 focus:ring-2 outline-none transition-all text-sm",
-                                  phoneQuery.length === 0 ? "border-gray-200 dark:border-zinc-700 focus:border-primary focus:ring-primary/20"
-                                  : phoneQueryValidation.valid ? "border-emerald-400 focus:border-emerald-500 focus:ring-emerald-200"
-                                  : "border-gray-200 dark:border-zinc-700 focus:border-primary focus:ring-primary/20"
-                                )}
-                              />
-                            </div>
-                            {phoneQuery.length > 0 && phoneQueryValidation.hint && (
-                              <p className={`text-xs font-semibold ${phoneQueryValidation.color}`}>{phoneQueryValidation.hint}</p>
-                            )}
-                            {phoneNotFound && (
-                              <p className="text-xs text-red-500 font-semibold">Número no encontrado</p>
-                            )}
-                            <m.button
-                              type="button"
-                              onClick={handlePhoneSearch}
-                              disabled={!phoneQueryValidation.valid || phoneSearching}
-                              whileHover={{ scale: 1.03, y: -1 }}
-                              whileTap={{ scale: 0.96 }}
-                              className="mt-auto w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-white font-bold text-sm hover:bg-primary-dark transition-all shadow-md shadow-primary/20 disabled:opacity-50"
-                            >
-                              {phoneSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Phone className="h-4 w-4" />}
-                              {phoneSearching ? "Buscando…" : "Buscar"}
-                            </m.button>
-                          </div>
-
-                          {/* Col 2: Cliente nuevo */}
-                          <m.div
-                            className="rounded-2xl border-2 border-dashed border-primary/30 bg-primary/5 p-5 flex flex-col gap-4 items-center justify-center"
-                            whileHover={{ scale: 1.02, borderColor: "rgba(0,180,166,0.5)" }}
-                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                          >
-                            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-                              <User className="h-6 w-6 text-primary" />
-                            </div>
-                            <div className="text-center">
-                              <p className="text-sm font-extrabold text-primary">Soy nuevo</p>
-                              <p className="text-xs text-gray-400 mt-1">Registro rápido sin cuenta</p>
-                            </div>
-                            <m.button
-                              type="button"
-                              onClick={handleSkipAccount}
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-primary/40 text-sm font-bold text-primary hover:bg-primary/10 hover:border-primary/60 transition-all"
-                            >
-                              Continuar <ChevronRight className="h-4 w-4" />
-                            </m.button>
-                          </m.div>
-
-                        </div>
-                      </div>
-                    </m.div>
+                    <CheckoutAccountStep
+                      phoneQuery={phoneQuery}
+                      onPhoneQueryChange={(v) => { setPhoneQuery(v); setPhoneNotFound(false); }}
+                      phoneQueryValidation={phoneQueryValidation}
+                      phoneSearching={phoneSearching}
+                      phoneNotFound={phoneNotFound}
+                      onPhoneSearch={handlePhoneSearch}
+                      onSkipAccount={handleSkipAccount}
+                    />
                   )}
 
                   {/* ── Step: Datos ───────────────────────── */}
@@ -1182,7 +1118,7 @@ export default function CheckoutModal() {
                                             </div>
                                           </div>
                                           <div>
-                                            <input required value={streetName} onChange={(e) => { setStreetName(e.target.value); setLocation(`${streetType} ${e.target.value}${streetNumber ? ' ' + streetNumber : ''}`); setMapCoords(coordsFromLocation(`${streetType} ${e.target.value}${streetNumber ? ' ' + streetNumber : ''}`)); }}
+                                            <input required value={streetName} onChange={(e) => { setStreetName(e.target.value); setLocation(`${streetType} ${e.target.value}${streetNumber ? ' ' + streetNumber : ''}`); setMapCoords(coordsFromLocation(`${streetType} ${e.target.value}${streetNumber ? ' ' + streetNumber : ''}`, businessLat, businessLon)); }}
                                               placeholder="Nombre de la vía (ej: Ucayali, San Martín)"
                                               className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
                                           </div>
@@ -1196,7 +1132,7 @@ export default function CheckoutModal() {
                                       ) : (
                                         <div className="relative">
                                           <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                          <input required value={location} onChange={(e) => { setLocation(e.target.value); setMapCoords(coordsFromLocation(e.target.value)); }}
+                                          <input required value={location} onChange={(e) => { setLocation(e.target.value); setMapCoords(coordsFromLocation(e.target.value, businessLat, businessLon)); }}
                                             placeholder="Ej: Jr. Ucayali 450"
                                             className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 dark:text-foreground dark:bg-transparent placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
                                         </div>
@@ -1271,29 +1207,8 @@ export default function CheckoutModal() {
                                       )}
                                     </div>
                                     
-                                    {/* Mejora 12: Mensaje personalizado mejorado */}
-                                    <div>
-                                      <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Mensaje especial (opcional)</label>
-                                      <textarea value={notes} onChange={(e) => { if (e.target.value.length <= 200) setNotes(e.target.value); }} rows={3}
-                                        placeholder="Ej: Feliz cumpleaños María, Dejar en portería, etc."
-                                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm resize-none" />
-                                      <div className="flex items-center justify-between mt-1.5">
-                                        <div className="flex gap-1.5">
-                                          {[
-                                            { emoji: "🎂", text: "Feliz cumpleaños! " },
-                                            { emoji: "🎁", text: "Es un regalo, envolver por favor. " },
-                                            { emoji: "📦", text: "Dejar en portería. " },
-                                          ].map(q => (
-                                            <button key={q.emoji} type="button"
-                                              onClick={() => { const next = (notes + q.text).slice(0, 200); setNotes(next); }}
-                                              className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-surface text-xs font-medium hover:bg-[#f97316]/20 transition-colors">
-                                              {q.emoji} {q.text.trim().split(" ")[0]}
-                                            </button>
-                                          ))}
-                                        </div>
-                                        <span className={`text-[10px] font-semibold ${notes.length > 180 ? "text-amber-500" : "text-gray-300"}`}>{notes.length}/200</span>
-                                      </div>
-                                    </div>
+                                    {/* Mensaje personalizado */}
+                                    <CheckoutNotesField notes={notes} onNotesChange={setNotes} rows={3} />
                                   </div>
                                 </div>
                               </>
@@ -1301,117 +1216,22 @@ export default function CheckoutModal() {
                           </>
                         )}
 
-                        {/* Mejora 12: Notas mejoradas si hay dirección guardada */}
+                        {/* Notas mejoradas si hay dirección guardada */}
                         {((foundCustomer !== null || (customer !== null && !skippedAccount)) && !editingCustomerData) && (
-                          <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Mensaje especial (opcional)</label>
-                            <textarea value={notes} onChange={(e) => { if (e.target.value.length <= 200) setNotes(e.target.value); }} rows={2}
-                              placeholder="Ej: Feliz cumpleaños María, Dejar en portería, etc."
-                              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-gray-900 placeholder:text-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm resize-none" />
-                            <div className="flex items-center justify-between mt-1.5">
-                              <div className="flex gap-1.5">
-                                {[
-                                  { emoji: "🎂", text: "Feliz cumpleaños! " },
-                                  { emoji: "🎁", text: "Es un regalo. " },
-                                  { emoji: "📦", text: "Dejar en portería. " },
-                                ].map(q => (
-                                  <button key={q.emoji} type="button"
-                                    onClick={() => { const next = (notes + q.text).slice(0, 200); setNotes(next); }}
-                                    className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-surface text-xs font-medium hover:bg-[#f97316]/20 transition-colors">
-                                    {q.emoji} {q.text.trim().split(" ")[0]}
-                                  </button>
-                                ))}
-                              </div>
-                              <span className={`text-[10px] font-semibold ${notes.length > 180 ? "text-amber-500" : "text-gray-300"}`}>{notes.length}/200</span>
-                            </div>
-                          </div>
+                          <CheckoutNotesField notes={notes} onNotesChange={setNotes} rows={2} />
                         )}
 
                         {/* ── Horario de entrega ────────────── */}
-                        <div>
-                          <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">
-                            <Clock className="inline h-3.5 w-3.5 mr-1 -mt-0.5" />
-                            Horario de entrega
-                          </label>
-                          
-                          {useCustomDateTime ? (
-                            <div className="space-y-3">
-                              <div className="grid md:grid-cols-2 gap-3">
-                                <div>
-                                  <label className="block text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Fecha de entrega</label>
-                                  <input type="date" value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)}
-                                    min={new Date().toISOString().split('T')[0]}
-                                    className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] font-bold text-gray-400 mb-1.5 uppercase tracking-wider">Hora preferida</label>
-                                  <input type="time" value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)}
-                                    min="08:00" max="20:00"
-                                    className="w-full px-3 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-foreground dark:bg-transparent focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm" />
-                                </div>
-                              </div>
-                              {deliveryDate && deliveryTime && (
-                                <div className="px-3 py-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30">
-                                  <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                                    <CheckCircle2 className="h-3.5 w-3.5" />
-                                    Entrega programada: {new Date(deliveryDate + 'T' + deliveryTime).toLocaleString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-                                  </p>
-                                </div>
-                              )}
-                              <p className="text-[10px] text-gray-400 leading-relaxed">
-                                💡 Horario de atención: Lunes a Domingo de 8:00 AM a 8:00 PM
-                              </p>
-                              <button type="button" onClick={() => { setUseCustomDateTime(false); setDeliverySlot('lo-antes-posible'); }}
-                                className="w-full text-xs font-semibold text-primary hover:underline py-2">
-                                ← Volver a &ldquo;Lo antes posible&rdquo;
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              {/* Mejora 11: Delivery time slot selector */}
-                              <p className="text-[10px] text-gray-400 dark:text-gray-500 mb-2">¿Cuándo quieres recibir tu pedido?</p>
-                              <div className="flex flex-wrap gap-2">
-                                {(() => {
-                                  const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
-                                  const h = now.getHours();
-                                  const todaySlots = [
-                                    { id: "lo-antes-posible", label: "Lo antes posible", emoji: "⚡", disabled: false },
-                                    { id: "hoy-14-16", label: "Hoy 2-4pm", emoji: "🕑", disabled: h >= 15 },
-                                    { id: "hoy-16-18", label: "Hoy 4-6pm", emoji: "🕓", disabled: h >= 17 },
-                                    { id: "hoy-18-20", label: "Hoy 6-8pm", emoji: "🕕", disabled: h >= 19 },
-                                  ];
-                                  const tomorrowSlots = [
-                                    { id: "manana-8-10", label: "Mañana 8-10am", emoji: "🌅", disabled: false },
-                                    { id: "manana-10-12", label: "Mañana 10-12pm", emoji: "☀️", disabled: false },
-                                    { id: "manana-14-16", label: "Mañana 2-4pm", emoji: "🕑", disabled: false },
-                                  ];
-                                  return [...todaySlots, ...tomorrowSlots].map(slot => (
-                                    <button
-                                      key={slot.id}
-                                      type="button"
-                                      disabled={slot.disabled}
-                                      onClick={() => setDeliverySlot(slot.id)}
-                                      className={`px-3 py-2 rounded-full text-xs font-bold transition-all ${
-                                        deliverySlot === slot.id
-                                          ? "bg-[#00B4A6] text-white shadow-md scale-105"
-                                          : slot.disabled
-                                            ? "bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600 cursor-not-allowed"
-                                            : "bg-gray-100 dark:bg-surface text-gray-700 dark:text-gray-300 hover:bg-primary/10 hover:text-primary"
-                                      }`}
-                                    >
-                                      {slot.emoji} {slot.label}
-                                    </button>
-                                  ));
-                                })()}
-                              </div>
-                              <button type="button" onClick={() => setUseCustomDateTime(true)}
-                                className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border-2 border-dashed border-primary/30 text-xs font-semibold text-primary hover:bg-primary/5 transition-colors">
-                                <Clock className="h-3.5 w-3.5" />
-                                ¿Otra fecha y hora específica?
-                              </button>
-                            </>
-                          )}
-                        </div>
+                        <CheckoutDeliverySchedule
+                          deliverySlot={deliverySlot}
+                          onDeliverySlotChange={setDeliverySlot}
+                          deliveryDate={deliveryDate}
+                          onDeliveryDateChange={setDeliveryDate}
+                          deliveryTime={deliveryTime}
+                          onDeliveryTimeChange={setDeliveryTime}
+                          useCustomDateTime={useCustomDateTime}
+                          onUseCustomDateTimeChange={setUseCustomDateTime}
+                        />
 
                         {/* datos validation error */}
                         {dataError && (
@@ -1446,414 +1266,48 @@ export default function CheckoutModal() {
                         <div className="grid grid-cols-1 sm:grid-cols-[1fr_360px] divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-card-border gap-0">
 
                           {/* ─── Columna izquierda: detalle del pedido ─── */}
-                          <div className="space-y-4 pr-0 sm:pr-6 pb-5 sm:pb-0">
-
-                            {/* Mejora 12: Direccion de entrega resaltada */}
-                            {(location || effectiveCustomer?.location) ? (
-                              <m.div
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="bg-linear-to-r from-primary/5 to-blue-50/50 dark:from-primary/10 dark:to-blue-900/10 border border-primary/20 rounded-2xl p-4 relative overflow-hidden"
-                              >
-                                <div className="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-                                <div className="flex items-start gap-3 relative z-10">
-                                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                                    <MapPin className="h-5 w-5 text-primary" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Entregaremos en</p>
-                                    <p className="text-sm font-bold text-gray-800 dark:text-foreground mt-0.5 truncate">{location || effectiveCustomer?.location}</p>
-                                    {(reference || effectiveCustomer?.reference) && (
-                                      <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1"><Home className="h-3 w-3 shrink-0" />{reference || effectiveCustomer?.reference}</p>
-                                    )}
-                                  </div>
-                                  <m.button type="button" onClick={() => setStep("datos")}
-                                    whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-                                    className="text-xs text-primary font-bold hover:underline shrink-0 px-2 py-1 rounded-lg hover:bg-primary/10 transition-colors">
-                                    Cambiar
-                                  </m.button>
-                                </div>
-                              </m.div>
-                            ) : (
-                              <m.div
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-2xl p-4"
-                              >
-                                <m.button type="button" onClick={() => setStep("datos")}
-                                  whileHover={{ scale: 1.02 }}
-                                  className="flex items-center gap-3 text-sm text-amber-700 dark:text-amber-400 font-bold w-full">
-                                  <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-800/30 flex items-center justify-center shrink-0">
-                                    <MapPin className="h-5 w-5" />
-                                  </div>
-                                  Agrega tu dirección de entrega →
-                                </m.button>
-                              </m.div>
-                            )}
-
-                            {/* Mejora 19: Items list — collapsible review */}
-                            <details open className="group">
-                              <summary className="flex items-center justify-between cursor-pointer list-none text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 py-2 px-3 rounded-xl bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-surface/80 transition-colors">
-                                <span className="flex items-center gap-2">
-                                  <ShoppingCart className="h-4 w-4" />
-                                  Revisar pedido ({items.length} {items.length === 1 ? "producto" : "productos"})
-                                </span>
-                                <span className="flex items-center gap-2">
-                                  <span className="text-sm font-extrabold text-gray-900 dark:text-foreground">S/{finalTotal.toFixed(2)}</span>
-                                  <svg className="h-4 w-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                                </span>
-                              </summary>
-                              <div className="rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden bg-white dark:bg-card shadow-sm">
-                                <div className="max-h-64 overflow-y-auto divide-y divide-gray-50 dark:divide-card-border">
-                                  {items.map((item) => (
-                                    <div key={item.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50/50 dark:hover:bg-surface/30 transition-colors">
-                                      <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-surface shrink-0 ring-1 ring-gray-100 dark:ring-card-border">
-                                        {item.image ? (
-                                          /* eslint-disable-next-line @next/next/no-img-element */
-                                          <img
-                                            src={item.image}
-                                            alt={item.name}
-                                            className="h-full w-full object-cover"
-                                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                                          />
-                                        ) : (
-                                          <div className="h-full w-full flex items-center justify-center text-gray-300 text-sm">📦</div>
-                                        )}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-gray-800 dark:text-foreground truncate leading-tight">{item.name}</p>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                          <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-md bg-primary/10 text-primary text-xs font-bold">
-                                            x{item.quantity}
-                                          </span>
-                                          <span className="text-xs text-gray-400">{item.unit}</span>
-                                          <span className="text-xs text-gray-400">S/{item.price.toFixed(2)} c/u</span>
-                                          {item.note && <span className="text-[10px] text-amber-500 truncate">📝 {item.note}</span>}
-                                        </div>
-                                      </div>
-                                      <p className="text-sm font-extrabold text-gray-900 dark:text-foreground shrink-0 tabular-nums">
-                                        S/{(item.price * item.quantity).toFixed(2)}
-                                      </p>
-                                    </div>
-                                  ))}
-                                </div>
-                                {/* Summary breakdown */}
-                                <div className="px-4 py-2.5 border-t border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 space-y-1">
-                                  <div className="flex justify-between text-xs text-gray-500">
-                                    <span>Subtotal</span>
-                                    <span>S/{items.reduce((s, i) => s + i.price * i.quantity, 0).toFixed(2)}</span>
-                                  </div>
-                                  {discount > 0 && (
-                                    <div className="flex justify-between text-xs text-emerald-600 font-bold">
-                                      <span>Descuento</span>
-                                      <span>-S/{discount.toFixed(2)}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </details>
-
-                            {/* K2 — WhatsApp summary */}
-                            <a
-                              href={`https://wa.me/?text=${encodeURIComponent(
-                                `📋 Mi pedido en Buleje:\n${items.map(i => `• ${i.name} ×${i.quantity} — S/${(i.price * i.quantity).toFixed(2)}`).join("\n")}\n\n💰 Total: S/${finalTotal.toFixed(2)}${discount > 0 ? ` (desc: -S/${discount.toFixed(2)})` : ""}`
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border-2 border-dashed border-emerald-300 text-emerald-600 text-xs font-bold hover:bg-emerald-50 transition-colors"
-                            >
-                              📲 Enviar resumen por WhatsApp
-                            </a>
-                          </div>
+                          <CheckoutOrderReview
+                            items={items}
+                            finalTotal={finalTotal}
+                            discount={discount}
+                            location={location}
+                            reference={reference}
+                            effectiveCustomerLocation={effectiveCustomer?.location}
+                            effectiveCustomerReference={effectiveCustomer?.reference}
+                            onEditAddress={() => setStep("datos")}
+                          />
 
                           {/* ─── Columna derecha: pago y resumen ─── */}
-                          <div className="space-y-4 pl-0 sm:pl-6 pt-5 sm:pt-0">
-
-                            {/* Mejora 14: Delivery time estimate */}
-                            {(() => {
-                              const now = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
-                              const h = now.getHours();
-                              const isOpen = h >= 8 && h < 21;
-                              const eta = isOpen ? "~30 minutos" : "Mañana de 8:00 a 10:00 am";
-                              const etaDetail = isOpen ? "Tu pedido está siendo preparado" : "Abrimos a las 8:00 AM";
-                              return (
-                                <m.div
-                                  initial={{ opacity: 0, y: 10 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  className="rounded-2xl border border-primary/20 bg-linear-to-br from-primary/5 via-primary/8 to-emerald-50/50 dark:from-primary/10 dark:via-primary/15 dark:to-emerald-900/10 p-4 relative overflow-hidden"
-                                >
-                                  {/* Background decoration */}
-                                  <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-                                  <div className="flex items-center gap-3.5 relative z-10">
-                                    <m.div
-                                      animate={{ x: [0, 4, 0] }}
-                                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                                      className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"
-                                    >
-                                      <span className="text-2xl">🚚</span>
-                                    </m.div>
-                                    <div className="flex-1">
-                                      <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Entrega estimada</p>
-                                      <p className="text-lg font-extrabold text-gray-900 dark:text-foreground">{eta}</p>
-                                      <p className="text-xs text-gray-500 mt-0.5">{etaDetail}</p>
-                                    </div>
-                                    <div className={`h-3 w-3 rounded-full shrink-0 ${isOpen ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
-                                  </div>
-                                  {/* Progress bar */}
-                                  {isOpen && (
-                                    <div className="mt-3 relative z-10">
-                                      <div className="h-1.5 bg-gray-200/60 dark:bg-gray-700/40 rounded-full overflow-hidden">
-                                        <m.div
-                                          className="h-full bg-linear-to-r from-primary to-emerald-400 rounded-full"
-                                          initial={{ width: "0%" }}
-                                          animate={{ width: "15%" }}
-                                          transition={{ duration: 1.5, ease: "easeOut" }}
-                                        />
-                                      </div>
-                                      <div className="flex justify-between mt-1.5 text-[9px] font-semibold text-gray-400">
-                                        <span>Confirmado</span>
-                                        <span>Preparando</span>
-                                        <span>En camino</span>
-                                        <span>Entregado</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </m.div>
-                              );
-                            })()}
-
-                            {/* R1: Tip */}
-                            <div className="rounded-2xl border border-gray-100 dark:border-card-border p-3.5 bg-gray-50/50 dark:bg-surface/30">
-                              <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                                <span className="text-base">🛵</span> Propina para el repartidor
-                              </p>
-                              <div className="flex gap-2">
-                                {[0, 1, 2, 5].map((v) => (
-                                  <button key={v} type="button" onClick={() => setTip(v)}
-                                    className={cn(
-                                      "flex-1 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border-2",
-                                      tip === v
-                                        ? "border-primary bg-primary text-white shadow-md shadow-primary/25"
-                                        : "border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-muted hover:border-primary/50 hover:text-primary bg-white dark:bg-card"
-                                    )}>
-                                    {v === 0 ? "Sin\npropina" : `S/${v}`}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Cupón de descuento */}
-                            <div className="rounded-2xl border border-gray-100 dark:border-card-border p-3.5 bg-gray-50/50 dark:bg-surface/30">
-                              <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                                <Tag className="h-4 w-4" /> Cupón de descuento
-                              </p>
-                              {couponApplied ? (
-                                <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 px-3 py-2">
-                                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
-                                  <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400 flex-1">{couponMsg}</span>
-                                  <button type="button" onClick={() => { setCouponApplied(false); setCouponDiscount(0); setCouponCode(""); setCouponMsg(""); }} className="text-xs text-gray-400 hover:text-red-500 transition-colors">Quitar</button>
-                                </div>
-                              ) : (
-                                <div className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    value={couponCode}
-                                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                                    onKeyDown={(e) => e.key === "Enter" && validateCoupon()}
-                                    placeholder="CÓDIGO"
-                                    className="flex-1 rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-card px-3 py-2 text-sm font-mono uppercase placeholder:normal-case placeholder:font-sans focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={validateCoupon}
-                                    disabled={validatingCoupon || !couponCode.trim()}
-                                    className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold disabled:opacity-50 hover:bg-primary/90 transition-colors"
-                                  >
-                                    {validatingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
-                                  </button>
-                                </div>
-                              )}
-                              {couponMsg && !couponApplied && (
-                                <p className="text-xs text-red-500 mt-1.5">{couponMsg}</p>
-                              )}
-                            </div>
-
-                            {/* Totals */}
-                            <div className="rounded-2xl border border-gray-100 dark:border-card-border overflow-hidden shadow-sm">
-                              <div className="px-4 py-2 bg-gray-50 dark:bg-surface border-b border-gray-100 dark:border-card-border">
-                                <p className="text-[10px] font-bold text-gray-400 dark:text-muted uppercase tracking-wider">Resumen del pago</p>
-                              </div>
-                              <div className="flex justify-between px-4 py-2.5 text-sm bg-white dark:bg-card">
-                                <span className="text-gray-500">Subtotal</span>
-                                <span className="font-semibold text-gray-800 dark:text-foreground">S/{total.toFixed(2)}</span>
-                              </div>
-                              {discount > 0 && promo && (
-                                <div className="flex justify-between px-4 py-2.5 text-sm bg-emerald-50/50 dark:bg-emerald-900/10">
-                                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Promo {promo.discountPercent}% off</span>
-                                  <span className="font-bold text-emerald-600">−S/{discount.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {couponApplied && couponDiscount > 0 && (
-                                <div className="flex justify-between px-4 py-2.5 text-sm bg-emerald-50/50 dark:bg-emerald-900/10">
-                                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Cupón {couponCode}</span>
-                                  <span className="font-bold text-emerald-600">−S/{couponDiscount.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {tierDiscount > 0 && loyaltyTier && (
-                                <div className="flex justify-between px-4 py-2.5 text-sm bg-purple-50/50 dark:bg-purple-900/10">
-                                  <span className="text-purple-700 dark:text-purple-400 font-semibold flex items-center gap-1"><Award className="h-3.5 w-3.5" /> Tier {loyaltyTier} ({tierDiscountPct}%)</span>
-                                  <span className="font-bold text-purple-600">−S/{tierDiscount.toFixed(2)}</span>
-                                </div>
-                              )}
-                              {tip > 0 && (
-                                <div className="flex justify-between px-4 py-2.5 text-sm bg-amber-50/50 dark:bg-amber-900/10">
-                                  <span className="text-amber-700 dark:text-amber-400 font-semibold">Propina</span>
-                                  <span className="font-bold text-amber-600">+S/{tip.toFixed(2)}</span>
-                                </div>
-                              )}
-                              <div className="flex justify-between items-center px-4 py-4 bg-linear-to-r from-primary/8 to-emerald-400/8 dark:from-primary/15 dark:to-emerald-500/15 border-t-2 border-primary/30">
-                                <span className="font-extrabold text-gray-900 dark:text-foreground text-base">Total a pagar</span>
-                                <m.span
-                                  key={finalTotal}
-                                  initial={{ scale: 1.2, color: "#00B4A6" }}
-                                  animate={{ scale: 1, color: "#00B4A6" }}
-                                  className="text-2xl font-extrabold text-primary"
-                                >S/{finalTotal.toFixed(2)}</m.span>
-                              </div>
-                            </div>
-
-                            {/* Método de pago */}
-                            <div className="space-y-3">
-                              <p className="text-xs font-bold text-gray-500 dark:text-muted uppercase tracking-wider flex items-center gap-1.5"><span className="text-base">💳</span> Método de pago</p>
-                              <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Método de pago">
-                                {yape.enabled && (
-                                  <m.button
-                                    type="button" role="radio" aria-checked={paymentMethod === "yape"}
-                                    onClick={() => { setPaymentMethod("yape"); setShowPaymentHint(false); }}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ type: "spring", damping: 15, stiffness: 300, delay: 0.1 }}
-                                    whileHover={{ scale: 1.04, y: -2 }}
-                                    whileTap={{ scale: 0.97 }}
-                                    className={cn("flex flex-col items-center gap-2 py-5 px-3 rounded-2xl border-2 transition-colors relative overflow-hidden",
-                                      paymentMethod === "yape"
-                                        ? "border-purple-400 bg-purple-50 shadow-lg shadow-purple-200/50 dark:shadow-purple-900/30"
-                                        : "border-gray-200 hover:border-purple-300 hover:shadow-md")}
-                                  >
-                                    {paymentMethod === "yape" && (
-                                      <m.div
-                                        layoutId="payment-glow"
-                                        className="absolute inset-0 bg-linear-to-br from-purple-100/80 to-purple-50/40 dark:from-purple-900/20 dark:to-purple-800/10"
-                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
-                                      />
-                                    )}
-                                    <m.div
-                                      animate={paymentMethod === "yape" ? { scale: [1, 1.15, 1], rotate: [0, -5, 5, 0] } : {}}
-                                      transition={{ duration: 0.5 }}
-                                      className="relative z-10 h-12 w-12 rounded-xl bg-purple-600 flex items-center justify-center text-white font-extrabold text-xl shadow-lg"
-                                    >Y</m.div>
-                                    <span className={cn("relative z-10 text-sm font-bold", paymentMethod === "yape" ? "text-purple-700" : "text-gray-500")}>Yape</span>
-                                    {paymentMethod !== "yape" && (
-                                      <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-purple-400 animate-pulse" />
-                                    )}
-                                  </m.button>
-                                )}
-                                {cashEnabled && (
-                                  <m.button
-                                    type="button" role="radio" aria-checked={paymentMethod === "efectivo"}
-                                    onClick={() => { setPaymentMethod("efectivo"); setShowPaymentHint(false); }}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ type: "spring", damping: 15, stiffness: 300, delay: 0.2 }}
-                                    whileHover={{ scale: 1.04, y: -2 }}
-                                    whileTap={{ scale: 0.97 }}
-                                    className={cn("flex flex-col items-center gap-2 py-5 px-3 rounded-2xl border-2 transition-colors relative overflow-hidden",
-                                      paymentMethod === "efectivo"
-                                        ? "border-emerald-400 bg-emerald-50 shadow-lg shadow-emerald-200/50 dark:shadow-emerald-900/30"
-                                        : "border-gray-200 hover:border-emerald-300 hover:shadow-md")}
-                                  >
-                                    {paymentMethod === "efectivo" && (
-                                      <m.div
-                                        layoutId="payment-glow"
-                                        className="absolute inset-0 bg-linear-to-br from-emerald-100/80 to-emerald-50/40 dark:from-emerald-900/20 dark:to-emerald-800/10"
-                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
-                                      />
-                                    )}
-                                    <m.div
-                                      animate={paymentMethod === "efectivo" ? { scale: [1, 1.15, 1], rotate: [0, 5, -5, 0] } : {}}
-                                      transition={{ duration: 0.5 }}
-                                      className="relative z-10"
-                                    >
-                                      <Banknote className={cn("h-12 w-12 drop-shadow-md", paymentMethod === "efectivo" ? "text-emerald-600" : "text-gray-400")} />
-                                    </m.div>
-                                    <span className={cn("relative z-10 text-sm font-bold", paymentMethod === "efectivo" ? "text-emerald-700" : "text-gray-500")}>Efectivo</span>
-                                    {paymentMethod !== "efectivo" && (
-                                      <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                                    )}
-                                  </m.button>
-                                )}
-                              </div>
-                              {paymentMethod === "yape" && yape.enabled && (
-                                <YapePaymentPanel
-                                  yape={yape}
-                                  finalTotal={finalTotal}
-                                  yapeOpNumber={yapeOpNumber}
-                                  onOpNumberChange={setYapeOpNumber}
-                                />
-                              )}
-                              {paymentMethod === "efectivo" && (
-                                <CashChangeCalculator finalTotal={finalTotal} />
-                              )}
-                              {showPaymentHint && (
-                                <p className="text-xs text-red-500 font-semibold">
-                                  {!paymentMethod ? "Selecciona un método de pago para continuar" : "Ingresa el número de operación de Yape para continuar"}
-                                </p>
-                              )}
-                            </div>
-
-                            {submitError && (
-                              <div className="flex items-center gap-3 p-3.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30 animate-[fadeUp_0.2s_ease-out]">
-                                <div className="h-9 w-9 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center shrink-0">
-                                  <X className="h-4 w-4 text-red-500" />
-                                </div>
-                                <p className="text-red-700 dark:text-red-300 text-sm font-medium">{submitError}</p>
-                              </div>
-                            )}
-
-                            {/* G1 — Points preview */}
-                            {finalTotal > 0 && (
-                              <div className="flex items-center gap-3 bg-linear-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 rounded-2xl border border-violet-100 dark:border-violet-800/30 px-4 py-3">
-                                <div className="h-10 w-10 rounded-xl bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center shrink-0">
-                                  <span className="text-xl leading-none">⭐</span>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-extrabold text-violet-800 dark:text-violet-300">+{Math.floor(finalTotal / 10) * 5} puntos</p>
-                                  <p className="text-[11px] text-violet-500 dark:text-violet-400">¡Ganarás puntos por este pedido!</p>
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="flex gap-3 pt-1">
-                              <m.button type="button" onClick={() => setStep("datos")}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.96 }}
-                                className="flex items-center justify-center gap-1.5 shrink-0 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors">
-                                ← Volver
-                              </m.button>
-                              <m.button type="submit" disabled={submitting}
-                                whileHover={submitting ? {} : { scale: 1.03, y: -2 }}
-                                whileTap={submitting ? {} : { scale: 0.96 }}
-                                className="flex-1 py-4 rounded-xl bg-linear-to-r from-primary via-emerald-500 to-primary text-white font-extrabold text-base transition-all shadow-lg shadow-primary/30 disabled:opacity-50 flex items-center justify-center gap-2.5 relative overflow-hidden">
-                                {!submitting && (
-                                  <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_3s_ease-in-out_infinite]" />
-                                )}
-                                <span className="relative z-10 flex items-center gap-2">
-                                  {submitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-                                  {submitting ? "Enviando…" : "🛒 Finalizar pedido"}
-                                </span>
-                              </m.button>
-                            </div>
-                          </div>
+                          <CheckoutPaymentSection
+                            tip={tip}
+                            onTipChange={setTip}
+                            couponCode={couponCode}
+                            onCouponCodeChange={setCouponCode}
+                            couponApplied={couponApplied}
+                            couponDiscount={couponDiscount}
+                            couponMsg={couponMsg}
+                            validatingCoupon={validatingCoupon}
+                            onValidateCoupon={validateCoupon}
+                            onRemoveCoupon={() => { setCouponApplied(false); setCouponDiscount(0); setCouponCode(""); setCouponMsg(""); }}
+                            total={total}
+                            finalTotal={finalTotal}
+                            discount={discount}
+                            promo={promo}
+                            tierDiscount={tierDiscount}
+                            tierDiscountPct={tierDiscountPct}
+                            loyaltyTier={loyaltyTier}
+                            paymentMethod={paymentMethod}
+                            onPaymentMethodChange={(method) => { setPaymentMethod(method); setShowPaymentHint(false); }}
+                            yapeEnabled={yape.enabled}
+                            cashEnabled={cashEnabled}
+                            yape={yape}
+                            yapeOpNumber={yapeOpNumber}
+                            onYapeOpNumberChange={setYapeOpNumber}
+                            showPaymentHint={showPaymentHint}
+                            submitting={submitting}
+                            submitError={submitError}
+                            onBack={() => setStep("datos")}
+                          />
 
                         </div>
                       </form>
@@ -1862,114 +1316,7 @@ export default function CheckoutModal() {
 
                   {/* ── Step: Éxito ──────────────────────── */}
                   {step === "exito" && (
-                    <m.div key="exito" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ type: "spring", damping: 20, stiffness: 250 }}>
-                      <div className="px-5 py-8 flex flex-col items-center text-center space-y-5 relative overflow-hidden">
-                        {/* Confetti CSS dots */}
-                        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                          {Array.from({ length: 12 }).map((_, i) => (
-                            <m.div
-                              key={i}
-                              initial={{ opacity: 0, y: -20, x: `${10 + (i * 7) % 80}%` }}
-                              animate={{ opacity: [0, 1, 0], y: ["-20%", "110%"], rotate: [0, 360 * (i % 2 === 0 ? 1 : -1)] }}
-                              transition={{ duration: 2.5 + (i % 3) * 0.5, delay: 0.2 + i * 0.15, ease: "easeOut" }}
-                              className="absolute w-2 h-2 rounded-sm"
-                              style={{
-                                left: `${10 + (i * 7) % 80}%`,
-                                backgroundColor: ["#00B4A6", "#f97316", "#e63946", "#457b9d", "#ffd60a", "#9b5de5"][i % 6],
-                              }}
-                            />
-                          ))}
-                        </div>
-
-                        {/* Animated checkmark with SVG */}
-                        <div className="relative">
-                          <m.div
-                            animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0, 0.3] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                            className="absolute inset-0 rounded-full bg-emerald-300/30"
-                          />
-                          <m.div
-                            initial={{ scale: 0, rotate: -180 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            transition={{ type: "spring", damping: 10, stiffness: 180, delay: 0.1 }}
-                            className="relative h-24 w-24 rounded-full bg-linear-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-xl shadow-emerald-300/40"
-                          >
-                            <svg viewBox="0 0 52 52" className="h-12 w-12">
-                              <m.path
-                                fill="none"
-                                stroke="white"
-                                strokeWidth={4}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M14 27l7.8 7.8L38 17"
-                                initial={{ pathLength: 0 }}
-                                animate={{ pathLength: 1 }}
-                                transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
-                              />
-                            </svg>
-                          </m.div>
-                        </div>
-
-                        <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                          <h3 className="text-2xl font-extrabold text-gray-900 dark:text-foreground">Pedido confirmado!</h3>
-                          <p className="text-sm text-gray-500 mt-1.5">Tu pedido esta siendo preparado con mucho cariño</p>
-                        </m.div>
-
-                        {/* Order number - prominent */}
-                        {orderId && (
-                          <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-                            className="bg-linear-to-r from-primary/5 to-emerald-50 dark:from-primary/10 dark:to-emerald-900/20 rounded-2xl px-6 py-4 border border-primary/20 w-full max-w-xs">
-                            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Numero de pedido</p>
-                            <p className="text-2xl font-extrabold text-primary font-mono mt-1">#{orderId}</p>
-                          </m.div>
-                        )}
-
-                        {/* Timeline estimado */}
-                        <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
-                          className="w-full max-w-sm">
-                          <div className="flex items-center justify-between text-[10px] font-bold text-gray-500 relative">
-                            <div className="absolute top-3 left-[14%] right-[14%] h-0.5 bg-gray-200 dark:bg-gray-700" />
-                            <m.div
-                              className="absolute top-3 left-[14%] h-0.5 bg-emerald-500"
-                              initial={{ width: 0 }}
-                              animate={{ width: "20%" }}
-                              transition={{ duration: 1, delay: 0.8, ease: "easeOut" }}
-                            />
-                            {[
-                              { icon: "📋", label: "Confirmado", active: true },
-                              { icon: "🍽", label: "Preparando", sub: "~10 min", active: false },
-                              { icon: "🚗", label: "En camino", sub: "~20 min", active: false },
-                              { icon: "✅", label: "Entregado", active: false },
-                            ].map((s, i) => (
-                              <div key={i} className="flex flex-col items-center gap-1 relative z-10">
-                                <span className={`text-lg ${s.active ? "" : "opacity-40"}`}>{s.icon}</span>
-                                <span className={s.active ? "text-emerald-600 font-extrabold" : "text-gray-400"}>{s.label}</span>
-                                {s.sub && <span className="text-[9px] text-gray-400">{s.sub}</span>}
-                              </div>
-                            ))}
-                          </div>
-                        </m.div>
-
-                        {/* Action buttons */}
-                        <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}
-                          className="flex flex-col sm:flex-row gap-2 w-full max-w-sm pt-2">
-                          {orderId && (
-                            <a
-                              href={`/tracking?id=${orderId}`}
-                              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white bg-primary hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
-                            >
-                              <MapPin className="h-4 w-4" /> Seguir mi pedido
-                            </a>
-                          )}
-                          <button
-                            onClick={closeCheckout}
-                            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-gray-700 dark:text-foreground bg-gray-100 dark:bg-surface hover:bg-gray-200 transition-colors"
-                          >
-                            <ShoppingCart className="h-4 w-4" /> Seguir comprando
-                          </button>
-                        </m.div>
-                      </div>
-                    </m.div>
+                    <CheckoutSuccessStep orderId={orderId} onClose={closeCheckout} />
                   )}
 
                 </AnimatePresence>
