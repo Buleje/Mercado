@@ -37,6 +37,7 @@ import type { Tab } from "./_lib/tabs.types";
 import { TAB_MIGRATION } from "./_lib/tab-migration";
 import { TabSpinner } from "./_lib/tab-spinner";
 import { NavDefaultTabsConfig } from "@/components/admin/NavDefaultTabsConfig";
+import { useKeyboardShortcuts } from "./_hooks/useKeyboardShortcuts";
 
 // Lazy-load heavy admin tabs for better initial load performance
 // ── Unified Module Imports (8 consolidated modules) ──
@@ -535,59 +536,16 @@ function AdminPage() {
     return () => clearInterval(interval);
   }, [userRole]);
 
-  // Keyboard shortcuts: Alt+1..9,0 for tabs, Alt+? for help
-  const SHORTCUT_MAP: Record<string, Tab> = {
-    "1": "asistente-ia", "2": "ventas-caja", "3": "inventario", "4": "pedidos",
-    "5": "productos", "6": "compras", "7": "plata", "8": "clientes",
-    "9": "config", "0": "plan",
-  };
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.tagName === "TEXTAREA") return;
-      if (e.altKey && SHORTCUT_MAP[e.key]) {
-        e.preventDefault();
-        navigateTab(SHORTCUT_MAP[e.key]);
-      }
-      // Ctrl+K / Cmd+K for global search
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        setSearchOpen(v => !v);
-      }
-      if (e.key === "?" && e.altKey) {
-        e.preventDefault();
-        setShowShortcuts(v => !v);
-      }
-      // Alt+T para toggle theme
-      if (e.key === "t" && e.altKey) {
-        e.preventDefault();
-        toggleTheme();
-      }
-      // Alt+S para enfocar búsqueda (si existe en el tab actual)
-      if (e.key === "s" && e.altKey) {
-        e.preventDefault();
-        const searchInput = document.querySelector('input[type="text"][placeholder*="Buscar"], input[type="search"]') as HTMLInputElement;
-        if (searchInput) searchInput.focus();
-      }
-      // Alt+N para cerrar sesión (nuevo/salir)
-      if (e.key === "l" && e.altKey) {
-        e.preventDefault();
-        handleLogout();
-      }
-      // Ctrl+Shift+C para cierre del día
-      if (e.ctrlKey && e.shiftKey && e.key === "C") {
-        e.preventDefault();
-        setShowCierreDiario(v => !v);
-      }
-      // Ctrl+Shift+P para modo presentación
-      if (e.ctrlKey && e.shiftKey && e.key === "P") {
-        e.preventDefault();
-        setPresentationMode(v => !v);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toggleTheme]);
+  // Keyboard shortcuts extraídos a app/admin/_hooks/useKeyboardShortcuts.ts (Paso 4 del refactor)
+  useKeyboardShortcuts({
+    navigateTab,
+    toggleTheme,
+    handleLogout,
+    setSearchOpen,
+    setShowShortcuts,
+    setShowCierreDiario,
+    setPresentationMode,
+  });
 
   // ── Favorites & recent tabs ────────────────────────────────────────
   const toggleFavorite = useCallback((id: Tab) => {
