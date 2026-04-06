@@ -47,6 +47,11 @@ import { useChangelogBadge } from "./_hooks/useChangelogBadge";
 import { useHiddenTabs } from "./_hooks/useHiddenTabs";
 import { useCategoryOrder } from "./_hooks/useCategoryOrder";
 import { useOnboardingTrigger } from "./_hooks/useOnboardingTrigger";
+import { useAdminAlerts } from "./_hooks/useAdminAlerts";
+import { useNewOrderNotification } from "./_hooks/useNewOrderNotification";
+import { useNotificationPermissionPrompt } from "./_hooks/useNotificationPermissionPrompt";
+import { useMobileTableCards } from "./_hooks/useMobileTableCards";
+import { useOnboardingTourTrigger } from "./_hooks/useOnboardingTourTrigger";
 
 // Lazy-load heavy admin tabs for better initial load performance
 // ── Unified Module Imports (8 consolidated modules) ──
@@ -479,19 +484,8 @@ function AdminPage() {
 
   // toggleCompact y toggleFocusMode → ahora viven en useAdminLayout
 
-  // ── Auto-start onboarding tour for first-time visitors ──────────────
-  useEffect(() => {
-    // Never auto-start the tour when SuperAdmin is impersonating — it blocks all navigation
-    try { if (localStorage.getItem("superadmin-impersonate-tenant")) return; } catch {}
-    // Also skip if accessing via /t/{slug}/admin (superadmin tenant path)
-    if (/\/t\/[^/]+\/admin/.test(window.location.pathname)) return;
-    if (onboarding.isFirstVisit && !onboarding.isTourActive) {
-      // Small delay so the sidebar renders first
-      const t = setTimeout(() => onboarding.startTour(), 800);
-      return () => clearTimeout(t);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // ── Auto-start onboarding tour → useOnboardingTourTrigger
+  useOnboardingTourTrigger(onboarding);
 
   // ── Fuzzy sidebar search helper ────────────────────────────────────
   const normalize = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -506,119 +500,17 @@ function AdminPage() {
     return qi === nq.length;
   }, []);
 
-  // Alert badges + quick stats powered by /api/admin/stats (lightweight aggregate endpoint)
-  const [alerts, setAlerts] = useState<Record<string, number>>({});
-  const [quickStats, setQuickStats] = useState<{ pendingOrders: number; todayRevenue: number; lowStockProducts: number; overduePayables?: number; oldPendingOrders?: number } | null>(null);
-  const fetchAlerts = useCallback(() => {
-    fetch("/api/admin/stats")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (!d) return;
-        const a: Record<string, number> = {};
-        if (d.lowStockProducts > 0) a["inventario"] = d.lowStockProducts;
-        if (d.pendingOrders > 0) a.pedidos = d.pendingOrders;
-        setAlerts(a);
-        setQuickStats({ pendingOrders: d.pendingOrders, todayRevenue: d.todayRevenue, lowStockProducts: d.lowStockProducts, overduePayables: d.overduePayables, oldPendingOrders: d.oldPendingOrders });
-      })
-      .catch(() => {});
-  }, []);
-  // 60s polling + immediate on mount
-  useEffect(() => {
-    // Delay first alert fetch to avoid competing with DashboardTab's initial load
-    const t = setTimeout(fetchAlerts, 3000);
-    const interval = setInterval(fetchAlerts, 60_000);
-    return () => { clearTimeout(t); clearInterval(interval); };
-  }, [fetchAlerts]);
-  // SSE: instant update when a new order arrives — with auto-disable after repeated failures
-  // (Cloudflare tunnels and some proxies kill long-lived SSE connections)
-  useEffect(() => {
-    if (!authReady) return;
-    let failCount = 0;
-    let es: EventSource | null = null;
-    let stopped = false;
+  // alerts + quickStats + fetchAlerts (polling + SSE) → useAdminAlerts
+  const { alerts, quickStats, fetchAlerts } = useAdminAlerts(authReady);
 
-    function connect() {
-      if (stopped || failCount >= 3) return; // Give up after 3 failures, rely on 60s polling
-      es = new EventSource("/api/admin/sse");
-      es.addEventListener("new_order", () => { failCount = 0; fetchAlerts(); });
-      es.addEventListener("open", () => { failCount = 0; });
-      es.onerror = () => {
-        failCount++;
-        es?.close();
-        if (!stopped && failCount < 3) {
-          setTimeout(connect, 5000 * failCount); // Back off: 5s, 10s, then give up
-        }
-      };
-    }
+  // Push notification cuando aumentan los pedidos pendientes → useNewOrderNotification
+  useNewOrderNotification(quickStats, permission, sendNotification);
 
-    connect();
-    return () => { stopped = true; es?.close(); };
-  }, [authReady, fetchAlerts]);
+  // Pedir permiso de notificaciones al cargar → useNotificationPermissionPrompt
+  useNotificationPermissionPrompt(authReady, hasAsked, permission, requestPermission);
 
-  // Push notifications for new orders
-  const prevPendingOrders = useRef<number | null>(null);
-  useEffect(() => {
-    if (!quickStats || prevPendingOrders.current === null) {
-      prevPendingOrders.current = quickStats?.pendingOrders ?? 0;
-      return;
-    }
-    const current = quickStats.pendingOrders;
-    const previous = prevPendingOrders.current;
-    if (current > previous && permission === "granted") {
-      const newCount = current - previous;
-      sendNotification(
-        `${newCount} ${newCount === 1 ? "pedido nuevo" : "pedidos nuevos"}`,
-        {
-          body: "Haz clic para ver los detalles en el panel de administración",
-          tag: "new-orders",
-          requireInteraction: false,
-        }
-      );
-    }
-    prevPendingOrders.current = current;
-  }, [quickStats, permission, sendNotification]);
-
-  // Request notification permission on first load (if not denied)
-  useEffect(() => {
-    if (!hasAsked && permission === "default" && authReady) {
-      const timer = setTimeout(() => {
-        requestPermission();
-      }, 5000); // Wait 5s after load to avoid overwhelming the user
-      return () => clearTimeout(timer);
-    }
-  }, [hasAsked, permission, authReady, requestPermission]);
-
-  useEffect(() => {
-    const root = document.querySelector('[data-admin-shell="true"]');
-    if (!root) return;
-
-    const applyMobileTableCards = () => {
-      const tables = root.querySelectorAll("table");
-      tables.forEach((table) => {
-        const headerCells = Array.from(table.querySelectorAll("thead th"));
-        const labels = headerCells.map((cell) => (cell.textContent ?? "").replace(/\s+/g, " ").trim());
-
-        table.querySelectorAll("tbody tr").forEach((row) => {
-          Array.from(row.children).forEach((cell, index) => {
-            if (!(cell instanceof HTMLElement)) return;
-            cell.dataset.label = labels[index] || `Campo ${index + 1}`;
-          });
-        });
-      });
-    };
-
-    const scheduleApply = () => window.requestAnimationFrame(applyMobileTableCards);
-    scheduleApply();
-
-    const observer = new MutationObserver(scheduleApply);
-    observer.observe(root, { childList: true, subtree: true });
-    window.addEventListener("resize", scheduleApply);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", scheduleApply);
-    };
-  }, [authReady, tab]);
+  // Convertir tablas a tarjetas en mobile → useMobileTableCards
+  useMobileTableCards(authReady, tab);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
