@@ -96,6 +96,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
               : "";
             await tx.inventoryMovement.create({
               data: {
+                tenantId: auth.tenantId,
                 productId: product.id,
                 type: "compra",
                 quantity: quantityReceived,

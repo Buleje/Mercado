@@ -39,11 +39,11 @@ export async function GET(req: NextRequest) {
               },
             }
           : {}),
-        Store: {
+        store: {
           isPublished: true,
           ...(zone && { zone }),
         },
-        Product: {
+        product: {
           name: { contains: q, mode: "insensitive" },
           ...(category && { category }),
         },
@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
         id:          true,
         retailPrice: true,
         minOrderQty: true,
-        Product: {
+        product: {
           select: {
             id:       true,
             name:     true,
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
             unit:     true,
           },
         },
-        Store: {
+        store: {
           select: {
             id:   true,
             name: true,
@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
       orderBy: sort === "price_desc"
         ? { retailPrice: "desc" }
         : sort === "name"
-          ? { Product: { name: "asc" } }
+          ? { product: { name: "asc" } }
           : { retailPrice: "asc" },
       take:    50,
     });

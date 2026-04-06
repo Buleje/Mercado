@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       // Query 3: Producto más vendido
       prisma.saleItem.groupBy({
         by: ["productId"],
-        where: { Sale: { tenantId, createdAt: { gte: startOfDay, lt: endOfDay } } },
+        where: { sale: { tenantId, createdAt: { gte: startOfDay, lt: endOfDay } } },
         _sum: { quantity: true },
         orderBy: { _sum: { quantity: "desc" } },
         take: 1,
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
       // Query 4: Fiados cobrados hoy
       prisma.fiadoCuota.aggregate({
         where: {
-          Fiado: { tenantId },
+          fiado: { tenantId },
           pagadoEn: { gte: startOfDay, lt: endOfDay },
         },
         _sum: { monto: true },

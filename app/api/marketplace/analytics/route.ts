@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
         where: {
           storeId: store.id,
           isActive: true,
-          Product: { stock: { lte: 5 } },
+          product: { stock: { lte: 5 } },
         },
       }),
       // Pending orders (pendiente status)
@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
       prisma.orderItem.groupBy({
         by: ["name"],
         where: {
-          Order: {
+          order: {
             tenantId: auth.tenantId,
             source: "marketplace",
             deletedAt: null,
@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
           total: true,
           status: true,
           createdAt: true,
-          _count: { select: { OrderItem: true } },
+          _count: { select: { items: true } },
         },
         orderBy: { createdAt: "desc" },
         take: 5,
@@ -221,7 +221,7 @@ export async function GET(req: NextRequest) {
         total: o.total,
         status: o.status,
         createdAt: o.createdAt.toISOString(),
-        itemsCount: o._count.OrderItem,
+        itemsCount: o._count.items,
       })),
       dailySales: Object.entries(salesByDay).map(([date, v]) => ({
         date,

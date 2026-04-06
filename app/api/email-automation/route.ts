@@ -27,23 +27,24 @@ export async function GET(req: NextRequest) {
     // Find customers whose first order was placed in the last 2h
     const recentOrders = await prisma.order.findMany({
       where: { createdAt: { gte: twoHoursAgo } },
-      select: { customerPhone: true },
+      select: { customerPhone: true, tenantId: true },
       distinct: ["customerPhone"],
     });
 
-    for (const { customerPhone } of recentOrders) {
+    for (const { customerPhone, tenantId } of recentOrders) {
       if (!customerPhone) continue;
-      const orderCount = await prisma.order.count({ where: { customerPhone } });
+      const orderCount = await prisma.order.count({ where: { customerPhone, tenantId } });
       if (orderCount !== 1) continue; // only first order
 
       // Check if welcome notification already sent
       const existing = await prisma.customerNotification.findFirst({
-        where: { customerPhone, title: "¡Bienvenido a Buleje!" },
+        where: { customerPhone, tenantId, title: "¡Bienvenido a Buleje!" },
       });
       if (existing) continue;
 
       await prisma.customerNotification.create({
         data: {
+          tenantId,
           customerPhone,
           title: "¡Bienvenido a Buleje!",
           body: "Gracias por tu primer pedido. Como cliente nuevo, disfruta envío gratis en tu próxima compra. ¡Esperamos verte pronto! 🎉",
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
         status: "entregado",
         updatedAt: { gte: twoHoursAgo },
       },
-      select: { id: true, customerPhone: true },
+      select: { id: true, customerPhone: true, tenantId: true },
     });
 
     for (const order of deliveredOrders) {
@@ -73,12 +74,13 @@ export async function GET(req: NextRequest) {
 
       // Check if review request already sent for this order
       const existing = await prisma.customerNotification.findFirst({
-        where: { customerPhone: order.customerPhone, body: { contains: order.id.slice(-6) } },
+        where: { customerPhone: order.customerPhone, tenantId: order.tenantId, body: { contains: order.id.slice(-6) } },
       });
       if (existing) continue;
 
       await prisma.customerNotification.create({
         data: {
+          tenantId: order.tenantId,
           customerPhone: order.customerPhone,
           title: "¿Cómo fue tu pedido?",
           body: `Tu pedido #${order.id.slice(-6)} fue entregado. ¡Cuéntanos cómo te fue! Tu opinión nos ayuda a mejorar. ⭐`,
@@ -93,7 +95,7 @@ export async function GET(req: NextRequest) {
       where: {
         updatedAt: { lte: oneHourAgo, gte: twoHoursAgo },
       },
-      select: { customerPhone: true, itemsJson: true },
+      select: { customerPhone: true, itemsJson: true, tenantId: true },
     });
 
     for (const cart of abandonedCarts) {
@@ -106,6 +108,7 @@ export async function GET(req: NextRequest) {
       const recentReminder = await prisma.customerNotification.findFirst({
         where: {
           customerPhone: cart.customerPhone,
+          tenantId: cart.tenantId,
           title: "¡No olvides tu carrito!",
           createdAt: { gte: new Date(now.getTime() - 24 * 60 * 60_000) },
         },
@@ -115,6 +118,7 @@ export async function GET(req: NextRequest) {
       const firstItems = items.slice(0, 2).map(i => i.name).join(", ");
       await prisma.customerNotification.create({
         data: {
+          tenantId: cart.tenantId,
           customerPhone: cart.customerPhone,
           title: "¡No olvides tu carrito!",
           body: `Tienes ${items.length} producto${items.length > 1 ? "s" : ""} esperando: ${firstItems}${items.length > 2 ? "…" : ""}. ¡Completa tu pedido! 🛒`,

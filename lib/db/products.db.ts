@@ -169,9 +169,9 @@ export const PriceHistoryDB = {
   async getAll(limit = 100): Promise<DbPriceHistory[]> {
     return (await prisma.priceHistory.findMany({ orderBy: { changedAt: "desc" }, take: limit })).map(mapPriceHistory);
   },
-  async record(productId: number, oldPrice: number, newPrice: number): Promise<DbPriceHistory> {
+  async record(productId: number, oldPrice: number, newPrice: number, tenantId?: string): Promise<DbPriceHistory> {
     if (oldPrice === newPrice) return { id: 0, productId, oldPrice, newPrice, changedAt: new Date().toISOString() };
-    const row = await prisma.priceHistory.create({ data: { productId, oldPrice, newPrice } });
+    const row = await prisma.priceHistory.create({ data: { productId, oldPrice, newPrice, tenantId: tenantId ?? "main" } });
     return mapPriceHistory(row);
   },
 };
@@ -187,9 +187,9 @@ export const BundlesDB = {
   async getActive(): Promise<DbBundle[]> {
     return (await prisma.bundle.findMany({ where: { active: true }, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);
   },
-  async add(data: { name: string; description?: string; price: number; image?: string; items: { productId: number; quantity: number }[] }): Promise<DbBundle> {
+  async add(data: { name: string; description?: string; price: number; image?: string; tenantId?: string; items: { productId: number; quantity: number }[] }): Promise<DbBundle> {
     const row = await prisma.bundle.create({
-      data: { name: data.name, description: data.description ?? "", price: data.price, image: data.image ?? "", items: { create: data.items } },
+      data: { name: data.name, description: data.description ?? "", price: data.price, image: data.image ?? "", tenantId: data.tenantId ?? "main", items: { create: data.items } },
       include: { items: true },
     });
     return mapBundle(row);

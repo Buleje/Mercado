@@ -62,18 +62,18 @@ export async function GET(req: NextRequest) {
       }),
       // 5. Costos hoy (para margen operativo)
       prisma.saleItem.findMany({
-        where: { Sale: { ...tenantFilter, createdAt: { gte: todayStart } } },
-        select: { costPrice: true, quantity: true, Product: { select: { costPrice: true } } },
+        where: { sale: { ...tenantFilter, createdAt: { gte: todayStart } } },
+        select: { costPrice: true, quantity: true, product: { select: { costPrice: true } } },
       }),
       // 6. Costos este mes
       prisma.saleItem.findMany({
-        where: { Sale: { ...tenantFilter, createdAt: { gte: thisMonthStart } } },
-        select: { costPrice: true, quantity: true, Product: { select: { costPrice: true } } },
+        where: { sale: { ...tenantFilter, createdAt: { gte: thisMonthStart } } },
+        select: { costPrice: true, quantity: true, product: { select: { costPrice: true } } },
       }),
       // 7. Costos mes anterior
       prisma.saleItem.findMany({
-        where: { Sale: { ...tenantFilter, createdAt: { gte: lastMonthStart, lt: lastMonthEnd } } },
-        select: { costPrice: true, quantity: true, Product: { select: { costPrice: true } } },
+        where: { sale: { ...tenantFilter, createdAt: { gte: lastMonthStart, lt: lastMonthEnd } } },
+        select: { costPrice: true, quantity: true, product: { select: { costPrice: true } } },
       }),
       // 8. Fiados pendientes
       prisma.fiado.aggregate({
@@ -114,9 +114,9 @@ export async function GET(req: NextRequest) {
     ).length;
 
     // Helper: calculate total cost from SaleItems
-    function calcCost(items: { costPrice: number | null; quantity: number; Product: { costPrice: number | null } }[]): number {
+    function calcCost(items: { costPrice: number | null; quantity: number; product: { costPrice: number | null } }[]): number {
       return items.reduce((sum, item) => {
-        const cost = item.costPrice ?? item.Product.costPrice ?? 0;
+        const cost = item.costPrice ?? item.product.costPrice ?? 0;
         return sum + cost * item.quantity;
       }, 0);
     }

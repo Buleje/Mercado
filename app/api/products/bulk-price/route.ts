@@ -56,6 +56,7 @@ export async function PATCH(req: NextRequest) {
           if (oldPrice !== u.newPrice) {
             await tx.priceHistory.create({
               data: {
+                tenantId: auth.tenantId,
                 productId: u.productId,
                 oldPrice,
                 newPrice: u.newPrice,

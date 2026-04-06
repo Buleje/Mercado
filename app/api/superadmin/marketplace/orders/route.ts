@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       total: true,
       status: true,
       createdAt: true,
-      OrderItem: {
+      items: {
         select: { id: true },
       },
     },
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     customerPhone: o.customerPhone ?? "",
     total: o.total,
     status: o.status,
-    itemCount: o.OrderItem.length,
+    itemCount: o.items.length,
     createdAt: o.createdAt.toISOString(),
   }));
 

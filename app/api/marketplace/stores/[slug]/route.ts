@@ -31,7 +31,7 @@ export async function GET(
         createdAt:       true,
         _count: {
           select: {
-            StoreProduct: { where: { isActive: true } },
+            storeProducts: { where: { isActive: true } },
           },
         },
       },

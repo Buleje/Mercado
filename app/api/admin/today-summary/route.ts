@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
         const topProductToday = await prisma.saleItem.groupBy({
           by: ["name"],
           where: {
-            Sale: {
+            sale: {
               tenantId: auth.tenantId,
               createdAt: { gte: startOfDay },
             },

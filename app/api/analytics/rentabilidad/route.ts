@@ -32,12 +32,12 @@ export async function GET(req: NextRequest) {
         select: { id: true, total: true, createdAt: true },
       }),
       prisma.saleItem.findMany({
-        where: { Sale: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } } },
+        where: { sale: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } } },
         select: {
           saleId: true,
           costPrice: true,
           quantity: true,
-          Product: { select: { costPrice: true } },
+          product: { select: { costPrice: true } },
         },
       }),
     ]);
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     // Index sale items by saleId for cost lookup
     const costBySale = new Map<string, number>();
     for (const item of saleItems) {
-      const cost = item.costPrice ?? item.Product.costPrice ?? 0;
+      const cost = item.costPrice ?? item.product.costPrice ?? 0;
       costBySale.set(item.saleId, (costBySale.get(item.saleId) ?? 0) + cost * item.quantity);
     }
 

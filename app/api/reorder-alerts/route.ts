@@ -168,7 +168,7 @@ export async function GET(req: NextRequest) {
           // Find the supplier
           const supplier = await prisma.supplier.findFirst({
             where: { name: supplierName },
-            select: { id: true },
+            select: { id: true, tenantId: true },
           });
           if (!supplier) continue;
 
@@ -178,6 +178,7 @@ export async function GET(req: NextRequest) {
           await prisma.purchaseOrder.create({
             data: {
               id: poId,
+              tenantId: supplier.tenantId,
               supplierId: supplier.id,
               supplierName,
               total,

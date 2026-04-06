@@ -35,8 +35,8 @@ function mapLocation(row: {
   qty: number;
   capacity: number;
   category: string;
-  Warehouse: { name: string };
-  Product: { name: string; category: string } | null;
+  warehouse: { name: string };
+  product: { name: string; category: string } | null;
 }) {
   return {
     id: row.id,
@@ -46,12 +46,12 @@ function mapLocation(row: {
     shelf: row.shelf,
     bin: row.bin,
     warehouseId: row.warehouseId,
-    warehouseName: row.Warehouse.name,
+    warehouseName: row.warehouse.name,
     productId: row.productId,
-    product: row.Product?.name ?? null,
+    product: row.product?.name ?? null,
     qty: row.qty,
     capacity: row.capacity,
-    category: row.category || row.Product?.category || "",
+    category: row.category || row.product?.category || "",
   };
 }
 
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
   try {
     const rows = await prisma.location.findMany({
       where: { tenantId: auth.tenantId },
-      include: { Warehouse: true, Product: true },
+      include: { warehouse: true, product: true },
       orderBy: [{ zone: "asc" }, { code: "asc" }],
     });
     return NextResponse.json(rows.map((row) => mapLocation(row)));
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         qty: parsed.data.qty ?? 0,
         tenantId: auth.tenantId,
       },
-      include: { Warehouse: true, Product: true },
+      include: { warehouse: true, product: true },
     });
     return NextResponse.json(mapLocation(row), { status: 201 });
   } catch (err) {
@@ -117,7 +117,7 @@ export async function PATCH(req: NextRequest) {
         ...rest,
         ...(rest.productId === undefined ? {} : { productId: rest.productId ?? null }),
       },
-      include: { Warehouse: true, Product: true },
+      include: { warehouse: true, product: true },
     });
     return NextResponse.json(mapLocation(row));
   } catch (err) {

@@ -28,21 +28,21 @@ export async function GET(req: NextRequest) {
     const storeProducts = await prisma.storeProduct.findMany({
       where: { storeId: store.id },
       include: {
-        Product: {
+        product: {
           select: { name: true, stock: true, barcode: true },
         },
       },
-      orderBy: { Product: { name: "asc" } },
+      orderBy: { product: { name: "asc" } },
     });
 
     const result = storeProducts.map((sp) => ({
       id: sp.id,
-      name: sp.Product.name,
+      name: sp.product.name,
       isActive: sp.isActive,
       retailPrice: sp.retailPrice,
       wholesalePrice: sp.wholesalePrice ?? 0,
-      stock: sp.Product.stock ?? 0,
-      sku: sp.Product.barcode ?? "",
+      stock: sp.product.stock ?? 0,
+      sku: sp.product.barcode ?? "",
     }));
 
     return NextResponse.json(result);

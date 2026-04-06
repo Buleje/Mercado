@@ -29,11 +29,11 @@ export async function GET(req: NextRequest) {
       // 1. Get customer's purchased product IDs (from orders + sales)
       const [orderItems, saleItems] = await Promise.all([
         prisma.orderItem.findMany({
-          where: { Order: { customerPhone: phone, status: { not: "cancelado" } } },
+          where: { order: { customerPhone: phone, status: { not: "cancelado" } } },
           select: { productId: true },
         }),
         prisma.saleItem.findMany({
-          where: { Sale: { customerPhone: phone } },
+          where: { sale: { customerPhone: phone } },
           select: { productId: true },
         }),
       ]);
@@ -48,36 +48,36 @@ export async function GET(req: NextRequest) {
           prisma.orderItem.findMany({
             where: {
               productId: { in: [...boughtIds] },
-              Order: { customerPhone: { not: phone }, status: { not: "cancelado" } },
+              order: { customerPhone: { not: phone }, status: { not: "cancelado" } },
             },
-            select: { Order: { select: { customerPhone: true } } },
+            select: { order: { select: { customerPhone: true } } },
           }),
           prisma.saleItem.findMany({
             where: {
               productId: { in: [...boughtIds] },
-              Sale: { customerPhone: { not: phone } },
+              sale: { customerPhone: { not: phone } },
             },
-            select: { Sale: { select: { customerPhone: true } } },
+            select: { sale: { select: { customerPhone: true } } },
           }),
         ]);
 
         const coPhones = new Set<string>();
-        for (const i of coOrders) if (i.Order.customerPhone) coPhones.add(i.Order.customerPhone);
-        for (const i of coSales) if (i.Sale.customerPhone) coPhones.add(i.Sale.customerPhone);
+        for (const i of coOrders) if (i.order.customerPhone) coPhones.add(i.order.customerPhone);
+        for (const i of coSales) if (i.sale.customerPhone) coPhones.add(i.sale.customerPhone);
 
         if (coPhones.size > 0) {
           // 3. Get products those co-customers bought (that current customer hasn't)
           const [coOrderItems, coSaleItems] = await Promise.all([
             prisma.orderItem.findMany({
               where: {
-                Order: { customerPhone: { in: [...coPhones] }, status: { not: "cancelado" } },
+                order: { customerPhone: { in: [...coPhones] }, status: { not: "cancelado" } },
                 productId: { notIn: [...boughtIds] },
               },
               select: { productId: true },
             }),
             prisma.saleItem.findMany({
               where: {
-                Sale: { customerPhone: { in: [...coPhones] } },
+                sale: { customerPhone: { in: [...coPhones] } },
                 productId: { notIn: [...boughtIds] },
               },
               select: { productId: true },

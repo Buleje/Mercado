@@ -36,12 +36,12 @@ export async function GET(request: NextRequest) {
         loyaltyTier: true,
         estado: true,
         createdAt: true,
-        Order: {
+        orders: {
           orderBy: { createdAt: "desc" },
           take: 1,
           select: { createdAt: true },
         },
-        Sale: {
+        sales: {
           orderBy: { createdAt: "desc" },
           take: 1,
           select: { createdAt: true },
@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
 
     const inactive = customers
       .map((c) => {
-        const lastOrder = c.Order[0]?.createdAt;
-        const lastSale = c.Sale[0]?.createdAt;
+        const lastOrder = c.orders[0]?.createdAt;
+        const lastSale = c.sales[0]?.createdAt;
         const lastActivity = lastOrder && lastSale
           ? new Date(Math.max(lastOrder.getTime(), lastSale.getTime()))
           : lastOrder || lastSale || null;

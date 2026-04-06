@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
 
     const notification = await prisma.customerNotification.create({
       data: {
+        tenantId: auth.tenantId,
         customerPhone: body.customerPhone,
         type: body.type || "general",
         title: body.title,

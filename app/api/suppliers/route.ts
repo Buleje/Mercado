@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
   const supplier = await prisma.supplier.create({
     data: {
       id,
+      tenantId: auth.tenantId,
       name: data.name,
       ruc: data.ruc || null,
       phone: data.phone || null,

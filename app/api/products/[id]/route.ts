@@ -71,7 +71,7 @@ async function handleUpdate(req: NextRequest, ctx: RouteCtx) {
 
     // Record price history when price actually changed
     if (body.price != null && body.price !== existing.price) {
-      await PriceHistoryDB.record(numId, existing.price, body.price).catch(() => {});
+      await PriceHistoryDB.record(numId, existing.price, body.price, auth.tenantId).catch(() => {});
     }
 
     const requestId = req.headers.get("x-request-id") ?? undefined;

@@ -19,7 +19,7 @@ async function checkAndAlert() {
       stock: { not: null },
       stockMin: { not: null },
     },
-    select: { id: true, name: true, stock: true, stockMin: true, category: true, unit: true },
+    select: { id: true, name: true, stock: true, stockMin: true, category: true, unit: true, tenantId: true },
   });
 
   const alerts = lowStock.filter(
@@ -91,19 +91,24 @@ async function checkAndAlert() {
     );
   } catch { /* email optional */ }
 
-  // Log to NotificationLog
+  // Log to NotificationLog — one entry per tenant
   try {
-    const logParts: string[] = [];
-    if (alerts.length > 0) logParts.push(`${alerts.length} con stock bajo: ${alerts.map(p => p.name).join(", ")}`);
-    if (velocityAlerts.length > 0) logParts.push(`${velocityAlerts.length} se agotan pronto: ${velocityAlerts.map(p => `${p.name} (~${p.daysLeft}d)`).join(", ")}`);
-    await prisma.notificationLog.create({
-      data: {
-        type: "low_stock",
-        recipient: "admin",
-        message: logParts.join(" | "),
-        status: "sent",
-      },
-    });
+    const tenantIds = [...new Set(alerts.map(p => p.tenantId))];
+    for (const tenantId of tenantIds) {
+      const tenantAlerts = alerts.filter(p => p.tenantId === tenantId);
+      const logParts: string[] = [];
+      if (tenantAlerts.length > 0) logParts.push(`${tenantAlerts.length} con stock bajo: ${tenantAlerts.map(p => p.name).join(", ")}`);
+      if (velocityAlerts.length > 0) logParts.push(`${velocityAlerts.length} se agotan pronto: ${velocityAlerts.map(p => `${p.name} (~${p.daysLeft}d)`).join(", ")}`);
+      await prisma.notificationLog.create({
+        data: {
+          tenantId,
+          type: "low_stock",
+          recipient: "admin",
+          message: logParts.join(" | "),
+          status: "sent",
+        },
+      });
+    }
   } catch { /* logging optional */ }
 
   return {

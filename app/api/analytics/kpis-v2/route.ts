@@ -77,8 +77,8 @@ export async function GET(req: NextRequest) {
           _sum: { total: true },
         }),
         prisma.saleItem.findMany({
-          where: { Sale: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } } },
-          select: { costPrice: true, quantity: true, Product: { select: { costPrice: true } } },
+          where: { sale: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } } },
+          select: { costPrice: true, quantity: true, product: { select: { costPrice: true } } },
         }),
       ]),
 
@@ -119,8 +119,8 @@ export async function GET(req: NextRequest) {
       Promise.all([
         // COGS 30d: sum(SaleItem.quantity * costPrice)
         prisma.saleItem.findMany({
-          where: { Sale: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } } },
-          select: { costPrice: true, quantity: true, Product: { select: { costPrice: true } } },
+          where: { sale: { ...tenantFilter, createdAt: { gte: thirtyDaysAgo } } },
+          select: { costPrice: true, quantity: true, product: { select: { costPrice: true } } },
         }),
         // Avg inventory value: sum(Product.stock * Product.costPrice)
         prisma.product.findMany({
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
     // Helper: calc cost from sale items
     function calcCost(items: { costPrice: number | null; quantity: number; product: { costPrice: number | null } }[]): number {
       return items.reduce((sum, item) => {
-        const cost = item.costPrice ?? item.Product.costPrice ?? 0;
+        const cost = item.costPrice ?? item.product.costPrice ?? 0;
         return sum + cost * item.quantity;
       }, 0);
     }

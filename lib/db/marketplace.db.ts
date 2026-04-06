@@ -248,11 +248,11 @@ export const MarketplaceStoreProductsDB = {
         where: {
           storeId:  params.storeId,
           isActive: true,
-          ...(params.category && { Product: { category: params.category } }),
-          ...(params.search   && { Product: { name: { contains: params.search, mode: "insensitive" } } }),
+          ...(params.category && { product: { category: params.category } }),
+          ...(params.search   && { product: { name: { contains: params.search, mode: "insensitive" } } }),
         },
         include: {
-          Product: {
+          product: {
             select: { id: true, name: true, image: true, category: true, unit: true },
           },
         },
@@ -269,10 +269,10 @@ export const MarketplaceStoreProductsDB = {
         minOrderQty:        r.minOrderQty,
         isActive:           r.isActive,
         volumePricingTiers: r.volumePricingTiers,
-        productName:        r.Product.name,
-        productImage:       r.Product.image,
-        productCategory:    r.Product.category,
-        productUnit:        r.Product.unit,
+        productName:        r.product.name,
+        productImage:       r.product.image,
+        productCategory:    r.product.category,
+        productUnit:        r.product.unit,
       }));
     });
   },
