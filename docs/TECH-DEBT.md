@@ -32,6 +32,22 @@
 | TD-016 | Service Worker | Sin SW + IndexedDB para PWA offline-first (#48 del Excel 2026) | App no funciona sin red | 🔓 Abierto |
 | TD-017 | DDD formal | `lib/db/` agrupa por dominio sin Bounded Contexts ni Aggregates formales (#38 del Excel 2026) | Lógica de negocio mezclada con persistencia en módulos core (ventas, facturas) | 🔓 Abierto |
 
+## 🆕 Hallazgos del audit Supabase Best Practices (2026-04-06)
+
+Audit automatizado contra el skill `supabase-postgres-best-practices` recién instalado. Ordenado por impacto. **Ninguno aplicado todavía** — requieren migración Prisma.
+
+| ID | Modelo/Campo | Problema | Referencia skill | Severidad |
+|----|--------------|----------|------------------|-----------|
+| TD-018 | `OrderItem.price`, `SaleItem.price`, `WholesaleOrderItem.unitPrice`+`total`, `Bundle.price` | Usan `Float` para dinero. Float tiene ~15-17 dígitos de precisión → errores de redondeo acumulados en audits, chargebacks, discrepancias de pago. | `schema-data-types.md` | 🔴 Crítica (correctness) |
+| TD-019 | `WholesaleOrderItem.productId`, `WholesaleOrderItem.wholesaleOrderId`, `StoreProduct.productId` | FK sin `@@index`. Postgres NO indexa FKs automáticamente → JOINs y CASCADE full-scan. Con pgbouncer `connection_limit=1`, serializa todas las transacciones. | `schema-foreign-key-indexes.md` | 🟠 Alta |
+| TD-020 | `CommissionLedger`, `Review`, y otros con `tenantId` + campo filtro común | Índices single-column en `tenantId` y `status` por separado — falta compound `(tenantId, status)` y `(tenantId, createdAt)` para los WHERE más comunes del SaaS multi-tenant. | `query-missing-indexes.md` | 🟠 Alta |
+| TD-021 | `StorePermission.userId` | FK con `@@unique([storeId, userId, userType])` pero sin `@@index([userId])` single-column. Queries "¿en qué tiendas trabaja este user?" van a full-scan. | `schema-foreign-key-indexes.md` | 🟡 Media |
+
+**Plan de mitigación propuesto** (requiere aprobación antes de ejecutar migración):
+1. Sprint 1: TD-018 (Float→Decimal) — migración de datos con conversión de tipos, requiere ventana de mantenimiento.
+2. Sprint 2: TD-019 + TD-021 — migración aditiva de índices, zero-downtime (usar `CREATE INDEX CONCURRENTLY` via SQL raw, no Prisma por defecto).
+3. Sprint 3: TD-020 — compound indexes estratégicos después de medir queries con `pg_stat_statements`.
+
 ## ✅ Resueltas
 
 | ID | Área | Descripción | Resuelto en |

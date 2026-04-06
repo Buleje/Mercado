@@ -37,6 +37,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Agent skills (per-machine install via `skills add ...`)
+.agents/
+.claude/skills/
+.windsurf/skills/
+skills-lock.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

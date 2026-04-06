@@ -24,7 +24,12 @@ const REQUIRED: EnvSpec[] = [
   // ── Core ──────────────────────────────────────────────────────────────────
   {
     key: "DATABASE_URL",
-    description: "PostgreSQL connection string (Supabase pooler URL)",
+    description: "PostgreSQL connection string (Supabase transaction pooler, port 6543, pgbouncer=true)",
+  },
+  {
+    key: "DIRECT_URL",
+    description: "PostgreSQL direct connection (port 5432) — required for `prisma migrate deploy`",
+    productionOnly: true,
   },
   {
     key: "AUTH_SECRET",
