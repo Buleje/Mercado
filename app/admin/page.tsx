@@ -7,7 +7,6 @@ import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useOnboarding } from "@/hooks/use-onboarding";
-import { useSwipe } from "@/hooks/use-swipe";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
 import { OnboardingTour } from "@/components/admin/OnboardingTour";
 import {
@@ -52,6 +51,11 @@ import { useNewOrderNotification } from "./_hooks/useNewOrderNotification";
 import { useNotificationPermissionPrompt } from "./_hooks/useNotificationPermissionPrompt";
 import { useMobileTableCards } from "./_hooks/useMobileTableCards";
 import { useOnboardingTourTrigger } from "./_hooks/useOnboardingTourTrigger";
+import { useDocumentTitle } from "./_hooks/useDocumentTitle";
+import { useSwipeNavigation } from "./_hooks/useSwipeNavigation";
+import { useAdminNavigateEvent } from "./_hooks/useAdminNavigateEvent";
+import { useSidebarShortcuts } from "./_hooks/useSidebarShortcuts";
+import { useClearDataFlow } from "./_hooks/useClearDataFlow";
 
 // Lazy-load heavy admin tabs for better initial load performance
 // ── Unified Module Imports (8 consolidated modules) ──
@@ -344,15 +348,15 @@ function AdminPage() {
   // favoriteTabs/recentTabs/toggleFavorite/addRecent → useFavoritesAndRecent
   const { favoriteTabs, toggleFavorite, recentTabs, addRecent } = useFavoritesAndRecent();
   const [recentCollapsed, setRecentCollapsed] = useState(true);
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [clearConfirmStep, setClearConfirmStep] = useState<1 | 2 | 3>(1);
-  const [clearConfirmText, setClearConfirmText] = useState("");
-  const [clearingData, setClearingData] = useState(false);
-  const [seedingData, setSeedingData] = useState(false);
-  const [clearCategories, setClearCategories] = useState<Set<string>>(() => new Set([
-    "products", "customers", "orders", "sales", "suppliers", "promotions",
-    "cash", "reviews", "expenses", "returns", "activity", "cms", "notifications",
-  ]));
+  // Clear data wizard state → useClearDataFlow
+  // (seedingData borrado: estaba declarado pero nunca usado)
+  const {
+    showClearConfirm, setShowClearConfirm,
+    clearConfirmStep, setClearConfirmStep,
+    clearConfirmText, setClearConfirmText,
+    clearingData, setClearingData,
+    clearCategories, setClearCategories,
+  } = useClearDataFlow();
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [openAccordionCategories, setOpenAccordionCategories] = useState<Set<string>>(new Set());
   const [sidebarFlyout, setSidebarFlyout] = useState<{ categoryId: string; top: number } | null>(null);
@@ -423,64 +427,14 @@ function AdminPage() {
     addRecent(id);
   }, [addRecent]);
 
-  // ── Navigate from notification hub alerts ──
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { moduleId, tabId } = (e as CustomEvent).detail || {};
-      if (moduleId) {
-        navigateTab(tabId || moduleId);
-      }
-    };
-    window.addEventListener("admin:navigate", handler);
-    return () => window.removeEventListener("admin:navigate", handler);
-  }, [navigateTab]);
+  // Listener evento admin:navigate → useAdminNavigateEvent
+  useAdminNavigateEvent(navigateTab);
 
-  // ── Mejora 13: Scroll to top al cambiar módulo ──
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [tab]);
+  // Document title + scroll-to-top → useDocumentTitle
+  useDocumentTitle(tab, activeTenantName);
 
-  // ── Mejora 20: Título dinámico del navegador ──
-  useEffect(() => {
-    const labels: Record<string, string> = {
-      "ventas-caja": "POS",
-      "inventario": "Inventario",
-      "productos": "Productos",
-      "compras": "Compras",
-      "plata": "Finanzas",
-      "clientes": "CRM",
-      "fiados": "Fiados",
-      "turnos": "Turnos",
-      "recetas": "Recetas",
-      "prestamos": "Préstamos",
-      "pedidos": "Pedidos",
-      "analytics-pro": "Analytics",
-      "config": "Configuración",
-      "asistente-ia": "Asistente IA",
-      "cotizaciones": "Cotizaciones",
-      "guias-remision": "Guías Remisión",
-      "notas-credito": "Notas Crédito",
-      "contratos": "Contratos",
-      "plan": "Plan",
-    };
-    document.title = `${labels[tab] || "Panel"} — ${activeTenantName || "Mi Bodega"}`;
-  }, [tab]);
-
-  // ── Mejora 16: Swipe para navegar tabs en mobile ──
-  const swipeHandlers = useSwipe(
-    useCallback(() => {
-      // Swipe left → siguiente tab
-      const allIds = TAB_CATEGORIES.flatMap(c => c.tabs);
-      const idx = allIds.indexOf(tab);
-      if (idx >= 0 && idx < allIds.length - 1) navigateTab(allIds[idx + 1]);
-    }, [tab, navigateTab]),
-    useCallback(() => {
-      // Swipe right → tab anterior
-      const allIds = TAB_CATEGORIES.flatMap(c => c.tabs);
-      const idx = allIds.indexOf(tab);
-      if (idx > 0) navigateTab(allIds[idx - 1]);
-    }, [tab, navigateTab])
-  );
+  // Swipe handlers para mobile → useSwipeNavigation
+  const swipeHandlers = useSwipeNavigation(tab, navigateTab, TAB_CATEGORIES);
 
   // toggleCompact y toggleFocusMode → ahora viven en useAdminLayout
 
@@ -639,66 +593,13 @@ function AdminPage() {
     .filter(Boolean)
     .slice(0, 5);
 
-  // ── Editable sidebar shortcuts ──────────────────────────────────────────────
-  const DEFAULT_SHORTCUTS: Array<{ id: string; label: string }> = [
-    { id: "asistente-ia", label: "Dashboard" },
-    { id: "inventario", label: "Stock" },
-    { id: "pedidos", label: "Pedidos" },
-    { id: "ventas-caja", label: "Caja POS" },
-  ];
-  const [sidebarShortcuts, setSidebarShortcuts] = useState<Array<{ id: string; label: string }>>(() => {
-    try {
-      const saved = localStorage.getItem("admin_sidebar_shortcuts");
-      if (saved) {
-        const parsed = JSON.parse(saved) as Array<{ id: string; label: string }>;
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch { /* use default */ }
-    return DEFAULT_SHORTCUTS;
-  });
-  const [editingShortcuts, setEditingShortcuts] = useState(false);
-  const [showAddShortcut, setShowAddShortcut] = useState(false);
-
-  const saveSidebarShortcuts = useCallback((next: Array<{ id: string; label: string }>) => {
-    setSidebarShortcuts(next);
-    localStorage.setItem("admin_sidebar_shortcuts", JSON.stringify(next));
-  }, []);
-
-  const removeShortcut = useCallback((id: string) => {
-    saveSidebarShortcuts(sidebarShortcuts.filter(s => s.id !== id));
-  }, [sidebarShortcuts, saveSidebarShortcuts]);
-
-  const addShortcut = useCallback((tabId: string) => {
-    const match = ALL_TABS.find(t => t.id === tabId);
-    if (match && !sidebarShortcuts.some(s => s.id === tabId)) {
-      saveSidebarShortcuts([...sidebarShortcuts, { id: tabId, label: match.label }]);
-    }
-    setShowAddShortcut(false);
-  }, [sidebarShortcuts, saveSidebarShortcuts, ALL_TABS]);
-
-  const moveShortcut = useCallback((idx: number, dir: -1 | 1) => {
-    const next = [...sidebarShortcuts];
-    const newIdx = idx + dir;
-    if (newIdx < 0 || newIdx >= next.length) return;
-    [next[idx], next[newIdx]] = [next[newIdx], next[idx]];
-    saveSidebarShortcuts(next);
-  }, [sidebarShortcuts, saveSidebarShortcuts]);
-
-  const resolvedShortcuts = useMemo(() =>
-    sidebarShortcuts
-      .map(s => {
-        const match = ALL_TABS.find(t => t.id === s.id);
-        return match ? { ...s, icon: match.icon } : null;
-      })
-      .filter(Boolean) as Array<{ id: string; label: string; icon: React.ComponentType<{ className?: string }> }>,
-    [sidebarShortcuts, ALL_TABS]
-  );
-
-  const availableForShortcut = useMemo(() =>
-    ALL_TABS.filter(t => allowedTabs.includes(t.id) && !sidebarShortcuts.some(s => s.id === t.id)),
-    [ALL_TABS, allowedTabs, sidebarShortcuts]
-  );
-  // ────────────────────────────────────────────────────────────────────────────
+  // Sidebar shortcuts → useSidebarShortcuts
+  const {
+    sidebarShortcuts, editingShortcuts, setEditingShortcuts,
+    showAddShortcut, setShowAddShortcut,
+    removeShortcut, addShortcut, moveShortcut,
+    resolvedShortcuts, availableForShortcut,
+  } = useSidebarShortcuts(ALL_TABS, allowedTabs);
 
   const currentTab = filteredTabs.find(t => t.id === tab) ?? filteredTabs[0];
 
