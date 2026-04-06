@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   try {
     // Obtener todos los tenants activos
     const tenants = await prisma.tenant.findMany({
-      where: { isActive: true },
+      where: { active: true },
       select: { id: true },
     });
 

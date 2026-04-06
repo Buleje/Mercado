@@ -254,6 +254,7 @@ export async function PATCH(
       if (msg) {
         prisma.customerNotification.create({
           data: {
+            tenantId: auth.tenantId,
             customerPhone: updated.customer.phone,
             type: "order",
             title: msg.title,

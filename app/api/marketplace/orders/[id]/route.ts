@@ -36,7 +36,7 @@ export async function GET(
 
   const order = await prisma.order.findFirst({
     where: { id, source: "marketplace", tenantId: auth.tenantId, deletedAt: null },
-    include: { OrderItem: true },
+    include: { items: true },
   });
 
   if (!order) {

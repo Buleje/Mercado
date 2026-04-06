@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       description: body.description,
       price: Number(body.price),
       image: body.image,
+      tenantId: auth.tenantId,
       items: body.items.map((i: { productId: number; quantity: number }) => ({
         productId: Number(i.productId),
         quantity: Number(i.quantity) || 1,

@@ -131,6 +131,7 @@ export async function GET(req: NextRequest) {
         // Log notification to prevent duplicates
         prisma.notificationLog.create({
           data: {
+            tenantId: lastOrder.tenantId,
             type: "inactive_reminder",
             recipient: phone,
             message: `Reminder 15d: ${customerName} — ${products}`,

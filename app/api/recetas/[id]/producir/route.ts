@@ -67,6 +67,7 @@ export async function POST(
         // Record inventory movement
         await tx.inventoryMovement.create({
           data: {
+            tenantId: auth.tenantId,
             productId: ing.productoId,
             type: "produccion",
             quantity: -cantidadNecesaria,
@@ -105,6 +106,7 @@ export async function POST(
         });
         await prisma.inventoryMovement.create({
           data: {
+            tenantId: auth.tenantId,
             productId: receta.productoId,
             type: "produccion",
             quantity: parsed.data.cantidad,

@@ -142,6 +142,7 @@ export async function GET(req: NextRequest) {
           // Create evaluation record
           await prisma.supplierEvaluation.create({
             data: {
+              tenantId: tenant.id,
               supplierId: supplier.id,
               punctuality,
               quality,

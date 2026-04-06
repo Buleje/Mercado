@@ -310,12 +310,17 @@ async function handlePedido(sender: string, text: string) {
     // Find matching products
     const orderItems = [];
     const notFound: string[] = [];
+    let resolvedTenantId = "main";
     for (const item of items) {
       const product = await prisma.product.findFirst({
         where: { name: { contains: item.name, mode: "insensitive" }, active: true },
-        select: { id: true, name: true, price: true, unit: true, image: true },
+        select: { id: true, name: true, price: true, unit: true, image: true, tenantId: true },
       });
       if (product) {
+        // Use tenantId from the first matched product
+        if (resolvedTenantId === "main" && product.tenantId) {
+          resolvedTenantId = product.tenantId;
+        }
         orderItems.push({
           productId: product.id,
           name: product.name,
@@ -345,6 +350,7 @@ async function handlePedido(sender: string, text: string) {
     const order = await prisma.order.create({
       data: {
         id: crypto.randomUUID(),
+        tenantId: resolvedTenantId,
         customerName: customer?.name ?? sender,
         customerPhone: sender,
         total,

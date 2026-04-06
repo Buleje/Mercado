@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
 
     await prisma.activityLog.create({
       data: {
+        tenantId: resolvedTenantId ?? "system",
         action: "CROSS_TENANT_AUDIT",
         entity: "security",
         entityId: requestId ?? undefined,

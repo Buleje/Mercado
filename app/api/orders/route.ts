@@ -482,6 +482,7 @@ export async function POST(req: NextRequest) {
     if (saved.customer.phone) {
       prisma.customerNotification.create({
         data: {
+          tenantId,
           customerPhone: saved.customer.phone,
           type: "order",
           title: "📋 Pedido recibido",
