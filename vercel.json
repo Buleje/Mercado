@@ -1,15 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "rollingRelease": {
-    "enabled": true,
-    "advancementType": "manual-approval",
-    "stages": [
-      { "targetPercentage": 10, "waitDuration": "5m" },
-      { "targetPercentage": 50, "waitDuration": "15m" },
-      { "targetPercentage": 100 }
-    ]
-  },
   "buildCommand": "npx prisma generate && npm run build",
   "installCommand": "npm ci",
   "functions": {
@@ -84,7 +75,7 @@
     },
     {
       "path": "/api/cron/stock-alerts-notify",
-      "schedule": "0 8,14,20 * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/auto-reorder-check",
@@ -108,7 +99,7 @@
     },
     {
       "path": "/api/cron/abandoned-cart",
-      "schedule": "0 */2 * * *"
+      "schedule": "0 14 * * *"
     },
     {
       "path": "/api/prestamos/cron/mora",
@@ -128,7 +119,7 @@
     },
     {
       "path": "/api/cron/cleanup-demos",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 4 * * *"
     },
     {
       "path": "/api/cron/reorder-reminders",
@@ -144,7 +135,7 @@
     },
     {
       "path": "/api/cron/marketplace-abandoned-carts",
-      "schedule": "0 */3 * * *"
+      "schedule": "0 15 * * *"
     },
     {
       "path": "/api/cron/dead-stock-report",
@@ -180,7 +171,7 @@
     },
     {
       "path": "/api/cron/isolation-monitor",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 16 * * *"
     },
     {
       "path": "/api/cron/churn-score",
