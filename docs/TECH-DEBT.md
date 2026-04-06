@@ -2,37 +2,64 @@
 
 > **Regla:** Dedicar ~20% de cada sesión a reducir deuda técnica.
 > Actualizar este archivo cuando se identifique o resuelva deuda.
+> **Última auditoría:** 2026-04-06
 
 ## 🔴 Alta prioridad (afecta estabilidad o seguridad)
 
 | ID | Área | Descripción | Impacto | Estado |
 |----|------|-------------|---------|--------|
-| TD-001 | CheckoutModal | Archivo de 119 KB / 2018 líneas — difícil de mantener y testear | Riesgo de regresión en cada cambio | 🔓 Abierto |
+| TD-001 | CheckoutModal | Refactor a `components/checkout/` está hecho (1333 → 16 líneas re-export). Falta migrar `components/CheckoutModal.tsx` antiguo a usar el nuevo o eliminarlo si ya no se referencia. | Riesgo de regresión en cada cambio | 🟡 En progreso |
 | TD-002 | Prisma migration | Modelos AIConversation/AIMessage en schema sin migrar | Memoria IA no persiste datos | 🔓 Abierto |
 | TD-003 | A/B testing + Quality eval | Métricas en memoria — se pierden al reiniciar servidor | Pérdida de datos de experimentos | 🔓 Abierto |
+| TD-011 | admin/page.tsx | Archivo de 1413 líneas — refactor en progreso (Sesiones 1-2 hechas, faltan 4-7) | Alto acoplamiento, difícil de mantener | 🟡 En progreso |
+| TD-012 | next.config.ts | `ignoreBuildErrors: true` enmascara errores TS reales (descubiertos ~30 en sesión 2026-04-06) | Bugs llegan a producción sin gate de tipos | 🟡 En progreso (fix en curso) |
 
 ## 🟠 Media prioridad (afecta desarrollo o rendimiento)
 
 | ID | Área | Descripción | Impacto | Estado |
 |----|------|-------------|---------|--------|
-| TD-004 | API endpoints | Varios endpoints usan OFFSET en vez de cursor pagination | Degradación con tablas grandes | 🔓 Abierto |
-| TD-005 | N+1 queries | No hay detección sistemática de queries N+1 | Posible lentitud oculta | 🔓 Abierto |
-| TD-006 | Cache | lib/cache.ts soporta Redis pero usa memoria por default | No escala con múltiples instancias | 🔓 Abierto |
-| TD-007 | Descuentos | Lógica de descuentos fragmentada (currency.ts, pricing.agent, checkout) | Strategy Pattern creado pero no integrado al checkout | 🔓 Abierto |
+| TD-004 | API endpoints | Algunos endpoints todavía usan OFFSET en vez de cursor pagination | Degradación con tablas grandes | 🔓 Abierto |
+| TD-007 | Descuentos | Strategy Pattern creado (ADR 006) pero no integrado al checkout | Lógica fragmentada entre currency.ts, pricing.agent y checkout | 🔓 Abierto |
+| TD-010 | DB classes | Sin interfaces formales (IProductsDB, IOrdersDB) | Dificulta mocking en tests | 🔓 Abierto |
+| TD-013 | proxy.ts | 470 líneas mezclando auth + CSP + tenant + rate limit + helpers duplicados de `lib/middleware-utils.ts` | Difícil de testear y modificar | 🔓 Abierto |
+| TD-014 | Doppler | Migración planeada en `docs/doppler.md` pero bloqueada por acciones humanas (crear cuenta, autenticar CLI) | Secrets duplicados Vercel + .env.local | 🟡 En progreso |
 
 ## 🟡 Baja prioridad (mejora calidad a largo plazo)
 
 | ID | Área | Descripción | Impacto | Estado |
 |----|------|-------------|---------|--------|
-| TD-008 | Documentación | No hay OpenAPI/Swagger spec para los 90+ endpoints | Onboarding más lento, no hay contrato formal | 🔓 Abierto |
-| TD-009 | Tracing | instrumentation.ts solo valida env vars, no tracing real | Difícil debuggear en producción | 🔓 Abierto |
-| TD-010 | DB classes | Sin interfaces formales (IProductsDB, IOrdersDB) | Dificulta mocking en tests | 🔓 Abierto |
+| TD-015 | Storybook | `stories/ErrorBoundary.stories.tsx` ya arreglado, pero faltan stories para hooks de admin | Cobertura visual incompleta | 🔓 Abierto |
+| TD-016 | Service Worker | Sin SW + IndexedDB para PWA offline-first (#48 del Excel 2026) | App no funciona sin red | 🔓 Abierto |
+| TD-017 | DDD formal | `lib/db/` agrupa por dominio sin Bounded Contexts ni Aggregates formales (#38 del Excel 2026) | Lógica de negocio mezclada con persistencia en módulos core (ventas, facturas) | 🔓 Abierto |
 
 ## ✅ Resueltas
 
 | ID | Área | Descripción | Resuelto en |
 |----|------|-------------|-------------|
-| — | — | (se llenará conforme se resuelvan items) | — |
+| TD-005 | N+1 queries | Auditoría sistemática completa | `docs/n-plus-1-audit.md` (sesión previa) |
+| TD-006 | Cache | `lib/cache.ts` híbrido Memory+Redis con `getOrSet`, `invalidate`, `invalidateByPrefix` activo | Implementado antes de 2026-04 |
+| TD-008 | Documentación API | OpenAPI spec generada con `npm run openapi:generate` desde Zod schemas → `public/openapi.json` | Implementado en sesiones previas |
+| TD-009 | Tracing | `@vercel/otel` registrado en `instrumentation.ts` con service name `bodega-san-martin` | Implementado en sesiones previas |
+
+## 🚧 Resueltas en sesión 2026-04-06 (Agent Team — bugs TS ocultos)
+
+Hallazgo crítico: `npx tsc --noEmit` reveló ~30 errores TypeScript pre-existentes que `ignoreBuildErrors: true` enmascaraba. Cerrados por agentes especialistas en paralelo:
+
+| Categoría | Archivos | Descripción | Severidad original |
+|---|---|---|---|
+| `tenantId` faltante | `lib/db/sales.db.ts`, `lib/db/supplier-portal.db.ts` (×2), `lib/push-subscriptions.ts`, `lib/workers/log-activity.worker.ts`, `lib/sunat.ts` | 6 queries Prisma sin `tenantId` → multi-tenant leak real | 🔴 Crítica |
+| Capitalización Prisma | `lib/notification-generators.ts` (×9), `prisma/seed-fruteria.ts` (×4) | Relaciones `Customer`/`Product`/`Prestamo`/`Fiado`/`Sale`/`Order`/`PurchaseOrder` en PascalCase rompían los queries en runtime | 🟡 Alta |
+| Tipos de DB classes incompletos | `lib/db/sales.db.ts:131,173`, `lib/forecasting/auto-reorder.ts`, `lib/whatsapp/conversation-engine.ts` | `DbSale` sin `items`, `CashRegister` sin `movements`, `DbPurchaseOrder`/`DbOrder` sin `createdAt`/`updatedAt` | 🟡 Alta |
+| Variable indefinida | `lib/mailer.ts:141` | `tenantName` referenciado pero no declarado | 🟡 Alta |
+| Roles faltantes | `lib/module-permissions.ts:55` | Record sin `owner`, `manager`, `analista` | 🟡 Alta |
+| Comparación imposible | `lib/require-admin.ts:55` | Comparación con `"superadmin"` fuera del union de roles | 🟡 Alta |
+| Implicit `any` en page.tsx | `app/admin/page.tsx` (líneas 753, 784, 1029, 1060, 1177) | Setters mal usados con updater functions | 🟢 Cosmética |
+| JSX type mismatch | `stories/ErrorBoundary.stories.tsx` (×4) | Componente que retorna `void` (throw sin return) | 🟢 Cosmética |
+| Funciones duplicadas | `scripts/setup-sentry-alerts.ts:411`, `scripts/verify-redis.ts:14` | Re-implementación duplicada | 🟢 Baja |
+| Argumento faltante | `scripts/seed-test-data.ts:4` | Función llamada sin argumento requerido | 🟡 Media |
+| Bug pre-existente | `app/admin/page.tsx` | Icono `Shield` usado sin import | 🟢 Cosmética |
+
+**Total:** ~30 errores TS resueltos. Tras este bloque, `next.config.ts` puede quitar `ignoreBuildErrors: true` y `npm run build` actuará como gate real.
 
 ---
 
