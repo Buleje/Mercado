@@ -41,6 +41,12 @@ import { useAdminLayout } from "./_hooks/useAdminLayout";
 import { useFavoritesAndRecent } from "./_hooks/useFavoritesAndRecent";
 import { useImpersonation } from "./_hooks/useImpersonation";
 import { useDemoCleanup } from "./_hooks/useDemoCleanup";
+import { useAdminAuth } from "./_hooks/useAdminAuth";
+import { useWebhookPendingCount } from "./_hooks/useWebhookPendingCount";
+import { useChangelogBadge } from "./_hooks/useChangelogBadge";
+import { useHiddenTabs } from "./_hooks/useHiddenTabs";
+import { useCategoryOrder } from "./_hooks/useCategoryOrder";
+import { useOnboardingTrigger } from "./_hooks/useOnboardingTrigger";
 
 // Lazy-load heavy admin tabs for better initial load performance
 // ── Unified Module Imports (8 consolidated modules) ──
@@ -315,7 +321,7 @@ function AdminPage() {
   const onboarding = useOnboarding();
   // Silent token refresh — rotates access token every 12 min (expires at 15 min)
   useTokenRefresh();
-  const [storeMode, setStoreModeState] = useState<StoreMode>("whatsapp");
+  // storeMode → useAdminAuth (compartido con el resto del flujo de auth)
   // Layout state (mobileNavOpen, compactMode, focusMode, presentationMode)
   // extraído a useAdminLayout — ver app/admin/_hooks/useAdminLayout.ts
   const {
@@ -346,42 +352,19 @@ function AdminPage() {
   const [openAccordionCategories, setOpenAccordionCategories] = useState<Set<string>>(new Set());
   const [sidebarFlyout, setSidebarFlyout] = useState<{ categoryId: string; top: number } | null>(null);
   const flyoutTimerRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [hiddenTabs, setHiddenTabs] = useState<Set<Tab>>(() => {
-    if (typeof window === "undefined") return new Set<Tab>();
-    try { const s = localStorage.getItem("admin_hidden_tabs"); return s ? new Set<Tab>(JSON.parse(s)) : new Set<Tab>(); } catch { return new Set<Tab>(); }
-  });
-  const toggleHideTab = (id: Tab) => {
-    setHiddenTabs(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      try { localStorage.setItem("admin_hidden_tabs", JSON.stringify(Array.from(next))); } catch {}
-      return next;
-    });
-  };
+  // hiddenTabs/toggleHideTab → useHiddenTabs
+  const { hiddenTabs, toggleHideTab } = useHiddenTabs();
   // clearedDemoTabs/demoClearing/dismissDemoTab/clearDemoData → useDemoCleanup
   const { clearedDemoTabs, demoClearing, dismissDemoTab, clearDemoData } = useDemoCleanup(DEMO_DATA_MODULES);
   const [showModuleManager, setShowModuleManager] = useState(false);
-  // Sidebar category ordering — persisted in localStorage
-  const [categoryOrder, setCategoryOrder] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try { const s = localStorage.getItem("admin_category_order"); return s ? JSON.parse(s) : []; } catch { return []; }
-  });
-  const saveCategoryOrder = useCallback((order: string[]) => {
-    setCategoryOrder(order);
-    try { localStorage.setItem("admin_category_order", JSON.stringify(order)); } catch {}
-  }, []);
+  // categoryOrder/saveCategoryOrder → useCategoryOrder
+  const { categoryOrder, saveCategoryOrder } = useCategoryOrder();
   const [showCierreDiario, setShowCierreDiario] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
-  // Changelog badge — check if user has seen the latest version
-  const [changelogHasNew, setChangelogHasNew] = useState(false);
-  useEffect(() => {
-    try {
-      const lastSeen = localStorage.getItem("changelog-last-seen");
-      if (lastSeen !== "2.5") setChangelogHasNew(true);
-    } catch {}
-  }, []);
+  // showOnboarding → useOnboardingTrigger
+  const { showOnboarding, setShowOnboarding } = useOnboardingTrigger();
+  // changelogHasNew → useChangelogBadge
+  const changelogHasNew = useChangelogBadge();
 
   // ── Open module manager from Settings via custom event ──────────────────
   useEffect(() => {
@@ -390,25 +373,16 @@ function AdminPage() {
     return () => window.removeEventListener("open-module-manager", handler);
   }, []);
 
-  // ── Onboarding wizard: show on first visit (skip when SuperAdmin is impersonating) ─
-  useEffect(() => {
-    try {
-      // Never show onboarding to SuperAdmin impersonating a tenant — it blocks the whole UI
-      if (localStorage.getItem("superadmin-impersonate-tenant")) return;
-      const slug = localStorage.getItem("active-tenant-slug") ?? "main";
-      const key = `onboarding-completed-${slug}`;
-      if (!localStorage.getItem(key)) {
-        // Small delay so admin panel renders first
-        const t = setTimeout(() => setShowOnboarding(true), 1200);
-        return () => clearTimeout(t);
-      }
-    } catch {}
-  }, []);
-  // demoClearing, dismissDemoTab, clearDemoData → ahora viven en useDemoCleanup
-  const [userRole, setUserRole] = useState<"admin" | "cajero" | "almacenero">("admin");
-  const [userName, setUserName] = useState("Admin");
-  const [authReady, setAuthReady] = useState(false);
-  const [savedRolePerms, setSavedRolePerms] = useState<Record<string, string[]> | null>(null);
+  // userRole/userName/authReady/savedRolePerms/storeMode → useAdminAuth
+  const onUnauth = useCallback(() => {
+    router.push(adminPath("/admin/login"));
+  // adminPath depende solo de tenantPrefix que es estable
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router]);
+  const {
+    userRole, userName, authReady, savedRolePerms,
+    storeMode, setStoreModeState,
+  } = useAdminAuth(onUnauth);
 
   // SuperAdmin impersonation + tenant info → useImpersonation
   const {
@@ -424,62 +398,9 @@ function AdminPage() {
   const { toggle: toggleTheme } = useTheme();
   const { permission, requestPermission, sendNotification, hasAsked } = useNotifications();
 
-  useEffect(() => {
-    fetch("/api/settings")
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (d?.mode) setStoreModeState(d.mode);
-        if (d?.rolePermissions) setSavedRolePerms(d.rolePermissions);
-      })
-      .catch(() => {});
-    // Plan fetch removed — tenantPlan was unused
-    fetch("/api/auth/me")
-      .then(r => { if (!r.ok) throw new Error("unauth"); return r.json(); })
-      .then(d => {
-        if (d?.role) { setUserRole(d.role); setUserName(d.username ?? "admin"); }
-        setAuthReady(true);
-      })
-      .catch(() => {
-        fetch("/api/settings")
-          .then(r => r.ok ? r.json() : null)
-          .then(s => {
-            if (s?.adminBypassLogin) {
-              return fetch("/api/auth/bypass", { method: "POST" })
-                .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-                .then(d => { setUserRole(d.role); setUserName(d.name ?? "invitado"); setAuthReady(true); });
-            }
-            throw new Error("no bypass");
-          })
-          .catch(() => { router.push(adminPath("/admin/login")); });
-      });
-  }, [router]);
-
-  // Webhook queue pending count for sidebar badge
-  const [webhookPendingCount, setWebhookPendingCount] = useState(0);
-  useEffect(() => {
-    if (userRole !== "admin") return;
-    const fetchCount = () =>
-      fetch("/api/billing/webhook-queue")
-        .then(r => r.ok ? r.json() : [])
-        .then((items: { processedAt: string | null }[]) =>
-          setWebhookPendingCount(items.filter(i => !i.processedAt).length)
-        )
-        .catch(() => {});
-    fetchCount();
-    const interval = setInterval(fetchCount, 60_000);
-    return () => clearInterval(interval);
-  }, [userRole]);
-
-  // Keyboard shortcuts extraídos a app/admin/_hooks/useKeyboardShortcuts.ts (Paso 4 del refactor)
-  useKeyboardShortcuts({
-    navigateTab,
-    toggleTheme,
-    handleLogout,
-    setSearchOpen,
-    setShowShortcuts,
-    setShowCierreDiario,
-    setPresentationMode,
-  });
+  // Auth + settings inicial → useAdminAuth (arriba)
+  // webhookPendingCount → useWebhookPendingCount
+  const webhookPendingCount = useWebhookPendingCount(userRole);
 
   // toggleFavorite ahora vive en useFavoritesAndRecent
   // navigateTab compone setTab + URL update + addRecent (de useFavoritesAndRecent)
@@ -703,6 +624,17 @@ function AdminPage() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     router.push(adminPath("/admin/login"));
   };
+
+  // Keyboard shortcuts → useKeyboardShortcuts (DEBE ir después de navigateTab y handleLogout)
+  useKeyboardShortcuts({
+    navigateTab,
+    toggleTheme,
+    handleLogout,
+    setSearchOpen,
+    setShowShortcuts,
+    setShowCierreDiario,
+    setPresentationMode,
+  });
 
   // ── 8 módulos consolidados + especiales ──────────────────────────────────────
   const ALL_TABS = [
