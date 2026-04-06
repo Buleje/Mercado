@@ -35,6 +35,8 @@ import { TabSpinner } from "./_lib/tab-spinner";
 import { NavDefaultTabsConfig } from "@/components/admin/NavDefaultTabsConfig";
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
+import { AdminFloatingButtons } from "@/components/admin/AdminFloatingButtons";
+import { AdminMobileBottomBar } from "@/components/admin/AdminMobileBottomBar";
 import { useKeyboardShortcuts } from "./_hooks/useKeyboardShortcuts";
 import { useAdminLayout } from "./_hooks/useAdminLayout";
 import { useFavoritesAndRecent } from "./_hooks/useFavoritesAndRecent";
@@ -1535,94 +1537,24 @@ function AdminPage() {
 
       </main>
 
-      {/* Focus mode floating expand toggle — only on desktop */}
-      {focusMode && !presentationMode && (
-        <button
-          onClick={toggleFocusMode}
-          className="hidden sm:flex fixed bottom-6 left-4 z-50 h-10 w-10 rounded-full bg-primary text-white shadow-lg items-center justify-center hover:bg-primary/90 transition-all"
-          title="Expandir sidebar"
-        >
-          <Maximize2 className="h-5 w-5" />
-        </button>
-      )}
-
-      {/* Presentation mode — floating exit button */}
-      {presentationMode && (
-        <button
-          onClick={() => setPresentationMode(false)}
-          className="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-xl bg-black/30 backdrop-blur-md text-white/80 text-sm font-semibold hover:bg-black/50 hover:text-white transition-all shadow-lg"
-          title="Salir de presentación (Ctrl+Shift+P)"
-        >
-          <EyeOff className="h-4 w-4" />
-          Salir
-        </button>
-      )}
+      <AdminFloatingButtons
+        focusMode={focusMode}
+        presentationMode={presentationMode}
+        onToggleFocus={toggleFocusMode}
+        onExitPresentation={() => setPresentationMode(false)}
+      />
 
       {/* Keyboard shortcuts modal — extracted to AdminModals */}
       <ShortcutsModal open={showShortcuts} onClose={() => setShowShortcuts(false)} />
 
-      {/* ── Mobile quick-tab bottom bar ─────────────────────────────────────── */}
-      {(() => {
-        const MOBILE_PRIORITY: Record<string, Tab[]> = {
-          admin:      ["asistente-ia", "ventas-caja", "pedidos", "inventario"],
-          cajero:     ["asistente-ia", "ventas-caja", "pedidos", "clientes"],
-          almacenero: ["asistente-ia", "inventario", "compras", "plata"],
-        };
-        const priorityIds = MOBILE_PRIORITY[userRole] ?? MOBILE_PRIORITY.admin;
-        const quickTabs = priorityIds
-          .map(id => filteredTabs.find(t => t.id === id))
-          .filter((t): t is NonNullable<typeof t> => t != null);
-        return (
-          <nav
-            className="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-white dark:bg-card border-t border-gray-200 dark:border-card-border flex items-stretch"
-            style={{ paddingBottom: "max(env(safe-area-inset-bottom), 4px)" }}
-            aria-label="Navegación rápida"
-          >
-            {quickTabs.map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => navigateTab(id)}
-                className={cn(
-                  "flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold transition-colors relative",
-                  tab === id ? "text-primary" : "text-gray-400 dark:text-muted"
-                )}
-                aria-current={tab === id ? "page" : undefined}
-              >
-                {alerts[id] ? (
-                  <span className="relative inline-flex">
-                    <Icon className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-extrabold flex items-center justify-center px-0.5">{alerts[id]}</span>
-                  </span>
-                ) : (
-                  <Icon className="h-5 w-5" />
-                )}
-                <span className="leading-tight truncate max-w-14">{label}</span>
-                {tab === id && <span className="absolute top-0 inset-x-0 h-0.5 bg-primary" />}
-              </button>
-            ))}
-            {(() => {
-              const otherAlerts = Object.entries(alerts)
-                .filter(([id]) => !priorityIds.includes(id as Tab))
-                .reduce((sum, [, v]) => sum + v, 0);
-              return (
-                <button
-                  onClick={() => setMobileNavOpen(true)}
-                  className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-semibold text-gray-400 dark:text-muted transition-colors"
-                  aria-label="Más opciones"
-                >
-                  <span className="relative inline-flex">
-                    <Menu className="h-5 w-5" />
-                    {otherAlerts > 0 && (
-                      <span className="absolute -top-1 -right-2 min-w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-extrabold flex items-center justify-center px-0.5">{otherAlerts}</span>
-                    )}
-                  </span>
-                  <span className="leading-tight">Más</span>
-                </button>
-              );
-            })()}
-          </nav>
-        );
-      })()}
+      <AdminMobileBottomBar
+        userRole={userRole}
+        currentTab={tab}
+        filteredTabs={filteredTabs}
+        alerts={alerts}
+        onNavigate={navigateTab}
+        onOpenMobileNav={() => setMobileNavOpen(true)}
+      />
       <SSEListener />
       <MorningSummaryModal />
       {showOnboarding && (
