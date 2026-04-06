@@ -35,6 +35,7 @@ import type { Tab } from "./_lib/tabs.types";
 import { TAB_MIGRATION } from "./_lib/tab-migration";
 import { TabSpinner } from "./_lib/tab-spinner";
 import { NavDefaultTabsConfig } from "@/components/admin/NavDefaultTabsConfig";
+import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
 import { useKeyboardShortcuts } from "./_hooks/useKeyboardShortcuts";
 import { useAdminLayout } from "./_hooks/useAdminLayout";
 import { useFavoritesAndRecent } from "./_hooks/useFavoritesAndRecent";
@@ -56,6 +57,8 @@ import { useSwipeNavigation } from "./_hooks/useSwipeNavigation";
 import { useAdminNavigateEvent } from "./_hooks/useAdminNavigateEvent";
 import { useSidebarShortcuts } from "./_hooks/useSidebarShortcuts";
 import { useClearDataFlow } from "./_hooks/useClearDataFlow";
+import { useCustomShortcuts } from "./_hooks/useCustomShortcuts";
+import { useCommandItems } from "./_hooks/useCommandItems";
 
 // Lazy-load heavy admin tabs for better initial load performance
 // ── Unified Module Imports (8 consolidated modules) ──
@@ -562,30 +565,8 @@ function AdminPage() {
   // Favorite & recent subsets for sidebar sections
   const favoriteTabItems = ALL_TABS.filter(t => favoriteTabs.has(t.id) && allowedTabs.includes(t.id));
 
-  // Custom shortcuts from SettingsModule
-  const [customShortcutsVersion, setCustomShortcutsVersion] = useState(0);
-  useEffect(() => {
-    const handler = () => setCustomShortcutsVersion(v => v + 1);
-    window.addEventListener("storage", handler);
-    // Also listen for custom event from same tab
-    window.addEventListener("admin-shortcuts-changed", handler);
-    return () => { window.removeEventListener("storage", handler); window.removeEventListener("admin-shortcuts-changed", handler); };
-  }, []);
-  const customShortcutItems = useMemo(() => {
-    try {
-      const saved = localStorage.getItem("admin_custom_shortcuts");
-      if (!saved) return [];
-      const shortcuts: Array<{ id: string; label: string; tabId: string }> = JSON.parse(saved);
-      return shortcuts
-        .filter(s => ALL_TABS.some(t => t.id === s.tabId))
-        .map(s => {
-          const match = ALL_TABS.find(t => t.id === s.tabId);
-          return match ? { id: s.tabId as Tab, label: s.label, icon: match.icon } : null;
-        })
-        .filter(Boolean) as Array<{ id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }>;
-    } catch { return []; }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customShortcutsVersion]);
+  // Custom shortcuts (de SettingsModule) → useCustomShortcuts
+  const customShortcutItems = useCustomShortcuts(ALL_TABS);
 
   const recentTabItems = recentTabs
     .filter(id => id !== tab && !favoriteTabs.has(id) && allowedTabs.includes(id))
@@ -603,44 +584,8 @@ function AdminPage() {
 
   const currentTab = filteredTabs.find(t => t.id === tab) ?? filteredTabs[0];
 
-  const commandItems = useMemo(() => {
-    const items: Array<{ id: string; label: string; category: string; icon?: string; onSelect: () => void }> = [];
-
-    const modules: Array<{ id: Tab; label: string; icon: string; category: string }> = [
-      { id: "asistente-ia",   label: "Asistente IA",            icon: "🧠", category: "Módulo" },
-      { id: "ventas-caja",    label: "Ventas & Caja (POS)",     icon: "🖥️", category: "Módulo" },
-      { id: "inventario",     label: "Inventario & Almacenes",  icon: "📦", category: "Módulo" },
-      { id: "productos",      label: "Productos & Precios",     icon: "🏪", category: "Módulo" },
-      { id: "compras",        label: "Compras & Proveedores",   icon: "📋", category: "Módulo" },
-      { id: "plata",          label: "Mi Plata (Finanzas)",     icon: "💵", category: "Módulo" },
-      { id: "clientes",       label: "Mis Clientes (CRM)",      icon: "👥", category: "Módulo" },
-      { id: "analytics-pro",  label: "Analytics Pro",           icon: "📊", category: "Módulo" },
-      { id: "fiados",         label: "Fiados",                  icon: "💰", category: "Módulo" },
-      { id: "turnos",         label: "Turnos de Caja",          icon: "⏱️", category: "Módulo" },
-      { id: "recetas",        label: "Recetas & Producción",    icon: "🍳", category: "Módulo" },
-      { id: "prestamos",      label: "Préstamos",               icon: "🏦", category: "Módulo" },
-      { id: "pedidos",        label: "Pedidos",                 icon: "🛒", category: "Módulo" },
-      { id: "cotizaciones",   label: "Cotizaciones",            icon: "📄", category: "Documento" },
-      { id: "guias-remision", label: "Guías de Remisión",       icon: "🚚", category: "Documento" },
-      { id: "notas-credito",  label: "Notas de Crédito",        icon: "📝", category: "Documento" },
-      { id: "contratos",      label: "Contratos",               icon: "📑", category: "Documento" },
-      { id: "config",         label: "Configuración",           icon: "⚙️", category: "Sistema" },
-      { id: "plan",           label: "Plan & Suscripción",      icon: "⚡", category: "Sistema" },
-    ];
-
-    modules.forEach(m => {
-      items.push({ ...m, onSelect: () => navigateTab(m.id) });
-    });
-
-    items.push(
-      { id: "action-new-sale",     label: "Nueva venta (POS)",  icon: "➕", category: "Acción", onSelect: () => navigateTab("ventas-caja") },
-      { id: "action-new-product",  label: "Nuevo producto",     icon: "➕", category: "Acción", onSelect: () => navigateTab("productos") },
-      { id: "action-new-customer", label: "Nuevo cliente",      icon: "➕", category: "Acción", onSelect: () => navigateTab("clientes") },
-      { id: "action-inventario",   label: "Ver stock",          icon: "🔍", category: "Acción", onSelect: () => navigateTab("inventario") },
-    );
-
-    return items;
-  }, [navigateTab]);
+  // Command palette items (Cmd+K) → useCommandItems
+  const commandItems = useCommandItems(navigateTab);
 
   if (!authReady) {
     return (
@@ -652,23 +597,13 @@ function AdminPage() {
 
   return (
     <div className="admin-mobile-cards min-h-screen bg-gray-50 dark:bg-background" data-admin-shell="true">
-      {/* SuperAdmin impersonation banner — fixed top-0, z-50 */}
-      {isSuperAdminImpersonating && (
-        <div className="fixed top-0 inset-x-0 z-50 bg-amber-500 text-white text-xs font-semibold flex items-center justify-center gap-3 h-10 px-4">
-          <Shield className="w-3.5 h-3.5 shrink-0" />
-          <span>Viendo como SuperAdmin —{" "}
-            <span className="font-bold">{activeTenantName ?? activeTenantSlug ?? "tienda"}</span>
-          </span>
-          <button
-            type="button"
-            onClick={handleExitImpersonation}
-            className="ml-3 flex items-center gap-1 bg-white/20 hover:bg-white/30 transition-colors rounded-md px-2.5 py-0.5 text-xs font-bold"
-          >
-            <LogOut className="w-3 h-3" />
-            Salir
-          </button>
-        </div>
-      )}
+      <AdminImpersonationBanner
+        visible={isSuperAdminImpersonating}
+        tenantName={activeTenantName}
+        tenantSlug={activeTenantSlug}
+        onExit={handleExitImpersonation}
+      />
+
 
       {/* Mobile nav overlay */}
       {mobileNavOpen && (
