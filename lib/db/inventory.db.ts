@@ -4,6 +4,7 @@ import type {
   InventoryMovement as PInventoryMovement,
   Warehouse as PWarehouse,
 } from "@/lib/generated/prisma/client";
+import { DomainEvents } from "@/lib/domain-events";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -158,6 +159,7 @@ export const InventoryMovementsDB = {
 
     // Fire-and-forget: push notification when stock drops below minimum
     const stockMin = (product as unknown as { stockMin?: number | null })?.stockMin;
+    const productTenantId = (product as unknown as { tenantId?: string })?.tenantId;
     if (
       !isIncrease &&
       stockMin != null &&
@@ -165,6 +167,7 @@ export const InventoryMovementsDB = {
       clampedNewStock <= stockMin &&
       product
     ) {
+      // 1) Legacy push notification (mantenido por compatibilidad)
       import("@/lib/push-sender").then(({ broadcastPush }) =>
         broadcastPush({
           title: `⚠️ Stock bajo: ${product.name}`,
@@ -174,6 +177,24 @@ export const InventoryMovementsDB = {
           url: "/admin?tab=inventario",
         })
       ).catch(() => {});
+
+      // 2) Domain event — permite que otros módulos reaccionen (ver ADR 007)
+      if (productTenantId) {
+        DomainEvents.stockBajo(productTenantId, {
+          productId:     data.productId,
+          productName:   product.name,
+          currentStock:  clampedNewStock,
+          stockMin,
+          lastDeduction: data.quantity,
+          reason:        (data.type === "venta" || data.type === "venta_online")
+            ? "venta"
+            : data.type === "merma"
+              ? "merma"
+              : data.type === "ajuste_negativo"
+                ? "ajuste"
+                : "transferencia",
+        }).catch(() => {});
+      }
     }
 
     return mapInventoryMovement(row);
@@ -188,21 +209,31 @@ export const InventoryMovementsDB = {
     await this.record({ productId, type, quantity, reference, notes: `FEFO: ${quantity} unidades` });
 
     // 2. Decrement from batches in FEFO order (earliest expiry first)
-    let remaining = quantity;
-    const batches = await prisma.batch.findMany({
-      where: { productId, quantity: { gt: 0 } },
-      orderBy: { expiryDate: "asc" },
-    });
-
-    for (const batch of batches) {
-      if (remaining <= 0) break;
-      const toDeduct = Math.min(batch.quantity, remaining);
-      await prisma.batch.update({
-        where: { id: batch.id },
-        data: { quantity: batch.quantity - toDeduct },
+    // N+1 fix: resolve all deductions up-front, then update in a single transaction
+    // with parallel writes (was: 1 findMany + N sequential updates).
+    await prisma.$transaction(async (tx) => {
+      const batches = await tx.batch.findMany({
+        where: { productId, quantity: { gt: 0 } },
+        orderBy: { expiryDate: "asc" },
       });
-      remaining -= toDeduct;
-    }
+
+      let remaining = quantity;
+      const updates: Array<{ id: string; newQty: number }> = [];
+      for (const batch of batches) {
+        if (remaining <= 0) break;
+        const toDeduct = Math.min(batch.quantity, remaining);
+        updates.push({ id: batch.id, newQty: batch.quantity - toDeduct });
+        remaining -= toDeduct;
+      }
+
+      if (updates.length > 0) {
+        await Promise.all(
+          updates.map((u) =>
+            tx.batch.update({ where: { id: u.id }, data: { quantity: u.newQty } })
+          )
+        );
+      }
+    });
 
     // 3. Update Product.expiresAt to reflect the nearest batch expiry
     await refreshProductExpiresAt(productId);

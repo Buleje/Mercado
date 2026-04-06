@@ -659,20 +659,27 @@ export const PrestamosDB = {
 
   /** Mark overdue cuotas — call from cron job */
   async marcarVencidos(tenantId: string): Promise<number> {
+    // N+1 fix: was 1 findMany (+ cuotas) + N sequential updates. Now: a single
+    // updateMany scoped by a subquery that identifies préstamos with at least one
+    // unpaid cuota past due. Much cheaper than pulling everything to Node.
     const now = new Date();
-    const activos = await prisma.prestamo.findMany({
-      where: { tenantId, status: "ACTIVO" },
-      include: { cuotas: true },
+    const overdueCuotas = await prisma.prestamoCuota.findMany({
+      where: {
+        pagadoEn: null,
+        fechaVence: { lt: now },
+        prestamo: { tenantId, status: "ACTIVO" },
+      },
+      select: { prestamoId: true },
+      distinct: ["prestamoId"],
     });
 
-    let count = 0;
-    for (const p of activos) {
-      const hasOverdue = p.cuotas.some((c) => !c.pagadoEn && c.fechaVence < now);
-      if (hasOverdue) {
-        await prisma.prestamo.update({ where: { id: p.id }, data: { status: "VENCIDO" } });
-        count++;
-      }
-    }
-    return count;
+    if (overdueCuotas.length === 0) return 0;
+
+    const ids = overdueCuotas.map((c: { prestamoId: string }) => c.prestamoId);
+    const result = await prisma.prestamo.updateMany({
+      where: { id: { in: ids }, tenantId, status: "ACTIVO" },
+      data:  { status: "VENCIDO" },
+    });
+    return result.count;
   },
 };

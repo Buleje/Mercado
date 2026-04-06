@@ -408,47 +408,73 @@ export const MarketplaceStoreProductsDB = {
     });
     const existingMap = new Map(existingStoreProducts.map((sp) => [sp.productId, sp]));
 
-    let created = 0;
-    let updated = 0;
-    let deactivated = 0;
+    // 4. Bucket each catalog product into: create, reactivate, deactivate, noop
+    // N+1 fix: was N sequential create/update calls. Now: 1 createMany + N small updates
+    // in a single transaction. Reactivations need per-row prices, so they stay as
+    // individual updates but run in parallel inside the transaction.
+    const toCreate: Array<{
+      id: string;
+      storeId: string;
+      productId: number;
+      retailPrice: number;
+      minOrderQty: number;
+      isActive: boolean;
+    }> = [];
+    const toReactivate: Array<{ id: string; price: number }> = [];
+    const toDeactivate: string[] = [];
 
-    // 4. For each catalog product, upsert into StoreProduct
     for (const product of catalogProducts) {
       const existing = existingMap.get(product.id);
 
       if (product.active) {
         if (!existing) {
-          // New product → create
-          await prisma.storeProduct.create({
-            data: {
-              id:          crypto.randomUUID(),
-              storeId:     store.id,
-              productId:   product.id,
-              retailPrice: product.price,
-              minOrderQty: 1,
-              isActive:    true,
-            },
+          toCreate.push({
+            id:          crypto.randomUUID(),
+            storeId:     store.id,
+            productId:   product.id,
+            retailPrice: product.price,
+            minOrderQty: 1,
+            isActive:    true,
           });
-          created++;
         } else if (!existing.isActive) {
-          // Was deactivated → reactivate + update price
-          await prisma.storeProduct.update({
-            where: { id: existing.id },
-            data:  { isActive: true, retailPrice: product.price },
-          });
-          updated++;
+          toReactivate.push({ id: existing.id, price: product.price });
         }
         // If already active, skip (don't override manual price changes)
-      } else {
-        // Product is inactive in catalog → deactivate in store if exists and active
-        if (existing && existing.isActive) {
-          await prisma.storeProduct.update({
-            where: { id: existing.id },
+      } else if (existing && existing.isActive) {
+        toDeactivate.push(existing.id);
+      }
+    }
+
+    const created = toCreate.length;
+    const updated = toReactivate.length;
+    const deactivated = toDeactivate.length;
+
+    if (created > 0 || updated > 0 || deactivated > 0) {
+      await prisma.$transaction(async (tx) => {
+        if (toCreate.length > 0) {
+          await tx.storeProduct.createMany({
+            data: toCreate,
+            skipDuplicates: true,
+          });
+        }
+        if (toDeactivate.length > 0) {
+          await tx.storeProduct.updateMany({
+            where: { id: { in: toDeactivate } },
             data:  { isActive: false },
           });
-          deactivated++;
         }
-      }
+        if (toReactivate.length > 0) {
+          // Per-row prices prevent updateMany; parallelize inside the transaction
+          await Promise.all(
+            toReactivate.map((r) =>
+              tx.storeProduct.update({
+                where: { id: r.id },
+                data:  { isActive: true, retailPrice: r.price },
+              })
+            )
+          );
+        }
+      });
     }
 
     invalidateByPrefix(`marketplace:store-products`);

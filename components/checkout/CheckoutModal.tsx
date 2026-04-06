@@ -1,0 +1,238 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { AnimatePresence } from "framer-motion";
+import { useScrollLock } from "@/hooks/use-scroll-lock";
+import { useCart } from "@/contexts/cart-context";
+import { useCustomer } from "@/contexts/customer-context";
+import { useSettings } from "@/contexts/settings-context";
+import { usePromotions } from "@/contexts/promotions-context";
+import type { Customer, SavedLocation } from "@/contexts/customer-context";
+import { CheckoutAccountStep, CheckoutSuccessStep } from ".";
+import { StepDatos } from "./steps/StepDatos";
+import { StepPago } from "./steps/StepPago";
+import { MiniCartSummary } from "./parts/MiniCartSummary";
+import { CheckoutModalShell } from "./parts/CheckoutModalShell";
+import { useCheckoutState } from "./hooks/useCheckoutState";
+import { useCoupon } from "./hooks/useCoupon";
+import { useLoyalty, getTierDiscountPct } from "./hooks/useLoyalty";
+import { useDniLookup } from "./hooks/useDniLookup";
+import { useGeolocation } from "./hooks/useGeolocation";
+import { usePhoneSearch } from "./hooks/usePhoneSearch";
+import { useStockCheck } from "./hooks/useStockCheck";
+import { usePendingOrders } from "./hooks/usePendingOrders";
+import { useCheckoutSubmit } from "./hooks/useCheckoutSubmit";
+import { useCheckoutHandlers } from "./hooks/useCheckoutHandlers";
+import { useCheckoutInit } from "./hooks/useCheckoutInit";
+import { validatePhone } from "./parts/phone-validation";
+
+/**
+ * CheckoutModal — orquestador del wizard de checkout.
+ *
+ * Reemplaza al monolito anterior de 1333 líneas. La lógica está
+ * delegada a hooks (componentes/checkout/hooks/) y los pasos del
+ * wizard a componentes/checkout/steps/.
+ *
+ * Reglas de oro (ver `.github/skills/checkout-flow.instructions.md`):
+ *  1. Nunca mutar `submitting` directamente — solo via dispatch.
+ *  2. Nunca recalcular totales en cliente — el backend recompone.
+ *  3. Tenant awareness: usamos fetch nativo igual que el original;
+ *     las APIs de checkout resuelven tenant via cookies y middleware.
+ */
+export default function CheckoutModal() {
+  const {
+    items,
+    total: cartTotal,
+    checkoutOpen,
+    closeCheckout,
+    clear,
+    close: closeCart,
+    markOrderPending,
+  } = useCart();
+  const { customer, register, findByPhone, openOrderStatusModal } = useCustomer();
+  const {
+    yape,
+    cashEnabled,
+    businessName,
+    businessLat,
+    businessLon,
+    storeTheme,
+  } = useSettings();
+  const { getBestPromotion } = usePromotions();
+
+  const { state, dispatch, reset } = useCheckoutState();
+  const phoneSearch = usePhoneSearch({ findByPhone });
+  const [editingCustomerData, setEditingCustomerData] = useState(false);
+  const [skippedAccount, setSkippedAccount] = useState(false);
+
+  const storeLat = businessLat ?? -8.3791;
+  const storeLon = businessLon ?? -74.5539;
+
+  const effectiveCustomer: Customer | null = phoneSearch.found ?? customer;
+  const locations: SavedLocation[] = useMemo(() => {
+    if (effectiveCustomer?.locations?.length)
+      return effectiveCustomer.locations;
+    if (effectiveCustomer?.location)
+      return [
+        {
+          id: "default",
+          location: effectiveCustomer.location,
+          reference: effectiveCustomer.reference ?? "",
+        },
+      ];
+    return [];
+  }, [effectiveCustomer]);
+
+  const promo = getBestPromotion(
+    cartTotal,
+    state.customer.phone || customer?.phone
+  );
+  const discount = promo ? cartTotal * (promo.discountPercent / 100) : 0;
+  const tierDiscountPct = getTierDiscountPct(state.loyalty.tier);
+  const tierDiscount = cartTotal * (tierDiscountPct / 100);
+
+  // El backend recompone — esto solo es UI/preview
+  const finalTotal = Math.max(
+    0,
+    cartTotal - discount - state.coupon.discount - tierDiscount + state.payment.tip
+  );
+
+  // ── Hooks de side effects ───────────────────────────────────────
+  const coupon = useCoupon({ state: state.coupon, cartTotal, dispatch });
+  const loyalty = useLoyalty(dispatch);
+  useDniLookup({ dni: state.customer.dni, dispatch });
+  const geo = useGeolocation({ dispatch });
+  useStockCheck({ enabled: checkoutOpen, items, dispatch });
+  usePendingOrders({
+    step: state.step,
+    phone: state.customer.phone,
+    dispatch,
+  });
+
+  const submitter = useCheckoutSubmit({
+    state,
+    items,
+    finalTotal,
+    effectiveCustomer,
+    promo,
+    discount,
+    dispatch,
+    cartActions: { clear, closeCart, markOrderPending },
+    customerActions: { register, openOrderStatusModal },
+    closeCheckout,
+  });
+
+  const handlers = useCheckoutHandlers({
+    state,
+    dispatch,
+    storeLat,
+    storeLon,
+    effectiveCustomer,
+    phoneSearch,
+    setEditingCustomerData,
+    setSkippedAccount,
+    fetchLoyaltyPoints: loyalty.fetchPoints,
+    fetchReferenceSuggestion: geo.fetchReferenceSuggestion,
+    submit: submitter.submit,
+  });
+
+  useScrollLock(checkoutOpen);
+
+  useCheckoutInit({
+    open: checkoutOpen,
+    customer,
+    locations,
+    storeLat,
+    storeLon,
+    reset,
+    phoneSearch,
+    setEditingCustomerData,
+    setSkippedAccount,
+    fetchLoyaltyPoints: loyalty.fetchPoints,
+  });
+
+  if (!checkoutOpen) return null;
+
+  const phoneQueryValidation = validatePhone(phoneSearch.query);
+  const showMiniCart =
+    (state.step === "cuenta" || state.step === "datos") && items.length > 0;
+
+  return (
+    <CheckoutModalShell
+      open={checkoutOpen}
+      step={state.step}
+      itemCount={items.length}
+      businessName={businessName}
+      storeTheme={storeTheme}
+      onClose={closeCheckout}
+      topSlot={
+        showMiniCart ? (
+          <MiniCartSummary items={items} finalTotal={finalTotal} />
+        ) : null
+      }
+    >
+      <AnimatePresence mode="wait">
+        {state.step === "cuenta" && (
+          <CheckoutAccountStep
+            phoneQuery={phoneSearch.query}
+            onPhoneQueryChange={(v) => phoneSearch.setQuery(v)}
+            phoneQueryValidation={phoneQueryValidation}
+            phoneSearching={phoneSearch.searching}
+            phoneNotFound={phoneSearch.notFound}
+            onPhoneSearch={handlers.handlePhoneSearchSubmit}
+            onSkipAccount={handlers.handleSkipAccount}
+          />
+        )}
+
+        {state.step === "datos" && (
+          <StepDatos
+            state={state}
+            dispatch={dispatch}
+            effectiveCustomer={effectiveCustomer}
+            customer={customer}
+            foundCustomer={phoneSearch.found}
+            skippedAccount={skippedAccount}
+            editingCustomerData={editingCustomerData}
+            setEditingCustomerData={setEditingCustomerData}
+            locations={locations}
+            onSelectLocation={handlers.handleSelectLocation}
+            onUseNewAddress={handlers.handleUseNewAddress}
+            onRequestGeo={geo.requestGeolocation}
+            onMapPick={handlers.handleMapPick}
+            onSubmit={handlers.handleDataSubmit}
+            onBack={() => dispatch({ type: "SET_STEP", step: "cuenta" })}
+          />
+        )}
+
+        {state.step === "pago" && (
+          <StepPago
+            state={state}
+            dispatch={dispatch}
+            items={items}
+            finalTotal={finalTotal}
+            cartTotal={cartTotal}
+            discount={discount}
+            promo={promo}
+            tierDiscount={tierDiscount}
+            tierDiscountPct={tierDiscountPct}
+            effectiveCustomer={effectiveCustomer}
+            yape={yape}
+            cashEnabled={cashEnabled}
+            onValidateCoupon={coupon.validate}
+            onSubmit={handlers.handlePaymentSubmit}
+            onBackToDatos={() =>
+              dispatch({ type: "SET_STEP", step: "datos" })
+            }
+          />
+        )}
+
+        {state.step === "exito" && (
+          <CheckoutSuccessStep
+            orderId={state.ui.orderId}
+            onClose={closeCheckout}
+          />
+        )}
+      </AnimatePresence>
+    </CheckoutModalShell>
+  );
+}

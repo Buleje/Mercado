@@ -1,0 +1,120 @@
+"use client";
+
+import { type FormEvent } from "react";
+import { m } from "framer-motion";
+import type { CartItem } from "@/contexts/cart-context";
+import type { Customer } from "@/contexts/customer-context";
+import type { DbPromotion } from "@/lib/jsondb";
+import { CheckoutOrderReview, CheckoutPaymentSection } from "..";
+import type { CheckoutState } from "../types";
+import type { CheckoutDispatch } from "../hooks/useCheckoutState";
+import type { YapeConfig } from "@/contexts/settings-context";
+
+/**
+ * StepPago — selector de método de pago + resumen del pedido.
+ * Reutiliza los componentes existentes `CheckoutOrderReview` y
+ * `CheckoutPaymentSection`. Maneja cupón, tip, Yape/efectivo.
+ */
+
+export type StepPagoProps = {
+  state: CheckoutState;
+  dispatch: CheckoutDispatch;
+  items: CartItem[];
+  finalTotal: number;
+  cartTotal: number;
+  discount: number;
+  promo: DbPromotion | null;
+  tierDiscount: number;
+  tierDiscountPct: number;
+  effectiveCustomer: Customer | null;
+  yape: YapeConfig;
+  cashEnabled: boolean;
+  onValidateCoupon: () => Promise<void>;
+  onSubmit: (e: FormEvent) => void;
+  onBackToDatos: () => void;
+};
+
+export function StepPago({
+  state,
+  dispatch,
+  items,
+  finalTotal,
+  cartTotal,
+  discount,
+  promo,
+  tierDiscount,
+  tierDiscountPct,
+  effectiveCustomer,
+  yape,
+  cashEnabled,
+  onValidateCoupon,
+  onSubmit,
+  onBackToDatos,
+}: StepPagoProps) {
+  return (
+    <m.div
+      key="pago"
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.2 }}
+    >
+      <form onSubmit={onSubmit} className="px-6 py-5">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_360px] divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-card-border gap-0">
+          <CheckoutOrderReview
+            items={items}
+            finalTotal={finalTotal}
+            discount={discount}
+            location={state.address.location}
+            reference={state.address.reference}
+            effectiveCustomerLocation={effectiveCustomer?.location}
+            effectiveCustomerReference={effectiveCustomer?.reference}
+            onEditAddress={onBackToDatos}
+          />
+
+          <CheckoutPaymentSection
+            tip={state.payment.tip}
+            onTipChange={(tip) =>
+              dispatch({ type: "SET_PAYMENT", patch: { tip } })
+            }
+            couponCode={state.coupon.code}
+            onCouponCodeChange={(code) =>
+              dispatch({ type: "SET_COUPON", patch: { code } })
+            }
+            couponApplied={state.coupon.applied}
+            couponDiscount={state.coupon.discount}
+            couponMsg={state.coupon.msg}
+            validatingCoupon={state.coupon.validating}
+            onValidateCoupon={onValidateCoupon}
+            onRemoveCoupon={() => dispatch({ type: "RESET_COUPON" })}
+            total={cartTotal}
+            finalTotal={finalTotal}
+            discount={discount}
+            promo={promo}
+            tierDiscount={tierDiscount}
+            tierDiscountPct={tierDiscountPct}
+            loyaltyTier={state.loyalty.tier}
+            paymentMethod={state.payment.method}
+            onPaymentMethodChange={(method) => {
+              dispatch({
+                type: "SET_PAYMENT",
+                patch: { method, showHint: false },
+              });
+            }}
+            yapeEnabled={yape.enabled}
+            cashEnabled={cashEnabled}
+            yape={yape}
+            yapeOpNumber={state.payment.yapeOpNumber}
+            onYapeOpNumberChange={(yapeOpNumber) =>
+              dispatch({ type: "SET_PAYMENT", patch: { yapeOpNumber } })
+            }
+            showPaymentHint={state.payment.showHint}
+            submitting={state.ui.submitting}
+            submitError={state.ui.submitError}
+            onBack={onBackToDatos}
+          />
+        </div>
+      </form>
+    </m.div>
+  );
+}

@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/lib/generated/prisma/client";
 import type {
   Order as POrder,
   OrderItem as POrderItem,
@@ -12,6 +13,7 @@ import {
   type OrderStatus,
   normalizePhone,
 } from "./misc.db";
+import { DomainEvents } from "@/lib/domain-events";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -234,19 +236,31 @@ export const OrdersDB = {
         (await prisma.product.findMany({ where: { id: { in: uniqueIds } }, select: { id: true } }))
           .map((p) => p.id)
       );
-      let needsSequenceReset = false;
+      // N+1 fix: was N sequential $executeRaw INSERTs, now a single bulk insert.
+      // De-dup by id so we don't try to insert the same stub twice.
+      const seenStubIds = new Set<number>();
+      const stubRows: Array<{ id: number; name: string; price: number; unit: string; image: string }> = [];
       for (const item of order.items) {
-        if (item.id > 0 && !existing.has(item.id)) {
-          // Insert stub record for catalog product not yet in admin Product table
-          await prisma.$executeRaw`
-            INSERT INTO "Product" (id, name, category, price, unit, image)
-            VALUES (${item.id}, ${item.name}, 'tienda', ${item.price}, ${item.unit}, ${item.image ?? ''})
-            ON CONFLICT (id) DO NOTHING
-          `;
-          needsSequenceReset = true;
+        if (item.id > 0 && !existing.has(item.id) && !seenStubIds.has(item.id)) {
+          seenStubIds.add(item.id);
+          stubRows.push({
+            id:    item.id,
+            name:  item.name,
+            price: item.price,
+            unit:  item.unit,
+            image: item.image ?? "",
+          });
         }
       }
-      if (needsSequenceReset) {
+      if (stubRows.length > 0) {
+        const values = stubRows.map(
+          (r) => Prisma.sql`(${r.id}, ${r.name}, 'tienda', ${r.price}, ${r.unit}, ${r.image})`
+        );
+        await prisma.$executeRaw`
+          INSERT INTO "Product" (id, name, category, price, unit, image)
+          VALUES ${Prisma.join(values)}
+          ON CONFLICT (id) DO NOTHING
+        `;
         // Keep the autoincrement sequence in sync so admin-created products get correct IDs
         await prisma.$executeRaw`SELECT setval(pg_get_serial_sequence('"Product"', 'id'), (SELECT MAX(id) FROM "Product"))`;
       }
@@ -281,6 +295,16 @@ export const OrdersDB = {
     if (order.idempotencyKey) {
       await prisma.$executeRaw`UPDATE "Order" SET "idempotencyKey" = ${order.idempotencyKey} WHERE id = ${row.id}`.catch(() => {});
     }
+    // Emit domain event — fire-and-forget, never breaks the happy path (see ADR 007)
+    DomainEvents.ventaCompletada(tenantId, {
+      orderId:       row.id,
+      customerPhone: row.customerPhone ?? "",
+      total:         row.total,
+      itemCount:     order.items.length,
+      paymentMethod: order.paymentMethod ?? "efectivo",
+      hadCoupon:     Boolean(order.appliedCouponCode),
+      isDelivery:    Boolean(order.customer.location),
+    }).catch(() => {});
     return mapOrder(row);
   },
   async update(id: string, patch: Partial<DbOrder>): Promise<DbOrder | null> {
