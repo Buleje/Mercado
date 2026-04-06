@@ -34,6 +34,7 @@ import { TAB_MIGRATION } from "./_lib/tab-migration";
 import { TabSpinner } from "./_lib/tab-spinner";
 import { NavDefaultTabsConfig } from "@/components/admin/NavDefaultTabsConfig";
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
+import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 import { useKeyboardShortcuts } from "./_hooks/useKeyboardShortcuts";
 import { useAdminLayout } from "./_hooks/useAdminLayout";
 import { useFavoritesAndRecent } from "./_hooks/useFavoritesAndRecent";
@@ -1180,67 +1181,20 @@ function AdminPage() {
       {/* Content area */}
       <div className={cn("flex flex-col min-h-screen transition-[margin] duration-300", presentationMode ? "sm:ml-0" : focusMode ? "sm:ml-16" : "sm:ml-64")}>
       {/* Top bar */}
-      <header className={cn(
-        "bg-white dark:bg-card border-b border-gray-200 dark:border-card-border px-4 sm:px-6 py-2.5 flex items-center justify-between gap-2 sticky z-40",
-        presentationMode && "hidden!",
-        isSuperAdminImpersonating ? "top-10" : "top-0"
-      )}>
-        {/* Left: hamburger (mobile) + search */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <button
-            onClick={() => setMobileNavOpen(true)}
-            className="sm:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors shrink-0"
-            aria-label="Menú"
-          >
-            <Menu className="h-5 w-5 text-gray-600 dark:text-muted" />
-          </button>
-          {/* Search bar — centered and prominent */}
-          <button
-            onClick={() => setSearchOpen(true)}
-            title="Busqueda global (Ctrl+K)"
-            className="flex items-center gap-2.5 px-4 h-10 rounded-2xl text-gray-400 dark:text-muted bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-all text-sm font-medium border border-gray-200 dark:border-card-border flex-1 max-w-xl group cursor-pointer"
-          >
-            <Search className="h-4.5 w-4.5 shrink-0 group-hover:text-primary transition-colors" />
-            <span className="flex-1 text-left text-gray-400 dark:text-muted truncate">Buscar módulos, productos, clientes...</span>
-            <kbd className="text-[10px] bg-white dark:bg-card px-2 py-0.5 rounded-lg font-mono text-gray-400 border border-gray-200 dark:border-card-border hidden sm:inline">⌘K</kbd>
-          </button>
-        </div>
-
-        {/* Right: actions */}
-        <div className="flex items-center gap-1 shrink-0">
-          <div className="hidden sm:block">
-            <NotificationBell />
-          </div>
-          <button
-            onClick={() => setShowCierreDiario(true)}
-            title="Cerrar dia (Ctrl+Shift+C)"
-            className="hidden md:flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors border border-amber-200 dark:border-amber-800"
-          >
-            <Power className="h-4 w-4" />
-            <span>Cerrar dia</span>
-          </button>
-          <button
-            onClick={toggleFocusMode}
-            title={focusMode ? "Salir modo enfoque" : "Modo enfoque"}
-            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
-          >
-            {focusMode ? <Minimize2 className="h-4 w-4 text-primary" /> : <Maximize2 className="h-4 w-4" />}
-          </button>
-          <button
-            onClick={() => setPresentationMode(true)}
-            title="Modo presentacion (Ctrl+Shift+P)"
-            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-lg text-gray-400 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent hover:text-primary transition-colors"
-          >
-            <Eye className="h-4 w-4" />
-          </button>
-          <AdminUserDropdown
-            userName={userName}
-            userRole={userRole}
-            onNavigate={(t) => navigateTab(t as Tab)}
-            onLogout={handleLogout}
-          />
-        </div>
-      </header>
+      <AdminTopHeader
+        presentationMode={presentationMode}
+        isSuperAdminImpersonating={isSuperAdminImpersonating}
+        focusMode={focusMode}
+        userName={userName}
+        userRole={userRole}
+        onOpenMobileNav={() => setMobileNavOpen(true)}
+        onOpenSearch={() => setSearchOpen(true)}
+        onOpenCierreDiario={() => setShowCierreDiario(true)}
+        onToggleFocus={toggleFocusMode}
+        onTogglePresentation={() => setPresentationMode(true)}
+        onNavigate={(t) => navigateTab(t as Tab)}
+        onLogout={handleLogout}
+      />
 
       {/* Command Palette global — Ctrl+K en todo el panel */}
       <AdminCommandPalette items={commandItems} />
