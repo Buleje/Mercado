@@ -42,6 +42,7 @@ import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 import { AdminFloatingButtons } from "@/components/admin/AdminFloatingButtons";
 import { AdminMobileBottomBar } from "@/components/admin/AdminMobileBottomBar";
+import { AdminMobileDrawer } from "@/components/admin/layout/AdminMobileDrawer";
 import { AdminModuleManagerModal } from "@/components/admin/AdminModuleManagerModal";
 import { useKeyboardShortcuts } from "./_hooks/useKeyboardShortcuts";
 import { useAdminLayout } from "./_hooks/useAdminLayout";
@@ -369,249 +370,41 @@ function AdminPage() {
       {/* Vinculación admin ↔ tienda individual del tenant */}
       <AdminTenantBar tenantSlug={activeTenantSlug} tenantName={activeTenantName} />
 
-      {/* Mobile nav overlay */}
-      {mobileNavOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/50 sm:hidden"
-          onClick={() => setMobileNavOpen(false)}
-        />
-      )}
-
-      {/* Mobile drawer */}
-      <aside
-        className={cn(
-          "fixed top-0 left-0 bottom-0 w-72 z-50 bg-white dark:bg-card shadow-2xl flex flex-col transition-transform duration-300 sm:hidden",
-          mobileNavOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-card-border bg-primary/5">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-xl bg-primary text-white flex items-center justify-center">
-              <ShoppingBasket className="h-4 w-4" />
-            </div>
-            <span className="font-extrabold text-gray-900 dark:text-foreground text-sm">{activeTenantName || "Mi Bodega"}</span>
-          </div>
-          <button onClick={() => setMobileNavOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
-            <X className="h-5 w-5 text-gray-500 dark:text-muted" />
-          </button>
-        </div>
-        
-        {/* Category selector (mobile) */}
-        <div className="relative px-3 py-3 border-b border-gray-200 dark:border-card-border">
-          <button
-            onClick={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-semibold text-gray-700 dark:text-foreground bg-gray-50 dark:bg-surface hover:bg-gray-100 dark:hover:bg-accent transition-all border border-gray-200 dark:border-card-border"
-          >
-            <div className="flex items-center gap-2">
-              {selectedCategory ? (
-                <>
-                  {visibleCategories.find(c => c.id === selectedCategory)?.icon && (
-                    React.createElement(visibleCategories.find(c => c.id === selectedCategory)!.icon, { className: "h-4 w-4 shrink-0" })
-                  )}
-                  <span className="truncate">{visibleCategories.find(c => c.id === selectedCategory)?.label}</span>
-                </>
-              ) : (
-                <>
-                  <Layers className="h-4 w-4 shrink-0" />
-                  <span>Todas las categorías</span>
-                </>
-              )}
-            </div>
-            <ChevronDown className={cn("h-4 w-4 transition-transform shrink-0", categoryDropdownOpen && "rotate-180")} />
-          </button>
-          
-          {categoryDropdownOpen && (
-            <>
-              <div className="fixed inset-0 z-10" onClick={() => setCategoryDropdownOpen(false)} />
-              <div className="absolute top-full left-3 right-3 mt-1 bg-white dark:bg-card shadow-xl rounded-xl border border-gray-200 dark:border-card-border z-20 max-h-80 overflow-y-auto py-2">
-                <button
-                  onClick={() => { setSelectedCategory(null); setCategoryDropdownOpen(false); }}
-                  className={cn(
-                    "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
-                    !selectedCategory ? "bg-primary/10 text-primary" : "text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
-                  )}
-                >
-                  <Layers className="h-4 w-4 shrink-0" />
-                  <span>Todas ({allowedTabs.length})</span>
-                </button>
-                <div className="h-px bg-gray-100 dark:bg-card-border my-1" />
-                {visibleCategories.map(category => {
-                  const count = category.tabs.filter(t => allowedTabs.includes(t)).length;
-                  if (count === 0) return null;
-                  const CategoryIcon = category.icon;
-                  return (
-                    <button
-                      key={category.id}
-                      onClick={() => { setSelectedCategory(category.id); setCategoryDropdownOpen(false); }}
-                      className={cn(
-                        "w-full flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors",
-                        selectedCategory === category.id ? "bg-primary/10 text-primary" : "text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface"
-                      )}
-                    >
-                      <CategoryIcon className="h-4 w-4 shrink-0" />
-                      <span className="truncate flex-1 text-left">{category.label}</span>
-                      <span className="text-xs text-gray-400 dark:text-muted">({count})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-        
-        <nav className="flex-1 overflow-y-auto py-3 px-3">
-          {/* Favorite tabs section */}
-          {(favoriteTabItems.length > 0 || customShortcutItems.length > 0) && (
-            <div className="mb-2">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1"><Star className="h-3 w-3" /> Favoritos</p>
-              {favoriteTabItems.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={`fav-${id}`}
-                  onClick={() => { navigateTab(id); setMobileNavOpen(false); }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
-                    tab === id ? "bg-primary text-white shadow-sm" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{label}</span>
-                </button>
-              ))}
-              {customShortcutItems.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={`sc-${id}-${label}`}
-                  onClick={() => { navigateTab(id); setMobileNavOpen(false); }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
-                    tab === id ? "bg-primary text-white shadow-sm" : "text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-accent"
-                  )}
-                >
-                  <Zap className="h-3.5 w-3.5 shrink-0 text-yellow-500" />
-                  <span className="truncate">{label}</span>
-                </button>
-              ))}
-              <div className="h-px bg-gray-100 dark:bg-card-border mx-2 my-1.5" />
-            </div>
-          )}
-
-          {/* Recent tabs section */}
-          {recentTabItems.length > 0 && (
-            <div className="mb-2">
-              <button onClick={() => setRecentCollapsed(c => !c)} className="w-full text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-muted px-4 mb-1 flex items-center gap-1 hover:text-gray-600 dark:hover:text-foreground transition-colors">
-                <Clock className="h-3 w-3" /> Recientes
-                {recentCollapsed ? <ChevronDown className="h-3 w-3 ml-auto" /> : <ChevronUp className="h-3 w-3 ml-auto" />}
-              </button>
-              {!recentCollapsed && recentTabItems.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={`rec-${id}`}
-                  onClick={() => { navigateTab(id); setMobileNavOpen(false); }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all mb-0.5",
-                    tab === id ? "bg-primary text-white shadow-sm" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{label}</span>
-                </button>
-              ))}
-              <div className="h-px bg-gray-100 dark:bg-card-border mx-2 my-1.5" />
-            </div>
-          )}
-
-          {/* All tabs */}
-          {filteredTabs.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => { navigateTab(id); setMobileNavOpen(false); }}
-              className={cn(
-                "group w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all mb-1",
-                tab === id ? "bg-primary text-white shadow-sm" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
-              )}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              <span className="truncate flex-1 text-left">{label}</span>
-              {DEMO_DATA_MODULES[id] && !clearedDemoTabs.has(id) && (
-                <span title="Contiene datos de ejemplo" className={cn("h-2 w-2 rounded-full shrink-0", tab === id ? "bg-red-300" : "bg-red-500")} />
-              )}
-              {alerts[id] && <span className={cn("text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center", tab === id ? "bg-white/20 text-white" : "bg-red-500 text-white")}>{alerts[id]}</span>}
-              <Star
-                onClick={e => { e.stopPropagation(); toggleFavorite(id); }}
-                className={cn(
-                  "h-4 w-4 shrink-0 transition-all cursor-pointer",
-                  favoriteTabs.has(id) ? "fill-amber-400 text-amber-400" : "opacity-0 group-hover:opacity-60 text-gray-400"
-                )}
-              />
-            </button>
-          ))}
-        </nav>
-        <div className="px-3 py-4 border-t border-gray-200 dark:border-card-border space-y-1">
-          {/* Quick access shortcuts — mobile */}
-          <div className="mb-2 space-y-0.5">
-            <div className="flex items-center justify-between px-4 mb-1">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">Accesos rápidos</p>
-              <button onClick={() => setEditingShortcuts(!editingShortcuts)} className="text-gray-400 hover:text-primary transition-colors" title="Editar accesos rápidos">
-                <Pencil className="h-3 w-3" />
-              </button>
-            </div>
-            {resolvedShortcuts.map((s, idx) => (
-              <div key={s.id} className="flex items-center gap-1">
-                {editingShortcuts && (
-                  <div className="flex flex-col -mr-1">
-                    <button onClick={() => moveShortcut(idx, -1)} disabled={idx === 0} className="text-gray-400 hover:text-primary disabled:opacity-20 p-0 leading-none"><ChevronUp className="h-3 w-3" /></button>
-                    <button onClick={() => moveShortcut(idx, 1)} disabled={idx === resolvedShortcuts.length - 1} className="text-gray-400 hover:text-primary disabled:opacity-20 p-0 leading-none"><ChevronDown className="h-3 w-3" /></button>
-                  </div>
-                )}
-                <button
-                  onClick={() => { if (!editingShortcuts) { navigateTab(s.id as Tab); setMobileNavOpen(false); } }}
-                  className={cn(
-                    "flex-1 flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium transition-all",
-                    tab === s.id ? "bg-primary/10 text-primary" : "text-gray-600 dark:text-muted hover:bg-gray-100 dark:hover:bg-accent"
-                  )}
-                >
-                  <s.icon className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{s.label}</span>
-                  {!editingShortcuts && alerts[s.id] && <span className="ml-auto text-xs font-bold rounded-full px-1.5 py-0.5 min-w-5 text-center bg-red-500 text-white">{alerts[s.id]}</span>}
-                </button>
-                {editingShortcuts && (
-                  <button onClick={() => removeShortcut(s.id)} className="p-1 text-red-400 hover:text-red-600 transition-colors" title="Quitar"><X className="h-3.5 w-3.5" /></button>
-                )}
-              </div>
-            ))}
-            {editingShortcuts && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowAddShortcut(!showAddShortcut)}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-sm font-medium text-primary/70 hover:bg-primary/5 transition-all border border-dashed border-primary/30"
-                >
-                  <Plus className="h-4 w-4" /> Agregar acceso
-                </button>
-                {showAddShortcut && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl shadow-xl max-h-48 overflow-y-auto">
-                    {availableForShortcut.map(t => (
-                      <button key={t.id} onClick={() => addShortcut(t.id)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors">
-                        <t.icon className="h-4 w-4 shrink-0" /> {t.label}
-                      </button>
-                    ))}
-                    {availableForShortcut.length === 0 && <p className="px-3 py-2 text-xs text-gray-400">Ya están todos agregados</p>}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <Link href="/marketplace" target="_blank" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all">
-              <Globe className="h-5 w-5" /> Marketplace
-            </Link>
-          <Link href="/" target="_blank" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-all">
-              <Store className="h-5 w-5" /> Tienda
-            </Link>
-          <button
-            onClick={() => { setShowCierreDiario(true); setMobileNavOpen(false); }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-all"
-          >
-            <Power className="h-5 w-5" /> Cerrar d&iacute;a
-          </button>
-        </div>
-      </aside>
+      <AdminMobileDrawer
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        activeTenantName={activeTenantName}
+        tab={tab}
+        navigateTab={navigateTab}
+        filteredTabs={filteredTabs}
+        allowedTabs={allowedTabs}
+        visibleCategories={visibleCategories}
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+        categoryDropdownOpen={categoryDropdownOpen}
+        onToggleCategoryDropdown={() => setCategoryDropdownOpen(!categoryDropdownOpen)}
+        favoriteTabItems={favoriteTabItems}
+        customShortcutItems={customShortcutItems}
+        recentTabItems={recentTabItems}
+        recentCollapsed={recentCollapsed}
+        onToggleRecentCollapsed={() => setRecentCollapsed(c => !c)}
+        favoriteTabs={favoriteTabs}
+        onToggleFavorite={toggleFavorite}
+        resolvedShortcuts={resolvedShortcuts}
+        editingShortcuts={editingShortcuts}
+        onToggleEditingShortcuts={() => setEditingShortcuts(!editingShortcuts)}
+        showAddShortcut={showAddShortcut}
+        onToggleShowAddShortcut={() => setShowAddShortcut(!showAddShortcut)}
+        availableForShortcut={availableForShortcut}
+        onAddShortcut={addShortcut}
+        onRemoveShortcut={removeShortcut}
+        onMoveShortcut={moveShortcut}
+        alerts={alerts}
+        demoDataModules={DEMO_DATA_MODULES}
+        clearedDemoTabs={clearedDemoTabs}
+        onOpenCierreDiario={() => setShowCierreDiario(true)}
+        onLogout={handleLogout}
+      />
 
       {/* Desktop permanent sidebar */}
       <aside className={cn(
