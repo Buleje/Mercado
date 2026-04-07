@@ -73,9 +73,16 @@ const SCORES: ScoreSnapshot[] = [
   {
     label: "Excel Agentes IA — Prácticas para sistemas de agentes (28)",
     total: 28,
-    applied: 11,   // +1: #7 Temperaturas diferenciadas (fix en ai-assistant + coach routes)
-    partial: 9,
-    missing: 8,    // -1: #7 salió de ❌
+    // 2026-04-06 noche: TD-024 (router LLM), TD-025 (HITL completo) y TD-022
+    // (structured output vía prompt-based) resueltos o parciales.
+    // Movimientos desde el audit inicial:
+    //   +#7 Temperaturas diferenciadas (❌ → ✅)
+    //   +#10 HITL (⚠️ → ✅)
+    //   +#23 Router LLM mixto (❌ → ✅)
+    //   #9 Structured output: ❌ → ⚠️ (3 endpoints migrados con safeParseJSON)
+    applied: 13,   // +2: #10 HITL + #23 Router
+    partial: 10,   // +1 neto: #9 entró de ❌ a ⚠️
+    missing: 5,    // -3: #7, #10, #23 ya no faltan
     na: 0,
     link: {
       url: "/superadmin/setup#practicas-agentes-ia",
