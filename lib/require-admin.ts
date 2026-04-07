@@ -90,3 +90,22 @@ export async function requireAdmin(
 
   return { ...payload, tenantId: effectiveTenantId };
 }
+
+/**
+ * Soft-auth variant: returns the session payload if the request has a valid
+ * admin cookie, or `null` if the caller is anonymous. Never returns 401/403.
+ *
+ * Useful for endpoints that serve BOTH the public storefront AND authenticated
+ * admin clients with different field shapes (e.g. storefront gets only active
+ * products without costPrice/stock; admin gets the full record).
+ */
+export async function tryAdmin(req: NextRequest): Promise<SessionPayload | null> {
+  const token = req.cookies.get(SESSION.COOKIE_NAME)?.value;
+  if (!token) return null;
+  const payload = await getSessionPayload(token);
+  if (!payload) return null;
+
+  const headerTenantId = req.headers.get("x-tenant-id");
+  const effectiveTenantId = headerTenantId || payload.tenantId;
+  return { ...payload, tenantId: effectiveTenantId };
+}

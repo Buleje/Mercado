@@ -152,16 +152,9 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Redirect root to marketplace (main landing page)
-  async redirects() {
-    return [
-      {
-        source: "/",
-        destination: "/marketplace",
-        permanent: false, // 307 — keep as temporary so we can change later
-      },
-    ];
-  },
+  // No root redirect: `/` ahora sirve la home informativa de app/(store)/page.tsx.
+  // El logo del header (components/Header.tsx) apunta a `/` y debe llegar
+  // a la landing pública, NO al directorio multi-tienda /marketplace.
 };
 
 export default bundleAnalyzer(nextConfig);

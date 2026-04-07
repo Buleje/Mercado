@@ -40,6 +40,7 @@ import { useAdminTabs } from "./_hooks/useAdminTabs";
 import { useAdminModals } from "./_hooks/useAdminModals";
 import { NavDefaultTabsConfig } from "@/components/admin/NavDefaultTabsConfig";
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
+import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
 import { AdminFloatingButtons } from "@/components/admin/AdminFloatingButtons";
 import { AdminMobileBottomBar } from "@/components/admin/AdminMobileBottomBar";
@@ -412,6 +413,8 @@ function AdminPage() {
         onExit={handleExitImpersonation}
       />
 
+      {/* Vinculación admin ↔ tienda individual del tenant */}
+      <AdminTenantBar tenantSlug={activeTenantSlug} tenantName={activeTenantName} />
 
       {/* Mobile nav overlay */}
       {mobileNavOpen && (

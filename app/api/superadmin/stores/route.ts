@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   const session = await getPlatformSession(token);
   if (!session) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const stores = await prisma.store.findMany({
+  const storesRaw = await prisma.store.findMany({
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
@@ -32,9 +32,27 @@ export async function GET(req: NextRequest) {
       tenant: {
         select: { id: true, slug: true, name: true, plan: true, active: true },
       },
-      _count: { select: { products: true } },
     },
   });
+
+  // Count real products (Product table) per tenant — NOT StoreProduct intermediate
+  // rows. This matches what the per-tenant admin inventory tab shows.
+  // Uses an OR(id, slug) lookup so it works whether Product.tenantId stores the
+  // canonical CUID or the slug (mismatch is being normalized in a separate fix).
+  const stores = await Promise.all(
+    storesRaw.map(async (store) => {
+      const productCount = await prisma.product.count({
+        where: {
+          deletedAt: null,
+          OR: [
+            { tenantId: store.tenant.id },
+            { tenantId: store.tenant.slug },
+          ],
+        },
+      });
+      return { ...store, _count: { products: productCount } };
+    })
+  );
 
   return NextResponse.json({ stores });
 }

@@ -12,13 +12,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ProductsDB } from "@/lib/jsondb";
 import { logActivity } from "@/lib/activity-logger";
-import { requireAdmin } from "@/lib/require-admin";
+import { requireAdmin, tryAdmin } from "@/lib/require-admin";
 import { prismaForTenant } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { logger } from "@/lib/logger";
 import { invalidate } from "@/lib/cache";
 import { withDbRetry } from "@/lib/db-retry";
+
+/**
+ * Strip sensitive fields (costPrice, stock counts) from product records when
+ * the caller is unauthenticated. Storefront visitors must NEVER see margins.
+ */
+function toPublicProduct(p: Awaited<ReturnType<typeof ProductsDB.getAll>>[number]) {
+  const { costPrice: _cost, stock: _s, stockMin: _smin, stockMax: _smax, ...rest } = p as Record<string, unknown> & { costPrice?: number; stock?: number; stockMin?: number; stockMax?: number };
+  void _cost; void _s; void _smin; void _smax;
+  return rest;
+}
 
 const ProductPostSchema = z.object({
   name:     z.string().min(1).max(150),
@@ -40,6 +50,11 @@ export async function GET(req: NextRequest) {
     const limitParam = searchParams.get("limit");
     const pageParam  = searchParams.get("page");
 
+    // Soft-auth: anonymous callers (storefront) get only active products with
+    // public-safe fields. Authenticated admins get the full record.
+    const session = await tryAdmin(req);
+    const isAdmin = session !== null;
+
     // tenantId is injected by proxy.ts from session/cookie/subdomain
     const tenantId = req.headers.get("x-tenant-id") ?? "main";
     let products = await withDbRetry(() => ProductsDB.getAll(tenantId));
@@ -51,20 +66,22 @@ export async function GET(req: NextRequest) {
       const q = search.toLowerCase();
       products = products.filter((p) => p.name.toLowerCase().includes(q));
     }
+    // Active filter is opt-in via ?active=true (preserves public API contract).
     if (onlyActive === "true") {
       products = products.filter((p) => p.active !== false);
     }
 
     const total = products.length;
+    const responseProducts = isAdmin ? products : products.map(toPublicProduct);
 
     // Optional pagination — only applied when ?limit= is provided
     if (limitParam) {
       const limit = Math.min(Math.max(parseInt(limitParam, 10) || 20, 1), 200);
       const page  = Math.max(parseInt(pageParam ?? "1", 10) || 1, 1);
       const start = (page - 1) * limit;
-      products = products.slice(start, start + limit);
+      const paged = responseProducts.slice(start, start + limit);
 
-      return NextResponse.json(products, {
+      return NextResponse.json(paged, {
         headers: {
           "X-Total-Count":   String(total),
           "X-Page":          String(page),
@@ -76,7 +93,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json(products, {
+    return NextResponse.json(responseProducts, {
       headers: {
         "X-Total-Count": String(total),
         "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120",

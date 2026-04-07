@@ -25,7 +25,7 @@ import {
   Heart,
   ExternalLink,
 } from "lucide-react";
-import { getProductSlug } from "@/data/products";
+import { getProductSlug, categories } from "@/data/products";
 import { useStoreProducts } from "@/hooks/use-store-products";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";

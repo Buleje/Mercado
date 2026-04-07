@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
-  Search, Trophy, Gift, History, PackageCheck, User, Mic, Flame, ChefHat, Globe,
+  Search, Trophy, Gift, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";

@@ -110,7 +110,17 @@ function getStoredOrder(): TrackedOrder | null {
 async function fetchLiveStatus(orderId: string): Promise<TrackedOrder["status"] | null> {
   try {
     const res = await fetch(`/api/orders/${orderId}/public`, { cache: "no-store" });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // Order no longer exists on the server (purged, expired, or never persisted) —
+      // clear stale tracking data so we stop hammering a dead endpoint.
+      if (res.status === 404 && typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("bsm-active-order");
+          localStorage.removeItem("bsm-last-order");
+        } catch {}
+      }
+      return null;
+    }
     const data = await res.json() as { status: TrackedOrder["status"] };
     return data.status ?? null;
   } catch {

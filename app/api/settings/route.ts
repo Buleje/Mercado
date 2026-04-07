@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { hash } from "bcryptjs";
 import { logger } from "@/lib/logger";
 import { withDbRetry } from "@/lib/db-retry";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
