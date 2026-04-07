@@ -26,7 +26,39 @@ export interface ToolDefinition {
       required?: string[];
     };
   };
+  /**
+   * Metadata interna (NO se envía al LLM — Groq/OpenAI ignoran campos extra en el root).
+   *
+   * Excel Agentes IA práctica #10 "Human-in-the-Loop para acciones críticas":
+   * cuando el LLM selecciona un tool marcado con `requiresApproval: true`, el
+   * orchestrator NO debe ejecutarlo inmediatamente; debe emitir un evento
+   * `pendingApproval` que el frontend (AICommandCenter.tsx) muestra como modal
+   * "¿Aprobar esta acción? [Sí] [No]". Solo tras la confirmación humana el
+   * orchestrator ejecuta el tool.
+   *
+   * Implementación del modal pendiente (TD-025). Este flag se agrega como
+   * pre-stage: el valor ya está marcado en los tools que lo necesitan, pero
+   * el orchestrator aún ejecuta todos inmediatamente. Cuando el modal se
+   * implemente, solo tiene que leer este flag sin redefinir qué es crítico.
+   */
+  requiresApproval?: boolean;
 }
+
+// ── Tools que requieren aprobación humana (referencia rápida) ────────────────
+//
+// Para marcar un tool como crítico, agregar `requiresApproval: true` a su
+// definición abajo. Criterio para decidir qué requiere aprobación:
+//
+//   1. ¿El tool envía comunicación externa (WhatsApp/email/push) a clientes
+//      reales? → sí requiere aprobación (riesgo de spam o mensaje incorrecto).
+//   2. ¿El tool modifica estado persistente (stock, precios, facturas,
+//      fiados)? → sí requiere aprobación (riesgo de pérdida de datos o fraude).
+//   3. ¿El tool es reversible? → si es irreversible (cancelar pedido, eliminar
+//      cliente, rematar producto), siempre requiere aprobación.
+//
+// HOY los 30 tools del catálogo son casi todos read-only + 5 de notificaciones.
+// Solo 2 de notificaciones califican (envían a clientes finales).
+// Cuando se agreguen tools de compras/eliminación/descuentos grandes, marcarlos.
 
 // ── Reverse mapping: tool name → domain + action ──────────────────────────────
 
@@ -403,6 +435,10 @@ const notificationsTools = defineTools("notifications", [
         required: ["orderId", "status"],
       },
     },
+    // HITL: comunicación al cliente final sobre SU pedido específico.
+    // Un mensaje incorrecto genera confusión directa con el cliente.
+    // Excel Agentes IA práctica #10. Modal lo gatea en TD-025.
+    requiresApproval: true,
   },
   {
     function: {
@@ -453,6 +489,10 @@ const notificationsTools = defineTools("notifications", [
         required: ["promoId"],
       },
     },
+    // HITL: comunicación masiva de marketing a clientes. Un envío erróneo a
+    // "todos" puede saturar WhatsApp/email y dañar la reputación de marca.
+    // Riesgo más alto que notifications_send_order_update. TD-025.
+    requiresApproval: true,
   },
   {
     function: {
