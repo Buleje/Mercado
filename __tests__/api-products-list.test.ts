@@ -33,9 +33,10 @@ vi.mock("@/lib/activity-logger", () => ({
   logActivity: vi.fn(),
 }));
 
-// ── Mock: require-admin (not used by GET, but imported by the module) ─────────
+// ── Mock: require-admin (GET uses tryAdmin for soft-auth, POST uses requireAdmin) ─
 vi.mock("@/lib/require-admin", () => ({
   requireAdmin: vi.fn(),
+  tryAdmin: vi.fn(async () => null), // anonymous by default — storefront flow
 }));
 
 // ── Mock: tenant ──────────────────────────────────────────────────────────────

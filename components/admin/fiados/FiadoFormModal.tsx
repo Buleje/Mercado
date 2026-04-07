@@ -4,7 +4,7 @@
 import { motion } from "framer-motion";
 import {
   X, DollarSign, Calendar, User, FileText,
-  Camera, AlertTriangle,
+  Camera, AlertTriangle, Loader2, Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -51,7 +51,7 @@ export default function FiadoFormModal({ showNew, setShowNew, newForm, setNewFor
                       <input
                         type="text"
                         value={newForm.customerId}
-                        onChange={e => setNewForm(p => ({ ...p, customerId: e.target.value }))}
+                        onChange={e => setNewForm((p: any) => ({ ...p, customerId: e.target.value }))}
                         placeholder="Ej: 987654321"
                         className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                       />
@@ -116,7 +116,7 @@ export default function FiadoFormModal({ showNew, setShowNew, newForm, setNewFor
                         step="0.01"
                         min="0.01"
                         value={newForm.total}
-                        onChange={e => setNewForm(p => ({ ...p, total: e.target.value }))}
+                        onChange={e => setNewForm((p: any) => ({ ...p, total: e.target.value }))}
                         placeholder="0.00"
                         className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                       />
@@ -129,7 +129,7 @@ export default function FiadoFormModal({ showNew, setShowNew, newForm, setNewFor
                       <FileText className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <textarea
                         value={newForm.descripcion}
-                        onChange={e => setNewForm(p => ({ ...p, descripcion: e.target.value }))}
+                        onChange={e => setNewForm((p: any) => ({ ...p, descripcion: e.target.value }))}
                         placeholder="Detalle de lo que se llevó..."
                         rows={2}
                         className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30 resize-none"
@@ -144,7 +144,7 @@ export default function FiadoFormModal({ showNew, setShowNew, newForm, setNewFor
                       <input
                         type="date"
                         value={newForm.fechaVence}
-                        onChange={e => setNewForm(p => ({ ...p, fechaVence: e.target.value }))}
+                        onChange={e => setNewForm((p: any) => ({ ...p, fechaVence: e.target.value }))}
                         className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30"
                       />
                     </div>

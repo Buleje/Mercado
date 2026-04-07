@@ -38,6 +38,7 @@ const { mockRequireAdmin } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/require-admin", () => ({
   requireAdmin: mockRequireAdmin,
+  tryAdmin: vi.fn(async () => null), // anonymous by default — storefront flow
 }));
 
 // Products API uses @/lib/jsondb — ProductsDB

@@ -38,23 +38,29 @@ vi.mock("@/lib/jsondb", () => ({
 }));
 
 // ── Mock: prisma ──────────────────────────────────────────────────────────────
-const { mockFindMany, mockTenantFindFirst } = vi.hoisted(() => ({
-  mockFindMany:       vi.fn(),
+const { mockFindMany, mockTenantFindFirst, mockTenantFindUnique } = vi.hoisted(() => ({
+  mockFindMany:        vi.fn(),
   mockTenantFindFirst: vi.fn(),
+  mockTenantFindUnique: vi.fn(),
 }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     adminUser: { findMany: mockFindMany },
-    tenant:    { findFirst: mockTenantFindFirst },
+    tenant:    { findFirst: mockTenantFindFirst, findUnique: mockTenantFindUnique },
   },
 }));
 
-// ── Mock: session — make createSessionToken return a predictable fake token ───
+// ── Mock: session — fake tokens + cookie name constants ─────────────────────
 vi.mock("@/lib/session", () => ({
   createSessionToken: vi.fn(async () => "fake-session-token"),
+  createRefreshToken: vi.fn(async () => "fake-refresh-token"),
   SESSION: {
     COOKIE_NAME: "bsm-admin-sess",
     MAX_AGE: 60 * 60 * 8,
+  },
+  REFRESH: {
+    COOKIE_NAME: "bsm-admin-refresh",
+    MAX_AGE: 60 * 60 * 24 * 7,
   },
 }));
 

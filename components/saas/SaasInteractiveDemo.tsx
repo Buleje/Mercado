@@ -248,11 +248,14 @@ function ReportsMiniApp() {
 
 // ── Mini-App: Delivery con tracking ──────────────────────────────────────────
 
+type DeliveryStatus = "preparando" | "en_camino" | "entregado";
+type DeliveryOrder = { id: string; client: string; status: DeliveryStatus; color: string };
+
 function DeliveryMiniApp() {
-  const [orders, setOrders] = useState([
-    { id: "#1845", client: "Maria Lopez", status: "preparando" as const, color: "text-blue-600" },
-    { id: "#1844", client: "Juan Perez", status: "en_camino" as const, color: "text-orange-600" },
-    { id: "#1843", client: "Rosa Torres", status: "preparando" as const, color: "text-blue-600" },
+  const [orders, setOrders] = useState<DeliveryOrder[]>([
+    { id: "#1845", client: "Maria Lopez", status: "preparando", color: "text-blue-600" },
+    { id: "#1844", client: "Juan Perez", status: "en_camino", color: "text-orange-600" },
+    { id: "#1843", client: "Rosa Torres", status: "preparando", color: "text-blue-600" },
   ]);
 
   const advance = (id: string) => {

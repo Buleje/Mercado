@@ -105,7 +105,7 @@ const auditColumns: import("@/components/ui/ResponsiveTable").Column<AuditEntry>
   {
     key: "severity",
     header: "Severidad",
-    render: (e) => {
+    render: (e: AuditEntry) => {
       const sev = SEVERITY_META[e.severity];
       return <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", sev.bg, sev.color)}>{sev.label}</span>;
     },
@@ -114,12 +114,12 @@ const auditColumns: import("@/components/ui/ResponsiveTable").Column<AuditEntry>
     key: "timestamp",
     header: "Fecha/Hora",
     hideOnMobile: true,
-    render: (e) => <span className="text-xs text-gray-500 whitespace-nowrap">{fmtDate(e.timestamp)}</span>,
+    render: (e: AuditEntry) => <span className="text-xs text-gray-500 whitespace-nowrap">{fmtDate(e.timestamp)}</span>,
   },
   {
     key: "user",
     header: "Usuario",
-    render: (e) => (
+    render: (e: AuditEntry) => (
       <div>
         <p className="font-semibold text-gray-800 dark:text-foreground text-xs">{e.user}</p>
         <p className="text-[10px] text-gray-400">{e.role}</p>
@@ -129,7 +129,7 @@ const auditColumns: import("@/components/ui/ResponsiveTable").Column<AuditEntry>
   {
     key: "action",
     header: "Acción",
-    render: (e) => {
+    render: (e: AuditEntry) => {
       const act = ACTION_META[e.action];
       const ActIcon = act.icon;
       return <span className={cn("inline-flex items-center gap-1 text-xs font-semibold", act.color)}><ActIcon className="h-3 w-3" />{act.label}</span>;
@@ -139,12 +139,12 @@ const auditColumns: import("@/components/ui/ResponsiveTable").Column<AuditEntry>
     key: "module",
     header: "Módulo",
     hideOnMobile: true,
-    render: (e) => <span className="text-xs text-gray-500 dark:text-muted">{e.module}</span>,
+    render: (e: AuditEntry) => <span className="text-xs text-gray-500 dark:text-muted">{e.module}</span>,
   },
   {
     key: "description",
     header: "Descripción",
-    render: (e) => <span className="text-xs text-gray-700 dark:text-foreground max-w-60 truncate block">{e.description}</span>,
+    render: (e: AuditEntry) => <span className="text-xs text-gray-700 dark:text-foreground max-w-60 truncate block">{e.description}</span>,
   },
   {
     key: "detail",

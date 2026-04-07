@@ -14,9 +14,11 @@ import { NextRequest } from "next/server";
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 const mockFindMany = vi.fn();
+const mockTenantFindMany = vi.fn();
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     order: { findMany: (...args: unknown[]) => mockFindMany(...args) },
+    tenant: { findMany: (...args: unknown[]) => mockTenantFindMany(...args) },
   },
 }));
 
@@ -25,6 +27,33 @@ vi.mock("server-only", () => ({}));
 const mockSendPushToPhone = vi.fn().mockResolvedValue(undefined);
 vi.mock("@/lib/push-sender", () => ({
   sendPushToPhone: (...args: unknown[]) => mockSendPushToPhone(...args),
+}));
+
+// Cron retry wrapper — passthrough in tests (no retry/backoff)
+vi.mock("@/lib/cron-retry", () => ({
+  withCronRetry: vi.fn(async (_name: string, fn: () => Promise<unknown>) => fn()),
+}));
+
+// Queue: fire-and-forget mocks
+vi.mock("@/lib/queue", () => ({
+  enqueueNotification: vi.fn(async () => undefined),
+}));
+
+// Logger: swallow output
+vi.mock("@/lib/logger", () => ({
+  logger: {
+    info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(),
+  },
+}));
+
+// Activity logger: noop
+vi.mock("@/lib/activity-logger", () => ({
+  logActivity: vi.fn(async () => undefined),
+}));
+
+// timing-safe: real comparison (just call ===)
+vi.mock("@/lib/timing-safe", () => ({
+  timingSafeCompare: (a: string, b: string) => a === b,
 }));
 
 import { GET } from "../app/api/cron/reorder-reminders/route";
@@ -47,6 +76,11 @@ describe("GET /api/cron/reorder-reminders", () => {
     vi.stubEnv("CRON_SECRET", CRON_SECRET);
     mockFindMany.mockReset();
     mockSendPushToPhone.mockReset();
+    // Default: a single tenant so the route can iterate at least once
+    mockTenantFindMany.mockReset();
+    mockTenantFindMany.mockResolvedValue([
+      { id: "main", slug: "main", name: "Buleje" },
+    ]);
   });
 
   afterEach(() => {
@@ -69,7 +103,8 @@ describe("GET /api/cron/reorder-reminders", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.ok).toBe(true);
-    expect(data.reminders).toBe(0);
+    // Multi-tenant shape: data.tenants[0] = { tenant, reminders, analyzed }
+    expect(data.tenants?.[0]?.reminders ?? 0).toBe(0);
   });
 
   it("returns ok with 0 reminders when customer has only 1 order", async () => {
@@ -85,8 +120,8 @@ describe("GET /api/cron/reorder-reminders", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.ok).toBe(true);
-    expect(data.reminders).toBe(0);
-    expect(data.analyzed).toBe(1);
+    expect(data.tenants?.[0]?.reminders ?? 0).toBe(0);
+    expect(data.tenants?.[0]?.analyzed ?? 0).toBe(1);
   });
 
   it("detects reorder pattern and counts correctly", async () => {
@@ -117,9 +152,9 @@ describe("GET /api/cron/reorder-reminders", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.ok).toBe(true);
-    expect(data.analyzed).toBe(1);
+    expect(data.tenants?.[0]?.analyzed ?? 0).toBe(1);
     // Reminder should be sent: avg interval ~10 days, last purchase 15 days ago
-    expect(data.reminders).toBe(1);
+    expect(data.tenants?.[0]?.reminders ?? 0).toBe(1);
   });
 
   it("does not send reminder if last purchase was recent (< 3 days)", async () => {
@@ -143,6 +178,6 @@ describe("GET /api/cron/reorder-reminders", () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.ok).toBe(true);
-    expect(data.reminders).toBe(0);
+    expect(data.tenants?.[0]?.reminders ?? 0).toBe(0);
   });
 });

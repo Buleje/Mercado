@@ -163,7 +163,7 @@ async function sendExpiryWarning(
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() + daysAhead);
 
-  const expiringBatches = await BatchesDB.getExpiringBatches(task.tenantId, daysAhead);
+  const expiringBatches = await BatchesDB.getExpiring(task.tenantId, daysAhead);
 
   if (expiringBatches.length === 0) {
     return {
@@ -175,20 +175,21 @@ async function sendExpiryWarning(
     };
   }
 
+  // expiryDate viene como ISO string desde DbBatch — convertir a timestamp
   const expired = expiringBatches.filter(
-    (b) => b.expiryDate.getTime() <= Date.now(),
+    (b) => new Date(b.expiryDate).getTime() <= Date.now(),
   );
   const expiringSoon = expiringBatches.filter(
-    (b) => b.expiryDate.getTime() > Date.now(),
+    (b) => new Date(b.expiryDate).getTime() > Date.now(),
   );
 
   const warningMessage = [
     `Alerta de Vencimiento -- ${new Date().toLocaleDateString("es-PE")}`,
     expired.length > 0
-      ? `VENCIDOS (${expired.length}): ${expired.map((b) => `${b.product.name} (${b.quantity} uds)`).join(", ")}`
+      ? `VENCIDOS (${expired.length}): ${expired.map((b) => `${b.product?.name ?? b.productName} (${b.quantity} uds)`).join(", ")}`
       : null,
     expiringSoon.length > 0
-      ? `POR VENCER (${expiringSoon.length}): ${expiringSoon.map((b) => `${b.product.name} vence ${b.expiryDate.toLocaleDateString("es-PE")}`).join(", ")}`
+      ? `POR VENCER (${expiringSoon.length}): ${expiringSoon.map((b) => `${b.product?.name ?? b.productName} vence ${new Date(b.expiryDate).toLocaleDateString("es-PE")}`).join(", ")}`
       : null,
   ]
     .filter(Boolean)
@@ -216,10 +217,10 @@ async function sendExpiryWarning(
       expiringSoonCount: expiringSoon.length,
       batches: expiringBatches.map((b) => ({
         batchId: b.id,
-        productId: b.product.id,
-        productName: b.product.name,
+        productId: b.product?.id ?? b.productId,
+        productName: b.product?.name ?? b.productName,
         quantity: b.quantity,
-        expiryDate: b.expiryDate.toISOString(),
+        expiryDate: b.expiryDate, // ya es ISO string
       })),
     },
   };

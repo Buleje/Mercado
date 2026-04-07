@@ -215,10 +215,11 @@ describe("Multi-tenant: tiendas no publicadas son invisibles", () => {
     const res  = await GETSearch(makeReq("https://host/api/marketplace/search?q=arroz"));
     const body = await res.json();
 
-    // Verificar que el filtro de Store isPublished siempre esta presente
-    // Prisma usa relaciones con capital (Store, Product) — no lowercase
+    // Verificar que el filtro de store.isPublished siempre esta presente.
+    // Las relaciones de Prisma se acceden por nombre de propiedad (lowercase),
+    // no por el nombre del modelo. El handler real usa `where: { store: {...} }`.
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.Store.isPublished).toBe(true);
+    expect(callArgs.where.store.isPublished).toBe(true);
 
     // Ningún resultado debe pertenecer a tienda privada
     const storeIds = body.data.map((r: { store?: { id?: string } }) => r.store?.id);

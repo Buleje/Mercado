@@ -3,6 +3,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock server-only before the module is imported
 vi.mock("server-only", () => ({}));
 
+// sentry-alerts pulls in @sentry/nextjs which imports next/router (Pages Router only).
+// Next 16 is App Router-only, so the import resolution fails. Stub the wrapper
+// completely so the real Sentry SDK never loads in tests.
+vi.mock("@/lib/sentry-alerts", () => ({
+  reportCriticalError: vi.fn(),
+}));
+
 // Mock the logger to suppress output and allow assertions
 vi.mock("@/lib/logger", () => ({
   logger: {

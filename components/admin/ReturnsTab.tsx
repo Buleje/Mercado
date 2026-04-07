@@ -47,7 +47,7 @@ export default function ReturnsTab() {
 
   const selectSale = (sale: Sale) => {
     setSelectedSale(sale);
-    setReturnItems(sale.items.map(i => ({ productId: i.productId, productName: i.name, quantity: 0, price: i.price, unit: i.unit })));
+    setReturnItems((sale.items ?? []).map(i => ({ productId: i.productId, productName: i.name, quantity: 0, price: i.price, unit: i.unit })));
   };
 
   const handleCreate = async () => {
@@ -105,7 +105,7 @@ export default function ReturnsTab() {
                       <span className="font-bold">Venta #{s.id.slice(-6)}</span>
                       <span className="text-emerald-600 font-bold">S/{s.total.toFixed(2)}</span>
                     </div>
-                    <p className="text-xs text-gray-400">{new Date(s.createdAt).toLocaleString()} • {s.items.length} productos</p>
+                    <p className="text-xs text-gray-400">{new Date(s.createdAt).toLocaleString()} • {s.items?.length ?? 0} productos</p>
                   </button>
                 ))}
               </div>

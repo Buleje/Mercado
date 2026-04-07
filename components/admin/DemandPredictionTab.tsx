@@ -61,7 +61,7 @@ export default function DemandPredictionTab() {
     sales.forEach(sale => {
       const saleDate = new Date(sale.createdAt);
       if (saleDate >= thirtyDaysAgo) {
-        sale.items.forEach(item => {
+        (sale.items ?? []).forEach(item => {
           salesByProduct[item.productId] = (salesByProduct[item.productId] || 0) + item.quantity;
         });
       }
@@ -69,14 +69,15 @@ export default function DemandPredictionTab() {
 
     // Calculate alerts
     const alerts: StockAlert[] = [];
-    
+
     products.forEach(product => {
-      if (product.stock > 0) {
+      const stock = product.stock ?? 0;
+      if (stock > 0) {
         const totalSales = salesByProduct[product.id] || 0;
         const dailyAvg = totalSales / 30;
-        
+
         if (dailyAvg > 0) {
-          const daysUntilStockout = product.stock / dailyAvg;
+          const daysUntilStockout = stock / dailyAvg;
           alerts.push({ product, dailyAvg, daysUntilStockout });
         }
       }

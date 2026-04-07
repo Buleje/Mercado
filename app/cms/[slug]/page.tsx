@@ -80,7 +80,7 @@ export default async function DynamicPage({
   }
 
   // Filter visible blocks and sort by order
-  const visibleBlocks = page.blocks
+  const visibleBlocks = (page.blocks as Array<{ visible: boolean; order: number; type: string; props?: unknown }>)
     .filter((block) => block.visible)
     .sort((a, b) => a.order - b.order);
 

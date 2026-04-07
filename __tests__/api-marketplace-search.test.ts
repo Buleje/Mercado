@@ -153,7 +153,7 @@ describe("GET /api/marketplace/search", () => {
     await GET(makeReq("https://host/api/marketplace/search?q=arroz&zone=Centro"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.Store).toMatchObject({ isPublished: true, zone: "Centro" });
+    expect(callArgs.where.store).toMatchObject({ isPublished: true, zone: "Centro" });
   });
 
   it("filtra por category — pasa category al where de product de Prisma", async () => {
@@ -162,7 +162,7 @@ describe("GET /api/marketplace/search", () => {
     await GET(makeReq("https://host/api/marketplace/search?q=arroz&category=Abarrotes"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.Product.category).toBe("Abarrotes");
+    expect(callArgs.where.product.category).toBe("Abarrotes");
   });
 
   it("SIEMPRE busca solo en productos activos (isActive:true)", async () => {
@@ -180,7 +180,7 @@ describe("GET /api/marketplace/search", () => {
     await GET(makeReq("https://host/api/marketplace/search?q=aceite"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.where.Store.isPublished).toBe(true);
+    expect(callArgs.where.store.isPublished).toBe(true);
   });
 
   // ── Estructura de la respuesta ────────────────────────────────────────────────

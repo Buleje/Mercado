@@ -132,7 +132,7 @@ export default function LoyaltyTab() {
   };
 
   const filtered = search
-    ? customers.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search))
+    ? customers.filter(c => c.name.toLowerCase().includes(search.toLowerCase()) || (c.phone ?? "").includes(search))
     : customers;
 
   const totalPoints = customers.reduce((s, c) => s + (c.loyaltyPoints ?? 0), 0);
