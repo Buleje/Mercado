@@ -22,6 +22,7 @@ import {
   Clock,
   Gauge,
   HeartPulse,
+  Package,
   Wrench,
 } from "lucide-react";
 
@@ -44,6 +45,7 @@ interface SuperAdminShellProps {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard",       icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"       },
   { label: "Centro Control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
+  { label: "Proyecto",        icon: <Package         className="w-5 h-5 shrink-0" />, href: "/superadmin/project-intel"   },
   { label: "Tiendas",         icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"         },
   { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"          },
   { label: "Analytics",       icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"       },
@@ -56,6 +58,7 @@ const NAV_ITEMS: NavItem[] = [
 const PAGE_TITLES: Record<string, string> = {
   "/superadmin/dashboard":       "Dashboard",
   "/superadmin/control-center":  "Centro de Control",
+  "/superadmin/project-intel":   "Panorama del Proyecto",
   "/superadmin/tenants":         "Tiendas",
   "/superadmin/stores":          "Marketplace",
   "/superadmin/analytics":       "Analytics",
