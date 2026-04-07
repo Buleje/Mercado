@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useCallback, useMemo, Fragment } from "react";
+import { useState, useEffect, useCallback, useMemo, Fragment } from "react";
 import {
   DollarSign, TrendingUp, AlertTriangle, BarChart3, Clock,
   CreditCard, Receipt, ShoppingCart, ShoppingBasket,
@@ -45,7 +45,16 @@ function Donut({ data, total, size = 96 }: { data: { total: number; color: strin
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-gray-300 dark:text-muted">{text}</div>; }
 function ElapsedTimer({ createdAt }: { createdAt: string }) {
-  const mins = Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000); const h = Math.floor(mins / 60); const m = mins % 60;
+  // react-hooks/purity — Date.now() no puede ir en render directo.
+  // useState lazy + useEffect con refresh cada 60s (igual pattern que DashboardTab).
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(t);
+  }, []);
+  const mins = Math.floor((now - new Date(createdAt).getTime()) / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
   const color = mins > 60 ? "text-red-500" : mins > 30 ? "text-amber-500" : "text-emerald-500";
   return <div className={cn("text-[10px] font-bold mt-0.5", color)}>\u23F1 {h > 0 ? `${h}h ${m}m` : `${m}m`}</div>;
 }
@@ -54,10 +63,14 @@ function DBadge({ children, color }: { children: React.ReactNode; color: "green"
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
-export default function DashboardVentasSection({ st, expandAll, orders, sales, period, quickStatusMap, changingStatusId, handleQuickStatus, printTicket, adminNotes, saveAdminNote, selectedOrders, toggleOrderSelection, handleBulkStatus, bulkUpdating, expandedHistory, toggleHistory }: any) {
+type OrderStatus = "pendiente"|"confirmado"|"en_camino"|"entregado"|"cancelado";
+interface Order { id: string; status: OrderStatus; [key: string]: any; }
+
+export default function DashboardVentasSection({ st, expandAll, orders, sales, period, quickStatusMap, changingStatusId, handleQuickStatus, printTicket, adminNotes, saveAdminNote, selectedOrders, setSelectedOrders, toggleOrderSelection, handleBulkStatus, bulkUpdating, expandedHistory, toggleHistory }: any) {
   const [topTab, setTopTab] = useState<"revenue"|"profit"|"units">("revenue");
   const [recentFilter, setRecentFilter] = useState<"all"|"pendiente"|"en_camino"|"entregado">("all");
   const [recentPage, setRecentPage] = useState(1);
+  const [dashSearch, setDashSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [selectedClientPhone, setSelectedClientPhone] = useState<string|null>(null);
@@ -135,31 +148,31 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     ))}
                     {/* Area */}
                     <path d={
-                      st.daily.map(([,v],i) => {
+                      st.daily.map(([,v]: [string, number], i: number) => {
                         const x = i*50+25; const y = 140-((v/st.maxDaily)*130);
                         return i===0?`M${x},${y}`:`L${x},${y}`;
                       }).join(' ') + ` L${(st.daily.length-1)*50+25},140 L25,140 Z`
                     } fill="url(#areaGrad)" />
                     {/* Revenue line */}
                     <polyline
-                      points={st.daily.map(([,v],i) => `${i*50+25},${140-((v/st.maxDaily)*130)}`).join(' ')}
+                      points={st.daily.map(([,v]: [string, number], i: number) => `${i*50+25},${140-((v/st.maxDaily)*130)}`).join(' ')}
                       fill="none" stroke="#00B4A6" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"
                     />
                     {/* Profit line (dashed, emerald) */}
-                    {st.dailyProfit.some(v => v > 0) && (
+                    {st.dailyProfit.some((v: number) => v > 0) && (
                       <polyline
-                        points={st.dailyProfit.map((v,i) => `${i*50+25},${140-((Math.max(v,0)/st.maxDaily)*130)}`).join(' ')}
+                        points={st.dailyProfit.map((v: number, i: number) => `${i*50+25},${140-((Math.max(v,0)/st.maxDaily)*130)}`).join(' ')}
                         fill="none" stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="5 3"
                       />
                     )}
                     {/* Revenue dots */}
-                    {st.daily.map(([,v],i) => (
+                    {st.daily.map(([,v]: [string, number], i: number) => (
                       <circle key={i} cx={i*50+25} cy={140-((v/st.maxDaily)*130)} r="3.5" fill="#00B4A6" stroke="white" strokeWidth="2" />
                     ))}
                     {/* 7-day moving average line (amber) */}
                     {st.movingAvg7.length >= 2 && (
                       <polyline
-                        points={st.movingAvg7.map((v,i) => `${i*50+25},${140-((Math.max(v,0)/st.maxDaily)*130)}`).join(' ')}
+                        points={st.movingAvg7.map((v: number, i: number) => `${i*50+25},${140-((Math.max(v,0)/st.maxDaily)*130)}`).join(' ')}
                         fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" strokeDasharray="2 2"
                       />
                     )}
@@ -176,7 +189,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   </svg>
                 </div>
                 <div className="flex justify-between px-1 mt-1">
-                  {st.daily.map(([dk]) => (
+                  {st.daily.map(([dk]: [string, number]) => (
                     <span key={dk} className="text-xs text-gray-400 dark:text-muted truncate text-center" style={{width:`${100/st.daily.length}%`}}>{dayLabel(dk)}</span>
                   ))}
                 </div>
@@ -189,8 +202,8 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
             <Card title="Pronóstico próximos 7 días" icon={Target}>
               <div className="space-y-3">
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5">
-                  {st.forecast7.map((f, i) => {
-                    const maxF = Math.max(...st.forecast7.map(x => x.value), 1);
+                  {st.forecast7.map((f: any, i: number) => {
+                    const maxF = Math.max(...st.forecast7.map((x: any) => x.value), 1);
                     return (
                       <div key={i} className="text-center">
                         <div className="h-16 flex items-end justify-center">
@@ -206,7 +219,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   })}
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-500 dark:text-muted pt-2 border-t border-gray-100 dark:border-card-border">
-                  <span>Total estimado: <strong className="text-gray-800 dark:text-foreground">{fmt(st.forecast7.reduce((a, f) => a + f.value, 0))}</strong></span>
+                  <span>Total estimado: <strong className="text-gray-800 dark:text-foreground">{fmt(st.forecast7.reduce((a: number, f: any) => a + f.value, 0))}</strong></span>
                   <span className="text-[10px]">Basado en tendencia lineal de {st.daily.length} días</span>
                 </div>
               </div>
@@ -322,7 +335,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
               <div className="space-y-3 sm:space-y-6">
                 {/* Visual Funnel Chart */}
                 <div className="space-y-0">
-                  {st.conversionFunnelData.map((stage, idx) => {
+                  {st.conversionFunnelData.map((stage: any, idx: number) => {
                     const maxCount = st.conversionFunnelData[0].count;
                     const widthPct = maxCount > 0 ? (stage.count / maxCount) * 100 : 0;
                     const prevStage = st.conversionFunnelData[idx - 1];
@@ -444,7 +457,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
             <Card title="Por categoría" icon={ShoppingBasket}>
               {st.catSales.length===0?<Empty />:(
                 <div className="space-y-2.5">
-                  {st.catSales.map(c => {
+                  {st.catSales.map((c: any) => {
                     const mx = st.catSales[0]?.total??1;
                     return (
                       <div key={c.cat}>
@@ -467,7 +480,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                 <div className="flex flex-wrap items-center gap-6 justify-center">
                   <Donut data={st.payments} total={st.payTotal} size={120} />
                   <div className="space-y-2">
-                    {st.payments.map(p => (
+                    {st.payments.map((p: any) => (
                       <div key={p.method} className="flex flex-wrap items-center gap-2 text-xs">
                         <div className="w-2.5 h-2.5 rounded-full" style={{background:p.color}} />
                         <span className="text-gray-500 w-20">{p.label}</span>
@@ -517,7 +530,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
           <Card title="Embudo de pedidos" icon={ShoppingCart}>
             {st.funnelData[0].count === 0 ? <Empty text="Sin pedidos en el periodo" /> : (
               <div className="space-y-3">
-                {st.funnelData.map((step) => {
+                {st.funnelData.map((step: any) => {
                   const pct = st.funnelData[0].count > 0 ? (step.count / st.funnelData[0].count) * 100 : 0;
                   return (
                     <div key={step.label}>
@@ -566,15 +579,15 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
             </div>
             {(() => {
               const filteredRecent = st.recent
-                .filter(o => recentFilter === "all" || o.status === recentFilter)
-                .filter(o => {
+                .filter((o: any) => recentFilter === "all" || o.status === recentFilter)
+                .filter((o: any) => {
                   if (!dateFrom && !dateTo) return true;
                   const od = o.createdAt.slice(0,10);
                   if (dateFrom && od < dateFrom) return false;
                   if (dateTo && od > dateTo) return false;
                   return true;
                 })
-                .filter(o => !dashSearch ||
+                .filter((o: any) => !dashSearch ||
                   o.customer.name.toLowerCase().includes(dashSearch.toLowerCase()) ||
                   (o.customer.phone ?? "").includes(dashSearch) ||
                   o.id.toLowerCase().includes(dashSearch.toLowerCase())
@@ -606,9 +619,9 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     <tr className="text-gray-400 dark:text-muted font-medium border-b border-gray-50 dark:border-card-border">
                       <th className="w-8 px-2 py-2">
                         <input type="checkbox"
-                          checked={filteredRecent.length > 0 && filteredRecent.every(o => selectedOrders.has(o.id))}
+                          checked={filteredRecent.length > 0 && filteredRecent.every((o: any) => selectedOrders.has(o.id))}
                           onChange={(e) => {
-                            if (e.target.checked) setSelectedOrders(new Set(filteredRecent.map(o => o.id)));
+                            if (e.target.checked) setSelectedOrders(new Set(filteredRecent.map((o: any) => o.id)));
                             else setSelectedOrders(new Set());
                           }}
                           className="rounded border-gray-300 accent-primary"
@@ -623,7 +636,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     </tr>
                   </thead>
                   <tbody>
-                    {pagedRecent.map(o => (
+                    {pagedRecent.map((o: any) => (
                       <Fragment key={o.id}>
                       <tr className="border-b border-gray-50 dark:border-card-border last:border-0 hover:bg-gray-50/50 dark:hover:bg-accent/50">
                         {/* U3: Checkbox */}
@@ -649,7 +662,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                             <span className="font-medium text-gray-700 dark:text-foreground">{o.customer.name}</span>
                             {/* J3 — New client badge */}
                             {o.customer.phone && (() => {
-                              const otherOrders = orders.filter(ord => ord.id !== o.id && ord.customer.phone === o.customer.phone);
+                              const otherOrders = orders.filter((ord: any) => ord.id !== o.id && ord.customer.phone === o.customer.phone);
                               return otherOrders.length === 0 ? <span className="text-[9px] bg-indigo-50 text-indigo-600 font-bold px-1.5 py-0.5 rounded-full" title="Primera compra">🆕</span> : null;
                             })()}
                           </div>
@@ -665,7 +678,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                           )}
                         </td>
                         <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-gray-400 hidden sm:table-cell max-w-40 truncate">
-                          {o.items.map(i=>`${i.quantity}× ${i.name}`).join(", ")}
+                          {o.items.map((i: any)=>`${i.quantity}× ${i.name}`).join(", ")}
                         </td>
                         <td className="px-2 sm:px-4 py-1.5 sm:py-2">
                           <DBadge color={o.paymentMethod==="yape"?"purple":"green"}>
@@ -723,7 +736,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                         <tr className="border-b border-gray-50 dark:border-card-border bg-gray-50/50 dark:bg-surface/30">
                           <td colSpan={7} className="px-3 sm:px-6 py-2">
                             <div className="flex items-center gap-3 flex-wrap">
-                              {o.statusHistory.map((h, hi) => (
+                              {o.statusHistory.map((h: any, hi: number) => (
                                 <div key={hi} className="flex items-center gap-1.5">
                                   <div className="w-2 h-2 rounded-full bg-primary" />
                                   <span className="text-[10px] font-semibold text-foreground capitalize">{h.status.replace("_", " ")}</span>

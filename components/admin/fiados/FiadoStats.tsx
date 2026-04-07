@@ -1,15 +1,88 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
-  DollarSign, Calendar, AlertTriangle, CreditCard,
+  DollarSign, Calendar, AlertTriangle,
   CheckCircle2, TrendingUp, Shield, MessageCircle,
   ChevronLeft, ChevronRight, Search, Plus, Clock, XCircle, Ban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type FiadoStatus = "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO";
+
+type FiadoCuota = {
+  id: string;
+  fiadoId: string;
+  monto: number;
+  pagadoEn?: string;
+  notas?: string;
+  createdAt: string;
+};
+
+type Fiado = {
+  id: string;
+  tenantId: string;
+  customerId: string;
+  customerName?: string;
+  total: number;
+  saldo: number;
+  descripcion?: string;
+  status: FiadoStatus;
+  fechaVence?: string;
+  cuotas: FiadoCuota[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+type RiskLevel = "ALTO" | "MEDIO" | "BAJO";
+
+type ScoredFiado = Fiado & { diasVencido: number; riskScore: number; riskLevel: RiskLevel };
+
+type TendenciaMorosidad = {
+  cobradoEsteMes: number;
+  prestadoEsteMes: number;
+};
+
+type ProyeccionCobro = {
+  cobradoHoy: number;
+  cobradoSemana: number;
+  promedioDiario: number;
+  totalPendiente: number;
+  pctRecuperado: number;
+  diasRestantes: number;
+};
+
+// FiadoMasAntiguo es un subconjunto de Fiado enriquecido con `dias`
+type FiadoMasAntiguo = Fiado & { dias: number };
+
+type PagosEstaSemana = {
+  total: number;
+  pagaron: number;
+};
+
+type MejorPagadorMes = {
+  nombre: string;
+  total: number;
+};
+
+type FiadoStatsProps = {
+  fiados: Fiado[];
+  loading: boolean;
+  totalSaldo: number;
+  tendenciaMorosidad: TendenciaMorosidad;
+  proyeccionCobro: ProyeccionCobro;
+  fiadoMasAntiguo: FiadoMasAntiguo | null;
+  pagosEstaSemana: PagosEstaSemana;
+  mejorPagadorMes: MejorPagadorMes | null;
+  openDetail: (f: Fiado) => void;
+  search: string;
+  setSearch: (v: string) => void;
+  setSelected: (f: Fiado) => void;
+  setShowQuickClient?: (v: boolean) => void;
+  statusFilter: FiadoStatus | "";
+  setStatusFilter: (v: FiadoStatus | "") => void;
+  FiadoTendenciaCobro: React.ComponentType;
+};
 
 const STATUS_META: Record<FiadoStatus, { label: string; color: string; bg: string; icon: typeof CheckCircle2 }> = {
   ACTIVO:    { label: "Activo",    color: "text-amber-700 dark:text-amber-400",   bg: "bg-amber-100 dark:bg-amber-900/30",   icon: Clock },
@@ -19,9 +92,8 @@ const STATUS_META: Record<FiadoStatus, { label: string; color: string; bg: strin
 };
 
 function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
-function formatDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
 
-export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, search, setSearch, setSelected, statusFilter, setStatusFilter, FiadoTendenciaCobro }: any) {
+export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMorosidad, proyeccionCobro, fiadoMasAntiguo, pagosEstaSemana, mejorPagadorMes, openDetail, search, setSearch, setSelected, setShowQuickClient, statusFilter, setStatusFilter, FiadoTendenciaCobro }: FiadoStatsProps) {
   const [calMes, setCalMes] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
   const [calDiaSeleccionado, setCalDiaSeleccionado] = useState<string | null>(null);
 
@@ -271,7 +343,7 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
           </div>
           <button
             type="button"
-            onClick={() => setShowQuickClient(true)}
+            onClick={() => setShowQuickClient?.(true)}
             className="shrink-0 h-[38px] w-[38px] flex items-center justify-center rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-[#00B4A6] hover:text-white hover:border-[#00B4A6] text-gray-500 transition-colors"
             title="Crear cliente rapido"
           >
@@ -313,11 +385,11 @@ export default function FiadoStats({ fiados, loading, totalSaldo, tendenciaMoros
         const now = new Date();
         now.setHours(0, 0, 0, 0);
 
-        const scored = activos.map(f => {
+        const scored: ScoredFiado[] = activos.map(f => {
           const vence = f.fechaVence ? new Date(f.fechaVence) : null;
           const diasVencido = vence ? Math.max(0, Math.floor((now.getTime() - new Date(vence).getTime()) / (1000 * 60 * 60 * 24))) : 0;
           const riskScore = f.saldo * (1 + diasVencido / 10);
-          let riskLevel: "ALTO" | "MEDIO" | "BAJO" = "BAJO";
+          let riskLevel: RiskLevel = "BAJO";
           if (f.saldo > 200 && diasVencido > 30) riskLevel = "ALTO";
           else if (f.saldo > 100 || diasVencido > 15) riskLevel = "MEDIO";
           return { ...f, diasVencido, riskScore, riskLevel };

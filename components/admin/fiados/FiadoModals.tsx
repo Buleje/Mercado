@@ -1,26 +1,106 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useRef, useState } from "react";
+import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, DollarSign, Calendar,
-  Loader2, AlertTriangle, CreditCard,
+  X, DollarSign,
+  Loader2,
   CheckCircle2, MessageCircle,
-  Printer, PenTool, Download, Navigation,
+  Printer, PenTool, Navigation, MapPin, Phone,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
+type FiadoStatus = "ACTIVO" | "PAGADO" | "VENCIDO" | "CANCELADO";
+
+type FiadoCuota = {
+  id: string;
+  fiadoId: string;
+  monto: number;
+  pagadoEn?: string;
+  notas?: string;
+  createdAt: string;
+};
+
+type Fiado = {
+  id: string;
+  tenantId: string;
+  customerId: string;
+  customerName?: string;
+  total: number;
+  saldo: number;
+  descripcion?: string;
+  status: FiadoStatus;
+  fechaVence?: string;
+  cuotas: FiadoCuota[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+type DistributionItem = {
+  customerName: string;
+  pago: number;
+  tipo: string;
+};
+
+type ReciboData = {
+  fecha: string;
+  clienteNombre: string;
+  clientePhone: string;
+  montoPagado: number;
+  saldoAnterior: number;
+  saldoActual: number;
+};
+
+type FiadoModalsProps = {
+  showPago: boolean;
+  setShowPago: (v: boolean) => void;
+  selected: Fiado | null;
+  pagoMonto: string;
+  setPagoMonto: (v: string) => void;
+  pagoNotas: string;
+  setPagoNotas: (v: string) => void;
+  paying: boolean;
+  pagoError: string | null;
+  handlePago: () => void;
+  setPagoError: (v: string | null) => void;
+  selectedIds: Set<string>;
+  selectedFiados: Fiado[];
+  selectedTotal: number;
+  setSelectedIds: (v: Set<string>) => void;
+  showCobroMasivo: boolean;
+  setShowCobroMasivo: (v: boolean) => void;
+  cobroMonto: string;
+  setCobroMonto: (v: string) => void;
+  cobroPaying: boolean;
+  cobroError: string | null;
+  handleCobroMasivo: () => void;
+  setCobroError: (v: string | null) => void;
+  computeDistribution: (monto: number) => DistributionItem[];
+  showRecibo: boolean;
+  setShowRecibo: (v: boolean) => void;
+  reciboData: ReciboData | null;
+  showCompromiso: boolean;
+  setShowCompromiso: (v: boolean) => void;
+  compromisoMonto: string;
+  setCompromisoMonto: (v: string) => void;
+  compromisoFecha: string;
+  setCompromisoFecha: (v: string) => void;
+  firmaCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+  isDrawing: boolean;
+  setIsDrawing: (v: boolean) => void;
+  showDebtorsMap: boolean;
+  setShowDebtorsMap: (v: boolean) => void;
+  fiados: Fiado[];
+};
 
 function formatCurrency(n: number) { return `S/${n.toFixed(2)}`; }
-function formatDate(iso: string) { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); }
 
 export default function FiadoModals({
-  showPago, setShowPago, selected, pagoMonto, setPagoMonto, pagoNotas, setPagoNotas, paying, pagoError, handlePago, setPagoError,
+  showPago, setShowPago, selected, pagoMonto, setPagoMonto, pagoNotas, setPagoNotas, paying, pagoError, handlePago, setPagoError: _setPagoError,
   selectedIds, selectedFiados, selectedTotal, setSelectedIds, showCobroMasivo, setShowCobroMasivo, cobroMonto, setCobroMonto, cobroPaying, cobroError, handleCobroMasivo, setCobroError, computeDistribution,
   showRecibo, setShowRecibo, reciboData,
   showCompromiso, setShowCompromiso, compromisoMonto, setCompromisoMonto, compromisoFecha, setCompromisoFecha, firmaCanvasRef, isDrawing, setIsDrawing,
   showDebtorsMap, setShowDebtorsMap, fiados,
-}: any) {
+}: FiadoModalsProps) {
   return (
     <>
       <AnimatePresence>
