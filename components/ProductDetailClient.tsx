@@ -20,6 +20,9 @@ import ProductGallery from "@/components/ProductGallery";
 import ProductReviewsSection from "@/components/ProductReviewsSection";
 import AlsoBoughtSection from "@/components/AlsoBoughtSection";
 import PriceComparisonBadge from "@/components/PriceComparisonBadge";
+import ProductBadges from "@/components/marketplace/ProductBadges";
+import ProductVariantSelector from "@/components/marketplace/ProductVariantSelector";
+import RatingByAttribute from "@/components/marketplace/RatingByAttribute";
 
 function getProductSlug(product: { name: string; id: number }): string {
   return product.name
@@ -37,6 +40,38 @@ function getProductSlug(product: { name: string; id: number }): string {
 
 type LiveProduct = Product & { stock?: number; stockMin?: number };
 
+interface ProductVariant {
+  id: string;
+  name: string;
+  sku?: string | null;
+  priceModifier: number;
+  stock?: number | null;
+  attributesJson?: string | null;
+}
+
+interface DetailedReview {
+  id: string;
+  name: string;
+  date: string;
+  rating: number;
+  qualityRating?: number;
+  priceRating?: number;
+  deliveryRating?: number;
+  text: string;
+  photosJson?: string | null;
+  helpfulCount: number;
+  verified: boolean;
+}
+
+interface ReviewSummary {
+  avgRating: number;
+  avgQuality?: number;
+  avgPrice?: number;
+  avgDelivery?: number;
+  totalReviews: number;
+  ratingDistribution: { [key: number]: number };
+}
+
 interface ProductDetailClientProps {
   product: Product;
 }
@@ -53,6 +88,53 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const fav = isFavorite(String(product.id));
   const compare = isCompare(product.id);
   const [copied, setCopied] = useState(false);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>();
+  const [variantFinalPrice, setVariantFinalPrice] = useState<number | undefined>();
+
+  // Fetch product variants
+  // TODO: conectar a API real cuando backend termine → /api/marketplace/products/${product.id}/variants
+  const { data: variants = [] } = useCachedData<ProductVariant[]>(
+    `product-variants-${product.id}`,
+    async () => {
+      try {
+        const res = await fetch(`/api/marketplace/products/${product.id}/variants`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data?.data) ? data.data : [];
+      } catch { return []; }
+    },
+    { staleTime: 5 * 60 * 1000, refetchOnFocus: false },
+  );
+
+  // Fetch product badges
+  // TODO: conectar a API real cuando backend termine → /api/marketplace/products/${product.id}/badges
+  const { data: productBadges = [] } = useCachedData<string[]>(
+    `product-badges-${product.id}`,
+    async () => {
+      try {
+        const res = await fetch(`/api/marketplace/products/${product.id}/badges`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        return Array.isArray(data?.data) ? data.data : [];
+      } catch { return []; }
+    },
+    { staleTime: 10 * 60 * 1000, refetchOnFocus: false },
+  );
+
+  // Fetch detailed reviews with attribute ratings
+  // TODO: conectar a API real cuando backend termine → /api/marketplace/products/${product.id}/reviews-detailed
+  const { data: reviewsDetailed } = useCachedData<{ summary: ReviewSummary; reviews: DetailedReview[] }>(
+    `product-reviews-detailed-${product.id}`,
+    async () => {
+      try {
+        const res = await fetch(`/api/marketplace/products/${product.id}/reviews-detailed`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data?.data ?? null;
+      } catch { return null; }
+    },
+    { staleTime: 5 * 60 * 1000, refetchOnFocus: false },
+  );
 
   // Restock notification state
   const [restockPhone, setRestockPhone] = useState("");
@@ -158,7 +240,8 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
 
   const handleAdd = () => {
     if (isOutOfStock) return;
-    addItem(product);
+    const effectivePrice = variantFinalPrice ?? product.price;
+    addItem({ ...product, price: effectivePrice });
     showToast(product.name, product.image);
   };
 
@@ -233,18 +316,23 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
           <div className="space-y-6">
             {/* Title & meta */}
             <div>
-              {product.badge && (
-                <span
-                  className={cn(
-                    "inline-block mb-3 px-3 py-1 rounded-full text-xs font-bold uppercase text-white",
-                    product.badge === "Oferta" && "bg-red-500",
-                    product.badge === "Popular" && "bg-secondary",
-                    product.badge === "Fresco" && "bg-emerald-500",
-                    product.badge === "Premium" && "bg-violet-600",
+              {(product.badge || productBadges.length > 0) && (
+                <div className="flex flex-wrap items-center gap-2 mb-3">
+                  {product.badge && (
+                    <span
+                      className={cn(
+                        "inline-block px-3 py-1 rounded-full text-xs font-bold uppercase text-white",
+                        product.badge === "Oferta" && "bg-red-500",
+                        product.badge === "Popular" && "bg-secondary",
+                        product.badge === "Fresco" && "bg-emerald-500",
+                        product.badge === "Premium" && "bg-violet-600",
+                      )}
+                    >
+                      {product.badge}
+                    </span>
                   )}
-                >
-                  {product.badge}
-                </span>
+                  <ProductBadges badges={productBadges} />
+                </div>
               )}
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-foreground leading-tight">
                 {product.name}
@@ -411,6 +499,19 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   })}
                 </div>
               </div>
+            )}
+
+            {/* Variantes del producto */}
+            {variants.length > 0 && (
+              <ProductVariantSelector
+                variants={variants}
+                basePrice={product.price}
+                selectedVariantId={selectedVariantId}
+                onSelect={(variantId, finalPrice) => {
+                  setSelectedVariantId(variantId);
+                  setVariantFinalPrice(finalPrice);
+                }}
+              />
             )}
 
             {/* Add to cart */}
@@ -618,8 +719,19 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
         </div>
 
         {/* Reviews section */}
-        <div className="mt-12 lg:mt-16">
+        <div id="resenas" className="mt-12 lg:mt-16">
           <ProductReviewsSection productId={product.id} productName={product.name} />
+          {reviewsDetailed && (
+            <div className="mt-8 bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">
+                Resenas detalladas
+              </h3>
+              <RatingByAttribute
+                summary={reviewsDetailed.summary}
+                reviews={reviewsDetailed.reviews}
+              />
+            </div>
+          )}
         </div>
 
         {/* Also bought — cross-sell */}

@@ -21,3 +21,5 @@ export * from "./notas-credito.db";
 export * from "./supplier-portal.db";
 export * from "./forecasting.db";
 export * from "./credit.db";
+export * from "./product-images.db";
+export * from "./product-variants.db";

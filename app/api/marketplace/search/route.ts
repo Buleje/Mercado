@@ -6,6 +6,51 @@ import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
+// ── Batch helpers ─────────────────────────────────────────────────────────────
+
+async function batchProductEnrichment(productIds: number[], tenantId: string) {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const [primaryImages, variantCounts, ratingsAgg, topSellers] = await Promise.all([
+    prisma.productImage.findMany({
+      where: { productId: { in: productIds }, tenantId, isPrimary: true },
+      select: { productId: true, url: true },
+    }),
+    prisma.productVariant.groupBy({
+      by: ["productId"],
+      where: { productId: { in: productIds }, tenantId, isActive: true },
+      _count: { id: true },
+    }),
+    prisma.review.groupBy({
+      by: ["productId"],
+      where: {
+        productId: { in: productIds },
+        tenantId,
+        status: "approved",
+        deletedAt: null,
+      },
+      _avg: { rating: true },
+    }),
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      where: {
+        productId: { in: productIds },
+        order: { tenantId, deletedAt: null, createdAt: { gte: thirtyDaysAgo } },
+      },
+      _sum: { quantity: true },
+      orderBy: { _sum: { quantity: "desc" } },
+      take: Math.ceil(productIds.length * 0.1) || 1,
+    }),
+  ]);
+
+  const primaryImageMap = new Map(primaryImages.map((i) => [i.productId, i.url]));
+  const variantMap = new Map(variantCounts.map((v) => [v.productId, v._count.id]));
+  const ratingMap = new Map(ratingsAgg.map((r) => [r.productId, r._avg.rating ?? 0]));
+  const bestSellerIds = new Set(topSellers.map((s) => s.productId));
+
+  return { primaryImageMap, variantMap, ratingMap, bestSellerIds };
+}
+
 const QuerySchema = z.object({
   q:        z.string().min(1).max(100),
   zone:     z.string().optional(),
@@ -55,6 +100,7 @@ type RawResult = {
     image: string | null;
     category: string;
     unit: string | null;
+    stock: number | null;
   };
   store: {
     id: string;
@@ -126,6 +172,7 @@ export async function GET(req: NextRequest) {
             image:    true,
             category: true,
             unit:     true,
+            stock:    true,
           },
         },
         store: {
@@ -168,21 +215,49 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const data = finalResults.slice(0, 50).map((r) => ({
-      productId:   r.product.id,
-      productName: r.product.name,
-      price:       r.retailPrice,
-      image:       r.product.image,
-      unit:        r.product.unit,
-      category:    r.product.category,
-      storeId:     r.store.id,
-      storeName:   r.store.name,
-      storeSlug:   r.store.slug,
-      storeLogo:   r.store.logo,
-      storeZone:   r.store.zone,
-      storeRating: r.store.rating,
-      stock:       r.minOrderQty ?? 0,
-    }));
+    const topItems = finalResults.slice(0, 50);
+    const tenantId = req.headers.get("x-tenant-id") ?? "main";
+    const productIds = topItems.map((r) => r.product.id);
+
+    const { primaryImageMap, variantMap, ratingMap, bestSellerIds } =
+      productIds.length > 0
+        ? await batchProductEnrichment(productIds, tenantId)
+        : { primaryImageMap: new Map(), variantMap: new Map(), ratingMap: new Map(), bestSellerIds: new Set<number>() };
+
+    // Proxy para badge "new": IDs en el top 10% del rango = producto reciente
+    const maxId = productIds.length > 0 ? Math.max(...productIds) : 0;
+    const newThreshold = maxId * 0.9;
+
+    const data = topItems.map((r) => {
+      const pid = r.product.id;
+      const stock = r.product.stock ?? 0;
+
+      const badges: string[] = [];
+      if (pid >= newThreshold && newThreshold > 0) badges.push("new");
+      if (stock > 0 && stock < 5) badges.push("low-stock");
+      if (bestSellerIds.has(pid)) badges.push("best-seller");
+      if (r.store.rating > 4.5) badges.push("verified");
+
+      return {
+        productId:   pid,
+        productName: r.product.name,
+        price:       r.retailPrice,
+        image:       primaryImageMap.get(pid) ?? r.product.image,
+        images:      primaryImageMap.has(pid) ? [primaryImageMap.get(pid)!] : (r.product.image ? [r.product.image] : []),
+        unit:        r.product.unit,
+        category:    r.product.category,
+        stock,
+        hasVariants: (variantMap.get(pid) ?? 0) > 0,
+        avgRating:   Math.round((ratingMap.get(pid) ?? 0) * 10) / 10,
+        badges,
+        storeId:     r.store.id,
+        storeName:   r.store.name,
+        storeSlug:   r.store.slug,
+        storeLogo:   r.store.logo,
+        storeZone:   r.store.zone,
+        storeRating: r.store.rating,
+      };
+    });
 
     return NextResponse.json({ data, total: data.length, query: q });
   } catch (err) {

@@ -104,10 +104,48 @@ model Product {
   ingredienteEn       RecetaIngrediente[] @relation("IngredienteProducto")
   storeProducts       StoreProduct[]
   forecastLogs        ForecastLog[]
+  images              ProductImage[]
+  variants            ProductVariant[]
 
   @@index([tenantId])
   @@index([tenantId, active])
   @@index([barcode])
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  position  Int      @default(0)
+  isPrimary Boolean  @default(false)
+  tenantId  String
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([tenantId])
+  @@index([productId, position])
+}
+
+model ProductVariant {
+  id             String   @id @default(cuid())
+  productId      Int
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name           String
+  sku            String?
+  priceModifier  Float    @default(0)
+  stock          Int?
+  attributesJson String?
+  isActive       Boolean  @default(true)
+  position       Int      @default(0)
+  tenantId       String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([productId])
+  @@index([tenantId])
+  @@index([sku])
 }
 
 // ─── Batches: see "Inventory Batches (Lotes)" section below (line ~969)
@@ -296,6 +334,12 @@ model Review {
   deletedAt      DateTime? // soft-delete — null means active
   adminReply     String?
   adminReplyDate DateTime?
+  qualityRating  Int?
+  priceRating    Int?
+  deliveryRating Int?
+  photosJson     String?
+  verified       Boolean  @default(false)
+  helpfulCount   Int      @default(0)
 
   @@index([status])
   @@index([tenantId])
