@@ -9,7 +9,8 @@ import { getCachedLLMResponse, setCachedLLMResponse } from "@/lib/llm-cache";
 import { ALL_AGENT_TOOLS, resolveToolCall, isToolApprovalRequired } from "@/lib/agents/tool-definitions";
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
 import { stashPendingApproval } from "@/lib/agents/pending-approvals";
-import { fetchGroqWithRetry, type GroqUsage } from "@/lib/groq-fetch";
+import { callLLM } from "@/lib/llm-router";
+import type { LLMUsage } from "@/lib/llm-providers";
 import { checkTokenBudget, recordTokenUsage } from "@/lib/ai-usage-tracker";
 import { recordAIFailure, recordAISuccess } from "@/lib/ai-failure-monitor";
 import { getOrCreateConversation, loadConversationHistory, saveMessage } from "@/lib/ai-conversation-memory";
@@ -282,12 +283,9 @@ export async function POST(req: NextRequest) {
     });
   };
 
-  // ── If no API key, use rule-based immediately ─────────────────────────────
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    logger.warn("[ai-assistant] GROQ_API_KEY not configured — using rule-based fallback");
-    return returnRuleBased();
-  }
+  // ── Router LLM (ADR-010) maneja disponibilidad internamente ──────────────
+  // Si ningún provider está configurado, el router devuelve error y caemos
+  // al rule-based en el bloque de manejo de errores del first call.
 
   // ── Token budget check — prevent overspending on AI ──────────────────────
   const budget = checkTokenBudget(auth.tenantId);
@@ -342,34 +340,37 @@ export async function POST(req: NextRequest) {
   await ensureAgentsRegistered();
 
   try {
-    // ── First LLM call (with tools) ─────────────────────────────────────────
-    const groqPayload: Record<string, unknown> = {
-      model: "llama-3.3-70b-versatile",
+    // ── First LLM call (with tools) — ADR-010 balanced tier ────────────────
+    // Router call, primera decisión con tools. Llama-3.3-70b por default,
+    // fallback a llama-4-scout si cae.
+    const res = await callLLM("balanced", {
       messages,
       temperature: AI_TEMPERATURES.router,
-      max_tokens: 1500,
+      maxTokens: 1500,
       stream: false, // Function calling requires non-streaming first pass
       tools: ALL_AGENT_TOOLS,
-      tool_choice: "auto",
-    };
+      toolChoice: "auto",
+      label: "ai-assistant",
+    });
 
-    let totalUsage: GroqUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
-
-    const res = await fetchGroqWithRetry(apiKey, groqPayload, "ai-assistant");
+    let totalUsage: LLMUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
     if (!res.ok) {
-      console.error("[ai-assistant] Groq API error:", res.error);
+      console.error("[ai-assistant] LLM router error:", res.error);
       recordAIFailure("ai-assistant", res.error ?? "unknown");
       return returnRuleBased();
     }
 
-    if (res.usage) {
-      totalUsage = { ...res.usage };
-    }
+    totalUsage = { ...res.usage };
 
-    const data = res.data!;
-    const choice = (data.choices as { message: Record<string, unknown> }[])?.[0];
-    const assistantMessage = choice?.message;
+    // Reconstruct assistantMessage shape for backward compat with rest of code
+    const assistantMessage: {
+      content: string | null;
+      tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }>;
+    } = {
+      content: res.content,
+      tool_calls: res.toolCalls ?? undefined,
+    };
 
     // ── Handle tool calls from the LLM ──────────────────────────────────────
     if (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
@@ -452,14 +453,14 @@ export async function POST(req: NextRequest) {
                 encoder.encode(`data: ${JSON.stringify({ toolProgress: "Generando respuesta...", tool: "_final" })}\n\n`)
               );
 
-              // Second LLM call — stream the response
-              const followUpRes = await fetchGroqWithRetry(apiKey, {
-                model: "llama-3.3-70b-versatile",
-                messages: capturedMessages,
+              // Second LLM call — stream the response via router (ADR-010)
+              const followUpRes = await callLLM("balanced", {
+                messages: capturedMessages as Parameters<typeof callLLM>[1]["messages"],
                 temperature: AI_TEMPERATURES.toolFollowup,
-                max_tokens: 1500,
+                maxTokens: 1500,
                 stream: true,
-              }, "ai-assistant-followup");
+                label: "ai-assistant-followup",
+              });
 
               if (!followUpRes.ok || !followUpRes.body) {
                 recordAIFailure("ai-assistant-followup", followUpRes.error ?? "unknown");
@@ -592,34 +593,31 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // ── Second LLM call with tool results ─────────────────────────────────
-      const followUpRes = await fetchGroqWithRetry(apiKey, {
-        model: "llama-3.3-70b-versatile",
-        messages,
+      // ── Second LLM call with tool results (ADR-010 balanced) ──────────
+      const followUpRes = await callLLM("balanced", {
+        messages: messages as Parameters<typeof callLLM>[1]["messages"],
         temperature: AI_TEMPERATURES.toolFollowup,
-        max_tokens: 1500,
+        maxTokens: 1500,
         stream: wantStream,
-      }, "ai-assistant-followup");
+        label: "ai-assistant-followup",
+      });
 
       if (!followUpRes.ok) {
-        console.error("[ai-assistant] Groq follow-up error:", followUpRes.error);
+        console.error("[ai-assistant] LLM router follow-up error:", followUpRes.error);
         recordAIFailure("ai-assistant-followup", followUpRes.error ?? "unknown");
         return returnRuleBased();
       }
 
-      if (followUpRes.usage) {
-        totalUsage.promptTokens += followUpRes.usage.promptTokens;
-        totalUsage.completionTokens += followUpRes.usage.completionTokens;
-        totalUsage.totalTokens += followUpRes.usage.totalTokens;
-      }
+      totalUsage.promptTokens += followUpRes.usage.promptTokens;
+      totalUsage.completionTokens += followUpRes.usage.completionTokens;
+      totalUsage.totalTokens += followUpRes.usage.totalTokens;
 
       // ── Stream the follow-up response if requested ──────────────────────
       if (wantStream && followUpRes.body) {
         return streamGroqResponse(followUpRes.body);
       }
 
-      const followUpData = followUpRes.data!;
-      const rawReply = (followUpData.choices as { message: { content: string } }[])?.[0]?.message?.content ?? "No pude generar una respuesta.";
+      const rawReply = followUpRes.content ?? "No pude generar una respuesta.";
 
       // ── Output moderation ───────────────────────────────────────────────
       const moderation = moderateLLMOutput(rawReply);
@@ -666,15 +664,15 @@ export async function POST(req: NextRequest) {
     const rawDirectReply = (assistantMessage?.content as string) ?? "No pude generar una respuesta.";
 
     // If streaming was requested but we got a non-streaming first pass,
-    // re-call with streaming since no tools were needed
+    // re-call with streaming since no tools were needed (ADR-010 balanced).
     if (wantStream) {
-      const streamRes = await fetchGroqWithRetry(apiKey, {
-        model: "llama-3.3-70b-versatile",
-        messages,
+      const streamRes = await callLLM("balanced", {
+        messages: messages as Parameters<typeof callLLM>[1]["messages"],
         temperature: AI_TEMPERATURES.gerente,
-        max_tokens: 1500,
+        maxTokens: 1500,
         stream: true,
-      }, "ai-assistant-stream");
+        label: "ai-assistant-stream",
+      });
 
       if (streamRes.ok && streamRes.body) {
         return streamGroqResponse(streamRes.body);

@@ -5,6 +5,7 @@ import { SalesDB, ProductsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { safeParseJSON } from "@/lib/ai-json-parser";
+import { callLLM } from "@/lib/llm-router";
 import { logger } from "@/lib/logger";
 
 // Schema estructurado del output — ADR 009 (prompt-based JSON enforcement).
@@ -39,8 +40,8 @@ export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const GROQ_KEY = process.env.GROQ_API_KEY;
-  if (!GROQ_KEY) return NextResponse.json({ error: "GROQ_API_KEY no configurada" }, { status: 500 });
+  // ADR-010: router LLM hace el chequeo de API key internamente.
+  // Si ningún provider está disponible, callLLM devuelve ok=false con error.
 
   const { period } = await req.json().catch(() => ({ period: "mes" }));
 
@@ -94,23 +95,18 @@ Genera un análisis JSON con:
 
 Responde SOLO el JSON, sin markdown.`;
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_KEY}` },
-    body: JSON.stringify({
-      // Forecast numérico — determinístico, predicciones estables entre runs.
-      // Excel Agentes IA práctica #7: valores bajos para evitar inventar cifras.
-      model: "llama-3.3-70b-versatile",
-      messages: [{ role: "user", content: prompt }],
-      temperature: AI_TEMPERATURES.forecast,
-      max_tokens: 2000,
-    }),
+  // ADR-010: router LLM balanced tier (Groq llama-3.3-70b con fallback a
+  // llama-4-scout). Forecast numérico — temperatura baja del Excel #7.
+  const res = await callLLM("balanced", {
+    messages: [{ role: "user", content: prompt }],
+    temperature: AI_TEMPERATURES.forecast,
+    maxTokens: 2000,
+    label: "demand-prediction",
   });
 
-  if (!res.ok) return NextResponse.json({ error: "Error IA" }, { status: 502 });
+  if (!res.ok) return NextResponse.json({ error: res.error ?? "Error IA" }, { status: 502 });
 
-  const data = await res.json();
-  const text = data.choices?.[0]?.message?.content ?? "";
+  const text = res.content ?? "";
 
   // ADR 009: parse defensivo con schema Zod. Si el LLM falla el formato,
   // degradamos a un response de estructura vacía con el texto crudo como

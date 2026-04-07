@@ -24,6 +24,8 @@ const AIDecisionLog = React.lazy(() => import("./AIDecisionLog"));
 const AIMarketResearch = React.lazy(() => import("./AIMarketResearch"));
 const AIStrategicAdvisor = React.lazy(() => import("./AIStrategicAdvisor"));
 const AISmartPricing = React.lazy(() => import("./AISmartPricing"));
+// HITL banner — polling ligero, no lazy (es pequeño y necesita estar siempre activo)
+import HITLApprovalsBanner from "./HITLApprovalsBanner";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -632,6 +634,10 @@ export default function AICommandCenter() {
 
   return (
     <div className="flex flex-col gap-4 w-full min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
+      {/* HITL approvals banner (Excel Agentes IA #10 — TD-025) — autónomo, se renderiza
+          solo cuando hay pendientes. Polling interno cada 5s. */}
+      <HITLApprovalsBanner />
+
       {/* Offline banner */}
       {isOffline && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-700 dark:text-amber-400 text-sm">

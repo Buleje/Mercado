@@ -3,17 +3,12 @@ import { NextResponse, type NextRequest } from "next/server";
 import { OrdersDB, CustomersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
+import { callLLM } from "@/lib/llm-router";
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "GROQ_API_KEY no configurada. Obtén una clave GRATUITA en console.groq.com y agrégala en tu .env" },
-      { status: 503 }
-    );
-  }
+  // ADR-010: router LLM hace la validación de provider disponible.
 
   const body = await req.json().catch(() => ({}));
   const context = body.context || "";
@@ -82,35 +77,20 @@ Responde en español con formato Markdown. Para cada sugerencia incluye:
 Genera al menos 5 promociones diferentes clasificadas por tipo de audiencia.`;
 
   try {
-    const res = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          // Generación creativa de promociones — variedad deseada.
-          // Excel Agentes IA práctica #7: creative role (más bajo que 0.7 original
-          // para reducir alucinación de combos no rentables, pero sin colapsar variedad).
-          model: "llama-3.3-70b-versatile",
-          messages: [{ role: "user", content: prompt }],
-          temperature: AI_TEMPERATURES.creative,
-          max_tokens: 2000,
-        }),
-      }
-    );
+    // ADR-010: router balanced tier. Creative generation con temperatura baja.
+    const res = await callLLM("balanced", {
+      messages: [{ role: "user", content: prompt }],
+      temperature: AI_TEMPERATURES.creative,
+      maxTokens: 2000,
+      label: "promotions-id",
+    });
 
     if (!res.ok) {
-      const errText = await res.text();
-      console.error("Groq error:", errText);
-      return NextResponse.json({ error: `Error IA ${res.status}` }, { status: 502 });
+      console.error("[promotions-id] router error:", res.error);
+      return NextResponse.json({ error: res.error ?? "Error IA" }, { status: 502 });
     }
 
-    const data = await res.json();
-    const suggestions = data.choices?.[0]?.message?.content ?? "No se pudieron generar sugerencias.";
-
+    const suggestions = res.content ?? "No se pudieron generar sugerencias.";
     return NextResponse.json({ suggestions });
   } catch {
     return NextResponse.json({ error: "Error al conectar con la IA" }, { status: 502 });

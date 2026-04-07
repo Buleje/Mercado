@@ -1,20 +1,37 @@
 export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { OrdersDB, CustomersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
+import { callLLM } from "@/lib/llm-router";
+import { safeParseJSON } from "@/lib/ai-json-parser";
+import { logger } from "@/lib/logger";
+
+// ADR-009: schema estructurado para el output del LLM. El LLM devuelve
+// JSON con un campo `markdown` renderizable (mantiene compat con el
+// frontend actual que usa dangerouslySetInnerHTML) y un array `items`
+// con datos tipados para UI futura más rica.
+const PromoSuggestionSchema = z.object({
+  markdown: z.string(),
+  items: z
+    .array(
+      z.object({
+        name: z.string(),
+        type: z.string(),
+        audience: z.string(),
+        message: z.string(),
+        discountPercent: z.number().optional(),
+      }),
+    )
+    .default([]),
+});
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      { error: "GROQ_API_KEY no configurada. Obtén una clave GRATUITA en console.groq.com y agrégala en tu .env" },
-      { status: 503 }
-    );
-  }
+  // ADR-010: router LLM verifica disponibilidad de providers internamente.
 
   const body = await req.json().catch(() => ({}));
   const context = body.context || "";
@@ -72,46 +89,60 @@ ${topCustomers.join("\n")}
 
 ${context ? `CONTEXTO ADICIONAL DEL USUARIO: ${context}` : ""}
 
-Responde en español con formato Markdown. Para cada sugerencia incluye:
-1. **Nombre de la promoción**
-2. **Tipo**: descuento %, 2x1, combo, envío gratis, etc.
-3. **Productos incluidos**
-4. **Público objetivo**: todos, top clientes, clientes nuevos, grupo específico
-5. **Mensaje sugerido para WhatsApp** (corto, persuasivo, con emojis)
-6. **Porcentaje de descuento sugerido**
+Responde SOLO con JSON válido (sin markdown fences, sin texto fuera del JSON) con este schema exacto:
+{
+  "markdown": "string — version markdown renderizable con TODAS las promos, cada una con su nombre, tipo, productos, publico, mensaje WhatsApp y descuento. Usa emojis y formato bold.",
+  "items": [
+    {
+      "name": "string — nombre corto de la promo",
+      "type": "string — descuento %, 2x1, combo, envio gratis, etc",
+      "audience": "string — todos, top clientes, clientes nuevos, etc",
+      "message": "string — mensaje WhatsApp corto y persuasivo con emojis",
+      "discountPercent": 20
+    }
+  ]
+}
 
 Genera al menos 5 promociones diferentes clasificadas por tipo de audiencia.`;
 
   try {
-    const res = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          // Generación de ideas de promociones con variedad.
-          // Excel Agentes IA práctica #7: creative role.
-          model: "llama-3.3-70b-versatile",
-          messages: [{ role: "user", content: prompt }],
-          temperature: AI_TEMPERATURES.creative,
-          max_tokens: 2000,
-        }),
-      }
-    );
+    // ADR-010: router LLM balanced tier. Generación creativa de promociones.
+    const res = await callLLM("balanced", {
+      messages: [{ role: "user", content: prompt }],
+      temperature: AI_TEMPERATURES.creative,
+      maxTokens: 2000,
+      label: "promotions-ai-suggest",
+    });
 
     if (!res.ok) {
-      const errText = await res.text();
-      console.error("Groq error:", errText);
-      return NextResponse.json({ error: `Error IA ${res.status}` }, { status: 502 });
+      console.error("[promotions-ai-suggest] router error:", res.error);
+      return NextResponse.json({ error: res.error ?? "Error IA" }, { status: 502 });
     }
 
-    const data = await res.json();
-    const suggestions = data.choices?.[0]?.message?.content ?? "No se pudieron generar sugerencias.";
+    const rawContent = res.content ?? "";
 
-    return NextResponse.json({ suggestions });
+    // ADR-009: parse defensivo con schema Zod. Si el LLM falla el formato,
+    // fallback: usamos el texto crudo como markdown (el frontend sigue
+    // funcionando aunque no haya items estructurados).
+    const parsed = safeParseJSON(rawContent, PromoSuggestionSchema);
+    if (!parsed.ok) {
+      logger.warn("[promotions-ai-suggest] malformed JSON from LLM, falling back to raw", {
+        error: parsed.error,
+        tenantId: auth.tenantId,
+      });
+      return NextResponse.json({
+        suggestions: rawContent || "No se pudieron generar sugerencias.",
+        items: [],
+        _malformed: true,
+      });
+    }
+
+    // Mantiene compat con el frontend actual: `suggestions` sigue siendo el
+    // markdown. Añade `items` para consumers futuros con UI estructurada.
+    return NextResponse.json({
+      suggestions: parsed.data.markdown,
+      items: parsed.data.items,
+    });
   } catch {
     return NextResponse.json({ error: "Error al conectar con la IA" }, { status: 502 });
   }

@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
+import { callLLM } from "@/lib/llm-router";
 
 // ── Fuzzy match local fallback ───────────────────────────────────────────
 function fuzzyMatchProducts(
@@ -86,15 +87,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "transcript es requerido" }, { status: 400 });
   }
 
-  // ── Try Groq LLM interpretation ────────────────────────────────────────
-  const apiKey = process.env.GROQ_API_KEY;
-
-  if (!apiKey) {
-    // Fallback: simple fuzzy match
-    const result = fuzzyMatchProducts(transcript, availableProducts);
-    return NextResponse.json({ ...result, mode: "fallback" });
-  }
-
+  // ── Try LLM interpretation via router ────────────────────────────────
+  // El router hace el chequeo de provider disponible y fallback automático.
   try {
     const productList = availableProducts.slice(0, 200).join(", ");
 
@@ -123,33 +117,26 @@ Si necesitas aclaración:
   "needsClarification": { "question": "¿Cuál producto desea?", "options": ["Opcion A", "Opcion B"] }
 }`;
 
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `El cajero dijo: "${transcript}"` },
-        ],
-        // Voice → intent parsing — determinístico, variación rompe el match de productos.
-        // Excel Agentes IA práctica #7: extraction role.
-        temperature: AI_TEMPERATURES.extraction,
-        max_tokens: 500,
-      }),
+    // ADR-010: router LLM cheap tier (llama-3.1-8b-instant) — voice intent
+    // parsing es una tarea simple de alto volumen. Si el cheap falla, fallback
+    // automático a balanced.
+    const res = await callLLM("cheap", {
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `El cajero dijo: "${transcript}"` },
+      ],
+      temperature: AI_TEMPERATURES.extraction,
+      maxTokens: 500,
+      label: "voice-interpret",
     });
 
     if (!res.ok) {
-      console.error("[voice-interpret] Groq API error:", res.status);
+      console.error("[voice-interpret] router error:", res.error);
       const result = fuzzyMatchProducts(transcript, availableProducts);
       return NextResponse.json({ ...result, mode: "fallback" });
     }
 
-    const data = await res.json();
-    const content = data.choices?.[0]?.message?.content || "";
+    const content = res.content || "";
 
     // Parse JSON from response
     const jsonMatch = content.match(/\{[\s\S]*\}/);
