@@ -183,6 +183,7 @@ function generatePlan(data: BusinessData): PlanTask[] {
   const pending = data.orders.filter((o) => o.status === "PENDING" || o.status === "PROCESSING");
   if (pending.length > 0) {
     const oldPending = pending.filter((o) => {
+      if (!o.createdAt) return false;
       const age = Date.now() - new Date(o.createdAt).getTime();
       return age > 24 * 60 * 60 * 1000;
     });
@@ -204,6 +205,7 @@ function generatePlan(data: BusinessData): PlanTask[] {
   if (fiados.length > 0) {
     const totalDebt = fiados.reduce((s, o) => s + (o.total ?? 0), 0);
     const oldFiados = fiados.filter((o) => {
+      if (!o.createdAt) return false;
       const age = Date.now() - new Date(o.createdAt).getTime();
       return age > 15 * 24 * 60 * 60 * 1000;
     });
@@ -222,8 +224,8 @@ function generatePlan(data: BusinessData): PlanTask[] {
 
   // Low margin products being sold a lot
   const lowMargin = data.products.filter((p) => {
-    if (!p.price || !p.cost) return false;
-    const margin = ((p.price - p.cost) / p.price) * 100;
+    if (!p.price || !p.costPrice) return false;
+    const margin = ((p.price - p.costPrice) / p.price) * 100;
     return margin < 15 && margin > 0;
   });
   if (lowMargin.length > 0) {
@@ -242,11 +244,13 @@ function generatePlan(data: BusinessData): PlanTask[] {
   // Sales decline detection
   if (data.sales.length > 14) {
     const lastWeek = data.sales.filter((s) => {
-      const age = Date.now() - new Date(s.date ?? s.createdAt).getTime();
+      if (!s.createdAt) return false;
+      const age = Date.now() - new Date(s.createdAt).getTime();
       return age <= 7 * 86400000;
     });
     const prevWeek = data.sales.filter((s) => {
-      const age = Date.now() - new Date(s.date ?? s.createdAt).getTime();
+      if (!s.createdAt) return false;
+      const age = Date.now() - new Date(s.createdAt).getTime();
       return age > 7 * 86400000 && age <= 14 * 86400000;
     });
     const lastTotal = lastWeek.reduce((s, o) => s + (o.total ?? 0), 0);
@@ -291,8 +295,8 @@ function generatePlan(data: BusinessData): PlanTask[] {
   const topProducts = [...data.products]
     .filter((p) => (p.stock ?? 0) > 20)
     .sort((a, b) => {
-      const marginA = a.price && a.cost ? (a.price - a.cost) / a.price : 0;
-      const marginB = b.price && b.cost ? (b.price - b.cost) / b.price : 0;
+      const marginA = a.price && a.costPrice ? (a.price - a.costPrice) / a.price : 0;
+      const marginB = b.price && b.costPrice ? (b.price - b.costPrice) / b.price : 0;
       return marginB - marginA;
     })
     .slice(0, 3);
@@ -559,15 +563,20 @@ export default function AIActionPlan({ data }: { data: BusinessData }) {
     return stats;
   }, [tasks]);
 
-  // Weekly progress
-  const weeklyProgress = useMemo(() => {
+  // Weekly progress — read once at mount via lazy useState. The useEffect
+  // below writes new values to localStorage as tasks complete; we don't
+  // re-read into state because the displayed value only needs the at-mount
+  // snapshot. Using useState (instead of useMemo with []) keeps React
+  // Compiler happy: useMemo over a side-effectful body trips
+  // `react-hooks/preserve-manual-memoization`.
+  const [weeklyProgress] = useState<{ completed: number; total: number; days: number }>(() => {
     try {
       const weekKey = getWeekKey();
       const saved = localStorage.getItem(weekKey);
       if (saved) return JSON.parse(saved) as { completed: number; total: number; days: number };
     } catch { /* ignore */ }
     return { completed: 0, total: 0, days: 0 };
-  }, []);
+  });
 
   // Save weekly progress
   useEffect(() => {
