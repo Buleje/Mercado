@@ -25,3 +25,8 @@ export * from "./product-images.db";
 export * from "./product-variants.db";
 export * from "./product-analytics.db";
 export * from "./store-banners.db";
+export * from "./stockout-predictions.db";
+export * from "./sales-anomalies.db";
+export * from "./recommendations-personalized.db";
+export * from "./search-suggestions.db";
+export * from "./sponsored-boosts.db";

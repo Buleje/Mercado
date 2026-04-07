@@ -11,6 +11,9 @@ import { VendorQuickActions } from "@/components/admin/vendor-dashboard/VendorQu
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import { LayoutDashboard, RefreshCw } from "lucide-react";
+import StockoutPredictionWidget from "@/components/marketplace/StockoutPredictionWidget";
+import SponsoredAdminPanel from "@/components/marketplace/SponsoredAdminPanel";
+import SalesAnomalyAlert from "@/components/marketplace/SalesAnomalyAlert";
 
 // ── Módulo ────────────────────────────────────────────────────────────────────
 
@@ -50,12 +53,24 @@ const REFRESH_INTERVAL_MS = 30_000;
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
+/** Obtiene el slug activo del vendor desde sessionStorage o cookie. */
+function getActiveStoreSlug(): string {
+  if (typeof window === "undefined") return "main";
+  try {
+    const ss = sessionStorage.getItem("active-tenant-slug");
+    if (ss) return ss;
+  } catch { /* ignore */ }
+  const match = document.cookie.match(/(?:^|;\s*)active-tenant=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : "main";
+}
+
 export default function VendorDashboardModule() {
   const [data, setData] = useState<VendorDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [tab, setTab] = useState("resumen");
+  const storeSlug = getActiveStoreSlug();
 
   const fetchDashboard = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -151,14 +166,24 @@ export default function VendorDashboardModule() {
       {/* Contenido — tab Resumen */}
       {!loading && data && tab === "resumen" && (
         <div className="space-y-4">
+          {/* C3 — Anomalias de ventas */}
+          <SalesAnomalyAlert storeSlug={storeSlug} />
+
           <VendorKPICards kpis={data.kpis} />
           <VendorQuickActions />
+
+          {/* C1 — Riesgo de quiebre de stock */}
+          <StockoutPredictionWidget storeSlug={storeSlug} />
+
           <VendorWeeklyChart data={data.weeklyRevenue} />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <VendorPendingOrders orders={data.pendingOrders} />
             <VendorLowStockList products={data.lowStockProducts} />
           </div>
           <VendorRecentSales sales={data.recentSales} />
+
+          {/* C5 — Productos patrocinados */}
+          <SponsoredAdminPanel storeSlug={storeSlug} />
         </div>
       )}
 

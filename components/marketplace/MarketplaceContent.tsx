@@ -1,21 +1,17 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
-  Search,
   MapPin,
   Star,
   Store,
   ShoppingBag,
-  X,
   ChevronRight,
   Sparkles,
   TrendingUp,
   Clock,
   Package,
   LocateFixed,
-  Loader2,
-  ExternalLink,
   LayoutGrid,
 } from "lucide-react";
 import Image from "next/image";
@@ -26,6 +22,8 @@ import MarketplaceFilters, {
   type MarketplaceFiltersState,
 } from "@/components/marketplace/MarketplaceFilters";
 import dynamic from "next/dynamic";
+import PersonalizedRecommendations from "@/components/marketplace/PersonalizedRecommendations";
+import SearchAutocomplete from "@/components/marketplace/SearchAutocomplete";
 
 const CatalogView = dynamic(
   () => import("@/components/marketplace/CatalogView"),
@@ -73,18 +71,6 @@ interface ProductPreview {
   name: string;
   price: number;
   image: string | null;
-  unit: string | null;
-}
-
-interface CrossStoreResult {
-  productId: number;
-  productName: string;
-  price: number;
-  image: string | null;
-  storeId: string;
-  storeName: string;
-  storeSlug: string;
-  stock: number;
   unit: string | null;
 }
 
@@ -310,149 +296,6 @@ function StoreCard({ store, index }: { store: MarketplaceStore; index: number })
   );
 }
 
-/* ── Cross-Store Search Dropdown ───────────────────────────────────────────── */
-
-function CrossStoreDropdown({
-  query,
-  onClose,
-  zone,
-  category,
-  filters,
-  userCoords,
-}: {
-  query: string;
-  onClose: () => void;
-  zone?: string;
-  category?: string;
-  filters?: MarketplaceFiltersState;
-  userCoords?: { lat: number; lng: number } | null;
-}) {
-  const [results, setResults] = useState<CrossStoreResult[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (query.length < 2) {
-      setResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({ q: query });
-        if (zone) params.set("zone", zone);
-        if (category && category !== "todos") params.set("category", category);
-        if (filters?.minPrice && filters.minPrice > 0) params.set("minPrice", String(filters.minPrice));
-        if (filters?.maxPrice && filters.maxPrice < 500) params.set("maxPrice", String(filters.maxPrice));
-        if (filters?.productCategory) params.set("category", filters.productCategory);
-        if (filters?.sortBy && filters.sortBy !== "relevance") {
-          const sortMap: Record<string, string> = {
-            "price-asc": "price_asc",
-            "price-desc": "price_desc",
-            "rating": "rating",
-            "distance": "distance",
-          };
-          const mappedSort = sortMap[filters.sortBy];
-          if (mappedSort) params.set("sort", mappedSort);
-        }
-        if (filters?.nearbyEnabled && userCoords) {
-          params.set("lat", String(userCoords.lat));
-          params.set("lng", String(userCoords.lng));
-        }
-        const res = await fetch(`/api/marketplace/search?${params}`);
-        if (res.ok) {
-          const json = await res.json();
-          setResults(json.data ?? []);
-        }
-      } catch {
-        /* silent */
-      }
-      setLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [query, zone, category, filters, userCoords]);
-
-  if (query.length < 2) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.2 }}
-      className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card shadow-2xl shadow-gray-200/50 dark:shadow-none overflow-hidden z-50"
-    >
-      {loading ? (
-        <div className="flex items-center gap-3 px-5 py-4">
-          <Loader2 className="h-4 w-4 text-primary animate-spin" />
-          <span className="text-sm text-gray-500 dark:text-muted">Buscando en todas las tiendas…</span>
-        </div>
-      ) : results.length === 0 ? (
-        <div className="px-5 py-4 text-sm text-gray-500 dark:text-muted">
-          No encontramos productos para <strong className="text-gray-900 dark:text-foreground">&ldquo;{query}&rdquo;</strong>
-        </div>
-      ) : (
-        <div>
-          <div className="px-5 py-2.5 border-b border-gray-100 dark:border-card-border">
-            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-muted">
-              Productos en el marketplace
-            </p>
-          </div>
-          <ul className="max-h-80 overflow-y-auto divide-y divide-gray-50 dark:divide-card-border">
-            {results.map((r) => (
-              <li key={`${r.storeId}-${r.productId}`}>
-                <Link
-                  href={`/marketplace/${r.storeSlug}`}
-                  onClick={onClose}
-                  className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 dark:hover:bg-surface transition-colors"
-                >
-                  <div className="relative h-10 w-10 shrink-0 rounded-xl overflow-hidden bg-gray-100 dark:bg-surface">
-                    {r.image ? (
-                      <Image
-                        src={r.image}
-                        alt={r.productName}
-                        fill
-                        className="object-cover"
-                        sizes="40px"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <Package className="h-4 w-4 text-gray-300 dark:text-gray-600" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-foreground line-clamp-1">
-                      {r.productName}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-muted line-clamp-1">
-                      en <span className="text-primary font-medium">{r.storeName}</span>
-                      {r.stock === 0 && (
-                        <span className="ml-2 text-red-500 font-medium">· Agotado</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="text-sm font-bold text-primary">{fmt(r.price)}</p>
-                    {r.unit && (
-                      <p className="text-[10px] text-gray-400 dark:text-muted">/{r.unit}</p>
-                    )}
-                  </div>
-                  <ExternalLink className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 shrink-0" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <div className="px-5 py-2.5 border-t border-gray-100 dark:border-card-border bg-gray-50 dark:bg-surface">
-            <p className="text-xs text-gray-400 dark:text-muted">
-              {results.length} resultado{results.length !== 1 ? "s" : ""} · Haz clic en un producto para ir a la tienda
-            </p>
-          </div>
-        </div>
-      )}
-    </motion.div>
-  );
-}
-
 /* ── Main Content ──────────────────────────────────────────────────────────── */
 
 const MAX_PRICE_LIMIT = 500;
@@ -472,13 +315,10 @@ export default function MarketplaceContent() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("todos");
   const [zone, setZone] = useState("");
-  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoActive, setGeoActive] = useState(false);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [productFilters, setProductFilters] = useState<MarketplaceFiltersState>(DEFAULT_FILTERS);
-  const searchRef = useRef<HTMLInputElement>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // ── New: view mode ──
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -507,16 +347,6 @@ export default function MarketplaceContent() {
     }
   }, []);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
-        setShowSearchDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const fetchStores = useCallback(async () => {
     setLoading(true);
@@ -652,50 +482,19 @@ export default function MarketplaceContent() {
             </motion.p>
           </div>
 
-          {/* Search bar */}
+          {/* Search bar — SearchAutocomplete con sugerencias IA + did you mean */}
           <motion.div
             className="max-w-xl mx-auto"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.4, delay: 0.3 }}
           >
-            <div className="relative" ref={searchContainerRef}>
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-muted pointer-events-none" />
-              <input
-                ref={searchRef}
-                type="text"
-                placeholder="Buscar tiendas o productos…"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setShowSearchDropdown(e.target.value.length >= 2);
-                }}
-                onFocus={() => { if (search.length >= 2) setShowSearchDropdown(true); }}
-                className="w-full pl-12 pr-12 py-4 rounded-2xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-gray-900 dark:text-foreground text-base font-medium shadow-lg shadow-gray-200/50 dark:shadow-none outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-gray-400 dark:placeholder:text-muted"
-              />
-              {search && (
-                <button
-                  onClick={() => { setSearch(""); setShowSearchDropdown(false); searchRef.current?.focus(); }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-accent transition-colors"
-                >
-                  <X className="h-4 w-4 text-gray-400" />
-                </button>
-              )}
-
-              {/* Cross-store search dropdown */}
-              <AnimatePresence>
-                {showSearchDropdown && (
-                  <CrossStoreDropdown
-                    query={search}
-                    onClose={() => setShowSearchDropdown(false)}
-                    zone={zone}
-                    category={category}
-                    filters={productFilters}
-                    userCoords={userCoords}
-                  />
-                )}
-              </AnimatePresence>
-            </div>
+            <SearchAutocomplete
+              placeholder="Buscar tiendas o productos…"
+              onSearch={(q) => {
+                setSearch(q);
+              }}
+            />
           </motion.div>
 
           {/* Stats row */}
@@ -831,6 +630,9 @@ export default function MarketplaceContent() {
             </button>
           )}
         </div>
+
+        {/* ── C2: Recomendaciones personalizadas (solo modo catalogo) ── */}
+        {viewMode === "catalogo" && <PersonalizedRecommendations />}
 
         {/* ── Conditional View Rendering ── */}
         {viewMode === "catalogo" ? (

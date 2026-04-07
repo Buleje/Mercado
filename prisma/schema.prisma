@@ -112,6 +112,9 @@ model Product {
   metaKeywordsJson    String?
   ogImage             String?
 
+  stockoutPredictions StockoutPrediction[]
+  sponsoredBoosts     SponsoredBoost[]
+
   @@index([tenantId])
   @@index([tenantId, active])
   @@index([barcode])
@@ -2277,10 +2280,13 @@ model Store {
   commission      Float    @default(5.0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  products        StoreProduct[]
-  permissions     StorePermission[]
-  reviews         Review[]
-  banners         StoreBanner[]
+  products             StoreProduct[]
+  permissions          StorePermission[]
+  reviews              Review[]
+  banners              StoreBanner[]
+  stockoutPredictions  StockoutPrediction[]
+  salesAnomalies       SalesAnomaly[]
+  sponsoredBoosts      SponsoredBoost[]
   @@index([tenantId])
 }
 
@@ -2317,6 +2323,7 @@ model StoreProduct {
   minOrderQty         Int     @default(1)
   isActive            Boolean @default(true)
   volumePricingTiers  Json?   // [{ minQty: 10, discount: 5 }, ...]
+  stockoutPredictions StockoutPrediction[]
   @@unique([storeId, productId])
   @@index([storeId])
   @@index([productId])
@@ -2753,4 +2760,110 @@ model ProductAnalytics {
   @@index([tenantId])
   @@index([productId])
   @@index([tenantId, date])
+}
+
+// ═══════════════════════════════════════════════════════
+// MARKETPLACE BLOQUE C — Stock Intelligence + Ads + Search
+// ═══════════════════════════════════════════════════════
+
+// ─── C1: Stock Intelligence ──────────────────────────────
+// Predicción de cuándo se agota un producto en una tienda concreta.
+// El worker de demand-forecast actualiza este registro cada noche.
+model StockoutPrediction {
+  id                      String   @id @default(cuid())
+  tenantId                String
+  storeId                 String
+  productId               Int
+  storeProductId          String
+  predictedDaysToStockout Float                        // días hasta agotamiento
+  avgDailyUnits           Float                        // promedio de unidades vendidas por día
+  currentStock            Int                          // stock al momento del cálculo
+  confidence              Float                        // 0-1
+  severity                String                       // low | medium | high | critical
+  computedAt              DateTime
+  expiresAt               DateTime                     // cuándo caduca esta predicción
+
+  store        Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product      Product      @relation(fields: [productId], references: [id])
+  storeProduct StoreProduct @relation(fields: [storeProductId], references: [id])
+
+  @@index([tenantId])
+  @@index([storeId])
+  @@index([storeId, severity])
+  @@index([expiresAt])
+}
+
+// ─── C2: Sales Anomalies ─────────────────────────────────
+// Anomalías de ventas detectadas por comparación con periodos anteriores.
+model SalesAnomaly {
+  id             String    @id @default(cuid())
+  tenantId       String
+  storeId        String
+  date           DateTime                           // día analizado
+  comparisonDate DateTime                           // ej: mismo día semana anterior
+  metric         String                             // revenue | orders | units | aov
+  expected       Float
+  actual         Float
+  deltaPct       Float                              // diferencia porcentual
+  severity       String                             // low | medium | high | critical
+  direction      String                             // drop | spike
+  notifiedAt     DateTime?
+  acknowledgedAt DateTime?
+  createdAt      DateTime  @default(now())
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([storeId])
+  @@index([storeId, date])
+  @@index([severity])
+}
+
+// ─── C3: Sponsored Boosts ────────────────────────────────
+// El vendedor paga para que su producto aparezca primero.
+// Usa Decimal para cumplir TD-018 (Float→Decimal para valores monetarios).
+model SponsoredBoost {
+  id               String   @id @default(cuid())
+  tenantId         String
+  storeId          String
+  productId        Int
+  bidAmount        Decimal  @db.Decimal(10, 2)         // PEN por día
+  startDate        DateTime
+  endDate          DateTime
+  status           String   @default("active")          // active | paused | expired | exhausted
+  impressionsCount Int      @default(0)
+  clicksCount      Int      @default(0)
+  conversionsCount Int      @default(0)
+  totalSpentPen    Decimal  @db.Decimal(10, 2) @default(0)
+  maxBudgetPen     Decimal  @db.Decimal(10, 2)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  store   Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([tenantId])
+  @@index([storeId])
+  @@index([productId])
+  @@index([status])
+  @@index([status, endDate])
+}
+
+// ─── C4: Search Suggestions ──────────────────────────────
+// Log + caché de búsquedas para autocompletado y autocorrección.
+// Se combina con índice GIN trigram sobre Product.name (creado en el SQL manual).
+model SearchSuggestion {
+  id               String   @id @default(cuid())
+  tenantId         String
+  query            String                              // texto original del usuario
+  normalizedQuery  String                              // lowercase + sin tildes
+  resultCount      Int
+  clickedProductId Int?
+  lastSearchedAt   DateTime
+  searchCount      Int      @default(1)
+
+  @@unique([tenantId, normalizedQuery])
+  @@index([tenantId])
+  @@index([tenantId, normalizedQuery])
+  @@index([lastSearchedAt])
 }

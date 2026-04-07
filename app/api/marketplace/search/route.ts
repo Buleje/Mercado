@@ -5,6 +5,8 @@ import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { SearchSuggestionsDB } from "@/lib/db/search-suggestions.db";
+import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
 
 // ── Batch helpers ─────────────────────────────────────────────────────────────
 
@@ -259,7 +261,32 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({ data, total: data.length, query: q });
+    // Fire-and-forget: registrar la búsqueda para autocompletado/autocorrección
+    SearchSuggestionsDB.record(tenantId, q, data.length).catch(() => {});
+
+    // Si hay resultados, aplicar boosts (sponsored products)
+    let finalData = data;
+    let didYouMean: { suggestion: string; similarity: number }[] = [];
+    let fuzzyMatches: { productId: number; productName: string; category: string; image: string | null; similarity: number }[] = [];
+
+    if (data.length === 0) {
+      // Sin resultados exactos → fuzzy + did-you-mean
+      [fuzzyMatches, didYouMean] = await Promise.all([
+        SearchSuggestionsDB.getProductFuzzyMatches(tenantId, q),
+        SearchSuggestionsDB.getDidYouMean(tenantId, q),
+      ]);
+    } else {
+      // Con resultados → aplicar sponsored ranking
+      finalData = await applyBoostsToProducts(tenantId, data);
+    }
+
+    return NextResponse.json({
+      data: finalData,
+      total: finalData.length,
+      query: q,
+      ...(didYouMean.length > 0 && { didYouMean }),
+      ...(fuzzyMatches.length > 0 && { fuzzyMatches }),
+    });
   } catch (err) {
     logger.error("marketplace/search: error inesperado", { requestId, err });
     const { payload, status } = toErrorPayload(err, traceId);

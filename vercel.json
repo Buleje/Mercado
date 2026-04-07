@@ -15,8 +15,14 @@
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
       ]
     }
   ],
@@ -176,6 +182,18 @@
     {
       "path": "/api/cron/churn-score",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/marketplace-stockout-predictions",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/marketplace-anomaly-detection",
+      "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/marketplace-sponsored-cleanup",
+      "schedule": "0 1 * * *"
     }
   ]
 }

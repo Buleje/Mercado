@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
+import { applyBoostsToProducts } from "@/lib/marketplace/sponsored-ranker";
 
 // ── Batch helpers ─────────────────────────────────────────────────────────────
 
@@ -219,9 +220,12 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    // Aplicar sponsored ranking (máx 3 por página al tope)
+    const rankedData = await applyBoostsToProducts(tenantId, data);
+
     return NextResponse.json({
-      data,
-      total: data.length,
+      data: rankedData,
+      total: rankedData.length,
       nextCursor,
       hasMore,
     });

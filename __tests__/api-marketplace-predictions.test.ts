@@ -1,0 +1,66 @@
+/**
+ * Tests unitarios — /api/marketplace/predictions
+ *
+ * Cubre:
+ *  - GET sin auth → 401/403
+ */
+
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest, NextResponse } from "next/server";
+
+vi.mock("server-only", () => ({}));
+
+const { mockRequireAdmin } = vi.hoisted(() => ({
+  mockRequireAdmin: vi.fn(),
+}));
+
+vi.mock("@/lib/require-admin", () => ({
+  requireAdmin: mockRequireAdmin,
+}));
+
+vi.mock("@/lib/prisma", () => ({
+  prisma: { store: { findFirst: vi.fn() } },
+}));
+
+vi.mock("@/lib/db", () => ({
+  StockoutPredictionsDB: { getByStore: vi.fn() },
+}));
+
+vi.mock("@/lib/logger", () => ({
+  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
+}));
+
+import { GET } from "@/app/api/marketplace/predictions/route";
+
+describe("GET /api/marketplace/predictions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("retorna 401 cuando requireAdmin rechaza la auth", async () => {
+    const authError = new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+    });
+    mockRequireAdmin.mockResolvedValueOnce(authError);
+
+    const url = new URL("http://localhost/api/marketplace/predictions?storeSlug=test");
+    const req = new NextRequest(url);
+    const res = await GET(req);
+
+    expect(res.status).toBe(401);
+    expect(mockRequireAdmin).toHaveBeenCalled();
+  });
+
+  it("retorna 403 cuando requireAdmin rechaza por roles insuficientes", async () => {
+    const authError = new NextResponse(JSON.stringify({ error: "Forbidden" }), {
+      status: 403,
+    });
+    mockRequireAdmin.mockResolvedValueOnce(authError);
+
+    const url = new URL("http://localhost/api/marketplace/predictions?storeSlug=test");
+    const req = new NextRequest(url);
+    const res = await GET(req);
+
+    expect(res.status).toBe(403);
+  });
+});

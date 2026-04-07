@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMarketplaceCart } from "@/hooks/use-marketplace-cart";
+import SponsoredBadge from "@/components/marketplace/SponsoredBadge";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -38,6 +39,9 @@ interface CatalogProduct {
   storeZone: string | null;
   storeRating: number;
   storeCategory: string | null;
+  // C5 — Sponsored
+  isSponsored?: boolean;
+  sponsoredBoostId?: string | null;
 }
 
 type SortOption = "popular" | "price_asc" | "price_desc" | "newest" | "rating";
@@ -157,11 +161,21 @@ function CatalogProductCard({
             ¡Solo {product.stock}!
           </span>
         )}
+        {/* C5 — Sponsored badge */}
+        {product.isSponsored && <SponsoredBadge />}
       </div>
 
       {/* Image */}
       <Link
         href={`/marketplace/${product.storeSlug}`}
+        onClick={() => {
+          if (product.sponsoredBoostId) {
+            fetch(`/api/marketplace/sponsored/${encodeURIComponent(product.sponsoredBoostId)}/click`, {
+              method: "POST",
+              keepalive: true,
+            }).catch(() => {});
+          }
+        }}
         className="relative aspect-square overflow-hidden bg-gray-50 dark:bg-gray-800 shrink-0"
       >
         {product.image && !imgError ? (
