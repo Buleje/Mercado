@@ -269,7 +269,7 @@ export default function DashboardTab() {
     const fOrders = orders.filter(o => o.status !== "cancelado" && inPeriod(o.createdAt, period));
     const cancelled = orders.filter(o => o.status === "cancelado" && inPeriod(o.createdAt, period));
     const fSales = sales.filter(s => inPeriod(s.createdAt, period));
-    const fPurchases = purchases.filter(p => inPeriod(p.createdAt, period));
+    const fPurchases = purchases.filter(p => inPeriod(p.createdAt ?? "", period));
 
     const costMap = new Map(products.map(p => [p.id, p.costPrice ?? p.price * 0.7]));
     const orderRev = fOrders.reduce((a,o) => a+o.total,0);
@@ -277,8 +277,8 @@ export default function DashboardTab() {
     const ventas = orderRev + saleRev;
 
     let costo = 0;
-    fOrders.forEach(o => o.items.forEach(i => { costo += (costMap.get(i.id) ?? i.price*0.7)*i.quantity; }));
-    fSales.forEach(s => s.items.forEach(i => { costo += (costMap.get(i.productId) ?? i.price*0.7)*i.quantity; }));
+    fOrders.forEach(o => o.items.forEach(i => { costo += (costMap.get(i.id) ?? (+(i.price ?? 0))*0.7)*i.quantity; }));
+    fSales.forEach(s => (s.items ?? []).forEach(i => { costo += (costMap.get(+(i.productId ?? 0)) ?? (+(i.price ?? 0))*0.7)*i.quantity; }));
     const utilidad = ventas - costo;
     const margen = ventas > 0 ? (utilidad/ventas)*100 : 0;
     const tickets = fOrders.length + fSales.length;
@@ -289,15 +289,15 @@ export default function DashboardTab() {
     const pfSales = sales.filter(s => inPrevPeriod(s.createdAt, period));
     const prevVentas = pfOrders.reduce((a,o) => a+o.total, 0) + pfSales.reduce((a,s) => a+s.total, 0);
     let prevCosto = 0;
-    pfOrders.forEach(o => o.items.forEach(i => { prevCosto += (costMap.get(i.id) ?? i.price*0.7)*i.quantity; }));
-    pfSales.forEach(s => s.items.forEach(i => { prevCosto += (costMap.get(i.productId) ?? i.price*0.7)*i.quantity; }));
+    pfOrders.forEach(o => o.items.forEach(i => { prevCosto += (costMap.get(i.id) ?? (+(i.price ?? 0))*0.7)*i.quantity; }));
+    pfSales.forEach(s => (s.items ?? []).forEach(i => { prevCosto += (costMap.get(+(i.productId ?? 0)) ?? (+(i.price ?? 0))*0.7)*i.quantity; }));
     const prevUtilidad = prevVentas - prevCosto;
     const prevTickets = pfOrders.length + pfSales.length;
     const prevTicketProm = prevTickets > 0 ? prevVentas/prevTickets : 0;
     const prevMargen = prevVentas > 0 ? (prevUtilidad/prevVentas)*100 : 0;
     let prevUds = 0;
     pfOrders.forEach(o => o.items.forEach(i => { prevUds += i.quantity; }));
-    pfSales.forEach(s => s.items.forEach(i => { prevUds += i.quantity; }));
+    pfSales.forEach(s => (s.items ?? []).forEach(i => { prevUds += i.quantity; }));
     const prevPhones = new Set<string>();
     orders.filter(o => inPrevPeriod(o.createdAt, period)).forEach(o => { if(o.customer.phone) prevPhones.add(o.customer.phone); });
     sales.filter(s => inPrevPeriod(s.createdAt, period)).forEach(s => { if(s.customerPhone) prevPhones.add(s.customerPhone); });
@@ -310,7 +310,7 @@ export default function DashboardTab() {
 
     let uds = 0;
     fOrders.forEach(o => o.items.forEach(i => { uds += i.quantity; }));
-    fSales.forEach(s => s.items.forEach(i => { uds += i.quantity; }));
+    fSales.forEach(s => (s.items ?? []).forEach(i => { uds += i.quantity; }));
 
     const uniqueClients = new Set<string>();
     fOrders.forEach(o => { if(o.customer.phone) uniqueClients.add(o.customer.phone); });
@@ -323,9 +323,9 @@ export default function DashboardTab() {
     const stockCritico = products.filter(p => p.active && p.stock!==undefined && p.stockMin!==undefined && p.stock<=p.stockMin);
     const agotados = products.filter(p => p.active && (p.stock??0)===0);
     const soldIds = new Set<number>();
-    orders.forEach(o => o.items.forEach(i => soldIds.add(i.id)));
-    sales.forEach(s => s.items.forEach(i => soldIds.add(i.productId)));
-    const sinMov = products.filter(p => p.active && !soldIds.has(p.id));
+    orders.forEach(o => o.items.forEach(i => soldIds.add(+i.id)));
+    sales.forEach(s => (s.items ?? []).forEach(i => soldIds.add(+(i.productId ?? 0))));
+    const sinMov = products.filter(p => p.active && !soldIds.has(+p.id));
 
     // ── Stock projection (last 30 days trend) ──
     const now = new Date();
@@ -336,16 +336,17 @@ export default function DashboardTab() {
     
     const productSalesLast30d = new Map<number, number>();
     recentOrders.forEach(o => o.items.forEach(i => {
-      productSalesLast30d.set(i.id, (productSalesLast30d.get(i.id) ?? 0) + i.quantity);
+      productSalesLast30d.set(+i.id, (productSalesLast30d.get(+i.id) ?? 0) + i.quantity);
     }));
-    recentSales.forEach(s => s.items.forEach(i => {
-      productSalesLast30d.set(i.productId, (productSalesLast30d.get(i.productId) ?? 0) + i.quantity);
+    recentSales.forEach(s => (s.items ?? []).forEach(i => {
+      const pid = +(i.productId ?? 0);
+      productSalesLast30d.set(pid, (productSalesLast30d.get(pid) ?? 0) + i.quantity);
     }));
 
     const stockProjections = products
       .filter(p => p.active && p.stock != null && p.stock > 0)
       .map(p => {
-        const soldLast30d = productSalesLast30d.get(p.id) ?? 0;
+        const soldLast30d = productSalesLast30d.get(+p.id) ?? 0;
         const dailyRate = soldLast30d / 30;
         const daysRemaining = dailyRate > 0 ? p.stock! / dailyRate : 999;
         const needsReorder = daysRemaining < 14; // Alert if less than 2 weeks
@@ -367,13 +368,13 @@ export default function DashboardTab() {
     const needsReorderSoon = stockProjections.filter(p => p.needsReorder && !p.criticalReorder);
 
     const catMap = new Map<string,number>();
-    fOrders.forEach(o => o.items.forEach(i => { const c = products.find(p=>p.id===i.id)?.category??"otros"; catMap.set(c,(catMap.get(c)??0)+i.price*i.quantity); }));
-    fSales.forEach(s => s.items.forEach(i => { const c = products.find(p=>p.id===i.productId)?.category??"otros"; catMap.set(c,(catMap.get(c)??0)+i.price*i.quantity); }));
+    fOrders.forEach(o => o.items.forEach(i => { const c = products.find(p=>p.id===i.id)?.category??"otros"; catMap.set(c,(catMap.get(c)??0)+(+(i.price ?? 0))*i.quantity); }));
+    fSales.forEach(s => (s.items ?? []).forEach(i => { const c = products.find(p=>p.id===+(i.productId ?? 0))?.category??"otros"; catMap.set(c,(catMap.get(c)??0)+(+(i.price ?? 0))*i.quantity); }));
     const catSales = [...catMap.entries()].map(([c,t])=>({cat:c,total:t,label:CAT_LABELS[c]??c,color:CAT_COLORS[c]??"#94a3b8"})).sort((a,b)=>b.total-a.total);
 
     const payMap = new Map<string,number>();
     fOrders.forEach(o => { const m=o.paymentMethod??"efectivo"; payMap.set(m,(payMap.get(m)??0)+o.total); });
-    fSales.forEach(s => { payMap.set(s.payment,(payMap.get(s.payment)??0)+s.total); });
+    fSales.forEach(s => { const pm = s.payment ?? "efectivo"; payMap.set(pm,(payMap.get(pm)??0)+s.total); });
     const payments = [...payMap.entries()].map(([m,t])=>({method:m,total:t,label:PAY_LABELS[m]??m,color:PAY_COLORS[m]??"#94a3b8"})).sort((a,b)=>b.total-a.total);
     const payTotal = payments.reduce((a,p)=>a+p.total,0);
 
@@ -384,7 +385,7 @@ export default function DashboardTab() {
 
     const dailyProfitMap = new Map<string,number>();
     fOrders.forEach(o => { const k = dateKey(o.createdAt); let c = 0; o.items.forEach(i => { c += (costMap.get(i.id) ?? i.price*0.7)*i.quantity; }); dailyProfitMap.set(k, (dailyProfitMap.get(k)??0) + o.total - c); });
-    fSales.forEach(s => { const k = dateKey(s.createdAt); let c = 0; s.items.forEach(i => { c += (costMap.get(i.productId) ?? i.price*0.7)*i.quantity; }); dailyProfitMap.set(k, (dailyProfitMap.get(k)??0) + s.total - c); });
+    fSales.forEach(s => { const k = dateKey(s.createdAt); let c = 0; (s.items ?? []).forEach(i => { c += (costMap.get(+(i.productId ?? 0)) ?? (+(i.price ?? 0))*0.7)*i.quantity; }); dailyProfitMap.set(k, (dailyProfitMap.get(k)??0) + s.total - c); });
     const dailyProfit = daily.map(([dk]) => dailyProfitMap.get(dk) ?? 0);
 
     // ── Sparkline data (last 7 days for KPI cards) ──────────────────
@@ -492,7 +493,7 @@ export default function DashboardTab() {
 
     const prodMap = new Map<number,{name:string;units:number;revenue:number;profit:number}>();
     fOrders.forEach(o => o.items.forEach(i => { const e=prodMap.get(i.id)??{name:i.name,units:0,revenue:0,profit:0}; const c=costMap.get(i.id)??i.price*0.7; e.units+=i.quantity;e.revenue+=i.price*i.quantity;e.profit+=(i.price-c)*i.quantity;prodMap.set(i.id,e); }));
-    fSales.forEach(s => s.items.forEach(i => { const e=prodMap.get(i.productId)??{name:i.name,units:0,revenue:0,profit:0}; const c=costMap.get(i.productId)??i.price*0.7; e.units+=i.quantity;e.revenue+=i.price*i.quantity;e.profit+=(i.price-c)*i.quantity;prodMap.set(i.productId,e); }));
+    fSales.forEach(s => (s.items ?? []).forEach(i => { const pid=+(i.productId ?? 0); const p0=+(i.price ?? 0); const e=prodMap.get(pid)??{name:String(i.name ?? ""),units:0,revenue:0,profit:0}; const c=costMap.get(pid)??p0*0.7; e.units+=i.quantity;e.revenue+=p0*i.quantity;e.profit+=(p0-c)*i.quantity;prodMap.set(pid,e); }));
     const topRev = [...prodMap.entries()].map(([id,x])=>({id,...x})).sort((a,b)=>b.revenue-a.revenue).slice(0,10);
     const topProfit = [...prodMap.entries()].map(([id,x])=>({id,...x})).sort((a,b)=>b.profit-a.profit).slice(0,10);
     const topUnits = [...prodMap.entries()].map(([id,x])=>({id,...x})).sort((a,b)=>b.units-a.units).slice(0,10);
@@ -517,9 +518,9 @@ export default function DashboardTab() {
     const recent = [...orders].sort((a,b)=>new Date(b.createdAt).getTime()-new Date(a.createdAt).getTime()).slice(0,200);
 
     const supMap = new Map<string,number>();
-    fPurchases.forEach(p => { supMap.set(p.supplierName,(supMap.get(p.supplierName)??0)+p.total); });
+    fPurchases.forEach(p => { const sn = p.supplierName ?? ""; supMap.set(sn,(supMap.get(sn)??0)+(p.total ?? 0)); });
     const supPurchases = [...supMap.entries()].map(([n,t])=>({name:n,total:t})).sort((a,b)=>b.total-a.total);
-    const totalPurch = fPurchases.reduce((a,p)=>a+p.total,0);
+    const totalPurch = fPurchases.reduce((a,p)=>a+(p.total ?? 0),0);
 
     const pending = payables.filter(p=>p.status!=="pagado");
     const debt = pending.reduce((a,p)=>a+(p.amount-p.paidAmount),0);
@@ -611,7 +612,7 @@ export default function DashboardTab() {
     }
 
     // 8. New customers
-    const recentCustomers = customers.filter(c => { try { return (now.getTime() - new Date(c.createdAt).getTime()) < 7 * 86400000; } catch { return false; } });
+    const recentCustomers = customers.filter(c => { try { return (now.getTime() - new Date(c.createdAt ?? "").getTime()) < 7 * 86400000; } catch { return false; } });
     if (recentCustomers.length > 0) {
       insights.push({ priority: 15, icon: UserCheck, title: `${recentCustomers.length} cliente${recentCustomers.length>1?"s":""} nuevo${recentCustomers.length>1?"s":""}`, desc: `Ganaste ${recentCustomers.length} cliente${recentCustomers.length>1?"s":""} esta semana. Dale seguimiento para fidelizarlos.`, type: "success" });
     }
@@ -669,13 +670,13 @@ export default function DashboardTab() {
 
     // ── Sprint 3 Feature 2: Product affinity (co-purchase analysis) ──
     const coMap = new Map<string,{a:string;b:string;count:number}>();
-    const orderBaskets = [...orders.filter(o => o.status !== "cancelado").map(o => o.items.map(i => ({ id: i.id, name: i.name }))), ...sales.map(s => s.items.map(i => ({ id: i.productId, name: i.name })))];
+    const orderBaskets = [...orders.filter(o => o.status !== "cancelado").map(o => o.items.map(i => ({ id: i.id as number, name: i.name as string }))), ...sales.map(s => (s.items ?? []).map(i => ({ id: +(i.productId ?? 0), name: String(i.name ?? "") })))];
     orderBaskets.forEach(basket => {
       const unique = [...new Map(basket.map(i => [i.id, i])).values()]; // dedupe
       for (let i = 0; i < unique.length; i++) {
         for (let j = i + 1; j < unique.length; j++) {
-          const key = [unique[i].id, unique[j].id].sort((a, b) => a - b).join("-");
-          const e = coMap.get(key) ?? { a: unique[i].name, b: unique[j].name, count: 0 };
+          const key = [unique[i].id, unique[j].id].sort((a, b) => +a - +b).join("-");
+          const e = coMap.get(key) ?? { a: unique[i].name ?? "", b: unique[j].name ?? "", count: 0 };
           e.count++; coMap.set(key, e);
         }
       }

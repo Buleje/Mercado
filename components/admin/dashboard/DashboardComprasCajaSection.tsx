@@ -3,11 +3,16 @@
 
 import { useMemo } from "react";
 import {
-  DollarSign, TrendingUp, AlertCircle, CreditCard, Banknote, Truck, Star,
+  DollarSign, TrendingUp, AlertCircle, CreditCard, Banknote, Truck, Star, BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
+function fmtDateFull(iso: string) { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); } catch { return iso; } }
+function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
+  const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-blue-50 text-blue-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
+  return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
+}
 
 function Kpi({ label, value, icon: Icon, accent, delta }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null }) {
   const isPositive = delta != null ? delta >= 0 : false;
@@ -52,7 +57,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
           {st.supPurchases.length > 0 && (
             <Card title="Compras por proveedor" icon={Truck}>
               <div className="space-y-2.5">
-                {st.supPurchases.map(s => {
+                {st.supPurchases.map((s: any) => {
                   const mx = st.supPurchases[0]?.total??1;
                   return (
                     <div key={s.name}>
@@ -85,7 +90,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
                     </tr>
                   </thead>
                   <tbody>
-                    {st.pending.map(p => {
+                    {st.pending.map((p: any) => {
                       const rem = p.amount-p.paidAmount;
                       const over = new Date(p.dueDate)<new Date();
                       return (
@@ -133,7 +138,7 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
             <Card title="Desglose de pagos" icon={CreditCard}>
               {st.payments.length===0?<Empty />:(
                 <div className="space-y-3">
-                  {st.payments.map(p => (
+                  {st.payments.map((p: any) => (
                     <div key={p.method} className="flex items-center justify-between">
                       <div className="flex flex-wrap items-center gap-2">
                         <div className="w-3 h-3 rounded-full" style={{background:p.color}} />
@@ -185,10 +190,10 @@ export default function DashboardComprasCajaSection({ st, expandAll, section }: 
 
               {/* Daily forecast chart */}
               {st.cashFlowForecast.length > 0 && (() => {
-                const maxVal = Math.max(...st.cashFlowForecast.map(f => Math.max(f.estRevenue, f.estExpense)), 1);
+                const maxVal = Math.max(...st.cashFlowForecast.map((f: any) => Math.max(f.estRevenue, f.estExpense)), 1);
                 return (
                   <div className="space-y-2">
-                    {st.cashFlowForecast.map((f, i) => (
+                    {st.cashFlowForecast.map((f: any, i: number) => (
                       <div key={i} className="space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-medium text-gray-600 dark:text-gray-400 w-28 truncate">{f.dayLabel}</span>

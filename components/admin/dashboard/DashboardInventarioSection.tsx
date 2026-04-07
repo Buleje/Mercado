@@ -1,9 +1,10 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   DollarSign, AlertTriangle, Package, PackageX, Timer, Truck,
+  Sparkles, Gift, ChevronRight, Zap, TrendingDown, Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import BatchStatsWidget from "@/components/admin/dashboard/BatchStatsWidget";
@@ -25,12 +26,15 @@ function Kpi({ label, value, icon: Icon, accent }: { label: string; value: strin
 function Card({ title, icon: Icon, children, action }: { title: string; icon: React.ComponentType<{className?:string}>; children: React.ReactNode; action?: React.ReactNode }) {
   return (<div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4"><div className="flex items-center justify-between mb-4"><h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-gray-400 dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-gray-300 dark:text-muted" />{title.toUpperCase()}</h3>{action}</div>{children}</div>);
 }
+function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-gray-300 dark:text-muted">{text}</div>; }
 function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
   const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-blue-50 text-blue-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
-export default function DashboardInventarioSection({ st, expandAll }: any) {
+export default function DashboardInventarioSection({ st, expandAll, products }: any) {
+  const [showCrossSell, setShowCrossSell] = useState(false);
+  const [selectedProductForCrossSell, setSelectedProductForCrossSell] = useState<string | null>(null);
   return (
         <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
@@ -59,7 +63,7 @@ export default function DashboardInventarioSection({ st, expandAll }: any) {
               <div className="py-6 text-center text-xs text-emerald-500 font-medium">✓ Inventario saludable</div>
             ):(
               <div className="space-y-1">
-                {st.agotados.map(p => (
+                {st.agotados.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
                     <div>
                       <span className="text-xs font-medium text-gray-700 dark:text-foreground">{p.name}</span>
@@ -68,7 +72,7 @@ export default function DashboardInventarioSection({ st, expandAll }: any) {
                     <DBadge color="red">Agotado</DBadge>
                   </div>
                 ))}
-                {st.stockCritico.filter(p=>(p.stock??0)>0).map(p => (
+                {st.stockCritico.filter((p: any)=>(p.stock??0)>0).map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                     <div>
                       <span className="text-xs font-medium text-gray-700 dark:text-foreground">{p.name}</span>
@@ -109,7 +113,7 @@ export default function DashboardInventarioSection({ st, expandAll }: any) {
               <div className="py-6 text-center text-xs text-emerald-500 font-medium">✓ Todos con rotación</div>
             ):(
               <div className="space-y-0.5">
-                {st.sinMov.slice(0,20).map(p => (
+                {st.sinMov.slice(0,20).map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between py-1.5 px-2 text-xs rounded hover:bg-gray-50 dark:hover:bg-accent">
                     <span className="text-gray-600 dark:text-gray-400 truncate flex-1">{p.name}</span>
                     <span className="text-gray-300 ml-2">{p.stock??0} uds</span>
@@ -135,8 +139,8 @@ export default function DashboardInventarioSection({ st, expandAll }: any) {
                     Basado en patrones de compra reales. Haz clic en un producto para ver qué productos se compran junto a él.
                   </p>
                   <div className="space-y-2">
-                    {[...st.crossSellRecommendations.entries()].slice(0, 10).map(([productId, recommendations]) => {
-                      const product = products.find(p => p.id === productId);
+                    {[...st.crossSellRecommendations.entries()].slice(0, 10).map(([productId, recommendations]: [any, any]) => {
+                      const product = (products ?? []).find((p: any) => p.id === productId);
                       if (!product) return null;
                       const isExpanded = selectedProductForCrossSell === productId;
                       return (
@@ -157,8 +161,8 @@ export default function DashboardInventarioSection({ st, expandAll }: any) {
                           {isExpanded && (
                             <div className="border-t border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface p-3 space-y-2">
                               <div className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">Frecuentemente comprado junto con:</div>
-                              {recommendations.map(rec => {
-                                const relatedProduct = products.find(p => p.id === rec.productId);
+                              {(recommendations as any[]).map((rec: any) => {
+                                const relatedProduct = (products ?? []).find((p: any) => p.id === rec.productId);
                                 if (!relatedProduct) return null;
                                 return (
                                   <div key={rec.productId} className="flex items-center justify-between py-2 px-3 bg-white dark:bg-card rounded-lg">
@@ -224,7 +228,7 @@ export default function DashboardInventarioSection({ st, expandAll }: any) {
                       <span className="text-xs font-semibold text-red-600 dark:text-red-400">Crítico (&lt;7 días)</span>
                     </div>
                     <div className="space-y-1.5">
-                      {st.criticalStock.map(p => (
+                      {st.criticalStock.map((p: any) => (
                         <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-gray-700 dark:text-foreground truncate">{p.name}</div>
@@ -266,7 +270,7 @@ export default function DashboardInventarioSection({ st, expandAll }: any) {
                       <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Reordenar pronto (7-14 días)</span>
                     </div>
                     <div className="space-y-1.5">
-                      {st.needsReorderSoon.slice(0, 10).map(p => (
+                      {st.needsReorderSoon.slice(0, 10).map((p: any) => (
                         <div key={p.id} className="flex items-center justify-between py-2 px-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-gray-700 dark:text-foreground truncate">{p.name}</div>

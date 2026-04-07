@@ -4,11 +4,26 @@
 import { useState, useMemo } from "react";
 import {
   Users, UserCheck, Star, TrendingDown,
-  Download, Trophy,
+  Download, Trophy, AlertTriangle, BarChart3,
 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
+function fmtDate(iso: string) { try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short" }); } catch { return iso; } }
+type Period = "hoy" | "semana" | "mes" | "todo";
+function inPeriod(iso: string, p: Period): boolean {
+  try {
+    const d = new Date(iso); const now = new Date();
+    if (p === "hoy") { const t = new Date(now.getFullYear(),now.getMonth(),now.getDate()); return d >= t; }
+    if (p === "semana") { const t = new Date(now); t.setDate(t.getDate()-7); return d >= t; }
+    if (p === "mes") { const t = new Date(now); t.setDate(t.getDate()-30); return d >= t; }
+    return true;
+  } catch { return false; }
+}
+function Donut({ data, total, size = 96 }: { data: { total: number; color: string }[]; total: number; size?: number }) {
+  const segments = data.map((p, i) => { const pcts = data.map(x => total > 0 ? (x.total / total) * 100 : 0); const cum = pcts.reduce<number[]>((acc, pct) => [...acc, (acc[acc.length - 1] ?? 0) + pct], []); return `${p.color} ${cum[i - 1] ?? 0}% ${cum[i]}%`; });
+  return (<div className="relative shrink-0" style={{ width: size, height: size }}><div className="w-full h-full rounded-full" style={{ background: `conic-gradient(${segments.join(", ")})` }} /><div className="absolute rounded-full bg-white dark:bg-card flex items-center justify-center" style={{ inset: size*0.2 }}><span className="text-xs font-bold text-gray-600 dark:text-foreground">{total}</span></div></div>);
+}
 
 function Kpi({ label, value, icon: Icon, accent, delta }: { label: string; value: string; icon: React.ComponentType<{className?:string}>; accent: string; delta?: number|null }) {
   const isPositive = delta != null ? delta >= 0 : false;
@@ -31,7 +46,8 @@ function DBadge({ children, color }: { children: React.ReactNode; color: "green"
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
-export default function DashboardClientesSection({ st, expandAll, orders, customers, products, showCohortRetention, setShowCohortRetention, showCrossSell, setShowCrossSell, selectedProductForCrossSell, setSelectedProductForCrossSell, reviewFilter, setReviewFilter, reviews }: any) {
+export default function DashboardClientesSection({ st, expandAll, orders, customers, products, showCohortRetention, setShowCohortRetention, showCrossSell, setShowCrossSell, selectedProductForCrossSell, setSelectedProductForCrossSell, reviewFilter, setReviewFilter, reviews, period }: any) {
+  const [selectedClientPhone, setSelectedClientPhone] = useState<string | null>(null);
   return (
         <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>
           {expandAll && (
@@ -47,7 +63,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
             const handleExportCustomers = () => {
               // Build spend map from orders
               const spendMap = new Map<string, number>();
-              orders.filter(o => o.status !== "cancelado").forEach(o => {
+              orders.filter((o: any) => o.status !== "cancelado").forEach((o: any) => {
                 if (!o.customer.phone) return;
                 spendMap.set(o.customer.phone, (spendMap.get(o.customer.phone) ?? 0) + o.total);
               });
@@ -58,7 +74,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                 if (spend >= 50) return "Regular";
                 return "Nuevo";
               };
-              const rows = customers.map(c => ({
+              const rows = customers.map((c: any) => ({
                 telefono: c.phone,
                 nombre: c.name,
                 ubicacion: c.location,
@@ -89,7 +105,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
           <Card title="Clientes más frecuentes" icon={Users}>
             {(() => {
               const clientSpend = new Map<string,{name:string;orders:number;total:number}>();
-              orders.filter(o=>o.status!=="cancelado"&&inPeriod(o.createdAt,period)).forEach(o => {
+              orders.filter((o: any)=>o.status!=="cancelado"&&inPeriod(o.createdAt,period as Period)).forEach((o: any) => {
                 if(!o.customer.phone) return;
                 const e = clientSpend.get(o.customer.phone)??{name:o.customer.name,orders:0,total:0};
                 e.orders++;e.total+=o.total;clientSpend.set(o.customer.phone,e);
@@ -120,12 +136,12 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                         </div>
                       </button>
                       {selectedClientPhone === c.phone && (() => {
-                        const clientOrders = orders.filter(o => o.customer.phone === c.phone).slice(0,5);
+                        const clientOrders = orders.filter((o: any) => o.customer.phone === c.phone).slice(0,5);
                         return (
                           <div className="mt-1.5 mb-1 ml-7 pl-2 border-l-2 border-violet-200 dark:border-violet-800/50 space-y-1">
                             {clientOrders.length === 0
                               ? <p className="text-[10px] text-gray-400">Sin pedidos registrados</p>
-                              : clientOrders.map(o => (
+                              : clientOrders.map((o: any) => (
                                 <div key={o.id} className="flex items-center justify-between text-[10px]">
                                   <span className="text-gray-500">#{o.id.slice(-6)} · {fmtDate(o.createdAt)}</span>
                                   <span className="font-semibold text-gray-700 dark:text-foreground">{fmt(o.total)}</span>
@@ -222,7 +238,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                         </tr>
                       </thead>
                       <tbody>
-                        {st.cohortData.map((cohort, idx) => (
+                        {st.cohortData.map((cohort: any, idx: number) => (
                           <tr key={idx} className="border-b border-gray-100 dark:border-card-border/50">
                             <td className="px-2 py-2 font-medium text-gray-700 dark:text-foreground">{cohort.cohortMonth}</td>
                             {[cohort.month0, cohort.month1, cohort.month2, cohort.month3, cohort.month4, cohort.month5plus].map((val, i) => {
@@ -269,7 +285,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                       Sin compras recientes ({st.atRiskClients.length})
                     </div>
                     <div className="space-y-1.5">
-                      {st.atRiskClients.slice(0, 8).map(c => (
+                      {st.atRiskClients.slice(0, 8).map((c: any) => (
                         <div key={c.phone} className="flex items-center justify-between py-2 px-3 bg-red-50 dark:bg-red-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-gray-700 dark:text-foreground truncate">{c.name}</div>
@@ -306,7 +322,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                       Frecuencia en declive ({st.decliningClients.length})
                     </div>
                     <div className="space-y-1.5">
-                      {st.decliningClients.slice(0, 5).map(c => (
+                      {st.decliningClients.slice(0, 5).map((c: any) => (
                         <div key={c.phone} className="flex items-center justify-between py-2 px-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                           <div className="flex-1 min-w-0">
                             <div className="text-xs font-medium text-gray-700 dark:text-foreground truncate">{c.name}</div>
@@ -350,11 +366,11 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
               </div>
             }>
             {(() => {
-              const filtered = reviewFilter === 0 ? reviews : reviews.filter(r => r.rating === reviewFilter);
+              const filtered = reviewFilter === 0 ? reviews : reviews.filter((r: any) => r.rating === reviewFilter);
               if (filtered.length === 0) return <Empty text="Sin reseñas" />;
               return (
                 <div className="space-y-2.5 max-h-80 overflow-y-auto">
-                  {filtered.map(r => (
+                  {filtered.map((r: any) => (
                     <div key={r.id} className="flex flex-wrap items-start gap-3 py-2.5 px-3 rounded-xl bg-gray-50 dark:bg-accent/40 border border-gray-100 dark:border-card-border">
                       <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xs font-bold text-amber-600 shrink-0">
                         {r.name.charAt(0).toUpperCase()}

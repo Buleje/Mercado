@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from "react";
 import {
-  TrendingUp, ShoppingCart, Package, Timer, Gift,
+  TrendingUp, ShoppingCart, Package, Timer, Gift, Target, ShoppingBasket,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -68,7 +68,7 @@ export default function DashboardProductosSection({ st, expandAll, products }: a
             }>
             {topList.length===0?<Empty />:(
               <div className="space-y-2">
-                {topList.map((p,i) => {
+                {topList.map((p: any, i: number) => {
                   const val = topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue;
                   return (
                     <div key={p.id} className="flex flex-wrap items-center gap-2.5">
@@ -123,7 +123,7 @@ export default function DashboardProductosSection({ st, expandAll, products }: a
                     {/* Cumulative line overlay */}
                     <svg className="absolute inset-0 pointer-events-none" style={{ width: "100%", height: "100%" }}>
                       <polyline
-                        points={st.paretoChartData.map((p, i) => {
+                        points={st.paretoChartData.map((p: any, i: number) => {
                           const x = (i / (st.paretoChartData.length - 1)) * 100;
                           const y = 100 - (p.cumulativePct / 100) * 80; // 80% of height
                           return `${x}%,${y}%`;
@@ -135,7 +135,7 @@ export default function DashboardProductosSection({ st, expandAll, products }: a
                       />
                     </svg>
                     {/* Bars */}
-                    {st.paretoChartData.map((p) => (
+                    {st.paretoChartData.map((p: any) => (
                       <div key={p.id} className="flex-1 flex flex-col items-center group relative">
                         <div
                           className={cn("w-full rounded-t transition-all", 
@@ -190,7 +190,7 @@ export default function DashboardProductosSection({ st, expandAll, products }: a
           <Card title="Ventas por categoría" icon={ShoppingBasket}>
             {st.catSales.length===0?<Empty />:(
               <div className="space-y-2.5">
-                {st.catSales.map(c => {
+                {st.catSales.map((c: any) => {
                   const mx = st.catSales[0]?.total??1;
                   return (
                     <div key={c.cat}>
@@ -212,7 +212,7 @@ export default function DashboardProductosSection({ st, expandAll, products }: a
           {st.productAffinities.length > 0 && (
             <Card title="Se compran juntos (Cross-sell)" icon={ShoppingCart}>
               <div className="space-y-2">
-                {st.productAffinities.map((pair, i) => (
+                {st.productAffinities.map((pair: any, i: number) => (
                   <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-accent/40 border border-gray-100 dark:border-card-border">
                     <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
                       <span className={cn("w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0",
