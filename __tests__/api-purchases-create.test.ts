@@ -11,9 +11,11 @@ const { mockRequireAdmin } = vi.hoisted(() => ({ mockRequireAdmin: vi.fn() }));
 vi.mock("@/lib/require-admin", () => ({ requireAdmin: mockRequireAdmin }));
 
 // ── Mock: prisma ─────────────────────────────────────────────────────────────
+// Type the mocks loosely so .mockResolvedValueOnce({...}) and .mock.calls[0][0]
+// don't get pinned to the narrow inferred return type from the default impl.
 const { mockProductUpdate, mockPayableFindFirst } = vi.hoisted(() => ({
-  mockProductUpdate: vi.fn(async () => ({})),
-  mockPayableFindFirst: vi.fn(async () => null),
+  mockProductUpdate: vi.fn<(args: { where: { id: number | string }; data: Record<string, unknown> }) => Promise<unknown>>(async () => ({})),
+  mockPayableFindFirst: vi.fn<(args?: unknown) => Promise<{ id: string; purchaseOrderId: string } | null>>(async () => null),
 }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -25,7 +27,7 @@ vi.mock("@/lib/prisma", () => ({
 // ── Mock: PurchasesDB (via @/lib/jsondb) ─────────────────────────────────────
 const { mockPurchasesAdd, mockPurchasesGetAll } = vi.hoisted(() => ({
   mockPurchasesAdd: vi.fn(),
-  mockPurchasesGetAll: vi.fn(async () => []),
+  mockPurchasesGetAll: vi.fn<() => Promise<Array<Record<string, unknown>>>>(async () => []),
 }));
 vi.mock("@/lib/jsondb", () => ({
   PurchasesDB: {

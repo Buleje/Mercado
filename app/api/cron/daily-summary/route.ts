@@ -41,7 +41,6 @@ export async function GET(req: NextRequest) {
       const summaries: Array<{ tenant: string; totalVentas: number; totalPedidos: number }> = [];
 
       for (const tenant of tenants) {
-        const tenantIds = tenant.id === tenant.slug ? [tenant.id] : [tenant.id, tenant.slug];
         const tenantId = tenant.id;
 
         const now = new Date();
@@ -121,32 +120,53 @@ export async function GET(req: NextRequest) {
         const ticketPromedio = totalPedidos > 0 ? totalVentas / totalPedidos : 0;
         const fechaTexto = new Date().toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long" });
 
-        // Auto-save DailySummary record
+        // Auto-save DailySummary record. Schema has @@index([tenantId, fecha])
+        // but no @@unique on the pair, so upsert isn't available — fall back
+        // to findFirst + update/create. Schema field types:
+        //   diferenciaCaja: Decimal NOT NULL @default(0)
+        //   stockAlertas:   String? (JSON stringified list)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        await prisma.dailySummary.upsert({
-          where: { tenantId_fecha: { tenantId, fecha: today } },
-          update: {
-            totalVentas,
-            cantidadVentas: totalPedidos,
-            ticketPromedio,
-            diferenciaCaja,
-            stockAlertas: productosStockBajo.length,
-            productoTop: top5Productos[0]?.nombre ?? null,
-            mejorHora: null,
-          },
-          create: {
-            tenantId,
-            fecha: today,
-            totalVentas,
-            cantidadVentas: totalPedidos,
-            ticketPromedio,
-            diferenciaCaja,
-            stockAlertas: productosStockBajo.length,
-            productoTop: top5Productos[0]?.nombre ?? null,
-            creadoPor: "cron",
-          },
-        }).catch(e => logger.warn("[daily-summary] Error saving DailySummary", { error: String(e) }));
+        const diferenciaCajaSafe = diferenciaCaja ?? 0;
+        const stockAlertasJson = JSON.stringify(
+          productosStockBajo.map((p) => ({ id: p.id, name: p.name, stock: p.stock ?? 0 })),
+        );
+        try {
+          const existing = await prisma.dailySummary.findFirst({
+            where: { tenantId, fecha: today },
+            select: { id: true },
+          });
+          if (existing) {
+            await prisma.dailySummary.update({
+              where: { id: existing.id },
+              data: {
+                totalVentas,
+                cantidadVentas: totalPedidos,
+                ticketPromedio,
+                diferenciaCaja: diferenciaCajaSafe,
+                stockAlertas: stockAlertasJson,
+                productoTop: top5Productos[0]?.nombre ?? null,
+                mejorHora: null,
+              },
+            });
+          } else {
+            await prisma.dailySummary.create({
+              data: {
+                tenantId,
+                fecha: today,
+                totalVentas,
+                cantidadVentas: totalPedidos,
+                ticketPromedio,
+                diferenciaCaja: diferenciaCajaSafe,
+                stockAlertas: stockAlertasJson,
+                productoTop: top5Productos[0]?.nombre ?? null,
+                creadoPor: "cron",
+              },
+            });
+          }
+        } catch (e) {
+          logger.warn("[daily-summary] Error saving DailySummary", { error: String(e) });
+        }
 
         const whatsappText = [
           `📊 *Resumen del día — ${tenant.name}*`,
@@ -167,14 +187,16 @@ export async function GET(req: NextRequest) {
           `${tenant.name} 🏪`,
         ].filter((line): line is string => line !== null).join("\n");
 
-        // Send WhatsApp + Push to store owner
+        // Send WhatsApp + Push to store owner.
+        // ownerPhone lives on the Tenant model (not Settings) — read it from
+        // the already-loaded tenant to avoid an extra round trip.
         (async () => {
           try {
-            const settings = await prisma.settings.findFirst({
-              where: { tenantId: { in: tenantIds } },
+            const tenantWithPhone = await prisma.tenant.findUnique({
+              where: { id: tenant.id },
               select: { ownerPhone: true },
             });
-            const ownerPhone = settings?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
+            const ownerPhone = tenantWithPhone?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
             if (ownerPhone) {
               enqueueNotification({ type: "whatsapp", recipient: ownerPhone, message: whatsappText, tenantId: tenant.id, metadata: { purpose: "daily-summary" } }).catch(() => {});
               sendPushToPhone(ownerPhone, {

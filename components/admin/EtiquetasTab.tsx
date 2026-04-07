@@ -29,7 +29,7 @@ const SEED: Product[] = [
   { id: 3,  name: "Azúcar Rubia 1kg",          category: "Abarrotes", price: 3.80,  unit: "bolsa",   barcode: "7500478000029", stock: 52, active: true },
   { id: 4,  name: "Fideos Lavaggi 500g",       category: "Abarrotes", price: 2.50,  unit: "bolsa",   barcode: "7500320001118", stock: 24, active: true },
   { id: 5,  name: "Leche Gloria Entera 400g",  category: "Lácteos",   price: 3.50,  unit: "lata",    barcode: "7750101310019", stock: 60, active: true },
-  { id: 6,  name: "Huevos Blancos x12",        category: "Frescos",   price: 9.00,  unit: "cartón",  barcode: null,           stock: 15, active: true },
+  { id: 6,  name: "Huevos Blancos x12",        category: "Frescos",   price: 9.00,  unit: "cartón",  barcode: undefined,           stock: 15, active: true },
   { id: 7,  name: "Pan de Molde Bimbo 500g",   category: "Panadería", price: 5.90,  unit: "bolsa",   barcode: "7501020005555", stock: 10, active: true },
   { id: 8,  name: "Gaseosa Inca Kola 1.5L",   category: "Bebidas",   price: 5.50,  unit: "botella", barcode: "7501055910027", stock: 30, active: true },
   { id: 9,  name: "Agua San Luis 625ml",       category: "Bebidas",   price: 1.00,  unit: "botella", barcode: "7501030400968", stock: 96, active: true },
@@ -104,7 +104,8 @@ function buildPrintHtml(products: Product[], config: LabelConfig): string {
 
 export default function EtiquetasTab() {
   const [products, setProducts] = useState<Product[]>(SEED);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  // Product.id is `number | string` (Prisma CUID strings, seeded numerics).
+  const [selected, setSelected] = useState<Set<number | string>>(new Set());
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -141,7 +142,7 @@ export default function EtiquetasTab() {
     [products, search, category]
   );
 
-  function toggleSelect(id: number) {
+  function toggleSelect(id: number | string) {
     setSelected(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id); else next.add(id);

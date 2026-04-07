@@ -86,7 +86,7 @@ export default function LoyaltyTab() {
   };
 
   const updateCredit = async () => {
-    if (!selected || !creditInput) return;
+    if (!selected || !selected.phone || !creditInput) return;
     const delta = Number(creditInput);
     if (isNaN(delta) || delta === 0) return;
     setCreditSaving(true);
@@ -104,7 +104,7 @@ export default function LoyaltyTab() {
   };
 
   const savePrivateNotes = async () => {
-    if (!selected) return;
+    if (!selected || !selected.phone) return;
     setNotesSaving(true);
     await fetch(`/api/customers/${encodeURIComponent(selected.phone)}`, {
       method: "PATCH",
@@ -116,18 +116,19 @@ export default function LoyaltyTab() {
   };
 
   const redeem = async () => {
-    if (!selected || !redeemPts) return;
+    if (!selected || !selected.phone || !redeemPts) return;
+    const phone = selected.phone;
     const pts = Number(redeemPts);
     if (pts <= 0 || pts > selected.loyaltyPoints) return;
-    const res = await fetch(`/api/loyalty/${encodeURIComponent(selected.phone)}`, {
+    const res = await fetch(`/api/loyalty/${encodeURIComponent(phone)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "redeem", points: pts }),
     });
     if (res.ok) {
       setRedeemPts("");
-      loadLoyalty(selected.phone);
-      setCustomers(prev => prev.map(c => c.phone === selected.phone ? { ...c, loyaltyPoints: c.loyaltyPoints - pts } : c));
+      loadLoyalty(phone);
+      setCustomers(prev => prev.map(c => c.phone === phone ? { ...c, loyaltyPoints: c.loyaltyPoints - pts } : c));
     }
   };
 
@@ -159,11 +160,11 @@ export default function LoyaltyTab() {
   };
 
   const generateReferralCode = async () => {
-    if (!selected) return;
+    if (!selected || !selected.phone) return;
     const namePart = selected.name.substring(0, 3).toUpperCase().replace(/[^A-Z]/g, 'X');
     const numberPart = Math.floor(1000 + Math.random() * 9000);
     const code = `${namePart}${numberPart}`;
-    
+
     const res = await fetch(`/api/customers/${encodeURIComponent(selected.phone)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -278,7 +279,7 @@ export default function LoyaltyTab() {
         <div className="lg:col-span-2 space-y-2 max-h-125 overflow-y-auto">
           {filtered.length === 0 && <p className="text-center text-gray-400 py-8">No se encontraron clientes</p>}
           {filtered.map(c => (
-            <button key={c.phone} onClick={() => loadLoyalty(c.phone)} className={cn("w-full text-left flex items-center gap-3 p-3 rounded-xl border transition", selected?.phone === c.phone ? "border-primary bg-primary/5" : "border-gray-200 dark:border-card-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-surface")}>
+            <button key={c.phone ?? c.id} onClick={() => c.phone && loadLoyalty(c.phone)} disabled={!c.phone} className={cn("w-full text-left flex items-center gap-3 p-3 rounded-xl border transition", selected?.phone === c.phone ? "border-primary bg-primary/5" : "border-gray-200 dark:border-card-border bg-white dark:bg-card hover:bg-gray-50 dark:hover:bg-surface")}>
               <div className={cn("px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase shrink-0", TIER_COLORS[c.loyaltyTier] ?? "bg-gray-200 text-gray-600")}>{c.loyaltyTier}</div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-sm text-gray-900 dark:text-foreground truncate">{c.name}</p>
@@ -445,14 +446,14 @@ export default function LoyaltyTab() {
                   </button>
                 </div>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {customers.filter(c => c.loyaltyPoints > 0).slice(0, 5).map(c => (
+                  {customers.filter(c => c.loyaltyPoints > 0 && c.phone).slice(0, 5).map(c => (
                     <div key={c.phone} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-surface rounded-lg">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-bold text-gray-900 dark:text-foreground truncate">{c.name}</p>
                         <p className="text-xs text-gray-400">{c.loyaltyPoints} pts · S/{(c.loyaltyPoints * 0.1).toFixed(2)}</p>
                       </div>
                       <button
-                        onClick={() => openWhatsApp(c.phone, generateWhatsAppMessage(c))}
+                        onClick={() => c.phone && openWhatsApp(c.phone, generateWhatsAppMessage(c))}
                         className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 rounded-lg transition shrink-0"
                       >
                         <MessageSquare className="h-3 w-3" />
