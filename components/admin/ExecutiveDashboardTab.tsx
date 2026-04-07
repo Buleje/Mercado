@@ -95,10 +95,10 @@ export default function ExecutiveDashboardTab() {
 
     const costMap: Record<string, number> = {};
     data.products.forEach(p => { if (p.costPrice) costMap[p.id] = p.costPrice; });
-    const totalCost   = [...orders.flatMap(o => o.items), ...sales.flatMap(s => s.items)].reduce((s, i) => s + (costMap[i.id] ?? 0) * i.quantity, 0);
+    const totalCost   = [...orders.flatMap(o => o.items), ...sales.flatMap(s => s.items ?? [])].reduce((s, i) => s + (costMap[i.id as string] ?? 0) * i.quantity, 0);
     const utilidad    = revenue - totalCost;
     const margen      = revenue > 0 ? (utilidad / revenue) * 100 : 0;
-    const prevCost    = [...prevOrders.flatMap(o => o.items), ...prevSales.flatMap(s => s.items)].reduce((s, i) => s + (costMap[i.id] ?? 0) * i.quantity, 0);
+    const prevCost    = [...prevOrders.flatMap(o => o.items), ...prevSales.flatMap(s => s.items ?? [])].reduce((s, i) => s + (costMap[i.id as string] ?? 0) * i.quantity, 0);
     const prevUtil    = prevRevenue - prevCost;
     const utilDelta   = prevUtil !== 0 ? ((utilidad - prevUtil) / Math.abs(prevUtil)) * 100 : 0;
 
@@ -123,7 +123,7 @@ export default function ExecutiveDashboardTab() {
       const dayOrders = data.orders.filter(o => o.status !== "cancelado" && o.createdAt.slice(0, 10) === k);
       const daySales  = data.sales.filter(s => s.createdAt.slice(0, 10) === k);
       const dayRev    = dayOrders.reduce((s, o) => s + o.total, 0) + daySales.reduce((s, sl) => s + sl.total, 0);
-      const dayCost   = [...dayOrders.flatMap(o => o.items), ...daySales.flatMap(s => s.items)].reduce((s, it) => s + (costMap[it.id] ?? 0) * it.quantity, 0);
+      const dayCost   = [...dayOrders.flatMap(o => o.items), ...daySales.flatMap(s => s.items ?? [])].reduce((s, it) => s + (costMap[it.id as string] ?? 0) * it.quantity, 0);
       return dayRev - dayCost;
     });
 
@@ -157,11 +157,11 @@ export default function ExecutiveDashboardTab() {
     const overduePay   = payables.filter(p => p.status !== "pagado" && new Date(p.dueDate) < new Date());
     const totalDebt    = payables.filter(p => p.status !== "pagado").reduce((s, p) => s + (p.amount - p.paidAmount), 0);
     const avgRating    = reviews.length > 0 ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0;
-    const newCustomers = customers.filter(c => inPeriod(c.createdAt, period)).length;
+    const newCustomers = customers.filter(c => inPeriod(c.createdAt ?? "", period)).length;
     const perOrders    = orders.filter(o => o.status !== "cancelado" && inPeriod(o.createdAt, period));
     const perSales     = sales.filter(s => inPeriod(s.createdAt, period));
     const perRevenue   = perOrders.reduce((s, o) => s + o.total, 0) + perSales.reduce((s, sl) => s + sl.total, 0);
-    const itemsSold    = [...perOrders.flatMap(o => o.items), ...perSales.flatMap(s => s.items)].reduce((s, i) => s + i.quantity, 0);
+    const itemsSold    = [...perOrders.flatMap(o => o.items), ...perSales.flatMap(s => s.items ?? [])].reduce((s, i) => s + i.quantity, 0);
 
     return [
       { module: "Inventario", status: stockCrit.length > 5 ? "critical" : stockCrit.length > 0 ? "warning" : "ok", metric: "Stock crítico", value: stockCrit.length, target: 0, detail: `${agotados.length} agotados / ${products.length} total`, trend: -stockCrit.length },

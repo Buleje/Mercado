@@ -709,7 +709,7 @@ export default function DashboardTab() {
     [...orders.filter(o => o.status !== "cancelado"), ...sales.map(s => ({ ...s, total: s.total, createdAt: s.createdAt }))].forEach(t => {
       const k = dateKey(t.createdAt); dailyRevMap.set(k, (dailyRevMap.get(k) ?? 0) + t.total);
     });
-    purchases.forEach(p => { const k = dateKey(p.createdAt); dailyExpMap.set(k, (dailyExpMap.get(k) ?? 0) + p.total); });
+    purchases.forEach(p => { if (!p.createdAt) return; const k = dateKey(p.createdAt); dailyExpMap.set(k, (dailyExpMap.get(k) ?? 0) + (p.total ?? 0)); });
     // Last 30 days averages by day-of-week
     const dayOfWeekRev = new Map<number,{sum:number;days:number}>();
     const dayOfWeekExp = new Map<number,{sum:number;days:number}>();
@@ -751,7 +751,7 @@ export default function DashboardTab() {
         .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
       if (firstPurchase) {
         const cohortMonth = new Date(firstPurchase.createdAt).toISOString().slice(0, 7);
-        customerCohorts.set(c.phone, cohortMonth);
+        if (c.phone) customerCohorts.set(c.phone, cohortMonth);
       }
     });
     const uniqueCohorts = [...new Set(customerCohorts.values())].sort().slice(-6); // last 6 months
@@ -811,7 +811,7 @@ export default function DashboardTab() {
     // ── FASE 6.3: Cross-Sell Recommendations ──
     const productAssociations = new Map<number, Map<number, number>>(); // productId → Map(otherProductId → count)
     [...orders, ...sales].forEach((t: Order | Sale) => {
-      const items = 'items' in t ? t.items.map(i => 'productId' in i ? i.productId : i.id) : [];
+      const items = 'items' in t ? (t.items ?? []).map(i => 'productId' in i ? i.productId : i.id) : [];
       items.forEach((id1, idx) => {
         if (!productAssociations.has(id1)) productAssociations.set(id1, new Map());
         items.forEach((id2, idx2) => {
@@ -875,7 +875,7 @@ export default function DashboardTab() {
         ...sales.filter(s => inPeriod(s.createdAt, period)).map(s => ({
           tipo: "POS", id: s.id, fecha: s.createdAt.slice(0,10), hora: s.createdAt.slice(11,16),
           cliente: s.customerPhone ?? "Mostrador", telefono: s.customerPhone ?? "",
-          items: s.items.map(i => `${i.name} x${i.quantity}`).join("; "),
+          items: (s.items ?? []).map(i => `${i.name} x${i.quantity}`).join("; "),
           total: s.total, pago: s.payment, estado: "completado",
         })),
       ];
@@ -889,7 +889,7 @@ export default function DashboardTab() {
     } else if (type === "clientes") {
       exportToCSV(customers.map(c => ({
         telefono: c.phone, nombre: c.name, ubicacion: c.location,
-        registrado: c.createdAt.slice(0,10),
+        registrado: (c.createdAt ?? "").slice(0,10),
       })), `clientes_${today}.csv`);
     } else if (type === "pedidos") {
       // Server-side paginated CSV export
@@ -1229,7 +1229,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
       .map(s => ({
         Tipo: "POS",
         Fecha: fmtDateFull(s.createdAt),
-        ID: s.id.slice(-8),
+        ID: String(s.id).slice(-8),
         Cliente: "POS",
         Teléfono: s.customerPhone ?? "",
         "Total S/": s.total.toFixed(2),
