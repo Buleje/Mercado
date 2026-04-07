@@ -10,22 +10,14 @@ import { useOnboarding } from "@/hooks/use-onboarding";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
 import { OnboardingTour } from "@/components/admin/OnboardingTour";
 import {
-  Users, ShoppingBasket, ShoppingCart,
-  Loader2, Truck, FileText, Settings, Store,
-  Activity,
-  Brain,
-  Package, FlaskConical,
-  DollarSign,
-  Zap, Tag, Landmark,
-  ClipboardList,
-  Palette, CircleUser,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/contexts/theme-context";
-import { MODULE_PERMISSIONS } from "@/lib/module-permissions";
 import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import { ShortcutsModal, ClearDataModal } from "@/components/admin/AdminModals";
 import type { Tab } from "./_lib/tabs.types";
+import { ALL_TABS } from "./_lib/tab-data";
 import { TabSpinner } from "./_lib/tab-spinner";
 import {
   DEMO_DATA_MODULES,
@@ -66,6 +58,7 @@ import { useSidebarShortcuts } from "./_hooks/useSidebarShortcuts";
 import { useClearDataFlow } from "./_hooks/useClearDataFlow";
 import { useCustomShortcuts } from "./_hooks/useCustomShortcuts";
 import { useCommandItems } from "./_hooks/useCommandItems";
+import { useAdminTabsDerived } from "./_hooks/useAdminTabsDerived";
 
 // ── Módulos de tab movidos a TabRouter (código splitting centralizado) ──
 // Los dynamic imports de todos los módulos admin viven ahora en _components/TabRouter.tsx
@@ -249,40 +242,7 @@ function AdminPage() {
     setPresentationMode,
   });
 
-  // ── 8 módulos consolidados + especiales ──────────────────────────────────────
-  const ALL_TABS = [
-    { id: "asistente-ia" as Tab,   label: "Asistente IA",           icon: Brain },
-    { id: "ventas-caja" as Tab,    label: "Ventas & Caja",          icon: ShoppingCart },
-    { id: "inventario" as Tab,     label: "Inventario",             icon: Package },
-    { id: "productos" as Tab,      label: "Productos & Precios",    icon: Tag },
-    { id: "compras" as Tab,        label: "Compras",                icon: Truck },
-    { id: "plata" as Tab,          label: "Mi Plata",               icon: DollarSign },
-    { id: "clientes" as Tab,       label: "Mis Clientes",           icon: Users },
-    // — OPERACIONES —
-    { id: "config" as Tab,         label: "Configuración",          icon: Settings },
-    { id: "pedidos" as Tab,        label: "Pedidos",                icon: ShoppingBasket },
-    // — INTELIGENCIA —
-    { id: "analytics-pro" as Tab,  label: "Analytics Pro",          icon: Activity },
-    // — FINANZAS EXTRA —
-    { id: "prestamos" as Tab,      label: "Préstamos",              icon: Landmark },
-    { id: "plan" as Tab,           label: "Plan & Límites",         icon: Zap },
-    // — PRODUCCIÓN —
-    { id: "recetas" as Tab,        label: "Recetas",                icon: FlaskConical },
-    // — DOCUMENTOS COMERCIALES —
-    { id: "cotizaciones" as Tab,          label: "Cotizaciones",           icon: ClipboardList },
-    { id: "guias-remision" as Tab,        label: "Guías de Remisión",      icon: Truck },
-    { id: "notas-credito" as Tab,         label: "Notas de Crédito",       icon: FileText },
-    { id: "contratos" as Tab,             label: "Contratos",              icon: FileText },
-    // — Declaración Inventario ahora está dentro de Inventario (tab "Declaración") —
-    // — MARKETPLACE & DELIVERY —
-    { id: "marketplace" as Tab,        label: "Marketplace",          icon: Store },
-    { id: "delivery-partners" as Tab,  label: "Delivery Partners",    icon: Truck },
-    // — MI TIENDA —
-    { id: "store-customizer" as Tab,   label: "Mi Tienda",            icon: Palette },
-    // — SISTEMA —
-    { id: "colas" as Tab,              label: "Colas",                icon: Activity },
-    { id: "mi-perfil" as Tab,          label: "Mi Perfil",            icon: CircleUser },
-  ] as const;
+  // ALL_TABS → extraído a ./_lib/tab-data.ts (Sprint A del refactor)
 
   // All modules available — sorted by user's custom category order
   const visibleCategories: TabCategory[] = useMemo(() => {
@@ -299,44 +259,23 @@ function AdminPage() {
     return ordered;
   }, [categoryOrder]);
 
-  // Role-based tab filtering — populated from lib/module-permissions.ts
-  const DEFAULT_ROLE_TABS: Record<string, Tab[]> = {
-    admin: ALL_TABS.map(t => t.id),
-    cajero: MODULE_PERMISSIONS.cajero as Tab[],
-    almacenero: MODULE_PERMISSIONS.almacenero as Tab[],
-  };
-  const ROLE_TABS: Record<string, Tab[]> = {
-    ...DEFAULT_ROLE_TABS,
-    ...(savedRolePerms ? Object.fromEntries(
-      Object.entries(savedRolePerms).map(([role, tabs]) => [role, tabs as Tab[]])
-    ) : {}),
-    admin: ALL_TABS.map(t => t.id),
-  };
-  const allowedTabs = ROLE_TABS[userRole] ?? ROLE_TABS.admin;
-  let filteredTabs = ALL_TABS.filter(t => allowedTabs.includes(t.id) && !hiddenTabs.has(t.id));
-  
-  // Category filtering — usa visibleCategories para respetar plan gating
-  if (selectedCategory) {
-    const categoryTabs = visibleCategories.find(c => c.id === selectedCategory)?.tabs ?? [];
-    filteredTabs = filteredTabs.filter(t => categoryTabs.includes(t.id));
-  }
-
-  // Sidebar fuzzy search
-  if (sidebarSearch.trim()) {
-    filteredTabs = filteredTabs.filter(t => fuzzyMatch(t.label, sidebarSearch.trim()));
-  }
-
-  // Favorite & recent subsets for sidebar sections
-  const favoriteTabItems = ALL_TABS.filter(t => favoriteTabs.has(t.id) && allowedTabs.includes(t.id));
+  // allowedTabs / filteredTabs / favoriteTabItems / recentTabItems
+  // → extraídos a ./_hooks/useAdminTabsDerived.ts (Sprint A del refactor)
+  const { allowedTabs, filteredTabs, favoriteTabItems, recentTabItems } = useAdminTabsDerived({
+    userRole,
+    savedRolePerms,
+    hiddenTabs,
+    selectedCategory,
+    visibleCategories,
+    sidebarSearch,
+    favoriteTabs,
+    recentTabs,
+    currentTab: tab,
+    fuzzyMatch,
+  });
 
   // Custom shortcuts (de SettingsModule) → useCustomShortcuts
   const customShortcutItems = useCustomShortcuts(ALL_TABS);
-
-  const recentTabItems = recentTabs
-    .filter(id => id !== tab && !favoriteTabs.has(id) && allowedTabs.includes(id))
-    .map(id => ALL_TABS.find(t => t.id === id)!)
-    .filter(Boolean)
-    .slice(0, 5);
 
   // Sidebar shortcuts → useSidebarShortcuts
   const {
