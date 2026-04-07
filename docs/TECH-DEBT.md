@@ -12,7 +12,7 @@
 | TD-002 | Prisma migration | Modelos AIConversation/AIMessage agregados al schema. Migration SQL preparada en `prisma/migrations/20260406210602_add_ai_conversation_and_message/`. **Pendiente:** Brandon corre `DATABASE_URL="$DIRECT_URL" npx prisma migrate deploy` antes del próximo push | Memoria IA no persiste datos hasta correr migración | 🟡 En progreso (SQL listo) |
 | TD-003 | A/B testing + Quality eval | Métricas en memoria — se pierden al reiniciar servidor | Pérdida de datos de experimentos | 🔓 Abierto |
 | TD-011 | admin/page.tsx | Archivo de 1413 líneas — refactor en progreso (Sesiones 1-2 hechas, faltan 4-7) | Alto acoplamiento, difícil de mantener | 🟡 En progreso |
-| TD-012 | next.config.ts | `ignoreBuildErrors: true` enmascara errores TS reales. **Baseline 2026-04-06 tarde: 469 → ahora 251 errores** (-218, -46.5% en sesión multi-turno). Cluster fiados resuelto al 100% (-91 errores en commit `25a53b4`). | Bugs llegan a producción sin gate de tipos | 🟡 En progreso (251 → 0 → flip flag) |
+| TD-012 | next.config.ts | `ignoreBuildErrors: true` enmascara errores TS reales. **Baseline 2026-04-07: 121 errores** (469 → 251 → 121, -74.2% acumulado). Sesión 2026-04-07 cerró 35 errores en 5 archivos top: AIActionPlan -10, LoyaltyTab -7, EtiquetasTab -7, daily-summary -7, api-purchases test -6 (commits `cebb778`, `226e8b0`). Distribución actual muy fragmentada (long tail, máx 4 errores por archivo). | Bugs llegan a producción sin gate de tipos | 🟡 En progreso (121 → 0 → flip flag → activar TD-026 gate pre-commit) |
 
 ## 🟠 Media prioridad (afecta desarrollo o rendimiento)
 
@@ -23,6 +23,10 @@
 | TD-010 | DB classes | Sin interfaces formales (IProductsDB, IOrdersDB) | Dificulta mocking en tests | 🔓 Abierto |
 | TD-013 | proxy.ts | 470 líneas mezclando auth + CSP + tenant + rate limit + helpers duplicados de `lib/middleware-utils.ts` | Difícil de testear y modificar | 🔓 Abierto |
 | TD-014 | Doppler | Migración planeada en `docs/doppler.md` pero bloqueada por acciones humanas (crear cuenta, autenticar CLI) | Secrets duplicados Vercel + .env.local | 🟡 En progreso |
+| TD-026 | .husky/pre-commit | Falta gate `npx tsc --noEmit` en pre-commit hook. Solo se puede activar cuando TD-012 baje a 0 errores (de lo contrario bloquea todo commit). Plan: añadir línea `npx tsc --noEmit \|\| (echo "❌ TS errors — fix antes de commitear" && exit 1)` al final de `.husky/pre-commit`. Sin este gate, nuevos TS errors se cuelan después de cerrar TD-012. | Riesgo de regresión post-cierre TD-012 | 🔓 Bloqueado por TD-012 |
+| TD-027 | api/superadmin/stores | Conteo de productos por tenant es N+1 (Promise.all + count por store). Funcional pero ineficiente. Plan: groupBy o subquery. Documentado inline en `app/api/superadmin/stores/route.ts`. | Latencia crece con # de tiendas | 🔓 Abierto |
+| TD-028 | components/admin/AdminTenantBar.tsx | Marcado `"use client"` sin justificación — es presentacional puro (sin hooks ni handlers). Convertir a Server Component reduce bundle JS. | Bytes JS innecesarios en cliente | 🔓 Abierto |
+| TD-029 | components/admin/fiados/FiadoFormModal.tsx | Setters tipados como `(p: any)` — escape hatch del type system introducido en commit `11bdafd` para destrabar TS errors rápido. Tipar correctamente con el shape real del form. | Pierde safety en formulario crítico de fiados | 🔓 Abierto |
 
 ## 🟡 Baja prioridad (mejora calidad a largo plazo)
 
