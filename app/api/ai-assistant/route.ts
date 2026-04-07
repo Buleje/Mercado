@@ -6,8 +6,9 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { processSafeInput, buildInjectionGuard, detectPromptInjection, moderateLLMOutput } from "@/lib/ai-safety";
 import { getCachedLLMResponse, setCachedLLMResponse } from "@/lib/llm-cache";
-import { ALL_AGENT_TOOLS, resolveToolCall } from "@/lib/agents/tool-definitions";
+import { ALL_AGENT_TOOLS, resolveToolCall, isToolApprovalRequired } from "@/lib/agents/tool-definitions";
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
+import { stashPendingApproval } from "@/lib/agents/pending-approvals";
 import { fetchGroqWithRetry, type GroqUsage } from "@/lib/groq-fetch";
 import { checkTokenBudget, recordTokenUsage } from "@/lib/ai-usage-tracker";
 import { recordAIFailure, recordAISuccess } from "@/lib/ai-failure-monitor";
@@ -412,14 +413,31 @@ export async function POST(req: NextRequest) {
                   let args: Record<string, unknown> = {};
                   try { args = JSON.parse(toolCall.function.arguments || "{}"); } catch { args = {}; }
 
-                  const result = await orchestrator.executeSync({
-                    domain: mapping.domain,
-                    action: mapping.action,
-                    payload: args,
-                    tenantId: auth.tenantId,
-                  });
-
-                  toolResult = JSON.stringify(result.success ? result.data : { error: result.error });
+                  // ── HITL gate (Excel Agentes IA práctica #10, TD-025) ──
+                  if (isToolApprovalRequired(toolName)) {
+                    const approvalId = stashPendingApproval({
+                      tenantId: auth.tenantId,
+                      toolName,
+                      domain: mapping.domain,
+                      action: mapping.action,
+                      payload: args,
+                      conversationId: activeConversationId,
+                      requestedBy: auth.username,
+                    });
+                    toolResult = JSON.stringify({
+                      pendingApprovalId: approvalId,
+                      requiresApproval: true,
+                      message: `Acción "${toolName}" pendiente de aprobación humana. Un admin debe confirmarla antes de ejecutar.`,
+                    });
+                  } else {
+                    const result = await orchestrator.executeSync({
+                      domain: mapping.domain,
+                      action: mapping.action,
+                      payload: args,
+                      tenantId: auth.tenantId,
+                    });
+                    toolResult = JSON.stringify(result.success ? result.data : { error: result.error });
+                  }
                 }
 
                 capturedMessages.push({
@@ -536,16 +554,34 @@ export async function POST(req: NextRequest) {
             args = {};
           }
 
-          const result = await orchestrator.executeSync({
-            domain: mapping.domain,
-            action: mapping.action,
-            payload: args,
-            tenantId: auth.tenantId,
-          });
+          // ── HITL gate (Excel Agentes IA práctica #10, TD-025) ──
+          if (isToolApprovalRequired(toolName)) {
+            const approvalId = stashPendingApproval({
+              tenantId: auth.tenantId,
+              toolName,
+              domain: mapping.domain,
+              action: mapping.action,
+              payload: args,
+              conversationId: activeConversationId,
+              requestedBy: auth.username,
+            });
+            toolResult = JSON.stringify({
+              pendingApprovalId: approvalId,
+              requiresApproval: true,
+              message: `Acción "${toolName}" pendiente de aprobación humana. Un admin debe confirmarla antes de ejecutar.`,
+            });
+          } else {
+            const result = await orchestrator.executeSync({
+              domain: mapping.domain,
+              action: mapping.action,
+              payload: args,
+              tenantId: auth.tenantId,
+            });
 
-          toolResult = JSON.stringify(
-            result.success ? result.data : { error: result.error },
-          );
+            toolResult = JSON.stringify(
+              result.success ? result.data : { error: result.error },
+            );
+          }
         }
 
         // Add tool result to the conversation

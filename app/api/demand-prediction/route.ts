@@ -1,8 +1,38 @@
 export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
 import { SalesDB, ProductsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
+import { safeParseJSON } from "@/lib/ai-json-parser";
+import { logger } from "@/lib/logger";
+
+// Schema estructurado del output — ADR 009 (prompt-based JSON enforcement).
+// Si el LLM devuelve algo que no matchee este schema, caemos al fallback
+// con arrays vacíos en vez de romper el endpoint.
+const DemandPredictionSchema = z.object({
+  predictions: z
+    .array(
+      z.object({
+        productName: z.string(),
+        currentStock: z.number(),
+        estimatedDaysLeft: z.number(),
+        recommendation: z.string(),
+      }),
+    )
+    .default([]),
+  peakDays: z.array(z.string()).default([]),
+  purchaseSuggestions: z
+    .array(
+      z.object({
+        product: z.string(),
+        suggestedQuantity: z.number(),
+        urgency: z.enum(["alta", "media", "baja"]),
+      }),
+    )
+    .default([]),
+  summary: z.string(),
+});
 
 export async function POST(req: NextRequest) {
   // Only admin can access demand prediction (sensitive business intelligence)
@@ -82,10 +112,22 @@ Responde SOLO el JSON, sin markdown.`;
   const data = await res.json();
   const text = data.choices?.[0]?.message?.content ?? "";
 
-  try {
-    const parsed = JSON.parse(text);
-    return NextResponse.json(parsed);
-  } catch {
-    return NextResponse.json({ summary: text, predictions: [], peakDays: [], purchaseSuggestions: [] });
+  // ADR 009: parse defensivo con schema Zod. Si el LLM falla el formato,
+  // degradamos a un response de estructura vacía con el texto crudo como
+  // summary, para que el frontend al menos muestre algo.
+  const parsed = safeParseJSON(text, DemandPredictionSchema);
+  if (!parsed.ok) {
+    logger.warn("[demand-prediction] malformed JSON from LLM", {
+      error: parsed.error,
+      tenantId: auth.tenantId,
+    });
+    return NextResponse.json({
+      summary: text,
+      predictions: [],
+      peakDays: [],
+      purchaseSuggestions: [],
+      _malformed: true,
+    });
   }
+  return NextResponse.json(parsed.data);
 }

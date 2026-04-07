@@ -13,6 +13,36 @@
 
 import type { AgentDomain } from "./types";
 
+// ── Helper: ¿el tool requiere aprobación humana? (HITL — ADR-010 / TD-025) ──
+
+/**
+ * Devuelve true si el tool con ese nombre tiene `requiresApproval: true`.
+ * El orchestrator / route handler debe chequear esto ANTES de ejecutar el
+ * tool; si es true, debe stashar el tool call en `lib/agents/pending-approvals.ts`
+ * y devolver un mensaje al LLM indicando que el admin debe confirmar.
+ *
+ * Uso directo en `app/api/ai-assistant/route.ts`:
+ * ```ts
+ * import { isToolApprovalRequired } from "@/lib/agents/tool-definitions";
+ *
+ * if (isToolApprovalRequired(toolName)) {
+ *   const approvalId = stashPendingApproval({...});
+ *   return JSON.stringify({ requiresApproval: true, approvalId, ... });
+ * }
+ * ```
+ */
+export function isToolApprovalRequired(toolName: string): boolean {
+  return Boolean(
+    allAgentToolsRegistry.find((t) => t.function.name === toolName)
+      ?.requiresApproval,
+  );
+}
+
+// Registry populado al final del archivo con `ALL_AGENT_TOOLS`. Se usa en
+// `isToolApprovalRequired` para lookup rápido. Declarado aquí como `let` para
+// permitir la inicialización tardía en el export default (evita circular imports).
+let allAgentToolsRegistry: ToolDefinition[] = [];
+
 // ── Tool definition type (OpenAI-compatible) ──────────────────────────────────
 
 export interface ToolDefinition {
@@ -615,6 +645,9 @@ export const ALL_AGENT_TOOLS: ToolDefinition[] = [
   ...notificationsTools,
   ...pricingTools,
 ];
+
+// Inicializa el registry usado por `isToolApprovalRequired` (declarado arriba).
+allAgentToolsRegistry = ALL_AGENT_TOOLS;
 
 /**
  * Resolve a tool name to its domain + action for orchestrator dispatch.

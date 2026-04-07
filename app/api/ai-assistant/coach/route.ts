@@ -14,7 +14,7 @@ import {
 } from "@/lib/ai-business-snapshot";
 import { z } from "zod";
 import { processSafeInput, buildInjectionGuard, detectPromptInjection, moderateLLMOutput } from "@/lib/ai-safety";
-import { fetchGroqWithRetry } from "@/lib/groq-fetch";
+import { callLLM } from "@/lib/llm-router";
 import { checkTokenBudget, recordTokenUsage } from "@/lib/ai-usage-tracker";
 import { recordAIFailure, recordAISuccess } from "@/lib/ai-failure-monitor";
 import { getOrCreateConversation, loadConversationHistory, saveMessage } from "@/lib/ai-conversation-memory";
@@ -182,17 +182,8 @@ export async function POST(req: NextRequest) {
     auth.username
   ).catch(() => {});
 
-  // ── Check for Groq API key ────────────────────────────────────────────────
-
-  const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    logger.warn("[ai-coach] GROQ_API_KEY not configured — using rule-based fallback");
-    return NextResponse.json({
-      response: generateFallbackResponse(snapshot.metrics, fecha, temporada, feriadoStr),
-      mode: "rule-based" as const,
-      snapshot: snapshot.metrics,
-    });
-  }
+  // ── Router LLM (ADR-010) hace disponibility check internamente ────────────
+  // El fallback a rule-based se maneja en el bloque `!res.ok` más abajo.
 
   // ── Token budget check ──────────────────────────────────────────────────
   const budget = checkTokenBudget(auth.tenantId);
@@ -221,18 +212,19 @@ export async function POST(req: NextRequest) {
   ];
 
   try {
-    // Coach es el "Gerente IA" del Excel Agentes IA práctica #7:
-    // respuestas creativas con consejos y recomendaciones (no datos exactos).
-    const res = await fetchGroqWithRetry(apiKey, {
-      model: "llama-3.3-70b-versatile",
+    // Coach es "balanced" tier del router LLM (ADR-010) — usa
+    // llama-3.3-70b-versatile por default, con fallback automático a
+    // llama-4-scout si el primario cae. Temperatura del Gerente (Excel #7).
+    const res = await callLLM("balanced", {
       messages,
       temperature: AI_TEMPERATURES.gerente,
-      max_tokens: 1500,
+      maxTokens: 1500,
       stream: true,
-    }, "ai-coach");
+      label: "ai-coach",
+    });
 
     if (!res.ok) {
-      console.error("[ai-coach] Groq API error:", res.error);
+      console.error("[ai-coach] LLM router error:", res.error);
       recordAIFailure("ai-coach", res.error ?? "unknown");
       return NextResponse.json({
         response: generateFallbackResponse(snapshot.metrics, fecha, temporada, feriadoStr),

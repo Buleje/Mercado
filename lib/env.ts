@@ -85,6 +85,13 @@ const REQUIRED: EnvSpec[] = [
 //
 // Analytics:
 //   NEXT_PUBLIC_GA_MEASUREMENT_ID — Google Analytics 4
+//
+// LLM providers (ver lib/llm-router.ts y ADR-010):
+//   GROQ_API_KEY           — Groq (primario) — ya usado por lib/ai-assistant
+//   ANTHROPIC_API_KEY      — Claude (premium tier + fallback) — pendiente de
+//                            implementación en lib/llm-providers/anthropic.ts,
+//                            el router stub permite que el tier 'premium'
+//                            degrade a Groq hasta que exista la key y el SDK
 
 // ── Validation logic ──────────────────────────────────────────────────────────
 

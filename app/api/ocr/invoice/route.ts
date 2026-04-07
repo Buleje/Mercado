@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
+import { safeParseJSON } from "@/lib/ai-json-parser";
 
 export const dynamic = "force-dynamic";
 
@@ -38,8 +39,6 @@ export async function POST(req: NextRequest) {
     // Try OpenAI first (most projects have OPENAI_API_KEY), fallback to Anthropic
     const apiKey = process.env.OPENAI_API_KEY;
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
-
-    let extractedData;
 
     if (apiKey) {
       // Use OpenAI GPT-4o-mini Vision
@@ -92,12 +91,15 @@ export async function POST(req: NextRequest) {
 
       const data = await res.json();
       const content = data.choices?.[0]?.message?.content ?? "";
-      // Extract JSON from response (handle markdown code blocks)
-      const jsonStr = content
-        .replace(/```json?\n?/g, "")
-        .replace(/```/g, "")
-        .trim();
-      extractedData = JSON.parse(jsonStr);
+      // ADR 009: parse defensivo con schema Zod unificado.
+      const parsed = safeParseJSON(content, InvoiceSchema);
+      if (!parsed.ok) {
+        return NextResponse.json(
+          { error: "No se pudo interpretar la factura", raw: content, parseError: parsed.error },
+          { status: 422 },
+        );
+      }
+      return NextResponse.json(parsed.data);
     } else if (anthropicKey) {
       // Use Anthropic Claude Vision
       const imageData = image.startsWith("data:")
@@ -144,11 +146,15 @@ export async function POST(req: NextRequest) {
 
       const data = await res.json();
       const content = data.content?.[0]?.text ?? "";
-      const jsonStr = content
-        .replace(/```json?\n?/g, "")
-        .replace(/```/g, "")
-        .trim();
-      extractedData = JSON.parse(jsonStr);
+      // ADR 009: mismo pattern que la ruta de OpenAI.
+      const parsed = safeParseJSON(content, InvoiceSchema);
+      if (!parsed.ok) {
+        return NextResponse.json(
+          { error: "No se pudo interpretar la factura", raw: content, parseError: parsed.error },
+          { status: 422 },
+        );
+      }
+      return NextResponse.json(parsed.data);
     } else {
       return NextResponse.json(
         {
@@ -158,17 +164,6 @@ export async function POST(req: NextRequest) {
         { status: 500 },
       );
     }
-
-    // Validate with Zod
-    const invoice = InvoiceSchema.safeParse(extractedData);
-    if (!invoice.success) {
-      return NextResponse.json(
-        { error: "No se pudo interpretar la factura", raw: extractedData },
-        { status: 422 },
-      );
-    }
-
-    return NextResponse.json(invoice.data);
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Error desconocido";
