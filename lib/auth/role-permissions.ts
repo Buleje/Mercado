@@ -1,11 +1,17 @@
 /**
  * Role-Based Access Control (RBAC) Matrix
- * 
+ *
  * Define qué roles pueden realizar qué acciones sobre qué recursos.
  * Usado por lib/require-admin.ts para validación granular de permisos.
+ *
+ * `Role` es alias de `AdminRole` (single source of truth en lib/session.ts).
+ * No todos los roles tienen entrada en PERMISSIONS — los que no la tengan
+ * quedan bloqueados por default (checkPermission retorna false).
  */
 
-export type Role = "admin" | "cajero" | "almacenero" | "proveedor" | "delivery" | "tienda_owner";
+import type { AdminRole } from "@/lib/session";
+
+export type Role = AdminRole;
 export type Action = "read" | "write" | "delete";
 export type Resource =
   | "orders"
@@ -49,7 +55,7 @@ export type Resource =
 /**
  * Matriz de permisos: role → resource → actions permitidas
  */
-const PERMISSIONS: Record<Role, Partial<Record<Resource, Action[]>>> = {
+const PERMISSIONS: Partial<Record<Role, Partial<Record<Resource, Action[]>>>> = {
   /**
    * ADMIN - Acceso completo al sistema
    */

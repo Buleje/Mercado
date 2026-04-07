@@ -168,7 +168,7 @@ export async function processMessage(
   const upper = text.toUpperCase();
   const { businessName, yapeNumber } = config;
 
-  let session = await getOrCreateSession(tenantId, phone);
+  const session = await getOrCreateSession(tenantId, phone);
   const state = session.state as ConversationState;
   const cart = parseCartItems(session.cartItems);
 
@@ -530,6 +530,7 @@ async function handleCreateOrder(
 
   const orderId = crypto.randomUUID();
 
+  const orderNow = new Date().toISOString();
   await OrdersDB.add(
     {
       id: orderId,
@@ -551,6 +552,8 @@ async function handleCreateOrder(
       status: "pendiente",
       paymentMethod: "efectivo",
       notes: `[WhatsApp Commerce] Dirección: ${address}`,
+      createdAt: orderNow,
+      updatedAt: orderNow,
     },
     tenantId
   );

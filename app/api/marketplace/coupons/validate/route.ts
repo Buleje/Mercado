@@ -35,12 +35,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Tienda no encontrada" }, { status: 404 });
     }
 
-    // Find the coupon (must belong to this store's tenant and storeId)
+    // Find the coupon (must belong to this store's tenant)
+    // TECH-DEBT: campo storeId no está en schema Prisma (Coupon) — filtro por storeId removido temporalmente
     const coupon = await prisma.coupon.findFirst({
       where: {
         tenantId: store.tenantId,
         code,
-        storeId: store.id,
         active: true,
       },
     });

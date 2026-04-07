@@ -53,6 +53,48 @@ export type ModuleId =
  * - almacenero → back-of-house: inventory, purchasing, suppliers, logistics, returns
  */
 export const MODULE_PERMISSIONS: Record<Exclude<AdminRole, "admin">, ModuleId[]> = {
+  // Roles básicos del sistema (acceso mínimo operativo)
+  proveedor: [
+    "panel-principal",
+    "compras",
+    "proveedores",
+  ],
+  delivery: [
+    "panel-principal",
+    "pedidos",
+    "logistica",
+  ],
+  tienda_owner: [
+    "panel-principal",
+    "pos-caja",
+    "inventario-almacenes",
+    "reposicion",
+    "catalogo-tienda",
+    "precios-promos",
+    "compras",
+    "proveedores",
+    "logistica",
+    "devoluciones-calidad",
+    "ventas-marketing",
+    "crm-clientes",
+    "fidelizacion",
+    "encuestas-soporte",
+    "analytics-bi",
+    "proyecciones",
+    "finanzas",
+    "tesoreria",
+    "facturacion",
+    "gastos-activos",
+    "comunicaciones",
+    "alertas-automatizacion",
+    "reportes-documentos",
+    "agenda-utilidades",
+    "clientes",
+    "resenas",
+    "pedidos",
+    "configuracion",
+    "plan",
+  ],
   cajero: [
     "panel-principal",       // Executive KPIs (read-only view)
     "pos-caja",              // Point of Sale — primary workstation

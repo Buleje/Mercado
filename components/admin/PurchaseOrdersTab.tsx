@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, type FormEvent } from "react";
+import { useState, useEffect, useCallback, useMemo, type FormEvent } from "react";
 import dynamic from "next/dynamic";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
@@ -25,12 +25,14 @@ const STATUS_LABELS: Record<PurchaseStatus, string> = {
   recibido: "Recibido",
   parcial: "Parcial",
   cancelado: "Cancelado",
+  auto_generated: "Auto-generado",
 };
 const STATUS_COLORS: Record<PurchaseStatus, string> = {
   pendiente: "bg-amber-100 text-amber-700",
   recibido: "bg-emerald-100 text-emerald-700",
   parcial: "bg-blue-100 text-blue-700",
   cancelado: "bg-red-100 text-red-500",
+  auto_generated: "bg-purple-100 text-purple-700",
 };
 
 // ── Mejora 13: Progress bar visual de status OC ─────────────────────────────
@@ -159,11 +161,28 @@ export default function PurchaseOrdersTab() {
     saveRecurring(recurringOrders.filter(r => r.ocId !== ocId));
   };
 
-  // Upcoming recurring orders
-  const upcomingRecurring = recurringOrders.map(r => {
-    const daysUntil = Math.max(0, Math.ceil((new Date(r.nextDate).getTime() - Date.now()) / 86400000));
-    return { ...r, daysUntil };
-  }).sort((a, b) => a.daysUntil - b.daysUntil);
+  // Upcoming recurring orders — Date.now() intencional.
+  const upcomingRecurring = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- snapshot del tiempo al renderizar es intencional
+    const now = Date.now();
+    return recurringOrders
+      .map(r => {
+        const daysUntil = Math.max(0, Math.ceil((new Date(r.nextDate).getTime() - now) / 86400000));
+        return { ...r, daysUntil };
+      })
+      .sort((a, b) => a.daysUntil - b.daysUntil);
+  }, [recurringOrders]);
+
+  // Fecha del próximo pedido recurrente para el modal
+  const nextRecurringDateLabel = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity -- snapshot del tiempo al abrir el modal es intencional
+    const baseMs = Date.now();
+    return new Date(baseMs + recurringInterval * 86400000).toLocaleDateString("es-PE", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  }, [recurringInterval, showRecurringModal]);
 
   useScrollLock(showCreate || showScanner || showAddItemModal);
   const [addItemMode, setAddItemMode] = useState<"search" | "new">("search");
@@ -502,7 +521,7 @@ export default function PurchaseOrdersTab() {
             <div>
               <label className="text-xs font-bold text-gray-600 dark:text-gray-400 uppercase mb-1 block">Proximo pedido</label>
               <p className="text-sm font-semibold text-gray-900 dark:text-foreground">
-                {new Date(Date.now() + recurringInterval * 86400000).toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" })}
+                {nextRecurringDateLabel}
               </p>
             </div>
             <div>

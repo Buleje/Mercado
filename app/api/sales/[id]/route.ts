@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   const data = parsed.data;
   const total = data.items.reduce((s, i) => s + i.price * i.quantity, 0);
   const id = `sale-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const sale = await SalesDB.add({
+  const sale = await SalesDB.add(auth.tenantId, {
     id,
     items: data.items,
     total,

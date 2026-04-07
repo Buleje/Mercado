@@ -490,8 +490,10 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
         { label: "Pedidos pend.", value: String(pedidosPendientes), color: "border-b-4 border-amber-500", spark: false, strokeColor: "", sparkVal: 0, onClick: onNavigate ? () => onNavigate("pedidos") : undefined },
         { label: "Fiados", value: `S/ ${fiadoTotal.toFixed(0)}`, color: "border-b-4 border-orange-500", spark: false, strokeColor: "", sparkVal: 0, onClick: onNavigate ? () => onNavigate("cuentas-cobrar") : undefined },
         { label: "Total ventas mes", value: `S/ ${ventasMes.toFixed(0)}`, color: "border-b-4 border-cyan-500", spark: false, strokeColor: "", sparkVal: 0 },
-      ].map((k) => {
-        const change = Math.round((Math.random() - 0.3) * 30);
+      ].map((k, idx) => {
+        // Valores determinísticos (no Math.random — pureza en render). Placeholder hasta que
+        // venga un cálculo real de trend vs periodo anterior desde el backend.
+        const change = [12, 8, -3, -6, 15, 4][idx] ?? 0;
         return (
           <div key={k.label} onClick={k.onClick} className={cn("bg-white rounded-xl border border-gray-200 p-4 shadow-sm transition-shadow", k.color, k.onClick && "cursor-pointer hover:shadow-md")}>
             <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
@@ -522,7 +524,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
       </div>
       {hourlyData.some(h => h.total > 0) ? (
         <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={hourlyData} onClick={(e) => e && e.activePayload?.[0]?.payload?.hora != null && setDrillHour(Number(e.activePayload[0].payload.hora))}>
+          <BarChart data={hourlyData} onClick={(e) => { const ev = e as { activePayload?: { payload?: { hora?: unknown } }[] } | null; if (ev?.activePayload?.[0]?.payload?.hora != null) setDrillHour(Number(ev.activePayload[0].payload.hora)); }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.12)" />
             <XAxis dataKey="hora" tick={{ fontSize: 11 }} />
             <YAxis tickFormatter={formatSolesShort} tick={{ fontSize: 11 }} />

@@ -150,7 +150,7 @@ export default function BundlesTab() {
               {filteredProducts.length > 0 && (
                 <div className="border border-gray-200 dark:border-card-border rounded-xl max-h-32 overflow-y-auto divide-y divide-gray-100 dark:divide-card-border">
                   {filteredProducts.slice(0, 8).map(p => (
-                    <button key={p.id} onClick={() => addItem(p.id)} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-surface flex justify-between">
+                    <button key={String(p.id)} onClick={() => addItem(String(p.id))} className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-surface flex justify-between">
                       <span>{p.name}</span><span className="text-gray-400">S/{p.price.toFixed(2)}</span>
                     </button>
                   ))}

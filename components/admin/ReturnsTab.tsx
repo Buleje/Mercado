@@ -47,7 +47,7 @@ export default function ReturnsTab() {
 
   const selectSale = (sale: Sale) => {
     setSelectedSale(sale);
-    setReturnItems((sale.items ?? []).map(i => ({ productId: i.productId, productName: i.name, quantity: 0, price: i.price, unit: i.unit })));
+    setReturnItems((sale.items ?? []).map(i => ({ productId: Number(i.productId ?? 0), productName: i.name ?? "", quantity: 0, price: i.price ?? 0, unit: i.unit ?? "und" })));
   };
 
   const handleCreate = async () => {
@@ -102,7 +102,7 @@ export default function ReturnsTab() {
                 {sales.map(s => (
                   <button key={s.id} onClick={() => selectSale(s)} className="w-full text-left p-3 border border-gray-200 dark:border-card-border rounded-xl hover:bg-gray-50 dark:hover:bg-surface transition">
                     <div className="flex justify-between text-sm">
-                      <span className="font-bold">Venta #{s.id.slice(-6)}</span>
+                      <span className="font-bold">Venta #{String(s.id).slice(-6)}</span>
                       <span className="text-emerald-600 font-bold">S/{s.total.toFixed(2)}</span>
                     </div>
                     <p className="text-xs text-gray-400">{new Date(s.createdAt).toLocaleString()} • {s.items?.length ?? 0} productos</p>
@@ -113,7 +113,7 @@ export default function ReturnsTab() {
             </div>
           ) : (
             <div className="space-y-4">
-              {selectedSale.id && <p className="text-sm font-bold text-gray-600 dark:text-muted">Venta #{selectedSale.id.slice(-6)} — Selecciona cantidades a devolver:</p>}
+              {selectedSale.id && <p className="text-sm font-bold text-gray-600 dark:text-muted">Venta #{String(selectedSale.id).slice(-6)} — Selecciona cantidades a devolver:</p>}
               <div className="space-y-2">
                 {returnItems.map((item, idx) => (
                   <div key={idx} className="flex flex-wrap items-center gap-3 text-sm">

@@ -205,14 +205,15 @@ export async function POST(req: NextRequest) {
     }
 
     // Registrar la emisión en actividad
-    logActivity(auth.username, "emit_comprobante", "invoice", orderId, {
-      tipo,
-      serie,
-      correlativo,
-      clienteNombre,
-      total: order.total,
-      tenantId: auth.tenantId,
-    }).catch(() => {});
+    logActivity(
+      "emit_comprobante",
+      "invoice",
+      `${tipo} ${serie}-${correlativo} cliente=${clienteNombre} total=${order.total}`,
+      orderId,
+      auth.username,
+      requestId,
+      auth.tenantId,
+    ).catch(() => {});
 
     logger.info("[invoices/emit] comprobante emitido OK", {
       requestId,
@@ -268,10 +269,15 @@ export async function POST(req: NextRequest) {
       extra: { requestId, orderId, tipoDoc, tenantId: auth.tenantId },
     });
 
-    logActivity(auth.userId, "emit_comprobante_error", "invoice", orderId, {
-      error: mensaje,
-      tenantId: auth.tenantId,
-    }).catch(() => {});
+    logActivity(
+      "emit_comprobante_error",
+      "invoice",
+      mensaje,
+      orderId,
+      auth.username,
+      requestId,
+      auth.tenantId,
+    ).catch(() => {});
 
     return NextResponse.json({ error: mensaje }, { status: 500 });
   }

@@ -67,7 +67,7 @@ export default function PointsProgramTab() {
           id: `mov-${i}`,
           customer: c.name,
           tier: c.loyaltyTier,
-          action: i % 4 === 0 ? "redeem" : "earn",
+          action: (i % 4 === 0 ? "redeem" : "earn") as "earn" | "redeem",
           points: i % 4 === 0 ? Math.round(c.loyaltyPoints * 0.2) : Math.round(c.totalSpent * 0.1),
           description: i % 4 === 0 ? "Canje por descuento" : `Compra S/${(c.totalSpent * 0.1).toFixed(0)}`,
           date: new Date(Date.now() - i * 86400000 * 2).toISOString(),

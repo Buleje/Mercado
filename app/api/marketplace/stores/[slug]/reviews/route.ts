@@ -47,7 +47,7 @@ export async function GET(
         rating: true,
         text: true,
         date: true,
-        imageUrls: true,
+        // TECH-DEBT: campo imageUrls no está en schema Prisma, removido temporalmente
       },
       orderBy: { date: "desc" },
       take: 20,
@@ -114,7 +114,7 @@ export async function POST(
         storeId: store.id,
         tenantId: store.tenantId,
         status: "approved",
-        imageUrls: imageUrls ? JSON.stringify(imageUrls) : null,
+        // TECH-DEBT: campo imageUrls no está en schema Prisma, removido temporalmente
       },
     });
 
@@ -142,7 +142,7 @@ export async function POST(
           rating: review.rating,
           text: review.text,
           date: review.date,
-          imageUrls: review.imageUrls,
+          // TECH-DEBT: campo imageUrls no está en schema Prisma, removido temporalmente
         },
         store: { rating: newRating, reviewCount: newCount },
       },

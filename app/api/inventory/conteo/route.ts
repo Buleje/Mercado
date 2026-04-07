@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
         ...(status ? { status } : {}),
       },
       include: {
-        _count: { select: { ConteoFisicoItem: true } },
+        _count: { select: { items: true } },
       },
       orderBy: { fechaInicio: "desc" },
       take: 50,

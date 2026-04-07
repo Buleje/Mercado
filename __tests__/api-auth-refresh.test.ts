@@ -9,7 +9,7 @@ import { NextRequest } from "next/server";
 
 // ── Mock: rate-limit — allow by default, controllable per test ───────────────
 const { mockApplyRateLimit } = vi.hoisted(() => ({
-  mockApplyRateLimit: vi.fn(() => null),
+  mockApplyRateLimit: vi.fn<() => Response | null>(() => null),
 }));
 vi.mock("@/lib/rate-limit", () => ({
   applyRateLimit: mockApplyRateLimit,

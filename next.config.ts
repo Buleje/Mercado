@@ -9,8 +9,9 @@ const bundleAnalyzer = withBundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
-  // Skip TS type check during build — validated in CI via tsc --noEmit / npm run build
-  typescript: { ignoreBuildErrors: true },
+  // Strict TypeScript gate — activado 2026-04-07 tras Sprint C (cierre de TD-012).
+  // Cualquier PR con error TS hace fallar el build en CI. Ver docs/adr/008-typescript-strict-gate.md.
+  typescript: { ignoreBuildErrors: false },
 
   // Allow cross-origin dev requests from Cloudflare Tunnel / ngrok
   allowedDevOrigins: ["*.trycloudflare.com", "*.ngrok-free.app", "*.ngrok.io"],

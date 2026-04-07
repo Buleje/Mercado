@@ -70,7 +70,16 @@ function b64Decode(str: string): string {
   return decodeURIComponent(escape(atob(str)));
 }
 
-export type AdminRole = "admin" | "cajero" | "almacenero" | "owner" | "manager" | "analista";
+export type AdminRole =
+  | "admin"
+  | "cajero"
+  | "almacenero"
+  | "proveedor"
+  | "delivery"
+  | "tienda_owner"
+  | "owner"
+  | "manager"
+  | "analista";
 
 export interface SessionPayload {
   role: AdminRole;

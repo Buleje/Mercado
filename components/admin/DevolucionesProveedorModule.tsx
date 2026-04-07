@@ -619,7 +619,7 @@ export default function DevolucionesProveedorModule() {
                     <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
                     <Tooltip
-                      formatter={(val: number) => [`${val} devoluci${val === 1 ? "ón" : "ones"}`, ""]}
+                      formatter={(val) => { const n = Number(val); return [`${n} devoluci${n === 1 ? "ón" : "ones"}`, ""] as [string, string]; }}
                       contentStyle={{ fontSize: 12, borderRadius: 8 }}
                     />
                     <Bar dataKey="total" fill="#00B4A6" radius={[4, 4, 0, 0]} />

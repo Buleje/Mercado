@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse, type NextRequest } from "next/server";
 import { ABTestDB } from "@/lib/ab-testing";
 import { requireAdmin } from "@/lib/require-admin";
+import { prisma } from "@/lib/prisma";
 import { toErrorPayload } from "@/lib/api-error";
 
 // GET: list all tests (admin) or get active tests (public with ?active=1)
@@ -15,7 +16,8 @@ export async function GET(req: NextRequest) {
     const auth = await requireAdmin(req);
     if (auth instanceof NextResponse) return auth;
     const tests = await ABTestDB.getAll();
-    return NextResponse.json(tests);
+    const filtered = tests.filter((t: any) => t.tenantId === auth.tenantId);
+    return NextResponse.json(filtered);
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
     return NextResponse.json(payload, { status });
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Cada variant necesita id, label y weight > 0" }, { status: 400 });
       }
     }
-    const test = await ABTestDB.create(name.trim(), description || "", variants);
+    const test = await ABTestDB.create(name.trim(), description || "", variants, auth.tenantId);
     return NextResponse.json(test, { status: 201 });
   } catch (err) {
     const { payload, status } = toErrorPayload(err);
@@ -53,6 +55,13 @@ export async function DELETE(req: NextRequest) {
   try {
     const { id } = await req.json();
     if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    
+    // Verify tenantId before deletion (IDOR check)
+    const test = await prisma.aBTest.findUnique({ where: { id } });
+    if (!test || test.tenantId !== auth.tenantId) {
+      return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
+    }
+    
     await ABTestDB.delete(id);
     return NextResponse.json({ ok: true });
   } catch (err) {
@@ -69,6 +78,13 @@ export async function PATCH(req: NextRequest) {
   try {
     const { id } = await req.json();
     if (!id) return NextResponse.json({ error: "id requerido" }, { status: 400 });
+    
+    // Verify tenantId before toggle (IDOR check)
+    const test = await prisma.aBTest.findUnique({ where: { id } });
+    if (!test || test.tenantId !== auth.tenantId) {
+      return NextResponse.json({ error: "Acceso denegado" }, { status: 403 });
+    }
+    
     await ABTestDB.toggle(id);
     return NextResponse.json({ ok: true });
   } catch (err) {

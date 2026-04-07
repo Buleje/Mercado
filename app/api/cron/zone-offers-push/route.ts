@@ -121,7 +121,8 @@ export async function GET(req: NextRequest) {
           phone: { not: "" },
           distrito: { not: null },
         },
-        select: { phone: true, distrito: true, firstName: true },
+        // Customer no tiene campo 'firstName' — su campo es 'name'
+        select: { phone: true, distrito: true, name: true },
       });
 
       // Check which phones have active push subscriptions

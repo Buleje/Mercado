@@ -275,8 +275,10 @@ function processQuery(raw: string, data: BusinessData | null, lastCtx?: string):
   // -- FIADOS (NEW) --
 
   if (q.includes("fiado") || q.includes("deuda") || q.includes("moroso") || q.includes("credito")) {
-    const fiTotal = data.alerts?.totalFiados ?? 0;
-    const fiCount = data.alerts?.fiadosCount ?? 0;
+    // TECH-DEBT: alerts type does not include totalFiados/fiadosCount yet (schema drift)
+    const alertsExt = data.alerts as (typeof data.alerts & { totalFiados?: number; fiadosCount?: number }) | undefined;
+    const fiTotal = alertsExt?.totalFiados ?? 0;
+    const fiCount = alertsExt?.fiadosCount ?? 0;
     if (fiCount === 0 && fiTotal === 0) return { query: raw, answer: "No hay fiados pendientes registrados." };
     return {
       query: raw,

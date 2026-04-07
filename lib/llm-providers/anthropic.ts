@@ -127,9 +127,9 @@ export const anthropicProvider: LLMProvider = {
         contentText = (contentText ?? "") + block.text;
       } else if (block.type === "tool_use") {
         toolCalls.push({
-          id: block.id,
+          id: block.id ?? "",
           function: {
-            name: block.name,
+            name: block.name ?? "",
             arguments: JSON.stringify(block.input ?? {}),
           },
         });

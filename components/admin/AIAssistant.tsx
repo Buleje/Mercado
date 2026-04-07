@@ -698,7 +698,7 @@ export default function AIAssistant({ onNavigate, embedded, moduleContext }: AIA
             {action.status === "error" && <XCircle className="h-3 w-3 text-red-500" />}
             <span className="flex-1">{action.result ?? action.label}</span>
             {/* Mejora 31: Direct navigate if action has a module target */}
-            {action.status === "done" && action.payload.module && (
+            {action.status === "done" && !!action.payload.module && (
               <button onClick={() => handleNavigate(String(action.payload.module))} className="flex items-center gap-0.5 text-primary hover:underline font-semibold">
                 Ir <ArrowRight className="h-2.5 w-2.5" />
               </button>

@@ -288,7 +288,7 @@ function computeInventoryDays(data: BusinessData): InventoryDaysRow[] {
   }
   for (const s of sales.filter((s) => (s.createdAt?.slice(0, 10) ?? "") >= monthAgo)) {
     for (const item of s.items) {
-      const key = ("productId" in item ? item.productId : item.id) ?? item.name;
+      const key = String(item.productId) ?? item.name;
       qtySold[key] = (qtySold[key] ?? 0) + item.quantity;
     }
   }
@@ -331,7 +331,7 @@ function computeProductRotation(data: BusinessData): ProductRotation {
   }
   for (const s of sales.filter((s) => (s.createdAt?.slice(0, 10) ?? "") >= monthAgo)) {
     for (const item of s.items) {
-      const key = ("productId" in item ? item.productId : item.id) ?? item.name;
+      const key = String(item.productId) ?? item.name;
       monthlySales[key] = (monthlySales[key] ?? 0) + item.quantity;
     }
   }

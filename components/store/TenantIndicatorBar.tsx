@@ -11,12 +11,12 @@ import { useSettings } from "@/contexts/settings-context";
  */
 export default function TenantIndicatorBar() {
   const slug = useTenantSlug();
-  const { settings } = useSettings();
+  const { businessName } = useSettings();
 
   // Don't show for main tenant (it's the default)
   if (slug === "main") return null;
 
-  const name = settings?.businessName ?? slug;
+  const name = businessName || slug;
 
   return (
     <div className="flex items-center justify-center gap-2 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary dark:bg-primary/20 dark:text-primary-light">

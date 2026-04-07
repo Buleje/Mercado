@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
           phone: { not: "" },
         },
         select: {
-          id: true,
+          // Customer no tiene campo 'id' — su PK es 'phone'
           name: true,
           phone: true,
           tenantId: true,

@@ -1,4 +1,10 @@
-import type { CapacitorConfig } from "@capacitor/cli";
+// @capacitor/cli no está en devDependencies — se define el tipo inline
+type CapacitorConfig = {
+  appId: string;
+  appName: string;
+  webDir: string;
+  server?: { androidScheme?: string; hostname?: string; url?: string };
+};
 
 const config: CapacitorConfig = {
   appId: "pe.buleje.app",

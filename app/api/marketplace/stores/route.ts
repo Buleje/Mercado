@@ -128,20 +128,30 @@ export async function GET(req: NextRequest) {
       });
     } catch (dbErr) {
       // If Store table doesn't exist or DB connection fails, return empty list
-      logger.warn("[marketplace/stores] DB query failed, returning empty list", dbErr);
+      logger.warn("[marketplace/stores] DB query failed, returning empty list", { error: dbErr instanceof Error ? dbErr.message : String(dbErr) });
       stores = [];
     }
 
     // Explicitly pick only public-safe fields (defense-in-depth: Prisma select
     // already excludes tenantId, but explicit destructuring ensures it can never
     // leak even if a mock, migration, or refactor adds the field back)
-    const safeStores = stores.map(({ id, slug, name, logo, category, zone, rating, reviewCount, description, vacationMode, vacationMessage }: Record<string, unknown>) => ({
-      id, slug, name, logo, category, zone, rating, reviewCount, description, vacationMode, vacationMessage,
+    const safeStores = stores.map((s) => ({
+      id: s.id,
+      slug: s.slug,
+      name: s.name,
+      logo: s.logo,
+      category: s.category,
+      zone: s.zone,
+      rating: s.rating,
+      reviewCount: s.reviewCount,
+      description: s.description,
+      vacationMode: s.vacationMode,
+      vacationMessage: s.vacationMessage,
     }));
 
     return NextResponse.json({ data: safeStores, total: safeStores.length });
   } catch (err) {
-    logger.error("[marketplace/stores GET]", err);
+    logger.error("[marketplace/stores GET]", { error: err instanceof Error ? err.message : String(err) });
     const { payload, status } = toErrorPayload(err, traceId);
     return NextResponse.json(payload, { status });
   }

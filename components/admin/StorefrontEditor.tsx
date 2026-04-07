@@ -5,7 +5,7 @@ import {
   Save, Eye, Loader2, Check, GripVertical,
   Megaphone, Layout, Grid3x3, ShoppingBag, Tag,
   Package, BookOpen, MessageSquare, HelpCircle,
-  Phone, Map, ToggleLeft, ToggleRight,
+  Phone, Map as MapIcon, ToggleLeft, ToggleRight,
   Zap, TrendingUp, Star, Clock, Heart, Home, Store, AlertTriangle,
   Navigation, ChefHat, Award, Mail, History, Globe,
   X, Search, Plus, ChevronUp, ChevronDown, Pencil,
@@ -141,7 +141,7 @@ const SECTION_DEFAULTS: Omit<StorefrontSection, "enabled">[] = [
     key: "delivery_map",
     label: "Mapa de delivery",
     description: "Mapa interactivo con la zona de cobertura",
-    icon: <Map className="h-4 w-4" />,
+    icon: <MapIcon className="h-4 w-4" />,
     iconBg: "bg-cyan-100 text-cyan-600 dark:bg-cyan-900/40 dark:text-cyan-400",
   },
 ];
@@ -742,7 +742,7 @@ export default function StorefrontEditor() {
 
         // Nav links
         const savedNavLinks: Array<{ id: string; visible: boolean }> = Array.isArray(s?.navLinks) ? s.navLinks : [];
-        const navSet = new Map(savedNavLinks.map(n => [n.id, n.visible]));
+        const navSet = new Map(savedNavLinks.map(n => [n.id, n.visible] as [string, boolean]));
         setNavItems(NAV_ITEM_DEFAULTS.map(def => ({
           ...def,
           visible: navSet.has(def.id) ? navSet.get(def.id)! : (def.id !== "categorias"), // categorias off by default

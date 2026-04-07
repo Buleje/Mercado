@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Users, Plus, X, LogOut, BarChart2, Clock, ShoppingBasket,
-  CheckCircle, _AlertCircle, ChevronRight, User, RefreshCw,
+  CheckCircle, AlertCircle, ChevronRight, User, RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

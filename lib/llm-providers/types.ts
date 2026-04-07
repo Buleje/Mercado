@@ -54,6 +54,14 @@ export interface LLMResponse {
   provider: "groq" | "anthropic" | "openai";
   /** Modelo concreto usado (para observabilidad). */
   model: string;
+  /**
+   * Raw response data del provider (shape nativo de OpenAI/Groq/Anthropic).
+   * Opcional — algunos callers legacy lo consumen directo. Nuevos callers
+   * deberían preferir `content` + `toolCalls` normalizados. TECH-DEBT para limpieza.
+   */
+  data?: unknown;
+  /** Cantidad de intentos que hizo el router (incluye retries + fallback). */
+  attempts?: number;
 }
 
 export interface LLMProvider {

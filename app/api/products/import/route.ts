@@ -13,7 +13,7 @@ import { logger } from "@/lib/logger";
 const RowSchema = z.object({
   nombre: z.string().min(1, "Nombre vacío").max(150),
   categoria: z.string().max(100).default("General"),
-  precio: z.number({ invalid_type_error: "Precio inválido" }).positive("Precio debe ser mayor a 0"),
+  precio: z.number({ error: "Precio inválido" }).positive("Precio debe ser mayor a 0"),
   precio_costo: z.number().min(0).optional(),
   stock: z.number().int().min(0).default(0),
   stock_minimo: z.number().int().min(0).optional(),

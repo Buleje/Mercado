@@ -51,7 +51,6 @@ export async function GET(req: NextRequest) {
           id: true,
           slug: true,
           name: true,
-          settings: true,
         },
       });
 
@@ -73,11 +72,18 @@ export async function GET(req: NextRequest) {
 
         logger.info("[cron/demand-forecast] Procesando tenant", { tenantId });
 
-        // Leer config de auto-reorder desde settings JSON
+        // Leer config de auto-reorder desde Settings (tabla separada de Tenant)
+        // TECH-DEBT: Tenant no tiene campo settings directo — consultar Settings si se necesita autoReorder granular
         let autoReorderEnabled = false;
         try {
-          const settingsRaw = tenant.settings as Record<string, unknown> | null;
-          autoReorderEnabled = Boolean(settingsRaw?.autoReorderEnabled ?? false);
+          const tenantSettings = await prisma.settings.findUnique({
+            where: { tenantId: tenant.id },
+            select: { featureFlagsJson: true },
+          });
+          if (tenantSettings?.featureFlagsJson) {
+            const flags = JSON.parse(tenantSettings.featureFlagsJson) as Record<string, unknown>;
+            autoReorderEnabled = Boolean(flags?.autoReorderEnabled ?? false);
+          }
         } catch {
           autoReorderEnabled = false;
         }

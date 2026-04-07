@@ -40,8 +40,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ data: [] });
     }
 
+    // TECH-DEBT: campo storeId no está en schema Prisma (Coupon) — filtrar solo por tenant
+    // TODO: agregar storeId al modelo Coupon para soporte de cupones de marketplace
     const coupons = await prisma.coupon.findMany({
-      where: { tenantId: auth.tenantId, storeId: store.id },
+      where: { tenantId: auth.tenantId },
       orderBy: { createdAt: "desc" },
     });
 
@@ -97,7 +99,7 @@ export async function POST(req: NextRequest) {
         minPurchase: minPurchase ?? null,
         maxUses: maxUses ?? null,
         expiresAt: expiresAt ? new Date(expiresAt) : null,
-        storeId: store.id,
+        // TECH-DEBT: campo storeId no está en schema Prisma (Coupon) — removido temporalmente
         tenantId: auth.tenantId,
       },
     });

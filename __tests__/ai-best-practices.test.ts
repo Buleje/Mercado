@@ -219,21 +219,22 @@ describe("inventory agent subtask delegation", () => {
       action: "check-stock",
       payload: {},
       tenantId: "tenant-1",
-      priority: "medium" as const,
-      createdAt: Date.now(),
+      priority: "normal" as const,
+      createdAt: new Date().toISOString(),
+      traceId: "trace-1",
       status: "pending" as const,
     };
 
     const ctx = {
       tenantId: "tenant-1",
-      requestId: "req-1",
-      agentDomain: "inventory",
+      traceId: "trace-1",
     };
 
     const result = await inventoryAgent.execute(task, ctx);
 
     expect(result.success).toBe(true);
-    expect(result.data.outOfStockCount).toBe(2);
+    const data = result.data as { outOfStockCount: number };
+    expect(data.outOfStockCount).toBe(2);
     // Subtask for notifications should be created
     expect(result.subtasks).toBeDefined();
     expect(result.subtasks!.length).toBeGreaterThanOrEqual(1);

@@ -395,9 +395,10 @@ export default function InventoryMetricsTab() {
                   cx="50%"
                   cy="50%"
                   outerRadius={95}
-                  label={({ nombre, ventas }) =>
-                    `${nombre.length > 15 ? nombre.slice(0, 15) + '…' : nombre}: ${ventas}`
-                  }
+                  label={({ name, value }) => {
+                    const n = String(name ?? "");
+                    return `${n.length > 15 ? n.slice(0, 15) + "…" : n}: ${value}`;
+                  }}
                   labelLine
                 >
                   {topRotationProducts.map((_, i) => (
@@ -405,7 +406,7 @@ export default function InventoryMetricsTab() {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value: number) => [`${value} uds`, 'Ventas']}
+                  formatter={(value) => [`${Number(value)} uds`, 'Ventas'] as [string, string]}
                   contentStyle={{
                     backgroundColor: 'var(--color-bg, #fff)',
                     border: '1px solid #e5e7eb',

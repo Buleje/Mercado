@@ -22,7 +22,8 @@ export async function getAllPages() {
 }
 
 export async function getPageBySlug(slug: string, includeBlocks = true) {
-  return await prisma.page.findUnique({
+  // Page tiene @@unique([tenantId, slug]) — usar findFirst con where por slug
+  return await prisma.page.findFirst({
     where: { slug },
     include: {
       blocks: includeBlocks ? { orderBy: { order: "asc" } } : false,

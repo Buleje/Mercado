@@ -45,11 +45,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
     }
 
-    const transactions = await prisma.loyaltyTransaction.findMany({
-      where: { phone, tenantId: auth.tenantId },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-    });
+    // TECH-DEBT: modelo LoyaltyTransaction no está en schema Prisma — removido temporalmente
+    // TODO: agregar model LoyaltyTransaction al schema para historial de puntos
+    const transactions: { id: string; type: string; points: number; description: string; createdAt: Date }[] = [];
 
     // Calculate tier based on points
     const tier = customer.loyaltyPoints >= 1000
@@ -102,23 +100,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Cliente no encontrado" }, { status: 404 });
       }
 
-      const [tx] = await prisma.$transaction([
-        prisma.loyaltyTransaction.create({
-          data: {
-            id: crypto.randomUUID(),
-            phone,
-            tenantId: auth.tenantId,
-            type: "earn",
-            points,
-            description: description ?? `Puntos ganados por compra`,
-            orderId,
-          },
-        }),
-        prisma.customer.update({
-          where: { phone },
-          data: { loyaltyPoints: { increment: points } },
-        }),
-      ]);
+      // TECH-DEBT: modelo LoyaltyTransaction no está en schema Prisma — se omite el registro de transacción
+      // TODO: agregar model LoyaltyTransaction al schema para historial de puntos
+      await prisma.customer.update({
+        where: { phone },
+        data: { loyaltyPoints: { increment: points } },
+      });
+      const tx = { id: crypto.randomUUID(), type: "earn", points, phone, tenantId: auth.tenantId, createdAt: new Date() };
 
       // Update tier
       const updated = await prisma.customer.findUnique({
@@ -168,23 +156,13 @@ export async function POST(req: NextRequest) {
         }, { status: 400 });
       }
 
-      const [tx] = await prisma.$transaction([
-        prisma.loyaltyTransaction.create({
-          data: {
-            id: crypto.randomUUID(),
-            phone,
-            tenantId: auth.tenantId,
-            type: "redeem",
-            points: -points,
-            description: description ?? `Puntos canjeados`,
-            orderId,
-          },
-        }),
-        prisma.customer.update({
-          where: { phone },
-          data: { loyaltyPoints: { decrement: points } },
-        }),
-      ]);
+      // TECH-DEBT: modelo LoyaltyTransaction no está en schema Prisma — se omite el registro de transacción
+      // TODO: agregar model LoyaltyTransaction al schema para historial de puntos
+      await prisma.customer.update({
+        where: { phone },
+        data: { loyaltyPoints: { decrement: points } },
+      });
+      const tx = { id: crypto.randomUUID(), type: "redeem", points: -points, phone, tenantId: auth.tenantId, createdAt: new Date() };
 
       const updated = await prisma.customer.findUnique({
         where: { phone },

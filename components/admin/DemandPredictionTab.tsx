@@ -62,7 +62,9 @@ export default function DemandPredictionTab() {
       const saleDate = new Date(sale.createdAt);
       if (saleDate >= thirtyDaysAgo) {
         (sale.items ?? []).forEach(item => {
-          salesByProduct[item.productId] = (salesByProduct[item.productId] || 0) + item.quantity;
+          if (item.productId == null) return;
+          const pid = Number(item.productId);
+          salesByProduct[pid] = (salesByProduct[pid] || 0) + item.quantity;
         });
       }
     });
@@ -73,7 +75,7 @@ export default function DemandPredictionTab() {
     products.forEach(product => {
       const stock = product.stock ?? 0;
       if (stock > 0) {
-        const totalSales = salesByProduct[product.id] || 0;
+        const totalSales = salesByProduct[Number(product.id)] || 0;
         const dailyAvg = totalSales / 30;
 
         if (dailyAvg > 0) {
@@ -88,7 +90,7 @@ export default function DemandPredictionTab() {
   };
 
   const generatePurchaseOrder = async (stockAlert: StockAlert) => {
-    setGeneratingPO(stockAlert.product.id);
+    setGeneratingPO(Number(stockAlert.product.id));
     try {
       const suggestedQty = Math.ceil(stockAlert.dailyAvg * 14); // 2 weeks supply
       const unitCost = stockAlert.product.costPrice || stockAlert.product.price * 0.7;

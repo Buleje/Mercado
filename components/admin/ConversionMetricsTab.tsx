@@ -62,7 +62,7 @@ export default function ConversionMetricsTab() {
     setFetchError(null);
     try {
       const [statsRes, abcRes, marginsRes, segmentsRes] = await Promise.all([
-        fetch("/api/admin/stats").then((r) => r.ok ? r.json() : {}),
+        fetch("/api/admin/stats").then((r) => r.ok ? r.json() : null),
         fetch("/api/analytics/abc").then((r) => r.ok ? r.json() : []),
         fetch("/api/analytics/margins").then((r) => r.ok ? r.json() : []),
         fetch("/api/analytics/segments").then((r) => r.ok ? r.json() : []),

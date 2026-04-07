@@ -42,13 +42,13 @@ export async function GET(req: NextRequest) {
         return { sent: 0, message: "No active stores" };
       }
 
-      // Get phone numbers for each tenant
+      // Get phone numbers for each tenant (ownerPhone vive en Tenant, no en Settings)
       const tenantIds = stores.map((s) => s.tenantId);
-      const settings = await prisma.settings.findMany({
-        where: { tenantId: { in: tenantIds } },
-        select: { tenantId: true, ownerPhone: true },
+      const tenants = await prisma.tenant.findMany({
+        where: { id: { in: tenantIds } },
+        select: { id: true, ownerPhone: true },
       });
-      const phoneMap = new Map(settings.map((s) => [s.tenantId, s.ownerPhone]));
+      const phoneMap = new Map(tenants.map((t) => [t.id, t.ownerPhone]));
 
       // Get orders for all stores in the past week
       const weekOrders = await prisma.order.findMany({

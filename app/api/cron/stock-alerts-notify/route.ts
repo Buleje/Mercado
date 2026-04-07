@@ -102,11 +102,12 @@ export async function GET(req: NextRequest) {
         // Send push + WhatsApp to store owner
         (async () => {
           try {
-            const settings = await prisma.settings.findFirst({
-              where: { tenantId: { in: tenantIds } },
+            // ownerPhone vive en Tenant, no en Settings
+            const tenantRecord = await prisma.tenant.findUnique({
+              where: { id: tenant.id },
               select: { ownerPhone: true },
             });
-            const ownerPhone = settings?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
+            const ownerPhone = tenantRecord?.ownerPhone || (tenant.slug === "main" ? process.env.NOTIFY_PHONE : null);
             if (!ownerPhone) return;
 
             const pushBody = alertas.slice(0, 3).map(a => `${a.nombre}: ${a.stockActual}/${a.minimo}`).join(", ");

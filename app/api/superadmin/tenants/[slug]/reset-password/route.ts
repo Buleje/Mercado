@@ -28,16 +28,18 @@ export async function POST(
 
   const { slug } = await params;
 
-  const store = await prisma.store.findUnique({
+  // ownerEmail vive en Tenant (no en Store) — buscar tenant por slug directamente
+  // TECH-DEBT: campo ownerEmail no existe en Store, se usa Tenant.ownerEmail
+  const tenant = await prisma.tenant.findUnique({
     where: { slug },
     select: { id: true, name: true, ownerEmail: true },
   });
 
-  if (!store) {
+  if (!tenant) {
     return NextResponse.json({ error: "Tenant no encontrado" }, { status: 404 });
   }
 
-  if (!store.ownerEmail) {
+  if (!tenant.ownerEmail) {
     return NextResponse.json({ error: "Este tenant no tiene email de dueño registrado" }, { status: 400 });
   }
 
@@ -47,7 +49,7 @@ export async function POST(
   // Por ahora retornamos instrucción clara al superadmin.
   return NextResponse.json({
     message: "Correo de reset enviado al dueño.",
-    ownerEmail: store.ownerEmail,
+    ownerEmail: tenant.ownerEmail,
     note: "Las contraseñas están hasheadas. Se debe usar el flujo de reset por email.",
   });
 }

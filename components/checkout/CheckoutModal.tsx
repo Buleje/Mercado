@@ -54,8 +54,6 @@ export default function CheckoutModal() {
     yape,
     cashEnabled,
     businessName,
-    businessLat,
-    businessLon,
     storeTheme,
   } = useSettings();
   const { getBestPromotion } = usePromotions();
@@ -65,8 +63,10 @@ export default function CheckoutModal() {
   const [editingCustomerData, setEditingCustomerData] = useState(false);
   const [skippedAccount, setSkippedAccount] = useState(false);
 
-  const storeLat = businessLat ?? -8.3791;
-  const storeLon = businessLon ?? -74.5539;
+  // TECH-DEBT: businessLat/businessLon no están en SettingsCtx aún.
+  // Usar coordenadas por defecto de Pucallpa hasta que se agreguen al schema.
+  const storeLat = -8.3791;
+  const storeLon = -74.5539;
 
   const effectiveCustomer: Customer | null = phoneSearch.found ?? customer;
   const locations: SavedLocation[] = useMemo(() => {

@@ -1,12 +1,20 @@
-﻿export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { OrdersDB } from "@/lib/jsondb";
 import { applyRateLimit } from "@/lib/rate-limit";
 
 /**
  * GET /api/orders/[id]/public
- * Public endpoint — no auth required.
- * Returns only safe, customer-facing fields (no phone, address, or reference).
+ * 
+ * SECURITY WARNING: This endpoint is VULNERABLE to IDOR attacks.
+ * Any user can fetch any order by guessing its ID.
+ * 
+ * TODO (High Priority): Implement one of:
+ * 1. Move to /admin/orders/[id] with requireAdmin() — breaking change for public order tracking
+ * 2. Add an `accessToken` query param generated when order is created (stored in DB)
+ * 3. Require customer email + verification token sent via email
+ * 
+ * Current implementation is public, no auth required.
  * Rate-limited: MODERATE preset (20 req / 5 min per IP).
  */
 export async function GET(

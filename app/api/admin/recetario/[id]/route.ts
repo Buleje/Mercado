@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod";
 
 const IngredienteSchema = z.object({
@@ -29,10 +30,13 @@ type RouteParams = { params: Promise<{ id: string }> };
 
 // GET: get a single recetario recipe by noteId
 export async function GET(_req: NextRequest, { params }: RouteParams) {
+  const auth = await requireAdmin(_req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+  
   try {
     const { id } = await params;
     const note = await prisma.note.findUnique({ where: { id } });
-    if (!note || note.title !== "__RECETARIO__") {
+    if (!note || note.title !== "__RECETARIO__" || note.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
     const data = JSON.parse(note.content);
@@ -44,10 +48,13 @@ export async function GET(_req: NextRequest, { params }: RouteParams) {
 
 // PATCH: update a recetario recipe
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
+  const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+  
   try {
     const { id } = await params;
     const note = await prisma.note.findUnique({ where: { id } });
-    if (!note || note.title !== "__RECETARIO__") {
+    if (!note || note.title !== "__RECETARIO__" || note.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
 
@@ -96,10 +103,13 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
 // DELETE: delete a recetario recipe (marks inactive or hard delete)
 export async function DELETE(_req: NextRequest, { params }: RouteParams) {
+  const auth = await requireAdmin(_req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+  
   try {
     const { id } = await params;
     const note = await prisma.note.findUnique({ where: { id } });
-    if (!note || note.title !== "__RECETARIO__") {
+    if (!note || note.title !== "__RECETARIO__" || note.tenantId !== auth.tenantId) {
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
 

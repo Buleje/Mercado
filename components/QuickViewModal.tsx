@@ -404,7 +404,7 @@ export default function QuickViewModal({ product, onClose }: { product: LiveProd
                         <div className="flex items-center justify-between mt-1.5">
                           <span className="font-extrabold text-primary text-sm">S/{cp.price.toFixed(2)}</span>
                           <button
-                            onClick={() => { addItem({ ...cp, category: "", unit: cp.unit } as LiveProduct); showToast(cp.name, cp.image); }}
+                            onClick={() => { addItem({ ...cp, category: "", unit: cp.unit } as LiveProduct); showToast(cp.name, cp.image ?? ""); }}
                             className="h-7 w-7 rounded-lg bg-primary text-white flex items-center justify-center hover:bg-primary-dark active:scale-95 transition-all"
                             aria-label={`Agregar ${cp.name}`}
                           >

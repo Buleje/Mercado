@@ -206,7 +206,11 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
   const [state, dispatch] = useReducer(reducer, defaultState);
   const hydratedRef = useRef(false);
   const slugRef = useRef(tenantSlug);
-  slugRef.current = tenantSlug;
+
+  // Mantener slugRef sincronizado en un effect (no se puede mutar refs en render — react-hooks/refs)
+  useEffect(() => {
+    slugRef.current = tenantSlug;
+  }, [tenantSlug]);
 
   // Hydrate from localStorage after mount to avoid SSR/client mismatch
   useEffect(() => {
@@ -224,7 +228,7 @@ export function CartProvider({ children, tenantSlug = "main" }: { children: Reac
             if (!data) return;
             const products: { id: number }[] = Array.isArray(data) ? data : [];
             const validIds = new Set(products.map((p: { id: number }) => p.id));
-            const validItems = items.filter((item: CartItem) => validIds.has(item.product.id));
+            const validItems = items.filter((item: CartItem) => validIds.has(item.id));
             if (validItems.length !== items.length) {
               // Some items were deleted — update cart
               dispatch({ type: "HYDRATE", payload: validItems });

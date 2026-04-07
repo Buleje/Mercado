@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
           await prisma.product.create({
             data: {
               name: row.nombre,
+              category: "General",
               barcode: row.barcode,
               price: row.precio,
               stock: row.stock,

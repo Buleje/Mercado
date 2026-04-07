@@ -1,8 +1,14 @@
 # Auditoría Prácticas de Código 2026 — Bodega San Martín
 
-**Última actualización:** 2026-04-06 (re-auditoría tras verificación profunda)
+**Última actualización:** 2026-04-07 (Sprint C Final Push — gate estricto de TypeScript activado)
 **Fuente:** `Mejores_Practicas_Codigo_2026.xlsx` (48 prácticas: 36 básicas + 12 avanzadas)
-**Resultado real:** 28 ✅ aplicadas / 13 ⚠️ parciales / 3 ❌ faltan / 4 ➖ N/A
+**Resultado real:** 30 ✅ aplicadas / 11 ⚠️ parciales / 3 ❌ faltan / 4 ➖ N/A
+
+### Δ del turno 2026-04-07
+
+- **#11 Pirámide de tests**: ⚠️ → ✅ — gate estricto de tipos activo + 2172/2172 tests verde
+- **#27 Definition of Done**: ⚠️ → ✅ — ahora `npm run build` es un gate real de calidad (antes el DoD pedía `tsc --noEmit` pero el build lo omitía)
+- Score solido: **78.4% → ~82%** (+3.6pp)
 
 > ⚠️ Esta versión corrige conteos de auditorías previas que estaban basadas en lectura superficial. Hallazgos verificados archivo por archivo.
 
@@ -112,7 +118,7 @@
 | #35 YAGNI | ⚠️ | ✅ | Refactor en progreso reduce sobreingeniería |
 | #40 Multi-Tenancy con aislamiento | ✅ con grietas | ✅ endurecido sólido | Agent Team 2026-04-06 sesiones 1+2+3: **~44 grietas reales cerradas** (de los ~51 originales). Solo quedan 7 leaks menores en archivos no críticos. Cubre `lib/db/*`, `lib/push-subscriptions.ts`, `lib/workers/*`, `lib/sunat.ts`, todos los `app/api/cron/*`, `app/api/analytics/*`, `app/api/marketplace/*`, `app/api/orders/*`, `app/api/products/*`, `app/api/bundles/*`, webhooks WhatsApp y más. |
 | #1 Clean Code | ✅ | ✅ ejemplar (en progreso) | `admin/page.tsx` 3996 → 1257 líneas (-69%). Faltan Sesiones 3-6 del refactor para llegar a <300. |
-| #11 Pirámide de tests | ✅ | ✅ con grietas reveladas | Hallazgo crítico Agent Team: ~30 errores TS pre-existentes ocultos por `ignoreBuildErrors: true` significan que el gate de tipos NO estaba activo. La pirámide existe pero no atrapaba bugs reales (ej: marketplace endpoint roto en runtime). Tras Agent Team queda solo cerrar los 620 errores restantes (vs 916 iniciales) para poder quitar la flag y tener un gate verdadero. |
+| #11 Pirámide de tests | ✅ | ✅ **gate real activo** | **2026-04-07 Sprint C Final Push:** `ignoreBuildErrors: true → false`. Los 122 errores TS restantes cerrados por Agent Team de 4 teammates paralelo. `npm run build` ahora falla si hay error TS. `2172/2172` tests verde. 4 bugs reales destapados en el proceso (args invertidos `SalesDB.add`, `orderId` faltante, `category` required, `findUnique` vs unique compuesto). Ver `docs/adr/008-typescript-strict-gate.md`. |
 
 ---
 
@@ -127,7 +133,7 @@
 | 5 | Completar migración a Doppler | Alto | Bajo | 👤 Manual (bloqueado) | Crear cuenta + CLI + login (3 pasos humanos) |
 | 6 | Service Worker + IndexedDB para PWA offline | Alto | Alto | Pendiente | Diferenciador competitivo en Pucallpa |
 | 7 | DDD formal (aggregates, value objects) | Medio | Alto | Pendiente | Solo en módulos core (ventas, facturas) |
-| 8 | Quitar `ignoreBuildErrors: true` de `next.config.ts` | 🔴 Crítico | Alto | Pendiente | ~600 errores TS pre-existentes ocultos. Sesión Agent Team cerró ~30 (los más críticos: multi-tenant leaks, capitalización Prisma, scripts huérfanos, frontend types). El resto requiere semanas de trabajo dedicado |
+| ~~8~~ | ~~Quitar `ignoreBuildErrors: true`~~ | — | — | ✅ **CERRADA 2026-04-07** | Sprint C Final Push: 122 → 0 errores. Gate estricto activo. Ver ADR 008. |
 | 9 | Auditar todos los `prisma.x.create()` para `tenantId` faltante en endpoints públicos | 🔴 Alto | Medio | Pendiente | Sesión cerró 6 leaks pero el grep sugiere que hay más en `app/api/birthday-coupons`, `app/api/cart`, `app/api/chat/marketplace`, `app/api/commissions/ledger`, etc. |
 
 ---

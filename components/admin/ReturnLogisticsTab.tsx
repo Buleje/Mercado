@@ -218,8 +218,8 @@ export default function ReturnLogisticsTab() {
                       <div className="relative flex items-center gap-0">
                         {TIMELINE_STEPS.map((step, idx) => {
                           const stepNum = STATUS_CONFIG[r.status].step;
-                          const done    = stepNum >= step.step ?? false;
-                          const current = stepNum === step.step;
+                          const done    = stepNum >= idx;
+                          const current = stepNum === idx;
                           const Icon    = step.icon;
                           return (
                             <div key={step.key} className="flex items-center flex-1">

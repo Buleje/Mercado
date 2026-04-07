@@ -102,8 +102,8 @@ function generateReport(data: BusinessData | null): WeeklyReport | null {
   const outOfStock = activeProducts.filter((p) => (p.stock ?? 0) === 0);
   const lowStock = activeProducts.filter((p) => p.stock != null && p.stockMin != null && p.stock > 0 && p.stock <= p.stockMin);
   const expiringProducts = activeProducts.filter((p) => {
-    if (!p.expiryDate) return false;
-    const daysLeft = Math.ceil((new Date(p.expiryDate).getTime() - Date.now()) / 86400000);
+    if (!p.expiresAt) return false;
+    const daysLeft = Math.ceil((new Date(p.expiresAt).getTime() - Date.now()) / 86400000);
     return daysLeft <= 7 && daysLeft >= 0;
   });
 

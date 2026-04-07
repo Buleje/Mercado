@@ -2,7 +2,7 @@
 
 > **Regla:** Dedicar ~20% de cada sesión a reducir deuda técnica.
 > Actualizar este archivo cuando se identifique o resuelva deuda.
-> **Última auditoría:** 2026-04-06
+> **Última auditoría:** 2026-04-07 (Sprint C Final Push — TD-012 cerrada, TD-030 a TD-033 nuevas)
 
 ## 🔴 Alta prioridad (afecta estabilidad o seguridad)
 
@@ -12,7 +12,7 @@
 | TD-002 | Prisma migration | Modelos AIConversation/AIMessage agregados al schema. Migration SQL preparada en `prisma/migrations/20260406210602_add_ai_conversation_and_message/`. **Pendiente:** Brandon corre `DATABASE_URL="$DIRECT_URL" npx prisma migrate deploy` antes del próximo push | Memoria IA no persiste datos hasta correr migración | 🟡 En progreso (SQL listo) |
 | TD-003 | A/B testing + Quality eval | Métricas en memoria — se pierden al reiniciar servidor | Pérdida de datos de experimentos | 🔓 Abierto |
 | TD-011 | admin/page.tsx | Archivo de 1413 líneas — refactor en progreso (Sesiones 1-2 hechas, faltan 4-7) | Alto acoplamiento, difícil de mantener | 🟡 En progreso |
-| TD-012 | next.config.ts | `ignoreBuildErrors: true` enmascara errores TS reales. **Baseline 2026-04-07: 121 errores** (469 → 251 → 121, -74.2% acumulado). Sesión 2026-04-07 cerró 35 errores en 5 archivos top: AIActionPlan -10, LoyaltyTab -7, EtiquetasTab -7, daily-summary -7, api-purchases test -6 (commits `cebb778`, `226e8b0`). Distribución actual muy fragmentada (long tail, máx 4 errores por archivo). | Bugs llegan a producción sin gate de tipos | 🟡 En progreso (121 → 0 → flip flag → activar TD-026 gate pre-commit) |
+| ~~TD-012~~ | ~~next.config.ts~~ | **RESUELTO 2026-04-07 — Sprint C Final Push.** `ignoreBuildErrors: true → false` activado. Histórico: 469 → 121 → 122 → **0 errores**. Cierre en 1 sesión con Agent Team 4 teammates paralelos (backend 43, frontend 52, DB 3, QA 7) + 17 fundacionales previos (unificación `AdminRole` 9 valores, `LLMResponse.data/attempts`, Tab "colas", `logActivity` signature). **4 bugs reales destapados** (args invertidos `SalesDB.add`, `orderId` faltante en cotizaciones, `category` required en import-csv, `findUnique` vs unique compuesto en cms-db/pages). Verificación: `tsc --noEmit` 0 errors, `npm run build` pasa, `2172/2172` tests verde. Ver `docs/adr/008-typescript-strict-gate.md`. | — | ✅ Cerrado |
 
 ## 🟠 Media prioridad (afecta desarrollo o rendimiento)
 
@@ -64,6 +64,24 @@ Audit automatizado contra las 28 prácticas del Excel `Mejores_Practicas_Agentes
 | TD-025 | #10 Human-in-the-Loop formal | ✅ **RESUELTO** | Backend completo: `lib/agents/pending-approvals.ts` + `isToolApprovalRequired()` helper + intercepción en `ai-assistant/route.ts` + endpoint `app/api/ai-assistant/approvals/route.ts` + 11 tests. Frontend: `components/admin/ai-center/HITLApprovalsBanner.tsx` con polling 5s + modal + approve/reject + toast. Montado en `AICommandCenter.tsx`. 2 tools marcados como críticos (notifications_send_order_update, notifications_send_promotion). |
 | TD-026 | #2 RAG vectorial | ❌ | Sin embeddings ni vector store. Snapshot text + 32 tools cubren el caso actual, pero falla con catálogos >1000 productos. ADR 011 cuando sea momento: pgvector vs ChromaDB vs Pinecone. |
 | TD-027 | #16 LlamaGuard / moderación | ❌ | Sin filtros de moderación en inputs ni outputs. `moderateLLMOutput()` existe pero es regex básico, no LlamaGuard. Antes de abrir el chat a clientes finales del marketplace, resolverlo. |
+
+## 🆕 Hallazgos del Sprint C Final Push (2026-04-07) — Schema drift Prisma
+
+Al cerrar los últimos 105 errores TS, el Agent Team descubrió 4 gaps reales entre el código y `prisma/schema.prisma`. Los route handlers y componentes referenciaban campos/modelos que simplemente no existen en el schema. Se aplicaron workarounds en el código (corrección, eliminación, o type assertion con comentario) pero el gap de schema sigue abierto y requiere migración futura.
+
+| ID | Modelo/Campo | Problema | Workaround aplicado | Severidad |
+|----|--------------|----------|---------------------|-----------|
+| TD-030 | `LoyaltyTransaction` (modelo completo) | Referenciado por `app/api/marketplace/loyalty/route.ts` (3 uses) pero el modelo no existe en schema. El historial de puntos de fidelidad NO persiste — solo se guarda el balance actual en `Customer.loyaltyPoints`. | Opción B: array vacío en GET, operación directa sobre `customer.loyaltyPoints` en POST. | 🟠 Alta — audit loyalty roto |
+| TD-031 | `Review.imageUrls` | Referenciado por `app/api/marketplace/stores/[slug]/reviews/route.ts` (3 uses: select, create, response). El UI del marketplace soportaba reseñas con fotos pero la DB nunca tuvo la columna. | Opción B: removido el uso, reseñas sin fotos. | 🟡 Media — feature UI sin backing |
+| TD-032 | `Coupon.storeId` | Referenciado en 3 archivos (`marketplace/coupons`, `marketplace/coupons/validate`, `superadmin/marketplace/coupons`). Los cupones del marketplace NO están diferenciados de los cupones del POS — comparten tabla sin relación a tienda. | Opción B: removidos filtros por `storeId` con comentarios TECH-DEBT. | 🟡 Media — cupones cruzados |
+| TD-033 | `Tenant.settings` (relación) | Los crons (`demand-forecast`, `marketplace-weekly-report`, `stock-alerts-notify`, `recompra-coupon`, `zone-offers-push`) asumían una relación `Tenant.settings` que no existe. La config real vive en el modelo `Settings` separado (1:1 implícito vía `tenantId`) y los feature flags en `Settings.featureFlagsJson`. | Opción A: corregido — queries ahora hacen `prisma.settings.findUnique({ where: { tenantId } })` y leen `featureFlagsJson` para feature flags. | ✅ Ya corregido en código |
+
+**Plan de migración futuro** (requiere sesión dedicada con `migration-planner`):
+
+1. **TD-030**: crear modelo `LoyaltyTransaction` con `(id, customerId, tenantId, amount, reason, createdAt)` + migration + backfill de `Customer.loyaltyPoints` a movimientos sintéticos.
+2. **TD-031**: agregar `Review.imageUrls String[]` (PostgreSQL array) o tabla `ReviewImage` con relación 1:N.
+3. **TD-032**: agregar `Coupon.storeId String? @index` + FK opcional a `Store` + migration que marque los existentes como cupones POS (storeId = null).
+4. **TD-033**: sin migración necesaria — solo documentar la relación implícita en `prisma/schema.prisma` como comentario.
 
 ## ✅ Resueltas
 

@@ -45,7 +45,8 @@ export type Tab =
   | "delivery-partners"
   | "store-customizer"
   | "mi-perfil"
-  | "rendimiento";
+  | "rendimiento"
+  | "colas";
 
 export type TabCategory = {
   id: string;

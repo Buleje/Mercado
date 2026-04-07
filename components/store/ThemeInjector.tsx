@@ -95,14 +95,14 @@ export default function ThemeInjector() {
     shadow: `.product-card,.store-card{box-shadow:0 4px 12px rgba(0,0,0,0.08)!important;border-color:transparent!important}`,
     border: `.product-card,.store-card{border:2px solid ${primaryColor ?? "#00B4A6"}20!important;box-shadow:none!important}`,
     glass: `.product-card,.store-card{background:rgba(255,255,255,0.7)!important;backdrop-filter:blur(12px)!important;border:1px solid rgba(255,255,255,0.3)!important}`,
-  }[cardStyle ?? ""] ?? "";
+  }[cardStyle as "minimal" | "shadow" | "border" | "glass"] ?? "";
 
   // ── Button styles ──
   const btnCSS = {
     square: `button,[role="button"]{border-radius:4px!important}`,
     pill: `button,[role="button"]{border-radius:9999px!important}`,
     rounded: `button,[role="button"]{border-radius:${borderRadius ?? 12}px!important}`,
-  }[buttonStyle ?? ""] ?? "";
+  }[buttonStyle as "square" | "pill" | "rounded"] ?? "";
 
   // ── Shadow level ──
   const shadowCSS = shadowLevel && shadowLevel !== "soft" ? `
@@ -133,7 +133,8 @@ export default function ThemeInjector() {
     transparent: `header,.store-header{background:transparent!important}`,
     blur: `header,.store-header{background:rgba(255,255,255,0.8)!important;backdrop-filter:blur(16px)!important}`,
     minimal: `header,.store-header{border-bottom:1px solid rgba(0,0,0,0.05)!important;box-shadow:none!important}`,
-  }[navbarStyle ?? ""] ?? "";
+    solid: `header,.store-header{background:var(--color-primary,#00B4A6)!important;color:#fff!important}`,
+  }[navbarStyle as "transparent" | "blur" | "minimal" | "solid"] ?? "";
 
   // Combinar todo
   const allCSS = [

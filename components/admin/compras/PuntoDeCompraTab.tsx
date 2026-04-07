@@ -1111,7 +1111,7 @@ export default function PuntoDeCompraTab() {
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <BarcodeScanner onScan={handleBarcodeScan} />
+              <BarcodeScanner onDetected={handleBarcodeScan} onClose={() => setShowBarcode(false)} />
             </motion.div>
           </motion.div>
         )}

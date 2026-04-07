@@ -135,7 +135,7 @@ export const ProductsDB = {
     };
     const row = await prisma.product.upsert({
       where: { id: product.id },
-      create: { id: product.id, ...d, ...(product.tenantId ? { tenantId: product.tenantId } : {}) },
+      create: { id: product.id, ...d, tenantId: product.tenantId ?? "main" },
       update: d,
     });
     return mapProduct(row);

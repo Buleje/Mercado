@@ -56,7 +56,12 @@ export async function POST(req: NextRequest) {
 
     // ── Importar productos en batch ───────────────────────────────────────────
     if (products.length > 0) {
-      const validProducts: Parameters<typeof prisma.product.createMany>[0]["data"] = [];
+      // Prisma 7: usar tipo explícito en lugar de Parameters<> para evitar drift de tipos
+      const validProducts: Array<{
+        name: string; category: string; price: number; costPrice: number | null;
+        unit: string; stock: number | null; stockMin: number | null; active: boolean;
+        barcode: string | null; description: string | null; tenantId: string;
+      }> = [];
 
       for (let i = 0; i < products.length; i++) {
         const itemParsed = ProductImportSchema.safeParse(products[i]);
@@ -91,7 +96,10 @@ export async function POST(req: NextRequest) {
 
     // ── Importar clientes en batch ────────────────────────────────────────────
     if (customers.length > 0) {
-      const validCustomers: Parameters<typeof prisma.customer.createMany>[0]["data"] = [];
+      // Prisma 7: usar tipo explícito en lugar de Parameters<> para evitar drift de tipos
+      const validCustomers: Array<{
+        phone: string; name: string; location: string; tenantId: string;
+      }> = [];
 
       for (let i = 0; i < customers.length; i++) {
         const itemParsed = CustomerImportSchema.safeParse(customers[i]);

@@ -291,9 +291,9 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Non-streaming fallback ──────────────────────────────────────────────
-    const data = res.data!;
+    const data = res.data as Record<string, unknown>;
     const rawReply =
-      (data.choices as { message: { content: string } }[])?.[0]?.message?.content ?? "No pude generar una respuesta.";
+      ((data?.choices) as { message: { content: string } }[] | undefined)?.[0]?.message?.content ?? "No pude generar una respuesta.";
 
     const moderation = moderateLLMOutput(rawReply);
     if (!moderation.safe) {

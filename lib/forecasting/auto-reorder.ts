@@ -208,6 +208,7 @@ export async function createAutoPurchaseOrders(
     const poId = `auto_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
 
     // Crear la PO usando la DB class (no Prisma directo)
+    const now = new Date().toISOString();
     const po = await PurchasesDB.add({
       id: poId,
       supplierId,
@@ -222,6 +223,8 @@ export async function createAutoPurchaseOrders(
         unitCost: i.unitCost,
         unit: i.unit,
       })),
+      createdAt: now,
+      updatedAt: now,
     });
 
     // Fire-and-forget: registrar actividad

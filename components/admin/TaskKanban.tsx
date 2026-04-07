@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import {
   ListChecks, Plus, Clock, User, Trash2, Pencil, Check, X,
-  ChevronLeft, ChevronRight, RefreshCw, _AlertCircle,
+  ChevronLeft, ChevronRight, RefreshCw, AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

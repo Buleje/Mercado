@@ -1,5 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { GuiaStatus } from "@/lib/generated/prisma/enums";
+import { Prisma } from "@/lib/generated/prisma/client";
 import type {
   GuiaRemision as PGuiaRemision,
   GuiaRemisionItem as PGuiaRemisionItem,
@@ -454,7 +456,7 @@ export const GuiasRemisionDB = {
       pesoBruto: original.pesoBruto,
       notas: original.notas,
       createdBy: username,
-      status: "BORRADOR",
+      status: GuiaStatus.BORRADOR,
       items: {
         create: original.items.map((i) => ({
           productoId: i.productoId,
@@ -466,10 +468,10 @@ export const GuiasRemisionDB = {
       },
     };
     const row = await prisma.guiaRemision.create({
-      data: dupData,
+      data: dupData as Prisma.GuiaRemisionUncheckedCreateInput,
       include: { items: true },
     });
-    return mapGuia(row);
+    return mapGuia(row as unknown as PGuiaRemision & { items: PGuiaRemisionItem[] });
   },
 
   async exportCSV(

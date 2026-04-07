@@ -28,7 +28,7 @@ const QuerySchema = z.object({
     .string()
     .optional()
     .transform((v) => (v != null ? parseInt(v, 10) : 30))
-    .pipe(z.number().int().min(1).max(90).default(30)),
+    .pipe(z.number().int().min(1).max(90)),
 });
 
 export async function GET(req: NextRequest) {

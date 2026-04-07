@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const stats = await SurveyDB.stats();
-    const recent = await SurveyDB.getAll(50);
+    const recent = await SurveyDB.getAll(undefined, 50);
 
     return NextResponse.json({ stats, recent });
   } catch (e) {

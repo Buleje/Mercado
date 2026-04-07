@@ -80,7 +80,10 @@ export default async function DynamicPage({
   }
 
   // Filter visible blocks and sort by order
-  const visibleBlocks = (page.blocks as Array<{ visible: boolean; order: number; type: string; props?: unknown }>)
+  // TECH-DEBT: Prisma return type when include.blocks is conditionally false/truthy
+  // loses the `blocks` field. Cast to access it safely since we always pass true here.
+  const pageWithBlocks = page as typeof page & { blocks: Array<{ id?: string; visible: boolean; order: number; type: string; props?: unknown; styles?: Record<string, unknown> }> };
+  const visibleBlocks = (pageWithBlocks.blocks ?? [])
     .filter((block) => block.visible)
     .sort((a, b) => a.order - b.order);
 

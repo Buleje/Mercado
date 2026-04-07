@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CotizacionesDB } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { OrderStatus } from "@/lib/generated/prisma/client";
 import { logAudit } from "@/lib/audit-logger";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -26,15 +27,17 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
 
     // Create order from cotización in a transaction
     const result = await prisma.$transaction(async (tx) => {
+      const orderId = `ord-cot-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const order = await tx.order.create({
         data: {
+          id: orderId,
           tenantId: auth.tenantId,
           customerName: cotizacion.clienteNombre,
           customerPhone: "",
           customerLocation: "",
           customerReference: "",
           total: cotizacion.total,
-          status: "pendiente",
+          status: OrderStatus.pendiente,
           notes: `Convertido desde cotización ${cotizacion.numero}`,
           items: {
             create: cotizacion.items.map((item) => ({

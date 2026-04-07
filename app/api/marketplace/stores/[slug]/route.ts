@@ -31,7 +31,8 @@ export async function GET(
         createdAt:       true,
         _count: {
           select: {
-            storeProducts: { where: { isActive: true } },
+            // La relación en Store se llama 'products' (StoreProduct[])
+            products: { where: { isActive: true } },
           },
         },
       },

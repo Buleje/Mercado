@@ -194,7 +194,7 @@ export default function PhysicalCountTab() {
         const rows = prev.rows.map((r) => {
           if (r.productId !== productId) return r;
           if (field === "realStock") {
-            const num = value === "" ? "" : Math.max(0, Number(value));
+            const num: number | "" = value === "" ? "" : Math.max(0, Number(value));
             return { ...r, realStock: num };
           }
           return { ...r, reason: value };

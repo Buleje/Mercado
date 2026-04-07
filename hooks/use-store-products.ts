@@ -47,7 +47,7 @@ export function useStoreProducts() {
         }
         const data = await res.json();
         const list: Product[] = Array.isArray(data)
-          ? data.filter((p: Product) => p.active !== false)
+          ? data.filter((p: Product & { active?: boolean }) => p.active !== false)
           : [];
 
         cachedProducts = list;
