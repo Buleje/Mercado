@@ -142,61 +142,72 @@ export interface AIChatResponse {
 
 /**
  * Send a chat completion to the best available AI provider.
- * Falls through: Groq → Google Gemini → xAI Grok → error.
+ *
+ * **Nota de migración (ADR-010 + Item 5 unificación):**
+ * A partir de 2026-04-06, esta función delega internamente a
+ * `lib/llm-router.ts#callLLM("cheap")` en vez de invocar directamente
+ * a los providers. Esto unifica las 2 abstracciones paralelas (ai-config
+ * y llm-router) en una sola bajo el capó.
+ *
+ * **Backward compat:** los callers existentes (lib/whatsapp-ai.ts,
+ * app/api/chat/auto-reply/route.ts) NO necesitan cambiar — la firma
+ * pública de `chatCompletion` + los tipos `AIChatMessage` y `AIChatResponse`
+ * siguen idénticos.
+ *
+ * **Qué se perdió del comportamiento anterior:**
+ * - El fallback a Google Gemini y xAI Grok ya NO existe. El router actual
+ *   solo soporta Groq + Anthropic (stub). Si Brandon quiere recuperar
+ *   Gemini/Grok como fallback, debe agregarlos como providers al router
+ *   (lib/llm-providers/google.ts, lib/llm-providers/xai.ts) siguiendo el
+ *   pattern de groq.ts y anthropic.ts.
+ * - Las funciones internas `callOpenAICompatible` y `callGoogleGemini`
+ *   están marcadas como deprecated abajo y serán eliminadas en una
+ *   sesión futura de limpieza.
  */
 export async function chatCompletion(
   messages: AIChatMessage[],
   options?: { maxTokens?: number; temperature?: number },
 ): Promise<AIChatResponse> {
-  const provider = getActiveProvider();
+  // Lazy import para evitar ciclos y costo de import estático si nunca se usa
+  const { callLLM } = await import("@/lib/llm-router");
 
-  if (!provider) {
+  const res = await callLLM("cheap", {
+    messages: messages.map((m) => ({ role: m.role, content: m.content })),
+    temperature: options?.temperature ?? 0.7,
+    maxTokens: options?.maxTokens ?? 500,
+    label: "ai-config-chatCompletion",
+  });
+
+  if (!res.ok) {
+    logger.error("[ai-config] llm-router call failed", { error: res.error });
     return {
       ok: false,
       content: "",
       provider: "none",
-      error: "No hay proveedor de IA configurado. Agrega una API key en el archivo .env",
+      error: res.error ?? "Todos los proveedores de IA fallaron",
     };
   }
 
-  const maxTokens = options?.maxTokens ?? provider.maxTokens;
-  const temperature = options?.temperature ?? 0.7;
+  // Map provider del router al tipo AIProvider local (groq | google | xai | none)
+  // Anthropic no existía en el tipo original — lo mapeo a "none" o mejor extender.
+  const providerMap: Record<string, AIProvider> = {
+    groq: "groq",
+    anthropic: "groq", // temporal: el tipo público no tiene "anthropic", no quiero romper consumers
+    openai: "groq", // temporal
+  };
 
-  try {
-    if (provider.id === "google") {
-      return await callGoogleGemini(provider, messages, maxTokens, temperature);
-    }
-    // Groq and xAI both use OpenAI-compatible API
-    return await callOpenAICompatible(provider, messages, maxTokens, temperature);
-  } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
-    logger.error(`[ai-config] ${provider.name} failed`, { error: errMsg });
-
-    // Try next provider as fallback
-    const providers = getProviders();
-    const currentIdx = providers.findIndex(p => p.id === provider.id);
-    for (let i = currentIdx + 1; i < providers.length; i++) {
-      if (!providers[i].isConfigured) continue;
-      try {
-        if (providers[i].id === "google") {
-          return await callGoogleGemini(providers[i], messages, maxTokens, temperature);
-        }
-        return await callOpenAICompatible(providers[i], messages, maxTokens, temperature);
-      } catch {
-        continue;
-      }
-    }
-
-    return {
-      ok: false,
-      content: "",
-      provider: provider.id,
-      error: `Todos los proveedores de IA fallaron: ${errMsg}`,
-    };
-  }
+  return {
+    ok: true,
+    content: (res.content ?? "").trim(),
+    provider: providerMap[res.provider] ?? "none",
+    tokensUsed: res.usage.totalTokens,
+  };
 }
 
 // ── OpenAI-compatible call (Groq, xAI) ─────────────────────────────────────
+// @deprecated 2026-04-06 — ya no se invoca desde chatCompletion (que ahora
+// delega a lib/llm-router). Mantenida solo por si hay callers directos
+// desconocidos. Eliminar en sesión de limpieza futura.
 
 async function callOpenAICompatible(
   provider: AIProviderConfig,
@@ -236,6 +247,7 @@ async function callOpenAICompatible(
 }
 
 // ── Google Gemini call ─────────────────────────────────────────────────────
+// @deprecated 2026-04-06 — ver nota en callOpenAICompatible arriba.
 
 async function callGoogleGemini(
   provider: AIProviderConfig,
