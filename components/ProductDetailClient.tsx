@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
+import useProductAnalyticsTracking from "@/hooks/useProductAnalyticsTracking";
 import { useFavorites } from "@/contexts/favorites-context";
 import { useCompare } from "@/contexts/compare-context";
 import { useCachedData } from "@/hooks/use-cached-data";
@@ -79,6 +80,7 @@ interface ProductDetailClientProps {
 export default function ProductDetailClient({ product }: ProductDetailClientProps) {
   const { items, addItem, updateQty } = useCart();
   const { showToast } = useToast();
+  const { trackView, trackAddToCart } = useProductAnalyticsTracking();
   const { isFavorite, toggle: toggleFav } = useFavorites();
   const { add: addCompare, isIn: isCompare, remove: removeCompare } = useCompare();
   const { products, categories } = useStoreProducts();
@@ -238,9 +240,15 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
     } catch {}
   }, [product]);
 
+  // Analytics: registrar vista al montar
+  useEffect(() => {
+    trackView(product.id);
+  }, [product.id, trackView]);
+
   const handleAdd = () => {
     if (isOutOfStock) return;
     const effectivePrice = variantFinalPrice ?? product.price;
+    trackAddToCart(product.id);
     addItem({ ...product, price: effectivePrice });
     showToast(product.name, product.image);
   };

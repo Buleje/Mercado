@@ -23,3 +23,5 @@ export * from "./forecasting.db";
 export * from "./credit.db";
 export * from "./product-images.db";
 export * from "./product-variants.db";
+export * from "./product-analytics.db";
+export * from "./store-banners.db";

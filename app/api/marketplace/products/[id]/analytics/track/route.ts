@@ -1,0 +1,49 @@
+export const dynamic = "force-dynamic";
+
+import { NextRequest, NextResponse } from "next/server";
+import { ProductAnalyticsDB } from "@/lib/db/product-analytics.db";
+import { checkEdgeRateLimit } from "@/lib/middleware-utils";
+import { z } from "zod";
+
+const BodySchema = z.object({
+  metric: z.enum(["view", "click", "addToCart", "conversion"]),
+  revenue: z.number().positive().optional(),
+});
+
+// Rate limiter in-memory: 100 req/min por IP
+const trackRlStore = new Map<string, { count: number; resetAt: number }>();
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id: idStr } = await params;
+  const productId = parseInt(idStr, 10);
+  if (isNaN(productId)) {
+    return NextResponse.json({ error: "ID de producto inválido" }, { status: 400 });
+  }
+
+  // Rate limit por IP
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+  const allowed = checkEdgeRateLimit(trackRlStore, ip, 100, 60_000);
+  if (!allowed) {
+    return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
+  }
+
+  const body = await req.json();
+  const parsed = BodySchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Datos inválidos", issues: parsed.error.issues }, { status: 400 });
+  }
+
+  const tenantId = req.headers.get("x-tenant-id") ?? "main";
+  const { metric, revenue } = parsed.data;
+
+  // Fire-and-forget
+  ProductAnalyticsDB.track(tenantId, productId, metric, revenue).catch(() => {});
+
+  return NextResponse.json({ ok: true });
+}

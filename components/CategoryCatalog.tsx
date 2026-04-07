@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { getProductSlug, categories } from "@/data/products";
 import { useStoreProducts } from "@/hooks/use-store-products";
+import useProductAnalyticsTracking from "@/hooks/useProductAnalyticsTracking";
 import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import { useFavorites } from "@/contexts/favorites-context";
@@ -373,6 +374,7 @@ export default function CategoryCatalog({
   const router = useRouter();
   const pathname = usePathname();
   const { products, categories, isLoading: isStoreLoading } = useStoreProducts();
+  const { trackClick } = useProductAnalyticsTracking();
 
   // Read initial state from URL
   const initialSearch = searchParams.get("q") ?? "";
@@ -473,8 +475,11 @@ export default function CategoryCatalog({
   );
 
   const handleQuickView = useCallback(
-    (p: LiveProduct) => setQuickViewProduct(p),
-    []
+    (p: LiveProduct) => {
+      trackClick(p.id);
+      setQuickViewProduct(p);
+    },
+    [trackClick]
   );
 
   // Other categories for navigation
