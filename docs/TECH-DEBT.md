@@ -48,6 +48,19 @@ Audit automatizado contra el skill `supabase-postgres-best-practices` recién in
 2. Sprint 2: TD-019 + TD-021 — migración aditiva de índices, zero-downtime (usar `CREATE INDEX CONCURRENTLY` via SQL raw, no Prisma por defecto).
 3. Sprint 3: TD-020 — compound indexes estratégicos después de medir queries con `pg_stat_statements`.
 
+## 🆕 Hallazgos del audit Excel Agentes IA (2026-04-06 noche)
+
+Audit automatizado contra las 28 prácticas del Excel `Mejores_Practicas_Agentes_IA.xlsx`. **Score real del sistema de agentes: 10 ✅ / 9 ⚠️ / 9 ❌ → 51.8% sólido / 35.7% perfecto**. Las brechas accionables:
+
+| ID | Práctica Excel | Estado | Razón / Bloqueador |
+|----|----------------|--------|-------------------|
+| TD-022 | #9 Salida estructurada JSON | ❌ Platform-blocked | Groq **NO soporta** `response_format: json_object` con `tools` ni con `streaming`. Modelo actual `llama-3.3-70b-versatile` **no soporta** structured outputs en absoluto. Solo `openai/gpt-oss-*` y `llama-4-scout` lo soportan en Groq. **Decisión pendiente (ADR 009):** (A) migrar modelo tool-calling a `llama-4-scout`, (B) prompt-based JSON enforcement con parsing + fallback, (C) mover endpoints críticos a Claude/OpenAI directo. |
+| TD-023 | #7 Temperaturas diferenciadas | ⚠️ → ✅ parcial | **RESUELTO en ai-assistant/route.ts + coach/route.ts** (commit post-audit). Quedan otros endpoints por alinear: `feedback`, `goals`, `decision-log` (no usan LLM directo — verificar). Constante `AI_TEMPERATURES` creada como referencia. |
+| TD-024 | #23 Modelo mixto / router LLM | ❌ | Solo Groq `llama-3.3-70b-versatile`. Requiere ADR 010: criterios de routing (keywords + complejidad + length) + integración con segundo provider (Claude o Groq cheap tier). -40% costo proyectado. |
+| TD-025 | #10 Human-in-the-Loop formal | ⚠️ | Notificaciones al humano existen, pero sin gate previo "¿Aprobar?" antes de acciones críticas del agente (comprar mercadería, rematar, aplicar descuento). Requiere: lista explícita de tools "high-risk" en `tool-definitions.ts` + modal UI en `AICommandCenter.tsx`. |
+| TD-026 | #2 RAG vectorial | ❌ | Sin embeddings ni vector store. Snapshot text + 32 tools cubren el caso actual, pero falla con catálogos >1000 productos. ADR 011 cuando sea momento: pgvector vs ChromaDB vs Pinecone. |
+| TD-027 | #16 LlamaGuard / moderación | ❌ | Sin filtros de moderación en inputs ni outputs. `moderateLLMOutput()` existe pero es regex básico, no LlamaGuard. Antes de abrir el chat a clientes finales del marketplace, resolverlo. |
+
 ## ✅ Resueltas
 
 | ID | Área | Descripción | Resuelto en |

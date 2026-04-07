@@ -220,10 +220,12 @@ export async function POST(req: NextRequest) {
   ];
 
   try {
+    // Temperature 0.4 — coach es el "Gerente IA" del Excel Agentes IA práctica #7:
+    // respuestas creativas con consejos y recomendaciones (no datos exactos).
     const res = await fetchGroqWithRetry(apiKey, {
       model: "llama-3.3-70b-versatile",
       messages,
-      temperature: 0.6,
+      temperature: 0.4,
       max_tokens: 1500,
       stream: true,
     }, "ai-coach");

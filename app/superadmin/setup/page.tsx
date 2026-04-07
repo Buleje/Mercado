@@ -73,9 +73,9 @@ const SCORES: ScoreSnapshot[] = [
   {
     label: "Excel Agentes IA — Prácticas para sistemas de agentes (28)",
     total: 28,
-    applied: 10,
+    applied: 11,   // +1: #7 Temperaturas diferenciadas (fix en ai-assistant + coach routes)
     partial: 9,
-    missing: 9,
+    missing: 8,    // -1: #7 salió de ❌
     na: 0,
     link: {
       url: "/superadmin/setup#practicas-agentes-ia",
@@ -422,6 +422,61 @@ const SETUP_ITEMS: SetupItem[] = [
       "Comando: /agent-team Sprint B: ejecutar TD-018 Float→Decimal Strategy B, 47 campos en 22 DB classes",
       "Estimado: 3 días según migration-planner",
       "Resuelve bug latente de SUNAT/IGV con redondeo Float",
+    ],
+  },
+  // ── Excel Agentes IA — brechas accionables (sesión 2026-04-06) ──────────
+  {
+    id: "td-022-adr-009-structured-output",
+    title: "📋 ADR 009: Estrategia de structured output dado el bloqueo de Groq",
+    description:
+      "Groq NO soporta response_format:json_object con tools ni con streaming. Modelo actual llama-3.3-70b-versatile no soporta structured outputs. Excel Agentes IA práctica #9 está bloqueada por plataforma. Hay que elegir entre 3 opciones: (A) migrar el modelo de tool-calling a llama-4-scout-17b-16e-instruct que sí soporta structured outputs, (B) prompt-based JSON enforcement con parsing + fallback, (C) mover endpoints críticos a Claude/OpenAI directo.",
+    priority: "medium",
+    category: "dev",
+    estimatedMinutes: 0,
+    blockedReason: "Requiere decisión arquitectónica (ADR)",
+    steps: [
+      "Medir costo y latencia de cada opción (A/B/C) en un spike de 1 hora",
+      "Crear docs/adr/009-structured-output-strategy.md con la decisión",
+      "Implementar la opción ganadora en una sesión posterior",
+      "Actualizar TD-022 en docs/TECH-DEBT.md con el resultado",
+      "Mueve Excel Agentes IA práctica #9 de ❌ a ✅ cuando se implemente",
+    ],
+  },
+  {
+    id: "td-024-adr-010-llm-router",
+    title: "📋 ADR 010 + sesión: Router LLM mixto (Groq + Claude/OpenAI)",
+    description:
+      "Excel Agentes IA práctica #23. Hoy solo Groq llama-3.3-70b-versatile para todo. Un router por complejidad (Groq tier barato para queries simples, Claude/GPT-4o para decisiones críticas) proyecta -40% costo. Ya hay API keys de Groq. Falta integrar segundo provider con fallback.",
+    priority: "medium",
+    category: "dev",
+    estimatedMinutes: 0,
+    blockedReason: "Requiere ADR + 1 sesión implementación",
+    steps: [
+      "Crear docs/adr/010-llm-router-strategy.md",
+      "Definir función pickModel(query, context): 'simple' | 'complex' | 'critical'",
+      "Agregar provider abstraction en lib/llm-providers/ (groq.ts + claude.ts)",
+      "Reemplazar fetchGroqWithRetry por fetchLLMWithRouter en ai-assistant/*",
+      "Medir costo antes/después con lib/ai-usage-tracker.ts",
+      "Mueve Excel Agentes IA práctica #23 de ❌ a ✅",
+    ],
+  },
+  {
+    id: "td-025-hitl-modal",
+    title: "📋 Sesión: Human-in-the-Loop modal para tools high-risk",
+    description:
+      "Excel Agentes IA práctica #10. Hoy el agente ejecuta cualquier tool sin gate previo. Requiere: definir lista de tools high-risk (comprar, rematar, aplicar descuento >20%, crear combo) en tool-definitions.ts + modal de confirmación en AICommandCenter.tsx antes de ejecutar esos tools.",
+    priority: "high",
+    category: "dev",
+    estimatedMinutes: 0,
+    blockedReason: "Requiere 1 sesión (UI + backend + lista de tools)",
+    steps: [
+      "Agregar campo 'requiresApproval: boolean' a las tool definitions en lib/agents/tool-definitions.ts",
+      "Marcar los tools críticos: comprar_stock, rematar_producto, aplicar_descuento_grande, crear_combo, cancelar_pedido_masivo",
+      "En el orchestrator: interceptar tools con requiresApproval y devolver un 'pendingApproval' event",
+      "En AICommandCenter.tsx: escuchar pendingApproval y mostrar modal con botones Aprobar / Rechazar",
+      "Al aprobar: emit 'approved' event al orchestrator para que continúe",
+      "Agregar tests de los 5 tools críticos",
+      "Mueve Excel Agentes IA práctica #10 de ⚠️ a ✅",
     ],
   },
 ];
