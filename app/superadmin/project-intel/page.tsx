@@ -20,7 +20,7 @@
  *  11. Roadmap
  */
 
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import {
   Rocket,
   Box,
@@ -325,12 +325,44 @@ const MCP_SIMPLE = [
   { name: "Google Calendar",    whatItDoes: "Puedo agendar reuniones y buscar horarios libres" },
 ];
 
-// ─── DATA: Scoreboards ─────────────────────────────────────────────────────
+// ─── DATA: Scoreboards (fallback; overridden by API if available) ─────────
+//
+// Estos valores son el fallback hardcoded que se usan si el fetch a
+// /api/superadmin/project-intel falla (ej: 401, 500, network). El API
+// parsea docs/practicas-2026-audit.md y docs/TECH-DEBT.md al vuelo, así
+// el scoreboard refleja el estado REAL del audit cuando Brandon lo abre.
+// Excel Agentes IA no está en el audit doc — se mantiene hardcoded.
 
-const SCORES = {
+interface ScoreSnapshot {
+  applied: number;
+  partial: number;
+  missing: number;
+  na: number;
+  total: number;
+  label: string;
+}
+
+const SCORES_FALLBACK: { excel2026: ScoreSnapshot; agentesIA: ScoreSnapshot } = {
   excel2026: { applied: 28, partial: 13, missing: 3, na: 4, total: 48, label: "Buenas prácticas generales (48)" },
   agentesIA: { applied: 13, partial: 10, missing: 5, na: 0, total: 28, label: "Mejores prácticas de IA (28)" },
 };
+
+interface LiveIntelData {
+  excel2026: ScoreSnapshot & { source: string; lastUpdated: string | null };
+  techDebt: {
+    total: number;
+    open: number;
+    inProgress: number;
+    closed: number;
+    bySeverity: Record<string, number>;
+  };
+  tsErrors: {
+    count: number | null;
+    lastMeasured: string | null;
+    note: string;
+  };
+  generatedAt: string;
+}
 
 function calcScore(s: { applied: number; partial: number; missing: number; na: number; total: number }) {
   const denom = s.total - s.na;
@@ -609,6 +641,23 @@ const ROADMAP_SIMPLE = [
 
 export default function ProjectIntelPage() {
   const [activeTab, setActiveTab] = useState<TabId>("what");
+  const [liveData, setLiveData] = useState<LiveIntelData | null>(null);
+
+  // Fetch live data on mount (parses docs/practicas-2026-audit.md + TECH-DEBT.md)
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/superadmin/project-intel", { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: LiveIntelData | null) => {
+        if (!cancelled && data) setLiveData(data);
+      })
+      .catch(() => {
+        // Silent fallback to hardcoded constants
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -674,7 +723,7 @@ export default function ProjectIntelPage() {
         {activeTab === "agents"  && <AgentsTab />}
         {activeTab === "skills"  && <SkillsTab />}
         {activeTab === "mcp"     && <MCPTab />}
-        {activeTab === "scores"  && <ScoresTab />}
+        {activeTab === "scores"  && <ScoresTab liveData={liveData} />}
         {activeTab === "pricing" && <PricingTab />}
         {activeTab === "sell"    && <SellTab />}
         {activeTab === "roadmap" && <RoadmapTab />}
@@ -1015,33 +1064,97 @@ function MCPTab() {
 
 // ─── Tab: Scores ──────────────────────────────────────────────────────────
 
-function ScoresTab() {
-  const e2026 = calcScore(SCORES.excel2026);
-  const eIA = calcScore(SCORES.agentesIA);
+function ScoresTab({ liveData }: { liveData: LiveIntelData | null }) {
+  // Usa liveData si está disponible, sino fallback a constantes hardcoded.
+  const excel2026Source: ScoreSnapshot = liveData
+    ? {
+        applied: liveData.excel2026.applied,
+        partial: liveData.excel2026.partial,
+        missing: liveData.excel2026.missing,
+        na: liveData.excel2026.na,
+        total: liveData.excel2026.total,
+        label: SCORES_FALLBACK.excel2026.label,
+      }
+    : SCORES_FALLBACK.excel2026;
+
+  const e2026 = calcScore(excel2026Source);
+  const eIA = calcScore(SCORES_FALLBACK.agentesIA);
+
+  const isLive = liveData?.excel2026.source === "docs/practicas-2026-audit.md";
+  const tsCount = liveData?.tsErrors.count ?? 251;
+
   return (
     <div className="space-y-4">
       <div className="bg-cyan-50 dark:bg-cyan-950/20 border border-cyan-200 dark:border-cyan-900/40 rounded-2xl p-5">
-        <h2 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-cyan-600" />
-          Cómo vamos con las mejores prácticas
-        </h2>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-cyan-600" />
+            Cómo vamos con las mejores prácticas
+          </h2>
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+              isLive
+                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+            }`}
+          >
+            {isLive ? "🔴 EN VIVO" : "fallback"}
+          </span>
+        </div>
         <p className="text-xs text-gray-600 dark:text-gray-400">
           Dos scorecards independientes. Uno mide prácticas generales de buen software. Otro mide prácticas específicas de sistemas de IA.
+          {isLive && liveData?.excel2026.lastUpdated && (
+            <span className="block mt-1 text-emerald-600 dark:text-emerald-400">
+              Fuente: docs/practicas-2026-audit.md · Última actualización: {liveData.excel2026.lastUpdated}
+            </span>
+          )}
         </p>
       </div>
 
-      <BigScoreCard label={SCORES.excel2026.label} snap={SCORES.excel2026} score={e2026} color="teal" />
-      <BigScoreCard label={SCORES.agentesIA.label} snap={SCORES.agentesIA} score={eIA}   color="purple" />
+      <BigScoreCard label={excel2026Source.label} snap={excel2026Source} score={e2026} color="teal" />
+      <BigScoreCard label={SCORES_FALLBACK.agentesIA.label} snap={SCORES_FALLBACK.agentesIA} score={eIA} color="purple" />
+
+      {/* Tech Debt (solo si tenemos liveData) */}
+      {liveData && (
+        <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">
+            📋 Deuda Técnica (docs/TECH-DEBT.md)
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <Bucket n={liveData.techDebt.total} label="Total items" color="text-gray-700 dark:text-gray-300" />
+            <Bucket n={liveData.techDebt.open} label="🔓 Abiertos" color="text-red-500" />
+            <Bucket n={liveData.techDebt.inProgress} label="🟡 En progreso" color="text-amber-500" />
+            <Bucket n={liveData.techDebt.closed} label="✅ Cerrados" color="text-emerald-500" />
+          </div>
+          {Object.values(liveData.techDebt.bySeverity).some((n) => n > 0) && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-3 border-t border-gray-100 dark:border-gray-900">
+              <SeverityBadge n={liveData.techDebt.bySeverity.critical} label="🔴 Críticos" />
+              <SeverityBadge n={liveData.techDebt.bySeverity.high}     label="🟠 Altos" />
+              <SeverityBadge n={liveData.techDebt.bySeverity.medium}   label="🟡 Medios" />
+              <SeverityBadge n={liveData.techDebt.bySeverity.low}      label="🟢 Bajos" />
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5">
         <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">📈 Avance de la sesión actual</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Metric label="Errores TS" before="469" after="251" delta="−46%" good />
+          <Metric label="Errores TS" before="469" after={String(tsCount)} delta="−46%" good />
           <Metric label="ADRs" before="7" after="10" delta="+3" good />
-          <Metric label="Commits" before="0" after="17+" delta="nueva sesión" />
+          <Metric label="Commits" before="0" after="20+" delta="nueva sesión" />
           <Metric label="Tests OK" before="26" after="26" delta="sin regresiones" good />
         </div>
       </div>
+    </div>
+  );
+}
+
+function SeverityBadge({ n, label }: { n: number; label: string }) {
+  return (
+    <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg px-3 py-2">
+      <span className="text-xs text-gray-600 dark:text-gray-400">{label}</span>
+      <span className="text-sm font-bold text-gray-900 dark:text-white">{n}</span>
     </div>
   );
 }
