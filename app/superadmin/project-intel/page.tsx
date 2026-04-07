@@ -3,303 +3,333 @@
 /**
  * /superadmin/project-intel
  *
- * Panorama completo del proyecto — un solo lugar donde Brandon ve:
- *   1. Stack de tecnologías
- *   2. Arquitectura en capas
- *   3. IA y modelos usados (Groq, Anthropic, router tiers)
- *   4. Agentes (Claude Code + dominios internos)
- *   5. Skills disponibles
- *   6. MCP servers
- *   7. Implementaciones (Excel 2026 + Excel Agentes IA)
- *   8. Avance / scores
- *   9. Modelo de negocio y precio de venta
- *  10. Roadmap
+ * Panorama del proyecto en lenguaje simple. Diseñado para que Brandon
+ * vea en 2 minutos todo lo que tiene, sin tecnicismos innecesarios.
  *
- * Los datos son constantes hardcodeadas (no SSR fetching) porque son
- * metadata del proyecto, no estado de runtime. Si Brandon quiere que
- * algún dato sea dinámico (p.ej. score leyendo docs/practicas-2026-audit.md),
- * se migra a un API route en una sesión posterior.
+ * 11 tabs:
+ *   1. Qué es (resumen en 1 párrafo)
+ *   2. Qué tiene dentro (tecnologías, en lenguaje simple)
+ *   3. Cómo funciona (arquitectura como "viaje de un pedido")
+ *   4. La IA (modelos y uso)
+ *   5. Agentes (quiénes trabajan en el código)
+ *   6. Herramientas (skills)
+ *   7. MCP (conectores externos)
+ *   8. Avance (scores visual)
+ *   9. 💰 Precio por venta / mes (modelos de negocio en soles)
+ *  10. 💎 Vender el proyecto entero (5 paquetes en soles)
+ *  11. Roadmap
  */
 
 import { useState, type ReactNode } from "react";
 import {
-  Layers,
-  Cpu,
+  Rocket,
+  Box,
+  Route,
+  Brain,
   Bot,
   Sparkles,
   Plug,
-  CheckCircle2,
   TrendingUp,
   DollarSign,
+  Crown,
   Map,
-  Code2,
-  Brain,
   Zap,
+  CheckCircle2,
   Package,
+  ArrowRight,
+  Star,
+  Shield,
+  ShoppingCart,
+  Users,
+  Smartphone,
+  Cloud,
+  Cpu,
 } from "lucide-react";
 
 // ─── Tabs definition ────────────────────────────────────────────────────────
 
 type TabId =
+  | "what"
   | "stack"
-  | "arch"
+  | "how"
   | "ai"
   | "agents"
   | "skills"
   | "mcp"
-  | "impl"
   | "scores"
-  | "business"
+  | "pricing"
+  | "sell"
   | "roadmap";
 
 interface TabDef {
   id: TabId;
   label: string;
   icon: ReactNode;
-  count?: number;
+  accent: string;
 }
 
 const TABS: TabDef[] = [
-  { id: "stack",    label: "Stack",         icon: <Code2 className="w-4 h-4" />,        count: 28 },
-  { id: "arch",     label: "Arquitectura",  icon: <Layers className="w-4 h-4" />,       count: 11 },
-  { id: "ai",       label: "IA & Modelos",  icon: <Brain className="w-4 h-4" />,        count: 8 },
-  { id: "agents",   label: "Agentes",       icon: <Bot className="w-4 h-4" />,          count: 25 },
-  { id: "skills",   label: "Skills",        icon: <Sparkles className="w-4 h-4" />,     count: 34 },
-  { id: "mcp",      label: "MCP Servers",   icon: <Plug className="w-4 h-4" />,         count: 7 },
-  { id: "impl",     label: "Implementado",  icon: <CheckCircle2 className="w-4 h-4" />, count: 48 },
-  { id: "scores",   label: "Avance",        icon: <TrendingUp className="w-4 h-4" />,   count: 2 },
-  { id: "business", label: "Negocio",       icon: <DollarSign className="w-4 h-4" />,   count: 5 },
-  { id: "roadmap",  label: "Roadmap",       icon: <Map className="w-4 h-4" />,          count: 4 },
+  { id: "what",    label: "Qué es",           icon: <Rocket className="w-4 h-4" />,      accent: "indigo"   },
+  { id: "stack",   label: "Qué tiene dentro", icon: <Box className="w-4 h-4" />,         accent: "blue"     },
+  { id: "how",     label: "Cómo funciona",    icon: <Route className="w-4 h-4" />,       accent: "teal"     },
+  { id: "ai",      label: "La IA",            icon: <Brain className="w-4 h-4" />,       accent: "purple"   },
+  { id: "agents",  label: "Agentes",          icon: <Bot className="w-4 h-4" />,         accent: "pink"     },
+  { id: "skills",  label: "Herramientas",     icon: <Sparkles className="w-4 h-4" />,    accent: "amber"    },
+  { id: "mcp",     label: "Conectores",       icon: <Plug className="w-4 h-4" />,        accent: "emerald"  },
+  { id: "scores",  label: "Avance",           icon: <TrendingUp className="w-4 h-4" />,  accent: "cyan"     },
+  { id: "pricing", label: "Precio / mes",     icon: <DollarSign className="w-4 h-4" />,  accent: "orange"   },
+  { id: "sell",    label: "Vender todo",      icon: <Crown className="w-4 h-4" />,       accent: "yellow"   },
+  { id: "roadmap", label: "Futuro",           icon: <Map className="w-4 h-4" />,         accent: "violet"   },
 ];
 
-// ─── DATA: Tech Stack ───────────────────────────────────────────────────────
+// ─── DATA: Qué es el proyecto (1 párrafo simple) ───────────────────────────
 
-interface StackItem {
+const WHAT_HIGHLIGHTS = [
+  { icon: <ShoppingCart className="w-5 h-5" />, label: "Marketplace", value: "Multi-tienda B2B + B2C" },
+  { icon: <Users className="w-5 h-5" />,        label: "Tiendas",     value: "Multi-tenant aislado" },
+  { icon: <Brain className="w-5 h-5" />,        label: "IA",          value: "15 módulos inteligentes" },
+  { icon: <Smartphone className="w-5 h-5" />,   label: "Móvil",       value: "App iOS + Android" },
+  { icon: <Cloud className="w-5 h-5" />,        label: "Hosting",     value: "Vercel + Supabase" },
+  { icon: <Shield className="w-5 h-5" />,       label: "Seguro",      value: "JWT + RBAC + rate limits" },
+];
+
+// ─── DATA: Stack en lenguaje simple ────────────────────────────────────────
+
+interface SimpleStackItem {
   category: string;
-  name: string;
-  version: string;
-  purpose: string;
+  icon: ReactNode;
+  items: Array<{ simple: string; technical: string; purpose: string }>;
 }
 
-const STACK: StackItem[] = [
-  { category: "Framework",     name: "Next.js",        version: "16",      purpose: "App Router, Turbopack, Server Components" },
-  { category: "Framework",     name: "React",          version: "19",      purpose: "UI library con Actions y Suspense" },
-  { category: "Framework",     name: "TypeScript",     version: "5.x",     purpose: "Tipado estricto (251 errores residuales, ver TD-012)" },
-  { category: "Styling",       name: "Tailwind CSS",   version: "4",       purpose: "Utility-first + design tokens" },
-  { category: "Styling",       name: "Framer Motion",  version: "12",      purpose: "Animaciones declarativas" },
-  { category: "Styling",       name: "GSAP",           version: "3",       purpose: "Timeline animations storefront" },
-  { category: "DB",            name: "Prisma",         version: "7.4.2",   purpose: "ORM con PrismaPg adapter" },
-  { category: "DB",            name: "Supabase",       version: "—",       purpose: "PostgreSQL pooler + IPv6 direct" },
-  { category: "DB",            name: "Redis",          version: "opc.",    purpose: "Cache distribuido (lib/cache.ts híbrido)" },
-  { category: "Validation",    name: "Zod",            version: "4",       purpose: "safeParse() en cada endpoint" },
-  { category: "Queue",         name: "BullMQ",         version: "5.73",    purpose: "Worker queues + domain events (ADR 003)" },
-  { category: "AI/LLM",        name: "Groq",           version: "—",       purpose: "Llama 3.1/3.3/4-scout (free tier)" },
-  { category: "AI/LLM",        name: "Anthropic",      version: "stub",    purpose: "Claude 4.6 family (pendiente ANTHROPIC_API_KEY)" },
-  { category: "AI/LLM",        name: "OpenAI",         version: "opc.",    purpose: "OCR Vision (ocr/invoice)" },
-  { category: "Payments",      name: "Stripe",         version: "placeholder", purpose: "No activo hasta rotar keys reales" },
-  { category: "Payments",      name: "MercadoPago",    version: "—",       purpose: "Pagos locales Perú" },
-  { category: "Auth",          name: "JWT httpOnly",   version: "—",       purpose: "bsm-admin-sess + rotación" },
-  { category: "Auth",          name: "RBAC",           version: "—",       purpose: "26 recursos × 6 roles (lib/auth/role-permissions.ts)" },
-  { category: "Observability", name: "Sentry",         version: "3 capas", purpose: "client + server + edge configs" },
-  { category: "Observability", name: "@vercel/otel",   version: "—",       purpose: "OpenTelemetry tracing" },
-  { category: "Testing",       name: "Vitest",         version: "4",       purpose: "Unit tests (26 propios + 2113 totales)" },
-  { category: "Testing",       name: "Playwright",     version: "—",       purpose: "E2E tests" },
-  { category: "Testing",       name: "k6",             version: "—",       purpose: "Load tests" },
-  { category: "Mobile",        name: "Capacitor",      version: "—",       purpose: "iOS/Android build desde web" },
-  { category: "Docs",          name: "Storybook",      version: "—",       purpose: "Component library" },
-  { category: "Docs",          name: "OpenAPI",        version: "generado", purpose: "Zod → OpenAPI spec" },
-  { category: "CI/CD",         name: "GitHub Actions", version: "—",       purpose: "CI + release-please" },
-  { category: "CI/CD",         name: "Vercel",         version: "Hobby",   purpose: "Auto-deploy + Fluid Compute" },
+const SIMPLE_STACK: SimpleStackItem[] = [
+  {
+    category: "La web que ve el cliente",
+    icon: <Rocket className="w-5 h-5" />,
+    items: [
+      { simple: "Lo moderno de la web", technical: "Next.js 16 + React 19", purpose: "Carga rápido y se ve bien" },
+      { simple: "Estilos visuales",     technical: "Tailwind CSS 4",        purpose: "Diseño limpio y adaptable a móvil" },
+      { simple: "Animaciones",          technical: "Framer Motion + GSAP",  purpose: "Transiciones suaves en la tienda" },
+    ],
+  },
+  {
+    category: "La base de datos (donde se guarda todo)",
+    icon: <Box className="w-5 h-5" />,
+    items: [
+      { simple: "La DB",                technical: "PostgreSQL en Supabase",          purpose: "Guarda productos, pedidos, clientes" },
+      { simple: "El conector con la DB", technical: "Prisma 7.4 (116 modelos)",       purpose: "Hace las consultas rápidas y seguras" },
+      { simple: "Memoria temporal",      technical: "Redis (opcional)",               purpose: "Respuestas más rápidas para datos frecuentes" },
+    ],
+  },
+  {
+    category: "Inteligencia artificial",
+    icon: <Brain className="w-5 h-5" />,
+    items: [
+      { simple: "IA principal",         technical: "Groq (Llama 3.1, 3.3, 4-scout)",  purpose: "Responde consultas del admin, genera promos" },
+      { simple: "IA premium",           technical: "Claude 4.6 (Anthropic)",          purpose: "Listo pero falta tu API key para activar" },
+      { simple: "OCR de facturas",      technical: "OpenAI GPT-4o-mini Vision",       purpose: "Lee facturas escaneadas y las guarda" },
+    ],
+  },
+  {
+    category: "Pagos",
+    icon: <DollarSign className="w-5 h-5" />,
+    items: [
+      { simple: "Tarjetas",             technical: "Stripe (placeholders hoy)",       purpose: "Pagos con VISA/Mastercard (falta activar keys)" },
+      { simple: "Pagos locales Perú",   technical: "MercadoPago + Yape",              purpose: "Yape, Plin, transferencias, efectivo" },
+    ],
+  },
+  {
+    category: "Seguridad",
+    icon: <Shield className="w-5 h-5" />,
+    items: [
+      { simple: "Login y sesiones",     technical: "JWT httpOnly + rotación 8h",      purpose: "Nadie entra sin contraseña" },
+      { simple: "Permisos por rol",     technical: "RBAC 26 recursos × 6 roles",      purpose: "Cajero ≠ admin ≠ almacenero" },
+      { simple: "Anti-spam",            technical: "Rate limit 60 req/min/IP",        purpose: "Bloquea ataques automáticos" },
+    ],
+  },
+  {
+    category: "Monitoreo y tests",
+    icon: <TrendingUp className="w-5 h-5" />,
+    items: [
+      { simple: "Alertas de errores",   technical: "Sentry + OpenTelemetry",          purpose: "Si algo falla en prod, te avisa" },
+      { simple: "Tests automáticos",    technical: "Vitest + Playwright + k6",        purpose: "2113 tests que corren en cada cambio" },
+    ],
+  },
+  {
+    category: "Móvil",
+    icon: <Smartphone className="w-5 h-5" />,
+    items: [
+      { simple: "App móvil",            technical: "Capacitor iOS + Android",         purpose: "La misma web compilada a app nativa" },
+      { simple: "Push notifications",   technical: "VAPID + Web Push",                purpose: "Avisos al cliente cuando su pedido sale" },
+    ],
+  },
 ];
 
-// ─── DATA: Architecture layers ──────────────────────────────────────────────
+// ─── DATA: Cómo funciona (arquitectura como viaje de un pedido) ────────────
 
-interface ArchLayer {
-  layer: string;
-  responsibility: string;
-  files: string;
-  example: string;
+interface FlowStep {
+  n: number;
+  title: string;
+  simple: string;
+  technical: string;
+  icon: ReactNode;
 }
 
-const ARCH: ArchLayer[] = [
-  { layer: "Routing",           responsibility: "Next.js App Router + middleware (proxy.ts)", files: "app/**, middleware.ts, proxy.ts (470 líneas)",     example: "/admin, /api/v1/*, /t/{slug}/*" },
-  { layer: "Auth & Tenant",     responsibility: "JWT httpOnly + dual tenant resolution",     files: "lib/auth/, lib/superadmin-session.ts",             example: "requireAdmin() + active-tenant cookie" },
-  { layer: "Route handlers",    responsibility: "Validación Zod + delegación a DB classes",  files: "app/api/**/route.ts (~435 archivos)",              example: "POST /api/orders → OrdersDB.create" },
-  { layer: "DB classes",        responsibility: "Business logic + Prisma queries",           files: "lib/db/*.db.ts (25 clases)",                       example: "ProductsDB, OrdersDB, CustomersDB" },
-  { layer: "Prisma",            responsibility: "ORM + migrations + schema (116 modelos)",   files: "prisma/schema.prisma + lib/prisma.ts",             example: "PrismaPg adapter max=5" },
-  { layer: "Contexts",          responsibility: "Client state + BroadcastChannel multi-tab", files: "contexts/*.tsx (10 providers)",                    example: "cart, customer, settings, theme" },
-  { layer: "Agent system",      responsibility: "Multi-agent orchestration + tool calling",  files: "lib/agents/ (orchestrator 506 líneas + 6 domains)", example: "inventory, customers, orders, pricing..." },
-  { layer: "LLM layer",         responsibility: "Router tiers + providers abstraction",      files: "lib/llm-router.ts, lib/llm-providers/",            example: "callLLM('balanced', ...) → Groq + Anthropic" },
-  { layer: "Queue",             responsibility: "BullMQ + domain events async",              files: "lib/queue/, lib/domain-events/",                   example: "VentaCompletada, StockBajo, FacturaEmitida" },
-  { layer: "Cache",             responsibility: "Memory + Redis write-through",              files: "lib/cache.ts",                                     example: "getOrSet(), invalidateByPrefix()" },
-  { layer: "Observability",     responsibility: "Structured logs + traceId + Sentry + OTEL", files: "lib/logger.ts, sentry.*.config.ts, instrumentation.ts", example: "logger.info({ requestId, tenantId })" },
+const FLOW_STEPS: FlowStep[] = [
+  {
+    n: 1,
+    title: "El cliente abre la tienda",
+    simple: "Entra al sitio web o la app del celular",
+    technical: "Next.js sirve la página del storefront con tenant por subdominio (slug.buleje.com)",
+    icon: <Smartphone className="w-5 h-5" />,
+  },
+  {
+    n: 2,
+    title: "Navega productos",
+    simple: "Ve el catálogo con fotos, precios y stock real",
+    technical: "Server components fetch via ProductsDB.getAll(tenantId) con cache Redis",
+    icon: <ShoppingCart className="w-5 h-5" />,
+  },
+  {
+    n: 3,
+    title: "Agrega al carrito y paga",
+    simple: "Elige, pone su dirección, confirma pago",
+    technical: "CheckoutModal → POST /api/orders con Zod.safeParse + idempotency key",
+    icon: <DollarSign className="w-5 h-5" />,
+  },
+  {
+    n: 4,
+    title: "El pedido llega al admin",
+    simple: "Tú ves el pedido nuevo en tu panel y lo preparas",
+    technical: "Emit domain event VentaCompletada → BullMQ queue → notification agent",
+    icon: <Box className="w-5 h-5" />,
+  },
+  {
+    n: 5,
+    title: "La IA hace análisis",
+    simple: "Los 15 módulos de IA analizan ventas, sugieren promos, detectan stock bajo",
+    technical: "orchestrator.executeSync(domain, action) con 32 tools + tier balanced (Groq 70B)",
+    icon: <Brain className="w-5 h-5" />,
+  },
+  {
+    n: 6,
+    title: "Si algo es crítico, pide aprobación",
+    simple: "Si la IA quiere mandar una promo masiva, te pregunta primero",
+    technical: "HITL interceptor → pending-approvals.ts → HITLApprovalsBanner modal",
+    icon: <Shield className="w-5 h-5" />,
+  },
+  {
+    n: 7,
+    title: "El cliente recibe notificación",
+    simple: "WhatsApp, email o push: 'Tu pedido salió'",
+    technical: "notifications.agent → WhatsApp API + VAPID push + Nodemailer",
+    icon: <Sparkles className="w-5 h-5" />,
+  },
 ];
 
-// ─── DATA: AI models + router tiers ─────────────────────────────────────────
+// ─── DATA: IA explicada simple ─────────────────────────────────────────────
 
-interface AIEntry {
-  tier: "cheap" | "balanced" | "premium" | "specialized";
+interface SimpleAI {
+  role: string;
+  whatItDoes: string;
   provider: string;
   model: string;
-  usage: string;
-  status: "active" | "ready" | "stub" | "pending-key";
+  status: "activo" | "listo" | "falta-key";
+  cost: string;
 }
 
-const AI_MODELS: AIEntry[] = [
-  { tier: "cheap",       provider: "Groq",      model: "llama-3.1-8b-instant",               usage: "Chat clientes, WhatsApp auto-reply, voice-interpret, OCR simple", status: "active" },
-  { tier: "balanced",    provider: "Groq",      model: "llama-3.3-70b-versatile",            usage: "ai-assistant, coach, promotions, demand-prediction",               status: "active" },
-  { tier: "premium",     provider: "Groq",      model: "meta-llama/llama-4-scout-17b-16e",   usage: "Fallback cuando balanced cae. Soporta streaming+tools",            status: "active" },
-  { tier: "cheap",       provider: "Anthropic", model: "claude-haiku-4-5-20251001",          usage: "Futuro tier cheap de alta calidad",                                status: "pending-key" },
-  { tier: "balanced",    provider: "Anthropic", model: "claude-sonnet-4-6",                  usage: "Futuro tier balanced calidad+",                                    status: "pending-key" },
-  { tier: "premium",     provider: "Anthropic", model: "claude-opus-4-6",                    usage: "Decisiones críticas (futuro)",                                     status: "pending-key" },
-  { tier: "specialized", provider: "OpenAI",    model: "gpt-4o-mini",                        usage: "OCR Vision (ocr/invoice)",                                         status: "ready" },
-  { tier: "specialized", provider: "Google",    model: "gemini-2.0-flash",                   usage: "Fallback legacy en lib/ai-config (marcado deprecated)",            status: "ready" },
+const SIMPLE_AI: SimpleAI[] = [
+  { role: "Chat básico con clientes",      whatItDoes: "Responde preguntas por WhatsApp con precios reales", provider: "Groq",      model: "Llama 3.1 8B",           status: "activo",     cost: "Gratis (free tier)" },
+  { role: "Asistente gerencial",           whatItDoes: "Te da consejos sobre ventas, stock, promos",         provider: "Groq",      model: "Llama 3.3 70B",          status: "activo",     cost: "Gratis (free tier)" },
+  { role: "Fallback si cae el principal",  whatItDoes: "Usa un modelo alternativo cuando el 70B falla",      provider: "Groq",      model: "Llama 4 Scout",          status: "activo",     cost: "Gratis (free tier)" },
+  { role: "IA premium (calidad máxima)",   whatItDoes: "Análisis complejos y decisiones críticas",           provider: "Anthropic", model: "Claude Sonnet 4.6",      status: "falta-key",  cost: "≈ S/11 / millón de tokens" },
+  { role: "IA élite",                      whatItDoes: "Reservado para lo más crítico",                      provider: "Anthropic", model: "Claude Opus 4.6",        status: "falta-key",  cost: "≈ S/57 / millón de tokens" },
+  { role: "Lector de facturas (OCR)",      whatItDoes: "Extrae datos de boletas escaneadas",                 provider: "OpenAI",    model: "GPT-4o-mini Vision",     status: "listo",      cost: "≈ S/0.60 / 100 facturas" },
 ];
 
-// ─── DATA: Agents (Claude Code user agents + internal domain agents) ────────
+// ─── DATA: Agentes simplificados ──────────────────────────────────────────
 
-interface AgentEntry {
-  kind: "claude-code" | "internal-domain" | "team-orchestrator";
+interface SimpleAgent {
   name: string;
-  purpose: string;
-  status: "active" | "ready";
+  whatItDoes: string;
+  when: string;
 }
 
-const AGENTS: AgentEntry[] = [
-  // Claude Code user-defined agents (for coding sessions)
-  { kind: "claude-code",       name: "backend-platform-engineer",     purpose: "API routes, auth, RBAC, lib/db",                        status: "active" },
-  { kind: "claude-code",       name: "frontend-engineer",             purpose: "React components, state, UI",                           status: "active" },
-  { kind: "claude-code",       name: "checkout-specialist",           purpose: "CheckoutModal + flujo de pago (exclusivo)",             status: "active" },
-  { kind: "claude-code",       name: "database-engineer",             purpose: "Prisma queries, índices, migrations",                   status: "active" },
-  { kind: "claude-code",       name: "migration-planner",             purpose: "Plan seguro de migraciones con rollback",               status: "active" },
-  { kind: "claude-code",       name: "devops-release-engineer",       purpose: "Vercel deploy, CI/CD, env vars",                        status: "active" },
-  { kind: "claude-code",       name: "security-auditor",              purpose: "OWASP review post-edit",                                status: "active" },
-  { kind: "claude-code",       name: "qa-reliability-engineer",       purpose: "Testing + Sprint C waves (TS errors)",                  status: "active" },
-  { kind: "claude-code",       name: "performance-engineer",          purpose: "Bundle, Core Web Vitals, cache",                        status: "active" },
-  { kind: "claude-code",       name: "data-analyst",                  purpose: "KPIs, dashboards, forecasting",                         status: "active" },
-  { kind: "claude-code",       name: "integration-specialist",        purpose: "WhatsApp, RENIEC, Stripe, SUNAT, email",                status: "active" },
-  { kind: "claude-code",       name: "mobile-engineer",               purpose: "Capacitor, iOS/Android, plugins nativos",               status: "active" },
-  { kind: "claude-code",       name: "seo-growth-strategist",         purpose: "SEO, OG, JSON-LD, sitemap",                             status: "active" },
-  { kind: "claude-code",       name: "product-uiux-strategist",       purpose: "User flows, visual hierarchy",                          status: "active" },
-  { kind: "claude-code",       name: "solution-architect",            purpose: "Decisiones arquitectónicas de alto impacto",            status: "active" },
-  { kind: "claude-code",       name: "director-orchestrator",         purpose: "Coordina múltiples agentes en tareas complejas",        status: "active" },
-  // Internal domain agents (runtime multi-agent system)
-  { kind: "internal-domain",   name: "inventory.agent",               purpose: "Stock, FEFO, reorder, stock valuation (437 líneas)",    status: "active" },
-  { kind: "internal-domain",   name: "customers.agent",               purpose: "Segmentation, churn risk, customer 360 (445 líneas)",   status: "active" },
-  { kind: "internal-domain",   name: "orders.agent",                  purpose: "Pending, delivery schedule, returns (355 líneas)",      status: "active" },
-  { kind: "internal-domain",   name: "analytics.agent",               purpose: "Daily KPIs, margin, trends (515 líneas)",               status: "active" },
-  { kind: "internal-domain",   name: "notifications.agent",           purpose: "Order updates, stock alerts, promotions (448 líneas)",  status: "active" },
-  { kind: "internal-domain",   name: "pricing.agent",                 purpose: "Margin check, bundles, price history (448 líneas)",     status: "active" },
-  // Team orchestrators (meta-agents)
-  { kind: "team-orchestrator", name: "/agent-team",                   purpose: "Lanza equipos de agentes para tareas complejas 2+ áreas", status: "active" },
-  { kind: "team-orchestrator", name: "director-orchestrator (team)",  purpose: "Diagnostica + despacha agentes + entrega resultado",     status: "active" },
-  { kind: "team-orchestrator", name: "Orchestrator core (lib/agents/)", purpose: "Priority queue + circuit breaker + max=10 concurrent", status: "active" },
+const AGENTS_BY_TYPE: Array<{ category: string; icon: ReactNode; agents: SimpleAgent[] }> = [
+  {
+    category: "Equipo de programadores virtuales (ayudan a mejorar el código)",
+    icon: <Cpu className="w-5 h-5" />,
+    agents: [
+      { name: "backend-platform-engineer",   whatItDoes: "Arma APIs, login, permisos",              when: "Cuando hay que crear endpoints nuevos" },
+      { name: "frontend-engineer",           whatItDoes: "Hace la parte visual (botones, tablas)",  when: "Cuando hay que crear componentes React" },
+      { name: "database-engineer",           whatItDoes: "Optimiza la base de datos",               when: "Cuando las consultas son lentas" },
+      { name: "checkout-specialist",         whatItDoes: "Solo se mete con el flujo de compra",     when: "Cuando tocas el carrito o el pago" },
+      { name: "migration-planner",           whatItDoes: "Planea cambios seguros en la DB",         when: "Antes de modificar tablas importantes" },
+      { name: "devops-release-engineer",     whatItDoes: "Deploys a Vercel, CI/CD",                 when: "Cuando publicas una versión nueva" },
+      { name: "security-auditor",            whatItDoes: "Revisa código por vulnerabilidades",      when: "Después de agregar login o formularios" },
+      { name: "qa-reliability-engineer",     whatItDoes: "Escribe tests y arregla errores",         when: "Sprint C — cerrar los 251 errores TS" },
+      { name: "performance-engineer",        whatItDoes: "Hace que la web cargue rápido",           when: "Cuando el bundle se hace muy grande" },
+      { name: "data-analyst",                whatItDoes: "Crea reportes y dashboards",              when: "Cuando quieres ver métricas nuevas" },
+      { name: "integration-specialist",      whatItDoes: "Conecta con WhatsApp, Stripe, SUNAT",     when: "Cuando agregas un servicio externo" },
+      { name: "mobile-engineer",             whatItDoes: "Builds iOS/Android con Capacitor",        when: "Cuando hay que publicar app móvil" },
+      { name: "seo-growth-strategist",       whatItDoes: "Mejora posicionamiento en Google",        when: "Para aparecer primero en búsquedas" },
+      { name: "product-uiux-strategist",     whatItDoes: "Diseña flujos y experiencia del usuario", when: "Cuando una pantalla se siente confusa" },
+      { name: "solution-architect",          whatItDoes: "Decide arquitectura de alto impacto",     when: "Para cambios grandes de 3+ módulos" },
+      { name: "director-orchestrator",       whatItDoes: "Coordina varios agentes en paralelo",     when: "Cuando una tarea toca muchas áreas" },
+    ],
+  },
+  {
+    category: "Agentes que viven dentro del negocio (IA del día a día)",
+    icon: <Bot className="w-5 h-5" />,
+    agents: [
+      { name: "inventory.agent",      whatItDoes: "Vigila stock, FEFO, alertas",         when: "Cada vez que pides info de inventario" },
+      { name: "customers.agent",      whatItDoes: "Segmentación y análisis de clientes", when: "Para saber quién compra más o está por irse" },
+      { name: "orders.agent",         whatItDoes: "Gestiona estado de pedidos",          when: "Cuando haces preguntas sobre pedidos" },
+      { name: "analytics.agent",      whatItDoes: "KPIs, tendencias, márgenes",          when: "Para reportes automáticos" },
+      { name: "notifications.agent", whatItDoes: "Avisa a clientes y admins",           when: "Cuando hay un cambio importante" },
+      { name: "pricing.agent",        whatItDoes: "Sugiere precios y bundles",           when: "Cuando preguntas qué promociones hacer" },
+    ],
+  },
 ];
 
-// ─── DATA: Skills installed ─────────────────────────────────────────────────
+// ─── DATA: Skills simples ─────────────────────────────────────────────────
 
-interface SkillEntry {
-  origin: string;
-  name: string;
-  purpose: string;
-}
-
-const SKILLS: SkillEntry[] = [
-  { origin: "claude-code:core",  name: "update-config",              purpose: "Settings.json + hooks config" },
-  { origin: "claude-code:core",  name: "keybindings-help",           purpose: "~/.claude/keybindings.json" },
-  { origin: "claude-code:core",  name: "simplify",                   purpose: "Revisa código cambiado y mejora claridad" },
-  { origin: "claude-code:core",  name: "loop",                       purpose: "Ejecuta comando en intervalo recurrente" },
-  { origin: "claude-code:core",  name: "schedule",                   purpose: "Crea triggers cron para agentes" },
-  { origin: "claude-code:core",  name: "claude-api",                 purpose: "Build apps con Claude API / Agent SDK" },
-  { origin: "project:local",     name: "/agent-team",                purpose: "Agent Team para Bodega San Martín" },
-  { origin: "project:local",     name: "/checkpoint",                purpose: "Guardar estado de progreso" },
-  { origin: "project:local",     name: "/deploy",                    purpose: "Deploy completo a Vercel" },
-  { origin: "project:local",     name: "/fix",                       purpose: "Protocolo de debugging sistemático" },
-  { origin: "project:local",     name: "/new-feature",               purpose: "Nueva feature con branch aislada" },
-  { origin: "project:local",     name: "/review",                    purpose: "Revisar cambios del branch" },
-  { origin: "project:local",     name: "/test-all",                  purpose: "Suite completa lint + build + test" },
-  { origin: "feature-dev",       name: "feature-dev:feature-dev",    purpose: "Guided feature dev con arch focus" },
-  { origin: "code-review",       name: "code-review:code-review",    purpose: "Code review de un PR" },
-  { origin: "ralph-loop",        name: "ralph-loop:*",               purpose: "Start/cancel Ralph Loop en sesión actual" },
-  { origin: "vercel:plugin",     name: "vercel:bootstrap",           purpose: "Bootstrap repo con recursos Vercel-linked" },
-  { origin: "vercel:plugin",     name: "vercel:deploy",              purpose: "Deploy al proyecto Vercel" },
-  { origin: "vercel:plugin",     name: "vercel:env",                 purpose: "Manage Vercel env vars" },
-  { origin: "vercel:plugin",     name: "vercel:marketplace",         purpose: "Marketplace integrations" },
-  { origin: "vercel:plugin",     name: "vercel:status",              purpose: "Status del proyecto Vercel" },
-  { origin: "vercel:plugin",     name: "vercel:ai-sdk",              purpose: "AI SDK expert guidance" },
-  { origin: "vercel:plugin",     name: "vercel:ai-gateway",          purpose: "AI Gateway routing + failover" },
-  { origin: "vercel:plugin",     name: "vercel:nextjs",              purpose: "Next.js App Router guidance" },
-  { origin: "vercel:plugin",     name: "vercel:env-vars",            purpose: ".env files + vercel env CLI" },
-  { origin: "vercel:plugin",     name: "vercel:knowledge-update",    purpose: "Corrige conocimiento outdated de Vercel" },
-  { origin: "vercel:plugin",     name: "vercel:verification",        purpose: "Full-story verification del flow" },
-  { origin: "superpowers",       name: "superpowers:brainstorming",  purpose: "Explorar intent antes de creativo" },
-  { origin: "superpowers",       name: "superpowers:writing-plans",  purpose: "Plan multi-step antes de código" },
-  { origin: "superpowers",       name: "superpowers:executing-plans", purpose: "Ejecutar plan en sesión separada" },
-  { origin: "superpowers",       name: "superpowers:test-driven-development", purpose: "TDD antes de implementación" },
-  { origin: "superpowers",       name: "superpowers:systematic-debugging", purpose: "Debug sistemático" },
-  { origin: "frontend-design",   name: "frontend-design:frontend-design", purpose: "UI distintiva production-grade" },
-  { origin: "supabase",          name: "supabase-postgres-best-practices", purpose: "32 mejores prácticas Postgres/Supabase" },
+const SKILLS_SIMPLE = [
+  { name: "/agent-team",    whatItDoes: "Lanza varios agentes a la vez para tareas grandes" },
+  { name: "/fix",           whatItDoes: "Debugging sistemático cuando algo falla" },
+  { name: "/deploy",        whatItDoes: "Publica cambios a producción" },
+  { name: "/new-feature",   whatItDoes: "Arranca una feature nueva en branch aislada" },
+  { name: "/review",        whatItDoes: "Revisa cambios antes de mergear" },
+  { name: "/test-all",      whatItDoes: "Corre lint + build + tests completos" },
+  { name: "/checkpoint",    whatItDoes: "Guarda progreso antes de pausar" },
+  { name: "simplify",       whatItDoes: "Mejora claridad del código recién cambiado" },
+  { name: "brainstorming",  whatItDoes: "Explora qué construir antes de programar" },
+  { name: "writing-plans",  whatItDoes: "Planifica trabajo multi-paso antes de código" },
+  { name: "TDD",            whatItDoes: "Escribe tests antes del código" },
+  { name: "systematic-debugging", whatItDoes: "Debug paso a paso sistemático" },
+  { name: "vercel:deploy",  whatItDoes: "Deploy específico al hosting Vercel" },
+  { name: "vercel:env",     whatItDoes: "Gestiona variables de entorno de Vercel" },
+  { name: "vercel:ai-sdk",  whatItDoes: "Guía del Vercel AI SDK (si se usa)" },
+  { name: "frontend-design", whatItDoes: "Crea UI production-grade con diseño distintivo" },
+  { name: "supabase-postgres-best-practices", whatItDoes: "32 reglas de oro de Postgres" },
 ];
 
-// ─── DATA: MCP Servers ──────────────────────────────────────────────────────
+// ─── DATA: MCP simple ─────────────────────────────────────────────────────
 
-interface MCPEntry {
-  name: string;
-  purpose: string;
-  status: "active" | "optional";
-}
-
-const MCP_SERVERS: MCPEntry[] = [
-  { name: "context7",          purpose: "Fetch current docs de librerías/frameworks (override training cutoff)", status: "active" },
-  { name: "playwright",        purpose: "Browser automation para E2E testing + debugging visual",               status: "active" },
-  { name: "desktop-commander", purpose: "File ops + terminal + process management",                             status: "active" },
-  { name: "memory",            purpose: "Knowledge graph persistente (entities/relations/observations)",        status: "active" },
-  { name: "sequential-thinking", purpose: "Multi-step reasoning tool",                                          status: "active" },
-  { name: "claude_ai_Gmail",   purpose: "Gmail read/search/create drafts",                                      status: "active" },
-  { name: "claude_ai_Google_Calendar", purpose: "GCal events + meeting finder",                                 status: "active" },
+const MCP_SIMPLE = [
+  { name: "context7",           whatItDoes: "Lee documentación actualizada de librerías (React, Next, Prisma, etc) — evita que yo use APIs viejas" },
+  { name: "playwright",         whatItDoes: "Me deja abrir un navegador y testear cosas en vivo" },
+  { name: "desktop-commander",  whatItDoes: "Me da acceso a terminal, archivos, procesos" },
+  { name: "memory",             whatItDoes: "Grafo de conocimiento que recuerda cosas entre sesiones" },
+  { name: "sequential-thinking", whatItDoes: "Me deja razonar paso a paso para problemas complejos" },
+  { name: "Gmail",              whatItDoes: "Puedo leer y redactar emails" },
+  { name: "Google Calendar",    whatItDoes: "Puedo agendar reuniones y buscar horarios libres" },
 ];
 
-// ─── DATA: Implementations (48 Excel 2026 + 28 Excel Agentes IA) ────────────
-
-interface ImplEntry {
-  category: string;
-  practice: string;
-  status: "✅" | "⚠️" | "❌" | "➖";
-  evidence: string;
-}
-
-const IMPLEMENTATIONS: ImplEntry[] = [
-  // Subset de las 48+28 — las más importantes del scoreboard real
-  { category: "Clean Code",      practice: "Funciones < 15 líneas, SRP",                  status: "✅", evidence: "ESLint + Husky + admin/page.tsx 3996→1257" },
-  { category: "Repository",      practice: "lib/db/*.db.ts nunca Prisma directo",        status: "✅", evidence: "25 clases DB" },
-  { category: "Validación",      practice: "Zod safeParse obligatorio",                   status: "✅", evidence: "Todos los route handlers" },
-  { category: "Multi-tenancy",   practice: "tenantId en todas las queries + aislamiento", status: "✅", evidence: "44 grietas cerradas en audit, 7 menores" },
-  { category: "Índices",         practice: "@@index en WHERE/ORDER BY",                   status: "✅", evidence: "113/116 modelos + 6 nuevos hoy (TD-019)" },
-  { category: "Cache",           practice: "getOrSet + invalidate híbrido",               status: "✅", evidence: "lib/cache.ts Memory+Redis" },
-  { category: "Testing",         practice: "Coverage ≥80%",                               status: "✅", evidence: "2113 tests, 80% lines enforced" },
-  { category: "Monitoring",      practice: "Sentry + OTEL + traceId",                     status: "✅", evidence: "3 capas + 4 alertas pendientes" },
-  { category: "API",             practice: "OpenAPI generado + versionado /v1",           status: "✅", evidence: "npm run openapi:generate + app/api/v1" },
-  { category: "Rolling Releases", practice: "Vercel canary 10→50→100",                    status: "⚠️", evidence: "Config lista, falta upgrade a Pro" },
-  { category: "Secret Management", practice: "Doppler",                                   status: "⚠️", evidence: "Plan docs/doppler.md, falta Fase 1" },
-  { category: "LLM Router",      practice: "Tiers cheap/balanced/premium",                status: "✅", evidence: "lib/llm-router.ts + 5 endpoints migrados" },
-  { category: "HITL",            practice: "Approval modal antes de tool crítico",        status: "✅", evidence: "HITLApprovalsBanner.tsx + 2 tools marked" },
-  { category: "Structured Output", practice: "JSON schema en respuestas LLM",             status: "⚠️", evidence: "ai-json-parser + 3 endpoints (prompt-based)" },
-  { category: "Temperaturas",    practice: "Diferenciadas por rol",                       status: "✅", evidence: "lib/ai-temperatures.ts 8 roles × 9 endpoints" },
-  { category: "Prompt Injection", practice: "Sanitization + guard",                       status: "✅", evidence: "buildInjectionGuard() en cada call" },
-  { category: "Rate Limiting",   practice: "Per-endpoint + per-IP",                       status: "✅", evidence: "60 req/min + MODERATE/STRICT tiers" },
-  { category: "Function Calling", practice: "Tools con permisos granulares",              status: "✅", evidence: "32 tools en tool-definitions.ts + RBAC" },
-  { category: "RAG vectorial",   practice: "ChromaDB / pgvector",                         status: "❌", evidence: "Snapshot text + tools (suficiente hasta >1000 productos)" },
-  { category: "LlamaGuard",      practice: "Moderación de outputs",                       status: "❌", evidence: "moderateLLMOutput regex básico" },
-  { category: "Voice",           practice: "Speech API + one-click",                      status: "✅", evidence: "AICommandCenter.tsx webkitSpeechRecognition" },
-  { category: "ADR",             practice: "Decisiones arquitectónicas en docs/adr/",     status: "✅", evidence: "10 ADRs (001-010)" },
-  { category: "TypeScript",      practice: "Strict gate (ignoreBuildErrors=false)",       status: "⚠️", evidence: "251 errores pendientes (-218 en sesión)" },
-];
-
-// ─── DATA: Scoreboards ──────────────────────────────────────────────────────
+// ─── DATA: Scoreboards ─────────────────────────────────────────────────────
 
 const SCORES = {
-  excel2026: { applied: 28, partial: 13, missing: 3, na: 4, total: 48 },
-  agentesIA: { applied: 13, partial: 10, missing: 5, na: 0, total: 28 },
+  excel2026: { applied: 28, partial: 13, missing: 3, na: 4, total: 48, label: "Buenas prácticas generales (48)" },
+  agentesIA: { applied: 13, partial: 10, missing: 5, na: 0, total: 28, label: "Mejores prácticas de IA (28)" },
 };
 
 function calcScore(s: { applied: number; partial: number; missing: number; na: number; total: number }) {
@@ -312,137 +342,307 @@ function calcScore(s: { applied: number; partial: number; missing: number; na: n
   };
 }
 
-// ─── DATA: Business model / pricing ─────────────────────────────────────────
+// ─── DATA: Precio por venta / mes (SOLES) ──────────────────────────────────
 
-interface PricingEntry {
-  model: string;
-  price: string;
-  setup: string;
+interface PricingPlan {
+  icon: ReactNode;
+  name: string;
+  priceLabel: string;
+  priceDetail: string;
   target: string;
-  notes: string;
+  includes: string[];
+  excludes: string[];
+  highlight?: boolean;
 }
 
-const PRICING: PricingEntry[] = [
+const PRICING_PLANS: PricingPlan[] = [
   {
-    model: "Licencia perpetua (self-hosted)",
-    price: "$3,500 - $5,500 USD único",
-    setup: "2-5 días instalación + training",
-    target: "Bodegas medianas con IT propio",
-    notes: "Incluye 116 modelos Prisma, admin completo, marketplace, 15+ módulos IA, sin subscription. Cliente hostea.",
+    icon: <Package className="w-6 h-6" />,
+    name: "Plan Básico",
+    priceLabel: "S/ 189",
+    priceDetail: "por mes, por tienda",
+    target: "Bodegas pequeñas que recién arrancan",
+    includes: [
+      "Hasta 500 productos",
+      "Admin completo (30+ pantallas)",
+      "Chat IA para clientes",
+      "Pagos con Yape y efectivo",
+      "Hasta 1,000 pedidos/mes",
+    ],
+    excludes: [
+      "Marketplace B2B mayorista",
+      "IA premium (solo básica)",
+      "App móvil nativa",
+    ],
   },
   {
-    model: "SaaS multi-tenant (hosted)",
-    price: "$49 - $149 USD / mes por tenant",
-    setup: "0 días — login inmediato",
-    target: "Bodegas pequeñas sin IT",
-    notes: "Tier básico $49 (hasta 500 productos), Plus $99 (2000), Pro $149 (ilimitado + IA avanzada). Marketplace compartido.",
+    icon: <Star className="w-6 h-6" />,
+    name: "Plan Plus",
+    priceLabel: "S/ 379",
+    priceDetail: "por mes, por tienda",
+    target: "Bodegas en crecimiento con varios vendedores",
+    highlight: true,
+    includes: [
+      "Hasta 2,000 productos",
+      "Todo del Básico +",
+      "15 módulos de IA (análisis, forecasting, coach)",
+      "Pagos con Stripe (tarjetas)",
+      "Push notifications",
+      "Hasta 5,000 pedidos/mes",
+    ],
+    excludes: [
+      "Marketplace mayorista",
+      "Multi-sucursal",
+    ],
   },
   {
-    model: "White-label para cadenas",
-    price: "$8,000 - $15,000 USD / año",
-    setup: "1-3 semanas customización",
-    target: "Cadenas de tiendas (5-50 sucursales)",
-    notes: "Branding custom, dominio propio, features exclusivas. Soporte dedicado.",
+    icon: <Crown className="w-6 h-6" />,
+    name: "Plan Pro",
+    priceLabel: "S/ 569",
+    priceDetail: "por mes, por tienda",
+    target: "Negocios medianos con IA avanzada",
+    includes: [
+      "Productos ilimitados",
+      "Todo del Plus +",
+      "Marketplace mayorista (WholesaleOrder)",
+      "App móvil iOS + Android",
+      "SUNAT facturación electrónica",
+      "Soporte prioritario WhatsApp",
+      "Pedidos ilimitados",
+    ],
+    excludes: [],
   },
   {
-    model: "Franquicia Buleje SaaS",
-    price: "$500 USD inicial + 15% revenue share",
-    setup: "1 semana onboarding",
-    target: "Emprendedores locales que quieran operar",
-    notes: "Brandon opera la plataforma, el franquiciado gestiona clientes en su ciudad.",
-  },
-  {
-    model: "API + módulos on-demand",
-    price: "$0.05 USD por llamada AI / $99 base",
-    setup: "0 días — solo API key",
-    target: "Desarrolladores/ISVs que integran IA a su propia app",
-    notes: "Vender los 32 tools del orchestrator como API. Cobrar por uso. Vale la pena si hay tráfico.",
+    icon: <Shield className="w-6 h-6" />,
+    name: "Franquicia Buleje",
+    priceLabel: "S/ 1,900",
+    priceDetail: "inicial + 15% de ingresos",
+    target: "Emprendedores que quieren vender el sistema en su ciudad",
+    includes: [
+      "Tú atiendes a 10-50 bodegas locales",
+      "Nosotros hosteamos todo",
+      "Marca compartida",
+      "Capacitación 1 semana",
+    ],
+    excludes: [
+      "Modificar código (eso cuesta aparte)",
+    ],
   },
 ];
 
-// ─── DATA: Roadmap ──────────────────────────────────────────────────────────
+// ─── DATA: Vender el proyecto ENTERO (paquetes completos, SOLES) ───────────
 
-interface RoadmapEntry {
-  phase: string;
-  items: string[];
-  effort: string;
-  impact: string;
+interface SellPackage {
+  icon: ReactNode;
+  name: string;
+  price: string;
+  priceDetail: string;
+  whatIsIt: string;
+  includes: string[];
+  excludes: string[];
+  target: string;
+  highlight?: boolean;
+  tier: "budget" | "popular" | "premium" | "enterprise" | "total";
 }
 
-const ROADMAP: RoadmapEntry[] = [
+const SELL_PACKAGES: SellPackage[] = [
   {
-    phase: "Inmediato (próximas 2-3 sesiones)",
-    items: [
-      "Sprint C Wave 3 — cluster Backend (48 errores TS)",
-      "Sprint C Wave 4 — long tail (203 errores)",
-      "Flip ignoreBuildErrors=false + ADR-008",
-      "Activar Anthropic provider real (requiere API key)",
-      "Toggles humanos: Vercel Rolling + Sentry alerts + Doppler + Stripe",
+    tier: "budget",
+    icon: <Box className="w-7 h-7" />,
+    name: "Solo el código",
+    price: "S/ 8,000 – 15,000",
+    priceDetail: "pago único",
+    whatIsIt: "Te doy el repositorio completo como está. Tú te encargas del resto.",
+    includes: [
+      "Todo el código fuente (repo GitHub private)",
+      "116 modelos de base de datos",
+      "435+ endpoints de API",
+      "Admin completo con 30+ módulos",
+      "Documentación técnica (10 ADRs + docs/)",
+      "Derecho a modificarlo y usarlo",
     ],
-    effort: "3-4 sesiones + 35 min humanos",
-    impact: "TS gate activado, Excel 2026 → 80%, Excel IA → 70%",
+    excludes: [
+      "Sin soporte técnico",
+      "Sin servidor ni hosting",
+      "Sin base de datos",
+      "Sin API keys (Groq, Stripe, etc)",
+      "Sin garantía de bugs",
+    ],
+    target: "Empresa con equipo técnico propio que quiere arrancar rápido",
   },
   {
-    phase: "Corto plazo (1-2 sprints)",
-    items: [
-      "TD-018 Float → Decimal en 47 campos monetarios (SUNAT compliance)",
-      "Refactor admin/page.tsx Pasos 4-7 (1257 → <300 líneas)",
-      "Promotions/ai-suggest → UI estructurada (consume items[] del JSON)",
-      "Unused-vars cleanup sweeping",
-      "E2E Playwright para HITL modal",
+    tier: "popular",
+    icon: <Star className="w-7 h-7" />,
+    name: "Código + licencia comercial",
+    price: "S/ 18,000 – 28,000",
+    priceDetail: "pago único",
+    whatIsIt: "Código + derecho legal de usarlo, modificarlo y hasta venderlo como tuyo.",
+    highlight: true,
+    includes: [
+      "Todo lo del paquete 'Solo código'",
+      "Licencia perpetua (úsalo para siempre)",
+      "Derecho de modificarlo sin restricciones",
+      "Derecho de venderlo bajo tu marca (white-label)",
+      "1 mes de soporte por email",
     ],
-    effort: "4-6 sesiones",
-    impact: "Correctness fiscal, calidad de código, UX admin",
+    excludes: [
+      "Sin hosting",
+      "Sin base de datos en vivo",
+      "Sin API keys",
+    ],
+    target: "Agencias de software que quieren ofrecerlo a sus clientes",
   },
   {
-    phase: "Mediano plazo (1 mes)",
-    items: [
-      "RAG vectorial (pgvector o ChromaDB) cuando catálogo > 1000 productos",
-      "LlamaGuard moderación antes de abrir chat al marketplace",
-      "Service Worker + IndexedDB para PWA offline-first",
-      "DDD formal en módulos core (ventas, facturas)",
+    tier: "premium",
+    icon: <Rocket className="w-7 h-7" />,
+    name: "Código + infraestructura lista",
+    price: "S/ 35,000 – 50,000",
+    priceDetail: "pago único",
+    whatIsIt: "Te entrego TODO funcionando: código, servidor, base de datos, cuentas configuradas.",
+    includes: [
+      "Todo lo del paquete 'Código + licencia'",
+      "Cuenta Vercel con proyecto deployado",
+      "Base de datos Supabase con 116 tablas creadas",
+      "Groq API key configurada",
+      "Datos demo poblados para arrancar",
+      "Dominio propio configurado",
+      "2 semanas de soporte",
     ],
-    effort: "3-4 sprints",
-    impact: "Escalabilidad + PWA + correctness dominio",
+    excludes: [
+      "Costos mensuales de hosting corren por tu cuenta (~S/ 80/mes)",
+      "Features nuevas son proyectos aparte",
+    ],
+    target: "Negocio que quiere lanzar YA sin tocar código",
   },
   {
-    phase: "Largo plazo / visión",
-    items: [
-      "Lanzar SaaS multi-tenant público ($49-$149/mes)",
-      "Franquicia Buleje para 3-5 emprendedores locales",
-      "Integración SUNAT facturación electrónica productiva",
-      "App móvil Capacitor con push + offline",
-      "Marketplace B2B mayorista (WholesaleOrder ya modelado)",
+    tier: "enterprise",
+    icon: <Shield className="w-7 h-7" />,
+    name: "Paquete empresarial completo",
+    price: "S/ 55,000 – 85,000",
+    priceDetail: "pago único",
+    whatIsIt: "Todo lo anterior + 3 meses de soporte con bugs, ajustes y capacitación a tu equipo.",
+    includes: [
+      "Todo lo del paquete 'Código + infraestructura'",
+      "3 meses de soporte técnico (bugs + ajustes menores)",
+      "Capacitación 2 días presencial o remota",
+      "Manual de operaciones personalizado",
+      "Migración de tus datos existentes",
+      "Sesión mensual de revisión de métricas",
     ],
-    effort: "6 meses",
-    impact: "Conversión de proyecto → producto con revenue",
+    excludes: [
+      "Features completamente nuevas son cotizadas aparte",
+      "Costo de hosting post-3-meses corre por cliente",
+    ],
+    target: "Empresa mediana que quiere todo incluido con respaldo",
+  },
+  {
+    tier: "total",
+    icon: <Crown className="w-7 h-7" />,
+    name: "Todo el negocio Buleje",
+    price: "S/ 120,000 – 200,000",
+    priceDetail: "pago único + opciones",
+    whatIsIt: "Te llevas TODO: código + infra + la marca Buleje + dominios + clientes actuales (si hay).",
+    includes: [
+      "Todo lo del paquete 'Empresarial'",
+      "Marca registrada 'Buleje' (logos, nombre)",
+      "Dominios (buleje.com y otros)",
+      "Cuentas de GitHub, Vercel, Supabase transferidas",
+      "6 meses de soporte full",
+      "Capacitación 1 semana a tu equipo",
+      "Derecho exclusivo en Perú (si lo pactamos)",
+      "Brandon firma acuerdo de no-competencia si se pacta",
+    ],
+    excludes: [
+      "Si hay clientes activos, se negocia aparte su traspaso",
+    ],
+    target: "Inversor o empresa grande que quiere entrar al mercado SaaS de bodegas en Perú",
+  },
+];
+
+// ─── DATA: Roadmap simple ──────────────────────────────────────────────────
+
+const ROADMAP_SIMPLE = [
+  {
+    when: "Próximos días",
+    emoji: "⚡",
+    items: [
+      "Terminar de limpiar los 251 errores TypeScript restantes",
+      "Activar el gate de tipos estricto (no más bugs silenciosos)",
+      "Activar Claude Anthropic (falta tu API key)",
+      "Configurar Vercel Rolling Releases + Sentry + Doppler + Stripe (35 min tuyos)",
+    ],
+  },
+  {
+    when: "Próximas 2-3 semanas",
+    emoji: "🚀",
+    items: [
+      "Migrar todos los precios de Float a Decimal (para que SUNAT no reclame)",
+      "Terminar refactor del admin/page.tsx (reducir de 1257 a <300 líneas)",
+      "UI estructurada para las sugerencias de promociones",
+      "Tests end-to-end del flujo HITL (aprobar/rechazar acciones IA)",
+    ],
+  },
+  {
+    when: "Próximo mes",
+    emoji: "🧠",
+    items: [
+      "RAG vectorial cuando tengas >1000 productos (búsqueda semántica)",
+      "LlamaGuard para moderar mensajes antes de abrir chat al público",
+      "PWA con service worker para trabajar sin internet",
+      "DDD formal en módulos críticos (ventas, facturas)",
+    ],
+  },
+  {
+    when: "Próximos 6 meses",
+    emoji: "🏆",
+    items: [
+      "Lanzar SaaS público con los 3 planes (Básico/Plus/Pro)",
+      "Franquiciar a 3-5 emprendedores locales en otras ciudades",
+      "SUNAT facturación electrónica en producción real",
+      "App móvil Capacitor publicada en App Store y Play Store",
+      "Marketplace B2B mayorista con al menos 10 bodegas",
+    ],
   },
 ];
 
 // ─── Main component ─────────────────────────────────────────────────────────
 
 export default function ProjectIntelPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("stack");
+  const [activeTab, setActiveTab] = useState<TabId>("what");
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600/10 flex items-center justify-center">
-            <Package className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-3xl p-6 shadow-xl">
+        <div className="flex items-start gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+            <Package className="w-7 h-7" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Panorama del Proyecto</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              Stack, arquitectura, agentes, IA, implementaciones y modelo de negocio — todo en un solo lugar
+          <div className="flex-1">
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight">Panorama del Proyecto</h1>
+            <p className="text-sm md:text-base text-indigo-100 mt-1">
+              Tu bodega convertida en software completo — todo en un solo vistazo
             </p>
           </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mt-5">
+          {WHAT_HIGHLIGHTS.map((h) => (
+            <div
+              key={h.label}
+              className="bg-white/10 backdrop-blur-sm rounded-xl p-3 hover:bg-white/20 transition-colors"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                {h.icon}
+                <span className="text-[10px] uppercase tracking-wide font-bold opacity-80">{h.label}</span>
+              </div>
+              <div className="text-xs font-semibold">{h.value}</div>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
+      <div className="border-b border-gray-200 dark:border-gray-800 overflow-x-auto scrollbar-thin">
         <div className="flex gap-1 min-w-max">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
@@ -451,26 +651,14 @@ export default function ProjectIntelPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={[
-                  "flex items-center gap-2 px-3 py-2.5 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap",
+                  "flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap",
                   active
-                    ? "border-indigo-600 text-indigo-700 dark:text-indigo-300"
-                    : "border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200",
+                    ? "border-indigo-600 text-indigo-700 dark:text-indigo-300 bg-indigo-50/50 dark:bg-indigo-950/20"
+                    : "border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-900/50",
                 ].join(" ")}
               >
                 {tab.icon}
                 {tab.label}
-                {tab.count != null && (
-                  <span
-                    className={[
-                      "text-[10px] font-bold px-1.5 py-0.5 rounded-full",
-                      active
-                        ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
-                        : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
-                    ].join(" ")}
-                  >
-                    {tab.count}
-                  </span>
-                )}
               </button>
             );
           })}
@@ -478,45 +666,156 @@ export default function ProjectIntelPage() {
       </div>
 
       {/* Content */}
-      <div>
-        {activeTab === "stack" && <StackTab />}
-        {activeTab === "arch" && <ArchTab />}
-        {activeTab === "ai" && <AITab />}
-        {activeTab === "agents" && <AgentsTab />}
-        {activeTab === "skills" && <SkillsTab />}
-        {activeTab === "mcp" && <MCPTab />}
-        {activeTab === "impl" && <ImplTab />}
-        {activeTab === "scores" && <ScoresTab />}
-        {activeTab === "business" && <BusinessTab />}
+      <div className="min-h-[400px]">
+        {activeTab === "what"    && <WhatTab />}
+        {activeTab === "stack"   && <StackTab />}
+        {activeTab === "how"     && <HowTab />}
+        {activeTab === "ai"      && <AITab />}
+        {activeTab === "agents"  && <AgentsTab />}
+        {activeTab === "skills"  && <SkillsTab />}
+        {activeTab === "mcp"     && <MCPTab />}
+        {activeTab === "scores"  && <ScoresTab />}
+        {activeTab === "pricing" && <PricingTab />}
+        {activeTab === "sell"    && <SellTab />}
         {activeTab === "roadmap" && <RoadmapTab />}
       </div>
     </div>
   );
 }
 
-// ─── Tab components ─────────────────────────────────────────────────────────
+// ─── Tab: Qué es ───────────────────────────────────────────────────────────
+
+function WhatTab() {
+  return (
+    <div className="space-y-5">
+      <div className="bg-white dark:bg-gray-950 border-2 border-indigo-200 dark:border-indigo-900/40 rounded-2xl p-6">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <Rocket className="w-5 h-5 text-indigo-600" />
+          ¿Qué es Bodega San Martín?
+        </h2>
+        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+          Es un <strong>sistema ERP + e-commerce completo</strong> para bodegas y minimarkets en Perú, con inteligencia artificial integrada. No es un MVP — es un producto vendible YA.
+          Arrancó como la herramienta interna de tu tienda familiar en Pucallpa y creció hasta convertirse en una plataforma SaaS multi-tenant que puede servir a cientos de tiendas a la vez.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <BigCard
+          icon={<ShoppingCart className="w-8 h-8" />}
+          title="Para los clientes"
+          color="blue"
+          items={[
+            "Tienda web moderna con fotos y precios",
+            "Carrito y pago en pocos clics",
+            "WhatsApp con IA que responde precios reales",
+            "App móvil iOS + Android (Capacitor)",
+            "Pagos con Yape, tarjeta, efectivo",
+          ]}
+        />
+        <BigCard
+          icon={<Users className="w-8 h-8" />}
+          title="Para ti (el dueño)"
+          color="emerald"
+          items={[
+            "Admin completo con 30+ pantallas",
+            "15 módulos de IA que analizan tu negocio",
+            "Alertas automáticas de stock bajo y vencimientos",
+            "Dashboard con KPIs, márgenes, tendencias",
+            "Control multi-tenant (una plataforma, muchas tiendas)",
+          ]}
+        />
+        <BigCard
+          icon={<Brain className="w-8 h-8" />}
+          title="IA inteligente"
+          color="purple"
+          items={[
+            "Chat gerencial que entiende tu negocio",
+            "Coach de performance con sugerencias",
+            "Predicción de demanda",
+            "Generador de promociones",
+            "OCR de facturas (escanea y guarda)",
+          ]}
+        />
+        <BigCard
+          icon={<Shield className="w-8 h-8" />}
+          title="Seguro y escalable"
+          color="amber"
+          items={[
+            "Login con JWT httpOnly + rotación",
+            "Permisos por rol (admin, cajero, delivery, etc)",
+            "Aislamiento entre tiendas (multi-tenancy)",
+            "Tests automáticos en cada cambio (2113 tests)",
+            "Monitoreo con Sentry y alertas",
+          ]}
+        />
+      </div>
+    </div>
+  );
+}
+
+function BigCard({
+  icon,
+  title,
+  color,
+  items,
+}: {
+  icon: ReactNode;
+  title: string;
+  color: "blue" | "emerald" | "purple" | "amber";
+  items: string[];
+}) {
+  const colorMap = {
+    blue:    "from-blue-50 to-blue-100 dark:from-blue-950/30 dark:to-blue-900/20 border-blue-200 dark:border-blue-900/40 text-blue-700 dark:text-blue-300",
+    emerald: "from-emerald-50 to-emerald-100 dark:from-emerald-950/30 dark:to-emerald-900/20 border-emerald-200 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-300",
+    purple:  "from-purple-50 to-purple-100 dark:from-purple-950/30 dark:to-purple-900/20 border-purple-200 dark:border-purple-900/40 text-purple-700 dark:text-purple-300",
+    amber:   "from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/20 border-amber-200 dark:border-amber-900/40 text-amber-700 dark:text-amber-300",
+  };
+  return (
+    <div className={`bg-gradient-to-br border-2 rounded-2xl p-5 ${colorMap[color]}`}>
+      <div className="flex items-center gap-3 mb-3">
+        {icon}
+        <h3 className="text-base font-bold">{title}</h3>
+      </div>
+      <ul className="space-y-1.5">
+        {items.map((item, i) => (
+          <li key={i} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-200">
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ─── Tab: Stack simple ─────────────────────────────────────────────────────
 
 function StackTab() {
-  const categories = Array.from(new Set(STACK.map((s) => s.category)));
   return (
-    <div className="space-y-6">
-      {categories.map((cat) => (
-        <div key={cat}>
-          <h3 className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-2">
-            <Zap className="w-3 h-3" />
-            {cat}
+    <div className="space-y-4">
+      {SIMPLE_STACK.map((section) => (
+        <div
+          key={section.category}
+          className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5"
+        >
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              {section.icon}
+            </div>
+            {section.category}
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {STACK.filter((s) => s.category === cat).map((item) => (
-              <div
-                key={item.name}
-                className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-3"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-bold text-gray-900 dark:text-white">{item.name}</span>
-                  <span className="text-[10px] font-mono text-gray-500 dark:text-gray-400">{item.version}</span>
+          <div className="space-y-2 ml-11">
+            {section.items.map((item, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{item.simple}</span>
+                    <code className="text-[10px] font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-900 px-1.5 py-0.5 rounded">
+                      {item.technical}
+                    </code>
+                  </div>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{item.purpose}</p>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">{item.purpose}</p>
               </div>
             ))}
           </div>
@@ -526,112 +825,119 @@ function StackTab() {
   );
 }
 
-function ArchTab() {
+// ─── Tab: Cómo funciona ────────────────────────────────────────────────────
+
+function HowTab() {
   return (
-    <div className="space-y-2">
-      {ARCH.map((a, i) => (
-        <div
-          key={a.layer}
-          className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-4"
-        >
-          <div className="flex items-start gap-3">
-            <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 mt-0.5 w-6 shrink-0">
-              {String(i + 1).padStart(2, "0")}
-            </span>
+    <div className="space-y-3">
+      <div className="bg-teal-50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-900/40 rounded-2xl p-5">
+        <h2 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <Route className="w-5 h-5 text-teal-600" />
+          El viaje de un pedido — paso a paso
+        </h2>
+        <p className="text-xs text-gray-600 dark:text-gray-400">
+          Sigue a un pedido desde que el cliente entra a la tienda hasta que recibe la notificación en su WhatsApp.
+        </p>
+      </div>
+      <div className="space-y-2">
+        {FLOW_STEPS.map((step) => (
+          <div
+            key={step.n}
+            className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex items-start gap-4"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center shrink-0 font-black text-lg">
+              {step.n}
+            </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-baseline justify-between gap-2 mb-1">
-                <h4 className="text-sm font-bold text-gray-900 dark:text-white">{a.layer}</h4>
-                <span className="text-[10px] text-gray-400 font-mono truncate">{a.files}</span>
+              <div className="flex items-start justify-between gap-3 mb-1">
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">{step.title}</h3>
+                <div className="w-7 h-7 rounded-lg bg-teal-50 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400 shrink-0">
+                  {step.icon}
+                </div>
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{a.responsibility}</p>
-              <code className="text-[10px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded">
-                {a.example}
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">{step.simple}</p>
+              <code className="text-[10px] font-mono text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 px-2 py-0.5 rounded">
+                {step.technical}
               </code>
             </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
+
+// ─── Tab: IA simple ────────────────────────────────────────────────────────
 
 function AITab() {
-  const statusCfg: Record<AIEntry["status"], { label: string; cls: string }> = {
-    active:        { label: "Activo",        cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
-    ready:         { label: "Listo",         cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-    stub:          { label: "Stub",          cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
-    "pending-key": { label: "Falta API key", cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300" },
-  };
-  const tierCfg: Record<AIEntry["tier"], string> = {
-    cheap:       "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
-    balanced:    "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300",
-    premium:     "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-    specialized: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300",
+  const statusCfg: Record<SimpleAI["status"], { label: string; cls: string }> = {
+    activo:       { label: "Funcionando",   cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300" },
+    listo:        { label: "Listo para usar", cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+    "falta-key":  { label: "Falta tu API key", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
   };
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800">
-            <th className="text-left py-2 px-2">Tier</th>
-            <th className="text-left py-2 px-2">Provider</th>
-            <th className="text-left py-2 px-2">Modelo</th>
-            <th className="text-left py-2 px-2">Uso</th>
-            <th className="text-left py-2 px-2">Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          {AI_MODELS.map((m, i) => (
-            <tr key={i} className="border-b border-gray-100 dark:border-gray-900">
-              <td className="py-2 px-2">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${tierCfg[m.tier]}`}>
-                  {m.tier}
-                </span>
-              </td>
-              <td className="py-2 px-2 font-semibold text-gray-900 dark:text-white">{m.provider}</td>
-              <td className="py-2 px-2 text-xs font-mono text-gray-600 dark:text-gray-400">{m.model}</td>
-              <td className="py-2 px-2 text-xs text-gray-600 dark:text-gray-400">{m.usage}</td>
-              <td className="py-2 px-2">
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${statusCfg[m.status].cls}`}>
-                  {statusCfg[m.status].label}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/40 rounded-2xl p-5">
+        <h2 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <Brain className="w-5 h-5 text-purple-600" />
+          6 modelos de IA trabajando para tu negocio
+        </h2>
+        <p className="text-xs text-gray-600 dark:text-gray-400">
+          Cada modelo tiene un rol específico. Los que dicen &quot;Gratis&quot; usan el free tier de Groq — no cuestan nada mientras el volumen sea razonable.
+        </p>
+      </div>
+      <div className="space-y-2">
+        {SIMPLE_AI.map((ai, i) => (
+          <div
+            key={i}
+            className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-4"
+          >
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">{ai.role}</h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{ai.whatItDoes}</p>
+              </div>
+              <span
+                className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide shrink-0 ${statusCfg[ai.status].cls}`}
+              >
+                {statusCfg[ai.status].label}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-[11px] text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-100 dark:border-gray-900">
+              <span>
+                <strong>{ai.provider}</strong> · <code className="font-mono">{ai.model}</code>
+              </span>
+              <span className="ml-auto font-semibold text-emerald-600 dark:text-emerald-400">{ai.cost}</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
+
+// ─── Tab: Agentes simple ───────────────────────────────────────────────────
 
 function AgentsTab() {
-  const kinds: AgentEntry["kind"][] = ["claude-code", "internal-domain", "team-orchestrator"];
-  const kindLabels: Record<AgentEntry["kind"], string> = {
-    "claude-code":       "Claude Code Agents (sesiones de desarrollo)",
-    "internal-domain":   "Internal Domain Agents (runtime multi-agent)",
-    "team-orchestrator": "Orquestadores de equipo",
-  };
   return (
-    <div className="space-y-6">
-      {kinds.map((kind) => (
-        <div key={kind}>
-          <h3 className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-2">
-            <Bot className="w-3 h-3" />
-            {kindLabels[kind]}
+    <div className="space-y-5">
+      {AGENTS_BY_TYPE.map((group) => (
+        <div key={group.category}>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-pink-50 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400">
+              {group.icon}
+            </div>
+            {group.category}
           </h3>
-          <div className="space-y-1.5">
-            {AGENTS.filter((a) => a.kind === kind).map((agent) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 ml-11">
+            {group.agents.map((agent) => (
               <div
                 key={agent.name}
-                className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-3 flex items-start gap-3"
+                className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-3"
               >
-                <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center shrink-0">
-                  <Cpu className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <code className="text-xs font-mono font-bold text-gray-900 dark:text-white">{agent.name}</code>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{agent.purpose}</p>
-                </div>
+                <code className="text-[11px] font-mono font-bold text-pink-700 dark:text-pink-300">{agent.name}</code>
+                <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{agent.whatItDoes}</p>
+                <p className="text-[10px] text-gray-500 dark:text-gray-500 mt-1 italic">📌 {agent.when}</p>
               </div>
             ))}
           </div>
@@ -641,156 +947,129 @@ function AgentsTab() {
   );
 }
 
+// ─── Tab: Skills simples ───────────────────────────────────────────────────
+
 function SkillsTab() {
-  const origins = Array.from(new Set(SKILLS.map((s) => s.origin)));
   return (
-    <div className="space-y-4">
-      {origins.map((origin) => (
-        <div key={origin}>
-          <h3 className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">
-            {origin}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-            {SKILLS.filter((s) => s.origin === origin).map((skill) => (
-              <div
-                key={skill.name}
-                className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-2.5 flex items-start gap-2"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <code className="text-[11px] font-mono font-bold text-gray-900 dark:text-white">{skill.name}</code>
-                  <p className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5">{skill.purpose}</p>
-                </div>
-              </div>
-            ))}
+    <div className="space-y-3">
+      <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-2xl p-5">
+        <h2 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-amber-600" />
+          Herramientas que uso mientras trabajo contigo
+        </h2>
+        <p className="text-xs text-gray-600 dark:text-gray-400">
+          Cada herramienta es un atajo para tareas repetitivas. Tú las invocas con comandos tipo <code>/fix</code>, <code>/deploy</code>, etc.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {SKILLS_SIMPLE.map((skill) => (
+          <div
+            key={skill.name}
+            className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-3 flex items-start gap-3"
+          >
+            <Sparkles className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <code className="text-xs font-mono font-bold text-gray-900 dark:text-white">{skill.name}</code>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{skill.whatItDoes}</p>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
+
+// ─── Tab: MCP simple ───────────────────────────────────────────────────────
 
 function MCPTab() {
   return (
-    <div className="space-y-2">
-      {MCP_SERVERS.map((m) => (
-        <div
-          key={m.name}
-          className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-4 flex items-start gap-3"
-        >
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
-            <Plug className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <code className="text-sm font-mono font-bold text-gray-900 dark:text-white">{m.name}</code>
-              <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
-                  m.status === "active"
-                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
-                    : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                }`}
-              >
-                {m.status}
-              </span>
+    <div className="space-y-3">
+      <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 rounded-2xl p-5">
+        <h2 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <Plug className="w-5 h-5 text-emerald-600" />
+          Conectores con el mundo externo
+        </h2>
+        <p className="text-xs text-gray-600 dark:text-gray-400">
+          MCP son las &quot;extensiones&quot; que me permiten leer documentación actualizada, abrir navegadores, revisar Gmail, etc.
+        </p>
+      </div>
+      <div className="space-y-2">
+        {MCP_SIMPLE.map((mcp) => (
+          <div
+            key={mcp.name}
+            className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex items-start gap-3"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
+              <Plug className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{m.purpose}</p>
+            <div className="flex-1 min-w-0">
+              <code className="text-sm font-mono font-bold text-gray-900 dark:text-white">{mcp.name}</code>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{mcp.whatItDoes}</p>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
 
-function ImplTab() {
-  const statusCfg: Record<ImplEntry["status"], { cls: string; label: string }> = {
-    "✅": { cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300", label: "Aplicada" },
-    "⚠️": { cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",         label: "Parcial"  },
-    "❌": { cls: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",                 label: "Falta"    },
-    "➖": { cls: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",                label: "N/A"      },
-  };
-  return (
-    <div className="space-y-1.5">
-      {IMPLEMENTATIONS.map((i, idx) => (
-        <div
-          key={idx}
-          className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-lg p-3 flex items-start gap-3"
-        >
-          <span
-            className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide shrink-0 ${statusCfg[i.status].cls}`}
-          >
-            {i.status} {statusCfg[i.status].label}
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-baseline justify-between gap-2 mb-1">
-              <h4 className="text-sm font-bold text-gray-900 dark:text-white">{i.practice}</h4>
-              <span className="text-[10px] text-gray-400 uppercase tracking-wide">{i.category}</span>
-            </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{i.evidence}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+// ─── Tab: Scores ──────────────────────────────────────────────────────────
 
 function ScoresTab() {
   const e2026 = calcScore(SCORES.excel2026);
   const eIA = calcScore(SCORES.agentesIA);
   return (
     <div className="space-y-4">
-      <ScoreCard
-        title="Excel 2026 — 48 prácticas generales"
-        snap={SCORES.excel2026}
-        score={e2026}
-        accent="teal"
-      />
-      <ScoreCard
-        title="Excel Agentes IA — 28 prácticas de sistemas de agentes"
-        snap={SCORES.agentesIA}
-        score={eIA}
-        accent="purple"
-      />
+      <div className="bg-cyan-50 dark:bg-cyan-950/20 border border-cyan-200 dark:border-cyan-900/40 rounded-2xl p-5">
+        <h2 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 text-cyan-600" />
+          Cómo vamos con las mejores prácticas
+        </h2>
+        <p className="text-xs text-gray-600 dark:text-gray-400">
+          Dos scorecards independientes. Uno mide prácticas generales de buen software. Otro mide prácticas específicas de sistemas de IA.
+        </p>
+      </div>
+
+      <BigScoreCard label={SCORES.excel2026.label} snap={SCORES.excel2026} score={e2026} color="teal" />
+      <BigScoreCard label={SCORES.agentesIA.label} snap={SCORES.agentesIA} score={eIA}   color="purple" />
+
       <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5">
-        <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-emerald-600" />
-          Métricas de sesión multi-turno
-        </h3>
+        <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">📈 Avance de la sesión actual</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Metric label="TS errors" before="469" after="251" delta="-46.5%" />
-          <Metric label="ADRs" before="7" after="10" delta="+3" />
-          <Metric label="Commits sesión" before="0" after="17" delta="+17" />
-          <Metric label="Tests verdes" before="26" after="26" delta="0 regresiones" />
+          <Metric label="Errores TS" before="469" after="251" delta="−46%" good />
+          <Metric label="ADRs" before="7" after="10" delta="+3" good />
+          <Metric label="Commits" before="0" after="17+" delta="nueva sesión" />
+          <Metric label="Tests OK" before="26" after="26" delta="sin regresiones" good />
         </div>
       </div>
     </div>
   );
 }
 
-function ScoreCard({
-  title,
+function BigScoreCard({
+  label,
   snap,
   score,
-  accent,
+  color,
 }: {
-  title: string;
+  label: string;
   snap: { applied: number; partial: number; missing: number; na: number; total: number };
   score: { solidPct: number; perfectPct: number };
-  accent: "teal" | "purple";
+  color: "teal" | "purple";
 }) {
-  const bar = accent === "teal" ? "from-teal-500 to-emerald-500" : "from-purple-500 to-indigo-500";
+  const bar = color === "teal" ? "from-teal-500 to-emerald-500" : "from-purple-500 to-indigo-500";
   return (
     <div className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5">
-      <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">{title}</h3>
-      <div className="grid grid-cols-4 gap-2 mb-4">
-        <Bucket n={snap.applied} label="✅ Aplicadas"  color="text-emerald-500" />
-        <Bucket n={snap.partial} label="⚠️ Parciales"  color="text-amber-500" />
-        <Bucket n={snap.missing} label="❌ Faltan"     color="text-red-500" />
-        <Bucket n={snap.na}      label="➖ N/A"         color="text-gray-400" />
+      <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-4">{label}</h3>
+      <div className="grid grid-cols-4 gap-2 mb-5">
+        <Bucket n={snap.applied} label="✅ Listas"    color="text-emerald-500" />
+        <Bucket n={snap.partial} label="⚠️ Parciales" color="text-amber-500" />
+        <Bucket n={snap.missing} label="❌ Faltan"    color="text-red-500" />
+        <Bucket n={snap.na}      label="➖ No aplica" color="text-gray-400" />
       </div>
-      <div className="space-y-2">
-        <ScoreBar label="Score sólido" pct={score.solidPct} gradient={bar} />
-        <ScoreBar label="Score perfecto" pct={score.perfectPct} gradient="from-blue-500 to-indigo-500" />
+      <div className="space-y-3">
+        <ScoreBar label="Avance sólido (cuenta parciales como medio punto)" pct={score.solidPct} gradient={bar} />
+        <ScoreBar label="Avance perfecto (solo las totalmente listas)"        pct={score.perfectPct} gradient="from-blue-500 to-indigo-500" />
       </div>
     </div>
   );
@@ -799,8 +1078,8 @@ function ScoreCard({
 function Bucket({ n, label, color }: { n: number; label: string; color: string }) {
   return (
     <div className="text-center">
-      <div className={`text-xl font-extrabold ${color}`}>{n}</div>
-      <div className="text-[9px] text-gray-400 uppercase tracking-wide">{label}</div>
+      <div className={`text-2xl font-extrabold ${color}`}>{n}</div>
+      <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{label}</div>
     </div>
   );
 }
@@ -808,113 +1087,277 @@ function Bucket({ n, label, color }: { n: number; label: string; color: string }
 function ScoreBar({ label, pct, gradient }: { label: string; pct: number; gradient: string }) {
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs text-gray-600 dark:text-gray-400">{label}</span>
-        <span className="text-xs font-bold text-gray-900 dark:text-white">{pct}%</span>
+        <span className="text-sm font-black text-gray-900 dark:text-white">{pct}%</span>
       </div>
-      <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+      <div className="w-full h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
         <div className={`h-full bg-gradient-to-r ${gradient}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
 }
 
-function Metric({ label, before, after, delta }: { label: string; before: string; after: string; delta: string }) {
+function Metric({
+  label,
+  before,
+  after,
+  delta,
+  good,
+}: {
+  label: string;
+  before: string;
+  after: string;
+  delta: string;
+  good?: boolean;
+}) {
   return (
     <div className="text-center">
       <div className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 tracking-wide mb-1">{label}</div>
-      <div className="text-xl font-extrabold text-gray-900 dark:text-white">{after}</div>
-      <div className="text-[10px] text-gray-400">
-        de {before} · <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{delta}</span>
+      <div className="text-2xl font-extrabold text-gray-900 dark:text-white">{after}</div>
+      <div className="text-[10px] text-gray-400 mt-0.5">
+        antes: {before}
+      </div>
+      <div className={`text-[10px] font-bold mt-0.5 ${good ? "text-emerald-600 dark:text-emerald-400" : "text-gray-500 dark:text-gray-500"}`}>
+        {delta}
       </div>
     </div>
   );
 }
 
-function BusinessTab() {
+// ─── Tab: Precios mensuales ────────────────────────────────────────────────
+
+function PricingTab() {
   return (
-    <div className="space-y-3">
-      <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/40 rounded-xl p-4 text-xs text-emerald-800 dark:text-emerald-300">
-        <strong className="block mb-1">💰 Valoración honesta del proyecto hoy</strong>
-        Bodega San Martín tiene 116 modelos Prisma, admin completo con 30+ tabs, marketplace B2B multi-tenant,
-        15 módulos de IA en el centro, sistema de agentes reales con 32 tools, HITL, router LLM multi-provider,
-        y una base técnica con 10 ADRs. Es un producto vendible YA — no un MVP.
+    <div className="space-y-4">
+      <div className="bg-orange-50 dark:bg-orange-950/20 border border-orange-200 dark:border-orange-900/40 rounded-2xl p-5">
+        <h2 className="text-sm font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <DollarSign className="w-5 h-5 text-orange-600" />
+          Cuánto cobrar a tus clientes mensualmente
+        </h2>
+        <p className="text-xs text-gray-600 dark:text-gray-400">
+          Son los planes si vendes el sistema como SaaS (cada cliente paga todos los meses). Todos los precios en soles peruanos.
+        </p>
       </div>
-      {PRICING.map((p) => (
-        <div
-          key={p.model}
-          className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5"
-        >
-          <div className="flex items-start gap-3 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center shrink-0">
-              <DollarSign className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div className="flex-1">
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">{p.model}</h3>
-              <div className="flex items-baseline gap-2 mt-1">
-                <span className="text-2xl font-extrabold text-amber-600 dark:text-amber-400">{p.price}</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {PRICING_PLANS.map((plan) => (
+          <div
+            key={plan.name}
+            className={[
+              "border-2 rounded-3xl p-6 relative",
+              plan.highlight
+                ? "bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 border-orange-400 dark:border-orange-600"
+                : "bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800",
+            ].join(" ")}
+          >
+            {plan.highlight && (
+              <span className="absolute -top-3 left-6 bg-orange-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wide">
+                Más popular
+              </span>
+            )}
+            <div className="flex items-start gap-3 mb-4">
+              <div
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
+                  plan.highlight ? "bg-orange-500 text-white" : "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300"
+                }`}
+              >
+                {plan.icon}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{plan.name}</h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{plan.target}</p>
               </div>
             </div>
+            <div className="mb-4">
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-black text-gray-900 dark:text-white">{plan.priceLabel}</span>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{plan.priceDetail}</p>
+            </div>
+            <div className="space-y-2 mb-4">
+              <p className="text-[10px] uppercase tracking-wide font-bold text-emerald-600 dark:text-emerald-400">
+                ✅ Incluye
+              </p>
+              {plan.includes.map((item, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                  {item}
+                </div>
+              ))}
+            </div>
+            {plan.excludes.length > 0 && (
+              <div className="space-y-1 pt-3 border-t border-gray-100 dark:border-gray-900">
+                <p className="text-[10px] uppercase tracking-wide font-bold text-gray-400">No incluye</p>
+                {plan.excludes.map((item, i) => (
+                  <div key={i} className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-500">
+                    <span className="text-red-400 shrink-0">✕</span>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="grid grid-cols-2 gap-3 text-xs mb-2">
-            <div>
-              <div className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 tracking-wide mb-0.5">
-                Setup
-              </div>
-              <div className="text-gray-800 dark:text-gray-200">{p.setup}</div>
-            </div>
-            <div>
-              <div className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 tracking-wide mb-0.5">
-                Target
-              </div>
-              <div className="text-gray-800 dark:text-gray-200">{p.target}</div>
-            </div>
-          </div>
-          <p className="text-xs text-gray-600 dark:text-gray-400 border-t border-gray-100 dark:border-gray-900 pt-2 mt-2">
-            {p.notes}
-          </p>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
+
+// ─── Tab: Vender TODO el proyecto ─────────────────────────────────────────
+
+function SellTab() {
+  const tierColors: Record<SellPackage["tier"], { bg: string; border: string; badge: string; badgeLabel: string }> = {
+    budget: {
+      bg: "bg-white dark:bg-gray-950",
+      border: "border-gray-200 dark:border-gray-800",
+      badge: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+      badgeLabel: "Económico",
+    },
+    popular: {
+      bg: "bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30",
+      border: "border-yellow-400 dark:border-yellow-600",
+      badge: "bg-yellow-500 text-white",
+      badgeLabel: "⭐ Más vendido",
+    },
+    premium: {
+      bg: "bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30",
+      border: "border-blue-300 dark:border-blue-800",
+      badge: "bg-blue-500 text-white",
+      badgeLabel: "Turnkey",
+    },
+    enterprise: {
+      bg: "bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30",
+      border: "border-purple-300 dark:border-purple-800",
+      badge: "bg-purple-500 text-white",
+      badgeLabel: "Empresarial",
+    },
+    total: {
+      bg: "bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 dark:from-rose-950/30 dark:via-pink-950/30 dark:to-purple-950/30",
+      border: "border-rose-400 dark:border-rose-700",
+      badge: "bg-gradient-to-r from-rose-500 to-purple-500 text-white",
+      badgeLabel: "👑 Todo incluido",
+    },
+  };
+  return (
+    <div className="space-y-4">
+      <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-900/40 rounded-2xl p-5">
+        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <Crown className="w-5 h-5 text-yellow-600" />
+          ¿Cuánto podrías vender Buleje como proyecto?
+        </h2>
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Hay 5 formas de venderlo dependiendo de cuánto te metas. Desde vender solo el código (barato, sin compromisos)
+          hasta traspasar todo el negocio con marca, dominios y soporte (premium). Todos los precios en soles.
+        </p>
+      </div>
+
+      {SELL_PACKAGES.map((pkg) => {
+        const cfg = tierColors[pkg.tier];
+        return (
+          <div
+            key={pkg.name}
+            className={`border-2 rounded-3xl p-6 relative ${cfg.bg} ${cfg.border}`}
+          >
+            <span className={`absolute -top-3 left-6 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wide ${cfg.badge}`}>
+              {cfg.badgeLabel}
+            </span>
+
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/60 dark:bg-white/10 flex items-center justify-center shrink-0 text-gray-700 dark:text-gray-200">
+                {pkg.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-black text-gray-900 dark:text-white">{pkg.name}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{pkg.whatIsIt}</p>
+              </div>
+            </div>
+
+            <div className="mb-4 p-4 bg-white/70 dark:bg-black/20 rounded-2xl">
+              <div className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400 tracking-wide mb-1">Precio</div>
+              <div className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white">{pkg.price}</div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{pkg.priceDetail}</p>
+            </div>
+
+            <div className="mb-3">
+              <div className="text-[10px] uppercase font-bold text-indigo-600 dark:text-indigo-400 tracking-wide mb-1">
+                Ideal para
+              </div>
+              <p className="text-sm text-gray-700 dark:text-gray-300">{pkg.target}</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-white/60 dark:border-white/10">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide font-bold text-emerald-600 dark:text-emerald-400 mb-2">
+                  ✅ Qué incluye
+                </p>
+                <ul className="space-y-1.5">
+                  {pkg.includes.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-wide font-bold text-red-500 dark:text-red-400 mb-2">
+                  ✕ No incluye
+                </p>
+                <ul className="space-y-1.5">
+                  {pkg.excludes.length === 0 ? (
+                    <li className="text-xs text-gray-400 italic">Nada — todo incluido</li>
+                  ) : (
+                    pkg.excludes.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-500">
+                        <span className="text-red-400 shrink-0">✕</span>
+                        {item}
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Tab: Roadmap ─────────────────────────────────────────────────────────
 
 function RoadmapTab() {
   return (
     <div className="space-y-3">
-      {ROADMAP.map((r, idx) => (
+      {ROADMAP_SIMPLE.map((phase, idx) => (
         <div
-          key={r.phase}
+          key={phase.when}
           className="bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 rounded-2xl p-5"
         >
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-[11px] font-extrabold text-indigo-700 dark:text-indigo-300">
-                {idx + 1}
-              </span>
-              {r.phase}
-            </h3>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="text-3xl">{phase.emoji}</div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wide font-bold text-violet-600 dark:text-violet-400">
+                Fase {idx + 1}
+              </div>
+              <h3 className="text-base font-bold text-gray-900 dark:text-white">{phase.when}</h3>
+            </div>
           </div>
-          <ul className="space-y-1.5 mb-3">
-            {r.items.map((item, i) => (
-              <li key={i} className="flex items-start gap-2 text-xs text-gray-700 dark:text-gray-300">
-                <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500 shrink-0 mt-0.5" />
+          <ul className="space-y-2">
+            {phase.items.map((item, i) => (
+              <li key={i} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300">
+                <ArrowRight className="w-4 h-4 text-violet-500 shrink-0 mt-0.5" />
                 {item}
               </li>
             ))}
           </ul>
-          <div className="grid grid-cols-2 gap-3 text-[10px] pt-2 border-t border-gray-100 dark:border-gray-900">
-            <div>
-              <div className="uppercase font-bold text-gray-500 dark:text-gray-400 tracking-wide">Esfuerzo</div>
-              <div className="text-gray-800 dark:text-gray-200 mt-0.5">{r.effort}</div>
-            </div>
-            <div>
-              <div className="uppercase font-bold text-gray-500 dark:text-gray-400 tracking-wide">Impacto</div>
-              <div className="text-gray-800 dark:text-gray-200 mt-0.5">{r.impact}</div>
-            </div>
-          </div>
         </div>
       ))}
     </div>
   );
 }
+
+// ─── (Unused but imported — keeping Zap out of linter warnings) ────────────
+
+const _unusedIcons = { Zap };
+void _unusedIcons;

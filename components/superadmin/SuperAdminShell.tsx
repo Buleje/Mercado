@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import CommandPalette from "./CommandPalette";
 import {
   LayoutDashboard,
   Building2,
@@ -179,6 +180,13 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+      {/* Global Command Palette (Ctrl+K / Cmd+K) */}
+      <CommandPalette
+        onToggleTheme={toggle}
+        currentTheme={dark ? "dark" : "light"}
+        onLogout={handleLogout}
+      />
+
       {/* Impersonation Banner */}
       {impersonating && (
         <ImpersonationBanner slug={impersonating} onClear={clearImpersonation} />
