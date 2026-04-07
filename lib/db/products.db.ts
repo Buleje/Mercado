@@ -149,6 +149,30 @@ export const ProductsDB = {
   async hardDelete(id: number): Promise<void> {
     await prisma.product.delete({ where: { id } }).catch(() => {});
   },
+
+  /**
+   * Devuelve productos con stock menor al umbral indicado, ordenados
+   * por stock ascendente (los más críticos primero).
+   * Usado por el dashboard del vendedor para mostrar alertas de stock bajo.
+   */
+  async getLowStock(
+    tenantId: string,
+    opts: { threshold?: number; limit?: number } = {},
+  ): Promise<DbProduct[]> {
+    const threshold = opts.threshold ?? 5;
+    const limit = Math.min(opts.limit ?? 10, 50);
+    const rows = await prisma.product.findMany({
+      where: {
+        tenantId,
+        deletedAt: null,
+        active: true,
+        stock: { lte: threshold, not: null },
+      },
+      orderBy: { stock: "asc" },
+      take: limit,
+    });
+    return rows.map(mapProduct);
+  },
   /** Bulk soft-delete: sets deletedAt on multiple products at once. */
   async bulkDelete(ids: number[]): Promise<number> {
     if (ids.length === 0) return 0;

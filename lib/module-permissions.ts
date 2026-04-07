@@ -10,6 +10,7 @@ import type { AdminRole } from "@/lib/session";
 
 // All module IDs — must stay in sync with the Tab type in app/admin/page.tsx
 export type ModuleId =
+  | "vendor-dashboard"
   | "panel-principal"
   | "pos-caja"
   | "inventario-almacenes"
@@ -55,6 +56,7 @@ export type ModuleId =
 export const MODULE_PERMISSIONS: Record<Exclude<AdminRole, "admin">, ModuleId[]> = {
   // Roles básicos del sistema (acceso mínimo operativo)
   proveedor: [
+    "vendor-dashboard",
     "panel-principal",
     "compras",
     "proveedores",
@@ -65,6 +67,7 @@ export const MODULE_PERMISSIONS: Record<Exclude<AdminRole, "admin">, ModuleId[]>
     "logistica",
   ],
   tienda_owner: [
+    "vendor-dashboard",
     "panel-principal",
     "pos-caja",
     "inventario-almacenes",

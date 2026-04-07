@@ -393,6 +393,108 @@ export const OrdersDB = {
   async delete(id: string): Promise<void> {
     await prisma.order.delete({ where: { id } }).catch(() => {});
   },
+
+  /**
+   * Suma el total de órdenes entregadas entre dos fechas.
+   * Usado por el dashboard del vendedor (KPI "ventas hoy/ayer/semana").
+   */
+  async getSalesTotal(tenantId: string, from: Date, to: Date): Promise<number> {
+    const result = await prisma.order.aggregate({
+      where: {
+        tenantId,
+        status: "entregado",
+        createdAt: { gte: from, lte: to },
+        deletedAt: null,
+      },
+      _sum: { total: true },
+    });
+    return result._sum.total ?? 0;
+  },
+
+  /**
+   * Cuenta los pedidos pendientes o confirmados (sin atender).
+   */
+  async countPending(tenantId: string): Promise<number> {
+    return prisma.order.count({
+      where: {
+        tenantId,
+        status: { in: ["pendiente", "confirmado"] },
+        deletedAt: null,
+      },
+    });
+  },
+
+  /**
+   * Obtiene los N pedidos pendientes/confirmados más recientes.
+   */
+  async getPending(tenantId: string, opts: { limit?: number } = {}): Promise<DbOrder[]> {
+    const limit = Math.min(opts.limit ?? 5, 20);
+    const rows = await prisma.order.findMany({
+      where: {
+        tenantId,
+        status: { in: ["pendiente", "confirmado"] },
+        deletedAt: null,
+      },
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+    return rows.map(mapOrder);
+  },
+
+  /**
+   * Obtiene las N ventas más recientes del día actual.
+   */
+  async getRecent(tenantId: string, opts: { limit?: number } = {}): Promise<DbOrder[]> {
+    const limit = Math.min(opts.limit ?? 5, 20);
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const rows = await prisma.order.findMany({
+      where: {
+        tenantId,
+        createdAt: { gte: startOfToday },
+        deletedAt: null,
+      },
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+    });
+    return rows.map(mapOrder);
+  },
+
+  /**
+   * Devuelve un array de 7 elementos con el ingreso (total entregado)
+   * por cada uno de los últimos 7 días (del más antiguo al más reciente).
+   */
+  async getWeeklyRevenueBreakdown(tenantId: string): Promise<Array<{ date: string; total: number }>> {
+    const results: Array<{ date: string; total: number }> = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const day = new Date();
+      day.setHours(0, 0, 0, 0);
+      day.setDate(day.getDate() - i);
+
+      const nextDay = new Date(day);
+      nextDay.setDate(nextDay.getDate() + 1);
+
+      const agg = await prisma.order.aggregate({
+        where: {
+          tenantId,
+          status: "entregado",
+          createdAt: { gte: day, lt: nextDay },
+          deletedAt: null,
+        },
+        _sum: { total: true },
+      });
+
+      results.push({
+        date: day.toISOString().split("T")[0],
+        total: agg._sum.total ?? 0,
+      });
+    }
+
+    return results;
+  },
 };
 
 // ── Delivery Slots DB ─────────────────────────────────────────────────────────

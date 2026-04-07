@@ -1,5 +1,6 @@
 // ── 8 módulos consolidados + pedidos + plan ──
 export type Tab =
+  | "vendor-dashboard"    // Panel del vendedor (tienda_owner / proveedor)
   | "asistente-ia"        // Asistente IA (dashboard + chat + alertas)
   | "ventas-caja"         // Ventas & Caja
   | "inventario"          // Inventario
@@ -49,6 +50,7 @@ export type Tab =
  * tabs visibles desde el sidebar.
  */
 export const VALID_TABS: readonly Tab[] = [
+  "vendor-dashboard",
   "asistente-ia",
   "ventas-caja",
   "inventario",

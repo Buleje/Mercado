@@ -1,0 +1,107 @@
+"use client";
+
+import type { WeeklyRevenueDay } from "./vendor-dashboard.types";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { TrendingUp } from "lucide-react";
+
+type Props = {
+  data: WeeklyRevenueDay[];
+};
+
+const DAY_LABELS: Record<string, string> = {
+  "0": "Dom", "1": "Lun", "2": "Mar", "3": "Mié",
+  "4": "Jue", "5": "Vie", "6": "Sáb",
+};
+
+function formatDayLabel(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  return DAY_LABELS[String(d.getDay())] ?? dateStr.slice(5);
+}
+
+function formatSolesTooltip(value: number): string {
+  return `S/ ${value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+}
+
+type TooltipPayloadEntry = { value: number };
+
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: TooltipPayloadEntry[];
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl px-3 py-2 shadow-lg text-xs">
+      <p className="font-semibold text-gray-700 dark:text-foreground">{label}</p>
+      <p className="text-[#00B4A6] font-bold">{formatSolesTooltip(payload[0].value)}</p>
+    </div>
+  );
+}
+
+export function VendorWeeklyChart({ data }: Props) {
+  if (!data || data.length === 0) return null;
+
+  const maxIdx = data.reduce((best, d, i) => (d.total > data[best].total ? i : best), 0);
+
+  const chartData = data.map((d, i) => ({
+    day: formatDayLabel(d.date),
+    total: d.total,
+    isMax: i === maxIdx,
+    isToday: i === data.length - 1,
+  }));
+
+  const weekTotal = data.reduce((s, d) => s + d.total, 0);
+
+  return (
+    <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="font-bold text-gray-900 dark:text-foreground flex items-center gap-2">
+          <TrendingUp className="h-5 w-5 text-[#00B4A6]" />
+          Ingresos — últimos 7 días
+        </h3>
+        <span className="text-sm font-extrabold text-[#00B4A6]">
+          S/ {weekTotal.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+        </span>
+      </div>
+      <p className="text-xs text-gray-400 dark:text-muted mb-4">Solo pedidos entregados</p>
+
+      <ResponsiveContainer width="100%" height={140}>
+        <BarChart data={chartData} barCategoryGap="30%">
+          <XAxis
+            dataKey="day"
+            tick={{ fontSize: 11, fill: "currentColor" }}
+            axisLine={false}
+            tickLine={false}
+            className="text-gray-500 dark:text-muted"
+          />
+          <YAxis hide />
+          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,180,166,0.06)" }} />
+          <Bar dataKey="total" radius={[6, 6, 0, 0]}>
+            {chartData.map((entry, index) => (
+              <Cell
+                key={`cell-${index}`}
+                fill={entry.isToday ? "#00B4A6" : entry.isMax ? "#f97316" : "#d1fae5"}
+              />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+
+      <div className="flex gap-4 mt-3 text-xs text-gray-500 dark:text-muted">
+        <span className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-sm bg-[#00B4A6] inline-block" /> Hoy
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-sm bg-[#f97316] inline-block" /> Mejor día
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-2.5 h-2.5 rounded-sm bg-emerald-100 dark:bg-emerald-900/30 inline-block" /> Otros días
+        </span>
+      </div>
+    </div>
+  );
+}

@@ -29,11 +29,13 @@ import {
   Store,
   Palette,
   CircleUser,
+  LayoutDashboard,
 } from "lucide-react";
 import type { Tab } from "./tabs.types";
 
 // ── 8 módulos consolidados + especiales ──────────────────────────────────────
 export const ALL_TABS = [
+  { id: "vendor-dashboard" as Tab,    label: "Mi Panel",            icon: LayoutDashboard },
   { id: "asistente-ia" as Tab,        label: "Asistente IA",        icon: Brain },
   { id: "ventas-caja" as Tab,         label: "Ventas & Caja",       icon: ShoppingCart },
   { id: "inventario" as Tab,          label: "Inventario",          icon: Package },

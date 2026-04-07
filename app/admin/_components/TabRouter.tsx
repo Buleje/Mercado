@@ -8,6 +8,7 @@ import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import type { StoreMode } from "@/lib/jsondb";
 
 // ── Unified Module Imports (módulos consolidados) ──────────────────────────────
+const VendorDashboardModule   = dynamic(() => import("@/components/admin/unified/VendorDashboardModule"),   { loading: TabSpinner });
 const AsistenteIAModule       = dynamic(() => import("@/components/admin/unified/AsistenteIAModule"),       { loading: TabSpinner });
 const POSCajaModule           = dynamic(() => import("@/components/admin/unified/POSCajaModule"),           { loading: TabSpinner });
 const InventarioAlmacenesModule = dynamic(() => import("@/components/admin/unified/InventarioAlmacenesModule"), { loading: TabSpinner });
@@ -92,6 +93,9 @@ export function TabRouter({
   onboarding,
   onNavigateTab,
 }: TabRouterProps) {
+
+  // ── 0. Panel del vendedor ──
+  if (tab === "vendor-dashboard") return <VendorDashboardModule />;
 
   // ── 1. Asistente IA ──
   if (tab === "asistente-ia") return <AsistenteIAModule />;
