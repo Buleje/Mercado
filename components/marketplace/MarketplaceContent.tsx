@@ -7,7 +7,6 @@ import {
   Star,
   Store,
   ShoppingBag,
-  Filter,
   X,
   ChevronRight,
   Sparkles,
@@ -17,6 +16,7 @@ import {
   LocateFixed,
   Loader2,
   ExternalLink,
+  LayoutGrid,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -24,8 +24,31 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import MarketplaceFilters, {
   type MarketplaceFiltersState,
-  type SortBy,
 } from "@/components/marketplace/MarketplaceFilters";
+import dynamic from "next/dynamic";
+
+const CatalogView = dynamic(
+  () => import("@/components/marketplace/CatalogView"),
+  { ssr: false, loading: () => <CatalogSkeleton /> }
+);
+
+function CatalogSkeleton() {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 mt-6">
+      {Array.from({ length: 20 }).map((_, i) => (
+        <div key={i} className="rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden">
+          <div className="aspect-square bg-gray-100 dark:bg-gray-800 animate-pulse" />
+          <div className="p-3 space-y-2">
+            <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-3/4 animate-pulse" />
+            <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-1/2 animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+type ViewMode = "tiendas" | "catalogo";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -449,7 +472,6 @@ export default function MarketplaceContent() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("todos");
   const [zone, setZone] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoActive, setGeoActive] = useState(false);
@@ -457,6 +479,17 @@ export default function MarketplaceContent() {
   const [productFilters, setProductFilters] = useState<MarketplaceFiltersState>(DEFAULT_FILTERS);
   const searchRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // ── New: view mode ──
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "tiendas";
+    return (localStorage.getItem("marketplace-view-mode") as ViewMode) || "tiendas";
+  });
+
+  // Persist view mode preference
+  useEffect(() => {
+    try { localStorage.setItem("marketplace-view-mode", viewMode); } catch { /* silent */ }
+  }, [viewMode]);
 
   const handleFiltersChange = useCallback((patch: Partial<MarketplaceFiltersState>) => {
     setProductFilters((prev) => {
@@ -691,6 +724,41 @@ export default function MarketplaceContent() {
               </span>
             )}
           </motion.div>
+
+          {/* ── View Mode Toggle ── */}
+          <motion.div
+            className="flex items-center justify-center mt-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <div className="inline-flex items-center rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1 shadow-md shadow-gray-200/40 dark:shadow-none">
+              <button
+                onClick={() => setViewMode("tiendas")}
+                className={cn(
+                  "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all",
+                  viewMode === "tiendas"
+                    ? "bg-primary text-white shadow-md shadow-primary/25"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
+                )}
+              >
+                <Store className="h-4 w-4" />
+                Tiendas
+              </button>
+              <button
+                onClick={() => setViewMode("catalogo")}
+                className={cn(
+                  "inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all",
+                  viewMode === "catalogo"
+                    ? "bg-primary text-white shadow-md shadow-primary/25"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Catálogo
+              </button>
+            </div>
+          </motion.div>
         </div>
       </section>
 
@@ -715,46 +783,38 @@ export default function MarketplaceContent() {
           ))}
         </div>
 
-        {/* Zona + filtros clásicos (zona / geo) */}
-        <div className="flex items-center gap-3 mt-4 flex-wrap">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            aria-expanded={showFilters}
+        {/* Zona + Filtros de producto — barra compacta */}
+        <div className="flex items-center gap-2 mt-4 flex-wrap">
+          {/* Zone selector */}
+          <select
+            value={zone}
+            onChange={(e) => setZone(e.target.value)}
+            aria-label="Filtrar por zona"
             className={cn(
-              "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border transition-colors",
-              showFilters || zone
+              "rounded-lg border px-3 py-1.5 text-xs font-semibold outline-none transition-colors",
+              zone
                 ? "bg-primary/10 text-primary border-primary/30"
-                : "bg-white dark:bg-card text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary/40",
+                : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40"
             )}
           >
-            <Filter className="h-4 w-4" aria-hidden="true" />
-            Zona
-          </button>
+            {ZONES.map((z) => (
+              <option key={z.id} value={z.id}>
+                {z.id ? `📍 ${z.label}` : "📍 Todas las zonas"}
+              </option>
+            ))}
+          </select>
 
-          {/* Zone quick filter (visible if filters open) */}
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                className="overflow-hidden"
-              >
-                <select
-                  value={zone}
-                  onChange={(e) => setZone(e.target.value)}
-                  aria-label="Filtrar por zona"
-                  className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-gray-700 dark:text-foreground outline-none focus:border-primary transition-colors"
-                >
-                  {ZONES.map((z) => (
-                    <option key={z.id} value={z.id}>
-                      {z.label}
-                    </option>
-                  ))}
-                </select>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Separador */}
+          <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 shrink-0 hidden sm:block" />
+
+          {/* Product filters (sort, price, category, nearby) */}
+          <MarketplaceFilters
+            filters={productFilters}
+            userCoords={userCoords}
+            geoLoading={geoLoading}
+            onChange={handleFiltersChange}
+            onRequestGeo={handleGeoSort}
+          />
 
           {(category !== "todos" || zone || geoActive) && (
             <button
@@ -767,86 +827,86 @@ export default function MarketplaceContent() {
               }}
               className="text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors underline"
             >
-              Limpiar filtros
+              Limpiar todo
             </button>
           )}
         </div>
 
-        {/* Panel de filtros de producto: precio, categoría producto, ordenar, geo */}
-        <div className="mt-4">
-          <MarketplaceFilters
-            filters={productFilters}
-            userCoords={userCoords}
-            geoLoading={geoLoading}
-            onChange={handleFiltersChange}
-            onRequestGeo={handleGeoSort}
+        {/* ── Conditional View Rendering ── */}
+        {viewMode === "catalogo" ? (
+          <CatalogView
+            searchQuery={search || undefined}
+            zone={zone || undefined}
+            category={category !== "todos" ? category : undefined}
           />
-        </div>
-
-        {/* Error state */}
-        {error && (
-          <div className="mt-6 flex items-center gap-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl px-5 py-4">
-            <span className="text-sm text-red-700 dark:text-red-400 flex-1">{error}</span>
-            <button
-              onClick={fetchStores}
-              className="text-xs font-bold text-red-600 hover:text-red-800 underline"
-            >
-              Reintentar
-            </button>
-          </div>
-        )}
-
-        {/* Loading state */}
-        {loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl overflow-hidden"
-              >
-                <div className="h-32 bg-gray-100 dark:bg-surface animate-pulse" />
-                <div className="p-4 space-y-3">
-                  <div className="h-5 bg-gray-100 dark:bg-surface rounded-lg w-3/4 animate-pulse" />
-                  <div className="h-4 bg-gray-100 dark:bg-surface rounded-lg w-full animate-pulse" />
-                  <div className="h-3 bg-gray-100 dark:bg-surface rounded-lg w-1/2 animate-pulse" />
-                </div>
+        ) : (
+          <>
+            {/* Error state */}
+            {error && (
+              <div className="mt-6 flex items-center gap-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-2xl px-5 py-4">
+                <span className="text-sm text-red-700 dark:text-red-400 flex-1">{error}</span>
+                <button
+                  onClick={fetchStores}
+                  className="text-xs font-bold text-red-600 hover:text-red-800 underline"
+                >
+                  Reintentar
+                </button>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!loading && !error && filteredStores.length === 0 && (
-          <div className="mt-12 flex flex-col items-center justify-center text-center py-16">
-            <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-surface flex items-center justify-center mb-6">
-              <Package className="h-12 w-12 text-gray-300 dark:text-gray-600" />
-            </div>
-            <h3 className="text-xl font-extrabold text-gray-900 dark:text-foreground mb-2">
-              No encontramos tiendas
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-muted max-w-md">
-              {search
-                ? `No hay tiendas que coincidan con "${search}". Prueba con otro nombre.`
-                : "Aún no hay tiendas publicadas en esta categoría. ¡Pronto habrá más!"}
-            </p>
-            {(search || category !== "todos" || zone || geoActive) && (
-              <button
-                onClick={() => { setSearch(""); setCategory("todos"); setZone(""); setGeoActive(false); setUserCoords(null); }}
-                className="mt-4 px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
-              >
-                Ver todas las tiendas
-              </button>
             )}
-          </div>
-        )}
 
-        {/* Store grid */}
-        {!loading && !error && filteredStores.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-            {filteredStores.map((store, i) => (
-              <StoreCard key={store.id} store={store} index={i} />
-            ))}
-          </div>
+            {/* Loading state */}
+            {loading && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white dark:bg-card border border-gray-100 dark:border-card-border rounded-2xl overflow-hidden"
+                  >
+                    <div className="h-32 bg-gray-100 dark:bg-surface animate-pulse" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-5 bg-gray-100 dark:bg-surface rounded-lg w-3/4 animate-pulse" />
+                      <div className="h-4 bg-gray-100 dark:bg-surface rounded-lg w-full animate-pulse" />
+                      <div className="h-3 bg-gray-100 dark:bg-surface rounded-lg w-1/2 animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Empty state */}
+            {!loading && !error && filteredStores.length === 0 && (
+              <div className="mt-12 flex flex-col items-center justify-center text-center py-16">
+                <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-surface flex items-center justify-center mb-6">
+                  <Package className="h-12 w-12 text-gray-300 dark:text-gray-600" />
+                </div>
+                <h3 className="text-xl font-extrabold text-gray-900 dark:text-foreground mb-2">
+                  No encontramos tiendas
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-muted max-w-md">
+                  {search
+                    ? `No hay tiendas que coincidan con "${search}". Prueba con otro nombre.`
+                    : "Aún no hay tiendas publicadas en esta categoría. ¡Pronto habrá más!"}
+                </p>
+                {(search || category !== "todos" || zone || geoActive) && (
+                  <button
+                    onClick={() => { setSearch(""); setCategory("todos"); setZone(""); setGeoActive(false); setUserCoords(null); }}
+                    className="mt-4 px-6 py-2.5 rounded-xl bg-primary text-white text-sm font-bold hover:bg-primary/90 transition-colors"
+                  >
+                    Ver todas las tiendas
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Store grid */}
+            {!loading && !error && filteredStores.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
+                {filteredStores.map((store, i) => (
+                  <StoreCard key={store.id} store={store} index={i} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
 

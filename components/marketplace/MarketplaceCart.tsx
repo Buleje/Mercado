@@ -143,9 +143,11 @@ export function CartBadge({ onClick }: { onClick: () => void }) {
 export default function MarketplaceCart({
   isOpen,
   onClose,
+  onCheckout,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onCheckout?: () => void;
 }) {
   const {
     byStore,
@@ -248,6 +250,10 @@ export default function MarketplaceCart({
   const finalTotal = Math.max(0, grandTotal - totalCouponDiscount - loyaltyDiscount);
 
   const goToCheckout = () => {
+    if (onCheckout) {
+      onCheckout();
+      return;
+    }
     setOrderError(null);
     setStep("datos");
   };

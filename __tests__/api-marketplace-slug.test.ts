@@ -24,15 +24,12 @@ vi.mock("@/lib/logger", () => ({
 
 // ── Mock: api-error ───────────────────────────────────────────────────────────
 
-const { NotFoundError } = vi.hoisted(() => {
-  class NotFoundError extends Error {
-    constructor(m: string) {
-      super(m);
-      this.name = "NotFoundError";
-    }
+class NotFoundError extends Error {
+  constructor(m: string) {
+    super(m);
+    this.name = "NotFoundError";
   }
-  return { NotFoundError };
-});
+}
 
 vi.mock("@/lib/api-error", () => ({
   toErrorPayload: vi.fn((err: unknown, _traceId: string) => {
@@ -43,13 +40,6 @@ vi.mock("@/lib/api-error", () => ({
   }),
   newTraceId: vi.fn(() => "trace-slug-789"),
   NotFoundError,
-}));
-
-// ── Mock: cache — passthrough para que los tests no dependan de estado cacheado ─
-vi.mock("@/lib/cache", () => ({
-  getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
-  invalidate: vi.fn(),
-  invalidateByPrefix: vi.fn(),
 }));
 
 // ── Mock: prisma ───────────────────────────────────────────────────────────────
@@ -118,7 +108,7 @@ const PRODUCT_ARROZ = {
     image:    "/arroz.png",
     category: "Abarrotes",
     unit:     "kg",
-    stock:    20,
+    description: "Arroz de calidad",
   },
 };
 
@@ -133,7 +123,7 @@ const PRODUCT_ACEITE = {
     image:    "/aceite.png",
     category: "Aceites",
     unit:     "lt",
-    stock:    15,
+    description: "Aceite de cocina",
   },
 };
 
@@ -265,8 +255,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_asc"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    // orderBy es un array con tiebreaker — verificar que retailPrice:asc está presente
-    expect(callArgs.orderBy).toEqual(expect.arrayContaining([{ retailPrice: "asc" }]));
+    expect(callArgs.orderBy).toMatchObject({ retailPrice: "asc" });
   });
 
   it("ordena por precio descendente con sort=price_desc", async () => {
@@ -276,8 +265,7 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_desc"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    // orderBy es un array con tiebreaker — verificar que retailPrice:desc está presente
-    expect(callArgs.orderBy).toEqual(expect.arrayContaining([{ retailPrice: "desc" }]));
+    expect(callArgs.orderBy).toMatchObject({ retailPrice: "desc" });
   });
 
   it("retorna 400 si sort tiene valor inválido", async () => {

@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   SlidersHorizontal,
   X,
   LocateFixed,
   Loader2,
   ChevronDown,
+  Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -38,20 +39,20 @@ export interface MarketplaceFiltersProps {
 /* ── Constantes ─────────────────────────────────────────────────────────────── */
 
 const PRODUCT_CATEGORIES = [
-  { id: null,        label: "Todos" },
-  { id: "abarrotes", label: "Abarrotes" },
-  { id: "bebidas",   label: "Bebidas" },
-  { id: "limpieza",  label: "Limpieza" },
-  { id: "frescos",   label: "Frescos" },
-  { id: "otros",     label: "Otros" },
+  { id: null,        label: "Todos", emoji: "🔥" },
+  { id: "abarrotes", label: "Abarrotes", emoji: "🛒" },
+  { id: "bebidas",   label: "Bebidas", emoji: "🥤" },
+  { id: "limpieza",  label: "Limpieza", emoji: "🧹" },
+  { id: "frescos",   label: "Frescos", emoji: "🥬" },
+  { id: "otros",     label: "Otros", emoji: "📦" },
 ] as const;
 
-const SORT_OPTIONS: { value: SortBy; label: string }[] = [
-  { value: "relevance",  label: "Relevancia" },
-  { value: "price-asc",  label: "Precio: menor a mayor" },
-  { value: "price-desc", label: "Precio: mayor a menor" },
-  { value: "rating",     label: "Mejor valorados" },
-  { value: "distance",   label: "Más cerca de mí" },
+const SORT_OPTIONS: { value: SortBy; label: string; short: string }[] = [
+  { value: "relevance",  label: "Relevancia",             short: "Relevancia" },
+  { value: "price-asc",  label: "Precio: menor a mayor",  short: "Menor precio" },
+  { value: "price-desc", label: "Precio: mayor a menor",  short: "Mayor precio" },
+  { value: "rating",     label: "Mejor valorados",        short: "Valorados" },
+  { value: "distance",   label: "Más cerca de mí",        short: "Cercanía" },
 ];
 
 const MAX_PRICE_LIMIT = 500;
@@ -67,9 +68,48 @@ function countActiveFilters(f: MarketplaceFiltersState): number {
   return count;
 }
 
-/* ── Price Range Slider ─────────────────────────────────────────────────────── */
+/* ── Dropdown genérico ──────────────────────────────────────────────────────── */
 
-function PriceRangeSlider({
+function FilterDropdown({
+  open,
+  onClose,
+  children,
+  align = "left",
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  align?: "left" | "right";
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handle = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "absolute top-full mt-2 z-50 min-w-55 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl shadow-gray-200/50 dark:shadow-none p-3 animate-in fade-in-0 zoom-in-95 duration-150",
+        align === "right" ? "right-0" : "left-0"
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/* ── Price Range Popover ────────────────────────────────────────────────────── */
+
+function PriceRangePopover({
   min,
   max,
   onChangeMin,
@@ -84,249 +124,54 @@ function PriceRangeSlider({
   const maxPercent = (max / MAX_PRICE_LIMIT) * 100;
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-          S/ {min.toFixed(0)}
-        </span>
-        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">
-          S/ {max >= MAX_PRICE_LIMIT ? `${MAX_PRICE_LIMIT}+` : max.toFixed(0)}
-        </span>
+    <div className="w-56 space-y-3">
+      <p className="text-xs font-bold text-gray-700 dark:text-gray-200">Rango de precio</p>
+      <div className="flex items-center justify-between text-xs font-semibold text-gray-500 dark:text-gray-400">
+        <span>S/ {min.toFixed(0)}</span>
+        <span>S/ {max >= MAX_PRICE_LIMIT ? `${MAX_PRICE_LIMIT}+` : max.toFixed(0)}</span>
       </div>
-
-      {/* Track visual */}
-      <div className="relative h-1.5 rounded-full bg-gray-200 dark:bg-gray-700 mb-4">
+      <div className="relative h-1.5 rounded-full bg-gray-200 dark:bg-gray-700">
         <div
-          className="absolute h-1.5 rounded-full bg-teal-600 dark:bg-teal-500"
+          className="absolute h-1.5 rounded-full bg-primary"
           style={{ left: `${minPercent}%`, right: `${100 - maxPercent}%` }}
-          aria-hidden="true"
         />
       </div>
-
-      {/* Inputs de rango superpuestos */}
-      <div className="relative">
+      <div className="relative h-4">
         <input
           type="range"
           min={0}
           max={MAX_PRICE_LIMIT}
-          step={1}
+          step={5}
           value={min}
           aria-label="Precio mínimo"
           onChange={(e) => {
             const v = Number(e.target.value);
             if (v < max) onChangeMin(v);
           }}
-          className="absolute inset-0 w-full h-1 opacity-0 cursor-pointer"
+          className="absolute inset-0 w-full opacity-0 cursor-pointer"
           style={{ zIndex: min > MAX_PRICE_LIMIT - 20 ? 5 : 3 }}
         />
         <input
           type="range"
           min={0}
           max={MAX_PRICE_LIMIT}
-          step={1}
+          step={5}
           value={max}
           aria-label="Precio máximo"
           onChange={(e) => {
             const v = Number(e.target.value);
             if (v > min) onChangeMax(v);
           }}
-          className="absolute inset-0 w-full h-1 opacity-0 cursor-pointer"
+          className="absolute inset-0 w-full opacity-0 cursor-pointer"
           style={{ zIndex: 4 }}
         />
-
-        {/* Thumbs visibles */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-teal-600 dark:border-teal-500 shadow-md"
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-md pointer-events-none"
           style={{ left: `calc(${minPercent}% - 8px)` }}
-          aria-hidden="true"
         />
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-teal-600 dark:border-teal-500 shadow-md"
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white border-2 border-primary shadow-md pointer-events-none"
           style={{ left: `calc(${maxPercent}% - 8px)` }}
-          aria-hidden="true"
-        />
-      </div>
-    </div>
-  );
-}
-
-/* ── Botón "Cerca de mí" ────────────────────────────────────────────────────── */
-
-function NearbyButton({
-  enabled,
-  loading,
-  userCoords,
-  onRequest,
-}: {
-  enabled: boolean;
-  loading: boolean;
-  userCoords: { lat: number; lng: number } | null;
-  onRequest: () => void;
-}) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <button
-        type="button"
-        onClick={onRequest}
-        disabled={loading}
-        aria-pressed={enabled}
-        className={cn(
-          "inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600",
-          enabled
-            ? "bg-teal-700 text-white shadow-md shadow-teal-700/25"
-            : "border border-gray-200 bg-white text-gray-600 hover:border-teal-400 hover:text-teal-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-teal-500",
-        )}
-      >
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-        ) : (
-          <LocateFixed className="h-4 w-4" aria-hidden="true" />
-        )}
-        {enabled ? "Cerca de mí activo" : "Tiendas cerca de mí"}
-        {enabled && (
-          <X
-            className="h-3.5 w-3.5 opacity-70"
-            aria-hidden="true"
-          />
-        )}
-      </button>
-
-      {/* Mensaje si no hay coordenadas todavía */}
-      {!enabled && !loading && !userCoords && (
-        <p className="text-xs text-gray-400 dark:text-gray-500 px-1">
-          Activa para filtrar tiendas a menos de 5 km.{" "}
-          <a
-            href="https://support.google.com/chrome/answer/142065"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-teal-600"
-          >
-            ¿Cómo permitir ubicación?
-          </a>
-        </p>
-      )}
-    </div>
-  );
-}
-
-/* ── Panel de filtros (contenido compartido entre desktop/drawer) ────────────── */
-
-function FiltersPanel({
-  filters,
-  userCoords,
-  geoLoading,
-  onChange,
-  onRequestGeo,
-  onReset,
-  activeCount,
-}: MarketplaceFiltersProps & {
-  onReset: () => void;
-  activeCount: number;
-}) {
-  return (
-    <div className="flex flex-col gap-5">
-      {/* Encabezado + reset */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <SlidersHorizontal className="h-4 w-4 text-teal-700 dark:text-teal-400" aria-hidden="true" />
-          <span className="text-sm font-bold text-gray-800 dark:text-white">Filtros</span>
-          {activeCount > 0 && (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-700 text-[10px] font-bold text-white">
-              {activeCount}
-            </span>
-          )}
-        </div>
-        {activeCount > 0 && (
-          <button
-            type="button"
-            onClick={onReset}
-            className="text-xs font-semibold text-gray-400 underline hover:text-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 transition-colors"
-          >
-            Limpiar filtros
-          </button>
-        )}
-      </div>
-
-      {/* Ordenar por */}
-      <div>
-        <label
-          htmlFor="marketplace-sort"
-          className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-        >
-          Ordenar por
-        </label>
-        <div className="relative">
-          <select
-            id="marketplace-sort"
-            value={filters.sortBy}
-            onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}
-            className="w-full appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-3 pr-9 text-sm font-semibold text-gray-700 shadow-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white transition-colors"
-          >
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
-            aria-hidden="true"
-          />
-        </div>
-      </div>
-
-      {/* Categoría de producto */}
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          Categoría de producto
-        </p>
-        <div
-          className="flex flex-wrap gap-2"
-          role="group"
-          aria-label="Filtrar por categoría de producto"
-        >
-          {PRODUCT_CATEGORIES.map((cat) => (
-            <button
-              key={String(cat.id)}
-              type="button"
-              onClick={() => onChange({ productCategory: cat.id })}
-              aria-pressed={filters.productCategory === cat.id}
-              className={cn(
-                "min-h-[36px] rounded-full px-3.5 py-1 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600",
-                filters.productCategory === cat.id
-                  ? "bg-teal-700 text-white shadow-sm"
-                  : "border border-gray-200 bg-white text-gray-600 hover:border-teal-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-teal-500",
-              )}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Rango de precio */}
-      <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          Rango de precio
-        </p>
-        <PriceRangeSlider
-          min={filters.minPrice}
-          max={filters.maxPrice}
-          onChangeMin={(v) => onChange({ minPrice: v })}
-          onChangeMax={(v) => onChange({ maxPrice: v })}
-        />
-      </div>
-
-      {/* Cerca de mí */}
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-          Ubicación
-        </p>
-        <NearbyButton
-          enabled={filters.nearbyEnabled}
-          loading={geoLoading}
-          userCoords={userCoords}
-          onRequest={onRequestGeo}
         />
       </div>
     </div>
@@ -338,9 +183,23 @@ function FiltersPanel({
 function FiltersDrawer({
   open,
   onClose,
-  ...panelProps
-}: { open: boolean; onClose: () => void } & Parameters<typeof FiltersPanel>[0]) {
-  // Bloquear scroll del body mientras está abierto
+  filters,
+  geoLoading,
+  onChange,
+  onRequestGeo,
+  onReset,
+  activeCount,
+}: {
+  open: boolean;
+  onClose: () => void;
+  filters: MarketplaceFiltersState;
+  userCoords: { lat: number; lng: number } | null;
+  geoLoading: boolean;
+  onChange: (patch: Partial<MarketplaceFiltersState>) => void;
+  onRequestGeo: () => void;
+  onReset: () => void;
+  activeCount: number;
+}) {
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -354,35 +213,101 @@ function FiltersDrawer({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:hidden" role="dialog" aria-modal="true" aria-label="Filtros">
-      {/* Overlay */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Panel desde abajo */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div className="relative w-full rounded-t-3xl bg-white px-5 pb-8 pt-5 dark:bg-gray-950 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
-        {/* Handle */}
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-200 dark:bg-gray-700" aria-hidden="true" />
-
-        {/* Botón cerrar */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
           aria-label="Cerrar filtros"
         >
-          <X className="h-4 w-4" aria-hidden="true" />
+          <X className="h-4 w-4" />
         </button>
 
-        <FiltersPanel {...panelProps} />
+        <div className="flex flex-col gap-5">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-gray-800 dark:text-white">Filtros</span>
+            {activeCount > 0 && (
+              <button type="button" onClick={onReset} className="text-xs font-semibold text-gray-400 underline hover:text-red-500">
+                Limpiar
+              </button>
+            )}
+          </div>
 
-        {/* Botón aplicar */}
+          {/* Sort */}
+          <div>
+            <label htmlFor="mobile-sort" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              Ordenar por
+            </label>
+            <select
+              id="mobile-sort"
+              value={filters.sortBy}
+              onChange={(e) => onChange({ sortBy: e.target.value as SortBy })}
+              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-3 pr-9 text-sm font-semibold text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Categories */}
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Categoría</p>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por categoría">
+              {PRODUCT_CATEGORIES.map((cat) => (
+                <button
+                  key={String(cat.id)}
+                  type="button"
+                  onClick={() => onChange({ productCategory: cat.id })}
+                  className={cn(
+                    "rounded-full px-3 py-1.5 text-sm font-semibold transition-colors",
+                    filters.productCategory === cat.id
+                      ? "bg-primary text-white shadow-sm"
+                      : "border border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                  )}
+                >
+                  {cat.emoji} {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Price Range */}
+          <div>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Precio</p>
+            <PriceRangePopover
+              min={filters.minPrice}
+              max={filters.maxPrice}
+              onChangeMin={(v) => onChange({ minPrice: v })}
+              onChangeMax={(v) => onChange({ maxPrice: v })}
+            />
+          </div>
+
+          {/* Nearby */}
+          <button
+            type="button"
+            onClick={onRequestGeo}
+            disabled={geoLoading}
+            className={cn(
+              "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors disabled:opacity-60",
+              filters.nearbyEnabled
+                ? "bg-primary text-white shadow-md"
+                : "border border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+            )}
+          >
+            {geoLoading
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <LocateFixed className="h-4 w-4" />}
+            {filters.nearbyEnabled ? "Cerca de mí ✓" : "Cerca de mí"}
+          </button>
+        </div>
+
         <button
           type="button"
           onClick={onClose}
-          className="mt-6 min-h-[48px] w-full rounded-2xl bg-teal-700 text-sm font-bold text-white shadow-md hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 transition-colors"
+          className="mt-6 min-h-12 w-full rounded-2xl bg-primary text-sm font-bold text-white shadow-md hover:bg-primary/90 transition-colors"
         >
           Ver resultados
         </button>
@@ -391,13 +316,17 @@ function FiltersDrawer({
   );
 }
 
-/* ── Componente principal exportado ────────────────────────────────────────── */
+/* ── Componente principal: barra horizontal compacta ────────────────────────── */
 
 export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
-  const { filters, onChange } = props;
+  const { filters, onChange, onRequestGeo, geoLoading } = props;
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  const [priceOpen, setPriceOpen] = useState(false);
 
   const activeCount = countActiveFilters(filters);
+  const priceActive = filters.minPrice > 0 || filters.maxPrice < MAX_PRICE_LIMIT;
+  const currentSort = SORT_OPTIONS.find((o) => o.value === filters.sortBy) ?? SORT_OPTIONS[0];
 
   const handleReset = useCallback(() => {
     onChange({
@@ -409,43 +338,162 @@ export default function MarketplaceFilters(props: MarketplaceFiltersProps) {
     });
   }, [onChange]);
 
-  const panelProps = {
-    ...props,
-    onReset: handleReset,
-    activeCount,
-  };
+  const handleCloseSortDropdown = useCallback(() => setSortOpen(false), []);
+  const handleClosePriceDropdown = useCallback(() => setPriceOpen(false), []);
 
   return (
     <>
-      {/* Botón "Filtrar" solo visible en mobile */}
-      <div className="mb-4 sm:hidden">
+      {/* ── Mobile: botón para abrir drawer ── */}
+      <div className="sm:hidden">
         <button
           type="button"
           onClick={() => setDrawerOpen(true)}
           className={cn(
-            "inline-flex min-h-[44px] items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold border transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600",
+            "inline-flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold border transition-colors",
             activeCount > 0
-              ? "bg-teal-700/10 border-teal-700/30 text-teal-700 dark:text-teal-400"
-              : "border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300",
+              ? "bg-primary/10 border-primary/30 text-primary"
+              : "border-gray-200 bg-white text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
           )}
-          aria-label={activeCount > 0 ? `Filtros (${activeCount} activos)` : "Abrir filtros"}
         >
-          <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
-          Filtrar
+          <SlidersHorizontal className="h-4 w-4" />
+          Filtros
           {activeCount > 0 && (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-teal-700 text-[10px] font-bold text-white">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white">
               {activeCount}
             </span>
           )}
         </button>
       </div>
 
-      {/* Drawer mobile */}
-      <FiltersDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} {...panelProps} />
+      <FiltersDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        filters={filters}
+        userCoords={props.userCoords}
+        geoLoading={geoLoading}
+        onChange={onChange}
+        onRequestGeo={onRequestGeo}
+        onReset={handleReset}
+        activeCount={activeCount}
+      />
 
-      {/* Panel desktop — siempre visible en sm+ */}
-      <div className="hidden sm:block rounded-2xl border border-gray-100 bg-white px-5 py-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 mb-6">
-        <FiltersPanel {...panelProps} />
+      {/* ── Desktop: barra horizontal compacta ── */}
+      <div className="hidden sm:flex items-center gap-2 flex-wrap">
+        {/* Categorías como pills horizontales */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide">
+          {PRODUCT_CATEGORIES.map((cat) => (
+            <button
+              key={String(cat.id)}
+              type="button"
+              onClick={() => onChange({ productCategory: cat.id })}
+              className={cn(
+                "inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all shrink-0",
+                filters.productCategory === cat.id
+                  ? "bg-primary text-white border-primary shadow-sm"
+                  : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40 hover:text-primary"
+              )}
+            >
+              <span className="text-sm">{cat.emoji}</span>
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Separador */}
+        <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 mx-1 shrink-0" />
+
+        {/* Ordenar — dropdown */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => { setSortOpen(!sortOpen); setPriceOpen(false); }}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+              filters.sortBy !== "relevance"
+                ? "bg-primary/10 text-primary border-primary/30"
+                : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40"
+            )}
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            {currentSort.short}
+            <ChevronDown className={cn("h-3 w-3 transition-transform", sortOpen && "rotate-180")} />
+          </button>
+          <FilterDropdown open={sortOpen} onClose={handleCloseSortDropdown}>
+            <div className="space-y-0.5">
+              {SORT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => { onChange({ sortBy: opt.value }); setSortOpen(false); }}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
+                    filters.sortBy === opt.value
+                      ? "bg-primary/10 text-primary"
+                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  )}
+                >
+                  {filters.sortBy === opt.value && <Check className="h-3 w-3" />}
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </FilterDropdown>
+        </div>
+
+        {/* Precio — dropdown con slider */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => { setPriceOpen(!priceOpen); setSortOpen(false); }}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all",
+              priceActive
+                ? "bg-primary/10 text-primary border-primary/30"
+                : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40"
+            )}
+          >
+            💰 {priceActive ? `S/${filters.minPrice} – S/${filters.maxPrice >= MAX_PRICE_LIMIT ? "500+" : filters.maxPrice}` : "Precio"}
+            <ChevronDown className={cn("h-3 w-3 transition-transform", priceOpen && "rotate-180")} />
+          </button>
+          <FilterDropdown open={priceOpen} onClose={handleClosePriceDropdown}>
+            <PriceRangePopover
+              min={filters.minPrice}
+              max={filters.maxPrice}
+              onChangeMin={(v) => onChange({ minPrice: v })}
+              onChangeMax={(v) => onChange({ maxPrice: v })}
+            />
+          </FilterDropdown>
+        </div>
+
+        {/* Cerca de mí — toggle */}
+        <button
+          type="button"
+          onClick={onRequestGeo}
+          disabled={geoLoading}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all disabled:opacity-60",
+            filters.nearbyEnabled
+              ? "bg-primary text-white border-primary shadow-sm"
+              : "bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/40 hover:text-primary"
+          )}
+        >
+          {geoLoading
+            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            : <LocateFixed className="h-3.5 w-3.5" />}
+          {filters.nearbyEnabled ? "Cerca ✓" : "Cerca"}
+        </button>
+
+        {/* Limpiar */}
+        {activeCount > 0 && (
+          <button
+            type="button"
+            onClick={handleReset}
+            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors"
+          >
+            <X className="h-3 w-3" />
+            Limpiar
+          </button>
+        )}
       </div>
     </>
   );

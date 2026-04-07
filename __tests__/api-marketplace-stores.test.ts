@@ -193,16 +193,11 @@ describe("GET /api/marketplace/stores", () => {
 
   // ── Error de BD ─────────────────────────────────────────────────────────────
 
-  it("retorna 200 con lista vacía si Prisma lanza excepción (soft-fail público)", async () => {
-    // La route atrapa errores de BD internamente y devuelve lista vacía
-    // para no romper el marketplace público ante fallos transitorios de BD
+  it("retorna 500 si Prisma lanza excepción", async () => {
     mockStoreFindMany.mockRejectedValue(new Error("DB connection failed"));
 
     const res = await GET(makeReq("https://host/api/marketplace/stores"));
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data).toEqual([]);
-    expect(body.total).toBe(0);
+    expect(res.status).toBe(500);
   });
 
   // ── Campos devueltos ────────────────────────────────────────────────────────

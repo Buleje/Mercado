@@ -1,12 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { CartBadge } from "@/components/marketplace/MarketplaceCart";
 import MarketplaceCart from "@/components/marketplace/MarketplaceCart";
 
+const MarketplaceCheckoutModal = dynamic(
+  () => import("@/components/marketplace/MarketplaceCheckoutModal"),
+  { ssr: false }
+);
+
 export default function MarketplaceNavbar() {
   const [cartOpen, setCartOpen] = useState(false);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  const handleOpenCart = useCallback(() => setCartOpen(true), []);
+  const handleCloseCart = useCallback(() => setCartOpen(false), []);
+  const handleCloseCheckout = useCallback(() => setCheckoutOpen(false), []);
+
+  const handleCheckout = useCallback(() => {
+    setCartOpen(false);
+    setCheckoutOpen(true);
+  }, []);
 
   return (
     <>
@@ -30,7 +46,7 @@ export default function MarketplaceNavbar() {
             </Link>
 
             <div className="flex items-center gap-1">
-              <CartBadge onClick={() => setCartOpen(true)} />
+              <CartBadge onClick={handleOpenCart} />
               <Link
                 href="/marketplace/registrar"
                 className="hidden sm:inline-flex rounded-lg px-3 py-1.5 text-sm font-semibold text-white/90 transition-colors hover:bg-white/10 hover:text-white"
@@ -39,7 +55,7 @@ export default function MarketplaceNavbar() {
               </Link>
               <Link
                 href="/registro"
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white"
               >
                 Iniciar sesión
               </Link>
@@ -48,7 +64,15 @@ export default function MarketplaceNavbar() {
         </div>
       </nav>
 
-      <MarketplaceCart isOpen={cartOpen} onClose={() => setCartOpen(false)} />
+      <MarketplaceCart
+        isOpen={cartOpen}
+        onClose={handleCloseCart}
+        onCheckout={handleCheckout}
+      />
+      <MarketplaceCheckoutModal
+        isOpen={checkoutOpen}
+        onClose={handleCloseCheckout}
+      />
     </>
   );
 }

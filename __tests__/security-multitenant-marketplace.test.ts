@@ -23,15 +23,12 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-const { NotFoundError } = vi.hoisted(() => {
-  class NotFoundError extends Error {
-    constructor(m: string) {
-      super(m);
-      this.name = "NotFoundError";
-    }
+class NotFoundError extends Error {
+  constructor(m: string) {
+    super(m);
+    this.name = "NotFoundError";
   }
-  return { NotFoundError };
-});
+}
 
 vi.mock("@/lib/api-error", () => ({
   toErrorPayload: vi.fn((err: unknown) => {
@@ -42,13 +39,6 @@ vi.mock("@/lib/api-error", () => ({
   }),
   newTraceId:   vi.fn(() => "trace-security"),
   NotFoundError,
-}));
-
-// ── Mock: cache — passthrough para que los tests no dependan de estado cacheado ─
-vi.mock("@/lib/cache", () => ({
-  getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => Promise<unknown>) => fn()),
-  invalidate: vi.fn(),
-  invalidateByPrefix: vi.fn(),
 }));
 
 // ── Mock: prisma con registros de MÚLTIPLES tenants ───────────────────────────
@@ -133,11 +123,6 @@ const TIENDA_RIVAL = {
 };
 
 // Productos de tienda pública
-// NOTA: la relación se llama `product` (camelCase) en el schema —
-// `model StoreProduct { product Product @relation(...) }` — y así la
-// retorna Prisma 7 en el `select`. Antes este test usaba `Product` con
-// mayúscula porque el endpoint también estaba mal (devolvía 500 en runtime
-// pero el bug estaba oculto por ignoreBuildErrors: true en next.config.ts).
 const PRODUCT_PUBLICA = {
   id:             "sp-pub-1",
   storeId:        "store-tenant-a",   // pertenece a TIENDA_PUBLICA
@@ -145,8 +130,7 @@ const PRODUCT_PUBLICA = {
   wholesalePrice: 3.0,
   minOrderQty:    1,
   isActive:       true,
-  product: { id: "prod-1", name: "Arroz", image: "/arroz.png", category: "Abarrotes", unit: "kg", description: "", stock: 10 },
-  store: { id: "store-tenant-a", name: "Tienda Pública", slug: "tienda-publica", logo: "/pub.png", zone: "Centro", rating: 4.5 },
+  product: { id: "prod-1", name: "Arroz", image: "/arroz.png", category: "Abarrotes", unit: "kg", description: "" },
 };
 
 // Productos de tienda rival (tenant diferente)
@@ -216,15 +200,12 @@ describe("Multi-tenant: tiendas no publicadas son invisibles", () => {
     const res  = await GETSearch(makeReq("https://host/api/marketplace/search?q=arroz"));
     const body = await res.json();
 
-    // Verificar que el filtro de store.isPublished siempre esta presente.
-    // Las relaciones de Prisma se acceden por nombre de propiedad (lowercase),
-    // no por el nombre del modelo. El handler real usa `where: { store: {...} }`.
+    // Verificar que el filtro de store isPublished siempre esta presente
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
     expect(callArgs.where.store.isPublished).toBe(true);
 
     // Ningún resultado debe pertenecer a tienda privada
-    // El handler ahora devuelve campos aplanados: storeId en lugar de store.id
-    const storeIds = body.data.map((r: { storeId?: string }) => r.storeId);
+    const storeIds = body.data.map((r: { store?: { id?: string } }) => r.store?.id);
     expect(storeIds).not.toContain("store-tenant-b");
   });
 });
@@ -330,8 +311,8 @@ describe("Multi-tenant: campos sensibles no expuestos al público", () => {
     // Por ahora pasa si el valor existe (es un WARNING, no un error bloqueante)
     const productData = body.data[0];
     if (productData?.wholesalePrice !== undefined) {
-      // Si tiene wholesalePrice, al menos verificar que price (retailPrice mapeado) también está
-      expect(productData.price).toBeDefined();
+      // Si tiene wholesalePrice, al menos verificar que retailPrice también está
+      expect(productData.retailPrice).toBeDefined();
     }
   });
 });
