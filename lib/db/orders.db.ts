@@ -14,6 +14,9 @@ import {
   normalizePhone,
 } from "./misc.db";
 import { DomainEvents } from "@/lib/domain-events";
+import { notifyOwnerNewOrder } from "@/lib/whatsapp-order-notify";
+import { findTenantByIdOrSlug } from "@/lib/tenant";
+import { checkAndIssueCoupons } from "@/lib/coupons/auto-coupon-triggers";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -306,7 +309,66 @@ export const OrdersDB = {
       hadCoupon:     Boolean(order.appliedCouponCode),
       isDelivery:    Boolean(order.customer.location),
     }).catch(() => {});
-    return mapOrder(row);
+
+    // Notify tenant owner via WhatsApp — fire-and-forget (Mejora #1)
+    findTenantByIdOrSlug(tenantId)
+      .then((tenant) => {
+        if (!tenant) return;
+        return notifyOwnerNewOrder(mapOrder(row), {
+          id:         tenant.id,
+          slug:       tenant.slug,
+          name:       tenant.name,
+          ownerPhone: tenant.ownerPhone,
+        });
+      })
+      .catch(() => {});
+
+    // Auto-coupon triggers — fire-and-forget (Mejora #6)
+    const mappedOrder = mapOrder(row);
+    const customerForCoupons = row.customerPhone
+      ? prisma.customer
+          .findUnique({
+            where: { phone: row.customerPhone },
+            include: { locations: true },
+          })
+          .then((c) => {
+            if (!c) return null;
+            const toISO = (d: Date) => d.toISOString();
+            return {
+              phone:           c.phone,
+              name:            c.name,
+              location:        c.location,
+              reference:       c.reference,
+              locations:       c.locations.map((l) => ({ id: l.id, location: l.location, reference: l.reference })),
+              activeLocationId: c.activeLocationId,
+              birthday:        c.birthday ? toISO(c.birthday) : undefined,
+              aiNotes:         c.aiNotes ?? undefined,
+              aiNotesDate:     c.aiNotesDate ? toISO(c.aiNotesDate) : undefined,
+              loyaltyPoints:   c.loyaltyPoints,
+              loyaltyTier:     c.loyaltyTier,
+              totalSpent:      c.totalSpent,
+              privateNotes:    c.privateNotes ?? undefined,
+              referralCode:    c.referralCode ?? undefined,
+              referredBy:      c.referredBy ?? undefined,
+              creditBalance:   c.creditBalance,
+              creditLimit:     c.creditLimit,
+              tags:            c.tags ?? null,
+              lat:             c.lat ?? undefined,
+              lng:             c.lng ?? undefined,
+              notifOrderUpdates: c.notifOrderUpdates,
+              notifPromotions:   c.notifPromotions,
+              notifRestock:      c.notifRestock,
+              createdAt:       toISO(c.createdAt),
+              updatedAt:       toISO(c.updatedAt),
+            };
+          })
+      : Promise.resolve(null);
+
+    customerForCoupons
+      .then((customer) => checkAndIssueCoupons(mappedOrder, customer, tenantId))
+      .catch(() => {});
+
+    return mappedOrder;
   },
   async update(id: string, patch: Partial<DbOrder>): Promise<DbOrder | null> {
     const existing = await prisma.order.findUnique({ where: { id } });

@@ -12,16 +12,18 @@
 import { logger } from "@/lib/logger";
 
 export type FeatureFlag =
-  | "bullmq-queues"        // Use BullMQ instead of fire-and-forget
-  | "refresh-tokens"       // Use access+refresh token rotation
-  | "rolling-releases"     // Canary deployments on Vercel
-  | "redis-cache"          // Use Redis-backed cache
-  | "oauth-google"         // Google OAuth login for customers
-  | "cursor-pagination"    // Cursor-based pagination
-  | "ai-assistant-v2"      // Next-gen AI assistant
-  | "marketplace-v2"       // Enhanced marketplace features
-  | "whatsapp-bot"         // WhatsApp chatbot integration
-  | "push-notifications";  // Web push notifications
+  | "bullmq-queues"                // Use BullMQ instead of fire-and-forget
+  | "refresh-tokens"               // Use access+refresh token rotation
+  | "rolling-releases"             // Canary deployments on Vercel
+  | "redis-cache"                  // Use Redis-backed cache
+  | "oauth-google"                 // Google OAuth login for customers
+  | "cursor-pagination"            // Cursor-based pagination
+  | "ai-assistant-v2"              // Next-gen AI assistant
+  | "marketplace-v2"               // Enhanced marketplace features
+  | "whatsapp-bot"                 // WhatsApp chatbot integration
+  | "push-notifications"           // Web push notifications
+  | "whatsapp-order-notifications" // WhatsApp al dueño cuando llega una nueva orden
+  | "auto-coupon-triggers";        // Cupones automáticos por hito (primera compra, cumpleaños, 10ma compra)
 
 // Default values — features that are already shipped
 const DEFAULTS: Record<FeatureFlag, boolean> = {
@@ -35,6 +37,8 @@ const DEFAULTS: Record<FeatureFlag, boolean> = {
   "marketplace-v2": false,
   "whatsapp-bot": true,
   "push-notifications": true,
+  "whatsapp-order-notifications": true,
+  "auto-coupon-triggers": true,
 };
 
 /**

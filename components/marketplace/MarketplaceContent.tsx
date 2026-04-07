@@ -22,6 +22,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import MarketplaceFilters, {
+  type MarketplaceFiltersState,
+  type SortBy,
+} from "@/components/marketplace/MarketplaceFilters";
 
 /* ── Types ─────────────────────────────────────────────────────────────────── */
 
@@ -290,11 +294,15 @@ function CrossStoreDropdown({
   onClose,
   zone,
   category,
+  filters,
+  userCoords,
 }: {
   query: string;
   onClose: () => void;
   zone?: string;
   category?: string;
+  filters?: MarketplaceFiltersState;
+  userCoords?: { lat: number; lng: number } | null;
 }) {
   const [results, setResults] = useState<CrossStoreResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -310,6 +318,23 @@ function CrossStoreDropdown({
         const params = new URLSearchParams({ q: query });
         if (zone) params.set("zone", zone);
         if (category && category !== "todos") params.set("category", category);
+        if (filters?.minPrice && filters.minPrice > 0) params.set("minPrice", String(filters.minPrice));
+        if (filters?.maxPrice && filters.maxPrice < 500) params.set("maxPrice", String(filters.maxPrice));
+        if (filters?.productCategory) params.set("category", filters.productCategory);
+        if (filters?.sortBy && filters.sortBy !== "relevance") {
+          const sortMap: Record<string, string> = {
+            "price-asc": "price_asc",
+            "price-desc": "price_desc",
+            "rating": "rating",
+            "distance": "distance",
+          };
+          const mappedSort = sortMap[filters.sortBy];
+          if (mappedSort) params.set("sort", mappedSort);
+        }
+        if (filters?.nearbyEnabled && userCoords) {
+          params.set("lat", String(userCoords.lat));
+          params.set("lng", String(userCoords.lng));
+        }
         const res = await fetch(`/api/marketplace/search?${params}`);
         if (res.ok) {
           const json = await res.json();
@@ -321,7 +346,7 @@ function CrossStoreDropdown({
       setLoading(false);
     }, 300);
     return () => clearTimeout(timer);
-  }, [query, zone, category]);
+  }, [query, zone, category, filters, userCoords]);
 
   if (query.length < 2) return null;
 
@@ -340,7 +365,7 @@ function CrossStoreDropdown({
         </div>
       ) : results.length === 0 ? (
         <div className="px-5 py-4 text-sm text-gray-500 dark:text-muted">
-          No encontramos productos para <strong className="text-gray-900 dark:text-foreground">"{query}"</strong>
+          No encontramos productos para <strong className="text-gray-900 dark:text-foreground">&ldquo;{query}&rdquo;</strong>
         </div>
       ) : (
         <div>
@@ -407,6 +432,16 @@ function CrossStoreDropdown({
 
 /* ── Main Content ──────────────────────────────────────────────────────────── */
 
+const MAX_PRICE_LIMIT = 500;
+
+const DEFAULT_FILTERS: MarketplaceFiltersState = {
+  minPrice: 0,
+  maxPrice: MAX_PRICE_LIMIT,
+  productCategory: null,
+  sortBy: "relevance",
+  nearbyEnabled: false,
+};
+
 export default function MarketplaceContent() {
   const [stores, setStores] = useState<MarketplaceStore[]>([]);
   const [loading, setLoading] = useState(true);
@@ -419,8 +454,25 @@ export default function MarketplaceContent() {
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoActive, setGeoActive] = useState(false);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [productFilters, setProductFilters] = useState<MarketplaceFiltersState>(DEFAULT_FILTERS);
   const searchRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  const handleFiltersChange = useCallback((patch: Partial<MarketplaceFiltersState>) => {
+    setProductFilters((prev) => {
+      const next = { ...prev, ...patch };
+      // Si activamos nearbyEnabled desde el panel de filtros, pedir GPS
+      if (patch.nearbyEnabled === true && !prev.nearbyEnabled) {
+        return next; // la lógica GPS ya está en handleGeoSort
+      }
+      return next;
+    });
+    // Si el usuario activa nearbyEnabled desde MarketplaceFilters, sincronizar con geoActive
+    if (patch.nearbyEnabled === false) {
+      setGeoActive(false);
+      setUserCoords(null);
+    }
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -483,6 +535,7 @@ export default function MarketplaceContent() {
     if (geoActive) {
       setGeoActive(false);
       setUserCoords(null);
+      setProductFilters((prev) => ({ ...prev, nearbyEnabled: false }));
       return;
     }
     if (!navigator.geolocation) {
@@ -495,16 +548,18 @@ export default function MarketplaceContent() {
         setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setGeoActive(true);
         setGeoLoading(false);
+        setProductFilters((prev) => ({ ...prev, nearbyEnabled: true }));
       },
       () => {
         setGeoLoading(false);
-        alert("No pudimos obtener tu ubicación. Verifica los permisos del navegador.");
+        setProductFilters((prev) => ({ ...prev, nearbyEnabled: false }));
+        alert(
+          "No pudimos obtener tu ubicación. Para ver tiendas cerca, permití la ubicación en la configuración de tu navegador.",
+        );
       },
-      { timeout: 8000 }
+      { timeout: 8000 },
     );
   }, [geoActive]);
-
-  const activeFilters = (category !== "todos" ? 1 : 0) + (zone ? 1 : 0) + (geoActive ? 1 : 0);
 
   return (
     <div className="relative">
@@ -602,6 +657,8 @@ export default function MarketplaceContent() {
                     onClose={() => setShowSearchDropdown(false)}
                     zone={zone}
                     category={category}
+                    filters={productFilters}
+                    userCoords={userCoords}
                   />
                 )}
               </AnimatePresence>
@@ -639,7 +696,7 @@ export default function MarketplaceContent() {
 
       {/* ── Filters + Grid ── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        {/* Category pills */}
+        {/* Category pills — categoría de TIENDA (bodega, minimarket, etc.) */}
         <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
           {CATEGORIES.map((cat) => (
             <button
@@ -658,43 +715,20 @@ export default function MarketplaceContent() {
           ))}
         </div>
 
-        {/* Zone filter + filter toggle */}
+        {/* Zona + filtros clásicos (zona / geo) */}
         <div className="flex items-center gap-3 mt-4 flex-wrap">
           <button
             onClick={() => setShowFilters(!showFilters)}
+            aria-expanded={showFilters}
             className={cn(
               "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border transition-colors",
-              showFilters || activeFilters > 0
+              showFilters || zone
                 ? "bg-primary/10 text-primary border-primary/30"
                 : "bg-white dark:bg-card text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary/40",
             )}
           >
-            <Filter className="h-4 w-4" />
-            Filtros
-            {activeFilters > 0 && (
-              <span className="w-5 h-5 rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center">
-                {activeFilters}
-              </span>
-            )}
-          </button>
-
-          {/* Geolocation button */}
-          <button
-            onClick={handleGeoSort}
-            disabled={geoLoading}
-            className={cn(
-              "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border transition-colors disabled:opacity-60",
-              geoActive
-                ? "bg-primary text-white border-primary shadow-md shadow-primary/25"
-                : "bg-white dark:bg-card text-gray-600 dark:text-muted border-gray-200 dark:border-card-border hover:border-primary/40 hover:text-primary",
-            )}
-          >
-            {geoLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <LocateFixed className="h-4 w-4" />
-            )}
-            {geoActive ? "Cerca de mí ✓" : "Cerca de mí"}
+            <Filter className="h-4 w-4" aria-hidden="true" />
+            Zona
           </button>
 
           {/* Zone quick filter (visible if filters open) */}
@@ -709,6 +743,7 @@ export default function MarketplaceContent() {
                 <select
                   value={zone}
                   onChange={(e) => setZone(e.target.value)}
+                  aria-label="Filtrar por zona"
                   className="px-4 py-2.5 rounded-xl border border-gray-200 dark:border-card-border bg-white dark:bg-card text-sm font-semibold text-gray-700 dark:text-foreground outline-none focus:border-primary transition-colors"
                 >
                   {ZONES.map((z) => (
@@ -723,12 +758,29 @@ export default function MarketplaceContent() {
 
           {(category !== "todos" || zone || geoActive) && (
             <button
-              onClick={() => { setCategory("todos"); setZone(""); setGeoActive(false); setUserCoords(null); }}
+              onClick={() => {
+                setCategory("todos");
+                setZone("");
+                setGeoActive(false);
+                setUserCoords(null);
+                setProductFilters(DEFAULT_FILTERS);
+              }}
               className="text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors underline"
             >
               Limpiar filtros
             </button>
           )}
+        </div>
+
+        {/* Panel de filtros de producto: precio, categoría producto, ordenar, geo */}
+        <div className="mt-4">
+          <MarketplaceFilters
+            filters={productFilters}
+            userCoords={userCoords}
+            geoLoading={geoLoading}
+            onChange={handleFiltersChange}
+            onRequestGeo={handleGeoSort}
+          />
         </div>
 
         {/* Error state */}

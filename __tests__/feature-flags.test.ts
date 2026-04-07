@@ -114,18 +114,19 @@ describe("getAllFlags", () => {
     process.env = originalEnv;
   });
 
-  it("returns all 10 known flag keys", () => {
+  it("returns all 12 known flag keys", () => {
     const flags = getAllFlags();
     const expectedKeys = [
       "bullmq-queues", "refresh-tokens", "rolling-releases",
       "redis-cache", "oauth-google", "cursor-pagination",
       "ai-assistant-v2", "marketplace-v2", "whatsapp-bot",
       "push-notifications",
+      "whatsapp-order-notifications", "auto-coupon-triggers",
     ];
     for (const key of expectedKeys) {
       expect(key in flags).toBe(true);
     }
-    expect(Object.keys(flags)).toHaveLength(10);
+    expect(Object.keys(flags)).toHaveLength(12);
   });
 
   it("returns defaults when no env vars set", () => {
@@ -140,6 +141,8 @@ describe("getAllFlags", () => {
     expect(flags["marketplace-v2"]).toBe(false);
     expect(flags["whatsapp-bot"]).toBe(true);
     expect(flags["push-notifications"]).toBe(true);
+    expect(flags["whatsapp-order-notifications"]).toBe(true);
+    expect(flags["auto-coupon-triggers"]).toBe(true);
   });
 
   it("reflects env var overrides", () => {
@@ -152,7 +155,7 @@ describe("getAllFlags", () => {
 
   it("accepts optional tenantId parameter", () => {
     const flags = getAllFlags("demo");
-    expect(Object.keys(flags)).toHaveLength(10);
+    expect(Object.keys(flags)).toHaveLength(12);
   });
 });
 

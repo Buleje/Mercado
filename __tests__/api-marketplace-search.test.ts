@@ -48,23 +48,25 @@ import { GET } from "@/app/api/marketplace/search/route";
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
 
+// Fixtures con la estructura que retorna Prisma al handler (relaciones en camelCase)
 const RESULT_ARROZ = {
   id:          "sp-1",
   retailPrice: 3.5,
   minOrderQty: 1,
-  Product: {
-    id:       "prod-1",
+  product: {
+    id:       1,
     name:     "Arroz Extra",
     image:    "/arroz.png",
     category: "Abarrotes",
     unit:     "kg",
   },
-  Store: {
-    id:   "store-1",
-    name: "Bodega San Martín",
-    slug: "bodega-san-martin",
-    logo: "/logo.png",
-    zone: "Centro",
+  store: {
+    id:     "store-1",
+    name:   "Bodega San Martín",
+    slug:   "bodega-san-martin",
+    logo:   "/logo.png",
+    zone:   "Centro",
+    rating: 4.5,
   },
 };
 
@@ -72,19 +74,20 @@ const RESULT_ARROZ_LARGO = {
   id:          "sp-2",
   retailPrice: 4.0,
   minOrderQty: 2,
-  Product: {
-    id:       "prod-2",
+  product: {
+    id:       2,
     name:     "Arroz Largo",
     image:    "/arroz-largo.png",
     category: "Abarrotes",
     unit:     "kg",
   },
-  Store: {
-    id:   "store-2",
-    name: "Minimarket Flora",
-    slug: "minimarket-flora",
-    logo: "/flora.png",
-    zone: "Yarinacocha",
+  store: {
+    id:     "store-2",
+    name:   "Minimarket Flora",
+    slug:   "minimarket-flora",
+    logo:   "/flora.png",
+    zone:   "Yarinacocha",
+    rating: 4.0,
   },
 };
 
@@ -192,16 +195,14 @@ describe("GET /api/marketplace/search", () => {
     const body = await res.json();
     const item = body.data[0];
 
-    // Precio
-    expect(item).toHaveProperty("retailPrice");
-    // Producto (Prisma relation names are capitalized)
-    expect(item.Product).toHaveProperty("name");
-    expect(item.Product).toHaveProperty("image");
-    expect(item.Product).toHaveProperty("category");
+    // El handler aplana la respuesta — campos directos en el objeto resultado
+    expect(item).toHaveProperty("price");
+    expect(item).toHaveProperty("productName");
+    expect(item).toHaveProperty("category");
     // Tienda
-    expect(item.Store).toHaveProperty("name");
-    expect(item.Store).toHaveProperty("slug");
-    expect(item.Store).toHaveProperty("zone");
+    expect(item).toHaveProperty("storeName");
+    expect(item).toHaveProperty("storeSlug");
+    expect(item).toHaveProperty("storeZone");
   });
 
   it("resultados están ordenados por precio ascendente", async () => {

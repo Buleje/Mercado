@@ -146,6 +146,7 @@ const PRODUCT_PUBLICA = {
   minOrderQty:    1,
   isActive:       true,
   product: { id: "prod-1", name: "Arroz", image: "/arroz.png", category: "Abarrotes", unit: "kg", description: "", stock: 10 },
+  store: { id: "store-tenant-a", name: "Tienda Pública", slug: "tienda-publica", logo: "/pub.png", zone: "Centro", rating: 4.5 },
 };
 
 // Productos de tienda rival (tenant diferente)
@@ -222,7 +223,8 @@ describe("Multi-tenant: tiendas no publicadas son invisibles", () => {
     expect(callArgs.where.store.isPublished).toBe(true);
 
     // Ningún resultado debe pertenecer a tienda privada
-    const storeIds = body.data.map((r: { store?: { id?: string } }) => r.store?.id);
+    // El handler ahora devuelve campos aplanados: storeId en lugar de store.id
+    const storeIds = body.data.map((r: { storeId?: string }) => r.storeId);
     expect(storeIds).not.toContain("store-tenant-b");
   });
 });
