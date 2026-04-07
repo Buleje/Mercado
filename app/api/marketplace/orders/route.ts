@@ -15,7 +15,7 @@ import { applyRateLimit } from "@/lib/rate-limit";
 export async function GET(req: NextRequest) {
   const traceId = newTraceId();
   try {
-    const auth = await requireAdmin(req, ["admin", "gerente", "cajero"]);
+    const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
     if (auth instanceof NextResponse) return auth;
 
     const orders = await prisma.order.findMany({
@@ -158,13 +158,15 @@ export async function POST(req: NextRequest) {
         }).catch(() => {});
 
         // Push notification to store owner's phone
-        const settings = await prisma.settings.findFirst({
-          where: { tenantId: store.tenantId },
+        // ownerPhone pertenece al modelo Tenant, no a Settings
+        const tenant = await prisma.tenant.findUnique({
+          where: { slug: store.tenantId },
           select: { ownerPhone: true },
         });
-        if (settings?.ownerPhone) {
-          sendPushToPhone(settings.ownerPhone, {
-            title: `🛒 Nuevo pedido — ${store.name}`,
+        const ownerPhone = tenant?.ownerPhone ?? null;
+        if (ownerPhone) {
+          sendPushToPhone(ownerPhone, {
+            title: `Nuevo pedido — ${store.name}`,
             body: `${customerName} pidió ${items.length} producto(s) por S/${order.total.toFixed(2)}`,
             url: `/admin?module=marketplace&tab=ordenes`,
           }).catch(() => {});
@@ -173,20 +175,22 @@ export async function POST(req: NextRequest) {
           const itemList = items.slice(0, 5).map((i: { name: string; quantity: number }) => `  • ${i.quantity}x ${i.name}`).join("\n");
           const moreItems = items.length > 5 ? `\n  + ${items.length - 5} más...` : "";
           sendWhatsAppText(
-            settings.ownerPhone,
-            `🛒 *Nuevo pedido en ${store.name}*\n\n` +
-            `👤 Cliente: ${customerName}\n` +
-            `📞 Tel: ${customerPhone}\n` +
-            `📍 Dirección: ${customerAddress || "No especificada"}\n\n` +
-            `📦 Productos:\n${itemList}${moreItems}\n\n` +
-            `💰 *Total: S/ ${order.total.toFixed(2)}*\n\n` +
-            `Entra a tu panel para confirmar el pedido 👉`
+            ownerPhone,
+            `*Nuevo pedido en ${store.name}*\n\n` +
+            `Cliente: ${customerName}\n` +
+            `Tel: ${customerPhone}\n` +
+            `Direccion: ${customerAddress || "No especificada"}\n\n` +
+            `Productos:\n${itemList}${moreItems}\n\n` +
+            `Total: S/ ${order.total.toFixed(2)}\n\n` +
+            `Entra a tu panel para confirmar el pedido`
           ).catch(() => {});
         }
       } catch { /* silencioso */ }
     })();
 
     // Fire-and-forget: earn loyalty points (1 point per S/1 spent)
+    // TODO Sprint C Wave 4: el modelo LoyaltyTransaction no existe en schema.prisma aún.
+    // Por ahora solo actualizamos loyaltyPoints en Customer.
     (async () => {
       try {
         if (!customerPhone) return;
@@ -197,22 +201,10 @@ export async function POST(req: NextRequest) {
         if (!customer) return;
         const pointsToEarn = Math.floor(order.total);
         if (pointsToEarn <= 0) return;
-        await prisma.$transaction([
-          prisma.loyaltyTransaction.create({
-            data: {
-              phone: customerPhone,
-              tenantId: "main",
-              type: "earn",
-              points: pointsToEarn,
-              description: `Compra marketplace #${order.id.slice(0, 8)}`,
-              orderId: order.id,
-            },
-          }),
-          prisma.customer.update({
-            where: { phone: customerPhone },
-            data: { loyaltyPoints: { increment: pointsToEarn } },
-          }),
-        ]);
+        await prisma.customer.update({
+          where: { phone: customerPhone },
+          data: { loyaltyPoints: { increment: pointsToEarn } },
+        });
       } catch { /* silencioso */ }
     })();
 
@@ -238,16 +230,17 @@ export async function POST(req: NextRequest) {
         if (prevOrders <= 1) {
           const welcomeCode = `BIENVENIDO${customerPhone.slice(-4)}`;
           // Don't create if already exists
+          // Coupon no tiene campo storeId — se discrimina por tenantId + code
+          // TODO Sprint C Wave 4: agregar storeId a Coupon si se necesita por-tienda
           const exists = await prisma.coupon.findFirst({
-            where: { tenantId: store.tenantId, code: welcomeCode, storeId: store.id },
+            where: { tenantId: store.tenantId, code: welcomeCode },
           });
           if (!exists) {
             await prisma.coupon.create({
               data: {
                 code: welcomeCode,
                 tenantId: store.tenantId,
-                storeId: store.id,
-                description: `¡Bienvenido a ${store.name}! 10% de descuento en tu próxima compra`,
+                description: `Bienvenido a ${store.name}! 10% de descuento en tu proxima compra`,
                 discountType: "percent",
                 discountValue: 10,
                 maxUses: 1,

@@ -52,15 +52,18 @@ export async function GET(req: NextRequest) {
         take: 20,
       }),
 
-      // Clientes que no compran hace 30+ días
+      // Clientes que no compran hace 30+ días — usando la última orden relacionada
+      // Customer.phone es la PK; lastOrderAt no existe en el modelo.
+      // Obtenemos clientes activos con órdenes previas al cutoff30.
       prisma.customer.findMany({
         where: {
           tenantId,
-          lastOrderAt: { lt: cutoff30 },
-          phone: { not: null },
+          orders: {
+            some: { createdAt: { lt: cutoff30 }, deletedAt: null },
+            none: { createdAt: { gte: cutoff30 }, deletedAt: null },
+          },
         },
-        select: { id: true, name: true, phone: true, lastOrderAt: true },
-        orderBy: { lastOrderAt: "asc" },
+        select: { name: true, phone: true, orders: { select: { createdAt: true }, orderBy: { createdAt: "desc" }, take: 1 } },
         take: 10,
       }),
     ]);
@@ -79,7 +82,8 @@ export async function GET(req: NextRequest) {
 
     // ── 2. Productos en riesgo de agotamiento ─────────────────────────────────
     // Ventas diarias promedio por producto (últimos 28 días)
-    const productSalesMap = new Map<string, number>();
+    // SaleItem.productId es Int (number); Product.id es también Int
+    const productSalesMap = new Map<number, number>();
     for (const sale of sales28) {
       for (const item of sale.items) {
         const prev = productSalesMap.get(item.productId) ?? 0;
@@ -118,11 +122,14 @@ export async function GET(req: NextRequest) {
     };
 
     // ── 4. Clientes en riesgo de abandono ─────────────────────────────────────
+    // Customer.phone es la PK; se usa como identificador único
     const churnRisk = churnable.map(c => {
-      const lastOrder = c.lastOrderAt ? new Date(c.lastOrderAt) : null;
-      const daysAgo = lastOrder ? Math.floor((now.getTime() - lastOrder.getTime()) / 86400000) : null;
+      const lastOrderDate = c.orders[0]?.createdAt ?? null;
+      const daysAgo = lastOrderDate
+        ? Math.floor((now.getTime() - lastOrderDate.getTime()) / 86400000)
+        : null;
       return {
-        id: c.id,
+        id: c.phone,
         name: c.name ?? "Cliente",
         phone: c.phone ?? "",
         daysAgo,

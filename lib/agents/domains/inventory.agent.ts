@@ -63,7 +63,7 @@ async function checkStock(
         count: lowStock.length,
         products: lowStock.slice(0, 10).map((p) => ({ name: p.name, stock: p.stock })),
       },
-      priority: "medium",
+      priority: "normal",
     });
   }
 
@@ -108,18 +108,22 @@ async function fefoAudit(
     `inventory:fefo-batches:${daysAhead}`,
     180,
     async () => {
-      const rows = await BatchesDB.getExpiringBatches(task.tenantId, daysAhead);
-      return rows.map((b) => ({
-        batchId: b.id,
-        productId: b.product.id,
-        productName: b.product.name,
-        category: b.product.category,
-        quantity: b.quantity,
-        expiryDate: b.expiryDate.toISOString(),
-        daysUntilExpiry: Math.ceil(
-          (b.expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-        ),
-      }));
+      // BatchesDB.getExpiring devuelve DbBatch[] con expiryDate como string ISO
+      const rows = await BatchesDB.getExpiring(task.tenantId, daysAhead);
+      return rows.map((b) => {
+        const expiryMs = new Date(b.expiryDate).getTime();
+        return {
+          batchId: b.id,
+          productId: b.productId ?? null,
+          productName: b.productName,
+          category: b.productCategory,
+          quantity: b.quantity,
+          expiryDate: b.expiryDate,
+          daysUntilExpiry: Math.ceil(
+            (expiryMs - Date.now()) / (1000 * 60 * 60 * 24),
+          ),
+        };
+      });
     },
   );
 
@@ -156,7 +160,7 @@ async function fefoAudit(
           daysLeft: b.daysUntilExpiry,
         })),
       },
-      priority: "medium",
+      priority: "normal",
     });
   }
 
@@ -191,7 +195,7 @@ async function reorderSuggestions(
   );
 
   // Estimate daily sales velocity from recent movements
-  const movements = await InventoryMovementsDB.getAll(500);
+  const movements = await InventoryMovementsDB.getAll(task.tenantId, 500);
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
   const salesByProduct = new Map<number, number>();
@@ -320,7 +324,7 @@ async function movementSummary(
   const from = task.payload.from as string | undefined;
   const to = task.payload.to as string | undefined;
 
-  const allMovements = await InventoryMovementsDB.getAll(1000);
+  const allMovements = await InventoryMovementsDB.getAll(task.tenantId, 1000);
 
   let filtered = allMovements;
   if (from) {

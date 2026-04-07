@@ -1,0 +1,73 @@
+"use client";
+
+import { useCallback } from "react";
+import type { StoreRow } from "./types";
+
+interface UseStoreActionsParams {
+  setSaving: (id: string | null) => void;
+  showToast: (msg: string, ok: boolean) => void;
+  onRefresh: () => void;
+  editCommission: { id: string; value: string } | null;
+  setEditCommission: (v: { id: string; value: string } | null) => void;
+}
+
+export function useStoreActions({
+  setSaving,
+  showToast,
+  onRefresh,
+  editCommission,
+  setEditCommission,
+}: UseStoreActionsParams) {
+  const togglePublished = useCallback(
+    async (store: StoreRow) => {
+      setSaving(store.id);
+      try {
+        const res = await fetch("/api/superadmin/stores", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ storeId: store.id, isPublished: !store.isPublished }),
+        });
+        if (!res.ok) throw new Error();
+        showToast(`${store.name} ${!store.isPublished ? "publicada" : "ocultada"}`, true);
+        onRefresh();
+      } catch {
+        showToast("Error al actualizar", false);
+      } finally {
+        setSaving(null);
+      }
+    },
+    [setSaving, showToast, onRefresh],
+  );
+
+  const saveCommission = useCallback(
+    async (storeId: string) => {
+      if (!editCommission) return;
+      const val = parseFloat(editCommission.value);
+      if (isNaN(val) || val < 0 || val > 100) {
+        showToast("Comisión debe ser entre 0 y 100%", false);
+        return;
+      }
+      setSaving(storeId);
+      try {
+        const res = await fetch("/api/superadmin/stores", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ storeId, commission: val }),
+        });
+        if (!res.ok) throw new Error();
+        showToast("Comisión actualizada", true);
+        setEditCommission(null);
+        onRefresh();
+      } catch {
+        showToast("Error al guardar comisión", false);
+      } finally {
+        setSaving(null);
+      }
+    },
+    [editCommission, setSaving, showToast, setEditCommission, onRefresh],
+  );
+
+  return { togglePublished, saveCommission };
+}
