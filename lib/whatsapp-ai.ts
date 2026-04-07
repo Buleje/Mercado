@@ -2,6 +2,7 @@
 import { logger } from "@/lib/logger";
 import { sanitizeForLLM, detectPromptInjection, moderateLLMOutput } from "@/lib/ai-safety";
 import { chatCompletion, getActiveProvider } from "@/lib/ai-config";
+import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { ProductsDB } from "@/lib/db/products.db";
 
 /**
@@ -66,10 +67,12 @@ ${context.hasOpenOrder ? "El cliente tiene un pedido en curso." : ""}
 ${context.hasFiado ? "El cliente tiene fiado pendiente." : ""}
 Nunca inventes precios si no los tienes en los datos. Si no sabes algo, sugiere escribir CATALOGO o llamar a la tienda.`;
 
+    // Chat directo al cliente final — precisión absoluta sobre precios y stock.
+    // Excel Agentes IA práctica #7: Chat = 0.0 (el prompt ya enforza "NO inventes precios").
     const result = await chatCompletion([
       { role: "system", content: systemPrompt },
       { role: "user", content: sanitizedMessage },
-    ], { maxTokens: 200, temperature: 0.7 });
+    ], { maxTokens: 200, temperature: AI_TEMPERATURES.chat });
 
     if (!result.ok) return fallbackResponse(customerMessage);
 

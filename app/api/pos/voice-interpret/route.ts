@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
+import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 
 // ── Fuzzy match local fallback ───────────────────────────────────────────
 function fuzzyMatchProducts(
@@ -134,7 +135,9 @@ Si necesitas aclaración:
           { role: "system", content: systemPrompt },
           { role: "user", content: `El cajero dijo: "${transcript}"` },
         ],
-        temperature: 0.3,
+        // Voice → intent parsing — determinístico, variación rompe el match de productos.
+        // Excel Agentes IA práctica #7: extraction role.
+        temperature: AI_TEMPERATURES.extraction,
         max_tokens: 500,
       }),
     });

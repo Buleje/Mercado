@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
 import { SalesDB, ProductsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 
 export async function POST(req: NextRequest) {
   // Only admin can access demand prediction (sensitive business intelligence)
@@ -67,9 +68,11 @@ Responde SOLO el JSON, sin markdown.`;
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${GROQ_KEY}` },
     body: JSON.stringify({
+      // Forecast numérico — determinístico, predicciones estables entre runs.
+      // Excel Agentes IA práctica #7: valores bajos para evitar inventar cifras.
       model: "llama-3.3-70b-versatile",
       messages: [{ role: "user", content: prompt }],
-      temperature: 0.3,
+      temperature: AI_TEMPERATURES.forecast,
       max_tokens: 2000,
     }),
   });

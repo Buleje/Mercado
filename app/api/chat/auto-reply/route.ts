@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { chatCompletion, getActiveProvider } from "@/lib/ai-config";
+import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { ProductsDB } from "@/lib/db/products.db";
 
 // ── FAQ knowledge base for auto-replies (fallback when no AI) ────────────────
@@ -173,10 +174,12 @@ Aceptamos: Yape, Plin, efectivo, transferencia.
 ${productInfo ? `\nINVENTARIO REAL (usa estos datos para responder, son precios y stock ACTUALIZADOS):\n${productInfo}\nSi el producto aparece en la lista, da el precio y stock REAL. Si está agotado, dilo y sugiere alternativas de la lista.` : ""}
 NO inventes precios ni stock. Si no encuentras el producto en los datos, sugiere al cliente visitar la tienda o escribir el nombre exacto.`;
 
+      // Chat de storefront — precisión sobre precios/stock del inventario real.
+      // Excel Agentes IA práctica #7: Chat = 0.0 (el prompt ya enforza "NO inventes").
       const aiResult = await chatCompletion([
         { role: "system", content: systemContent },
         { role: "user", content: message },
-      ], { maxTokens: 200, temperature: 0.6 });
+      ], { maxTokens: 200, temperature: AI_TEMPERATURES.chat });
 
       if (aiResult.ok && aiResult.content) {
         return NextResponse.json({

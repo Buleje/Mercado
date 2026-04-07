@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 
 export const dynamic = "force-dynamic";
 
@@ -75,7 +76,9 @@ export async function POST(req: NextRequest) {
             },
           ],
           max_tokens: 1500,
-          temperature: 0.1,
+          // OCR/extracción — determinístico, variación = errores de parsing.
+          // Excel Agentes IA práctica #7.
+          temperature: AI_TEMPERATURES.extraction,
         }),
       });
 

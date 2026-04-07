@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
 import { OrdersDB, CustomersDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 
 export async function POST(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -90,9 +91,12 @@ Genera al menos 5 promociones diferentes clasificadas por tipo de audiencia.`;
           "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
+          // Generación creativa de promociones — variedad deseada.
+          // Excel Agentes IA práctica #7: creative role (más bajo que 0.7 original
+          // para reducir alucinación de combos no rentables, pero sin colapsar variedad).
           model: "llama-3.3-70b-versatile",
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.7,
+          temperature: AI_TEMPERATURES.creative,
           max_tokens: 2000,
         }),
       }

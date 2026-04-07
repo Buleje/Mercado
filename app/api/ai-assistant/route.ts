@@ -14,30 +14,7 @@ import { recordAIFailure, recordAISuccess } from "@/lib/ai-failure-monitor";
 import { getOrCreateConversation, loadConversationHistory, saveMessage } from "@/lib/ai-conversation-memory";
 import { getPromptVariant, recordVariantUsage } from "@/lib/ai-ab-testing";
 import { evaluateResponse } from "@/lib/ai-quality-evaluator";
-
-// ── LLM temperaturas por rol (Excel Agentes IA práctica #7) ─────────────────
-//
-// El assistant opera en 3 modos distintos. Cada uno necesita una temperatura
-// diferente para respetar la práctica "temperaturas diferenciadas por agente":
-//
-//   router        (0.2) — primera llamada con tools. Baja pero no cero: el LLM
-//                         necesita margen mínimo para elegir tools correctos
-//                         cuando la query es ambigua, sin alucinar.
-//   toolFollowup  (0.1) — segunda llamada tras ejecutar tools. Sintetiza
-//                         datos objetivos (precios, stocks, conteos) — debe
-//                         ser casi determinística para evitar inventar números.
-//   directResponse(0.4) — respuesta directa sin tools. Modo "Gerente IA" del
-//                         Excel: consejos, análisis, recomendaciones. Creativa
-//                         pero no loca.
-//
-// Antes: todo a 0.6 genérico — Chat podía alucinar datos + Gerente sonaba plano.
-// Gap cerrado: Excel Agentes IA práctica #7, pasa de ❌ a ✅ para este endpoint.
-// Próximos endpoints a alinear: app/api/ai-assistant/{coach,goals,feedback}/route.ts.
-const AI_TEMPERATURES = {
-  router: 0.2,
-  toolFollowup: 0.1,
-  directResponse: 0.4,
-} as const;
+import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 
 // ── Snapshot cache (5 min TTL) ────────────────────────────────────────────────
 
@@ -658,7 +635,7 @@ export async function POST(req: NextRequest) {
       const streamRes = await fetchGroqWithRetry(apiKey, {
         model: "llama-3.3-70b-versatile",
         messages,
-        temperature: AI_TEMPERATURES.directResponse,
+        temperature: AI_TEMPERATURES.gerente,
         max_tokens: 1500,
         stream: true,
       }, "ai-assistant-stream");
