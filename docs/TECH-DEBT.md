@@ -12,7 +12,7 @@
 | TD-002 | Prisma migration | Modelos AIConversation/AIMessage agregados al schema. Migration SQL preparada en `prisma/migrations/20260406210602_add_ai_conversation_and_message/`. **Pendiente:** Brandon corre `DATABASE_URL="$DIRECT_URL" npx prisma migrate deploy` antes del próximo push | Memoria IA no persiste datos hasta correr migración | 🟡 En progreso (SQL listo) |
 | TD-003 | A/B testing + Quality eval | Métricas en memoria — se pierden al reiniciar servidor | Pérdida de datos de experimentos | 🔓 Abierto |
 | TD-011 | admin/page.tsx | Archivo de 1413 líneas — refactor en progreso (Sesiones 1-2 hechas, faltan 4-7) | Alto acoplamiento, difícil de mantener | 🟡 En progreso |
-| TD-012 | next.config.ts | `ignoreBuildErrors: true` enmascara errores TS reales. **Baseline 2026-04-06 tarde: 469 errores** (mejor que ~620 estimado en docs). Sesiones Agent Team previas cerraron ~150 de los ~916 originales. | Bugs llegan a producción sin gate de tipos | 🟡 En progreso (469 → 0 → flip flag) |
+| TD-012 | next.config.ts | `ignoreBuildErrors: true` enmascara errores TS reales. **Baseline 2026-04-06 tarde: 469 → ahora 251 errores** (-218, -46.5% en sesión multi-turno). Cluster fiados resuelto al 100% (-91 errores en commit `25a53b4`). | Bugs llegan a producción sin gate de tipos | 🟡 En progreso (251 → 0 → flip flag) |
 
 ## 🟠 Media prioridad (afecta desarrollo o rendimiento)
 
