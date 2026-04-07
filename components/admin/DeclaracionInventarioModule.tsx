@@ -145,9 +145,10 @@ export default function DeclaracionInventarioModule() {
       // Guardar declaracion actual para futuras comparaciones
       const catResumen: Record<string, { unidades: number; valorCosto: number }> = {};
       Object.entries((result.porCategoria ?? result.categorias ?? {})).forEach(([cat, items]) => {
+        const productItems = items as ProductItem[];
         catResumen[cat] = {
-          unidades: items.reduce((s, p) => s + p.stock, 0),
-          valorCosto: items.reduce((s, p) => s + p.stock * p.costPrice, 0),
+          unidades: productItems.reduce((s: number, p: ProductItem) => s + p.stock, 0),
+          valorCosto: productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.costPrice, 0),
         };
       });
       localStorage.setItem("last-declaration", JSON.stringify({
@@ -183,7 +184,7 @@ export default function DeclaracionInventarioModule() {
     if (!data) return;
     const rows: Record<string, unknown>[] = [];
     Object.entries((data.porCategoria ?? data.categorias ?? {})).forEach(([cat, items]) => {
-      items.forEach(p => {
+      (items as ProductItem[]).forEach((p: ProductItem) => {
         rows.push({
           Categoría: cat,
           SKU: p.sku,
@@ -377,9 +378,10 @@ export default function DeclaracionInventarioModule() {
           {prevDecl ? (() => {
             const currentCats: Record<string, { unidades: number; valorCosto: number }> = {};
             Object.entries((data.porCategoria ?? data.categorias ?? {})).forEach(([cat, items]) => {
+              const productItems = items as ProductItem[];
               currentCats[cat] = {
-                unidades: items.reduce((s, p) => s + p.stock, 0),
-                valorCosto: items.reduce((s, p) => s + p.stock * p.costPrice, 0),
+                unidades: productItems.reduce((s: number, p: ProductItem) => s + p.stock, 0),
+                valorCosto: productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.costPrice, 0),
               };
             });
             const allCats = Array.from(new Set([...Object.keys(currentCats), ...Object.keys(prevDecl.categorias)]));
@@ -450,9 +452,10 @@ export default function DeclaracionInventarioModule() {
           {/* Table grouped by category */}
           <div className="space-y-4 print:space-y-2">
             {Object.entries((data.porCategoria ?? data.categorias ?? {}) ?? data.categorias ?? {}).map(([category, items]) => {
-              const catCosto = items.reduce((s, p) => s + p.stock * p.costPrice, 0);
-              const catPrecio = items.reduce((s, p) => s + p.stock * p.price, 0);
-              const catUnidades = items.reduce((s, p) => s + p.stock, 0);
+              const productItems = items as ProductItem[];
+              const catCosto = productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.costPrice, 0);
+              const catPrecio = productItems.reduce((s: number, p: ProductItem) => s + p.stock * p.price, 0);
+              const catUnidades = productItems.reduce((s: number, p: ProductItem) => s + p.stock, 0);
               return (
                 <div key={category} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm">
                   {/* Category header */}
@@ -460,7 +463,7 @@ export default function DeclaracionInventarioModule() {
                     <div className="flex items-center gap-2">
                       <Layers className="h-4 w-4 text-[#00B4A6]" />
                       <span className="font-bold text-sm text-gray-900 dark:text-white">{category}</span>
-                      <span className="text-xs text-gray-400">({items.length} productos)</span>
+                      <span className="text-xs text-gray-400">({productItems.length} productos)</span>
                     </div>
                     <div className="flex gap-4 text-xs text-gray-500 dark:text-gray-400">
                       <span>{catUnidades} uds</span>
@@ -483,7 +486,7 @@ export default function DeclaracionInventarioModule() {
                         </tr>
                       </thead>
                       <tbody>
-                        {items.map(p => (
+                        {productItems.map((p: ProductItem) => (
                           <tr key={p.id} className="border-b border-gray-50 dark:border-white/5">
                             <td className="px-4 py-2 font-mono text-xs text-gray-500">{p.sku}</td>
                             <td className="px-4 py-2 text-gray-900 dark:text-white truncate max-w-[200px]">{p.name}</td>
