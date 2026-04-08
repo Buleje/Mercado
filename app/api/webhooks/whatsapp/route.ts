@@ -46,13 +46,33 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const body = JSON.parse(rawBody);
+    // Tipo laxo del payload del webhook WhatsApp Business API.
+    // Meta cambia esta shape ocasionalmente — preferimos cast explícito a
+    // mantener un type sincronizado manualmente.
+    type WebhookPayload = {
+      entry?: Array<{
+        changes?: Array<{
+          value: {
+            statuses?: Array<{ recipient_id: string; status: string }>;
+            messages?: WhatsAppMessage[];
+          };
+        }>;
+      }>;
+    };
+    let body: WebhookPayload;
+    try {
+      body = JSON.parse(rawBody) as WebhookPayload;
+    } catch {
+      logger.warn("[webhook/whatsapp] JSON inválido en payload");
+      return NextResponse.json({ error: "Payload JSON inválido" }, { status: 400 });
+    }
 
     logger.info("[webhook/whatsapp] Recibido payload", { payload: body });
 
     // 1. Status updates (delivered, read, etc.)
-    if (body.entry?.[0]?.changes) {
-      for (const change of body.entry[0].changes) {
+    const changes = body.entry?.[0]?.changes;
+    if (changes) {
+      for (const change of changes) {
         if (change.value.statuses) {
           for (const statusObj of change.value.statuses) {
             logger.info(`[webhook/whatsapp] Mensaje a ${statusObj.recipient_id} tuvo status: ${statusObj.status}`);
@@ -61,7 +81,7 @@ export async function POST(req: NextRequest) {
 
         // 2. Incoming messages
         if (change.value.messages) {
-          for (const message of change.value.messages as WhatsAppMessage[]) {
+          for (const message of change.value.messages) {
             await handleMessage(message);
           }
         }

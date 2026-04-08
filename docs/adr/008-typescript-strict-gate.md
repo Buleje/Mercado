@@ -15,7 +15,21 @@ El proyecto venía operando con `typescript.ignoreBuildErrors: true` en `next.co
 | Baseline original | 469 | — |
 | 2026-04-06 | 121 | -74% (3 sesiones) |
 | 2026-04-07 inicio sesión | 122 | regresión +1 |
-| 2026-04-07 fin sesión | **0** | ✅ cerrado |
+| 2026-04-07 fin sesión | **0** | ✅ cerrado (primera vez) |
+| 2026-04-08 inicio marketplace D1 | 6 | regresión por schema drift + ediciones del Sprint D1 |
+| **2026-04-08 fin sesión D2 F3** | **0** | ✅ **cerrado (segunda vez, definitivo)** |
+
+### Re-cierre del 2026-04-08
+
+Durante la implementación del Bloque D2 del Marketplace (chat buyer↔seller), el gate estricto destapó 6 errores que habían entrado sin detectarse al final de una sesión previa:
+
+1. `__tests__/schema-db-sync.test.ts:120` — regex flag `s` requiere target es2018+ (eliminado, `[^}]+` ya excluye `}`)
+2. `app/api/chat/route.ts:8` — `"BALANCED"` no es parte del enum `RateLimitPreset` (cambiado a `"MODERATE"`)
+3. `app/api/cron/weekly-email-report/route.ts:64` — `subtotal` no existe en `OrderItemSelect` (cambiado a `price`, calculando subtotal inline)
+4. `app/api/cron/weekly-email-report/route.ts:96` — la query usaba `select` sin incluir `items[]` como relación (cambiado a `include`)
+5-6. `app/api/webhooks/whatsapp/route.ts:60-61` — body tipado como `Record<string, unknown>` no permitía indexing (creado type `WebhookPayload` explícito)
+
+Todos fueron fixes quirúrgicos sin cambio de comportamiento. Cada uno mencionado en el commit del Sprint D2 Fase 3.
 
 ## Decisión
 

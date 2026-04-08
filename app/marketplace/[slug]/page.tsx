@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
 import StoreDetail from "@/components/marketplace/StoreDetail";
+// ChatBubble ya es "use client" — Next.js lo hidrata en el browser
+// automáticamente. No usamos next/dynamic con ssr:false porque no está
+// permitido en Server Components en Next 16.
+import ChatBubble from "@/components/marketplace/ChatBubble";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -131,6 +135,13 @@ export default async function StoreDetailPage({ params }: Props) {
     <>
       {data && <StoreJsonLd data={data} slug={slug} />}
       <StoreDetail slug={slug} />
+      {/*
+        ChatBubble del Bloque D2 del Marketplace.
+        Se activa con el feature flag marketplace-chat-public en Vercel env.
+        Si el flag está off, el endpoint devuelve 503 y el widget muestra
+        "Chat temporalmente no disponible". Sin fricción si no está listo.
+      */}
+      <ChatBubble storeSlug={slug} storeName={data?.name ?? "Tienda"} />
     </>
   );
 }

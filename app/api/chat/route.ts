@@ -1,9 +1,12 @@
 export const dynamic = "force-dynamic";
 import { NextResponse, type NextRequest } from "next/server";
 import { ChatDB } from "@/lib/jsondb";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 // GET: fetch messages for a customer conversation
 export async function GET(req: NextRequest) {
+  const rl = applyRateLimit(req, "MODERATE", "chat");
+  if (rl) return rl;
   const phone = req.nextUrl.searchParams.get("phone");
   if (!phone || !/^9\d{8}$/.test(phone)) {
     return NextResponse.json({ error: "phone requerido (9 dígitos)" }, { status: 400 });
@@ -14,6 +17,8 @@ export async function GET(req: NextRequest) {
 
 // POST: customer sends a message
 export async function POST(req: NextRequest) {
+  const rl = applyRateLimit(req, "STRICT", "chat");
+  if (rl) return rl;
   const { phone, name, message } = await req.json();
   // Allow special system phones for bot/internal messages
   const isSystemPhone = phone === "sistema" || phone === "bot";
