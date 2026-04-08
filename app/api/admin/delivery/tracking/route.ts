@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { DeliveryTrackingDB, type DeliveryStatus, type DeliveryActorType } from "@/lib/db/delivery.db";
 import { logger } from "@/lib/logger";
+import { reportCriticalError } from "@/lib/sentry-alerts";
 
 const StatusSchema = z.enum([
   "preparing",
@@ -76,6 +77,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ data: result }, { status: 201 });
   } catch (err) {
     logger.error("[delivery/tracking] add failed", { err: String(err) });
+    reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+      module: "api/admin/delivery/tracking",
+      tenantId: auth.tenantId,
+      extra: {
+        verb: "POST",
+        orderId: parsed.data.orderId,
+        status: parsed.data.status,
+      },
+    });
     return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
   }
 }
@@ -115,6 +125,11 @@ export async function GET(req: NextRequest) {
     );
   } catch (err) {
     logger.error("[delivery/tracking] list failed", { err: String(err) });
+    reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+      module: "api/admin/delivery/tracking",
+      tenantId: auth.tenantId,
+      extra: { verb: "GET" },
+    });
     return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
   }
 }

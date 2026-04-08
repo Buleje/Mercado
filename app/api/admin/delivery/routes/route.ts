@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { DeliveryRoutesDB, type RouteStatus } from "@/lib/db/delivery.db";
 import { logger } from "@/lib/logger";
+import { reportCriticalError } from "@/lib/sentry-alerts";
 
 const RouteStatusSchema = z.enum(["planned", "in_progress", "completed", "cancelled"]);
 
@@ -63,6 +64,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ data: route }, { status: 201 });
   } catch (err) {
     logger.error("[delivery/routes] create failed", { err: String(err) });
+    reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+      module: "api/admin/delivery/routes",
+      tenantId: auth.tenantId,
+      extra: { verb: "POST" },
+    });
     return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
   }
 }
@@ -94,6 +100,11 @@ export async function GET(req: NextRequest) {
     );
   } catch (err) {
     logger.error("[delivery/routes] list failed", { err: String(err) });
+    reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+      module: "api/admin/delivery/routes",
+      tenantId: auth.tenantId,
+      extra: { verb: "GET" },
+    });
     return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
   }
 }
@@ -130,6 +141,14 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     logger.error("[delivery/routes] patch failed", { err: String(err) });
+    reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+      module: "api/admin/delivery/routes",
+      tenantId: auth.tenantId,
+      extra: {
+        verb: "PATCH",
+        routeId: parsed.data.routeId,
+      },
+    });
     return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
   }
 }

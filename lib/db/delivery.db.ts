@@ -2,6 +2,8 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { enqueueDeliveryNotification } from "@/lib/queue/queues";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 /**
  * lib/db/delivery.db.ts — Bloque D1 del Marketplace (Delivery vivo)
@@ -192,6 +194,39 @@ export const DeliveryTrackingDB = {
       orderId: params.orderId,
       status: params.status,
     });
+
+    // Emitir job de notificación al cliente (fire-and-forget, respeta feature flag)
+    // Solo para eventos que el cliente final debería enterarse por WhatsApp.
+    const customerNotifyEvents: Array<typeof params.status> = [
+      "nearby",
+      "delivered",
+      "failed",
+      "picked_up",
+    ];
+    if (
+      customerNotifyEvents.includes(params.status) &&
+      isFeatureEnabled("delivery-live-whatsapp", params.tenantId)
+    ) {
+      // idempotencyKey = evento único por (orderId + status + minuto) para
+      // prevenir duplicates si se emite el mismo evento dos veces en seguida
+      const minuteBucket = Math.floor(now.getTime() / 60_000);
+      enqueueDeliveryNotification({
+        event: params.status as "nearby" | "delivered" | "failed" | "picked_up",
+        tenantId: params.tenantId,
+        orderId: params.orderId,
+        triggeredBy: id,
+        etaMinutes: params.etaMinutes,
+        failureReason: params.description ?? undefined,
+        idempotencyKey: `${params.orderId}:${params.status}:${minuteBucket}`,
+      }).catch((err) => {
+        // Fire-and-forget: si la cola falla, NO romper el flujo de tracking
+        logger.error("[DeliveryTracking] enqueue notification failed", {
+          orderId: params.orderId,
+          status: params.status,
+          error: String(err),
+        });
+      });
+    }
 
     return {
       id,

@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { DeliveryTrackingDB } from "@/lib/db/delivery.db";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { reportCriticalError } from "@/lib/sentry-alerts";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 /**
  * GET /api/track/[orderId]
@@ -56,6 +58,14 @@ export async function GET(
   { params }: { params: Promise<{ orderId: string }> },
 ) {
   const { orderId } = await params;
+
+  // Gate — feature flag del endpoint público
+  if (!isFeatureEnabled("delivery-live-public-link")) {
+    return NextResponse.json(
+      { error: "Tracking temporalmente no disponible" },
+      { status: 503, headers: { "Retry-After": "300" } },
+    );
+  }
 
   // Validación minimal de formato (prevenir abuso de enumeración)
   if (!orderId || orderId.length < 8 || orderId.length > 100) {
@@ -157,6 +167,11 @@ export async function GET(
     );
   } catch (err) {
     logger.error("[track/[orderId]] failed", { err: String(err), orderId });
+    reportCriticalError(err instanceof Error ? err : new Error(String(err)), {
+      module: "api/track/public",
+      tags: { severity_user_facing: "true" },
+      extra: { verb: "GET", orderId },
+    });
     return NextResponse.json({ error: "Error del servidor" }, { status: 500 });
   }
 }

@@ -23,7 +23,10 @@ export type FeatureFlag =
   | "whatsapp-bot"                 // WhatsApp chatbot integration
   | "push-notifications"           // Web push notifications
   | "whatsapp-order-notifications" // WhatsApp al dueño cuando llega una nueva orden
-  | "auto-coupon-triggers";        // Cupones automáticos por hito (primera compra, cumpleaños, 10ma compra)
+  | "auto-coupon-triggers"         // Cupones automáticos por hito (primera compra, cumpleaños, 10ma compra)
+  | "delivery-live"                // Bloque D1: tracking vivo + rutas + endpoint público
+  | "delivery-live-whatsapp"       // Worker BullMQ que dispara WhatsApp al cliente en eventos nearby/delivered
+  | "delivery-live-public-link";   // Endpoint público /api/track/[orderId] para el cliente final
 
 // Default values — features that are already shipped
 const DEFAULTS: Record<FeatureFlag, boolean> = {
@@ -39,6 +42,12 @@ const DEFAULTS: Record<FeatureFlag, boolean> = {
   "push-notifications": true,
   "whatsapp-order-notifications": true,
   "auto-coupon-triggers": true,
+  // Bloque D1 arranca OFF — se prende por env var FEATURE_DELIVERY_LIVE=true
+  // una vez que la UI y el worker estén probados en preview.
+  // Permite apagar en caliente si rompe prod (rollback < 5 min).
+  "delivery-live": false,
+  "delivery-live-whatsapp": false,
+  "delivery-live-public-link": false,
 };
 
 /**

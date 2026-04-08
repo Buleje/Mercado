@@ -64,7 +64,18 @@ export const QUEUE_NAMES = {
   NOTIFICATION: "notification",
   ACTIVITY_LOG: "activity-log",
   STOCK_SYNC: "stock-sync",
+  DELIVERY_NOTIFICATIONS: "delivery-notifications",
 } as const;
+
+export interface DeliveryNotificationJobData {
+  event: "nearby" | "delivered" | "failed" | "picked_up";
+  tenantId: string;
+  orderId: string;
+  triggeredBy: string;
+  etaMinutes?: number;
+  failureReason?: string;
+  idempotencyKey: string;
+}
 
 // Default job options
 const DEFAULT_JOB_OPTIONS = {
@@ -159,4 +170,21 @@ export async function enqueueActivityLog(data: ActivityLogJobData): Promise<stri
 /** Enqueue a stock sync job */
 export async function enqueueStockSync(data: StockSyncJobData): Promise<string | null> {
   return enqueue(QUEUE_NAMES.STOCK_SYNC, `stock-${data.operation}`, data);
+}
+
+/**
+ * Enqueue a delivery notification job. Disparado desde DeliveryTrackingDB.add()
+ * cuando el status del evento es terminal (delivered, failed) o semi-terminal
+ * (nearby, picked_up). El worker lo procesa y envía WhatsApp al cliente.
+ *
+ * Idempotente por `idempotencyKey` — el worker detecta duplicates.
+ */
+export async function enqueueDeliveryNotification(
+  data: DeliveryNotificationJobData,
+): Promise<string | null> {
+  return enqueue(
+    QUEUE_NAMES.DELIVERY_NOTIFICATIONS,
+    `delivery-notify-${data.event}`,
+    data,
+  );
 }
