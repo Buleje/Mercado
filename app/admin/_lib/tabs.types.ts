@@ -36,6 +36,7 @@ export type Tab =
   // Módulos de operaciones de marketplace y delivery
   | "marketplace"
   | "delivery-partners"
+  | "delivery-live"         // Bloque D1 marketplace: tracking vivo + rutas + mapa Leaflet
   | "store-customizer"
   | "mi-perfil"
   // Módulo rendimiento técnico
@@ -73,6 +74,7 @@ export const VALID_TABS: readonly Tab[] = [
   "metas-logros",
   "marketplace",
   "delivery-partners",
+  "delivery-live",
   "store-customizer",
   "colas",
 ] as const;

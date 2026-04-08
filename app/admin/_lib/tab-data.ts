@@ -61,6 +61,7 @@ export const ALL_TABS = [
   // — MARKETPLACE & DELIVERY —
   { id: "marketplace" as Tab,         label: "Marketplace",         icon: Store },
   { id: "delivery-partners" as Tab,   label: "Delivery Partners",   icon: Truck },
+  { id: "delivery-live" as Tab,       label: "Delivery en Vivo",    icon: Activity },
   // — MI TIENDA —
   { id: "store-customizer" as Tab,    label: "Mi Tienda",           icon: Palette },
   // — SISTEMA —

@@ -43,6 +43,7 @@ export type Tab =
   | "metas-logros"
   | "marketplace"
   | "delivery-partners"
+  | "delivery-live"
   | "store-customizer"
   | "mi-perfil"
   | "rendimiento"
@@ -323,7 +324,7 @@ export const TAB_CATEGORIES: TabCategory[] = [
 ];
 
 export const VALID_TABS: Tab[] = [
-  "asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command","fiados","turnos","cotizaciones","guias-remision","notas-credito","contratos","sugerencias-ia","metas-logros","marketplace","delivery-partners","store-customizer","colas",
+  "asistente-ia","ventas-caja","inventario","productos","compras","plata","clientes","config","pedidos","plan","analytics-pro","ai-command","fiados","turnos","cotizaciones","guias-remision","notas-credito","contratos","sugerencias-ia","metas-logros","marketplace","delivery-partners","delivery-live","store-customizer","colas",
 ];
 
 // Nav module defaults configuration

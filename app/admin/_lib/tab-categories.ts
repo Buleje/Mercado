@@ -253,7 +253,7 @@ export const BASIC_MODULES: TabCategory[] = [
     id: "marketplace-ops",
     label: "Marketplace",
     icon: Store,
-    tabs: ["marketplace", "delivery-partners"],
+    tabs: ["marketplace", "delivery-partners", "delivery-live"],
   },
 ];
 
