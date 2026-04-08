@@ -26,7 +26,10 @@ export type FeatureFlag =
   | "auto-coupon-triggers"         // Cupones automáticos por hito (primera compra, cumpleaños, 10ma compra)
   | "delivery-live"                // Bloque D1: tracking vivo + rutas + endpoint público
   | "delivery-live-whatsapp"       // Worker BullMQ que dispara WhatsApp al cliente en eventos nearby/delivered
-  | "delivery-live-public-link";   // Endpoint público /api/track/[orderId] para el cliente final
+  | "delivery-live-public-link"    // Endpoint público /api/track/[orderId] para el cliente final
+  | "marketplace-chat"             // Bloque D2: chat buyer ↔ seller admin UI
+  | "marketplace-chat-public"      // Endpoints públicos del buyer /api/chat/public
+  | "marketplace-chat-realtime";   // Supabase Realtime para live updates (Fase 2)
 
 // Default values — features that are already shipped
 const DEFAULTS: Record<FeatureFlag, boolean> = {
@@ -48,6 +51,13 @@ const DEFAULTS: Record<FeatureFlag, boolean> = {
   "delivery-live": false,
   "delivery-live-whatsapp": false,
   "delivery-live-public-link": false,
+  // Bloque D2 — Chat buyer ↔ seller. Todos arrancan OFF.
+  // marketplace-chat: tab admin con threads + messages
+  // marketplace-chat-public: endpoint público para el buyer
+  // marketplace-chat-realtime: Supabase Realtime para live updates (Fase 2)
+  "marketplace-chat": false,
+  "marketplace-chat-public": false,
+  "marketplace-chat-realtime": false,
 };
 
 /**

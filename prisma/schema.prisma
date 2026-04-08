@@ -311,6 +311,7 @@ model Order {
   deliveryAssignment  DeliveryAssignment?
   deliveryTracking    DeliveryTracking[]
   deliveryRouteStops  DeliveryRouteStop[]
+  conversationThreads ConversationThread[]
 
   @@index([customerPhone])
   @@index([status])
@@ -2302,6 +2303,7 @@ model Store {
   salesAnomalies       SalesAnomaly[]
   sponsoredBoosts      SponsoredBoost[]
   deliveryRoutes       DeliveryRoute[]
+  conversationThreads  ConversationThread[]
   @@index([tenantId])
 }
 
@@ -2471,6 +2473,67 @@ model DeliveryRouteStop {
   @@index([routeId])
   @@index([orderId])
   @@index([routeId, status])
+}
+
+// ─── Bloque D2 — Chat buyer ↔ seller ─────────────────────
+// Schema alineado con MANUAL-marketplace-bloque-d2.sql aplicado 2026-04-08.
+// Los hilos viven del lado del tenant VENDEDOR (dueño de la tienda).
+// Un buyer puede tener varios hilos cerrados pero sólo uno abierto por
+// (storeId, customerPhone, orderId|null).
+
+model ConversationThread {
+  id              String    @id
+  tenantId        String
+  storeId         String
+  orderId         String?
+  customerPhone   String
+  customerName    String
+  subject         String?
+  status          String    @default("open") // open|closed|archived|blocked
+  unreadForBuyer  Int       @default(0)
+  unreadForSeller Int       @default(0)
+  lastMessageAt   DateTime?
+  lastMessageText String?
+  lastSenderType  String?   // buyer|seller|system
+  closedAt        DateTime?
+  closedReason    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  store    Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  order    Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  messages ConversationMessage[]
+
+  @@index([tenantId])
+  @@index([storeId])
+  @@index([tenantId, status])
+  @@index([tenantId, lastMessageAt(sort: Desc)], name: "ConversationThread_tenantId_lastMessageAt_idx")
+  @@index([customerPhone])
+  @@index([orderId])
+}
+
+model ConversationMessage {
+  id             String    @id
+  tenantId       String
+  threadId       String
+  senderType     String    // buyer|seller|system
+  senderId       String?
+  senderName     String
+  body           String
+  messageType    String    @default("text") // text|image|system_event|quote|order_link
+  attachmentUrl  String?
+  metadataJson   String?
+  readByBuyerAt  DateTime?
+  readBySellerAt DateTime?
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  thread ConversationThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([threadId])
+  @@index([threadId, createdAt(sort: Desc)], name: "ConversationMessage_threadId_createdAt_idx")
+  @@index([senderType])
 }
 
 model WholesaleOrder {
