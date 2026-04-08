@@ -65,6 +65,7 @@ export const QUEUE_NAMES = {
   ACTIVITY_LOG: "activity-log",
   STOCK_SYNC: "stock-sync",
   DELIVERY_NOTIFICATIONS: "delivery-notifications",
+  CHAT_NOTIFICATIONS: "chat-notifications",
 } as const;
 
 export interface DeliveryNotificationJobData {
@@ -74,6 +75,15 @@ export interface DeliveryNotificationJobData {
   triggeredBy: string;
   etaMinutes?: number;
   failureReason?: string;
+  idempotencyKey: string;
+}
+
+export interface ChatNotificationJobData {
+  event: "seller_responded" | "buyer_new_message" | "thread_closed";
+  tenantId: string;
+  threadId: string;
+  messagePreview?: string;
+  closeReason?: string;
   idempotencyKey: string;
 }
 
@@ -185,6 +195,21 @@ export async function enqueueDeliveryNotification(
   return enqueue(
     QUEUE_NAMES.DELIVERY_NOTIFICATIONS,
     `delivery-notify-${data.event}`,
+    data,
+  );
+}
+
+/**
+ * Enqueue a chat notification job. Disparado desde ChatMessagesDB.send()
+ * cuando un participante responde y el otro debería enterarse por WhatsApp.
+ * El worker procesa y rutea al buyer o al owner del tenant según el evento.
+ */
+export async function enqueueChatNotification(
+  data: ChatNotificationJobData,
+): Promise<string | null> {
+  return enqueue(
+    QUEUE_NAMES.CHAT_NOTIFICATIONS,
+    `chat-notify-${data.event}`,
     data,
   );
 }

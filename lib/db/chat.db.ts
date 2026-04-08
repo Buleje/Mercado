@@ -2,6 +2,8 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { logger } from "@/lib/logger";
+import { enqueueChatNotification } from "@/lib/queue/queues";
+import { isFeatureEnabled } from "@/lib/feature-flags";
 
 /**
  * lib/db/chat.db.ts — Bloque D2 del Marketplace (Chat buyer ↔ seller)
@@ -300,6 +302,23 @@ export const ChatThreadsDB = {
     invalidateByPrefix(`chat:threads:${tenantId}`);
     invalidateByPrefix(`chat:messages:${tenantId}:${threadId}`);
     logger.info("[ChatThreads] closed", { tenantId, threadId, reason });
+
+    // Notificar al buyer que el hilo se cerró (fire-and-forget, feature-gated)
+    if (isFeatureEnabled("marketplace-chat-whatsapp", tenantId)) {
+      const minuteBucket = Math.floor(now.getTime() / 60_000);
+      enqueueChatNotification({
+        event: "thread_closed",
+        tenantId,
+        threadId,
+        closeReason: reason,
+        idempotencyKey: `${threadId}:thread_closed:${minuteBucket}`,
+      }).catch((err) => {
+        logger.error("[ChatThreads] enqueue close notification failed", {
+          threadId,
+          error: String(err),
+        });
+      });
+    }
   },
 };
 
@@ -416,6 +435,30 @@ export const ChatMessagesDB = {
       messageId: id,
       senderType: params.senderType,
     });
+
+    // Emitir notificación WhatsApp al otro lado (fire-and-forget, feature-gated)
+    if (
+      (params.senderType === "seller" || params.senderType === "buyer") &&
+      isFeatureEnabled("marketplace-chat-whatsapp", params.tenantId)
+    ) {
+      const event =
+        params.senderType === "seller" ? "seller_responded" : "buyer_new_message";
+      // Idempotency por minuto para evitar floods si hay varios mensajes seguidos
+      const minuteBucket = Math.floor(now.getTime() / 60_000);
+      enqueueChatNotification({
+        event,
+        tenantId: params.tenantId,
+        threadId: params.threadId,
+        messagePreview: preview,
+        idempotencyKey: `${params.threadId}:${event}:${minuteBucket}`,
+      }).catch((err) => {
+        logger.error("[ChatMessages] enqueue notification failed", {
+          threadId: params.threadId,
+          event,
+          error: String(err),
+        });
+      });
+    }
 
     return {
       id,

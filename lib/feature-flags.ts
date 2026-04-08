@@ -29,7 +29,8 @@ export type FeatureFlag =
   | "delivery-live-public-link"    // Endpoint público /api/track/[orderId] para el cliente final
   | "marketplace-chat"             // Bloque D2: chat buyer ↔ seller admin UI
   | "marketplace-chat-public"      // Endpoints públicos del buyer /api/chat/public
-  | "marketplace-chat-realtime";   // Supabase Realtime para live updates (Fase 2)
+  | "marketplace-chat-whatsapp"    // Worker BullMQ que dispara WhatsApp en eventos del chat
+  | "marketplace-chat-realtime";   // Supabase Realtime para live updates (Fase 3)
 
 // Default values — features that are already shipped
 const DEFAULTS: Record<FeatureFlag, boolean> = {
@@ -54,9 +55,11 @@ const DEFAULTS: Record<FeatureFlag, boolean> = {
   // Bloque D2 — Chat buyer ↔ seller. Todos arrancan OFF.
   // marketplace-chat: tab admin con threads + messages
   // marketplace-chat-public: endpoint público para el buyer
-  // marketplace-chat-realtime: Supabase Realtime para live updates (Fase 2)
+  // marketplace-chat-whatsapp: worker BullMQ de notificaciones
+  // marketplace-chat-realtime: Supabase Realtime para live updates (Fase 3)
   "marketplace-chat": false,
   "marketplace-chat-public": false,
+  "marketplace-chat-whatsapp": false,
   "marketplace-chat-realtime": false,
 };
 
