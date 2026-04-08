@@ -293,12 +293,24 @@ model Order {
   cancelReason        String?             // motivo de cancelación
   cancelledAt         DateTime?           // cuándo se canceló
 
+  // ─── Bloque D1 — Delivery vivo (marketplace) ────────────────
+  deliveryStatus      String?             // preparing|ready|picked_up|in_transit|nearby|delivered|failed|cancelled
+  driverId            String?
+  estimatedDeliveryAt DateTime?
+  deliveredAt         DateTime?
+  pickupLat           Float?
+  pickupLng           Float?
+  dropoffLat          Float?
+  dropoffLng          Float?
+
   items               OrderItem[]
   customer            Customer?           @relation(fields: [customerPhone], references: [phone], onDelete: SetNull)
   statusHistory       OrderStatusHistory[]
   guiasRemision       GuiaRemision[]
   notasCredito        NotaCredito[]
   deliveryAssignment  DeliveryAssignment?
+  deliveryTracking    DeliveryTracking[]
+  deliveryRouteStops  DeliveryRouteStop[]
 
   @@index([customerPhone])
   @@index([status])
@@ -306,6 +318,8 @@ model Order {
   @@index([tenantId])
   @@index([tenantId, status, createdAt])
   @@index([tenantId, createdAt])
+  @@index([tenantId, deliveryStatus], name: "Order_deliveryStatus_idx")
+  @@index([driverId], name: "Order_driverId_idx")
 }
 
 model OrderItem {
@@ -2287,6 +2301,7 @@ model Store {
   stockoutPredictions  StockoutPrediction[]
   salesAnomalies       SalesAnomaly[]
   sponsoredBoosts      SponsoredBoost[]
+  deliveryRoutes       DeliveryRoute[]
   @@index([tenantId])
 }
 
@@ -2364,6 +2379,98 @@ model DeliveryAssignment {
   @@index([orderId])
   @@index([partnerId])
   @@index([tenantId])
+}
+
+// ─── Bloque D1 — Delivery vivo ────────────────────────────
+// Schema alineado con MANUAL-marketplace-bloque-d1.sql aplicado 2026-04-08 (Supabase us-east-2).
+// Los modelos usan nombres en PascalCase que matchean la tabla real (no se agrega @map
+// porque el SQL ya creó las tablas con esos nombres exactos).
+
+model DeliveryTracking {
+  id           String   @id
+  tenantId     String
+  orderId      String
+  status       String   // preparing|ready|picked_up|in_transit|nearby|delivered|failed|cancelled
+  description  String?
+  lat          Float?
+  lng          Float?
+  distanceM    Int?
+  etaMinutes   Int?
+  actorId      String?
+  actorType    String   @default("system") // driver|system|admin|customer
+  photoUrl     String?
+  metadataJson String?
+  createdAt    DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([orderId])
+  @@index([orderId, createdAt(sort: Desc)], name: "DeliveryTracking_orderId_createdAt_idx")
+  @@index([tenantId, status])
+}
+
+model DeliveryRoute {
+  id              String    @id
+  tenantId        String
+  storeId         String
+  driverId        String
+  driverName      String
+  driverPhone     String?
+  vehicleType     String    @default("moto") // moto|bici|auto|caminando
+  status          String    @default("planned") // planned|in_progress|completed|cancelled
+  plannedStartAt  DateTime
+  actualStartAt   DateTime?
+  completedAt     DateTime?
+  totalStops      Int       @default(0)
+  completedStops  Int       @default(0)
+  totalDistanceM  Int?
+  optimizedByAi   Boolean   @default(false)
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  store Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  stops DeliveryRouteStop[]
+
+  @@index([tenantId])
+  @@index([storeId])
+  @@index([driverId])
+  @@index([storeId, status])
+  @@index([tenantId, plannedStartAt(sort: Desc)], name: "DeliveryRoute_tenantId_plannedStartAt_idx")
+}
+
+model DeliveryRouteStop {
+  id                 String    @id
+  tenantId           String
+  routeId            String
+  orderId            String
+  sequence           Int
+  status             String    @default("pending") // pending|arrived|delivered|failed|skipped
+  address            String
+  addressDetail      String?
+  lat                Float?
+  lng                Float?
+  customerName       String
+  customerPhone      String?
+  estimatedArrivalAt DateTime?
+  actualArrivalAt    DateTime?
+  completedAt        DateTime?
+  failureReason      String?
+  proofPhotoUrl      String?
+  proofSignatureUrl  String?
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  route DeliveryRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  order Order         @relation(fields: [orderId], references: [id])
+
+  @@unique([routeId, sequence])
+  @@index([tenantId])
+  @@index([routeId])
+  @@index([orderId])
+  @@index([routeId, status])
 }
 
 model WholesaleOrder {
