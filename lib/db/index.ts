@@ -32,3 +32,4 @@ export * from "./search-suggestions.db";
 export * from "./sponsored-boosts.db";
 export * from "./delivery.db";
 export * from "./chat.db";
+export * from "./reviews.db";

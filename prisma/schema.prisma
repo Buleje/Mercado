@@ -351,7 +351,7 @@ model Review {
   productId      Int?      // null = general store review; set for product-specific reviews
   storeId        String?   // null = reseña de tienda del sistema; set for marketplace store reviews
   store          Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
-  status         String    @default("approved") // pending | approved | rejected
+  status         String    @default("approved") // pending | approved | rejected | hidden
   tenantId       String
   date           DateTime  @default(now())
   deletedAt      DateTime? // soft-delete — null means active
@@ -364,10 +364,42 @@ model Review {
   verified       Boolean  @default(false)
   helpfulCount   Int      @default(0)
 
+  // ─── Bloque D3 — Reviews verificadas del marketplace ────────
+  orderId          String?       // FK a Order: si existe, la review es "verified"
+  verifiedAt       DateTime?     // cuándo se verificó el link con el Order
+  helpfulUpvotes   Int      @default(0)
+  helpfulDownvotes Int      @default(0)
+  votes            ReviewVote[]
+
   @@index([status])
   @@index([tenantId])
   @@index([productId])
   @@index([storeId])
+  @@index([storeId, status, date(sort: Desc)], name: "Review_storeId_status_date_idx")
+  @@index([productId, status, date(sort: Desc)], name: "Review_productId_status_date_idx")
+  @@index([tenantId, verified], name: "Review_tenantId_verified_idx")
+  @@index([orderId])
+}
+
+// ─── Bloque D3 — ReviewVote (dedupe de votos helpful) ──────
+// Un buyer solo puede votar una review una vez. El tipo de voto puede
+// cambiarse (upvote ↔ downvote) pero no duplicarse.
+
+model ReviewVote {
+  id            String   @id
+  tenantId      String
+  reviewId      String
+  customerPhone String
+  voteType      String   // upvote | downvote
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, customerPhone], name: "ReviewVote_review_customer_unique")
+  @@index([tenantId])
+  @@index([reviewId])
+  @@index([customerPhone])
 }
 
 // ─── Settings ───────────────────────────────────────────

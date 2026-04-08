@@ -30,7 +30,10 @@ export type FeatureFlag =
   | "marketplace-chat"             // Bloque D2: chat buyer ↔ seller admin UI
   | "marketplace-chat-public"      // Endpoints públicos del buyer /api/chat/public
   | "marketplace-chat-whatsapp"    // Worker BullMQ que dispara WhatsApp en eventos del chat
-  | "marketplace-chat-realtime";   // Supabase Realtime para live updates (Fase 3)
+  | "marketplace-chat-realtime"    // Supabase Realtime para live updates (Fase 3)
+  | "marketplace-reviews"          // Bloque D3: UI admin de reviews + moderación
+  | "marketplace-reviews-public"   // Endpoint público /api/marketplace/reviews (create + vote)
+  | "marketplace-reviews-widget";  // Widget de reviews en el storefront
 
 // Default values — features that are already shipped
 const DEFAULTS: Record<FeatureFlag, boolean> = {
@@ -53,14 +56,17 @@ const DEFAULTS: Record<FeatureFlag, boolean> = {
   "delivery-live-whatsapp": false,
   "delivery-live-public-link": false,
   // Bloque D2 — Chat buyer ↔ seller. Todos arrancan OFF.
-  // marketplace-chat: tab admin con threads + messages
-  // marketplace-chat-public: endpoint público para el buyer
-  // marketplace-chat-whatsapp: worker BullMQ de notificaciones
-  // marketplace-chat-realtime: Supabase Realtime para live updates (Fase 3)
   "marketplace-chat": false,
   "marketplace-chat-public": false,
   "marketplace-chat-whatsapp": false,
   "marketplace-chat-realtime": false,
+  // Bloque D3 — Reviews verificadas. Todos arrancan OFF.
+  // marketplace-reviews: tab admin de moderación
+  // marketplace-reviews-public: endpoints públicos (create + vote)
+  // marketplace-reviews-widget: widget de reviews en storefront
+  "marketplace-reviews": false,
+  "marketplace-reviews-public": false,
+  "marketplace-reviews-widget": false,
 };
 
 /**
