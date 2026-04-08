@@ -3,545 +3,229 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Bodega San Martín — Agentes en vivo</title>
+    <title>Bodega San Martín — Agent Town</title>
     <style>
       :root {
-        --bg: #0b1020;
-        --bg-2: #101636;
-        --panel: #161c3d;
-        --panel-b: #1f2650;
+        --bg: #0b0e1a;
+        --bg-2: #131833;
+        --panel: #1a2142;
+        --border: #2b355e;
         --text: #e6edf3;
         --muted: #8b93c7;
         --primary: #00b4a6;
         --secondary: #f97316;
-        --ok: #22c55e;
-        --warn: #eab308;
-        --err: #ef4444;
-        --radius: 14px;
       }
-      * { box-sizing: border-box; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
       html, body {
-        margin: 0;
-        padding: 0;
-        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-        background: radial-gradient(1200px 800px at 10% -10%, #1a2260 0%, transparent 60%),
-          radial-gradient(1000px 700px at 110% 30%, #0c1335 0%, transparent 55%),
-          var(--bg);
+        height: 100%;
+        background: var(--bg);
         color: var(--text);
-        min-height: 100vh;
+        font-family: "Courier New", "Consolas", ui-monospace, monospace;
+        overflow: hidden;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+      #game {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+      }
+      canvas {
+        display: block;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
       }
 
-      header {
-        padding: 24px 28px 0;
+      /* HUD overlay */
+      .hud {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 14px 20px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        flex-wrap: wrap;
         gap: 16px;
+        pointer-events: none;
+        z-index: 10;
+        font-family: "Courier New", monospace;
       }
-      header h1 {
-        margin: 0;
-        font-size: 22px;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
+      .hud-left, .hud-right {
+        background: rgba(10, 14, 26, 0.75);
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 14px;
+        backdrop-filter: blur(4px);
+        box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.4);
       }
-      header .subtitle {
+      .hud-left {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .title {
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: var(--primary);
+        text-shadow: 2px 2px 0 #000;
+      }
+      .subtitle {
+        font-size: 10px;
         color: var(--muted);
-        font-size: 12px;
-        margin-top: 4px;
+        letter-spacing: 0.05em;
       }
-      header .clock {
+      .hud-right {
+        display: flex;
+        gap: 16px;
+        font-size: 11px;
         font-variant-numeric: tabular-nums;
-        font-size: 13px;
-        color: var(--muted);
-        padding: 6px 12px;
-        border: 1px solid var(--panel-b);
-        border-radius: 999px;
-        background: rgba(255, 255, 255, 0.02);
       }
-
-      .stats {
-        padding: 16px 28px 0;
-        display: grid;
-        gap: 12px;
-        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-      }
-      .stat {
-        padding: 14px 16px;
-        background: var(--panel);
-        border: 1px solid var(--panel-b);
-        border-radius: var(--radius);
-      }
+      .stat { display: flex; flex-direction: column; align-items: center; }
       .stat .n {
-        font-size: 24px;
-        font-weight: 800;
-        font-variant-numeric: tabular-nums;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--secondary);
+        text-shadow: 2px 2px 0 #000;
       }
       .stat .l {
-        font-size: 11px;
+        font-size: 9px;
         color: var(--muted);
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-top: 2px;
       }
 
-      main {
-        padding: 24px 28px 64px;
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 14px;
-      }
-      .card {
-        position: relative;
-        padding: 16px 16px 14px;
-        background: var(--panel);
-        border: 1px solid var(--panel-b);
-        border-radius: var(--radius);
-        overflow: hidden;
-        animation: fadeUp 0.5s ease both;
-      }
-      .card::before {
-        content: "";
-        position: absolute;
-        inset: 0 auto auto 0;
-        height: 3px;
-        width: 100%;
-        background: linear-gradient(90deg, var(--primary), var(--secondary));
-        opacity: 0.6;
-      }
-      .card.highlight {
-        border-color: var(--primary);
-        box-shadow: 0 0 24px rgba(0, 180, 166, 0.25);
-      }
-      .card.highlight::after {
-        content: "NEW";
-        position: absolute;
-        top: 12px;
-        right: 14px;
-        padding: 2px 8px;
-        background: var(--secondary);
-        color: #000;
-        font-size: 10px;
-        font-weight: 800;
-        border-radius: 999px;
-        letter-spacing: 0.1em;
-      }
-      .card h3 {
-        margin: 4px 0 6px;
-        font-size: 15px;
-        font-weight: 700;
-      }
-      .card .role {
+      /* Tooltip pixel-art */
+      .tooltip {
+        position: fixed;
+        pointer-events: none;
+        background: #000;
+        border: 2px solid var(--primary);
+        padding: 6px 10px;
+        font-family: "Courier New", monospace;
         font-size: 11px;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 10px;
-      }
-      .card p {
-        margin: 0;
-        font-size: 12.5px;
-        line-height: 1.45;
         color: var(--text);
-        opacity: 0.85;
+        box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+        z-index: 20;
+        display: none;
+        max-width: 240px;
+        image-rendering: pixelated;
       }
-      .card .footer {
-        margin-top: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 11px;
-        color: var(--muted);
+      .tooltip.show { display: block; }
+      .tooltip .tt-name {
+        color: var(--primary);
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        margin-bottom: 2px;
       }
-      .dot {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--ok);
-        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
-        animation: pulse 2s infinite;
-      }
-      .card[data-status="busy"] .dot { background: var(--warn); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.6); animation: pulse 1s infinite; }
-      .card[data-status="critical"] .dot { background: var(--err); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); animation: pulse 0.6s infinite; }
-
-      .card[data-area="backend"] .role { color: #60a5fa; }
-      .card[data-area="frontend"] .role { color: #c084fc; }
-      .card[data-area="database"] .role { color: #2dd4bf; }
-      .card[data-area="devops"] .role { color: #fb923c; }
-      .card[data-area="qa"] .role { color: #a3e635; }
-      .card[data-area="security"] .role { color: #f87171; }
-      .card[data-area="product"] .role { color: #f472b6; }
-      .card[data-area="orchestration"] .role { color: var(--primary); }
-      .card[data-area="integration"] .role { color: #facc15; }
-      .card[data-area="mobile"] .role { color: #67e8f9; }
-      .card[data-area="data"] .role { color: #86efac; }
-
-      @keyframes pulse {
-        0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
-        70%  { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-        100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-      }
-      @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(8px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-      @keyframes float {
-        0%, 100% { transform: translateY(0); }
-        50%      { transform: translateY(-3px); }
-      }
-      .card:hover { transform: translateY(-2px); transition: transform 0.2s ease; }
-
-      .section-title {
-        margin: 32px 0 12px;
-        font-size: 13px;
+      .tooltip .tt-role {
+        color: var(--secondary);
+        font-size: 9px;
         text-transform: uppercase;
-        letter-spacing: 0.12em;
+      }
+      .tooltip .tt-status {
+        margin-top: 4px;
+        font-size: 9px;
         color: var(--muted);
       }
-      .legend {
+
+      /* Action bar */
+      .actions {
+        position: fixed;
+        bottom: 14px;
+        left: 50%;
+        transform: translateX(-50%);
         display: flex;
-        gap: 16px;
-        margin-top: 12px;
-        font-size: 11px;
-        color: var(--muted);
-        flex-wrap: wrap;
+        gap: 10px;
+        z-index: 10;
       }
-      .legend span { display: inline-flex; align-items: center; gap: 6px; }
-      .legend .dot { width: 7px; height: 7px; }
-      .legend .dot.b { background: var(--ok); animation: none; }
-      .legend .dot.w { background: var(--warn); animation: none; }
-      .legend .dot.r { background: var(--err); animation: none; }
-
-      .footer-bar {
-        padding: 20px 28px;
-        text-align: center;
+      .btn {
+        font-family: "Courier New", monospace;
         font-size: 11px;
-        color: var(--muted);
-        border-top: 1px solid var(--panel-b);
-        margin-top: 20px;
+        padding: 8px 14px;
+        background: #000;
+        color: var(--primary);
+        border: 2px solid var(--primary);
+        cursor: pointer;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6);
+        transition: transform 0.1s, box-shadow 0.1s;
       }
-      .footer-bar a { color: var(--primary); text-decoration: none; }
-      .footer-bar a:hover { text-decoration: underline; }
+      .btn:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+      }
+      .btn:active {
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.6);
+      }
+      .btn.secondary {
+        color: var(--secondary);
+        border-color: var(--secondary);
+      }
 
-      /* Animated background particles */
-      .bg-particles {
+      /* Loading */
+      .loading {
         position: fixed;
         inset: 0;
-        pointer-events: none;
-        z-index: -1;
-        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        color: var(--primary);
+        font-size: 14px;
+        font-family: "Courier New", monospace;
+        letter-spacing: 0.1em;
+        z-index: 100;
       }
-      .bg-particles span {
-        position: absolute;
-        display: block;
-        width: 4px;
-        height: 4px;
-        background: var(--primary);
-        border-radius: 50%;
-        opacity: 0.2;
-        animation: float 6s ease-in-out infinite;
-      }
+      .loading.hide { display: none; }
     </style>
   </head>
   <body>
-    <div class="bg-particles" id="particles"></div>
+    <div class="loading" id="loading">CARGANDO PIXEL AGENTS...</div>
 
-    <header>
-      <div>
-        <h1>Bodega San Martín · Agent Team en vivo</h1>
-        <div class="subtitle">
-          19 agentes del proyecto · orquestación enterprise Nivel 4 · contrato 2026-04-08
+    <div id="game"></div>
+
+    <div class="hud">
+      <div class="hud-left">
+        <div class="title">⚙ BODEGA SAN MARTÍN · AGENT TOWN</div>
+        <div class="subtitle">19 agentes en vivo · nivel 4 enterprise · clic en uno para asignarle una tarea</div>
+      </div>
+      <div class="hud-right">
+        <div class="stat">
+          <div class="n" id="stat-total">19</div>
+          <div class="l">Agentes</div>
+        </div>
+        <div class="stat">
+          <div class="n" id="stat-working">0</div>
+          <div class="l">Trabajando</div>
+        </div>
+        <div class="stat">
+          <div class="n" id="stat-tasks">0</div>
+          <div class="l">Tareas</div>
+        </div>
+        <div class="stat">
+          <div class="n" id="clock">--:--</div>
+          <div class="l">PE</div>
         </div>
       </div>
-      <div class="clock" id="clock">--:--:--</div>
-    </header>
-
-    <section class="stats" id="stats"></section>
-
-    <main>
-      <h2 class="section-title">🏛️ Meta-orquestación</h2>
-      <div class="grid" data-area-group="orchestration"></div>
-
-      <h2 class="section-title">🧱 Foundations (DB + Backend)</h2>
-      <div class="grid" data-area-group="foundations"></div>
-
-      <h2 class="section-title">🎨 Experiencia (Frontend + Mobile + UX)</h2>
-      <div class="grid" data-area-group="experience"></div>
-
-      <h2 class="section-title">🛡️ Calidad y seguridad</h2>
-      <div class="grid" data-area-group="quality"></div>
-
-      <h2 class="section-title">🔌 Integraciones + DevOps + Datos</h2>
-      <div class="grid" data-area-group="ops"></div>
-
-      <div class="legend">
-        <span><span class="dot b"></span> Disponible</span>
-        <span><span class="dot w"></span> Ocupado</span>
-        <span><span class="dot r"></span> Crítico</span>
-      </div>
-    </main>
-
-    <div class="footer-bar">
-      Servido desde <code>http://localhost:3456/</code> · generado por Claude Code para Brandon Buleje ·
-      <a href="https://github.com/anthropics/claude-code" target="_blank" rel="noopener">claude-code</a>
     </div>
 
-    <script>
-      const AGENTS = [
-        {
-          id: "initiative-orchestrator",
-          name: "Initiative Orchestrator",
-          role: "Meta-orquestador Enterprise",
-          area: "orchestration",
-          group: "orchestration",
-          desc: "Descompone objetivos grandes en 3 sprints × 4 fases × 12 work items con 5-8 teammates paralelos, gates bloqueantes, rollback plan y observabilidad obligatoria. Primera iniciativa cerró Bloque D1 con 12/12 checkpoints Nivel 4.",
-          status: "available",
-          highlight: true,
-        },
-        {
-          id: "director-orchestrator",
-          name: "Director Orchestrator",
-          role: "Director medio (2-4 áreas)",
-          area: "orchestration",
-          group: "orchestration",
-          desc: "Diagnostica tareas cross-area medianas, elige especialistas y entrega en lenguaje ejecutivo. Para iniciativas enterprise grandes, delega al initiative-orchestrator.",
-          status: "available",
-        },
-        {
-          id: "solution-architect",
-          name: "Solution Architect",
-          role: "Arquitectura de alto impacto",
-          area: "orchestration",
-          group: "orchestration",
-          desc: "Solo lectura — evalúa trade-offs, diseña schemas de 3+ modelos, escribe ADRs. NO implementa.",
-          status: "available",
-        },
-        {
-          id: "database-engineer",
-          name: "Database Engineer",
-          role: "Prisma + Supabase + índices",
-          area: "database",
-          group: "foundations",
-          desc: "Queries, índices, N+1, migraciones, pooler. Experto en raw SQL del bloque marketplace.",
-          status: "available",
-        },
-        {
-          id: "migration-planner",
-          name: "Migration Planner",
-          role: "Planes de migración seguros",
-          area: "database",
-          group: "foundations",
-          desc: "Usar ANTES de ejecutar migraciones Prisma que afecten 2+ modelos. Genera plan con rollback steps.",
-          status: "available",
-        },
-        {
-          id: "backend-platform-engineer",
-          name: "Backend Platform Engineer",
-          role: "Routes + Auth + DB classes",
-          area: "backend",
-          group: "foundations",
-          desc: "Route handlers, Zod safeParse, RBAC, DB classes, webhooks. Respeta el patrón tenantId-primer-param.",
-          status: "available",
-        },
-        {
-          id: "frontend-engineer",
-          name: "Frontend Engineer",
-          role: "React + Tailwind + a11y",
-          area: "frontend",
-          group: "experience",
-          desc: "Componentes React, estado, accesibilidad, dark mode, animaciones. Patrón hooks + subcomponentes como OrdersTab/DeliveryTab.",
-          status: "available",
-        },
-        {
-          id: "checkout-specialist",
-          name: "Checkout Specialist",
-          role: "CheckoutModal + Pagos",
-          area: "frontend",
-          group: "experience",
-          desc: "Especialista exclusivo en el flujo de compra (Yape/efectivo/cupones/delivery). Nunca delegar esto al frontend-engineer genérico.",
-          status: "available",
-        },
-        {
-          id: "mobile-engineer",
-          name: "Mobile Engineer",
-          role: "Capacitor iOS/Android",
-          area: "mobile",
-          group: "experience",
-          desc: "Builds nativos, plugins, push, deep links, sincronización web/nativo.",
-          status: "available",
-        },
-        {
-          id: "product-uiux-strategist",
-          name: "Product UI/UX Strategist",
-          role: "Flujos y jerarquía visual",
-          area: "product",
-          group: "experience",
-          desc: "Diseña flujos de usuario y evalúa la experiencia ANTES de implementar.",
-          status: "available",
-        },
-        {
-          id: "qa-reliability-engineer",
-          name: "QA Reliability Engineer",
-          role: "Tests + Coverage + e2e",
-          area: "qa",
-          group: "quality",
-          desc: "Vitest unit, Playwright e2e, k6 load, coverage 80/70/75/80. Diagnostica bugs y diseña estrategias de QA.",
-          status: "available",
-        },
-        {
-          id: "bug-hunter",
-          name: "Bug Hunter",
-          role: "Detección proactiva",
-          area: "qa",
-          group: "quality",
-          desc: "Busca bugs ocultos, race conditions, memory leaks antes de que lleguen a prod.",
-          status: "available",
-        },
-        {
-          id: "code-reviewer",
-          name: "Code Reviewer",
-          role: "Review pre-merge",
-          area: "qa",
-          group: "quality",
-          desc: "Revisa código contra los 48 practicas 2026 + Definition of Done del proyecto.",
-          status: "available",
-        },
-        {
-          id: "security-auditor",
-          name: "Security Auditor",
-          role: "OWASP + Multi-tenant",
-          area: "security",
-          group: "quality",
-          desc: "Audita SQL injection, XSS, CSRF, auth bypass, secrets expuestos, multi-tenant leaks. Usar después de cualquier endpoint nuevo.",
-          status: "available",
-        },
-        {
-          id: "refactoring-expert",
-          name: "Refactoring Expert",
-          role: "Clean code + SOLID",
-          area: "qa",
-          group: "quality",
-          desc: "Refactorización quirúrgica. Extrae subcomponentes, renombra, reduce complejidad sin cambiar comportamiento.",
-          status: "available",
-        },
-        {
-          id: "integration-specialist",
-          name: "Integration Specialist",
-          role: "WhatsApp + SUNAT + Stripe",
-          area: "integration",
-          group: "ops",
-          desc: "Integraciones externas — WhatsApp Business API, RENIEC, Stripe, SUNAT, email, webhooks. Creó los templates del delivery nearby/delivered/failed.",
-          status: "busy",
-        },
-        {
-          id: "devops-release-engineer",
-          name: "DevOps Release Engineer",
-          role: "Deploy + Sentry + Crons",
-          area: "devops",
-          group: "ops",
-          desc: "Vercel deploys, env vars, Prisma migrate, crons, monitoring, Sentry, feature flags, rollback plans.",
-          status: "available",
-        },
-        {
-          id: "performance-engineer",
-          name: "Performance Engineer",
-          role: "Core Web Vitals + Bundle",
-          area: "qa",
-          group: "ops",
-          desc: "Bundle size, lazy loading, Core Web Vitals, imágenes, cache. Analiza con npm run analyze.",
-          status: "available",
-        },
-        {
-          id: "data-analyst",
-          name: "Data Analyst",
-          role: "KPIs + Dashboards",
-          area: "data",
-          group: "ops",
-          desc: "KPIs de ventas, dashboards, reportes, forecasting. Trabaja con la read replica de Prisma.",
-          status: "available",
-        },
-      ];
+    <div class="tooltip" id="tooltip">
+      <div class="tt-name"></div>
+      <div class="tt-role"></div>
+      <div class="tt-status"></div>
+    </div>
 
-      // Stats
-      const stats = [
-        { n: AGENTS.length, l: "Agentes totales" },
-        { n: AGENTS.filter(a => a.area === "orchestration").length, l: "Orquestadores" },
-        { n: AGENTS.filter(a => a.area === "frontend" || a.area === "mobile" || a.area === "product").length, l: "Experiencia" },
-        { n: AGENTS.filter(a => a.area === "backend" || a.area === "database").length, l: "Foundations" },
-        { n: AGENTS.filter(a => a.area === "qa" || a.area === "security").length, l: "Calidad" },
-        { n: "12/12", l: "Checkpoints Nivel 4 D1" },
-      ];
+    <div class="actions">
+      <button class="btn" id="btn-assign">ASIGNAR TAREA RANDOM</button>
+      <button class="btn secondary" id="btn-reset">RESET</button>
+    </div>
 
-      const statsEl = document.getElementById("stats");
-      for (const s of stats) {
-        const d = document.createElement("div");
-        d.className = "stat";
-        d.innerHTML = `<div class="n">${s.n}</div><div class="l">${s.l}</div>`;
-        statsEl.appendChild(d);
-      }
-
-      // Render cards by group
-      for (const agent of AGENTS) {
-        const container = document.querySelector(`.grid[data-area-group="${agent.group}"]`);
-        if (!container) continue;
-        const card = document.createElement("div");
-        card.className = "card" + (agent.highlight ? " highlight" : "");
-        card.dataset.area = agent.area;
-        card.dataset.status = agent.status;
-        card.innerHTML = `
-          <div class="role">${agent.role}</div>
-          <h3>${agent.name}</h3>
-          <p>${agent.desc}</p>
-          <div class="footer">
-            <span class="dot"></span>
-            <span>${agent.status === "available" ? "Disponible" : agent.status === "busy" ? "Ocupado" : "Crítico"}</span>
-            <span style="margin-left:auto;opacity:0.6;">${agent.id}</span>
-          </div>
-        `;
-        container.appendChild(card);
-      }
-
-      // Clock
-      function tick() {
-        const now = new Date();
-        document.getElementById("clock").textContent = now.toLocaleTimeString("es-PE", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        });
-      }
-      tick();
-      setInterval(tick, 1000);
-
-      // Bg particles
-      const particles = document.getElementById("particles");
-      for (let i = 0; i < 30; i++) {
-        const p = document.createElement("span");
-        p.style.left = Math.random() * 100 + "%";
-        p.style.top = Math.random() * 100 + "%";
-        p.style.animationDelay = Math.random() * 6 + "s";
-        p.style.animationDuration = 4 + Math.random() * 6 + "s";
-        particles.appendChild(p);
-      }
-
-      // Periodically toggle a random busy agent for visual life
-      setInterval(() => {
-        const cards = document.querySelectorAll(".card");
-        const idx = Math.floor(Math.random() * cards.length);
-        const c = cards[idx];
-        const cur = c.dataset.status;
-        const next = cur === "available" ? "busy" : "available";
-        c.dataset.status = next;
-        const label = c.querySelector(".footer span:nth-child(2)");
-        if (label) label.textContent = next === "available" ? "Disponible" : "Ocupado";
-      }, 3500);
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/pixi.js@8.6.6/dist/pixi.min.js"></script>
+    <script type="module" src="./game.js"></script>
   </body>
 </html>
