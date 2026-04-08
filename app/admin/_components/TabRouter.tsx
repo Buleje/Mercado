@@ -23,6 +23,7 @@ const MetasLogrosModule       = dynamic(() => import("@/components/admin/unified
 const MarketplaceModule       = dynamic(() => import("@/components/admin/unified/MarketplaceModule"),       { loading: TabSpinner });
 const DeliveryPartnersModule  = dynamic(() => import("@/components/admin/unified/DeliveryPartnersModule"),  { loading: TabSpinner });
 const DeliveryLiveTab         = dynamic(() => import("@/components/admin/DeliveryTab"),                     { loading: TabSpinner, ssr: false });
+const MarketplaceChatTab      = dynamic(() => import("@/components/admin/ChatTab"),                         { loading: TabSpinner });
 const RendimientoModule       = dynamic(() => import("@/components/admin/unified/RendimientoModule"),       { loading: TabSpinner });
 
 // ── Módulos adicionales ────────────────────────────────────────────────────────
@@ -233,6 +234,7 @@ export function TabRouter({
   if (tab === "marketplace")       return <MarketplaceModule />;
   if (tab === "delivery-partners") return <DeliveryPartnersModule />;
   if (tab === "delivery-live")     return <DeliveryLiveTab />;
+  if (tab === "marketplace-chat")  return <MarketplaceChatTab />;
 
   // ── Rendimiento técnico ──
   if (tab === "rendimiento") return <RendimientoModule />;
