@@ -7,13 +7,14 @@
 import { readFileSync } from 'node:fs';
 
 const DANGER_ZONES = [
-  { pattern: /CheckoutModal\.tsx/, skill: 'checkout-flow', label: 'CheckoutModal (119 KB, pagos y cupones)' },
-  { pattern: /role-permissions\.ts/, skill: 'security-auth', label: 'role-permissions.ts (RBAC)' },
+  { pattern: /CheckoutModal\.tsx/, skill: 'checkout-flow', label: 'CheckoutModal (pagos, cupones, reservas) + todo components/checkout/**' },
+  { pattern: /role-permissions\.ts/, skill: 'security-auth', label: 'role-permissions.ts (RBAC 26 recursos × 6 roles)' },
   { pattern: /lib\/db\/orders\.db\.ts/, skill: 'database-migrations', label: 'orders.db.ts (state machine, idempotency)' },
-  { pattern: /schema\.prisma/, skill: 'prisma-schema', label: 'schema.prisma (66 modelos, requiere DIRECT_URL)' },
-  { pattern: /cart-context\.tsx/, skill: 'state-management', label: 'cart-context.tsx (BroadcastChannel + localStorage)' },
+  { pattern: /schema\.prisma/, skill: 'prisma-schema', label: 'schema.prisma (120 modelos, requiere DIRECT_URL)' },
+  { pattern: /cart-context\.tsx/, skill: 'state-management', label: 'cart-context.tsx (BroadcastChannel + localStorage multi-tab)' },
   { pattern: /api\/batches/, skill: 'fefo-inventory', label: 'API batches (FEFO, expiryDate vs expiresAt)' },
-  { pattern: /proxy\.ts/, skill: 'security-auth', label: 'proxy.ts (auth middleware)' },
+  { pattern: /proxy\.ts/, skill: 'security-auth', label: 'proxy.ts (auth + CSP + tenant + rate limit — 398 líneas)' },
+  { pattern: /CartSidebar\.tsx/, skill: 'state-management', label: 'CartSidebar.tsx (BroadcastChannel multi-tab sync)' },
 ];
 
 try {
@@ -29,6 +30,7 @@ try {
   for (const zone of DANGER_ZONES) {
     if (zone.pattern.test(filePath)) {
       // Structured JSON response per official spec
+      const skillPath = `.github/instructions/${zone.skill}.instructions.md`;
       const response = JSON.stringify({
         decision: 'block',
         reason: `ZONA DE PELIGRO: ${zone.label}. Lee el skill "${zone.skill}" primero.`,
@@ -38,11 +40,12 @@ try {
           permissionDecisionReason:
             `⚠️ ZONA DE PELIGRO: ${zone.label}\n` +
             `Lee el skill "${zone.skill}" antes de modificar este archivo.\n` +
-            `Skill path: .github/skills/${zone.skill}.instructions.md`
+            `Skill path: ${skillPath}\n` +
+            `Índice maestro: docs/instructions-index.md`
         }
       });
       process.stdout.write(response);
-      process.stderr.write(`⚠️ ZONA DE PELIGRO: ${zone.label} — Lee skill "${zone.skill}" primero.\n`);
+      process.stderr.write(`⚠️ ZONA DE PELIGRO: ${zone.label} — Lee skill "${zone.skill}" primero (${skillPath}).\n`);
       process.exit(2); // Exit 2 = blocking error per official spec
     }
   }
