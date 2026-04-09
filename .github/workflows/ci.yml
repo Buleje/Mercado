@@ -32,18 +32,19 @@ jobs:
 
       - name: Security audit
         run: npm audit --audit-level=high
-        continue-on-error: true
+        continue-on-error: true  # non-blocking: upstream CVEs tracked in TECH-DEBT
 
       - name: Generate Prisma Client
         run: npx prisma generate
 
       - name: Lint
         run: npm run lint
-        continue-on-error: true
+
+      - name: Type check (tsc --noEmit)
+        run: npx tsc --noEmit
 
       - name: Run tests with coverage
         run: npm run test:coverage
-        continue-on-error: true
 
       - name: Build
         run: npm run build
