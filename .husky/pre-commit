@@ -1,3 +1,18 @@
 #!/usr/bin/env sh
 cd bodega-san-martin 2>/dev/null || true
-npx lint-staged
+
+# 1. Lint-staged: ESLint fix on staged .ts/.tsx files
+npx lint-staged || exit 1
+
+# 2. Type gate (closes TD-026): fail fast if tsc has any errors.
+#    Runs on the whole project — fast thanks to incremental cache.
+#    Temporarily bypass with `HUSKY=0 git commit` ONLY for emergency hotfixes.
+echo "🔎 Running tsc --noEmit (TD-026 gate)..."
+npx tsc --noEmit || {
+  echo ""
+  echo "❌ TypeScript errors detected. Fix them before committing."
+  echo "   Run \`npx tsc --noEmit\` locally to see the full list."
+  echo "   Emergency bypass: HUSKY=0 git commit ..."
+  exit 1
+}
+echo "✅ tsc clean"
