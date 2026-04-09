@@ -9,14 +9,14 @@
 # Bypass temporal: `HUSKY_SKIP_POSTCOMMIT=1 git commit ...`
 # Bypass global (emergencia): `HUSKY=0 git commit ...`
 
-set -e
-
 if [ "${HUSKY_SKIP_POSTCOMMIT:-0}" = "1" ]; then
   exit 0
 fi
 
-# Solo tiene sentido dentro del monorepo del proyecto.
-cd bodega-san-martin 2>/dev/null || exit 0
+# El hook puede correr desde el parent repo o desde adentro del proyecto.
+# Igual que el pre-commit: intenta entrar y sigue sin error si ya estamos
+# dentro (bodega-san-martin es su propio git repo).
+cd bodega-san-martin 2>/dev/null || true
 
 # Solo correr si hay archivos TS/TSX tocados en el último commit.
 CHANGED_TS=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -E '\.(ts|tsx)$' || true)
