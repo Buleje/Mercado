@@ -100,6 +100,7 @@ function ListProductRow({
   return (
     <div
       onClick={() => onQuickView(product)}
+      data-testid="product-card"
       className="flex items-center gap-3 bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-3 hover:shadow-md hover:border-primary/20 transition-all cursor-pointer"
     >
       <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-50 dark:bg-surface shrink-0">

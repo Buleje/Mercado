@@ -70,6 +70,7 @@ export default function RecommendedProducts() {
           {products.map((p) => (
             <div
               key={p.id}
+              data-testid="product-card"
               className="snap-start shrink-0 w-44 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="aspect-square relative bg-gray-50 dark:bg-card">
@@ -100,6 +101,7 @@ export default function RecommendedProducts() {
                   <button
                     onClick={() => handleAdd(p)}
                     className="flex items-center justify-center h-10 w-10 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                    aria-label={`Agregar ${p.name} al carrito`}
                     title="Agregar al carrito"
                   >
                     <ShoppingCart className="h-5 w-5" />
