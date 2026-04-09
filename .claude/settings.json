@@ -71,7 +71,7 @@
   },
   "permissions": {
     "defaultMode": "acceptEdits",
-    "_comment_autonomy": "2026-04-09 — Brandon delegó autonomía total. Allowlist amplia para ejecutar sin confirmación. Los únicos gates que quedan son el deny list (acciones realmente destructivas) y los hooks de danger-zone/pre-bash-guard que viven aparte. Si Claude necesita instalar una lib, correr un script, ejecutar un agente o hacer commit → lo hace directo.",
+    "_comment_autonomy": "2026-04-09 (v2) — Brandon refinó el mandato: cierre con 3 tablas fijas (antes/despues, hecho, mejoras+agentes). Autonomía v2 arranca siguiente iniciativa automatico sin esperar si. Instalación de libs/MCPs/skills/agentes directa. Commit + push directo si tests verdes. Ver memoria feedback_autonomous_chief.md seccion 6.2.",
     "allow": [
       "Bash(npm *)",
       "Bash(npx *)",
