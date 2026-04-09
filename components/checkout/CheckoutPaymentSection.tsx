@@ -311,6 +311,7 @@ export function CheckoutPaymentSection({
               type="button"
               role="radio"
               aria-checked={paymentMethod === "yape"}
+              data-testid="payment-yape"
               onClick={() => onPaymentMethodChange("yape")}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -367,6 +368,7 @@ export function CheckoutPaymentSection({
               type="button"
               role="radio"
               aria-checked={paymentMethod === "efectivo"}
+              data-testid="payment-efectivo"
               onClick={() => onPaymentMethodChange("efectivo")}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

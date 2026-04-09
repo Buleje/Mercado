@@ -1,7 +1,8 @@
-"use client";
-
 /**
  * components/admin/AdminTenantBar.tsx
+ *
+ * Server Component puro — presentacional sin hooks, estado ni handlers. Se
+ * renderiza como parte del shell del panel admin y no envía JS al cliente.
  *
  * Barra superior fina que vincula el panel admin con la tienda individual del
  * tenant que se está administrando. Resuelve la petición:
