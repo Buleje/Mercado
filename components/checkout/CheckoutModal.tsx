@@ -11,6 +11,7 @@ import type { Customer, SavedLocation } from "@/contexts/customer-context";
 import { CheckoutAccountStep, CheckoutSuccessStep } from ".";
 import { StepDatos } from "./steps/StepDatos";
 import { StepPago } from "./steps/StepPago";
+import { StepConfirmar, StepConfirmarFooter } from "./steps/StepConfirmar";
 import { MiniCartSummary } from "./parts/MiniCartSummary";
 import { CheckoutModalShell } from "./parts/CheckoutModalShell";
 import { useCheckoutState } from "./hooks/useCheckoutState";
@@ -157,6 +158,17 @@ export default function CheckoutModal() {
   const showMiniCart =
     (state.step === "cuenta" || state.step === "datos") && items.length > 0;
 
+  const confirmarFooter =
+    state.step === "confirmar" ? (
+      <StepConfirmarFooter
+        submitting={state.ui.submitting}
+        submitError={state.ui.submitError}
+        finalTotal={finalTotal}
+        onBack={() => dispatch({ type: "SET_STEP", step: "pago" })}
+        onConfirm={handlers.handleFinalConfirm}
+      />
+    ) : null;
+
   return (
     <CheckoutModalShell
       open={checkoutOpen}
@@ -170,6 +182,7 @@ export default function CheckoutModal() {
           <MiniCartSummary items={items} finalTotal={finalTotal} />
         ) : null
       }
+      footerSlot={confirmarFooter}
     >
       <AnimatePresence mode="wait">
         {state.step === "cuenta" && (
@@ -223,6 +236,18 @@ export default function CheckoutModal() {
             onBackToDatos={() =>
               dispatch({ type: "SET_STEP", step: "datos" })
             }
+          />
+        )}
+
+        {state.step === "confirmar" && (
+          <StepConfirmar
+            state={state}
+            items={items}
+            finalTotal={finalTotal}
+            cartTotal={cartTotal}
+            discount={discount}
+            effectiveCustomer={effectiveCustomer}
+            onEditAddress={() => dispatch({ type: "SET_STEP", step: "datos" })}
           />
         )}
 

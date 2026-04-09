@@ -1,0 +1,46 @@
+#!/usr/bin/env sh
+# post-commit — dispara vitest en background tras cada commit.
+#
+# Objetivo: tener feedback rápido sin bloquear el flujo. Los tests corren
+# en segundo plano y el resultado se guarda en `.husky/.last-test-run.log`.
+# Si falla, escribe un marcador `.husky/.last-test-run.FAILED` que se
+# puede chequear con `cat .husky/.last-test-run.log | tail -20`.
+#
+# Bypass temporal: `HUSKY_SKIP_POSTCOMMIT=1 git commit ...`
+# Bypass global (emergencia): `HUSKY=0 git commit ...`
+
+set -e
+
+if [ "${HUSKY_SKIP_POSTCOMMIT:-0}" = "1" ]; then
+  exit 0
+fi
+
+# Solo tiene sentido dentro del monorepo del proyecto.
+cd bodega-san-martin 2>/dev/null || exit 0
+
+# Solo correr si hay archivos TS/TSX tocados en el último commit.
+CHANGED_TS=$(git diff --name-only HEAD~1 HEAD 2>/dev/null | grep -E '\.(ts|tsx)$' || true)
+if [ -z "$CHANGED_TS" ]; then
+  echo "ℹ️  post-commit: sin cambios TS — skip de vitest"
+  exit 0
+fi
+
+LOG=".husky/.last-test-run.log"
+FAIL_MARK=".husky/.last-test-run.FAILED"
+rm -f "$FAIL_MARK"
+
+echo "🧪 post-commit: corriendo vitest en background (log: bodega-san-martin/$LOG)"
+
+# Nohup + disown para que sobreviva al cierre del shell de git.
+# Si vitest termina con !=0, dejamos el marcador de fallo.
+(
+  if npm run test -- --reporter=dot >"$LOG" 2>&1; then
+    echo "✅ post-commit: vitest OK ($(date '+%H:%M:%S'))" >> "$LOG"
+  else
+    echo "❌ post-commit: vitest FALLÓ ($(date '+%H:%M:%S'))" >> "$LOG"
+    touch "$FAIL_MARK"
+  fi
+) >/dev/null 2>&1 &
+
+disown 2>/dev/null || true
+exit 0

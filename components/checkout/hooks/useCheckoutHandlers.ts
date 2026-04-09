@@ -236,10 +236,17 @@ export function useCheckoutHandlers({
         dispatch({ type: "SET_PAYMENT", patch: { showHint: true } });
         return;
       }
-      submit();
+      // Ya no envía la orden directamente — avanza al paso "Confirmar"
+      // donde el cliente revisa todo antes del submit final.
+      dispatch({ type: "SET_STEP", step: "confirmar" });
     },
-    [canConfirm, dispatch, submit]
+    [canConfirm, dispatch]
   );
+
+  const handleFinalConfirm = useCallback(() => {
+    if (state.ui.submitting) return;
+    submit();
+  }, [state.ui.submitting, submit]);
 
   return {
     handlePhoneSearchSubmit,
@@ -249,6 +256,7 @@ export function useCheckoutHandlers({
     handleMapPick,
     handleDataSubmit,
     handlePaymentSubmit,
+    handleFinalConfirm,
     canConfirm,
   };
 }

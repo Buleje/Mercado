@@ -21,6 +21,7 @@ export type CheckoutModalShellProps = {
   storeTheme: StoreTheme | null;
   onClose: () => void;
   topSlot?: ReactNode;
+  footerSlot?: ReactNode;
   children: ReactNode;
 };
 
@@ -32,6 +33,7 @@ export function CheckoutModalShell({
   storeTheme,
   onClose,
   topSlot,
+  footerSlot,
   children,
 }: CheckoutModalShellProps) {
   return (
@@ -70,7 +72,13 @@ export function CheckoutModalShell({
               aria-modal="true"
               aria-label="Completar pedido"
               data-testid="checkout-modal"
-              className={`relative bg-white dark:bg-background rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-h-[95svh] flex flex-col overflow-hidden transition-all duration-300 ${step === "pago" ? "sm:max-w-5xl" : "sm:max-w-2xl"}`}
+              className={`relative bg-white dark:bg-background rounded-t-2xl sm:rounded-3xl shadow-2xl w-full max-h-[95svh] flex flex-col overflow-hidden transition-all duration-300 ${
+                step === "pago"
+                  ? "sm:max-w-5xl"
+                  : step === "confirmar"
+                    ? "sm:max-w-lg"
+                    : "sm:max-w-2xl"
+              }`}
             >
               <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
                 <div className="h-1 w-10 rounded-full bg-gray-200" />
@@ -88,6 +96,12 @@ export function CheckoutModalShell({
               {topSlot}
 
               <div className="flex-1 overflow-y-auto">{children}</div>
+
+              {footerSlot && (
+                <div className="shrink-0 border-t border-gray-200/80 dark:border-gray-800/80 bg-white/90 dark:bg-gray-950/90 backdrop-blur-sm">
+                  {footerSlot}
+                </div>
+              )}
             </div>
           </m.div>
         </>
