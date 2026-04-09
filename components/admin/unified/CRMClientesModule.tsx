@@ -1,5 +1,5 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars -- pre-existing warnings pending dedicated cleanup sprint */
 import { useState, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
@@ -111,6 +111,10 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
   // Mejora 3: Auto-refresh
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [minAgo, setMinAgo] = useState(0);
+  // Mock KPI deltas — lazy-init so Math.random runs once per mount, not each render (React Compiler purity rule)
+  const [kpiMockChanges] = useState<number[]>(() =>
+    Array.from({ length: 6 }, () => Math.round((Math.random() - 0.3) * 30))
+  );
   // Mejora 5: Favoritos
   const crmFavs = useCrmFavCharts("fav-charts-crm");
 
@@ -409,7 +413,7 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
           },
         ].map((k, i) => {
           const Icon = k.icon;
-          const change = Math.round((Math.random() - 0.3) * 30);
+          const change = kpiMockChanges[i] ?? 0;
           return (
             <div
               key={i}

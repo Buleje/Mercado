@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any -- pre-existing warnings pending dedicated cleanup sprint (post-TD-018) */
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -83,6 +84,8 @@ function ComprasDashboard() {
   // Mejora 3: Auto-refresh
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [minAgo, setMinAgo] = useState(0);
+  // Snapshot "now" once per mount — React Compiler rejects Date.now() during render/useMemo
+  const [nowTs] = useState(() => Date.now());
   // Mejora 5: Favoritos
   const compFavs = useComprasFavCharts("compras");
 
@@ -133,7 +136,7 @@ function ComprasDashboard() {
       months[key] = { total: 0, count: 0 };
     }
     data.purchases.forEach((p: any) => {
-      const d = new Date(p.createdAt || p.date || p.orderDate || Date.now());
+      const d = new Date(p.createdAt || p.date || p.orderDate || nowTs);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (months[key]) {
         months[key].total += (p.total || p.grandTotal || 0);
@@ -144,7 +147,7 @@ function ComprasDashboard() {
       const [y, m] = key.split('-');
       return { mes: monthNames[parseInt(m) - 1], total: Math.round(val.total), count: val.count };
     });
-  }, [data.purchases]);
+  }, [data.purchases, nowTs]);
 
   /* ── Gasto por proveedor ── */
   const supplierSpend = useMemo(() => {
@@ -172,7 +175,7 @@ function ComprasDashboard() {
       months[key] = { Pendiente: 0, 'En proceso': 0, Recibido: 0, Cancelado: 0 };
     }
     data.purchases.forEach((p: any) => {
-      const d = new Date(p.createdAt || p.date || p.orderDate || Date.now());
+      const d = new Date(p.createdAt || p.date || p.orderDate || nowTs);
       const key = monthNames[d.getMonth()];
       if (!months[key]) return;
       const st = p.status || 'pendiente';
@@ -183,7 +186,7 @@ function ComprasDashboard() {
       else months[key].Pendiente += 1;
     });
     return Object.entries(months).map(([mes, vals]) => ({ mes, ...vals }));
-  }, [data.purchases]);
+  }, [data.purchases, nowTs]);
 
   /* ── Deuda por proveedor ── */
   const debtBySupplier = useMemo(() => {
@@ -212,7 +215,7 @@ function ComprasDashboard() {
       .sort((a: any, b: any) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime())
       .slice(0, 5)
       .map((p: any) => {
-        const due = new Date(p.dueDate || Date.now());
+        const due = new Date(p.dueDate || nowTs);
         const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         return {
           name: p.supplierName || p.supplier?.name || p.supplier || 'Proveedor',
@@ -222,7 +225,7 @@ function ComprasDashboard() {
           id: p.id,
         };
       });
-  }, [data.payables]);
+  }, [data.payables, nowTs]);
 
   /* ── Tendencia con promedio movil ── */
   const trendData = useMemo(() => {

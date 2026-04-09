@@ -78,6 +78,8 @@ export default function POSSearchBar({
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showResults, setShowResults] = useState(false);
   const [highlightFirst, setHighlightFirst] = useState(false);
+  // Snapshot "now" once per mount — React Compiler rejects impure Date.now() during render
+  const [nowTs] = useState(() => Date.now());
   const prevResultCountRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -218,7 +220,7 @@ export default function POSSearchBar({
                           S/{p.previousPrice.toFixed(2)}
                         </span>
                       )}
-                      {p.updatedAt && (Date.now() - new Date(p.updatedAt).getTime()) < 7 * 86400000 && p.previousPrice && p.previousPrice !== p.price && (
+                      {p.updatedAt && (nowTs - new Date(p.updatedAt).getTime()) < 7 * 86400000 && p.previousPrice && p.previousPrice !== p.price && (
                         <span className="text-[9px] font-bold text-white bg-[#f97316] px-1 py-0.5 rounded">
                           Nuevo precio
                         </span>

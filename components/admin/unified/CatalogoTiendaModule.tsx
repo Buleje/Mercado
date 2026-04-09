@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars -- pre-existing warnings pending dedicated cleanup sprint */
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -92,6 +93,10 @@ function ProductsDashboard() {
   // Mejora 3: Auto-refresh
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [minAgo, setMinAgo] = useState(0);
+  // Mock KPI deltas — lazy-init so Math.random runs once per mount (React Compiler purity rule)
+  const [kpiMockChanges] = useState<number[]>(() =>
+    Array.from({ length: 8 }, () => Math.round((Math.random() - 0.3) * 30))
+  );
   // Mejora 5: Favoritos
   const catFavs = useCatFavCharts("catalogo");
 
@@ -257,7 +262,7 @@ function ProductsDashboard() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {kpiCards.map((k, i) => {
           const Icon = k.icon;
-          const change = Math.round((Math.random() - 0.3) * 30);
+          const change = kpiMockChanges[i] ?? 0;
           return (
             <div key={i} className={cn("bg-white rounded-2xl shadow-sm p-4 border-l-[3px] border border-gray-100", k.borderColor)}>
               <div className="flex items-start justify-between">

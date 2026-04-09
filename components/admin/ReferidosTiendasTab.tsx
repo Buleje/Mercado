@@ -159,7 +159,7 @@ export default function ReferidosTiendasTab() {
         {/* Mensaje de compartir */}
         {data?.referralCode && (
           <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2 italic">
-            "Unete a Buleje con mi codigo {data.referralCode} y ambos ganamos 30 dias gratis"
+            &ldquo;Unete a Buleje con mi codigo {data.referralCode} y ambos ganamos 30 dias gratis&rdquo;
           </div>
         )}
       </div>

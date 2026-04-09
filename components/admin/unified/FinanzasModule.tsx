@@ -1,6 +1,5 @@
 "use client";
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import {
@@ -98,6 +97,7 @@ function calcHealthScore(d: HealthData) {
   return { total, margenPts, liquidezPts, deudaPts, margen, liquidez, deudaRatio };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function HealthSemaphore() {
   const [data, setData] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -269,6 +269,7 @@ function ComparativoMensual() {
 
 // ── Mejora 14: Punto de equilibrio visual ─────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function PuntoEquilibrio() {
   const [data, setData] = useState<{ gastoDiario: number; ventasHoy: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -365,6 +366,7 @@ const EXPENSE_COLORS: Record<string, string> = {
   "limpieza": "#06b6d4",
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function GastosDonut() {
   const [gastos, setGastos] = useState<Array<{ category: string; total: number }>>([]);
   // Mejora 13: Promedio historico por categoria para detectar gastos inusuales
@@ -497,6 +499,7 @@ function GastosDonut() {
 
 // ── Mejora 16: Proyeccion de cierre de mes ───────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ProyeccionCierreMes() {
   const [data, setData] = useState<{
     ventasMes: number;
@@ -584,6 +587,7 @@ function ProyeccionCierreMes() {
 
 // ── Mejora 12: Resumen fiscal mensual ────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ResumenFiscal() {
   const [data, setData] = useState<{ ventas: number; compras: number } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -853,6 +857,10 @@ function FinanzasDashboard() {
   // Mejora 3: Auto-refresh
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [minAgo, setMinAgo] = useState(0);
+  // Mock KPI deltas — lazy-init so Math.random runs once per mount (React Compiler purity rule)
+  const [kpiMockChanges] = useState<number[]>(() =>
+    Array.from({ length: KPI_DEFS.length }, () => Math.round((Math.random() - 0.3) * 30))
+  );
   // Mejora 5: Favoritos
   const finFavs = useFinanzasFavCharts("fav-charts-finanzas");
 
@@ -1142,8 +1150,8 @@ function FinanzasDashboard() {
           let display: string;
           let subtexto = "";
           let valColor = "text-gray-900";
-          // Mejora 7: Comparativo mock
-          const change = Math.round((Math.random() - 0.3) * 30);
+          // Mejora 7: Comparativo mock (lazy-initialized for React Compiler purity)
+          const change = kpiMockChanges[kpiIdx] ?? 0;
 
           if (def.key === "margen") {
             display = `${val}%`;

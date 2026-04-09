@@ -395,7 +395,7 @@ export default function BulkInvoiceGenerator() {
       {!loadingOrders && orders.length === 0 && !errorOrders && !results && (
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-xl py-16 text-center">
           <Download className="h-10 w-10 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-          <p className="text-sm font-medium text-gray-500 dark:text-muted">Selecciona un rango de fechas y haz clic en "Buscar ventas"</p>
+          <p className="text-sm font-medium text-gray-500 dark:text-muted">Selecciona un rango de fechas y haz clic en &ldquo;Buscar ventas&rdquo;</p>
         </div>
       )}
     </div>

@@ -11,11 +11,12 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// No pre-rendered pages — products are dynamic (DB-based)
-export async function generateStaticParams() {
-  return [];
-}
-export const dynamicParams = true;
+// No pre-rendered pages — products are dynamic (DB-based, per-tenant).
+// Next 16 con cacheComponents rechaza `generateStaticParams` que retorne []
+// ("EmptyGenerateStaticParamsError"). La página lee `await headers()` para
+// resolver tenantId, así que JAMÁS puede pre-renderizarse estáticamente →
+// removemos la función por completo. Next auto-detecta dinámica por headers().
+// Ver ADR-019 (ampliado 2026-04-09).
 
 async function getProductBySlugFromDB(slug: string): Promise<Product | null> {
   const hdrs = await headers();

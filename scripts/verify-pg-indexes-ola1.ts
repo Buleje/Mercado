@@ -185,8 +185,8 @@ async function main() {
     indexesByTable.set(row.tablename, arr);
   }
 
-  let needsCreate: string[] = [];
-  let alreadyExists: string[] = [];
+  const needsCreate: string[] = [];
+  const alreadyExists: string[] = [];
 
   // TD-019 / TD-021 (deberían existir en el schema)
   for (const entry of EXPECTED_INDEXES["TD-019 / TD-021 (deberían existir)"]) {
@@ -206,7 +206,6 @@ async function main() {
   // TD-020 (nuevos — no deberían existir)
   for (const entry of EXPECTED_INDEXES["TD-020 (nuevos — no deberían existir)"]) {
     const idxs = indexesByTable.get(entry.table) || [];
-    const signature = entry.columns.map((c) => c.toLowerCase()).join(", ");
     const found = idxs.find((i) => {
       const defLower = i.def.toLowerCase();
       return entry.columns.every((col) => defLower.includes(col.toLowerCase()));

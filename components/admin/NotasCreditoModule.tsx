@@ -222,7 +222,9 @@ function NCCard({ nc, onSelect, selected, onToggle }: { nc: NotaCredito; onSelec
 // ── StaleDraftsBanner ───────────────────────────────────────────────────────
 
 function StaleDraftsBanner({ notas, onFilter }: { notas: NotaCredito[]; onFilter: () => void }) {
-  const stale = notas.filter(nc => nc.status === "BORRADOR" && (Date.now() - new Date(nc.createdAt).getTime()) > 48 * 3600000);
+  // Capture "now" once per mount via lazy state init (avoids impure Date.now() during render)
+  const [nowTs] = useState(() => Date.now());
+  const stale = notas.filter(nc => nc.status === "BORRADOR" && (nowTs - new Date(nc.createdAt).getTime()) > 48 * 3600000);
   if (stale.length === 0) return null;
   return (
     <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/50 text-sm">

@@ -270,6 +270,18 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const searchRef = useRef<HTMLDivElement>(null);
 
+  // Lazy-init: read sessionStorage once on mount (avoids impure Date.now() during render)
+  const [productsInitialData] = useState<Array<LiveProduct & { active?: boolean }> | undefined>(() => {
+    try {
+      const cached = sessionStorage.getItem("products-cache");
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < 5 * 60 * 1000) return data;
+      }
+    } catch { /* ignore */ }
+    return undefined;
+  });
+
   // Fetch live products from API (admin changes reflect here) - with in-memory + sessionStorage caching
   const { data: apiProducts, isLoading: isLoadingProducts, isError: apiError, refetch: refetchProducts } = useCachedData<Array<LiveProduct & { active?: boolean }>>(
     "products",
@@ -296,17 +308,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
     {
       staleTime: 2 * 60 * 1000, // 2 minutes - products don't change that often
       refetchOnFocus: true, // Refetch when user returns to tab
-      initialData: (() => {
-        // Seed from sessionStorage on mount for instant display
-        try {
-          const cached = sessionStorage.getItem("products-cache");
-          if (cached) {
-            const { data, timestamp } = JSON.parse(cached);
-            if (Date.now() - timestamp < 5 * 60 * 1000) return data;
-          }
-        } catch { /* ignore */ }
-        return undefined;
-      })(),
+      initialData: productsInitialData,
     }
   );
 

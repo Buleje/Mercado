@@ -86,13 +86,22 @@ function WidgetContent({ id }: { id: WidgetId }) {
         </div>
       );
     case "grafico-ventas-semana":
+      // Static mock heights (pure values — no impure calls during render)
       return (
         <div className="flex items-end gap-1 h-16">
-          {["L", "M", "X", "J", "V", "S", "D"].map((day) => (
+          {[
+            { day: "L", h: 22 },
+            { day: "M", h: 35 },
+            { day: "X", h: 18 },
+            { day: "J", h: 42 },
+            { day: "V", h: 30 },
+            { day: "S", h: 48 },
+            { day: "D", h: 25 },
+          ].map(({ day, h }) => (
             <div key={day} className="flex-1 flex flex-col items-center gap-1">
               <div
                 className="w-full rounded-t bg-green-200 dark:bg-green-800"
-                style={{ height: `${Math.random() * 40 + 10}px` }}
+                style={{ height: `${h}px` }}
               />
               <span className="text-[10px] text-gray-400">{day}</span>
             </div>

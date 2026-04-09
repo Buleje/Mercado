@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { ApiDocsPage } from "@/components/ApiDocsPage";
 
 export const metadata: Metadata = {
@@ -8,6 +9,13 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+// Next 16 cacheComponents: uncached async data inside ApiDocsPage requires a
+// Suspense boundary to allow partial prerendering. Sin boundary, el build
+// falla con "Uncached data accessed outside of <Suspense>". Ver ADR-019.
 export default function Page() {
-  return <ApiDocsPage />;
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-muted">Cargando docs…</div>}>
+      <ApiDocsPage />
+    </Suspense>
+  );
 }

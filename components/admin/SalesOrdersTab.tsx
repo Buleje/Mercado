@@ -1928,7 +1928,8 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
 }
 
 function DashKpi({ icon, iconBg, label, value, border, pulse, sparkColor, sparkVal }: { icon: React.ReactNode; iconBg: string; label: string; value: string | number; border: string; pulse?: boolean; sparkColor?: string; sparkVal?: number }) {
-  const change = Math.round((Math.random() - 0.3) * 30);
+  // Lazy init so mock delta is computed once per mount, not each render (React Compiler purity rule)
+  const [change] = useState(() => Math.round((Math.random() - 0.3) * 30));
   return (
     <div className={cn("bg-white dark:bg-card rounded-xl border border-gray-200 dark:border-card-border p-4 shadow-sm border-l-4", border)}>
       <div className="flex items-start gap-3">

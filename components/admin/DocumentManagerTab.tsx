@@ -262,7 +262,7 @@ export default function DocumentManagerTab() {
               {stats.contratosPorVencer > 0 && (
                 <span className="block mt-1 font-bold text-violet-600 dark:text-violet-400">
                   <FileSignature className="h-3 w-3 inline mr-0.5" />
-                  {stats.contratosPorVencer} contrato(s) por vencer — usa la accion "Renovar" para extenderlos.
+                  {stats.contratosPorVencer} contrato(s) por vencer — usa la accion &ldquo;Renovar&rdquo; para extenderlos.
                 </span>
               )}
             </p>

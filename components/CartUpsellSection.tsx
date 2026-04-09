@@ -45,7 +45,7 @@ export default function CartUpsellSection({
       .filter((p) => !cartIds.has(p.id) && p.price >= remaining && p.price <= remaining + 10)
       .sort((a, b) => a.price - b.price)
       .slice(0, 2);
-  }, [needsThresholdPush, remaining, cartIds]);
+  }, [needsThresholdPush, remaining, cartIds, allProducts]);
 
   // ── 2. Co-purchased suggestions (filtered, exclude already in cart) ──
   const suggestions = useMemo(() => {
@@ -57,7 +57,7 @@ export default function CartUpsellSection({
       .filter((p) => cartCats.has(p.category) && !cartIds.has(p.id))
       .slice(0, 4);
     return [...real, ...fallback.filter((f) => !real.some((r) => r.id === f.id))].slice(0, 4);
-  }, [coPurchased, cartIds, items]);
+  }, [coPurchased, cartIds, items, allProducts]);
 
   // Helper: resolve a CoPurchased to a full Product (for addItem compatibility)
   const resolveProduct = (s: CoPurchased | Product): Product => {

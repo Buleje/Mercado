@@ -210,9 +210,11 @@ export default function POSCustomerSearch({
       .catch(() => setPaymentHistory([]));
   }, [selectedPhone]);
 
+  // Snapshot "now" once per mount (avoids impure Date.now() during render per React Compiler rules)
+  const [nowTs] = useState(() => Date.now());
   // Helper to format relative time
   const getRelativeTime = (dateStr: string) => {
-    const diff = Date.now() - new Date(dateStr).getTime();
+    const diff = nowTs - new Date(dateStr).getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     if (days === 0) return "hoy";
     if (days === 1) return "ayer";
