@@ -18,9 +18,10 @@ import CTABlock from "@/components/blocks/CTABlock";
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const page = await getPageBySlug(params.slug, false);
+  const { slug } = await params;
+  const page = await getPageBySlug(slug, false);
 
   if (!page || page.status !== "PUBLISHED") {
     return {
@@ -28,7 +29,7 @@ export async function generateMetadata({
     };
   }
 
-  const pageUrl = `https://www.buleje.pe/cms/${params.slug}`;
+  const pageUrl = `https://www.buleje.pe/cms/${slug}`;
 
   return {
     title: page.metaTitle || page.title,
@@ -69,10 +70,11 @@ const BLOCK_COMPONENTS: Record<string, React.ComponentType<any>> = {
 export default async function DynamicPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
   // Fetch page from database
-  const page = await getPageBySlug(params.slug, true);
+  const { slug } = await params;
+  const page = await getPageBySlug(slug, true);
 
   // 404 if not found or not published
   if (!page || page.status !== "PUBLISHED") {
@@ -97,7 +99,7 @@ export default async function DynamicPage({
             "@type": "Article",
             headline: page.title,
             description: page.metaDescription || page.description,
-            url: `https://www.buleje.pe/cms/${params.slug}`,
+            url: `https://www.buleje.pe/cms/${slug}`,
             ...(page.ogImage ? { image: page.ogImage } : {}),
             author: { "@type": "Organization", name: "Buleje" },
             publisher: {
@@ -105,8 +107,10 @@ export default async function DynamicPage({
               name: "Buleje",
               logo: { "@type": "ImageObject", url: "https://www.buleje.pe/og-image.jpg" },
             },
-            datePublished: page.createdAt ?? new Date().toISOString(),
-            dateModified: page.updatedAt ?? new Date().toISOString(),
+            // TD-018/Next16: page.createdAt/updatedAt siempre existen (Prisma required fields).
+            // El fallback a new Date() violaba cacheComponents ("non-deterministic data during prerender").
+            datePublished: page.createdAt ? new Date(page.createdAt).toISOString() : undefined,
+            dateModified: page.updatedAt ? new Date(page.updatedAt).toISOString() : undefined,
           }),
         }}
       />

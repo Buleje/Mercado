@@ -1,10 +1,15 @@
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionPayload, SESSION } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import OnboardingWizard from "@/components/onboarding/OnboardingWizard";
 
-export default async function OnboardingPage() {
+// Next 16 cacheComponents: la lógica async (cookies + prisma + redirect) debe
+// estar bajo un Suspense boundary para permitir partial prerendering del shell.
+// La página exporta un componente síncrono que wrap el gate async.
+// Ver ADR-019 (ampliación 4x, 2026-04-09).
+async function OnboardingGate() {
   // 1. Verify session
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION.COOKIE_NAME)?.value;
@@ -37,4 +42,20 @@ export default async function OnboardingPage() {
 
   // 3. Render wizard
   return <OnboardingWizard />;
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-pulse text-sm text-muted">
+            Preparando configuración inicial…
+          </div>
+        </div>
+      }
+    >
+      <OnboardingGate />
+    </Suspense>
+  );
 }
