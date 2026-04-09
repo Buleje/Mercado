@@ -5,9 +5,19 @@ cd bodega-san-martin 2>/dev/null || true
 npx lint-staged || exit 1
 
 # 2. Type gate (closes TD-026): fail fast if tsc has any errors.
-#    Runs on the whole project — fast thanks to incremental cache.
-#    Temporarily bypass with `HUSKY=0 git commit` ONLY for emergency hotfixes.
+#    Only runs when TypeScript-related files are staged. Doc-only or
+#    config-only commits skip this entirely (instant commit).
+#    Uses incremental cache (tsconfig.tsbuildinfo) — warm run ~10s,
+#    cold run ~85s (first time after clone or after nuking .tsbuildinfo).
+#    Emergency bypass: `HUSKY=0 git commit` for true hotfixes only.
+STAGED_TS=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx|mts|cts)$' || true)
+if [ -z "$STAGED_TS" ]; then
+  echo "✅ No TypeScript files staged — skipping tsc gate"
+  exit 0
+fi
+
 echo "🔎 Running tsc --noEmit (TD-026 gate)..."
+echo "   Staged TS files: $(echo "$STAGED_TS" | wc -l | tr -d ' ')"
 npx tsc --noEmit || {
   echo ""
   echo "❌ TypeScript errors detected. Fix them before committing."
