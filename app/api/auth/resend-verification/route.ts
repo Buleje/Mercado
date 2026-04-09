@@ -6,8 +6,6 @@ import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 function buildVerificationHtml(storeName: string, verifyUrl: string): string {
   return `
     <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;">

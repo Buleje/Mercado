@@ -9,8 +9,6 @@
  * Auth: Bearer CRON_SECRET.
  */
 
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { SalesAnomaliesDB } from "@/lib/db";

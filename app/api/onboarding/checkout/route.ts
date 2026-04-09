@@ -8,8 +8,6 @@ import {
 } from "@/lib/stripe";
 import type { PlanId } from "@/lib/plans";
 
-export const dynamic = "force-dynamic";
-
 /**
  * POST /api/onboarding/checkout
  * Body: { tenantSlug: string, plan: "pro" | "business" | "enterprise" }

@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { readData, writeData } from "@/lib/file-store";
 import { z } from "zod";
 
-export const dynamic = "force-dynamic";
-
 const schema = z.object({
   rating: z.number().int().min(1).max(5),
   comment: z.string().max(300).optional(),

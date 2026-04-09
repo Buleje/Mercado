@@ -4,8 +4,6 @@ import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
-
 /**
  * GET /api/cron/trial-expiry
  *

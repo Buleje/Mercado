@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyEmailToken } from "@/lib/email-verification";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
-
 /**
  * GET /api/auth/verify-email?token=xxx
  *

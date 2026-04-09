@@ -3,8 +3,6 @@ import { requireAdmin } from "@/lib/require-admin";
 import { readData, writeData } from "@/lib/file-store";
 import { toErrorPayload } from "@/lib/api-error";
 
-export const dynamic = "force-dynamic";
-
 const GOALS_KEY = "goals";
 
 interface Goal {

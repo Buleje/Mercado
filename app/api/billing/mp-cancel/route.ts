@@ -5,8 +5,6 @@ import { cancelMPSubscription } from "@/lib/mercadopago";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 
-export const dynamic = "force-dynamic";
-
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/mp-cancel
 //

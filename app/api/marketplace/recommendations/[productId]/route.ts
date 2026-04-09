@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 /**
  * GET /api/marketplace/recommendations/[productId]
  *

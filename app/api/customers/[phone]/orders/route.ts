@@ -1,4 +1,3 @@
-﻿export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { OrdersDB, normalizePhone } from "@/lib/jsondb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";

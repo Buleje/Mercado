@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { requireSupplier } from "@/lib/require-supplier";
 import { SupplierRatingDB } from "@/lib/db/supplier-portal.db";

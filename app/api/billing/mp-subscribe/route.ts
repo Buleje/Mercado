@@ -7,8 +7,6 @@ import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import type { PlanId } from "@/lib/plans";
 
-export const dynamic = "force-dynamic";
-
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/mp-subscribe
 //

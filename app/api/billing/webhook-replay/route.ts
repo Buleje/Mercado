@@ -7,8 +7,6 @@
  *
  * Security: requires the `Authorization: Bearer <CRON_SECRET>` header.
  */
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";

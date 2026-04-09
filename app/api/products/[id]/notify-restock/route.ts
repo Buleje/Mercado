@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
-
 /**
  * POST /api/products/[id]/notify-restock
  * Stores a phone number for restock notification.

@@ -7,6 +7,7 @@ import type {
   BundleItem as PBundleItem,
 } from "@/lib/generated/prisma/client";
 import type { DbProduct } from "./misc.db";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -43,8 +44,8 @@ function mapProduct(p: PProduct): DbProduct {
     id: p.id,
     name: p.name,
     category: p.category,
-    price: p.price,
-    ...(p.costPrice != null && { costPrice: p.costPrice }),
+    price: toNumOrZero(p.price),
+    ...(p.costPrice != null && { costPrice: toNumOrZero(p.costPrice) }),
     image: p.image,
     ...(p.description != null && { description: p.description }),
     unit: p.unit,
@@ -58,12 +59,12 @@ function mapProduct(p: PProduct): DbProduct {
 }
 
 function mapPriceHistory(p: PPriceHistory): DbPriceHistory {
-  return { id: p.id, productId: p.productId, oldPrice: p.oldPrice, newPrice: p.newPrice, changedAt: toISO(p.changedAt) };
+  return { id: p.id, productId: p.productId, oldPrice: toNumOrZero(p.oldPrice), newPrice: toNumOrZero(p.newPrice), changedAt: toISO(p.changedAt) };
 }
 
 function mapBundle(b: PBundle & { items: PBundleItem[] }): DbBundle {
   return {
-    id: b.id, name: b.name, description: b.description, price: b.price,
+    id: b.id, name: b.name, description: b.description, price: toNumOrZero(b.price),
     image: b.image, active: b.active, createdAt: toISO(b.createdAt),
     items: b.items.map(i => ({ id: i.id, productId: i.productId, quantity: i.quantity })),
   };

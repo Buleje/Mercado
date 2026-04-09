@@ -4,8 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 
-export const dynamic = "force-dynamic";
-
 // Rate limit: 1 demo por IP cada 30 minutos
 const demoLimiter = createRateLimiter({ maxRequests: 1, windowMs: 30 * 60 * 1000 });
 

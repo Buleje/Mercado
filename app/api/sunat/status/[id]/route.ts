@@ -14,8 +14,6 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { getInvoiceStatus } from "@/lib/sunat/nubefact-client";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },

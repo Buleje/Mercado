@@ -5,8 +5,6 @@ import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 import { is2FAEnabled, create2FAChallenge, verify2FACode } from "@/lib/superadmin-2fa";
 
-export const dynamic = "force-dynamic";
-
 function cookieOpts(maxAge: number) {
   return {
     httpOnly: true,

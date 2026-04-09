@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
 import { ReviewsDB } from "@/lib/jsondb";
 import { getOrSet } from "@/lib/cache";

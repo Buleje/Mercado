@@ -12,8 +12,6 @@
  * Sunset date: to be announced 6 months before removal.
  */
 
-export const dynamic = "force-dynamic";
-
 import type { NextRequest } from "next/server";
 import {
   GET as V1_GET,

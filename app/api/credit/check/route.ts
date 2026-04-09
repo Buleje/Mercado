@@ -8,8 +8,6 @@ import { updateCreditProfile } from "@/lib/credit/scoring-engine";
 import { INTEREST_RATES, ALLOWED_INSTALLMENTS } from "@/lib/credit/installment-manager";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 // ── Schema ────────────────────────────────────────────────────────────────────
 
 const CheckSchema = z.object({

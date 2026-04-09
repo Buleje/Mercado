@@ -6,8 +6,6 @@
  *
  * Returns 200 when all checks pass, 503 when any check is degraded.
  */
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { withCircuitBreaker, getCircuitStatus } from "@/lib/circuit-breaker";

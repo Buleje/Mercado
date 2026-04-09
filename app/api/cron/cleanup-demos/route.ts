@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
-
 /**
  * GET /api/cron/cleanup-demos
  *

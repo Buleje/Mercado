@@ -4,8 +4,6 @@ import Link from "next/link";
 import { ShoppingBag, Settings, ExternalLink, MapPin, Phone } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 interface TenantLandingProps {
   params: Promise<{ slug: string }>;
 }

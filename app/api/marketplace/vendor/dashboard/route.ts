@@ -4,8 +4,6 @@ import { OrdersDB } from "@/lib/db/orders.db";
 import { ProductsDB } from "@/lib/db/products.db";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
-
 // ── Helpers de rango de fechas ────────────────────────────────────────────────
 
 function startOfDay(date = new Date()): Date {

@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { chatCompletion, getAIStatus } from "@/lib/ai-config";
 import { requireAdmin } from "@/lib/require-admin";

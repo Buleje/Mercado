@@ -4,8 +4,6 @@ import { timingSafeCompare } from "@/lib/timing-safe";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
-
 /**
  * GET /api/cron/settle-commissions
  *

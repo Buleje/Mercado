@@ -4,8 +4,6 @@ import { prismaForTenant } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { getPlanDef, getPlanLimits } from "@/lib/plans";
 
-export const dynamic = "force-dynamic";
-
 // GET /api/plan — returns current tenant plan + usage stats
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);

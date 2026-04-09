@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { toErrorPayload } from "@/lib/api-error";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(req: NextRequest) {
   const limited = applyRateLimit(req, "GENEROUS", "stock-check");
   if (limited) return limited;

@@ -2,8 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPushToPhone } from "@/lib/push-sender";
 
-export const dynamic = "force-dynamic";
-
 async function checkAndCreateBirthdayCoupons() {
   const now = new Date();
   const month = now.getMonth() + 1;

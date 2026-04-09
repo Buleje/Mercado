@@ -20,8 +20,6 @@ import { buildBoleta, buildFactura } from "@/lib/sunat/invoice-builder";
 import { calculateIGV } from "@/lib/sunat";
 import { DomainEvents } from "@/lib/domain-events";
 
-export const dynamic = "force-dynamic";
-
 // ── Validación de entrada ─────────────────────────────────────────────────────
 
 const EmitSchema = z.object({

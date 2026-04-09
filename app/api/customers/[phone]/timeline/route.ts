@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { OrdersDB, NotificationLogsDB, ReviewsDB, normalizePhone } from "@/lib/jsondb";
 import { prisma } from "@/lib/prisma";

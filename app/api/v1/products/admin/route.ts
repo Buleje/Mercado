@@ -13,8 +13,6 @@
  * que el caller es admin y recibir el shape completo.
  */
 
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { ProductsDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";

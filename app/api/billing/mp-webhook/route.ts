@@ -9,8 +9,6 @@ import { logger } from "@/lib/logger";
 import { reportCriticalError } from "@/lib/sentry-alerts";
 import { PLAN_ORDER, type PlanId } from "@/lib/plans";
 
-export const dynamic = "force-dynamic";
-
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/mp-webhook
 //

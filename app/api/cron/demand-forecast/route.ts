@@ -13,8 +13,6 @@
  * Vercel cron schedule: "0 5 * * *"
  */
 
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";

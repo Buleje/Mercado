@@ -2,8 +2,6 @@
  * POST /api/agents  — Submit a new task to the orchestrator.
  * GET  /api/agents  — List recent tasks with optional filters.
  */
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { newTraceId, toErrorPayload } from "@/lib/api-error";

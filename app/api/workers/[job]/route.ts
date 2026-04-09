@@ -15,8 +15,6 @@
  *         → fallo:  queue.retry(envelope)  →  re-fetch con attempt+1
  */
 
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyWorkerSecret, JobEnvelopeSchema, type JobType } from "@/lib/queue";

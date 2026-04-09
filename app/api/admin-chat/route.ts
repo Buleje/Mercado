@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
 import { AdminChatDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
