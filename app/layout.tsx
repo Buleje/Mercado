@@ -11,7 +11,7 @@ import "./globals.css";
 import SchemaMarkup from "@/components/SchemaMarkup";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import InstallPrompt from "@/components/InstallPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -128,34 +128,44 @@ export const viewport: Viewport = {
   maximumScale: 5,
 };
 
-// Cache review stats for 5 min — avoids a DB round-trip on every SSR request
-const getCachedReviewStats = unstable_cache(
-  async () => {
-    try {
-      const agg = await prisma.review.aggregate({ _avg: { rating: true }, _count: { rating: true } });
-      if (agg._count.rating > 0) {
-        return {
-          ratingValue: (agg._avg.rating ?? 4.9).toFixed(1),
-          ratingCount: String(agg._count.rating),
-        };
-      }
-    } catch { /* use defaults */ }
-    return { ratingValue: undefined, ratingCount: undefined };
-  },
-  ["review-stats"],
-  { revalidate: 300 }
-);
+// Cache review stats con la directiva `'use cache'` de Next.js 16.
+// Reemplaza al `unstable_cache` deprecado. Usa cacheTag para invalidación
+// quirúrgica desde el endpoint de moderación de reviews.
+//
+// Invalidación: cuando se aprueba una nueva review, llamar al API de dos
+// args de Next.js 16 con un perfil de cacheLife: `revalidateTag("review-stats", "max")`
+// (la forma de un solo argumento quedó deprecada en Next 16).
+//
+// cacheLife("hours") = stale después de 1h, revalidación background,
+// expiración dura 24h. Las reviews no cambian con frecuencia — 1h es seguro.
+async function getCachedReviewStats() {
+  "use cache";
+  cacheTag("review-stats");
+  cacheLife("hours");
+  try {
+    const agg = await prisma.review.aggregate({ _avg: { rating: true }, _count: { rating: true } });
+    if (agg._count.rating > 0) {
+      return {
+        ratingValue: (agg._avg.rating ?? 4.9).toFixed(1),
+        ratingCount: String(agg._count.rating),
+      };
+    }
+  } catch { /* use defaults */ }
+  return { ratingValue: undefined, ratingCount: undefined };
+}
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Run headers() and DB query in parallel — shaves 100-500ms off TTFB
-  const [reqHeaders, { ratingValue, ratingCount }] = await Promise.all([
-    headers(),
-    getCachedReviewStats(),
-  ]);
+  // Correr DB query en paralelo con headers — shaves 100-500ms off TTFB.
+  // Arrancamos statsPromise primero (DB call, lento) y después await headers()
+  // (fast, solo lee el request context). Cuando statsPromise resuelva ya el
+  // headers fue procesado → paralelismo real con awaits explícitos Next.js 16.
+  const statsPromise = getCachedReviewStats();
+  const reqHeaders = await headers();
+  const { ratingValue, ratingCount } = await statsPromise;
   const requestId = reqHeaders.get("x-request-id") ?? undefined;
   // Per-request nonce for CSP — matches what middleware set in x-nonce
   const nonce = reqHeaders.get("x-nonce") ?? undefined;

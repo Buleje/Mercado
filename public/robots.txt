@@ -1,9 +1,0 @@
-# *
-User-agent: *
-Allow: /
-
-# Host
-Host: https://www.bodegasanmartin.pe
-
-# Sitemaps
-Sitemap: https://www.bodegasanmartin.pe/sitemap.xml

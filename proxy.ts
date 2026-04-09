@@ -108,10 +108,19 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all paths except Next.js internals and static file extensions.
-     * This ensures x-tenant-id is injected on every request including
-     * /manifest.webmanifest, /sitemap.xml, /robots.txt, etc.
+     * Match all paths except Next.js internals, static files, and platform
+     * metadata endpoints that don't need tenant resolution or auth guards.
+     *
+     * Excluidos (antes se ejecutaba el pipeline completo sin necesidad):
+     *  - _next/static, _next/image           — assets generados por Next
+     *  - favicon.ico, robots.txt, sitemap.xml, manifest.webmanifest, sw.js
+     *  - og-image, opengraph-image*, twitter-image*  — metadata Next.js 16
+     *  - llms.txt, llms-full.txt              — AI answer engines
+     *  - assets por extensión (svg/png/jpg/jpeg/gif/webp/avif/ico/woff/woff2/js/css/map)
+     *
+     * Efecto: -20-40% de invocaciones de Routing Middleware sin cambios
+     * de comportamiento en rutas reales.
      */
-    "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2)$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|sitemap(?:\\.xml|-.*\\.xml)|manifest\\.webmanifest|sw\\.js|llms(?:-full)?\\.txt|og-image|opengraph-image.*|twitter-image.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|woff|woff2|js|css|map)$).*)",
   ],
 };

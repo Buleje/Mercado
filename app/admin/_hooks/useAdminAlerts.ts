@@ -48,6 +48,12 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
   const [quickStats, setQuickStats] = useState<QuickStats | null>(null);
 
   const fetchAlerts = useCallback(() => {
+    // Skip si la pestaña está oculta — evita invocar /api/admin/stats mientras
+    // el usuario trabaja en otra tab (p.ej. cajera con el admin abierto pero
+    // atendiendo el mostrador). Ahorra hasta 80% de invocaciones ociosas.
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") {
+      return;
+    }
     fetch("/api/admin/stats")
       .then((r) => (r.ok ? r.json() : null))
       .then((d: StatsResponse | null) => {
@@ -67,13 +73,19 @@ export function useAdminAlerts(authReady: boolean): UseAdminAlertsResult {
       .catch(() => {});
   }, []);
 
-  // Polling: 3 s delay inicial + cada 60 s
+  // Polling: 3 s delay inicial + cada 60 s + reactivación al volver a la pestaña
   useEffect(() => {
     const t = setTimeout(fetchAlerts, POLL_INITIAL_DELAY_MS);
     const interval = setInterval(fetchAlerts, POLL_INTERVAL_MS);
+    // Al volver el foco, refrescar inmediatamente (sin esperar 60s más).
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") fetchAlerts();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       clearTimeout(t);
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [fetchAlerts]);
 

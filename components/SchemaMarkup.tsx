@@ -1,4 +1,11 @@
 export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue?: string; ratingCount?: string } = {}) {
+  // Solo incluir aggregateRating si hay reviews reales — nunca fallback a números fake.
+  // Structured data con rating falso = riesgo de penalización manual de Google.
+  const hasRealRating =
+    typeof ratingCount === "string" &&
+    ratingCount.length > 0 &&
+    Number.parseInt(ratingCount, 10) > 0;
+
   const localBusinessSchema = {
     "@context": "https://schema.org",
     "@type": "GroceryStore",
@@ -62,13 +69,18 @@ export default function SchemaMarkup({ ratingValue, ratingCount }: { ratingValue
       "https://www.facebook.com/buleje",
       "https://www.instagram.com/buleje",
     ],
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: ratingValue || "4.9",
-      bestRating: "5",
-      worstRating: "1",
-      ratingCount: ratingCount || "328",
-    },
+    // aggregateRating solo si hay reviews reales (> 0). Sin fallback fake.
+    ...(hasRealRating
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: ratingValue || "4.9",
+            bestRating: "5",
+            worstRating: "1",
+            ratingCount,
+          },
+        }
+      : {}),
     review: [
       {
         "@type": "Review",

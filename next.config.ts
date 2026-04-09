@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
   // Cualquier PR con error TS hace fallar el build en CI. Ver docs/adr/008-typescript-strict-gate.md.
   typescript: { ignoreBuildErrors: false },
 
+  // ── Cache Components (Next.js 16) ─────────────────────────────────────────
+  // Habilita Partial Prerendering (PPR) + directiva `'use cache'` + cacheLife +
+  // cacheTag + updateTag/revalidateTag. Reemplaza al viejo `experimental.ppr`.
+  // Impacto esperado: -60-80% invocaciones Vercel en rutas públicas cacheables
+  // + LCP -200-500ms por servir el shell HTML desde CDN.
+  // Activado 2026-04-08 como parte del Plan Maestro Sprint 1 (quick win Q5).
+  cacheComponents: true,
+
   // Allow cross-origin dev requests from Cloudflare Tunnel / ngrok
   allowedDevOrigins: ["*.trycloudflare.com", "*.ngrok-free.app", "*.ngrok.io"],
 
