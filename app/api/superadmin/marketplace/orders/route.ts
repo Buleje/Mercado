@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 // GET /api/superadmin/marketplace/orders
 // Returns all marketplace orders across all tenants
 export async function GET(req: NextRequest) {

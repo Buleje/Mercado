@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { ProductAnalyticsDB } from "@/lib/db/product-analytics.db";
 import { checkEdgeRateLimit } from "@/lib/middleware-utils";

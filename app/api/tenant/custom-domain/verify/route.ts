@@ -4,8 +4,6 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import dns from "dns/promises";
 
-export const dynamic = "force-dynamic";
-
 /**
  * GET /api/tenant/custom-domain/verify
  *

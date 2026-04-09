@@ -5,8 +5,6 @@ import { getMPSubscriptionStatus } from "@/lib/mercadopago";
 import { getPlanDef } from "@/lib/plans";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
-
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/billing/mp-subscription-status
 //

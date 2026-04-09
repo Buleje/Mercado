@@ -4,8 +4,6 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
-export const dynamic = "force-dynamic";
-
 // GET /api/superadmin/stores
 export async function GET(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;

@@ -5,8 +5,6 @@ import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { createSessionToken, SESSION } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 const ImpersonateSchema = z.object({
   slug: z.string().min(1).max(64),
 });

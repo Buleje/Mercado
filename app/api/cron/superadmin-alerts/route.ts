@@ -4,8 +4,6 @@ import { sendSuperAdminAlert } from "@/lib/mailer-superadmin";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
 
-export const dynamic = "force-dynamic";
-
 const CRON_SECRET = process.env.CRON_SECRET;
 
 /**

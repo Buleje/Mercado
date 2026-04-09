@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import nodemailer from "nodemailer";
 
-export const dynamic = "force-dynamic";
-
 const CartItemSchema = z.object({
   name: z.string().min(1).max(200),
   price: z.number().min(0),

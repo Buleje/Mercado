@@ -5,8 +5,6 @@
  * Returns agent registry status, active task count, and circuit breaker states.
  * No authentication required — intended for monitoring and load balancers.
  */
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
 import { logger } from "@/lib/logger";
 import {

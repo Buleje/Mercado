@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { applyRateLimit } from "@/lib/rate-limit";
 
-export const dynamic = "force-dynamic";
-
 const schema = z.object({
   email: z.string().email("Email inválido").max(255),
 });

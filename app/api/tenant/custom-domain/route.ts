@@ -5,8 +5,6 @@ import { prisma } from "@/lib/prisma";
 import { getPlanLimits } from "@/lib/plans";
 import { invalidateCustomDomainCache } from "@/lib/resolve-tenant";
 
-export const dynamic = "force-dynamic";
-
 /** Validate a custom domain string (basic format check). */
 function isValidDomain(d: string): boolean {
   // Must look like: domain.tld or sub.domain.tld — no scheme, no path, no port

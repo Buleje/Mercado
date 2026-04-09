@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { readData, writeData } from "@/lib/file-store";
 
-export const dynamic = "force-dynamic";
-
 const KEY = "tasks";
 
 interface Task {

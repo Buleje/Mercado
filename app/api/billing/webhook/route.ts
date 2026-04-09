@@ -5,8 +5,6 @@ import type Stripe from "stripe";
 import { logger } from "@/lib/logger";
 import { enqueueWebhookEvent } from "@/lib/stripe-webhook-queue";
 
-export const dynamic = "force-dynamic";
-
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/billing/webhook
 //

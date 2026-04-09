@@ -10,6 +10,7 @@ import {
   type DbPayment,
   type PaymentMethod,
 } from "./misc.db";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -35,11 +36,11 @@ function mapPayable(p: PPayable & { payments: PPayment[] }): DbPayable {
   return {
     id: p.id, supplierId: p.supplierId, supplierName: p.supplierName,
     ...(p.purchaseOrderId != null && { purchaseOrderId: p.purchaseOrderId }),
-    description: p.description, amount: p.amount, paidAmount: p.paidAmount,
+    description: p.description, amount: toNumOrZero(p.amount), paidAmount: toNumOrZero(p.paidAmount),
     status: p.status as DbPayable["status"],
     dueDate: toISO(p.dueDate),
     payments: p.payments.map((pm: PPayment) => ({
-      id: pm.id, amount: pm.amount, method: pm.method as PaymentMethod,
+      id: pm.id, amount: toNumOrZero(pm.amount), method: pm.method as PaymentMethod,
       date: toISO(pm.date),
       ...(pm.reference != null && { reference: pm.reference }),
     })),
@@ -48,7 +49,7 @@ function mapPayable(p: PPayable & { payments: PPayment[] }): DbPayable {
 }
 
 function mapExpense(e: PExpense): DbExpense {
-  return { id: e.id, category: e.category, description: e.description, amount: e.amount, date: toISO(e.date), recurring: e.recurring, createdAt: toISO(e.createdAt) };
+  return { id: e.id, category: e.category, description: e.description, amount: toNumOrZero(e.amount), date: toISO(e.date), recurring: e.recurring, createdAt: toISO(e.createdAt) };
 }
 
 // ── Payables DB ───────────────────────────────────────────────────────────────

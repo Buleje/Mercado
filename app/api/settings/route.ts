@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from "next/server";
 import { SettingsDB, type DbSettings } from "@/lib/jsondb";
 import { enqueueActivityLog } from "@/lib/queue";

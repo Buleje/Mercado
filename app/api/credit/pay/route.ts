@@ -8,8 +8,6 @@ import { processPayment } from "@/lib/credit/installment-manager";
 import { updateCreditProfile } from "@/lib/credit/scoring-engine";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 // ── Schema ────────────────────────────────────────────────────────────────────
 
 const PaySchema = z.object({

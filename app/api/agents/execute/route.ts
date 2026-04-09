@@ -8,8 +8,6 @@
  * Timeout: 30 seconds — if the task does not complete in time,
  * returns the task in its current state with a timeout flag.
  */
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { newTraceId, toErrorPayload } from "@/lib/api-error";

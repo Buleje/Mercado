@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { processMessage } from "@/lib/whatsapp/conversation-engine";
 
-export const dynamic = "force-dynamic";
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface MetaTextMessage {

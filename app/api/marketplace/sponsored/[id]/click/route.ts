@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { SponsoredBoostsDB } from "@/lib/db/sponsored-boosts.db";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";

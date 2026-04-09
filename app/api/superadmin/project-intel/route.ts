@@ -17,7 +17,6 @@
  * Cache: `revalidate: 300` (5 minutos). No es data time-sensitive.
  */
 
-export const dynamic = "force-dynamic";
 export const revalidate = 300;
 
 import { NextResponse, type NextRequest } from "next/server";

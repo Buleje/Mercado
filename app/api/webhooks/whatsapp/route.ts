@@ -11,8 +11,6 @@ import {
 } from "@/lib/whatsapp-bot";
 import { generateAIResponse } from "@/lib/whatsapp-ai";
 
-export const dynamic = "force-dynamic";
-
 /* ─────────────────────────── helpers ─────────────────────────── */
 
 interface WhatsAppMessage {

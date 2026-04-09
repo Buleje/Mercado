@@ -8,8 +8,6 @@ import { getTenantUsage } from "@/lib/usage";
 import { getPlanLimits } from "@/lib/plans";
 import { logActivity } from "@/lib/activity-logger";
 
-export const dynamic = "force-dynamic";
-
 async function requirePlatform(req: NextRequest) {
   const token = req.cookies.get(PLATFORM_SESSION.COOKIE_NAME)?.value;
   if (!token) return null;

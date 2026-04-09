@@ -17,8 +17,6 @@ import { logActivity } from "@/lib/activity-logger";
 import { voidInvoice } from "@/lib/sunat/nubefact-client";
 import { buildBaja } from "@/lib/sunat/invoice-builder";
 
-export const dynamic = "force-dynamic";
-
 // ── Validación ────────────────────────────────────────────────────────────────
 
 const VoidSchema = z.object({

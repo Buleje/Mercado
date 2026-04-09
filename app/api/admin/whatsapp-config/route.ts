@@ -6,8 +6,6 @@ import { z } from "zod";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 
-export const dynamic = "force-dynamic";
-
 // ─── Zod Schema ───────────────────────────────────────────────────────────────
 
 const WhatsAppConfigSchema = z.object({

@@ -13,6 +13,7 @@ import {
   type OrderStatus,
   normalizePhone,
 } from "./misc.db";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { DomainEvents } from "@/lib/domain-events";
 import { notifyOwnerNewOrder } from "@/lib/whatsapp-order-notify";
 import { findTenantByIdOrSlug } from "@/lib/tenant";
@@ -68,18 +69,18 @@ function mapOrder(o: POrder & { items: POrderItem[] }): DbOrder {
       location: o.customerLocation,
       reference: o.customerReference,
     },
-    items: o.items.map((i: POrderItem) => ({ id: i.productId ?? 0, name: i.name, price: i.price, ...(i.costPrice != null && { costPrice: i.costPrice }), quantity: i.quantity, unit: i.unit, image: i.image })),
-    total: o.total,
-    ...(o.totalCogs != null && { totalCogs: o.totalCogs }),
+    items: o.items.map((i: POrderItem) => ({ id: i.productId ?? 0, name: i.name, price: toNumOrZero(i.price), ...(i.costPrice != null && { costPrice: toNumOrZero(i.costPrice) }), quantity: i.quantity, unit: i.unit, image: i.image })),
+    total: toNumOrZero(o.total),
+    ...(o.totalCogs != null && { totalCogs: toNumOrZero(o.totalCogs) }),
     status: o.status as OrderStatus,
     ...(o.notes != null && { notes: o.notes }),
     ...(o.paymentMethod != null && { paymentMethod: o.paymentMethod as "yape" | "efectivo" }),
     ...(o.yapeOperationNumber != null && { yapeOperationNumber: o.yapeOperationNumber }),
     ...(o.deuda != null && { deuda: o.deuda }),
     ...(o.appliedCouponCode != null && { appliedCouponCode: o.appliedCouponCode }),
-    ...(o.couponDiscount != null && { couponDiscount: o.couponDiscount }),
+    ...(o.couponDiscount != null && { couponDiscount: toNumOrZero(o.couponDiscount) }),
     ...(o.appliedPromoId != null && { appliedPromoId: o.appliedPromoId }),
-    ...(o.discountAmount != null && { discountAmount: o.discountAmount }),
+    ...(o.discountAmount != null && { discountAmount: toNumOrZero(o.discountAmount) }),
     ...((o as Record<string, unknown>).idempotencyKey != null && { idempotencyKey: (o as Record<string, unknown>).idempotencyKey as string }),
     ...((o as Record<string, unknown>).riderName != null && { riderName: (o as Record<string, unknown>).riderName as string }),
     ...((o as Record<string, unknown>).deletedAt != null && { deletedAt: toISO((o as Record<string, unknown>).deletedAt as Date) }),
@@ -101,11 +102,11 @@ function mapReturn(r: PReturn & { items: PReturnItem[] }): DbReturn {
     id: r.id,
     ...(r.saleId != null && { saleId: r.saleId }),
     ...(r.orderId != null && { orderId: r.orderId }),
-    reason: r.reason, total: r.total,
+    reason: r.reason, total: toNumOrZero(r.total),
     ...(r.photoUrl != null && { photoUrl: r.photoUrl }),
     ...(r.customerPhone != null && { customerPhone: r.customerPhone }),
     creditApplied: r.creditApplied ?? false,
-    items: r.items.map((i: PReturnItem) => ({ id: i.id, productId: i.productId, name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })),
+    items: r.items.map((i: PReturnItem) => ({ id: i.id, productId: i.productId, name: i.name, quantity: i.quantity, price: toNumOrZero(i.price), unit: i.unit })),
     createdAt: toISO(r.createdAt),
   };
 }
@@ -346,12 +347,12 @@ export const OrdersDB = {
               aiNotesDate:     c.aiNotesDate ? toISO(c.aiNotesDate) : undefined,
               loyaltyPoints:   c.loyaltyPoints,
               loyaltyTier:     c.loyaltyTier,
-              totalSpent:      c.totalSpent,
+              totalSpent:      toNumOrZero(c.totalSpent),
               privateNotes:    c.privateNotes ?? undefined,
               referralCode:    c.referralCode ?? undefined,
               referredBy:      c.referredBy ?? undefined,
-              creditBalance:   c.creditBalance,
-              creditLimit:     c.creditLimit,
+              creditBalance:   toNumOrZero(c.creditBalance),
+              creditLimit:     toNumOrZero(c.creditLimit),
               tags:            c.tags ?? null,
               lat:             c.lat ?? undefined,
               lng:             c.lng ?? undefined,
@@ -408,7 +409,7 @@ export const OrdersDB = {
       },
       _sum: { total: true },
     });
-    return result._sum.total ?? 0;
+    return toNumOrZero(result._sum.total);
   },
 
   /**
@@ -489,7 +490,7 @@ export const OrdersDB = {
 
       results.push({
         date: day.toISOString().split("T")[0],
-        total: agg._sum.total ?? 0,
+        total: toNumOrZero(agg._sum.total),
       });
     }
 

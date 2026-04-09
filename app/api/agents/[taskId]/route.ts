@@ -2,8 +2,6 @@
  * GET   /api/agents/:taskId — Get task status and details.
  * PATCH /api/agents/:taskId — Cancel a running/pending task.
  */
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { newTraceId, toErrorPayload, NotFoundError } from "@/lib/api-error";
 import { logger } from "@/lib/logger";

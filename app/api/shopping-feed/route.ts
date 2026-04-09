@@ -4,8 +4,6 @@ import type { PrismaClient } from "@/lib/generated/prisma/client";
 import { logger } from "@/lib/logger";
 import { newTraceId, toErrorPayload } from "@/lib/api-error";
 
-export const dynamic = "force-dynamic";
-
 const BASE_URL = "https://www.buleje.pe";
 const STORE_NAME = "Buleje";
 

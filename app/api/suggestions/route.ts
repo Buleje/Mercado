@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB, OrdersDB, CustomersDB } from "@/lib/jsondb";
 
-export const dynamic = "force-dynamic";
-
 type SuggestionType = "alerta" | "oportunidad" | "optimizacion" | "accion";
 interface Suggestion {
   id: string;

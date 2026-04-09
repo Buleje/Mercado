@@ -14,8 +14,6 @@
  * Autorización: Bearer <CRON_SECRET>
  */
 
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";

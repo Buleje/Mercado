@@ -4,8 +4,6 @@ import { readData, writeData } from "@/lib/file-store";
 import { randomUUID } from "crypto";
 import { toErrorPayload } from "@/lib/api-error";
 
-export const dynamic = "force-dynamic";
-
 const GOALS_KEY = "goals";
 
 interface Goal {

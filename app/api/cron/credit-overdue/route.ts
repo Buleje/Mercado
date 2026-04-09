@@ -4,8 +4,6 @@ import { logger } from "@/lib/logger";
 import { checkOverdue } from "@/lib/credit/installment-manager";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 // ── GET /api/cron/credit-overdue ──────────────────────────────────────────────
 // Cron diario. Protegido por CRON_SECRET (Vercel Cron Jobs).
 // Configura en vercel.json:

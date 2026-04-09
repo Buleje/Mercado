@@ -8,8 +8,6 @@ import {
 } from "@/lib/stripe";
 import type { PlanId } from "@/lib/plans";
 
-export const dynamic = "force-dynamic";
-
 // POST /api/billing/checkout
 // Body: { plan: "pro" | "business" }
 // Creates a Stripe Checkout Session and returns { url }

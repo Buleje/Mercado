@@ -9,6 +9,7 @@ import type {
 } from "@/lib/generated/prisma/client";
 import type { DbCustomer, DbReview } from "./misc.db";
 import { normalizePhone } from "./misc.db";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -44,12 +45,12 @@ function mapCustomer(c: PCustomer & { locations: PSavedLocation[] }): DbCustomer
     aiNotesDate: c.aiNotesDate ? toISO(c.aiNotesDate) : undefined,
     loyaltyPoints: c.loyaltyPoints,
     loyaltyTier: c.loyaltyTier,
-    totalSpent: c.totalSpent,
+    totalSpent: toNumOrZero(c.totalSpent),
     privateNotes: c.privateNotes ?? undefined,
     referralCode: c.referralCode ?? undefined,
     referredBy: c.referredBy ?? undefined,
-    creditBalance: c.creditBalance,
-    creditLimit: c.creditLimit,
+    creditBalance: toNumOrZero(c.creditBalance),
+    creditLimit: toNumOrZero(c.creditLimit),
     tags: c.tags ?? null,
     lat: c.lat ?? undefined,
     lng: c.lng ?? undefined,
@@ -190,7 +191,7 @@ export const CustomersDB = {
       where: { phone: normalizePhone(phone) },
       data: { creditBalance: { increment: delta } },
     });
-    return c.creditBalance;
+    return toNumOrZero(c.creditBalance);
   },
   /** Generate a unique referral code for a customer if they don't have one */
   async ensureReferralCode(phone: string): Promise<string> {
@@ -233,7 +234,7 @@ export const LoyaltyDB = {
     const normalized = normalizePhone(phone);
     const c = await prisma.customer.findUnique({ where: { phone: normalized } });
     if (!c) return null;
-    const newTotal = c.totalSpent + amount;
+    const newTotal = toNumOrZero(c.totalSpent) + amount;
     const newPoints = c.loyaltyPoints + computePoints(amount);
     const newTier = computeTier(newTotal);
     await prisma.customer.update({

@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { requirePlatformAPI } from "@/lib/superadmin-auth";
 import { prisma } from "@/lib/prisma";

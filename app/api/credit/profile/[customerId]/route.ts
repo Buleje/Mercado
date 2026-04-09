@@ -7,8 +7,6 @@ import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { updateCreditProfile } from "@/lib/credit/scoring-engine";
 
-export const dynamic = "force-dynamic";
-
 // ── Schemas ───────────────────────────────────────────────────────────────────
 
 const PutSchema = z.object({

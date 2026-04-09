@@ -6,8 +6,6 @@ import { CustomersDB } from "@/lib/db/customers.db";
 import { requireAdmin } from "@/lib/require-admin";
 import type { DailyReport } from "@/lib/daily-report";
 
-export const dynamic = "force-dynamic";
-
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request, ["admin", "cajero"]);
   if (auth instanceof NextResponse) return auth;

@@ -5,8 +5,6 @@ import { createApiKey, revokeApiKey, listApiKeys } from "@/lib/api-keys";
 import { verifySessionToken, SESSION } from "@/lib/session";
 import { getPlanLimits } from "@/lib/plans";
 
-export const dynamic = "force-dynamic";
-
 // ─── Auth helper ──────────────────────────────────────────────────────────────
 
 async function requireAdmin(req: NextRequest): Promise<boolean> {

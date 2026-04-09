@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic'
 import { NextResponse } from "next/server";
 
 // Search Open Food Facts by product name (national product database)

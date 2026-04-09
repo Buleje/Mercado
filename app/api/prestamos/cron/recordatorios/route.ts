@@ -1,4 +1,3 @@
-export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { PrestamosDB } from "@/lib/db/prestamos.db";
 import { logger } from "@/lib/logger";

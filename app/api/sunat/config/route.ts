@@ -14,8 +14,6 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 
-export const dynamic = "force-dynamic";
-
 // ── Validación PUT ────────────────────────────────────────────────────────────
 
 const ConfigPutSchema = z.object({

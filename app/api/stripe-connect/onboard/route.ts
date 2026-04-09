@@ -5,8 +5,6 @@
  * retorna la URL de onboarding para redirigir al comerciante.
  */
 
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod/v4";

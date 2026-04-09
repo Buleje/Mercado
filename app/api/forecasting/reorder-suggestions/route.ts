@@ -7,8 +7,6 @@
  * Roles permitidos: admin, almacenero
  */
 
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { generateReorderSuggestions } from "@/lib/forecasting/auto-reorder";

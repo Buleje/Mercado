@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
-
 /**
  * GET /api/superadmin/notifications — Últimas actividades relevantes para el superadmin
  * Retorna las últimas entradas del activity log que son relevantes a nivel de plataforma

@@ -3,8 +3,6 @@ import { z } from "zod";
 import { AI_TEMPERATURES } from "@/lib/ai-temperatures";
 import { safeParseJSON } from "@/lib/ai-json-parser";
 
-export const dynamic = "force-dynamic";
-
 const RequestSchema = z.object({
   image: z.string().min(100, "Imagen requerida"),
 });

@@ -9,6 +9,7 @@ import type {
 import {
   type DbSale,
 } from "./misc.db";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
@@ -49,9 +50,9 @@ function toISO(d: Date): string {
 function mapSale(s: PSale & { items: PSaleItem[] }): DbSale {
   return {
     id: s.id,
-    items: s.items.map((i: PSaleItem) => ({ productId: i.productId, name: i.name, price: i.price, ...(i.costPrice != null && { costPrice: i.costPrice }), quantity: i.quantity, unit: i.unit })),
-    total: s.total, ...(s.totalCogs != null && { totalCogs: s.totalCogs }), payment: s.payment as DbSale["payment"],
-    amountPaid: s.amountPaid, change: s.change,
+    items: s.items.map((i: PSaleItem) => ({ productId: i.productId, name: i.name, price: toNumOrZero(i.price), ...(i.costPrice != null && { costPrice: toNumOrZero(i.costPrice) }), quantity: i.quantity, unit: i.unit })),
+    total: toNumOrZero(s.total), ...(s.totalCogs != null && { totalCogs: toNumOrZero(s.totalCogs) }), payment: s.payment as DbSale["payment"],
+    amountPaid: toNumOrZero(s.amountPaid), change: toNumOrZero(s.change),
     ...(s.customerPhone != null && { customerPhone: s.customerPhone }),
     ...(s.cashierId != null && { cashierId: s.cashierId }),
     createdAt: toISO(s.createdAt),
@@ -68,7 +69,7 @@ function mapSale(s: PSale & { items: PSaleItem[] }): DbSale {
 function mapCashMovement(m: PCashMovement): DbCashMovement {
   return {
     id: m.id, cashRegisterId: m.cashRegisterId, type: m.type,
-    amount: m.amount, method: m.method, description: m.description,
+    amount: toNumOrZero(m.amount), method: m.method, description: m.description,
     ...(m.saleId != null && { saleId: m.saleId }),
     createdAt: toISO(m.createdAt),
   };
@@ -78,10 +79,10 @@ function mapCashRegister(r: PCashRegister & { movements: PCashMovement[] }): DbC
   return {
     id: r.id, openedAt: toISO(r.openedAt),
     ...(r.closedAt != null && { closedAt: toISO(r.closedAt) }),
-    openingAmount: r.openingAmount,
-    ...(r.closingAmount != null && { closingAmount: r.closingAmount }),
-    ...(r.expectedAmount != null && { expectedAmount: r.expectedAmount }),
-    ...(r.difference != null && { difference: r.difference }),
+    openingAmount: toNumOrZero(r.openingAmount),
+    ...(r.closingAmount != null && { closingAmount: toNumOrZero(r.closingAmount) }),
+    ...(r.expectedAmount != null && { expectedAmount: toNumOrZero(r.expectedAmount) }),
+    ...(r.difference != null && { difference: toNumOrZero(r.difference) }),
     status: r.status as CashRegisterStatus,
     ...(r.notes != null && { notes: r.notes }),
     movements: r.movements.map(mapCashMovement),
@@ -178,10 +179,10 @@ export const CashRegistersDB = {
     const reg = await prisma.cashRegister.findUnique({ where: { id }, include: { movements: true } });
     if (!reg || reg.closedAt) return null;
 
-    const totalSales = reg.movements.filter(m => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + m.amount, 0);
-    const totalIn = reg.movements.filter(m => m.type === "ingreso").reduce((s, m) => s + m.amount, 0);
-    const totalOut = reg.movements.filter(m => m.type === "egreso").reduce((s, m) => s + m.amount, 0);
-    const expectedAmount = reg.openingAmount + totalSales + totalIn - totalOut;
+    const totalSales = reg.movements.filter(m => m.type === "venta" && m.method === "efectivo").reduce((s, m) => s + toNumOrZero(m.amount), 0);
+    const totalIn = reg.movements.filter(m => m.type === "ingreso").reduce((s, m) => s + toNumOrZero(m.amount), 0);
+    const totalOut = reg.movements.filter(m => m.type === "egreso").reduce((s, m) => s + toNumOrZero(m.amount), 0);
+    const expectedAmount = toNumOrZero(reg.openingAmount) + totalSales + totalIn - totalOut;
     const difference = closingAmount - expectedAmount;
 
     // Optimistic lock: only update if closedAt is still null

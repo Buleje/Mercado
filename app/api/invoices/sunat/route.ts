@@ -7,8 +7,6 @@
  * El registro de cada emisión queda en ActivityLog (action = "sunat_invoice_emitido").
  */
 
-export const dynamic = "force-dynamic";
-
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { z } from "zod/v4";

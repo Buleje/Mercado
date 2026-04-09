@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic'
 import { NextResponse, type NextRequest } from "next/server";
 import webpush from "web-push";
 import { PushSubscriptionsStore } from "@/lib/push-subscriptions";

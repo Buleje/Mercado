@@ -16,8 +16,6 @@ import { enqueueActivityLog } from "@/lib/queue";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
-export const dynamic = "force-dynamic";
-
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
 export type WebhookEvent = "new_order" | "low_stock" | "new_customer" | "payment";

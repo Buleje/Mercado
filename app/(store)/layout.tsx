@@ -18,9 +18,6 @@ import {
   MetaPixel,
 } from "@/components/Analytics";
 
-// force-dynamic: el tenantId viene del header x-tenant-id que varía por request
-export const dynamic = "force-dynamic";
-
 // ── Metadata dinámica desde la DB ─────────────────────────────────────────────
 export async function generateMetadata(): Promise<Metadata> {
   try {

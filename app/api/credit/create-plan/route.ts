@@ -7,8 +7,6 @@ import { logger } from "@/lib/logger";
 import { createInstallmentPlan } from "@/lib/credit/installment-manager";
 import type { AllowedInstallments } from "@/lib/credit/installment-manager";
 
-export const dynamic = "force-dynamic";
-
 // ── Schema ────────────────────────────────────────────────────────────────────
 
 const CreatePlanSchema = z.object({
