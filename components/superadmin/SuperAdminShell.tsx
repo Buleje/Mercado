@@ -25,6 +25,7 @@ import {
   HeartPulse,
   Package,
   Wrench,
+  Map as MapIcon,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -46,6 +47,7 @@ interface SuperAdminShellProps {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard",       icon: <LayoutDashboard className="w-5 h-5 shrink-0" />, href: "/superadmin/dashboard"       },
   { label: "Centro Control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
+  { label: "Roadmap",         icon: <MapIcon         className="w-5 h-5 shrink-0" />, href: "/superadmin/roadmap"         },
   { label: "Proyecto",        icon: <Package         className="w-5 h-5 shrink-0" />, href: "/superadmin/project-intel"   },
   { label: "Tiendas",         icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"         },
   { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"          },
@@ -59,6 +61,7 @@ const NAV_ITEMS: NavItem[] = [
 const PAGE_TITLES: Record<string, string> = {
   "/superadmin/dashboard":       "Dashboard",
   "/superadmin/control-center":  "Centro de Control",
+  "/superadmin/roadmap":         "Roadmap",
   "/superadmin/project-intel":   "Panorama del Proyecto",
   "/superadmin/tenants":         "Tiendas",
   "/superadmin/stores":          "Marketplace",

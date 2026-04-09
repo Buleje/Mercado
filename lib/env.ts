@@ -74,6 +74,13 @@ const REQUIRED: EnvSpec[] = [
 // Redis:
 //   REDIS_URL              — Redis connection URL for distributed cache
 //
+// Upstash Redis (distributed rate limiting — ADR-022):
+//   UPSTASH_REDIS_REST_URL    — REST endpoint from Upstash console
+//   UPSTASH_REDIS_REST_TOKEN  — REST token from Upstash console
+//   If BOTH are missing, lib/rate-limit.ts falls back to per-instance in-memory
+//   rate limiting. In production this is checked by `validateEnv()` below and
+//   logged as a warning (NOT a throw) so existing deploys keep working.
+//
 // Email (SMTP):
 //   SMTP_USER, SMTP_PASS   — Nodemailer credentials
 //
@@ -119,6 +126,21 @@ export function validateEnv(): void {
 
   if (warnings.length > 0) {
     logger.warn("[env] Optional env vars not set (OK for dev)", { warnings });
+  }
+
+  // Soft-check for Upstash Redis rate-limiting (ADR-022). In production,
+  // missing env vars mean distributed rate limiting is disabled — we log
+  // a warning but do NOT throw, so existing deploys on Vercel continue to
+  // boot while the human toggles the Upstash integration.
+  const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (isProd && (!upstashUrl || !upstashToken)) {
+    logger.warn(
+      "[env] Upstash Redis REST env vars missing — rate limiting will fall " +
+        "back to per-instance in-memory (not distributed across Vercel " +
+        "replicas). Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN to " +
+        "close this gap. See docs/adr/022-upstash-rate-limit-distribuido.md.",
+    );
   }
 
   if (missing.length > 0) {

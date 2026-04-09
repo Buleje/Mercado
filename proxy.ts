@@ -71,8 +71,9 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── 5. Rate limit all /api/* in non-dev ────────────────────────────────────
+  // Distributed via Upstash Redis REST (ADR-022, 2026-04-09). Edge-compatible.
   if (pathname.startsWith("/api/") && process.env.NODE_ENV !== "development") {
-    const rlResponse = checkRateLimit(request);
+    const rlResponse = await checkRateLimit(request);
     if (rlResponse) return rlResponse;
   }
 

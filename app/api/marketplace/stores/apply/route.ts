@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod/v4";
-import { prisma } from "@/lib/prisma";
 import { MarketplaceStoresDB } from "@/lib/db/marketplace.db";
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
@@ -42,32 +41,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { ownerName, ownerPhone, ownerEmail: _ownerEmail, storeName, description, category, zone, address: _address } = parsed.data;
+    const { ownerName, ownerPhone, ownerEmail, storeName, description, category, zone, address: _address } = parsed.data;
 
-    // Check duplicate by phone
-    const existingStores = await prisma.store.findMany({
-      where: { zone: { not: null } },
-      select: { id: true, slug: true, tenantId: true },
-    });
-    // Check if this phone already has a store (search by tenantId pattern)
-    const existingByPhone = existingStores.find(
-      (s) => s.tenantId === `store-${ownerPhone.replace(/\D/g, "")}`
-    );
-    if (existingByPhone) {
-      return NextResponse.json(
-        { error: "Ya tienes una solicitud registrada con ese teléfono", storeSlug: existingByPhone.slug },
-        { status: 409 }
-      );
+    // Create Tenant REAL + Store via DB class en una transacción.
+    // ADR-023: el tenantId ya NO es sintético — se crea un row real en Tenant
+    // dentro del mismo $transaction, evitando stores huérfanos y data-leaks.
+    // La dedup por ownerPhone vive en MarketplaceStoresDB.register().
+    let store;
+    try {
+      store = await MarketplaceStoresDB.register({
+        ownerName,
+        ownerPhone,
+        ownerEmail,
+        storeName,
+        description,
+        category,
+        zone,
+      });
+    } catch (dbErr) {
+      const err = dbErr as Error & { code?: string; storeSlug?: string };
+      if (err.code === "MKT_DUPLICATE_PHONE") {
+        return NextResponse.json(
+          { error: err.message, storeSlug: err.storeSlug },
+          { status: 409 }
+        );
+      }
+      throw dbErr;
     }
-
-    // Create store via DB class (unpublished, pending approval)
-    const store = await MarketplaceStoresDB.register({
-      tenantId: `store-${ownerPhone.replace(/\D/g, "")}`,
-      name: storeName,
-      description,
-      category,
-      zone,
-    });
 
     // Notify platform admin (fire-and-forget)
     const adminPhone = process.env.NOTIFY_PHONE;

@@ -8,20 +8,28 @@ Total: **3 toggles** · Tiempo estimado: **30 minutos** · Bloquean: observabili
 
 ## 🟢 Toggle 1 — Upstash Redis (gratis)
 
-**Qué hace:** cache compartido para rate limiting, sesiones, background jobs. Sin esto el rate limiter vive en memoria y se pierde entre deploys.
+**Qué hace:** rate limiting distribuido entre todas las réplicas de Vercel (edge + lambdas). Sin esto el rate limiter vive en un `Map` por proceso, así que 10 réplicas = 10 × 60 req/min reales pese al límite configurado de 60. Ver `docs/adr/022-upstash-rate-limit-distribuido.md`.
+
+**Pre-requisito (una vez):** correr `npm install` después de `git pull` para instalar `@upstash/ratelimit` y `@upstash/redis` (ya están en `package.json`).
 
 **Qué tienes que hacer:**
 
 1. Ir a https://console.upstash.com/ → login con GitHub
 2. Crear base de datos nueva → nombre: `bodega-ratelimit` → región: `us-east-1` (más cercana a Supabase y Vercel) → tier: **Free** (10k commands/día)
-3. Copiar estas 2 variables del dashboard:
+3. En la pestaña **REST API**, copiar estas 2 variables del dashboard:
    - `UPSTASH_REDIS_REST_URL`
    - `UPSTASH_REDIS_REST_TOKEN`
 4. Pegarlas en `.env.local` (dev) y en Vercel → Settings → Environment Variables (prod + preview)
 
-**Validación:** correr `npm run dev` y hacer 11 requests seguidos a `/api/orders` con el mismo token. La 11va debe dar 429. Si sigue dejando pasar = Redis no conectó.
+**Dónde viven los secrets en el código:**
 
-**Rollback:** borrar las 2 vars del `.env.local`. El rate limiter cae al fallback in-memory automáticamente.
+- Se leen desde `lib/rate-limit.ts` → `createDistributedRateLimiter()` → `getRedisClient()`.
+- `lib/middleware-utils.ts#checkRateLimit` es async y las usa en cada request `/api/*`.
+- `lib/env.ts` loggea un warning en producción si faltan (NO throw — fallback sigue vivo).
+
+**Validación:** correr `npm run dev` y hacer 11 requests seguidas a `/api/orders` con el mismo token. La 11ava debe dar 429. Si sigue dejando pasar = Upstash no conectó → revisar logs, deberían decir `"[rate-limit] Upstash Redis env vars missing"` si fallback activo.
+
+**Rollback:** borrar las 2 vars del `.env.local` (y de Vercel si es necesario). El rate limiter cae al fallback in-memory automáticamente con un warning visible en logs (`logger.error` en producción, `logger.warn` en dev).
 
 ---
 

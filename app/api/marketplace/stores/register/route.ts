@@ -43,7 +43,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const store = await MarketplaceStoresDB.register({
+    // ADR-023: el admin autenticado ya tiene un Tenant real (auth.tenantId),
+    // así que usamos registerForExistingTenant() — no creamos un Tenant nuevo.
+    const store = await MarketplaceStoresDB.registerForExistingTenant({
       tenantId:    auth.tenantId,
       name:        parsed.data.name,
       description: parsed.data.description,

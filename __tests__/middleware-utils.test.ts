@@ -23,8 +23,10 @@ import {
   buildCSP,
   rlStore,
   PUBLIC_ADMIN_PATHS,
+  __resetEdgeLimiterForTests,
   type RateLimitEntry,
 } from "@/lib/middleware-utils";
+import { __resetDistributedRateLimitFallback } from "@/lib/rate-limit";
 
 // Helper: crea un NextRequest mínimo con headers opcionales
 function makeReq(url = "http://localhost:3000/", headers: Record<string, string> = {}): NextRequest {
@@ -207,10 +209,16 @@ describe("getIP", () => {
 
 // ── checkRateLimit ────────────────────────────────────────────────────────────
 
-describe("checkRateLimit", () => {
+describe("checkRateLimit (distributed — Upstash fallback path)", () => {
+  // Tests run without UPSTASH_REDIS_REST_URL so the limiter transparently
+  // uses the in-memory fallback from lib/rate-limit.ts. Behavior should be
+  // observationally identical to the pre-ADR-022 implementation for a
+  // single-process test runner.
+
   beforeEach(() => {
-    // Limpiar el store global antes de cada test para aislamiento
     rlStore.clear();
+    __resetEdgeLimiterForTests();
+    __resetDistributedRateLimitFallback();
     vi.useFakeTimers();
   });
 
@@ -218,59 +226,58 @@ describe("checkRateLimit", () => {
     vi.useRealTimers();
   });
 
-  it("primera request de una IP nueva retorna null (permitida)", () => {
+  it("primera request de una IP nueva retorna null (permitida)", async () => {
     const req = makeReq("http://localhost/", { "x-forwarded-for": "10.1.1.1" });
-    expect(checkRateLimit(req)).toBeNull();
+    expect(await checkRateLimit(req)).toBeNull();
   });
 
-  it("request número 60 sigue siendo permitida", () => {
+  it("request número 60 sigue siendo permitida", async () => {
     const req = makeReq("http://localhost/", { "x-forwarded-for": "10.1.1.2" });
-    for (let i = 0; i < 59; i++) checkRateLimit(req);
-    expect(checkRateLimit(req)).toBeNull();
+    for (let i = 0; i < 59; i++) await checkRateLimit(req);
+    expect(await checkRateLimit(req)).toBeNull();
   });
 
-  it("request número 61 retorna NextResponse con status 429", () => {
+  it("request número 61 retorna NextResponse con status 429", async () => {
     const req = makeReq("http://localhost/", { "x-forwarded-for": "10.1.1.3" });
-    for (let i = 0; i < 60; i++) checkRateLimit(req);
-    const result = checkRateLimit(req);
+    for (let i = 0; i < 60; i++) await checkRateLimit(req);
+    const result = await checkRateLimit(req);
     expect(result).not.toBeNull();
     expect(result!.status).toBe(429);
   });
 
-  it("la response 429 incluye el header Retry-After", () => {
+  it("la response 429 incluye el header Retry-After", async () => {
     const req = makeReq("http://localhost/", { "x-forwarded-for": "10.1.1.4" });
-    for (let i = 0; i < 60; i++) checkRateLimit(req);
-    const result = checkRateLimit(req);
+    for (let i = 0; i < 60; i++) await checkRateLimit(req);
+    const result = await checkRateLimit(req);
     const retryAfter = result!.headers.get("Retry-After");
     expect(retryAfter).toBeTruthy();
     expect(Number(retryAfter)).toBeGreaterThan(0);
   });
 
-  it("IPs diferentes no comparten contador", () => {
+  it("IPs diferentes no comparten contador", async () => {
     const reqA = makeReq("http://localhost/", { "x-forwarded-for": "10.2.0.1" });
     const reqB = makeReq("http://localhost/", { "x-forwarded-for": "10.2.0.2" });
-    for (let i = 0; i < 60; i++) checkRateLimit(reqA);
+    for (let i = 0; i < 60; i++) await checkRateLimit(reqA);
     // IP A bloqueada, IP B libre
-    expect(checkRateLimit(reqA)).not.toBeNull();
-    expect(checkRateLimit(reqB)).toBeNull();
+    expect(await checkRateLimit(reqA)).not.toBeNull();
+    expect(await checkRateLimit(reqB)).toBeNull();
   });
 
-  it("después de que la ventana expira permite de nuevo", () => {
+  it("después de que la ventana expira permite de nuevo", async () => {
     const req = makeReq("http://localhost/", { "x-forwarded-for": "10.3.0.1" });
-    for (let i = 0; i < 60; i++) checkRateLimit(req);
-    expect(checkRateLimit(req)).not.toBeNull(); // bloqueada
+    for (let i = 0; i < 60; i++) await checkRateLimit(req);
+    expect(await checkRateLimit(req)).not.toBeNull(); // bloqueada
 
-    // Avanzar más de 60 segundos (ventana de 60_000 ms)
+    // Avanzar más de 60 segundos (ventana de 60_000 ms) — el fallback
+    // detecta el resetAt en el pasado y abre una ventana nueva.
     vi.advanceTimersByTime(60_001);
-    // Limpiar manualmente la entrada expirada para simular el comportamiento del store
-    // checkEdgeRateLimit detecta resetAt en el pasado y resetea la entrada
-    expect(checkRateLimit(req)).toBeNull();
+    expect(await checkRateLimit(req)).toBeNull();
   });
 
   it("el cuerpo de la response 429 contiene mensaje de error en español", async () => {
     const req = makeReq("http://localhost/", { "x-forwarded-for": "10.4.0.1" });
-    for (let i = 0; i < 60; i++) checkRateLimit(req);
-    const result = checkRateLimit(req);
+    for (let i = 0; i < 60; i++) await checkRateLimit(req);
+    const result = await checkRateLimit(req);
     const body = await result!.json();
     expect(body.error).toBeTruthy();
     expect(typeof body.error).toBe("string");

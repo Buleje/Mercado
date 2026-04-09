@@ -3101,3 +3101,37 @@ model SearchSuggestion {
   @@index([tenantId, normalizedQuery])
   @@index([lastSearchedAt])
 }
+
+// ─── Roadmap Item Status (Master Roadmap 2026-04-09) ─────
+// Estado mutable de los 84 items del master roadmap.
+// El contenido vive en lib/roadmap/items.ts (estático en código).
+// Este modelo solo guarda el estado (planned/in_progress/done/blocked/skipped),
+// progreso 0-100, notas y auditoría. Es PLATFORM-LEVEL (sin tenantId).
+model RoadmapItemStatus {
+  id          String    @id @default(cuid())
+  itemId      String    @unique // slug que matchea RoadmapItem.id en lib/roadmap/items.ts
+  status      String    @default("planned") // "planned" | "in_progress" | "done" | "blocked" | "skipped"
+  progress    Int       @default(0) // 0-100
+  startedAt   DateTime?
+  completedAt DateTime?
+  notes       String? // historial de notas (append-only con timestamps inline)
+  updatedBy   String? // username del superadmin que hizo la última mutación
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@index([updatedAt])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// PlatformSetting — global platform-level key/value store (NO tenantId).
+/// Single source of truth for plan prices, maintenance mode, feature flags, etc.
+/// Referenced by lib/db/platform-settings.db.ts + lib/plans.ts (getPlanPrice).
+/// Fix del bug MRR fake 2026-04-09 — ver docs/research/superadmin-improvements-2026-04-09.md
+/// ─────────────────────────────────────────────────────────────────────────────
+model PlatformSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}

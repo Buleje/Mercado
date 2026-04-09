@@ -102,8 +102,11 @@ export const PLANS: Record<PlanId, PlanDef> = {
     id: "enterprise",
     name: "Enterprise",
     description: "Para cadenas y franquicias con requerimientos avanzados",
-    priceMonthly: 399,
-    priceYearly: 3830, // ~20% discount ($319.17/mo)
+    // Canonical price. Matches lib/superadmin-types.ts:DEFAULT_SETTINGS.priceEnterprise.
+    // NOTE: static default only — runtime consumers must use `getPlanPrice("enterprise")`
+    // which reads from the PlatformSetting("plan-prices") row in DB.
+    priceMonthly: 499,
+    priceYearly: 4790, // ~20% discount (~$399.17/mo)
     color: "amber",
     limits: {
       maxProducts: -1,
@@ -156,4 +159,66 @@ export function planLimitPayload(resource: string, current: number, max: number,
     plan,
     upgrade: true,
   };
+}
+
+// ─── Single source of truth para precios de planes ────────────────────────────
+// Fix del bug MRR fake 2026-04-09 — antes había 3 lugares desincronizados:
+//   · lib/superadmin-types.ts:DEFAULT_SETTINGS (499)
+//   · app/api/superadmin/analytics/route.ts PLAN_PRICES (399) ← estaba mal
+//   · lib/plans.ts PLANS.enterprise.priceMonthly (399)        ← estaba mal
+//
+// Ahora TODOS leen desde aquí, y este helper intenta primero PlatformSetting
+// en la DB (key="plan-prices") y cae a DEFAULT_PLAN_PRICES si no hay override.
+
+/** Defaults canónicos — si no hay override en DB, se usan estos. */
+export const DEFAULT_PLAN_PRICES: Record<PlanId, number> = {
+  free: 0,
+  pro: 49,
+  business: 149,
+  enterprise: 499,
+};
+
+/**
+ * Single source of truth para el precio de UN plan específico.
+ * Lee `PlatformSetting("plan-prices")` con cache 5min, fallback a DEFAULT_PLAN_PRICES.
+ *
+ * Server-only: no importar desde Client Components. En client, fetchear vía API.
+ */
+export async function getPlanPrice(plan: PlanId): Promise<number> {
+  const all = await getAllPlanPrices();
+  return all[plan];
+}
+
+/**
+ * Single source of truth para los precios de TODOS los planes.
+ * Lee `PlatformSetting("plan-prices")` con cache 5min, fallback a DEFAULT_PLAN_PRICES.
+ *
+ * Server-only: importa dinámicamente `lib/db/platform-settings.db` para evitar
+ * meter `server-only` en este archivo (que es re-usado en componentes cliente
+ * para la catalog estática de PLANS).
+ */
+export async function getAllPlanPrices(): Promise<Record<PlanId, number>> {
+  try {
+    const { PlatformSettingsDB } = await import("@/lib/db/platform-settings.db");
+    const override = await PlatformSettingsDB.get<Partial<Record<PlanId, number>>>(
+      "plan-prices",
+    );
+    if (!override) return { ...DEFAULT_PLAN_PRICES };
+    return {
+      free: typeof override.free === "number" ? override.free : DEFAULT_PLAN_PRICES.free,
+      pro: typeof override.pro === "number" ? override.pro : DEFAULT_PLAN_PRICES.pro,
+      business:
+        typeof override.business === "number"
+          ? override.business
+          : DEFAULT_PLAN_PRICES.business,
+      enterprise:
+        typeof override.enterprise === "number"
+          ? override.enterprise
+          : DEFAULT_PLAN_PRICES.enterprise,
+    };
+  } catch {
+    // Si la DB class o el modelo no existe aún (migración no corrida),
+    // caemos a defaults sin romper el build.
+    return { ...DEFAULT_PLAN_PRICES };
+  }
 }

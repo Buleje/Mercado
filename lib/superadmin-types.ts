@@ -69,6 +69,15 @@ export interface PlatformSettings {
   maintenanceMode: boolean;
 }
 
+/**
+ * DEFAULT_SETTINGS — fallback UI defaults para el formulario de superadmin.
+ *
+ * ⚠️ NO uses estos valores para cálculos server-side (MRR, billing, Stripe).
+ *     Para leer el precio canónico usa `getAllPlanPrices()` / `getPlanPrice(plan)`
+ *     de `lib/plans.ts`, que lee desde `PlatformSetting("plan-prices")` en DB.
+ *
+ * Fix del bug MRR fake 2026-04-09 — ver docs/research/superadmin-improvements-2026-04-09.md
+ */
 export const DEFAULT_SETTINGS: PlatformSettings = {
   priceFree: 0,
   pricePro: 49,

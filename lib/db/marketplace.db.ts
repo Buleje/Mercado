@@ -68,12 +68,139 @@ function slugify(name: string): string {
 
 // ─── MarketplaceStoresDB ──────────────────────────────────────────────────────
 
+/**
+ * Normaliza un número telefónico dejando solo dígitos.
+ * Usado como dedup-key contra `Tenant.ownerPhone` (que NO es unique en schema,
+ * así que la unicidad se fuerza en application-layer).
+ */
+function normalizePhone(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
 export const MarketplaceStoresDB = {
   /**
    * Registrar una nueva tienda en el marketplace.
-   * El tenantId de la sesión del admin se usa como dueño de la tienda.
+   *
+   * **Fix 2026-04-09 (ADR-023):** antes este método recibía un `tenantId`
+   * sintético como string (`store-${phone}`) que NUNCA existía como row real
+   * en la tabla `Tenant`. Eso rompía el aislamiento multi-tenant, bloqueaba
+   * el login del dueño al admin y dejaba los stores huérfanos.
+   *
+   * Ahora crea un `Tenant` REAL dentro de un `$transaction` y luego crea el
+   * `Store` apuntando a ese `tenant.id` (cuid de verdad).
+   *
+   * Si ya existe un Tenant con el mismo `ownerPhone` normalizado, lanza error
+   * (el route handler lo traduce a 409).
    */
   async register(params: {
+    ownerName: string;
+    ownerPhone: string;
+    ownerEmail?: string;
+    storeName: string;
+    description?: string;
+    logo?: string;
+    banner?: string;
+    category?: string;
+    zone?: string;
+    commission?: number;
+  }): Promise<DbStore> {
+    const phoneDigits = normalizePhone(params.ownerPhone);
+    if (!phoneDigits) {
+      throw new Error("Teléfono inválido");
+    }
+
+    // 1. Duplicate check por ownerPhone normalizado (application-layer unique)
+    const existingTenant = await prisma.tenant.findFirst({
+      where: { ownerPhone: phoneDigits, type: "store" },
+      select: { id: true, slug: true, stores: { select: { slug: true }, take: 1 } },
+    });
+    if (existingTenant) {
+      const err = new Error("Ya tienes una solicitud registrada con ese teléfono");
+      (err as Error & { code?: string; storeSlug?: string }).code = "MKT_DUPLICATE_PHONE";
+      (err as Error & { code?: string; storeSlug?: string }).storeSlug =
+        existingTenant.stores[0]?.slug ?? existingTenant.slug;
+      throw err;
+    }
+
+    // 2. Generar slugs únicos (Tenant.slug y Store.slug son ambos unique)
+    const baseSlug = slugify(params.storeName) || `tienda-${phoneDigits.slice(-6)}`;
+
+    const [storeSlugTaken, tenantSlugTaken] = await Promise.all([
+      prisma.store.findUnique({ where: { slug: baseSlug }, select: { id: true } }),
+      prisma.tenant.findUnique({ where: { slug: baseSlug }, select: { id: true } }),
+    ]);
+
+    const suffix = phoneDigits.slice(-6) || Date.now().toString(36).slice(-6);
+    const storeSlug  = storeSlugTaken  ? `${baseSlug}-${suffix}` : baseSlug;
+    const tenantSlug = tenantSlugTaken ? `${baseSlug}-${suffix}` : baseSlug;
+
+    // 3. Crear Tenant + Store en una transacción atómica
+    const { store } = await prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.create({
+        data: {
+          // id autogenerado por @default(cuid())
+          slug:       tenantSlug,
+          name:       params.storeName,
+          type:       "store",
+          plan:       "free",
+          active:     false, // requiere aprobación del superadmin
+          ownerEmail: params.ownerEmail ?? null,
+          ownerPhone: phoneDigits,
+        },
+        select: { id: true },
+      });
+
+      const createdStore = await tx.store.create({
+        data: {
+          id:          crypto.randomUUID(),
+          tenantId:    tenant.id, // ← tenant REAL
+          slug:        storeSlug,
+          name:        params.storeName,
+          description: params.description ?? null,
+          logo:        params.logo ?? null,
+          banner:      params.banner ?? null,
+          category:    params.category ?? "bodega",
+          zone:        params.zone ?? null,
+          commission:  params.commission ?? 5.0,
+          isPublished: false, // requiere aprobación manual
+          updatedAt:   new Date(),
+        },
+      });
+
+      return { tenant, store: createdStore };
+    });
+
+    invalidateByPrefix("marketplace:stores");
+
+    return {
+      id:          store.id,
+      tenantId:    store.tenantId,
+      slug:        store.slug,
+      name:        store.name,
+      description: store.description,
+      logo:        store.logo,
+      banner:      store.banner,
+      category:    store.category,
+      zone:        store.zone,
+      rating:      store.rating,
+      reviewCount: store.reviewCount,
+      isPublished: store.isPublished,
+      commission:  store.commission,
+      createdAt:   store.createdAt.toISOString(),
+    };
+  },
+
+  /**
+   * Registrar una tienda en el marketplace para un Tenant que YA EXISTE.
+   *
+   * Usado por el endpoint admin-autenticado `POST /api/marketplace/stores/register`,
+   * donde el `tenantId` viene de `auth.tenantId` (sesión JWT) y por construcción
+   * corresponde a un row real en la tabla `Tenant`.
+   *
+   * No crea Tenant nuevo. Diferente de `register()` (que sí lo hace para el
+   * flujo público del apply).
+   */
+  async registerForExistingTenant(params: {
     tenantId: string;
     name: string;
     description?: string;
@@ -85,7 +212,7 @@ export const MarketplaceStoresDB = {
   }): Promise<DbStore> {
     const baseSlug = slugify(params.name);
 
-    // Si ya existe el slug, agregar sufijo del tenantId
+    // Si ya existe el slug, agregar sufijo del tenantId real
     const existing = await prisma.store.findUnique({ where: { slug: baseSlug } });
     const slug = existing ? `${baseSlug}-${params.tenantId.slice(-6)}` : baseSlug;
 
