@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { createNotification } from "./create-notification";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export async function generateNotifications(tenantId: string): Promise<number> {
   let count = 0;
@@ -129,7 +130,8 @@ export async function generateNotifications(tenantId: string): Promise<number> {
       take: 10,
     });
     for (const r of closedRegisters) {
-      const diff = r.difference ?? 0;
+      // TD-018: r.difference es Decimal | null
+      const diff = toNumOrZero(r.difference);
       if (Math.abs(diff) > 20) {
         const severity = Math.abs(diff) > 50 ? "HIGH" as const : "MEDIUM" as const;
         await createNotification({

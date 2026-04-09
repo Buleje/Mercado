@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { ProductsDB } from "@/lib/db/products.db";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { logger } from "@/lib/logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import {
   type CartItem,
   formatWelcomeMenu,
@@ -402,10 +403,11 @@ async function handleSearch(
     orderBy: { name: "asc" },
   });
 
+  // TD-018: r.price es Decimal → convertir a number
   const products = rows.map((r) => ({
     id: r.id,
     name: r.name,
-    price: r.price ?? 0,
+    price: toNumOrZero(r.price),
     stock: r.stock,
     unit: r.unit ?? "und",
   }));
@@ -449,6 +451,9 @@ async function handleAddItem(
     };
   }
 
+  // TD-018: product.price es Decimal → convertir a number
+  const productPriceNum = toNumOrZero(product.price);
+
   // Merge en carrito (sumar si ya existe)
   const existing = currentCart.findIndex((c) => c.productId === product.id);
   const updatedCart = [...currentCart];
@@ -462,7 +467,7 @@ async function handleAddItem(
       productId: product.id,
       name: product.name,
       quantity,
-      price: product.price ?? 0,
+      price: productPriceNum,
       unit: product.unit ?? "und",
     });
   }
@@ -473,7 +478,7 @@ async function handleAddItem(
     productId: product.id,
     name: product.name,
     quantity,
-    price: product.price ?? 0,
+    price: productPriceNum,
     unit: product.unit ?? "und",
   };
 

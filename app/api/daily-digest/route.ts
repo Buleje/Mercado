@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendDailyDigestEmail } from "@/lib/mailer-digest";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/daily-digest — Send a daily operations summary email to admin.
@@ -37,9 +38,10 @@ async function buildAndSendDigest() {
   const delivered = orders.filter(o => o.status === "entregado").length;
   const cancelled = orders.filter(o => o.status === "cancelado").length;
   const pending = orders.filter(o => o.status !== "entregado" && o.status !== "cancelado").length;
+  // TD-018: o.total es Decimal
   const totalRevenue = orders
     .filter(o => o.status !== "cancelado")
-    .reduce((sum, o) => sum + o.total, 0);
+    .reduce((sum, o) => sum + toNumOrZero(o.total), 0);
   const avgOrderValue = totalRevenue / Math.max(orders.length - cancelled, 1);
 
   // Top products by quantity
@@ -62,7 +64,7 @@ async function buildAndSendDigest() {
     const method = o.paymentMethod ?? "otro";
     const label = method === "yape" ? "Yape" : method === "efectivo" ? "Efectivo" : method;
     const prev = payMap.get(label) ?? { count: 0, total: 0 };
-    payMap.set(label, { count: prev.count + 1, total: prev.total + o.total });
+    payMap.set(label, { count: prev.count + 1, total: prev.total + toNumOrZero(o.total) });
   }
   const paymentBreakdown = [...payMap.entries()].map(([method, d]) => ({ method, ...d }));
 

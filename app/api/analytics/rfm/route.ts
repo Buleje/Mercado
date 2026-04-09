@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { z } from "zod";
 
 const querySchema = z.object({
@@ -98,7 +99,8 @@ export async function GET(req: NextRequest) {
         monetary: 0,
       };
       existing.frequency++;
-      existing.monetary += sale.total;
+      // TD-018: sale.total es Decimal
+      existing.monetary += toNumOrZero(sale.total);
       if (sale.createdAt > existing.lastPurchase) {
         existing.lastPurchase = sale.createdAt;
       }
@@ -113,7 +115,8 @@ export async function GET(req: NextRequest) {
         monetary: 0,
       };
       existing.frequency++;
-      existing.monetary += order.total;
+      // TD-018: order.total es Decimal
+      existing.monetary += toNumOrZero(order.total);
       if (order.createdAt > existing.lastPurchase) {
         existing.lastPurchase = order.createdAt;
       }

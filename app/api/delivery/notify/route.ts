@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { prisma } from "@/lib/prisma";
 import { sendWhatsAppNotification } from "@/lib/whatsapp";
 import { sendOrderNotification } from "@/lib/mailer";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 const NotifySchema = z.object({
   partnerId: z.string().min(1, "partnerId requerido"),
@@ -64,10 +65,19 @@ export async function POST(req: NextRequest) {
 
   const channels: string[] = [];
 
+  // TD-018: order.total y items[].price son Decimal → convertir a number
+  const orderTotalNum = toNumOrZero(order.total);
+  const itemsAsNum = order.items.map((i) => ({
+    name: i.name,
+    quantity: i.quantity,
+    price: toNumOrZero(i.price),
+    unit: i.unit,
+  }));
+
   // Mensaje personalizado para el repartidor
   const deliveryMsg =
     message ??
-    `Nuevo pedido asignado!\nCliente: ${order.customerName}\nDireccion: ${order.customerLocation || "Sin direccion"}\nTotal: S/ ${order.total.toFixed(2)}\nRecoge en tienda: ${auth.tenantId}`;
+    `Nuevo pedido asignado!\nCliente: ${order.customerName}\nDireccion: ${order.customerLocation || "Sin direccion"}\nTotal: S/ ${orderTotalNum.toFixed(2)}\nRecoge en tienda: ${auth.tenantId}`;
 
   // Canal WhatsApp (fire-and-forget)
   if (notifConfig.notifyWhatsApp && partner.phone) {
@@ -75,14 +85,9 @@ export async function POST(req: NextRequest) {
       id: order.id,
       customerName: order.customerName,
       customerPhone: partner.phone,
-      total: order.total,
+      total: orderTotalNum,
       status: "en_camino",
-      items: order.items.map((i) => ({
-        name: i.name,
-        quantity: i.quantity,
-        price: i.price,
-        unit: i.unit,
-      })),
+      items: itemsAsNum,
     }).catch(() => {});
     channels.push("whatsapp");
   }
@@ -94,14 +99,9 @@ export async function POST(req: NextRequest) {
       customerName: `[Repartidor: ${partner.name}] ${order.customerName}`,
       customerPhone: partner.phone || undefined,
       customerLocation: order.customerLocation,
-      total: order.total,
+      total: orderTotalNum,
       paymentMethod: order.paymentMethod || undefined,
-      items: order.items.map((i) => ({
-        name: i.name,
-        quantity: i.quantity,
-        price: i.price,
-        unit: i.unit,
-      })),
+      items: itemsAsNum,
     }).catch(() => {});
     channels.push("email");
   }

@@ -6,6 +6,7 @@ import { enqueueNotification } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/cron/supplier-scoring
@@ -230,13 +231,13 @@ export async function GET(req: NextRequest) {
 
 /** Calculate weighted average unit cost from purchase orders */
 function calcAvgCost(
-  purchases: Array<{ items: Array<{ unitCost: number; quantity: number }> }>
+  purchases: Array<{ items: Array<{ unitCost: unknown; quantity: number }> }>
 ): number {
   let totalCost = 0;
   let totalQty = 0;
   for (const p of purchases) {
     for (const item of p.items) {
-      totalCost += item.unitCost * item.quantity;
+      totalCost += toNumOrZero(item.unitCost as Parameters<typeof toNumOrZero>[0]) * item.quantity;
       totalQty += item.quantity;
     }
   }

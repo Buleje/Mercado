@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizePhone } from "@/lib/jsondb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // GET /api/customers/[phone]/favorite-products
 // Top 5 productos mas comprados por el cliente (ventas POS + orders)
@@ -58,9 +59,10 @@ export async function GET(
       const pid = item.productId;
       const existing = productMap.get(pid);
       const date = item.sale.createdAt;
+      const lineTotal = toNumOrZero(item.price) * item.quantity;
       if (existing) {
         existing.totalQty += item.quantity;
-        existing.totalSpent += item.price * item.quantity;
+        existing.totalSpent += lineTotal;
         existing.purchaseCount += 1;
         if (date < existing.firstDate) existing.firstDate = date;
         if (date > existing.lastDate) existing.lastDate = date;
@@ -69,7 +71,7 @@ export async function GET(
           productId: pid,
           name: item.name,
           totalQty: item.quantity,
-          totalSpent: item.price * item.quantity,
+          totalSpent: lineTotal,
           purchaseCount: 1,
           firstDate: date,
           lastDate: date,
@@ -82,9 +84,10 @@ export async function GET(
       const pid = item.productId;
       const existing = productMap.get(pid);
       const date = item.order.createdAt;
+      const lineTotal = toNumOrZero(item.price) * item.quantity;
       if (existing) {
         existing.totalQty += item.quantity;
-        existing.totalSpent += item.price * item.quantity;
+        existing.totalSpent += lineTotal;
         existing.purchaseCount += 1;
         if (date < existing.firstDate) existing.firstDate = date;
         if (date > existing.lastDate) existing.lastDate = date;
@@ -93,7 +96,7 @@ export async function GET(
           productId: pid,
           name: item.name,
           totalQty: item.quantity,
-          totalSpent: item.price * item.quantity,
+          totalSpent: lineTotal,
           purchaseCount: 1,
           firstDate: date,
           lastDate: date,

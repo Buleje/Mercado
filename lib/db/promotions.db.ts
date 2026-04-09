@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import type {
   Promotion as PPromotion,
   Coupon as PCoupon,
@@ -35,8 +36,9 @@ function toISO(d: Date): string {
 
 function mapPromotion(p: PPromotion): DbPromotion {
   return {
-    id: p.id, name: p.name, description: p.description, discountPercent: p.discountPercent,
-    ...(p.minPurchase != null && { minPurchase: p.minPurchase }),
+    // TD-018: discountPercent / minPurchase son Decimal → serializar a number
+    id: p.id, name: p.name, description: p.description, discountPercent: toNumOrZero(p.discountPercent),
+    ...(p.minPurchase != null && { minPurchase: toNumOrZero(p.minPurchase) }),
     ...(p.imageUrl != null && { imageUrl: p.imageUrl }),
     ...(p.message != null && { message: p.message }),
     targetType: p.targetType,
@@ -49,9 +51,10 @@ function mapPromotion(p: PPromotion): DbPromotion {
 function mapCoupon(c: PCoupon): DbCoupon {
   return {
     id: c.id, code: c.code, description: c.description,
-    discountType: c.discountType as "percent" | "fixed" | "giftcard", discountValue: c.discountValue,
-    ...(c.balance != null && { balance: c.balance }),
-    ...(c.minPurchase != null && { minPurchase: c.minPurchase }),
+    // TD-018: discountValue / balance / minPurchase son Decimal
+    discountType: c.discountType as "percent" | "fixed" | "giftcard", discountValue: toNumOrZero(c.discountValue),
+    ...(c.balance != null && { balance: toNumOrZero(c.balance) }),
+    ...(c.minPurchase != null && { minPurchase: toNumOrZero(c.minPurchase) }),
     ...(c.maxUses != null && { maxUses: c.maxUses }),
     usedCount: c.usedCount, active: c.active,
     ...(c.expiresAt != null && { expiresAt: toISO(c.expiresAt) }),
@@ -148,7 +151,8 @@ export const CouponsDB = {
     const data: Record<string, unknown> = { usedCount: row.usedCount + 1 };
     // Deduct balance for giftcard type
     if (row.discountType === "giftcard" && deductAmount != null) {
-      const currentBalance = row.balance ?? row.discountValue;
+      // TD-018: balance / discountValue son Decimal
+      const currentBalance = toNumOrZero(row.balance) || toNumOrZero(row.discountValue);
       const newBalance = Math.max(0, currentBalance - deductAmount);
       data.balance = newBalance;
       if (newBalance <= 0) data.active = false;

@@ -304,7 +304,8 @@ export const OrdersDB = {
     DomainEvents.ventaCompletada(tenantId, {
       orderId:       row.id,
       customerPhone: row.customerPhone ?? "",
-      total:         row.total,
+      // TD-018: row.total es Decimal
+      total:         toNumOrZero(row.total),
       itemCount:     order.items.length,
       paymentMethod: order.paymentMethod ?? "efectivo",
       hadCoupon:     Boolean(order.appliedCouponCode),

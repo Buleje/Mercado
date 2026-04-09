@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import type { PrismaClient } from "@/lib/generated/prisma/client";
 
 export type SegmentLabel = "vip" | "regular" | "en_riesgo" | "nuevo" | "dormido";
@@ -67,8 +68,11 @@ export async function GET(req: NextRequest) {
 
     const daysSinceCreated = Math.floor((now.getTime() - c.createdAt.getTime()) / 86_400_000);
 
+    // TD-018: c.totalSpent es Decimal
+    const totalSpentNum = toNumOrZero(c.totalSpent);
+
     let segment: SegmentLabel;
-    if (c.totalSpent >= 1500 || c.loyaltyTier === "diamante" || c.loyaltyTier === "oro") {
+    if (totalSpentNum >= 1500 || c.loyaltyTier === "diamante" || c.loyaltyTier === "oro") {
       segment = "vip";
     } else if (daysSinceCreated <= 14 && orderCount <= 1) {
       segment = "nuevo";
@@ -84,7 +88,8 @@ export async function GET(req: NextRequest) {
       phone: c.phone,
       name: c.name,
       loyaltyTier: c.loyaltyTier,
-      totalSpent: c.totalSpent,
+      // TD-018: totalSpent es Decimal — serializar a number
+      totalSpent: totalSpentNum,
       loyaltyPoints: c.loyaltyPoints,
       orderCount,
       lastOrderDate,

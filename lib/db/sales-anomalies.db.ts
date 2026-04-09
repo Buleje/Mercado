@@ -16,6 +16,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { invalidateByPrefix, getOrSet } from "@/lib/cache";
 import type { SalesAnomaly as PSalesAnomaly } from "@/lib/generated/prisma/client";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export type AnomalySeverity = "low" | "medium" | "high" | "critical";
 export type AnomalyDirection = "drop" | "spike";
@@ -104,7 +105,8 @@ async function aggregateStoreStats(
   ]);
 
   return {
-    revenue: orderAgg._sum.total ?? 0,
+    // TD-018: _sum.total es Decimal | null
+    revenue: toNumOrZero(orderAgg._sum.total),
     orderCount: orderAgg._count._all,
     units: items._sum.quantity ?? 0,
   };

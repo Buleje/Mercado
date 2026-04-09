@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { enqueueEmail } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/cron/weekly-email-report
@@ -72,11 +73,11 @@ export async function GET(req: NextRequest) {
         });
 
         // Calculate KPIs
-        const totalRevenue = thisWeekOrders.reduce((s, o) => s + (o.total ?? 0), 0);
+        const totalRevenue = thisWeekOrders.reduce((s, o) => s + toNumOrZero(o.total), 0);
         const totalOrders = thisWeekOrders.length;
         const avgTicket = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-        const prevRevenue = prevWeekOrders.reduce((s, o) => s + (o.total ?? 0), 0);
+        const prevRevenue = prevWeekOrders.reduce((s, o) => s + toNumOrZero(o.total), 0);
         const prevOrders = prevWeekOrders.length;
 
         const revenueChange = prevRevenue > 0
@@ -93,7 +94,7 @@ export async function GET(req: NextRequest) {
             const key = String(item.productId);
             const existing = productSales.get(key) ?? { name: item.name ?? "Producto", qty: 0, revenue: 0 };
             existing.qty += item.quantity;
-            existing.revenue += (item.price ?? 0) * (item.quantity ?? 0);
+            existing.revenue += toNumOrZero(item.price) * (item.quantity ?? 0);
             productSales.set(key, existing);
           }
         }

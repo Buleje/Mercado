@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 const TENANT_ID = "main";
 const NOTE_TITLE = "__PRESUPUESTO_MENSUAL__";
@@ -48,11 +49,11 @@ export async function GET() {
       select: { category: true, amount: true },
     });
 
-    // Agrupar gastos por categoria
+    // Agrupar gastos por categoria (TD-018: amount es Decimal)
     const gastosPorCategoria: Record<string, number> = {};
     for (const exp of expenses) {
       const cat = exp.category.toLowerCase();
-      gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + exp.amount;
+      gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + toNumOrZero(exp.amount);
     }
 
     const categoriasConGasto = categorias.map((cat) => {

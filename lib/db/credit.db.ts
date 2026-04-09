@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -189,8 +190,9 @@ export const CreditDB = {
     return {
       totalProfiles: totals._count.id,
       activeProfiles: activeCount,
-      totalCreditGranted: totals._sum.creditLimit ?? 0,
-      totalCreditUsed: totals._sum.usedCredit ?? 0,
+      // TD-018: _sum.creditLimit / usedCredit son Decimal | null
+      totalCreditGranted: toNumOrZero(totals._sum.creditLimit),
+      totalCreditUsed: toNumOrZero(totals._sum.usedCredit),
       overduePlans: overdue,
       defaultedPlans: defaulted,
     };

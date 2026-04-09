@@ -14,14 +14,15 @@
  * Fallback: si algo falla el parse, devuelve el shape vacío para que el
  * frontend degrade a las constantes hardcodeadas sin romper.
  *
- * Cache: `revalidate: 300` (5 minutos). No es data time-sensitive.
+ * Cache (Next 16): los helpers `parsePracticasAudit` / `parseTechDebt`
+ * usan `'use cache'` + `cacheLife({ revalidate: 300 })`. El handler GET
+ * sigue siendo dinámico porque lee cookies (auth guard). Ver ADR-019.
  */
-
-export const revalidate = 300;
 
 import { NextResponse, type NextRequest } from "next/server";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { cacheLife, cacheTag } from "next/cache";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { logger } from "@/lib/logger";
 
@@ -94,6 +95,9 @@ export async function GET(req: NextRequest) {
 async function parsePracticasAudit(
   path: string,
 ): Promise<ProjectIntelData["excel2026"]> {
+  "use cache";
+  cacheLife({ revalidate: 300, stale: 60, expire: 600 });
+  cacheTag("project-intel:practicas-audit");
   try {
     const content = await readFile(path, "utf8");
     // Buscar la fila "Total" del resumen ejecutivo. Formato:
@@ -143,6 +147,9 @@ function fallbackExcel2026(): ProjectIntelData["excel2026"] {
 async function parseTechDebt(
   path: string,
 ): Promise<ProjectIntelData["techDebt"]> {
+  "use cache";
+  cacheLife({ revalidate: 300, stale: 60, expire: 600 });
+  cacheTag("project-intel:tech-debt");
   try {
     const content = await readFile(path, "utf8");
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export async function GET(
   req: NextRequest,
@@ -59,7 +60,8 @@ export async function GET(
       deliveryDays.length > 0 ? (onTimeCount / deliveryDays.length) * 100 : 100;
 
     // Price consistency: coefficient of variation of unit prices across all items
-    const allPrices = orders.flatMap((o) => o.items.map((i) => i.unitCost));
+    // TD-018: i.unitCost es Decimal → convertir al aplanar
+    const allPrices = orders.flatMap((o) => o.items.map((i) => toNumOrZero(i.unitCost)));
     let priceVariance = 100; // default: perfectly consistent
     if (allPrices.length > 1) {
       const mean = allPrices.reduce((s, p) => s + p, 0) / allPrices.length;

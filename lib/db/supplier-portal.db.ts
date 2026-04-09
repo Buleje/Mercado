@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,8 +62,9 @@ export const SupplierPriceVersionDB = {
       supplierId: r.supplierId,
       productName: r.productName,
       ...(r.sku != null && { sku: r.sku }),
-      oldPrice: r.oldPrice,
-      newPrice: r.newPrice,
+      // TD-018: oldPrice / newPrice son Decimal
+      oldPrice: toNumOrZero(r.oldPrice),
+      newPrice: toNumOrZero(r.newPrice),
       effectiveDate: toISO(r.effectiveDate),
       createdAt: toISO(r.createdAt),
     }));
@@ -84,8 +86,9 @@ export const SupplierPriceVersionDB = {
       supplierId: row.supplierId,
       productName: row.productName,
       ...(row.sku != null && { sku: row.sku }),
-      oldPrice: row.oldPrice,
-      newPrice: row.newPrice,
+      // TD-018: serializar Decimal → number
+      oldPrice: toNumOrZero(row.oldPrice),
+      newPrice: toNumOrZero(row.newPrice),
       effectiveDate: toISO(row.effectiveDate),
       createdAt: toISO(row.createdAt),
     };

@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import { NotFoundError } from "@/lib/api-error";
+import { toNum, toNumOrZero } from "@/lib/decimal-utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -264,8 +265,9 @@ export const MarketplaceStoreProductsDB = {
         id:                 r.id,
         storeId:            r.storeId,
         productId:          r.productId,
-        retailPrice:        r.retailPrice,
-        wholesalePrice:     r.wholesalePrice,
+        // TD-018: retailPrice / wholesalePrice ahora son Decimal → serializar a number
+        retailPrice:        toNumOrZero(r.retailPrice),
+        wholesalePrice:     toNum(r.wholesalePrice),
         minOrderQty:        r.minOrderQty,
         isActive:           r.isActive,
         volumePricingTiers: r.volumePricingTiers,
@@ -325,8 +327,9 @@ export const MarketplaceStoreProductsDB = {
       id:                 row.id,
       storeId:            row.storeId,
       productId:          row.productId,
-      retailPrice:        row.retailPrice,
-      wholesalePrice:     row.wholesalePrice,
+      // TD-018: serializar Decimal → number
+      retailPrice:        toNumOrZero(row.retailPrice),
+      wholesalePrice:     toNum(row.wholesalePrice),
       minOrderQty:        row.minOrderQty,
       isActive:           row.isActive,
       volumePricingTiers: row.volumePricingTiers,
@@ -425,6 +428,8 @@ export const MarketplaceStoreProductsDB = {
 
     for (const product of catalogProducts) {
       const existing = existingMap.get(product.id);
+      // TD-018: product.price es Decimal → convertir para el contrato number
+      const priceNum = toNumOrZero(product.price);
 
       if (product.active) {
         if (!existing) {
@@ -432,12 +437,12 @@ export const MarketplaceStoreProductsDB = {
             id:          crypto.randomUUID(),
             storeId:     store.id,
             productId:   product.id,
-            retailPrice: product.price,
+            retailPrice: priceNum,
             minOrderQty: 1,
             isActive:    true,
           });
         } else if (!existing.isActive) {
-          toReactivate.push({ id: existing.id, price: product.price });
+          toReactivate.push({ id: existing.id, price: priceNum });
         }
         // If already active, skip (don't override manual price changes)
       } else if (existing && existing.isActive) {
@@ -544,7 +549,8 @@ export const MarketplaceOrdersDB = {
     }
 
     // Mapa de precio real (server-side — nunca confiar en el precio del cliente)
-    const priceMap = new Map(storeProducts.map((sp) => [sp.id, sp.retailPrice]));
+    // TD-018: sp.retailPrice es Decimal → convertir a number antes de map
+    const priceMap = new Map(storeProducts.map((sp) => [sp.id, toNumOrZero(sp.retailPrice)]));
 
     const orderItems = params.items.map((item) => {
       const unitPrice = priceMap.get(item.storeProductId) ?? item.retailPrice;
@@ -559,7 +565,9 @@ export const MarketplaceOrdersDB = {
     });
 
     const total      = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
-    const commission = parseFloat(((total * store.commission) / 100).toFixed(2));
+    // TD-018: store.commission es Decimal → convertir para toFixed()
+    const commissionRate = toNumOrZero(store.commission);
+    const commission = parseFloat(((total * commissionRate) / 100).toFixed(2));
 
     // 3. Crear el Order en el tenant del vendedor
     const orderId = crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
@@ -647,7 +655,8 @@ export const MarketplaceOrdersDB = {
         }),
       ]);
 
-      const totalRevenue = allOrders.reduce((sum, o) => sum + o.total, 0);
+      // TD-018: o.total es Decimal → convertir para suma
+      const totalRevenue = allOrders.reduce((sum, o) => sum + toNumOrZero(o.total), 0);
       const pendingOrders = allOrders.filter(
         (o) => o.status === "pendiente" || o.status === "confirmado",
       ).length;
@@ -657,9 +666,11 @@ export const MarketplaceOrdersDB = {
       for (const order of allOrders) {
         for (const item of order.items) {
           const existing = productSales.get(item.name) ?? { quantity: 0, revenue: 0 };
+          // TD-018: item.price es Decimal → convertir para aritmética
+          const itemPriceNum = toNumOrZero(item.price);
           productSales.set(item.name, {
             quantity: existing.quantity + item.quantity,
-            revenue:  existing.revenue + item.price * item.quantity,
+            revenue:  existing.revenue + itemPriceNum * item.quantity,
           });
         }
       }
@@ -682,7 +693,8 @@ export const MarketplaceOrdersDB = {
         recentOrders: allOrders.slice(0, 10).map((o) => ({
           id:           o.id,
           customerName: o.customerName,
-          total:        o.total,
+          // TD-018: total es Decimal → serializar a number
+          total:        toNumOrZero(o.total),
           status:       o.status,
           createdAt:    o.createdAt.toISOString(),
         })),

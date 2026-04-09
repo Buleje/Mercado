@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/commissions?from=2025-01-01&to=2025-01-31
@@ -30,10 +31,12 @@ export async function GET(req: NextRequest) {
   for (const s of sales) {
     const cid = s.cashierId!;
     const entry = map.get(cid) ?? { sales: 0, revenue: 0, cogs: 0, profit: 0 };
+    const totalNum = toNumOrZero(s.total);
+    const cogsNum = s.totalCogs != null ? toNumOrZero(s.totalCogs) : totalNum * 0.7;
     entry.sales += 1;
-    entry.revenue += s.total;
-    entry.cogs += s.totalCogs ?? s.total * 0.7;
-    entry.profit += s.total - (s.totalCogs ?? s.total * 0.7);
+    entry.revenue += totalNum;
+    entry.cogs += cogsNum;
+    entry.profit += totalNum - cogsNum;
     map.set(cid, entry);
   }
 

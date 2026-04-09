@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 const querySchema = z.object({
   period: z.enum(["7d", "30d", "90d"]).default("30d"),
@@ -59,7 +60,8 @@ export async function GET(req: NextRequest) {
     const dailyTotals = new Map<string, number>();
     for (const sale of sales) {
       const dateKey = sale.createdAt.toISOString().slice(0, 10);
-      dailyTotals.set(dateKey, (dailyTotals.get(dateKey) ?? 0) + sale.total);
+      // TD-018: sale.total es Decimal
+      dailyTotals.set(dateKey, (dailyTotals.get(dateKey) ?? 0) + toNumOrZero(sale.total));
     }
 
     // Build array for the full extended period

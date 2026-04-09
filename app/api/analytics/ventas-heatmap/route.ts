@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 const querySchema = z.object({
   days: z.coerce.number().min(7).max(180).default(60),
@@ -47,7 +48,8 @@ export async function GET(req: NextRequest) {
       const dow = sale.createdAt.getDay();
       const hour = sale.createdAt.getHours();
       const dayKey = sale.createdAt.toISOString().slice(0, 10);
-      matrix[dow][hour].totalSum += sale.total;
+      // TD-018: sale.total es Decimal
+      matrix[dow][hour].totalSum += toNumOrZero(sale.total);
       matrix[dow][hour].count += 1;
       matrix[dow][hour].daysSet.add(dayKey);
     }

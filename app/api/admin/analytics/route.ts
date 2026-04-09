@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "analista"]);
@@ -33,8 +34,9 @@ export async function GET(req: NextRequest) {
       })
     ]);
 
-    const currentRevenue = currentAgg._sum.total ?? 0;
-    const previousRevenue = prevAgg._sum.total ?? 0;
+    // TD-018: _sum.total es Decimal | null → convertir
+    const currentRevenue = toNumOrZero(currentAgg._sum.total);
+    const previousRevenue = toNumOrZero(prevAgg._sum.total);
     const currentCount = currentAgg._count.id;
     const previousCount = prevAgg._count.id;
 

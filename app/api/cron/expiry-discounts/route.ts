@@ -5,6 +5,7 @@ import { BatchesDB } from "@/lib/db/batches.db";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 const DESCUENTO_VENCIMIENTO = 0.20; // 20%
 const DIAS_ALERTA = 15;
@@ -69,9 +70,10 @@ export async function GET(req: NextRequest) {
               select: { price: true },
             });
             if (producto) {
-              precioOriginal = producto.price;
+              const priceNum = toNumOrZero(producto.price);
+              precioOriginal = priceNum;
               precioSugerido = Math.round(
-                producto.price * (1 - DESCUENTO_VENCIMIENTO) * 100
+                priceNum * (1 - DESCUENTO_VENCIMIENTO) * 100
               ) / 100;
             }
           }

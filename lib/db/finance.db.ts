@@ -100,8 +100,10 @@ export const PayablesDB = {
       data: { id: payment.id, payableId: id, amount: payment.amount, method: payment.method, date: new Date(payment.date), reference: payment.reference },
     });
     const allPay = await prisma.payment.findMany({ where: { payableId: id } });
-    const paidAmount = allPay.reduce((s: number, p: PPayment) => s + p.amount, 0);
-    const status = paidAmount >= existing.amount ? "pagado" : paidAmount > 0 ? "parcial" : "pendiente";
+    // TD-018: p.amount y existing.amount son Decimal
+    const paidAmount = allPay.reduce((s: number, p: PPayment) => s + toNumOrZero(p.amount), 0);
+    const existingAmountNum = toNumOrZero(existing.amount);
+    const status = paidAmount >= existingAmountNum ? "pagado" : paidAmount > 0 ? "parcial" : "pendiente";
     await prisma.payable.updateMany({ where: { id, tenantId }, data: { paidAmount, status } });
     const row = await prisma.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
     if (!row) return null;
@@ -132,6 +134,7 @@ export const ExpensesDB = {
   },
   async getSummary(): Promise<{ category: string; total: number; count: number }[]> {
     const groups = await prisma.expense.groupBy({ by: ["category"], _sum: { amount: true }, _count: true, orderBy: { _sum: { amount: "desc" } } });
-    return groups.map(g => ({ category: g.category, total: g._sum.amount ?? 0, count: g._count }));
+    // TD-018: g._sum.amount es Decimal | null
+    return groups.map(g => ({ category: g.category, total: toNumOrZero(g._sum.amount), count: g._count }));
   },
 };

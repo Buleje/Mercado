@@ -3,6 +3,7 @@ import { z } from "zod";
 import { OrdersDB, CouponsDB, PromotionsDB } from "@/lib/jsondb";
 import type { DbOrder } from "@/lib/jsondb";
 import { emitAdminSSE } from "@/lib/sse-emitter";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { sendOrderNotification } from "@/lib/mailer";
 import { sendWhatsAppNotification, getWhatsAppLink, sendWhatsAppText } from "@/lib/whatsapp";
 import { sendReceiptByWhatsApp } from "@/lib/receipt-whatsapp";
@@ -274,11 +275,16 @@ export async function POST(req: NextRequest) {
     const now = new Date().toISOString();
 
     // Look up costPrice for each product to capture COGS at order time
+    // TD-018: product.costPrice y product.price son Decimal
     const productIds = body.items.map(i => i.id).filter(id => id > 0);
     const costMap = new Map<number, number>();
     if (productIds.length > 0) {
       const products = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, costPrice: true, price: true } });
-      for (const p of products) costMap.set(p.id, p.costPrice ?? p.price * 0.7);
+      for (const p of products) {
+        const costNum = toNumOrZero(p.costPrice);
+        const priceNum = toNumOrZero(p.price);
+        costMap.set(p.id, costNum || priceNum * 0.7);
+      }
     }
 
     const orderItems = body.items.map(i => ({

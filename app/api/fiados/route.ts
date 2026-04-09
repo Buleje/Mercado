@@ -6,6 +6,7 @@ import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 const CreateFiadoSchema = z.object({
   customerId: z.string().min(1).max(100),
@@ -152,16 +153,18 @@ export async function POST(req: NextRequest) {
 
     // Verificar límite de crédito
     const customer = await prisma.customer.findUnique({ where: { phone: resolvedPhone } });
-    if (customer?.creditLimit && customer.creditLimit > 0) {
+    // TD-018: customer.creditLimit es Decimal | null
+    const creditLimitNum = toNumOrZero(customer?.creditLimit);
+    if (creditLimitNum > 0) {
       const fiadoActivo = await prisma.fiado.aggregate({
         where: { customerId: resolvedPhone, status: "ACTIVO", tenantId: auth.tenantId },
         _sum: { saldo: true },
       });
-      const totalActivo = Number(fiadoActivo._sum?.saldo || 0);
-      if (totalActivo + parsed.data.total > customer.creditLimit) {
+      const totalActivo = toNumOrZero(fiadoActivo._sum?.saldo);
+      if (totalActivo + parsed.data.total > creditLimitNum) {
         return NextResponse.json(
           {
-            error: `Cliente supera límite de crédito. Límite: S/${customer.creditLimit.toFixed(2)}, Deuda actual: S/${totalActivo.toFixed(2)}, Disponible: S/${(customer.creditLimit - totalActivo).toFixed(2)}`,
+            error: `Cliente supera límite de crédito. Límite: S/${creditLimitNum.toFixed(2)}, Deuda actual: S/${totalActivo.toFixed(2)}, Disponible: S/${(creditLimitNum - totalActivo).toFixed(2)}`,
           },
           { status: 400 },
         );

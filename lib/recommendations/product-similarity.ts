@@ -16,6 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { getOrSet } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import type { OrderStatus } from "@/lib/generated/prisma/client";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Tipos públicos ───────────────────────────────────────────────────────────
 
@@ -115,7 +116,8 @@ export async function getRelatedProducts(
         counts.set(item.productId, {
           count: 1,
           name: item.name,
-          price: item.price,
+          // TD-018: item.price es Decimal
+          price: toNumOrZero(item.price),
           image: item.image || null,
         });
       }

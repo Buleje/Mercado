@@ -3,6 +3,7 @@ import { timingSafeCompare } from "@/lib/timing-safe";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import nodemailer from "nodemailer";
 
 /**
@@ -90,7 +91,7 @@ async function buildMonthlyReport(
     },
   });
 
-  const ingresos = orders.reduce((sum, o) => sum + o.total, 0);
+  const ingresos = orders.reduce((sum, o) => sum + toNumOrZero(o.total), 0);
 
   // Gastos operativos del mes
   const expenses = await prisma.expense.findMany({
@@ -100,7 +101,7 @@ async function buildMonthlyReport(
     },
     select: { amount: true },
   });
-  const gastos   = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const gastos   = expenses.reduce((sum, e) => sum + toNumOrZero(e.amount), 0);
   const utilidad = ingresos - gastos;
   const margenPct = ingresos > 0 ? (utilidad / ingresos) * 100 : 0;
 
@@ -111,7 +112,7 @@ async function buildMonthlyReport(
       const key  = item.name;
       const prev = productRevMap.get(key) ?? { revenue: 0, quantity: 0 };
       productRevMap.set(key, {
-        revenue:  prev.revenue  + item.price * item.quantity,
+        revenue:  prev.revenue  + toNumOrZero(item.price) * item.quantity,
         quantity: prev.quantity + item.quantity,
       });
     }
@@ -127,7 +128,7 @@ async function buildMonthlyReport(
     if (!order.customer) continue;
     const key  = order.customer.phone;
     const prev = clienteMap.get(key) ?? { name: order.customer.name, phone: key, total: 0 };
-    clienteMap.set(key, { ...prev, total: prev.total + order.total });
+    clienteMap.set(key, { ...prev, total: prev.total + toNumOrZero(order.total) });
   }
   const topClientes: TopCustomer[] = [...clienteMap.values()]
     .sort((a, b) => b.total - a.total)
@@ -138,8 +139,8 @@ async function buildMonthlyReport(
     where: { tenantId, createdAt: { gte: startDate, lte: endDate } },
     _sum:  { total: true, saldo: true },
   });
-  const fiadosTotal    = Number(fiadosSummary._sum.total  ?? 0);
-  const fiadosSaldoPendiente = Number(fiadosSummary._sum.saldo ?? 0);
+  const fiadosTotal    = toNumOrZero(fiadosSummary._sum.total);
+  const fiadosSaldoPendiente = toNumOrZero(fiadosSummary._sum.saldo);
   const fiadosCobrados = fiadosTotal - fiadosSaldoPendiente;
 
   const fiadosVencidosCount = await prisma.fiado.count({

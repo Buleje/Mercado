@@ -7,6 +7,7 @@
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hash } from "bcryptjs";
+import { toNumOrZero } from "../lib/decimal-utils";
 
 const SLUG = "fruteria-maria";
 const TENANT_NAME = "Frutería María";
@@ -190,7 +191,7 @@ async function main() {
       const p1 = products[i % products.length];
       const p2 = products[(i + 3) % products.length];
       const q1 = (i % 3) + 1, q2 = (i % 2) + 1;
-      const total = p1.price * q1 + p2.price * q2;
+      const total = toNumOrZero(p1.price) * q1 + toNumOrZero(p2.price) * q2;
 
       await prisma.order.create({
         data: {
@@ -216,7 +217,7 @@ async function main() {
     for (let i = 0; i < 8; i++) {
       const p1 = products[i % products.length];
       const p2 = products[(i + 2) % products.length];
-      const total = p1.price * 2 + p2.price;
+      const total = toNumOrZero(p1.price) * 2 + toNumOrZero(p2.price);
       await prisma.sale.create({
         data: {
           id: `fm-sale-${String(i).padStart(3, "0")}`,
@@ -253,7 +254,7 @@ async function main() {
           quantity: b.qty, unit: "kg", productId: p.id,
           entryDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
           expiryDate: new Date(Date.now() + b.daysToExpiry * 24 * 60 * 60 * 1000),
-          costUnit: (p.costPrice ?? p.price * 0.6) as number,
+          costUnit: toNumOrZero(p.costPrice) || toNumOrZero(p.price) * 0.6,
           supplierName: SUPPLIERS[b.productIdx % SUPPLIERS.length].name,
           supplierId: SUPPLIERS[b.productIdx % SUPPLIERS.length].id,
         },

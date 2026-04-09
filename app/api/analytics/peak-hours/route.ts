@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // GET /api/analytics/peak-hours — sales grouped by hour of day and day of week
 // Query params: days (default 30), from, to (legacy support)
@@ -60,12 +61,14 @@ export async function GET(req: NextRequest) {
       const d = new Date(sale.createdAt);
       const hour = d.getHours();
       const dow = d.getDay();
+      // TD-018: sale.total es Decimal
+      const saleTotalNum = toNumOrZero(sale.total);
 
       byHour[hour].count++;
-      byHour[hour].total = Math.round((byHour[hour].total + sale.total) * 100) / 100;
+      byHour[hour].total = Math.round((byHour[hour].total + saleTotalNum) * 100) / 100;
 
       byDayOfWeek[dow].count++;
-      byDayOfWeek[dow].total = Math.round((byDayOfWeek[dow].total + sale.total) * 100) / 100;
+      byDayOfWeek[dow].total = Math.round((byDayOfWeek[dow].total + saleTotalNum) * 100) / 100;
     }
 
     // Calculate avgTotal per hour

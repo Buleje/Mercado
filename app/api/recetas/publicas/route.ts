@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -68,19 +69,20 @@ export async function GET(req: NextRequest) {
           precio: r.producto.price,
           imagen: r.producto.image,
         } : null,
+        // TD-018: ing.producto.price es Decimal
         ingredientes: r.ingredientes.map(ing => ({
           id: ing.id,
           productoId: ing.producto?.id,
           nombre: ing.producto?.name || "Ingrediente",
           cantidad: Number(ing.cantidad),
           unidad: ing.unidad,
-          precio: ing.producto?.price || 0,
+          precio: toNumOrZero(ing.producto?.price),
           imagen: ing.producto?.image,
           stock: ing.producto?.stock || 0,
           categoria: ing.producto?.category,
         })),
         totalIngredientes: r.ingredientes.reduce((sum, ing) =>
-          sum + (ing.producto?.price || 0) * Number(ing.cantidad), 0
+          sum + toNumOrZero(ing.producto?.price) * Number(ing.cantidad), 0
         ),
       }));
       return NextResponse.json(result);

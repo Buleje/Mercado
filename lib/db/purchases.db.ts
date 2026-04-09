@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import type {
   Supplier as PSupplier,
   PurchaseOrder as PPurchaseOrder,
@@ -48,12 +49,13 @@ function mapSupplier(s: PSupplier): DbSupplier {
 function mapPurchaseOrder(po: PPurchaseOrder & { items: PPurchaseItem[] }): DbPurchaseOrder {
   return {
     id: po.id, supplierId: po.supplierId, supplierName: po.supplierName,
-    items: po.items.map((i: PPurchaseItem) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: i.unitCost, unit: i.unit })),
-    total: po.total, status: po.status as PurchaseStatus,
+    // TD-018: unitCost / total / discount son Decimal
+    items: po.items.map((i: PPurchaseItem) => ({ productId: i.productId, name: i.name, quantity: i.quantity, unitCost: toNumOrZero(i.unitCost), unit: i.unit })),
+    total: toNumOrZero(po.total), status: po.status as PurchaseStatus,
     ...(po.notes != null && { notes: po.notes }),
     ...(po.paymentMethod != null && { paymentMethod: po.paymentMethod }),
     ...(po.deliveryDate != null && { deliveryDate: toISO(po.deliveryDate) }),
-    ...(po.discount != null && { discount: po.discount }),
+    ...(po.discount != null && { discount: toNumOrZero(po.discount) }),
     createdAt: toISO(po.createdAt), updatedAt: toISO(po.updatedAt),
   };
 }

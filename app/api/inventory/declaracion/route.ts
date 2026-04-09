@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "owner", "manager", "almacenero"]);
@@ -46,9 +47,12 @@ export async function GET(req: NextRequest) {
 
     for (const p of productos) {
       const stock = p.stock ?? 0;
-      const costo = p.costPrice ?? p.price * 0.7;
+      // TD-018: price y costPrice ahora son Decimal → convertir
+      const priceNum = toNumOrZero(p.price);
+      const costoRaw = toNumOrZero(p.costPrice);
+      const costo = costoRaw || priceNum * 0.7;
       const valorCosto = stock * costo;
-      const valorPrecio = stock * p.price;
+      const valorPrecio = stock * priceNum;
 
       if (!porCategoria[p.category]) {
         porCategoria[p.category] = {
@@ -66,7 +70,7 @@ export async function GET(req: NextRequest) {
         nombre: p.name,
         stock,
         costoPrecio: costo,
-        precioVenta: p.price,
+        precioVenta: priceNum,
         valorCosto,
         valorPrecio,
       });

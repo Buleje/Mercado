@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export type MarginProduct = {
   productId: number;
@@ -48,9 +49,10 @@ export async function GET(req: NextRequest) {
 
   for (const item of saleItems) {
     const existing = productMap.get(item.productId) ?? { name: item.name, category: item.product?.category ?? "Sin categoría", revenue: 0, cost: 0, hasCost: item.costPrice != null, units: 0 };
-    existing.revenue += item.price * item.quantity;
+    // TD-018: item.price y item.costPrice son Decimal
+    existing.revenue += toNumOrZero(item.price) * item.quantity;
     if (item.costPrice != null) {
-      existing.cost = (existing.cost ?? 0) + item.costPrice * item.quantity;
+      existing.cost = (existing.cost ?? 0) + toNumOrZero(item.costPrice) * item.quantity;
       existing.hasCost = true;
     }
     existing.units += item.quantity;

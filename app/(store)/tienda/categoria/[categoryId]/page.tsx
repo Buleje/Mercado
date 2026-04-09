@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { headers } from "next/headers";
+import { cacheLife, cacheTag } from "next/cache";
 import { categories, type Category } from "@/data/products";
 import { ProductsDB } from "@/lib/db/products.db";
 import Header from "@/components/Header";
@@ -21,8 +22,21 @@ const StickyCartBar = dynamic(() => import("@/components/StickyCartBar"));
 
 const realCategories = categories.filter((c) => c.id !== "todos");
 
-// ISR: regenerate category pages at most once per 5 minutes
-export const revalidate = 300;
+/**
+ * Cached product fetcher for category pages (Next 16 Cache Components).
+ * Replaces the old `export const revalidate = 300`. tenantId is part of
+ * the cache key automatically. Invalidable via `updateTag('category-products:*')`.
+ * Ver ADR-019.
+ */
+async function getCategoryProducts(tenantId: string, categoryId: string) {
+  "use cache";
+  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
+  cacheTag("category-products", `category-products:${tenantId}:${categoryId}`);
+  const allProducts = await ProductsDB.getAll(tenantId);
+  return allProducts.filter(
+    (p) => p.category === categoryId && p.active !== false,
+  );
+}
 
 interface Props {
   params: Promise<{ categoryId: string }>;
@@ -56,11 +70,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cat = findCategory(categoryId);
   if (!cat) return { title: "Categoría no encontrada" };
 
-  // Fetch product count/price from DB
+  // Fetch product count/price from DB (cached 5m via use cache helper)
   const hdrs = await headers();
   const tenantId = hdrs.get("x-tenant-id") ?? "main";
-  const allProducts = await ProductsDB.getAll(tenantId);
-  const catProducts = allProducts.filter((p) => p.category === cat.id && p.active !== false);
+  const catProducts = await getCategoryProducts(tenantId, cat.id);
   const productCount = catProducts.length;
   const minPrice = catProducts.length ? Math.min(...catProducts.map((p) => p.price)) : 0;
 
@@ -112,11 +125,10 @@ export default async function CategoryPage({ params }: Props) {
 
   const categoryUrl = `https://www.buleje.pe/tienda/categoria/${cat.id}`;
   
-  // Fetch products from DB for JSON-LD schema
+  // Fetch products from DB for JSON-LD schema (cached 5m via use cache helper)
   const hdrs = await headers();
   const tenantId = hdrs.get("x-tenant-id") ?? "main";
-  const allProducts = await ProductsDB.getAll(tenantId);
-  const catProducts = allProducts.filter((p) => p.category === cat.id && p.active !== false);
+  const catProducts = await getCategoryProducts(tenantId, cat.id);
 
   return (
     <>

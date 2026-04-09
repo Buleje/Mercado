@@ -1,7 +1,7 @@
-# ADR-019: Next 16 Cache Components incompatible con `export const dynamic = "force-dynamic"`
+# ADR-019: Next 16 Cache Components incompatible con `export const dynamic = "force-dynamic"` y `export const revalidate = N`
 
 ## Estado
-✅ Aceptada — hotfix aplicado 2026-04-09 (488 archivos `.ts/.tsx` limpiados)
+✅ Aceptada — hotfix aplicado 2026-04-09 (488 archivos `.ts/.tsx` limpiados, ampliada 2026-04-09 para cubrir `revalidate`)
 
 ## Fecha
 2026-04-09
@@ -86,3 +86,22 @@ Elegimos la **Opción B — remover el export en los 488 archivos**.
 - `CLAUDE.md` — regla crítica #4 actualizada
 - `scripts/remove-force-dynamic.ts` — script del hotfix
 - ADR-016 — Plan Maestro 24 semanas (contiene el Quick Win Q5 que introdujo `cacheComponents: true`)
+
+## Amplición 2026-04-09 — `export const revalidate`
+
+Next.js 16 también rechaza el antiguo ISR segment config `export const revalidate = N` cuando `cacheComponents: true` está activo. Error visible:
+
+```
+Route segment config "revalidate" is not compatible with
+`nextConfig.cacheComponents`. Please remove it.
+```
+
+**Archivos afectados (encontrados con `grep -R "^export const revalidate" app/`):**
+
+1. `app/api/superadmin/project-intel/route.ts` — removido. Los helpers `parsePracticasAudit()` y `parseTechDebt()` ahora usan `"use cache"` + `cacheLife({ revalidate: 300, stale: 60, expire: 600 })` + `cacheTag("project-intel:*")`. El handler `GET` sigue siendo dinámico porque lee `req.cookies` para auth.
+
+2. `app/(store)/tienda/categoria/[categoryId]/page.tsx` — removido. Se extrajo un helper `getCategoryProducts(tenantId, categoryId)` con `"use cache"` + `cacheLife({ revalidate: 300, stale: 60, expire: 900 })` + `cacheTag("category-products", "category-products:${tenantId}:${categoryId}")`. La página principal sigue dinámica por `headers()`.
+
+**Patrón canónico Next 16:** cuando se necesita caché time-based, mover el fetch al interior de una función async con `"use cache"` y usar `cacheLife({ revalidate: N })`. Los argumentos de la función (ej: `tenantId`) se incluyen automáticamente en la cache key. Invalidación vía `revalidateTag("tag")` o `updateTag("tag")` (esta última para invalidación dentro de la misma request).
+
+**Regla crítica #4 del CLAUDE.md queda actualizada** para prohibir también `export const revalidate = N` en cualquier archivo `.ts/.tsx` dentro de `app/`. Para caché, usar directiva `"use cache"` + `cacheLife`.

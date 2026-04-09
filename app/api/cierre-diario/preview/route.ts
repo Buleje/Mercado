@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -121,7 +122,8 @@ export async function GET(req: NextRequest) {
         const hour = h < 0 ? h + 24 : h;
         if (!hourMap[hour]) hourMap[hour] = { count: 0, total: 0 };
         hourMap[hour].count++;
-        hourMap[hour].total += v.total;
+        // TD-018: v.total es Decimal
+        hourMap[hour].total += toNumOrZero(v.total);
       }
       let maxCount = 0;
       let bestHour = 0;
@@ -135,9 +137,10 @@ export async function GET(req: NextRequest) {
     }
 
     // Compute efectivo esperado (sales paid with efectivo)
+    // TD-018: v.total es Decimal
     const efectivoEsperado = ventasDetalle
       .filter((v) => v.payment === "efectivo")
-      .reduce((sum, v) => sum + v.total, 0);
+      .reduce((sum, v) => sum + toNumOrZero(v.total), 0);
 
     // Get product name for top product
     let productoTop: string | null = null;

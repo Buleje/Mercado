@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { ProductVariant as PProductVariant } from "@/lib/generated/prisma/client";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -53,7 +54,8 @@ function mapVariant(r: PProductVariant): DbProductVariant {
     productId: r.productId,
     name: r.name,
     sku: r.sku ?? null,
-    priceModifier: r.priceModifier,
+    // TD-018: priceModifier es Decimal
+    priceModifier: toNumOrZero(r.priceModifier),
     stock: r.stock ?? null,
     attributesJson: r.attributesJson ?? null,
     isActive: r.isActive,

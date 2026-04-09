@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/analytics/cash-flow
@@ -81,7 +82,8 @@ export async function GET(req: NextRequest) {
       for (const sale of sales.value) {
         const key = sale.createdAt.toISOString().slice(0, 10);
         const day = dailyMap.get(key);
-        if (day) day.ingresos += sale.total;
+        // TD-018: sale.total es Decimal
+        if (day) day.ingresos += toNumOrZero(sale.total);
       }
     }
 
@@ -100,7 +102,8 @@ export async function GET(req: NextRequest) {
       for (const expense of expenses.value) {
         const key = expense.date.toISOString().slice(0, 10);
         const day = dailyMap.get(key);
-        if (day) day.egresos += expense.amount;
+        // TD-018: expense.amount es Decimal
+        if (day) day.egresos += toNumOrZero(expense.amount);
       }
     }
 
@@ -109,7 +112,8 @@ export async function GET(req: NextRequest) {
       for (const payment of payments.value) {
         const key = payment.date.toISOString().slice(0, 10);
         const day = dailyMap.get(key);
-        if (day) day.egresos += payment.amount;
+        // TD-018: payment.amount es Decimal
+        if (day) day.egresos += toNumOrZero(payment.amount);
       }
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -67,7 +68,8 @@ export async function GET(req: NextRequest) {
           numero: v.comprobanteNumero || v.id.substring(0, 8),
           cliente: v.customerPhone || "Sin cliente",
           ruc: v.comprobanteRuc ?? undefined,
-          total: v.total,
+          // TD-018: v.total es Decimal
+          total: toNumOrZero(v.total),
           fecha: v.createdAt.toISOString(),
           estado: "emitido",
           fuente: "venta",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/marketplace/admin/overview
@@ -104,8 +105,9 @@ export async function GET(req: NextRequest) {
     });
     const orderStoreMap = new Map(orderStores.map((s) => [s.tenantId, s.name]));
 
-    const monthRevenue = monthOrders._sum.total ?? 0;
-    const prevMonthRevenue = prevMonthOrders._sum.total ?? 0;
+    // TD-018: _sum.total es Decimal | null → convertir
+    const monthRevenue = toNumOrZero(monthOrders._sum.total);
+    const prevMonthRevenue = toNumOrZero(prevMonthOrders._sum.total);
     const revenueGrowth = prevMonthRevenue > 0
       ? Math.round(((monthRevenue - prevMonthRevenue) / prevMonthRevenue) * 100)
       : 0;

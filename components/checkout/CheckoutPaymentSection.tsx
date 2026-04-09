@@ -490,6 +490,7 @@ export function CheckoutPaymentSection({
         </m.button>
         <m.button
           type="submit"
+          data-testid="pago-submit"
           disabled={submitting}
           whileHover={submitting ? {} : { scale: 1.03, y: -2 }}
           whileTap={submitting ? {} : { scale: 0.96 }}

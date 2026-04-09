@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/lib/generated/prisma/client";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -152,7 +153,8 @@ export const RecetasDB = {
 
     let total = 0;
     for (const ing of receta.ingredientes) {
-      const costUnit = ing.producto.costPrice ?? ing.producto.price;
+      // TD-018: costPrice / price son Decimal
+      const costUnit = toNumOrZero(ing.producto.costPrice) || toNumOrZero(ing.producto.price);
       total += costUnit * Number(ing.cantidad);
     }
 

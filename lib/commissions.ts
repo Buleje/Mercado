@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * Calcula la comisión de marketplace para una orden.
@@ -85,7 +86,8 @@ export async function recordMarketplaceCommissions(
         orderId,
         partnerId: deliveryPartnerId,
         type: "delivery_fee",
-        amount: assignment.fee,
+        // TD-018: fee es Decimal
+        amount: toNumOrZero(assignment.fee),
         rate: 0, // fee fijo, no porcentaje
       });
     }

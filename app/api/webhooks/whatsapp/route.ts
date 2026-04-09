@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import {
   sendBotReply,
   sendInteractiveButtons,
@@ -207,9 +208,10 @@ async function handleCatalogo(sender: string) {
       take: 20,
     });
 
+    // TD-018: p.price es Decimal → convertir a number para el catálogo
     const catalog = products.map(p => ({
       name: p.name,
-      price: p.price ?? 0,
+      price: toNumOrZero(p.price),
       stock: p.stock ?? 0,
     }));
 
@@ -236,7 +238,9 @@ async function handlePrecio(sender: string, text: string) {
 
     if (product) {
       const stockText = (product.stock ?? 0) > 0 ? `✅ ${product.stock} ${product.unit} disponibles` : "⛔ Agotado";
-      sendBotReply(sender, `💰 *${product.name}*\nPrecio: S/${(product.price ?? 0).toFixed(2)} por ${product.unit}\n${stockText}\n\n🛒 Escribe "QUIERO 1 ${product.name}" para pedir`).catch(() => {});
+      // TD-018: product.price es Decimal
+      const priceNum = toNumOrZero(product.price);
+      sendBotReply(sender, `💰 *${product.name}*\nPrecio: S/${priceNum.toFixed(2)} por ${product.unit}\n${stockText}\n\n🛒 Escribe "QUIERO 1 ${product.name}" para pedir`).catch(() => {});
     } else {
       sendBotReply(sender, `No encontré "${term}" en nuestro catálogo.\nEscribe *CATALOGO* para ver todos los productos.`).catch(() => {});
     }
@@ -290,11 +294,16 @@ async function handleEstado(sender: string) {
 
     if (activeOrders.length > 0) {
       for (const order of activeOrders) {
+        // TD-018: order.total e i.price son Decimal → convertir
         const detail = formatOrderDetail({
           id: order.id,
           status: order.status,
-          total: order.total,
-          items: order.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
+          total: toNumOrZero(order.total),
+          items: order.items.map(i => ({
+            name: i.name,
+            quantity: i.quantity,
+            price: toNumOrZero(i.price),
+          })),
         });
         sendBotReply(sender, detail).catch(() => {});
       }
@@ -342,7 +351,8 @@ async function handlePedido(sender: string, text: string) {
         orderItems.push({
           productId: product.id,
           name: product.name,
-          price: product.price ?? 0,
+          // TD-018: product.price es Decimal
+          price: toNumOrZero(product.price),
           quantity: item.quantity,
           unit: product.unit ?? "und",
           image: product.image ?? "",

@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { prisma } from "@/lib/prisma";
 import { updateCreditProfile } from "@/lib/credit/scoring-engine";
 
@@ -96,7 +97,8 @@ export async function PUT(
   } = { isActive };
 
   if (creditLimitOverride !== undefined) {
-    const newAvailable = Math.max(0, creditLimitOverride - profile.usedCredit);
+    // TD-018: profile.usedCredit es Decimal
+    const newAvailable = Math.max(0, creditLimitOverride - toNumOrZero(profile.usedCredit));
     updateData.creditLimit = creditLimitOverride;
     updateData.availableCredit = newAvailable;
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export type CLVCustomer = {
   phone: string;
@@ -82,7 +83,8 @@ export async function GET(req: NextRequest) {
       const daysSinceFirst = Math.floor((now.getTime() - first.getTime()) / 86400000);
       const daysSinceLast  = Math.floor((now.getTime() - last.getTime())  / 86400000);
       const orderCount = r._count.id;
-      const totalSpent = r._sum.total ?? 0;
+      // TD-018: r._sum.total es Decimal | null
+      const totalSpent = toNumOrZero(r._sum.total);
       return {
         phone,
         name: nameMap.get(phone) ?? phone,

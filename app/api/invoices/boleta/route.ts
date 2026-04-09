@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * POST /api/invoices/boleta
@@ -45,8 +46,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
     }
 
-    const items = order.items.map(i => ({ name: i.name, price: i.price, quantity: i.quantity }));
-    const total = order.total ?? 0;
+    // TD-018: i.price es Decimal → convertir a number en el shape de items
+    const items = order.items.map(i => ({
+      name: i.name,
+      price: toNumOrZero(i.price),
+      quantity: i.quantity,
+    }));
+    const total = toNumOrZero(order.total);
     const igv = total * 0.18; // 18% IGV Peru
     const subtotal = total - igv;
 

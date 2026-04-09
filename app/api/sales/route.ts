@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { SalesDB, InventoryMovementsDB, CashRegistersDB, LoyaltyDB } from "@/lib/jsondb";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { requireAdmin } from "@/lib/require-admin";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
@@ -75,11 +76,16 @@ export async function POST(req: NextRequest) {
   const total = data.items.reduce((s, i) => s + i.price * i.quantity, 0);
 
   // Look up costPrice for each product to capture COGS at sale time
+  // TD-018: product.costPrice / price son Decimal
   const pIds = data.items.map(i => i.productId);
   const costMap = new Map<number, number>();
   if (pIds.length > 0) {
     const prods = await prisma.product.findMany({ where: { id: { in: pIds } }, select: { id: true, costPrice: true, price: true } });
-    for (const p of prods) costMap.set(p.id, p.costPrice ?? p.price * 0.7);
+    for (const p of prods) {
+      const costNum = toNumOrZero(p.costPrice);
+      const priceNum = toNumOrZero(p.price);
+      costMap.set(p.id, costNum || priceNum * 0.7);
+    }
   }
   const itemsWithCost = data.items.map(i => ({ ...i, costPrice: costMap.get(i.productId) }));
   const totalCogs = itemsWithCost.reduce((s, i) => s + (i.costPrice ?? i.price * 0.7) * i.quantity, 0);

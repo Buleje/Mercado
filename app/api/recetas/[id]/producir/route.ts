@@ -3,6 +3,7 @@ import { z } from "zod";
 import { RecetasDB } from "@/lib/db/recetas.db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logActivity } from "@/lib/activity-logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 
@@ -78,7 +79,8 @@ export async function POST(
           },
         });
 
-        totalCosto += (producto.costPrice ?? producto.price) * cantidadNecesaria;
+        // TD-018: costPrice y price son Decimal
+        totalCosto += (toNumOrZero(producto.costPrice) || toNumOrZero(producto.price)) * cantidadNecesaria;
       }
 
       return totalCosto;

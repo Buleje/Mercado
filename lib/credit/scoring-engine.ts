@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // ── Constantes de pesos del scoring ──────────────────────────────────────────
 
@@ -192,13 +193,14 @@ export async function calculateCreditScore(
   }
 
   // Calcular métricas de compras
+  // TD-018: s.total / o.total / customer.totalSpent son Decimal
   const allPurchases = [
-    ...customer.sales.map((s) => ({ amount: Number(s.total), date: s.createdAt })),
-    ...customer.orders.map((o) => ({ amount: Number(o.total), date: o.createdAt })),
+    ...customer.sales.map((s) => ({ amount: toNumOrZero(s.total), date: s.createdAt })),
+    ...customer.orders.map((o) => ({ amount: toNumOrZero(o.total), date: o.createdAt })),
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
 
   const totalPurchaseCount = allPurchases.length;
-  const totalSpent = customer.totalSpent ?? 0;
+  const totalSpent = toNumOrZero(customer.totalSpent);
   const avgTicket = totalPurchaseCount > 0 ? totalSpent / totalPurchaseCount : 0;
 
   const daysSinceLastPurchase =
@@ -309,7 +311,8 @@ export async function updateCreditProfile(
   ].sort((a, b) => b.getTime() - a.getTime());
 
   const totalPurchaseCount = allDates.length;
-  const totalSpent = Number(customer.totalSpent ?? 0);
+  // TD-018: customer.totalSpent es Decimal
+  const totalSpent = toNumOrZero(customer.totalSpent);
   const avgTicket = totalPurchaseCount > 0 ? totalSpent / totalPurchaseCount : 0;
 
   let purchaseFreqDays: number | null = null;
@@ -333,7 +336,8 @@ export async function updateCreditProfile(
     },
   });
 
-  const usedCredit = existing?.usedCredit ?? 0;
+  // TD-018: existing.usedCredit es Decimal
+  const usedCredit = toNumOrZero(existing?.usedCredit);
   const availableCredit = Math.max(0, result.creditLimit - usedCredit);
 
   await prisma.creditProfile.upsert({

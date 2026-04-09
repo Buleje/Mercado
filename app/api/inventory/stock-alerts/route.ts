@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // GET — Consolida 4 tipos de alertas de stock
 export async function GET(req: NextRequest) {
@@ -110,15 +111,19 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const sinMovimiento = staleProducts.slice(0, 100).map(p => ({
-      id: p.id,
-      name: p.name,
-      stock: p.stock ?? 0,
-      costPrice: p.costPrice ?? 0,
-      valorAtado: (p.stock ?? 0) * (p.costPrice ?? 0),
-      category: p.category,
-      lastSaleDate: staleLastSaleMap.get(p.id)?.toISOString() ?? null,
-    }));
+    const sinMovimiento = staleProducts.slice(0, 100).map(p => {
+      // TD-018: costPrice es Decimal
+      const costPriceNum = toNumOrZero(p.costPrice);
+      return {
+        id: p.id,
+        name: p.name,
+        stock: p.stock ?? 0,
+        costPrice: costPriceNum,
+        valorAtado: (p.stock ?? 0) * costPriceNum,
+        category: p.category,
+        lastSaleDate: staleLastSaleMap.get(p.id)?.toISOString() ?? null,
+      };
+    });
 
     const sinMovimientoValor = sinMovimiento.reduce((sum, p) => sum + p.valorAtado, 0);
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero", "cajero"]);
@@ -67,14 +68,17 @@ export async function GET(req: NextRequest) {
         (today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24),
       );
 
-      const remaining = p.amount - p.paidAmount;
+      // TD-018: amount y paidAmount son Decimal
+      const amountNum = toNumOrZero(p.amount);
+      const paidAmountNum = toNumOrZero(p.paidAmount);
+      const remaining = amountNum - paidAmountNum;
 
       if (!calendar[dateKey]) calendar[dateKey] = [];
       calendar[dateKey].push({
         id: p.id,
         supplierName: p.supplier?.name ?? p.supplierName,
-        amount: p.amount,
-        paidAmount: p.paidAmount,
+        amount: amountNum,
+        paidAmount: paidAmountNum,
         status: p.status,
         daysOverdue: Math.max(0, daysOverdue),
         description: p.description,

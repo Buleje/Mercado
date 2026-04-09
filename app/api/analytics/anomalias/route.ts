@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 type Anomalia = {
   type: "venta_baja" | "stock_muerto" | "fiado_vencido" | "margen_critico";
@@ -53,9 +54,9 @@ export async function GET(req: NextRequest) {
       ),
     ]);
 
-    const ventasHoy = ventasHoyAgg.status === "fulfilled" ? (ventasHoyAgg.value._sum.total ?? 0) : 0;
+    const ventasHoy = ventasHoyAgg.status === "fulfilled" ? toNumOrZero(ventasHoyAgg.value._sum.total) : 0;
     const pastTotals = ventasPasadas
-      .map((r) => (r.status === "fulfilled" ? (r.value._sum.total ?? 0) : 0))
+      .map((r) => (r.status === "fulfilled" ? toNumOrZero(r.value._sum.total) : 0))
       .filter((t) => t > 0);
 
     if (pastTotals.length >= 2) {
@@ -153,7 +154,7 @@ export async function GET(req: NextRequest) {
         const diasVencido = Math.floor(
           (now.getTime() - new Date(fiado.fechaVence!).getTime()) / (1000 * 60 * 60 * 24)
         );
-        const saldo = Number(fiado.saldo);
+        const saldo = toNumOrZero(fiado.saldo);
 
         anomalias.push({
           type: "fiado_vencido",
@@ -181,19 +182,27 @@ export async function GET(req: NextRequest) {
     });
 
     const criticalMarginProducts = productsLowMargin
+      .map((p) => ({
+        ...p,
+        _priceNum: toNumOrZero(p.price),
+        _costNum: toNumOrZero(p.costPrice),
+      }))
       .filter((p) => {
-        const margin = ((p.price - (p.costPrice ?? 0)) / p.price) * 100;
+        if (p._priceNum <= 0) return false;
+        const margin = ((p._priceNum - p._costNum) / p._priceNum) * 100;
         return margin < 10;
       })
       .slice(0, 10);
 
     for (const product of criticalMarginProducts) {
-      const margin = ((product.price - (product.costPrice ?? 0)) / product.price) * 100;
+      const priceNum = product._priceNum;
+      const costNum = product._costNum;
+      const margin = ((priceNum - costNum) / priceNum) * 100;
       anomalias.push({
         type: "margen_critico",
         severity: margin < 5 ? "alto" : "medio",
         title: `Margen crítico: ${product.name}`,
-        body: `Margen ${margin.toFixed(1)}% — precio S/ ${product.price.toFixed(2)}, costo S/ ${(product.costPrice ?? 0).toFixed(2)}`,
+        body: `Margen ${margin.toFixed(1)}% — precio S/ ${priceNum.toFixed(2)}, costo S/ ${costNum.toFixed(2)}`,
         actionUrl: `/admin/productos?search=${encodeURIComponent(product.name)}`,
         actionLabel: "Ajustar precio",
       });

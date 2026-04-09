@@ -76,8 +76,8 @@ model Product {
   id            Int       @id @default(autoincrement())
   name          String
   category      String
-  price         Float
-  costPrice     Float?
+  price         Decimal   @db.Decimal(12, 2)
+  costPrice     Decimal?  @db.Decimal(12, 2)
   image         String    @default("")
   description   String?
   unit          String    @default("unidad")
@@ -142,7 +142,7 @@ model ProductVariant {
   product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   name           String
   sku            String?
-  priceModifier  Float    @default(0)
+  priceModifier  Decimal  @default(0) @db.Decimal(12, 2)
   stock          Int?
   attributesJson String?
   isActive       Boolean  @default(true)
@@ -170,15 +170,15 @@ model Customer {
   birthday          DateTime?
   loyaltyPoints     Int       @default(0)
   loyaltyTier       String    @default("bronce")
-  totalSpent        Float     @default(0)
+  totalSpent        Decimal   @default(0) @db.Decimal(12, 2)
   notifOrderUpdates Boolean   @default(true)
   notifPromotions   Boolean   @default(true)
   notifRestock      Boolean   @default(false)
   privateNotes      String?
   referralCode      String?   @unique
   referredBy        String?
-  creditBalance     Float     @default(0)
-  creditLimit       Float     @default(0) // 0 = sin límite
+  creditBalance     Decimal   @default(0) @db.Decimal(12, 2)
+  creditLimit       Decimal   @default(0) // 0 = sin límite @db.Decimal(12, 2)
   tags              String? // JSON array: ["mayorista", "restaurante", "vecino"]
 
   // ── Identificación ──
@@ -272,17 +272,17 @@ model Order {
   customerPhone       String?
   customerLocation    String      @default("")
   customerReference   String      @default("")
-  total               Float
+  total               Decimal     @db.Decimal(12, 2)
   status              OrderStatus @default(pendiente)
   notes               String?
   paymentMethod       String?
   yapeOperationNumber String?
   deuda               Boolean?
   appliedCouponCode   String?
-  couponDiscount      Float?
+  couponDiscount      Decimal?    @db.Decimal(12, 2)
   appliedPromoId      String?
-  discountAmount      Float?
-  totalCogs           Float?
+  discountAmount      Decimal?    @db.Decimal(12, 2)
+  totalCogs           Decimal?    @db.Decimal(12, 2)
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
   tenantId            String
@@ -324,15 +324,15 @@ model Order {
 }
 
 model OrderItem {
-  id        Int    @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   orderId   String
   productId Int?
   name      String
-  price     Float
-  costPrice Float?
+  price     Decimal  @db.Decimal(12, 2)
+  costPrice Decimal? @db.Decimal(12, 2)
   quantity  Int
   unit      String
-  image     String @default("")
+  image     String   @default("")
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
@@ -472,16 +472,16 @@ model Settings {
   inventoryCountFreq String? @default("monthly") // weekly | monthly | quarterly
 
   // ── Caja y pagos (Mejora M47-M54) ──
-  cashOpeningAmount Float?  @default(100)
-  cashAlertMax      Float?  @default(500)
-  returnPolicyDays  Int?    @default(7)
-  returnMaxNoAuth   Float?  @default(50)
+  cashOpeningAmount Decimal? @default(100) @db.Decimal(12, 2)
+  cashAlertMax      Decimal? @default(500) @db.Decimal(12, 2)
+  returnPolicyDays  Int?     @default(7)
+  returnMaxNoAuth   Decimal? @default(50) @db.Decimal(12, 2)
   autoCloseTime     String? // e.g. "22:00"
 
   // ── Delivery (Mejora M55-M62) ──
   deliveryZonesJson String? // JSON array: [{ name, fee, estimatedMin }]
-  freeDeliveryMin   Float?  @default(0)
-  deliveryMaxRadius Float?  @default(10)
+  freeDeliveryMin   Decimal? @default(0) @db.Decimal(12, 2)
+  deliveryMaxRadius Float?   @default(10)
   deliveryHoursJson String? // JSON: { morning, afternoon, evening }
   ridersJson        String? // JSON array: [{ name, phone, zone }]
 
@@ -597,12 +597,12 @@ model PurchaseOrder {
   id            String         @id
   supplierId    String
   supplierName  String
-  total         Float
+  total         Decimal        @db.Decimal(12, 2)
   status        PurchaseStatus @default(pendiente)
   notes         String?
   paymentMethod String?
   deliveryDate  DateTime?
-  discount      Float?         @default(0)
+  discount      Decimal?       @default(0) @db.Decimal(12, 2)
   tenantId      String
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -617,12 +617,12 @@ model PurchaseOrder {
 }
 
 model PurchaseItem {
-  id              Int    @id @default(autoincrement())
+  id              Int     @id @default(autoincrement())
   purchaseOrderId String
   productId       Int
   name            String
   quantity        Int
-  unitCost        Float
+  unitCost        Decimal @db.Decimal(12, 2)
   unit            String
 
   purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
@@ -634,11 +634,11 @@ model PurchaseItem {
 // ─── Sales (POS) ────────────────────────────────────────
 model Sale {
   id            String   @id
-  total         Float
-  totalCogs     Float?
+  total         Decimal  @db.Decimal(12, 2)
+  totalCogs     Decimal? @db.Decimal(12, 2)
   payment       String   @default("efectivo")
-  amountPaid    Float    @default(0)
-  change        Float    @default(0)
+  amountPaid    Decimal  @default(0) @db.Decimal(12, 2)
+  change        Decimal  @default(0) @db.Decimal(12, 2)
   customerPhone String?
   cashierId     String?
   tenantId      String
@@ -666,12 +666,12 @@ model Sale {
 }
 
 model SaleItem {
-  id        Int    @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   saleId    String
   productId Int
   name      String
-  price     Float
-  costPrice Float?
+  price     Decimal  @db.Decimal(12, 2)
+  costPrice Decimal? @db.Decimal(12, 2)
   quantity  Int
   unit      String
 
@@ -687,7 +687,7 @@ model Promotion {
   name            String
   description     String    @default("")
   discountPercent Float     @default(0)
-  minPurchase     Float?
+  minPurchase     Decimal?  @db.Decimal(12, 2)
   imageUrl        String?
   message         String?
   targetType      String    @default("all")
@@ -707,8 +707,8 @@ model Payable {
   supplierName    String
   purchaseOrderId String?
   description     String   @default("")
-  amount          Float
-  paidAmount      Float    @default(0)
+  amount          Decimal  @db.Decimal(12, 2)
+  paidAmount      Decimal  @default(0) @db.Decimal(12, 2)
   status          String   @default("pendiente")
   dueDate         DateTime
   tenantId        String
@@ -727,7 +727,7 @@ model Payable {
 model Payment {
   id        String   @id
   payableId String
-  amount    Float
+  amount    Decimal  @db.Decimal(12, 2)
   method    String   @default("efectivo")
   date      DateTime @default(now())
   reference String?
@@ -747,10 +747,10 @@ model CashRegister {
   id             String             @id @default(cuid())
   openedAt       DateTime           @default(now())
   closedAt       DateTime?
-  openingAmount  Float              @default(0)
-  closingAmount  Float?
-  expectedAmount Float?
-  difference     Float?
+  openingAmount  Decimal            @default(0) @db.Decimal(12, 2)
+  closingAmount  Decimal?           @db.Decimal(12, 2)
+  expectedAmount Decimal?           @db.Decimal(12, 2)
+  difference     Decimal?           @db.Decimal(12, 2)
   status         CashRegisterStatus @default(abierta)
   notes          String?
   tenantId       String
@@ -764,7 +764,7 @@ model CashMovement {
   id             String   @id @default(cuid())
   cashRegisterId String
   type           String // venta, ingreso, egreso, apertura, cierre
-  amount         Float
+  amount         Decimal  @db.Decimal(12, 2)
   method         String   @default("efectivo") // efectivo, yape, plin, tarjeta, transferencia
   description    String   @default("")
   saleId         String?
@@ -809,9 +809,9 @@ model Coupon {
   tenantId      String
   description   String    @default("")
   discountType  String    @default("percent") // percent | fixed | giftcard
-  discountValue Float     @default(0)
-  balance       Float? // remaining balance for giftcard type
-  minPurchase   Float?
+  discountValue Decimal   @default(0) @db.Decimal(12, 2)
+  balance       Decimal?  @db.Decimal(12, 2) // remaining balance for giftcard type
+  minPurchase   Decimal?  @db.Decimal(12, 2)
   maxUses       Int?
   usedCount     Int       @default(0)
   active        Boolean   @default(true)
@@ -828,7 +828,7 @@ model Return {
   saleId        String?
   orderId       String?
   reason        String   @default("")
-  total         Float    @default(0)
+  total         Decimal  @default(0) @db.Decimal(12, 2)
   photoUrl      String?
   customerPhone String?
   creditApplied Boolean  @default(false)
@@ -841,12 +841,12 @@ model Return {
 }
 
 model ReturnItem {
-  id        Int    @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   returnId  String
   productId Int
   name      String
   quantity  Int
-  price     Float
+  price     Decimal @db.Decimal(12, 2)
   unit      String
 
   returnRecord Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
@@ -884,8 +884,8 @@ model ShoppingListItem {
 model PriceHistory {
   id        Int      @id @default(autoincrement())
   productId Int
-  oldPrice  Float
-  newPrice  Float
+  oldPrice  Decimal  @db.Decimal(12, 2)
+  newPrice  Decimal  @db.Decimal(12, 2)
   tenantId  String
   changedAt DateTime @default(now())
 
@@ -943,7 +943,7 @@ model Expense {
   id          String   @id @default(cuid())
   category    String // alquiler, servicios, personal, transporte, limpieza, marketing, otros
   description String   @default("")
-  amount      Float
+  amount      Decimal  @db.Decimal(12, 2)
   date        DateTime @default(now())
   recurring   Boolean  @default(false)
   tenantId    String
@@ -959,7 +959,7 @@ model Bundle {
   id          String   @id @default(cuid())
   name        String
   description String   @default("")
-  price       Float // bundle price (usually less than sum of items)
+  price       Decimal  @db.Decimal(12, 2) // bundle price (usually less than sum of items)
   image       String   @default("")
   active      Boolean  @default(true)
   tenantId    String
@@ -1387,7 +1387,7 @@ model Batch {
   supplierName    String   @default("")
   entryDate       DateTime
   expiryDate      DateTime
-  costUnit        Float    @default(0)
+  costUnit        Decimal  @default(0) @db.Decimal(12, 2)
   notes           String   @default("")
   productId       Int? // FK to Product catalogue (optional, backward compat)
   warehouseId     String? // FK to Warehouse where this batch is stored
@@ -1455,7 +1455,7 @@ model ABTestEvent {
   variantId String
   visitorId String // anonymous cookie or phone
   event     String // "impression" | "conversion"
-  value     Float? // optional conversion value
+  value     Decimal? @db.Decimal(12, 2) // optional conversion value
   tenantId  String
   createdAt DateTime @default(now())
 
@@ -1661,7 +1661,7 @@ model Campaign {
   delivered     Int       @default(0)
   opened        Int       @default(0)
   conversions   Int       @default(0)
-  revenue       Float     @default(0)
+  revenue       Decimal   @default(0) @db.Decimal(12, 2)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -1676,8 +1676,8 @@ model CommissionRule {
   tenantId  String
   cashierId String // matches adminUser.username
   label     String   @default("") // e.g. "Nivel base", "Objetivo Q1"
-  minSales  Float    @default(0) // minimum revenue to qualify
-  maxSales  Float? // null = no upper limit
+  minSales  Decimal  @default(0) // minimum revenue to qualify @db.Decimal(12, 2)
+  maxSales  Decimal? @db.Decimal(12, 2) // null = no upper limit
   rate      Float    @default(0) // commission % applied to revenue
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2239,7 +2239,7 @@ model DiscountRule {
   id          String   @id @default(cuid())
   nombre      String
   tipo        String // porcentaje, 2x1, 3x2, combo, monto_fijo
-  valor       Float    @default(0)
+  valor       Decimal  @default(0) @db.Decimal(12, 2)
   categorias  String   @default("[]") // JSON array
   condicion   String?
   fechaInicio DateTime
@@ -2390,8 +2390,8 @@ model StoreProduct {
   store               Store                @relation(fields: [storeId], references: [id])
   productId           Int
   product             Product              @relation(fields: [productId], references: [id])
-  retailPrice         Float
-  wholesalePrice      Float?
+  retailPrice         Decimal              @db.Decimal(12, 2)
+  wholesalePrice      Decimal?             @db.Decimal(12, 2)
   minOrderQty         Int                  @default(1)
   isActive            Boolean              @default(true)
   volumePricingTiers  Json? // [{ minQty: 10, discount: 5 }, ...]
@@ -2411,7 +2411,7 @@ model DeliveryPartner {
   vehicleType String               @default("moto")
   isActive    Boolean              @default(true)
   rating      Float                @default(5.0)
-  fee         Float                @default(5.0)
+  fee         Decimal              @default(5.0) @db.Decimal(12, 2)
   notes       String? // JSON: { notifyWhatsApp, notifyEmail, notifyUrgent }
   tenantId    String
   createdAt   DateTime             @default(now())
@@ -2427,7 +2427,7 @@ model DeliveryAssignment {
   partnerId   String
   partner     DeliveryPartner @relation(fields: [partnerId], references: [id])
   status      String          @default("assigned")
-  fee         Float
+  fee         Decimal         @db.Decimal(12, 2)
   pickedUpAt  DateTime?
   deliveredAt DateTime?
   notes       String?
@@ -2598,8 +2598,8 @@ model WholesaleOrder {
   buyerTenantId  String
   sellerTenantId String
   status         String               @default("pending")
-  total          Float
-  commission     Float                @default(0)
+  total          Decimal              @db.Decimal(12, 2)
+  commission     Decimal              @default(0) @db.Decimal(12, 2)
   notes          String?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
@@ -2616,8 +2616,8 @@ model WholesaleOrderItem {
   productId        Int
   name             String
   quantity         Int
-  unitPrice        Float
-  total            Float
+  unitPrice        Decimal        @db.Decimal(12, 2)
+  total            Decimal        @db.Decimal(12, 2)
   appliedDiscount  Float          @default(0) // porcentaje de descuento por volumen aplicado
 
   @@index([wholesaleOrderId])
@@ -2645,7 +2645,7 @@ model CommissionLedger {
   storeId   String?
   partnerId String?
   type      String
-  amount    Float
+  amount    Decimal   @db.Decimal(12, 2)
   rate      Float
   status    String    @default("pending")
   settledAt DateTime?
@@ -2729,9 +2729,9 @@ model SunatInvoice {
   number       Int // correlativo
   customerRuc  String? // RUC del receptor (solo facturas)
   customerName String // nombre/razón social del receptor
-  subtotal     Float // monto gravado (sin IGV)
-  igv          Float // monto IGV
-  total        Float // total con IGV
+  subtotal     Decimal   @db.Decimal(12, 2) // monto gravado (sin IGV)
+  igv          Decimal   @db.Decimal(12, 2) // monto IGV
+  total        Decimal   @db.Decimal(12, 2) // total con IGV
   xmlContent   String? // XML UBL 2.1 generado (texto)
   cdrResponse  String? // CDR XML devuelto por SUNAT
   sunatStatus  String    @default("pending") // pending | accepted | rejected | voided
@@ -2816,15 +2816,15 @@ model CreditProfile {
   tenantId         String
   customerId       String
   creditScore      Int      @default(0) // 0-1000
-  creditLimit      Float    @default(0) // monto máximo de crédito en PEN
-  usedCredit       Float    @default(0) // crédito utilizado actualmente
-  availableCredit  Float    @default(0) // creditLimit - usedCredit
+  creditLimit      Decimal  @default(0) // monto máximo de crédito en PEN @db.Decimal(12, 2)
+  usedCredit       Decimal  @default(0) // crédito utilizado actualmente @db.Decimal(12, 2)
+  availableCredit  Decimal  @default(0) // creditLimit - usedCredit @db.Decimal(12, 2)
   riskLevel        String   @default("none") // none | low | medium | high
   totalLoans       Int      @default(0) // total de préstamos dados
   paidOnTime       Int      @default(0) // pagados a tiempo
   paidLate         Int      @default(0) // pagados tarde
   defaulted        Int      @default(0) // impagos
-  avgTicket        Float    @default(0) // ticket promedio de compra
+  avgTicket        Decimal  @default(0) // ticket promedio de compra @db.Decimal(12, 2)
   purchaseFreqDays Float? // frecuencia de compra en días
   lastScoreUpdate  DateTime @default(now())
   isActive         Boolean  @default(true)
@@ -2843,11 +2843,11 @@ model CreditInstallment {
   tenantId          String
   creditProfileId   String
   orderId           String? // orden que generó este crédito
-  totalAmount       Float // monto total del crédito
+  totalAmount       Decimal  @db.Decimal(12, 2) // monto total del crédito
   installments      Int // número de cuotas (2, 3, 4)
-  installmentAmount Float // monto por cuota
+  installmentAmount Decimal  @db.Decimal(12, 2) // monto por cuota
   interestRate      Float    @default(0) // tasa de interés mensual (ej: 0.05 = 5%)
-  paidAmount        Float    @default(0)
+  paidAmount        Decimal  @default(0) @db.Decimal(12, 2)
   paidInstallments  Int      @default(0)
   status            String   @default("active") // active | paid | overdue | defaulted
   nextDueDate       DateTime
@@ -2887,8 +2887,8 @@ model SupplierPriceVersion {
   supplierId    String
   productName   String
   sku           String?
-  oldPrice      Float
-  newPrice      Float
+  oldPrice      Decimal  @db.Decimal(12, 2)
+  newPrice      Decimal  @db.Decimal(12, 2)
   tenantId      String
   effectiveDate DateTime @default(now())
   createdAt     DateTime @default(now())
@@ -2986,7 +2986,7 @@ model ProductAnalytics {
   clicks      Int      @default(0)
   addsToCart  Int      @default(0)
   conversions Int      @default(0)
-  revenue     Float    @default(0)
+  revenue     Decimal  @default(0) @db.Decimal(12, 2)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

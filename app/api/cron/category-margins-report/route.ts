@@ -6,6 +6,7 @@ import { enqueueNotification } from "@/lib/queue";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/cron/category-margins-report
@@ -68,8 +69,8 @@ export async function GET(req: NextRequest) {
         const cat = item.product?.category || "Sin categoría";
         const existing = categoryMap.get(cat) || { revenue: 0, cost: 0, units: 0, items: 0 };
 
-        const itemRevenue = item.price * item.quantity;
-        const itemCost = (item.costPrice ?? 0) * item.quantity;
+        const itemRevenue = toNumOrZero(item.price) * item.quantity;
+        const itemCost = toNumOrZero(item.costPrice) * item.quantity;
 
         existing.revenue += itemRevenue;
         existing.cost += itemCost;

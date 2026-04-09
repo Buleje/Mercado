@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // GET /api/delivery/driver/[partnerId] — driver sees their assigned deliveries
 export async function GET(
@@ -49,9 +50,10 @@ export async function GET(
     const pending = assignments.filter(
       (a) => a.status === "assigned" || a.status === "picked_up" || a.status === "in_transit"
     ).length;
+    // TD-018: a.fee es Decimal
     const todayEarnings = assignments
       .filter((a) => a.status === "delivered" && a.deliveredAt && a.deliveredAt >= todayStart)
-      .reduce((sum, a) => sum + a.fee, 0);
+      .reduce((sum, a) => sum + toNumOrZero(a.fee), 0);
 
     return NextResponse.json({
       partner: { id: partner.id, name: partner.name },
@@ -60,7 +62,7 @@ export async function GET(
         id: a.id,
         orderId: a.orderId,
         status: a.status,
-        fee: a.fee,
+        fee: toNumOrZero(a.fee),
         createdAt: a.createdAt,
         pickedUpAt: a.pickedUpAt,
         deliveredAt: a.deliveredAt,

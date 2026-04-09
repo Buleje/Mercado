@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/analytics/predictions
@@ -68,9 +69,10 @@ export async function GET(req: NextRequest) {
 
     // ── 1. Proyección de ventas próxima semana ────────────────────────────────
     // Promedio semanal de 4 semanas × factor tendencia
-    const totalRevenue28 = sales28.reduce((s, sale) => s + (sale.total ?? 0), 0);
+    // TD-018: sale.total y _sum.total son Decimal
+    const totalRevenue28 = sales28.reduce((s, sale) => s + toNumOrZero(sale.total), 0);
     const avgWeeklySales = totalRevenue28 / 4;
-    const lastWeekRevenue = sales7._sum.total ?? 0;
+    const lastWeekRevenue = toNumOrZero(sales7._sum.total);
     // Tendencia: ratio semana pasada vs promedio semanal (capped entre 0.5 y 2)
     const trendFactor = avgWeeklySales > 0
       ? Math.min(2, Math.max(0.5, lastWeekRevenue / avgWeeklySales))
@@ -106,7 +108,8 @@ export async function GET(req: NextRequest) {
     const dayCounts: number[] = [0, 0, 0, 0, 0, 0, 0];
     for (const sale of sales28) {
       const day = new Date(sale.createdAt).getDay();
-      dayTotals[day] += sale.total ?? 0;
+      // TD-018: sale.total es Decimal
+      dayTotals[day] += toNumOrZero(sale.total);
       dayCounts[day]++;
     }
     const dayAvgs = dayTotals.map((t, i) => dayCounts[i] > 0 ? t / dayCounts[i] : 0);

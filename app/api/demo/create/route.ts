@@ -3,6 +3,7 @@ import { hash } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { createRateLimiter, getClientIp } from "@/lib/rate-limit";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 // Rate limit: 1 demo por IP cada 30 minutos
 const demoLimiter = createRateLimiter({ maxRequests: 1, windowMs: 30 * 60 * 1000 });
@@ -174,10 +175,15 @@ export async function POST(req: NextRequest) {
     });
 
     // ── Seed 15 pedidos variados ────────────────────────
-    const products = await prisma.product.findMany({
+    // TD-018: price es Decimal en DB — convertir a number para aritmética en seeds
+    const productsRaw = await prisma.product.findMany({
       where: { tenantId: tenant.id },
       select: { id: true, name: true, price: true },
     });
+    const products = productsRaw.map((p) => ({
+      ...p,
+      price: toNumOrZero(p.price),
+    }));
 
     const orderStatuses = ["entregado", "entregado", "entregado", "entregado", "entregado",
       "entregado", "entregado", "pendiente", "pendiente", "pendiente",

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 /**
  * GET /api/analytics/kpis-v2
@@ -129,10 +130,17 @@ export async function GET(req: NextRequest) {
       ]),
     ]);
 
-    // Helper: calc cost from sale items
-    function calcCost(items: { costPrice: number | null; quantity: number; product: { costPrice: number | null } }[]): number {
+    // Helper: calc cost from sale items (TD-018: costPrice es Decimal)
+    type SaleItemForCost = {
+      costPrice: unknown;
+      quantity: number;
+      product: { costPrice: unknown };
+    };
+    function calcCost(items: SaleItemForCost[]): number {
       return items.reduce((sum, item) => {
-        const cost = item.costPrice ?? item.product.costPrice ?? 0;
+        const cost =
+          toNumOrZero(item.costPrice as never) ||
+          toNumOrZero(item.product.costPrice as never);
         return sum + cost * item.quantity;
       }, 0);
     }
@@ -146,12 +154,12 @@ export async function GET(req: NextRequest) {
     let ingresosHoy = { valor: 0, cambio: 0, sparkline: [] as number[] };
     if (results[0].status === "fulfilled") {
       const [hoyAgg, lastWeekAgg, ...sparklineAggs] = results[0].value;
-      const hoy = hoyAgg._sum.total ?? 0;
-      const lastWeek = lastWeekAgg._sum.total ?? 0;
+      const hoy = toNumOrZero(hoyAgg._sum.total);
+      const lastWeek = toNumOrZero(lastWeekAgg._sum.total);
       ingresosHoy = {
         valor: Math.round(hoy * 100) / 100,
         cambio: pctChange(hoy, lastWeek),
-        sparkline: sparklineAggs.map((a) => Math.round((a._sum.total ?? 0) * 100) / 100),
+        sparkline: sparklineAggs.map((a) => Math.round(toNumOrZero(a._sum.total) * 100) / 100),
       };
     }
 
@@ -159,8 +167,8 @@ export async function GET(req: NextRequest) {
     let ticketPromedio = { valor: 0, cambio: 0 };
     if (results[1].status === "fulfilled") {
       const [actual, anterior] = results[1].value;
-      const avgActual = actual._avg.total ?? 0;
-      const avgAnterior = anterior._avg.total ?? 0;
+      const avgActual = toNumOrZero(actual._avg.total);
+      const avgAnterior = toNumOrZero(anterior._avg.total);
       ticketPromedio = {
         valor: Math.round(avgActual * 100) / 100,
         cambio: pctChange(avgActual, avgAnterior),
@@ -171,7 +179,7 @@ export async function GET(req: NextRequest) {
     let margenOperativo = { valor: 0, estado: "rojo" as "verde" | "amarillo" | "rojo" };
     if (results[2].status === "fulfilled") {
       const [ingresosAgg, costItems] = results[2].value;
-      const ingresos = ingresosAgg._sum.total ?? 0;
+      const ingresos = toNumOrZero(ingresosAgg._sum.total);
       const costos = calcCost(costItems);
       const margen = ingresos > 0 ? ((ingresos - costos) / ingresos) * 100 : 0;
       margenOperativo = {
@@ -194,8 +202,9 @@ export async function GET(req: NextRequest) {
     let fiadoPendiente = { valor: 0, totalClientes: 0, vencidos: 0 };
     if (results[4].status === "fulfilled" && results[4].value !== null) {
       const data = results[4].value;
+      const saldo = toNumOrZero(data.pendiente._sum.saldo);
       fiadoPendiente = {
-        valor: data.pendiente._sum.saldo ? Math.round(Number(data.pendiente._sum.saldo) * 100) / 100 : 0,
+        valor: Math.round(saldo * 100) / 100,
         totalClientes: data.pendiente._count.id,
         vencidos: data.vencidos,
       };
@@ -207,7 +216,7 @@ export async function GET(req: NextRequest) {
       const [cogItems, products] = results[5].value;
       const cogs30d = calcCost(cogItems);
       const avgInventoryValue = products.reduce((sum, p) => {
-        return sum + (p.stock ?? 0) * (p.costPrice ?? 0);
+        return sum + (p.stock ?? 0) * toNumOrZero(p.costPrice);
       }, 0);
 
       if (avgInventoryValue > 0) {
