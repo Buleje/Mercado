@@ -1,8 +1,16 @@
 # Auditoría Prácticas de Código 2026 — Bodega San Martín
 
-**Última actualización:** 2026-04-07 (Sprint C Final Push — gate estricto de TypeScript activado)
+**Última actualización:** 2026-04-08 (audit next-phase — gates de CI reales + docs ancla)
 **Fuente:** `Mejores_Practicas_Codigo_2026.xlsx` (48 prácticas: 36 básicas + 12 avanzadas)
-**Resultado real:** 30 ✅ aplicadas / 11 ⚠️ parciales / 3 ❌ faltan / 4 ➖ N/A
+**Resultado real:** 32 ✅ aplicadas / 9 ⚠️ parciales / 3 ❌ faltan / 4 ➖ N/A
+
+### Δ del turno 2026-04-08 (audit next-phase)
+
+- **#12 CI/CD con gates reales**: ⚠️ → ✅ — `ci.yml` quitó `continue-on-error: true` de lint y tests, agregó step `tsc --noEmit` dedicado. ADR 008 ahora es ejecutable.
+- **#25 Pre-commit hooks bloqueantes**: ⚠️ → ✅ — `.husky/pre-commit` corre `lint-staged` + `tsc --noEmit` con exit 1. TD-026 cerrado.
+- **#28 Documentación de arquitectura**: ⚠️ → ✅ — creados `docs/ARCHITECTURE.md`, `docs/ONBOARDING.md`, `docs/plans/README.md` + template, `docs/instructions-index.md`.
+- **Safety snapshot WIP**: 288 archivos del turno anterior guardados en branch `wip/marketplace-modals-safety-2026-04-08` antes de tocar nada más.
+- Score solido: **~82% → ~87%** (+5pp)
 
 ### Δ del turno 2026-04-07
 
