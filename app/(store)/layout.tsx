@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import MotionProvider from "@/components/MotionProvider";
 import MaintenancePage from "@/components/MaintenancePage";
@@ -56,15 +57,23 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function StoreLayout({
+/**
+ * Async inner component que hace tenant validation + maintenance check +
+ * provee el árbol de providers. Aislado del layout root para que pueda
+ * ir dentro de <Suspense> y Next 16 cacheComponents no warnee sobre
+ * "Uncached data accessed outside of Suspense".
+ *
+ * Fix 2026-04-09: antes el StoreLayout hacía los 2 awaits de DB en el
+ * root del layout, bloqueando el render del shell entero. Con cacheComponents
+ * el layout debe streamar lo estático y mover el async adentro de Suspense.
+ */
+async function StoreLayoutContent({
+  tenantId,
   children,
 }: {
+  tenantId: string;
   children: React.ReactNode;
 }) {
-  // Leer tenantId del header inyectado por proxy.ts (cookie active-tenant → x-tenant-id)
-  const hdrs = await headers();
-  const tenantId = hdrs.get("x-tenant-id") ?? "main";
-
   // Validate tenant exists — return 404 for invalid slugs
   if (tenantId !== "main") {
     const exists = await tenantExists(tenantId);
@@ -78,8 +87,31 @@ export default async function StoreLayout({
     const settings = await SettingsDB.get(tenantId);
     maintenanceMode = !!settings.maintenanceMode;
     maintenanceMessage = settings.maintenanceMessage;
-  } catch { /* continue normally */ }
+  } catch {
+    /* continue normally */
+  }
   if (maintenanceMode) return <MaintenancePage message={maintenanceMessage} />;
+
+  return (
+    <StoreProviders tenantSlug={tenantId}>
+      <TenantIndicatorBar />
+      <MotionProvider>
+        {children}
+        <StoreClientShell />
+        <StoreFloatingWidgets />
+      </MotionProvider>
+    </StoreProviders>
+  );
+}
+
+export default async function StoreLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Leer tenantId del header inyectado por proxy.ts (cookie active-tenant → x-tenant-id)
+  const hdrs = await headers();
+  const tenantId = hdrs.get("x-tenant-id") ?? "main";
 
   return (
     <>
@@ -95,14 +127,9 @@ export default async function StoreLayout({
       >
         Saltar al contenido principal
       </a>
-      <StoreProviders tenantSlug={tenantId}>
-        <TenantIndicatorBar />
-        <MotionProvider>
-          {children}
-          <StoreClientShell />
-          <StoreFloatingWidgets />
-        </MotionProvider>
-      </StoreProviders>
+      <Suspense fallback={null}>
+        <StoreLayoutContent tenantId={tenantId}>{children}</StoreLayoutContent>
+      </Suspense>
       <LocalBusinessJsonLd />
     </>
   );
