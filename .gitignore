@@ -39,9 +39,20 @@ yarn-error.log*
 
 # Agent skills (per-machine install via `skills add ...`)
 .agents/
-.claude/skills/
 .windsurf/skills/
 skills-lock.json
+
+# Claude Code — trackeamos .claude/ (agents, skills, hooks, settings.json)
+# porque forman parte del plugin bodega-claude-pack (ver .claude-plugin/plugin.json).
+# Ignoramos solo artefactos locales per-machine:
+/.claude/worktrees/
+/.claude/.last-stop-checkpoint.json
+/.claude/.last-session-id
+/.claude/**/.tmp/
+/.claude/skills/*/\.tmp/
+# Symlinks heredados del layout viejo (.agents/) quedan ignorados por la línea .agents/ arriba
+/.claude/skills/supabase
+/.claude/skills/supabase-postgres-best-practices
 
 # typescript
 *.tsbuildinfo

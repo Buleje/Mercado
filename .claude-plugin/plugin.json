@@ -1,0 +1,72 @@
+{
+  "$schema": "https://code.claude.com/schemas/plugin.json",
+  "name": "bodega-claude-pack",
+  "version": "0.1.0",
+  "description": "Claude Code agent suite for Bodega San Martín — 19 subagents, 14+ skills, 5 hooks, self-improvement loop with Compound Engineering pattern, and full multi-agent level 3 architecture (Orquestador → Agencias → Empleados).",
+  "author": {
+    "name": "Brandon Buleje",
+    "url": "https://buleje.pe"
+  },
+  "homepage": "https://github.com/Buleje/Mercado",
+  "repository": "https://github.com/Buleje/Mercado",
+  "license": "Proprietary",
+  "keywords": [
+    "nextjs",
+    "nextjs-16",
+    "prisma",
+    "supabase",
+    "bullmq",
+    "multi-tenant",
+    "marketplace",
+    "peru",
+    "bodega",
+    "ecommerce",
+    "erp",
+    "compound-engineering",
+    "self-improvement",
+    "agent-teams",
+    "flujo-pro-v6"
+  ],
+  "category": "productivity",
+  "components": {
+    "agents": "agents/",
+    "skills": "skills/",
+    "hooks": "hooks/",
+    "commands": null,
+    "mcps": null,
+    "lsps": null
+  },
+  "supports": {
+    "claude-code-min-version": "2.1.32",
+    "node-min-version": "20.0.0"
+  },
+  "metadata": {
+    "created": "2026-04-08",
+    "architecture": "level-3-hierarchical-multi-agentic",
+    "a2a-protocol": "enabled",
+    "compound-engineering": "via self-improvement skill",
+    "stack": "Next.js 16 + React 19 + TypeScript 5 + Tailwind 4 + Prisma 7 + Supabase + BullMQ 5.73 + Capacitor",
+    "agencias": [
+      "arquitectura",
+      "backend",
+      "frontend",
+      "database",
+      "qa",
+      "gobernanza",
+      "integraciones",
+      "growth-seo",
+      "performance"
+    ],
+    "empleados-total": 19,
+    "skills-total": 14,
+    "hooks-total": 5,
+    "target-audience": "Brandon Buleje — founder solo, Pucallpa Perú, Claude Code Max $200/mes"
+  },
+  "installation-notes": [
+    "1. Este plugin NO está publicado en un marketplace público todavía.",
+    "2. Para usarlo en otro proyecto, clonar bodega-san-martin y copiar .claude/ + .claude-plugin/.",
+    "3. Los hooks requieren Node 20+ y los scripts .mjs tienen que ser ejecutables (chmod +x en Unix, auto en Windows).",
+    "4. Activar con CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 + CLAUDE_CODE_TEAMMATE_MODE=in-process en settings.json del proyecto.",
+    "5. Requiere Husky + pre-commit + post-commit ya configurados (ver bodega-san-martin/.husky/)."
+  ]
+}
