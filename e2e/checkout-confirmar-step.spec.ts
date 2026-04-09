@@ -21,25 +21,23 @@ async function addFirstProductToCart(page: Page) {
 async function openCheckoutModal(page: Page) {
   const cartSidebar = page.locator('[data-testid="cart-sidebar"]');
   if (!(await cartSidebar.isVisible().catch(() => false))) {
+    // Usar el testid específico — getByRole({name: /carrito/}) matchea
+    // también los botones de "Agregar ... al carrito" de cada product card.
     const cartButton = page
       .locator('[data-testid="cart-button"]')
-      .or(page.getByRole('button', { name: /carrito|cart/i }));
-    await cartButton.click();
+      .or(page.getByRole('button', { name: /^abrir carrito$/i }));
+    await cartButton.first().click();
     await expect(cartSidebar).toBeVisible({ timeout: 10000 });
   }
 
-  const checkoutButton = page
-    .locator('[data-testid="checkout-button"]')
-    .or(
-      page.getByRole('button', {
-        name: /pagar|checkout|finalizar|comprar|completar pedido/i,
-      })
-    );
+  // Usar solo el testid — el regex /pagar|completar/ matchea también el
+  // botón de la FAQ "¿Se puede pagar con Yape?" que vive dentro del sidebar.
+  const checkoutButton = page.locator('[data-testid="checkout-button"]');
   await checkoutButton.click();
 
-  const checkoutModal = page
-    .locator('[data-testid="checkout-modal"]')
-    .or(page.getByRole('dialog'));
+  // Usar solo el testid — hay 3 dialogs simultáneos (cart-sidebar, cookie
+  // consent, checkout-modal) que matchean el fallback getByRole('dialog').
+  const checkoutModal = page.locator('[data-testid="checkout-modal"]');
   await expect(checkoutModal).toBeVisible({ timeout: 10000 });
   return checkoutModal;
 }
@@ -52,9 +50,7 @@ test.describe('Checkout — Paso Confirmar (review screen)', () => {
     const modal = await openCheckoutModal(page);
 
     // ─── Paso cuenta: saltar cuenta (invitado) ───
-    const skipAccount = modal
-      .getByRole('button', { name: /continuar sin|omitir|invitad/i })
-      .or(modal.locator('[data-testid="checkout-skip-account"]'));
+    const skipAccount = modal.locator('[data-testid="checkout-skip-account"]');
     if (await skipAccount.isVisible().catch(() => false)) {
       await skipAccount.click();
     }
@@ -129,9 +125,7 @@ test.describe('Checkout — Paso Confirmar (review screen)', () => {
     await addFirstProductToCart(page);
     const modal = await openCheckoutModal(page);
 
-    const skipAccount = modal
-      .getByRole('button', { name: /continuar sin|omitir|invitad/i })
-      .or(modal.locator('[data-testid="checkout-skip-account"]'));
+    const skipAccount = modal.locator('[data-testid="checkout-skip-account"]');
     if (await skipAccount.isVisible().catch(() => false)) {
       await skipAccount.click();
     }
@@ -181,9 +175,7 @@ test.describe('Checkout — Paso Confirmar (review screen)', () => {
     await addFirstProductToCart(page);
     const modal = await openCheckoutModal(page);
 
-    const skipAccount = modal
-      .getByRole('button', { name: /continuar sin|omitir|invitad/i })
-      .or(modal.locator('[data-testid="checkout-skip-account"]'));
+    const skipAccount = modal.locator('[data-testid="checkout-skip-account"]');
     if (await skipAccount.isVisible().catch(() => false)) {
       await skipAccount.click();
     }

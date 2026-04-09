@@ -114,19 +114,24 @@ describe("getAllFlags", () => {
     process.env = originalEnv;
   });
 
-  it("returns all 12 known flag keys", () => {
+  it("incluye las 12 flags originales (backward compat)", () => {
     const flags = getAllFlags();
-    const expectedKeys = [
+    // Las 12 flags que existían antes de los bloques D1/D2/D3 del marketplace.
+    // Agregar nuevas flags NO debe romper este test — solo garantizamos que
+    // las originales siguen exportándose.
+    const baselineKeys = [
       "bullmq-queues", "refresh-tokens", "rolling-releases",
       "redis-cache", "oauth-google", "cursor-pagination",
       "ai-assistant-v2", "marketplace-v2", "whatsapp-bot",
       "push-notifications",
       "whatsapp-order-notifications", "auto-coupon-triggers",
     ];
-    for (const key of expectedKeys) {
+    for (const key of baselineKeys) {
       expect(key in flags).toBe(true);
     }
-    expect(Object.keys(flags)).toHaveLength(12);
+    expect(Object.keys(flags).length).toBeGreaterThanOrEqual(
+      baselineKeys.length
+    );
   });
 
   it("returns defaults when no env vars set", () => {
@@ -155,7 +160,9 @@ describe("getAllFlags", () => {
 
   it("accepts optional tenantId parameter", () => {
     const flags = getAllFlags("demo");
-    expect(Object.keys(flags)).toHaveLength(12);
+    // No hardcodeamos el count — solo que el resultado tenga al menos las
+    // 12 flags baseline.
+    expect(Object.keys(flags).length).toBeGreaterThanOrEqual(12);
   });
 });
 

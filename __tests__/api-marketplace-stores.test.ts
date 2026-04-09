@@ -193,11 +193,18 @@ describe("GET /api/marketplace/stores", () => {
 
   // ── Error de BD ─────────────────────────────────────────────────────────────
 
-  it("retorna 500 si Prisma lanza excepción", async () => {
+  it("retorna lista vacía 200 si Prisma lanza excepción (degradación grácil)", async () => {
+    // El handler es defensivo: si Prisma falla, captura el error y retorna
+    // `{ data: [], total: 0 }` con status 200. Esto evita romper el
+    // marketplace entero cuando la DB tiene un hipo temporal. El error se
+    // loguea con logger.warn para observabilidad.
     mockStoreFindMany.mockRejectedValue(new Error("DB connection failed"));
 
     const res = await GET(makeReq("https://host/api/marketplace/stores"));
-    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.data).toEqual([]);
+    expect(body.total).toBe(0);
   });
 
   // ── Campos devueltos ────────────────────────────────────────────────────────

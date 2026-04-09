@@ -23,13 +23,31 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 // ── Mock: api-error ───────────────────────────────────────────────────────────
+// Nota: vi.mock se hoistea al tope del archivo, así que NotFoundError debe
+// vivir dentro de vi.hoisted() para estar disponible cuando el mock factory
+// corre. Si se declara como top-level `class`, la hoisting lo deja undefined.
 
-class NotFoundError extends Error {
-  constructor(m: string) {
-    super(m);
-    this.name = "NotFoundError";
+const { NotFoundError } = vi.hoisted(() => {
+  class NotFoundError extends Error {
+    constructor(m: string) {
+      super(m);
+      this.name = "NotFoundError";
+    }
   }
-}
+  return { NotFoundError };
+});
+
+// Bypass del cache — el handler usa getOrSet() que persiste entre tests y
+// hace que las llamadas a los mocks de Prisma nunca ocurran en tests
+// subsecuentes. Al mockear getOrSet para que siempre invoque la función
+// factory, cada test ve la invocación fresca.
+vi.mock("@/lib/cache", () => ({
+  getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => unknown) => {
+    return await fn();
+  }),
+  invalidate: vi.fn(),
+  invalidateByPrefix: vi.fn(),
+}));
 
 vi.mock("@/lib/api-error", () => ({
   toErrorPayload: vi.fn((err: unknown, _traceId: string) => {
@@ -255,7 +273,12 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_asc"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.orderBy).toMatchObject({ retailPrice: "asc" });
+    // El handler usa orderBy en array con tiebreaker por id para cursor
+    // pagination estable: [{ retailPrice: 'asc' }, { id: 'asc' }].
+    expect(callArgs.orderBy).toEqual([
+      { retailPrice: "asc" },
+      { id: "asc" },
+    ]);
   });
 
   it("ordena por precio descendente con sort=price_desc", async () => {
@@ -265,7 +288,10 @@ describe("GET /api/marketplace/stores/[slug]/products", () => {
     await GETProducts(makeReq("https://host/api/marketplace/stores/bodega-san-martin/products?sort=price_desc"), makeParams("bodega-san-martin"));
 
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
-    expect(callArgs.orderBy).toMatchObject({ retailPrice: "desc" });
+    expect(callArgs.orderBy).toEqual([
+      { retailPrice: "desc" },
+      { id: "asc" },
+    ]);
   });
 
   it("retorna 400 si sort tiene valor inválido", async () => {

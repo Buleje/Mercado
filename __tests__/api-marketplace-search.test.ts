@@ -32,8 +32,21 @@ vi.mock("@/lib/api-error", () => ({
 }));
 
 // ── Mock: prisma ───────────────────────────────────────────────────────────────
-const { mockStoreProductFindMany } = vi.hoisted(() => ({
+// El handler hace batchProductEnrichment que consulta 4 modelos adicionales en
+// paralelo (productImage, productVariant, review, orderItem) — hay que mockear
+// los 5 para que el test no explote con "undefined.map".
+const {
+  mockStoreProductFindMany,
+  mockProductImageFindMany,
+  mockProductVariantGroupBy,
+  mockReviewGroupBy,
+  mockOrderItemGroupBy,
+} = vi.hoisted(() => ({
   mockStoreProductFindMany: vi.fn(),
+  mockProductImageFindMany: vi.fn(),
+  mockProductVariantGroupBy: vi.fn(),
+  mockReviewGroupBy: vi.fn(),
+  mockOrderItemGroupBy: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -41,7 +54,37 @@ vi.mock("@/lib/prisma", () => ({
     storeProduct: {
       findMany: mockStoreProductFindMany,
     },
+    productImage: {
+      findMany: mockProductImageFindMany,
+    },
+    productVariant: {
+      groupBy: mockProductVariantGroupBy,
+    },
+    review: {
+      groupBy: mockReviewGroupBy,
+    },
+    orderItem: {
+      groupBy: mockOrderItemGroupBy,
+    },
   },
+}));
+
+// Mock SearchSuggestionsDB — el handler:
+//  - llama .record() fire-and-forget después de cada búsqueda
+//  - llama .getProductFuzzyMatches() + .getDidYouMean() si no hay resultados
+vi.mock("@/lib/db/search-suggestions.db", () => ({
+  SearchSuggestionsDB: {
+    record: vi.fn().mockResolvedValue(undefined),
+    getProductFuzzyMatches: vi.fn().mockResolvedValue([]),
+    getDidYouMean: vi.fn().mockResolvedValue([]),
+  },
+}));
+
+// Mock sponsored-ranker — aplica boosts a productos. Firma: (tenantId, products).
+vi.mock("@/lib/marketplace/sponsored-ranker", () => ({
+  applyBoostsToProducts: vi.fn(
+    (_tenantId: string, products: unknown[]) => products
+  ),
 }));
 
 import { GET } from "@/app/api/marketplace/search/route";
@@ -100,6 +143,13 @@ function makeReq(url: string): NextRequest {
 describe("GET /api/marketplace/search", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Defaults para los mocks del batchProductEnrichment — arrays vacíos
+    // dejan que los Map del handler no se rompan. Los tests que necesiten
+    // valores específicos los sobrescriben individualmente.
+    mockProductImageFindMany.mockResolvedValue([]);
+    mockProductVariantGroupBy.mockResolvedValue([]);
+    mockReviewGroupBy.mockResolvedValue([]);
+    mockOrderItemGroupBy.mockResolvedValue([]);
   });
 
   // ── Caso feliz ───────────────────────────────────────────────────────────────

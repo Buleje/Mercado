@@ -23,12 +23,42 @@ vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }));
 
-class NotFoundError extends Error {
-  constructor(m: string) {
-    super(m);
-    this.name = "NotFoundError";
+// vi.hoisted() porque vi.mock se hoistea al tope y necesita NotFoundError
+// ya inicializado cuando el mock factory corre.
+const { NotFoundError } = vi.hoisted(() => {
+  class NotFoundError extends Error {
+    constructor(m: string) {
+      super(m);
+      this.name = "NotFoundError";
+    }
   }
-}
+  return { NotFoundError };
+});
+
+// Bypass del cache — los handlers usan getOrSet() que persiste entre tests.
+vi.mock("@/lib/cache", () => ({
+  getOrSet: vi.fn(async (_key: string, _ttl: number, fn: () => unknown) => {
+    return await fn();
+  }),
+  invalidate: vi.fn(),
+  invalidateByPrefix: vi.fn(),
+}));
+
+// Mock SearchSuggestionsDB usado por /api/marketplace/search
+vi.mock("@/lib/db/search-suggestions.db", () => ({
+  SearchSuggestionsDB: {
+    record: vi.fn().mockResolvedValue(undefined),
+    getProductFuzzyMatches: vi.fn().mockResolvedValue([]),
+    getDidYouMean: vi.fn().mockResolvedValue([]),
+  },
+}));
+
+// Mock sponsored-ranker usado por /api/marketplace/search
+vi.mock("@/lib/marketplace/sponsored-ranker", () => ({
+  applyBoostsToProducts: vi.fn(
+    (_tenantId: string, products: unknown[]) => products
+  ),
+}));
 
 vi.mock("@/lib/api-error", () => ({
   toErrorPayload: vi.fn((err: unknown) => {
@@ -42,10 +72,25 @@ vi.mock("@/lib/api-error", () => ({
 }));
 
 // ── Mock: prisma con registros de MÚLTIPLES tenants ───────────────────────────
-const { mockStoreFindMany, mockStoreFindUnique, mockStoreProductFindMany } = vi.hoisted(() => ({
-  mockStoreFindMany:        vi.fn(),
-  mockStoreFindUnique:      vi.fn(),
-  mockStoreProductFindMany: vi.fn(),
+// /api/marketplace/search hace batchProductEnrichment → consulta 4 modelos
+// adicionales en paralelo (productImage, productVariant, review, orderItem).
+// Si no se mockean, retornan undefined y el handler explota con TypeError.
+const {
+  mockStoreFindMany,
+  mockStoreFindUnique,
+  mockStoreProductFindMany,
+  mockProductImageFindMany,
+  mockProductVariantGroupBy,
+  mockReviewGroupBy,
+  mockOrderItemGroupBy,
+} = vi.hoisted(() => ({
+  mockStoreFindMany:         vi.fn(),
+  mockStoreFindUnique:       vi.fn(),
+  mockStoreProductFindMany:  vi.fn(),
+  mockProductImageFindMany:  vi.fn().mockResolvedValue([]),
+  mockProductVariantGroupBy: vi.fn().mockResolvedValue([]),
+  mockReviewGroupBy:         vi.fn().mockResolvedValue([]),
+  mockOrderItemGroupBy:      vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@/lib/prisma", () => ({
@@ -56,6 +101,18 @@ vi.mock("@/lib/prisma", () => ({
     },
     storeProduct: {
       findMany: mockStoreProductFindMany,
+    },
+    productImage: {
+      findMany: mockProductImageFindMany,
+    },
+    productVariant: {
+      groupBy: mockProductVariantGroupBy,
+    },
+    review: {
+      groupBy: mockReviewGroupBy,
+    },
+    orderItem: {
+      groupBy: mockOrderItemGroupBy,
     },
   },
 }));
@@ -194,8 +251,32 @@ describe("Multi-tenant: tiendas no publicadas son invisibles", () => {
   });
 
   it("búsqueda cross-tienda NUNCA incluye productos de tiendas no publicadas", async () => {
-    // Simulamos que Prisma devuelve solo resultados de tiendas publicadas
-    mockStoreProductFindMany.mockResolvedValue([PRODUCT_PUBLICA]);
+    // Fixture específico para el endpoint de search — el handler aplana la
+    // respuesta y requiere: product.id numérico, product.stock, store.id,
+    // store.name, store.slug, store.logo, store.zone, store.rating.
+    // El fixture de arriba (PRODUCT_PUBLICA) solo sirve para tests de query shape.
+    const SEARCH_RESULT_PUBLICA = {
+      id:          "sp-pub-1",
+      retailPrice: 3.5,
+      minOrderQty: 1,
+      product: {
+        id:       1,
+        name:     "Arroz",
+        image:    "/arroz.png",
+        category: "Abarrotes",
+        unit:     "kg",
+        stock:    10,
+      },
+      store: {
+        id:     "store-tenant-a",
+        name:   "Tienda Pública",
+        slug:   "tienda-publica",
+        logo:   "/pub.png",
+        zone:   "Centro",
+        rating: 4.5,
+      },
+    };
+    mockStoreProductFindMany.mockResolvedValue([SEARCH_RESULT_PUBLICA]);
 
     const res  = await GETSearch(makeReq("https://host/api/marketplace/search?q=arroz"));
     const body = await res.json();
@@ -204,8 +285,13 @@ describe("Multi-tenant: tiendas no publicadas son invisibles", () => {
     const callArgs = mockStoreProductFindMany.mock.calls[0][0];
     expect(callArgs.where.store.isPublished).toBe(true);
 
-    // Ningún resultado debe pertenecer a tienda privada
-    const storeIds = body.data.map((r: { store?: { id?: string } }) => r.store?.id);
+    // Ningún resultado debe pertenecer a tienda privada. El handler de search
+    // aplana la respuesta — la tienda va en campos directos (storeId, storeName)
+    // en vez de anidada en .store.
+    const storeIds = body.data.map(
+      (r: { storeId?: string; store?: { id?: string } }) =>
+        r.storeId ?? r.store?.id
+    );
     expect(storeIds).not.toContain("store-tenant-b");
   });
 });

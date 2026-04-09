@@ -307,6 +307,7 @@ export default function CartSidebar() {
             role="dialog"
             aria-modal="true"
             aria-label="Carrito de compras"
+            data-testid="cart-sidebar"
             className="fixed top-0 right-0 bottom-0 z-6001 w-full max-w-md bg-white dark:bg-background shadow-2xl flex flex-col isolate"
           >
             {/* Header */}
@@ -731,6 +732,7 @@ export default function CartSidebar() {
                     onClick={handleOrder}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
+                    data-testid="checkout-button"
                     className="w-full flex items-center justify-center gap-3 rounded-xl bg-primary px-6 py-3 text-base font-bold text-white shadow-lg shadow-primary/25 hover:bg-primary-dark transition-all duration-200"
                   >
                     <Package className="h-5 w-5" />

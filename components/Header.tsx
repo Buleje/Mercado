@@ -1071,6 +1071,7 @@ export default function Header() {
                   : "bg-white/20 backdrop-blur-sm text-white hover:bg-white/30"
               )}
               aria-label="Abrir carrito"
+              data-testid="cart-button"
             >
               <span className={cartBounce ? "inline-block animate-[cartBounce_0.5s_ease-out]" : "inline-block"}>
                 <ShoppingCart className="h-6 w-6" />

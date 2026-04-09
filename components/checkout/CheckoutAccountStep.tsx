@@ -123,6 +123,7 @@ export function CheckoutAccountStep({
               onClick={onSkipAccount}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              data-testid="checkout-skip-account"
               className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-primary/40 text-sm font-bold text-primary hover:bg-primary/10 hover:border-primary/60 transition-all"
             >
               Continuar <ChevronRight className="h-4 w-4" />
