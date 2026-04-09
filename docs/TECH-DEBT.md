@@ -44,9 +44,9 @@ Audit automatizado contra el skill `supabase-postgres-best-practices` recién in
 | ID | Modelo/Campo | Problema | Referencia skill | Severidad |
 |----|--------------|----------|------------------|-----------|
 | TD-018 | `OrderItem.price`, `SaleItem.price`, `WholesaleOrderItem.unitPrice`+`total`, `Bundle.price` | Usan `Float` para dinero. Float tiene ~15-17 dígitos de precisión → errores de redondeo acumulados en audits, chargebacks, discrepancias de pago. | `schema-data-types.md` | 🔴 Crítica (correctness) |
-| TD-019 | `WholesaleOrderItem.productId`, `WholesaleOrderItem.wholesaleOrderId`, `StoreProduct.productId` | FK sin `@@index`. Postgres NO indexa FKs automáticamente → JOINs y CASCADE full-scan. Con pgbouncer `connection_limit=1`, serializa todas las transacciones. | `schema-foreign-key-indexes.md` | 🟠 Alta |
-| TD-020 | `CommissionLedger`, `Review`, y otros con `tenantId` + campo filtro común | Índices single-column en `tenantId` y `status` por separado — falta compound `(tenantId, status)` y `(tenantId, createdAt)` para los WHERE más comunes del SaaS multi-tenant. | `query-missing-indexes.md` | 🟠 Alta |
-| TD-021 | `StorePermission.userId` | FK con `@@unique([storeId, userId, userType])` pero sin `@@index([userId])` single-column. Queries "¿en qué tiendas trabaja este user?" van a full-scan. | `schema-foreign-key-indexes.md` | 🟡 Media |
+| ~~TD-019~~ | ~~WholesaleOrderItem + StoreProduct FK~~ | **RESUELTO 2026-04-09** — verificación contra prod (Paso 0 Sprint 2 Ola 1) confirmó que los 3 índices ya estaban aplicados en producción. Zero schema drift en esas tablas. Ver ADR 017. | — | ✅ Cerrado |
+| ~~TD-020~~ | ~~Compound indexes faltantes~~ | **RESUELTO 2026-04-09** — 4 compound indexes aplicados en prod vía `scripts/apply-ola1-indices.ts` (pooler session mode, CREATE INDEX CONCURRENTLY): `PurchaseOrder(tenantId,status)`, `Payable(tenantId,status)`, `NotificationLog(tenantId,createdAt DESC)`, `SupportTicket(tenantId,status)`. Tiempos 193+128+130+133 ms = <600ms total, zero downtime. Schema.prisma sincronizado con `@@index(..., map)`. Ver ADR 017. | — | ✅ Cerrado |
+| ~~TD-021~~ | ~~StorePermission.userId~~ | **RESUELTO 2026-04-09** — verificación contra prod confirmó que `StorePermission_userId_idx` ya existía físicamente. Sin acción adicional requerida. Ver ADR 017. | — | ✅ Cerrado |
 
 **Plan de mitigación propuesto** (requiere aprobación antes de ejecutar migración):
 1. Sprint 1: TD-018 (Float→Decimal) — migración de datos con conversión de tipos, requiere ventana de mantenimiento.

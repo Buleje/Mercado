@@ -15,56 +15,56 @@ datasource db {
 
 // ─── Tenant (SaaS multi-tenancy) ────────────────────────
 model Tenant {
-  id                   String    @id @default(cuid())
-  slug                 String    @unique  // subdomain: e.g. "bodega-san-martin"
-  name                 String            // E.g. "Bodega San Martín"
-  plan                 String    @default("free") // free | pro | business
-  type                 String    @default("store") // store | supplier | delivery
-  active               Boolean   @default(true)
-  customDomain         String?           // Optional custom domain: "www.mitienda.com"
-  ownerEmail           String?
-  ownerPhone           String?
-  trialEndsAt          DateTime?
+  id                     String    @id @default(cuid())
+  slug                   String    @unique // subdomain: e.g. "bodega-san-martin"
+  name                   String // E.g. "Bodega San Martín"
+  plan                   String    @default("free") // free | pro | business
+  type                   String    @default("store") // store | supplier | delivery
+  active                 Boolean   @default(true)
+  customDomain           String? // Optional custom domain: "www.mitienda.com"
+  ownerEmail             String?
+  ownerPhone             String?
+  trialEndsAt            DateTime?
   // ── Branding white-label ─────────────────────────────
-  logoUrl              String?           // URL del logo (Vercel Blob o CDN)
-  faviconUrl           String?           // URL del favicon
-  primaryColor         String   @default("#00B4A6") // Color principal del negocio
-  secondaryColor       String   @default("#f4a261") // Color secundario
+  logoUrl                String? // URL del logo (Vercel Blob o CDN)
+  faviconUrl             String? // URL del favicon
+  primaryColor           String    @default("#00B4A6") // Color principal del negocio
+  secondaryColor         String    @default("#f4a261") // Color secundario
   // ── Referidos entre tiendas ──────────────────────────
-  referralCode         String?   @unique // Código único para invitar otras tiendas
-  referredBy           String?           // slug del tenant que invitó a este
+  referralCode           String?   @unique // Código único para invitar otras tiendas
+  referredBy             String? // slug del tenant que invitó a este
   // ── Stripe billing ──────────────────────────────────
-  stripeCustomerId     String?   @unique
-  stripeSubscriptionId String?   @unique
-  stripePriceId        String?
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
   stripeCurrentPeriodEnd DateTime?
-  cancelAtPeriodEnd    Boolean   @default(false)
+  cancelAtPeriodEnd      Boolean   @default(false)
   // ── Mercado Pago billing ─────────────────────────────
-  mpCustomerId         String?             // ID de customer en Mercado Pago
-  mpSubscriptionId     String?             // ID de suscripción MP (si aplica)
-  mpPaymentMethod      String?             // Método de pago: "yape", "bcp", "efectivo", etc.
+  mpCustomerId           String? // ID de customer en Mercado Pago
+  mpSubscriptionId       String? // ID de suscripción MP (si aplica)
+  mpPaymentMethod        String? // Método de pago: "yape", "bcp", "efectivo", etc.
   // ── Email verification ───────────────────────────────
-  emailVerified        Boolean   @default(false)
-  emailVerifyToken     String?   @unique
-  emailVerifyExpires   DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  emailVerified          Boolean   @default(false)
+  emailVerifyToken       String?   @unique
+  emailVerifyExpires     DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
-  dailySummaries   DailySummary[]
-  fiados           Fiado[]
-  turnos           Turno[]
-  recetas          Receta[]
-  produccionLotes  ProduccionLote[]
-  prestamos        Prestamo[]
-  cotizaciones     Cotizacion[]
-  guiasRemision    GuiaRemision[]
-  notasCredito     NotaCredito[]
-  notifications    Notification[]
-  conteosFisicos   ConteoFisico[]
-  treasuryCuentas  TreasuryCuenta[]
-  treasuryMovimientos TreasuryMovimiento[]
+  dailySummaries         DailySummary[]
+  fiados                 Fiado[]
+  turnos                 Turno[]
+  recetas                Receta[]
+  produccionLotes        ProduccionLote[]
+  prestamos              Prestamo[]
+  cotizaciones           Cotizacion[]
+  guiasRemision          GuiaRemision[]
+  notasCredito           NotaCredito[]
+  notifications          Notification[]
+  conteosFisicos         ConteoFisico[]
+  treasuryCuentas        TreasuryCuenta[]
+  treasuryMovimientos    TreasuryMovimiento[]
   treasuryTransferencias TreasuryTransferencia[]
-  stores           Store[]
+  stores                 Store[]
 
   @@index([slug])
   @@index([active])
@@ -73,33 +73,33 @@ model Tenant {
 
 // ─── Products ───────────────────────────────────────────
 model Product {
-  id          Int       @id @default(autoincrement())
-  name        String
-  category    String
-  price       Float
-  costPrice   Float?
-  image       String    @default("")
-  description String?
-  unit        String    @default("unidad")
-  badge       String?
-  barcode     String?
-  stock       Int?
-  stockMin    Int?
-  stockMax    Int?
-  active      Boolean   @default(true)
-  tenantId    String
-  deletedAt   DateTime? // soft-delete — null means active
-  expiresAt   DateTime? // nearest expiry date of available stock
-  shelfLifeDays Int?    // default shelf-life in days for auto-calc
+  id            Int       @id @default(autoincrement())
+  name          String
+  category      String
+  price         Float
+  costPrice     Float?
+  image         String    @default("")
+  description   String?
+  unit          String    @default("unidad")
+  badge         String?
+  barcode       String?
+  stock         Int?
+  stockMin      Int?
+  stockMax      Int?
+  active        Boolean   @default(true)
+  tenantId      String
+  deletedAt     DateTime? // soft-delete — null means active
+  expiresAt     DateTime? // nearest expiry date of available stock
+  shelfLifeDays Int? // default shelf-life in days for auto-calc
 
-  orderItems    OrderItem[]
-  purchaseItems PurchaseItem[]
-  saleItems     SaleItem[]
-  inventoryMovements InventoryMovement[]
-  priceHistory  PriceHistory[]
-  transfers     Transfer[]
-  locations     Location[]
-  batches       Batch[]
+  orderItems          OrderItem[]
+  purchaseItems       PurchaseItem[]
+  saleItems           SaleItem[]
+  inventoryMovements  InventoryMovement[]
+  priceHistory        PriceHistory[]
+  transfers           Transfer[]
+  locations           Location[]
+  batches             Batch[]
   recetasComoProducto Receta[]            @relation("RecetaProducto")
   ingredienteEn       RecetaIngrediente[] @relation("IngredienteProducto")
   storeProducts       StoreProduct[]
@@ -160,65 +160,65 @@ model ProductVariant {
 
 // ─── Customers ──────────────────────────────────────────
 model Customer {
-  phone            String          @id
-  name             String
-  location         String          @default("")
-  reference        String          @default("")
-  activeLocationId String?
-  aiNotes          String?
-  aiNotesDate      DateTime?
-  birthday         DateTime?
-  loyaltyPoints    Int             @default(0)
-  loyaltyTier      String          @default("bronce")
-  totalSpent       Float           @default(0)
-  notifOrderUpdates Boolean        @default(true)
-  notifPromotions   Boolean        @default(true)
-  notifRestock      Boolean        @default(false)
+  phone             String    @id
+  name              String
+  location          String    @default("")
+  reference         String    @default("")
+  activeLocationId  String?
+  aiNotes           String?
+  aiNotesDate       DateTime?
+  birthday          DateTime?
+  loyaltyPoints     Int       @default(0)
+  loyaltyTier       String    @default("bronce")
+  totalSpent        Float     @default(0)
+  notifOrderUpdates Boolean   @default(true)
+  notifPromotions   Boolean   @default(true)
+  notifRestock      Boolean   @default(false)
   privateNotes      String?
-  referralCode      String?        @unique
+  referralCode      String?   @unique
   referredBy        String?
-  creditBalance     Float          @default(0)
-  creditLimit       Float          @default(0) // 0 = sin límite
-  tags              String?        // JSON array: ["mayorista", "restaurante", "vecino"]
+  creditBalance     Float     @default(0)
+  creditLimit       Float     @default(0) // 0 = sin límite
+  tags              String? // JSON array: ["mayorista", "restaurante", "vecino"]
 
   // ── Identificación ──
-  tipoPersona        String?   // "natural" | "juridica"
-  tipoDocumento      String?   // "DNI" | "RUC" | "CE" | "PASAPORTE"
-  documento          String?   // número de documento
-  razonSocial        String?   // si es jurídica
-  estado             String?   @default("activo") // activo | inactivo | bloqueado
+  tipoPersona   String? // "natural" | "juridica"
+  tipoDocumento String? // "DNI" | "RUC" | "CE" | "PASAPORTE"
+  documento     String? // número de documento
+  razonSocial   String? // si es jurídica
+  estado        String? @default("activo") // activo | inactivo | bloqueado
 
   // ── Contacto ──
   whatsappSecundario String?
   email              String?
 
   // ── Ubicación ──
-  departamento       String?
-  provincia          String?
-  distrito           String?
-  direccion          String?
-  lat                Float?
-  lng                Float?
+  departamento String?
+  provincia    String?
+  distrito     String?
+  direccion    String?
+  lat          Float?
+  lng          Float?
 
   // ── Comercial ──
-  categoria          String?   // "mayorista" | "minorista" | "restaurante" | "tienda"
-  canal              String?   // "presencial" | "delivery" | "whatsapp" | "web"
-  listaPrecio        String?   // "general" | "mayorista" | "especial"
-  vendedorAsignado   String?
+  categoria        String? // "mayorista" | "minorista" | "restaurante" | "tienda"
+  canal            String? // "presencial" | "delivery" | "whatsapp" | "web"
+  listaPrecio      String? // "general" | "mayorista" | "especial"
+  vendedorAsignado String?
 
   // ── Fiado Digital ──
-  diasCredito        Int?      @default(0)
-  alertasWhatsapp    Boolean?  @default(true)
+  diasCredito     Int?     @default(0)
+  alertasWhatsapp Boolean? @default(true)
 
   // ── Adicionales ──
-  fechaNacimiento    DateTime? @db.Date
-  genero             String?   // "M" | "F" | "otro"
-  comoLlego          String?   // "referido" | "redes" | "local" | "otro"
-  observaciones      String?
+  fechaNacimiento DateTime? @db.Date
+  genero          String? // "M" | "F" | "otro"
+  comoLlego       String? // "referido" | "redes" | "local" | "otro"
+  observaciones   String?
 
-  tenantId         String
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   locations     SavedLocation[]
   orders        Order[]
@@ -239,7 +239,7 @@ model SavedCart {
   id            String   @id @default(cuid())
   customerPhone String   @unique
   tenantId      String
-  itemsJson     String   // JSON array of cart items
+  itemsJson     String // JSON array of cart items
   updatedAt     DateTime @updatedAt
 
   customer Customer @relation(fields: [customerPhone], references: [phone], onDelete: Cascade)
@@ -287,14 +287,14 @@ model Order {
   updatedAt           DateTime    @updatedAt
   tenantId            String
   source              String      @default("direct") // direct | marketplace | wholesale
-  deletedAt           DateTime?   // soft-delete — null means active
+  deletedAt           DateTime? // soft-delete — null means active
   idempotencyKey      String?     @unique // prevents duplicate order creation
-  riderName           String?             // repartidor asignado al pedido
-  cancelReason        String?             // motivo de cancelación
-  cancelledAt         DateTime?           // cuándo se canceló
+  riderName           String? // repartidor asignado al pedido
+  cancelReason        String? // motivo de cancelación
+  cancelledAt         DateTime? // cuándo se canceló
 
   // ─── Bloque D1 — Delivery vivo (marketplace) ────────────────
-  deliveryStatus      String?             // preparing|ready|picked_up|in_transit|nearby|delivered|failed|cancelled
+  deliveryStatus      String? // preparing|ready|picked_up|in_transit|nearby|delivered|failed|cancelled
   driverId            String?
   estimatedDeliveryAt DateTime?
   deliveredAt         DateTime?
@@ -304,7 +304,7 @@ model Order {
   dropoffLng          Float?
 
   items               OrderItem[]
-  customer            Customer?           @relation(fields: [customerPhone], references: [phone], onDelete: SetNull)
+  customer            Customer?            @relation(fields: [customerPhone], references: [phone], onDelete: SetNull)
   statusHistory       OrderStatusHistory[]
   guiasRemision       GuiaRemision[]
   notasCredito        NotaCredito[]
@@ -324,15 +324,15 @@ model Order {
 }
 
 model OrderItem {
-  id       Int    @id @default(autoincrement())
-  orderId  String
+  id        Int    @id @default(autoincrement())
+  orderId   String
   productId Int?
-  name     String
-  price    Float
+  name      String
+  price     Float
   costPrice Float?
-  quantity Int
-  unit     String
-  image    String @default("")
+  quantity  Int
+  unit      String
+  image     String @default("")
 
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
@@ -348,8 +348,8 @@ model Review {
   text           String
   rating         Int
   phone          String?
-  productId      Int?      // null = general store review; set for product-specific reviews
-  storeId        String?   // null = reseña de tienda del sistema; set for marketplace store reviews
+  productId      Int? // null = general store review; set for product-specific reviews
+  storeId        String? // null = reseña de tienda del sistema; set for marketplace store reviews
   store          Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
   status         String    @default("approved") // pending | approved | rejected | hidden
   tenantId       String
@@ -361,14 +361,14 @@ model Review {
   priceRating    Int?
   deliveryRating Int?
   photosJson     String?
-  verified       Boolean  @default(false)
-  helpfulCount   Int      @default(0)
+  verified       Boolean   @default(false)
+  helpfulCount   Int       @default(0)
 
   // ─── Bloque D3 — Reviews verificadas del marketplace ────────
-  orderId          String?       // FK a Order: si existe, la review es "verified"
-  verifiedAt       DateTime?     // cuándo se verificó el link con el Order
-  helpfulUpvotes   Int      @default(0)
-  helpfulDownvotes Int      @default(0)
+  orderId          String? // FK a Order: si existe, la review es "verified"
+  verifiedAt       DateTime? // cuándo se verificó el link con el Order
+  helpfulUpvotes   Int          @default(0)
+  helpfulDownvotes Int          @default(0)
   votes            ReviewVote[]
 
   @@index([status])
@@ -390,7 +390,7 @@ model ReviewVote {
   tenantId      String
   reviewId      String
   customerPhone String
-  voteType      String   // upvote | downvote
+  voteType      String // upvote | downvote
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -405,7 +405,7 @@ model ReviewVote {
 // ─── Settings ───────────────────────────────────────────
 model Settings {
   id                 Int     @id @default(autoincrement())
-  tenantId           String @unique
+  tenantId           String  @unique
   mode               String  @default("checkout")
   businessName       String?
   businessPhone      String?
@@ -430,148 +430,148 @@ model Settings {
   featureFlagsJson   String? // JSON object: { [FeatureFlag]: boolean }
 
   // ── Datos del negocio (Mejora M1-M10) ──
-  razonSocial        String?
-  ruc                String?
-  businessEmail      String?
-  currency           String?  @default("PEN")
-  timezone           String?  @default("America/Lima")
-  businessType       String?  // bodega | minimarket | tienda | restaurante
-  socialLinksJson    String?  // JSON: { facebook?, instagram?, tiktok? }
+  razonSocial     String?
+  ruc             String?
+  businessEmail   String?
+  currency        String? @default("PEN")
+  timezone        String? @default("America/Lima")
+  businessType    String? // bodega | minimarket | tienda | restaurante
+  socialLinksJson String? // JSON: { facebook?, instagram?, tiktok? }
 
   // ── Apariencia (Mejora M79-M86) — fix: persist colors/slogan ──
-  primaryColor       String?  @default("#2d6a4f")
-  secondaryColor     String?  @default("#f4a261")
-  slogan             String?
+  primaryColor   String? @default("#2d6a4f")
+  secondaryColor String? @default("#f4a261")
+  slogan         String?
 
   // ── Sistema (Mejora M21-M28) ──
-  dateFormat         String?  @default("DD/MM/YYYY")
-  timeFormat         String?  @default("24h")
-  decimals           Int?     @default(2)
-  taxRate            Float?   @default(18)
-  fiscalYearStart    Int?     @default(1) // month 1-12
+  dateFormat      String? @default("DD/MM/YYYY")
+  timeFormat      String? @default("24h")
+  decimals        Int?    @default(2)
+  taxRate         Float?  @default(18)
+  fiscalYearStart Int?    @default(1) // month 1-12
 
   // ── Ventas y comprobantes (Mejora M29-M38) ──
-  invoiceSeriesJson  String?  // JSON: { factura: "F001", boleta: "B001", ncFactura: "FC01", ncBoleta: "BC01" }
-  invoiceStartJson   String?  // JSON: { F001: 1, B001: 1, ... }
-  enabledDocTypes    String?  @default("factura,boleta,ticket")
-  roundingMode       String?  @default("none") // none | 0.10 | 0.50
-  maxDiscountPercent Float?   @default(100)
+  invoiceSeriesJson    String? // JSON: { factura: "F001", boleta: "B001", ncFactura: "FC01", ncBoleta: "BC01" }
+  invoiceStartJson     String? // JSON: { F001: 1, B001: 1, ... }
+  enabledDocTypes      String? @default("factura,boleta,ticket")
+  roundingMode         String? @default("none") // none | 0.10 | 0.50
+  maxDiscountPercent   Float?  @default(100)
   discountRequiresAuth Boolean @default(false)
-  invoiceFooterText  String?
-  sunatRuc           String?
-  sunatDenominacion  String?
-  sunatDireccion     String?
+  invoiceFooterText    String?
+  sunatRuc             String?
+  sunatDenominacion    String?
+  sunatDireccion       String?
 
   // ── Inventario (Mejora M39-M46) ──
-  defaultUnit        String?  @default("unidad")
-  globalMinStock     Int?     @default(5)
-  stockAlertChannels String?  @default("dashboard") // dashboard,email,whatsapp,push
-  adjustReasonsJson  String?  // JSON array: ["Merma","Robo","Vencimiento","Error de conteo","Donación"]
-  fefoEnabled        Boolean  @default(true)
-  fefoAlertDays      Int?     @default(15)
-  inventoryCountFreq String?  @default("monthly") // weekly | monthly | quarterly
+  defaultUnit        String? @default("unidad")
+  globalMinStock     Int?    @default(5)
+  stockAlertChannels String? @default("dashboard") // dashboard,email,whatsapp,push
+  adjustReasonsJson  String? // JSON array: ["Merma","Robo","Vencimiento","Error de conteo","Donación"]
+  fefoEnabled        Boolean @default(true)
+  fefoAlertDays      Int?    @default(15)
+  inventoryCountFreq String? @default("monthly") // weekly | monthly | quarterly
 
   // ── Caja y pagos (Mejora M47-M54) ──
-  cashOpeningAmount  Float?   @default(100)
-  cashAlertMax       Float?   @default(500)
-  returnPolicyDays   Int?     @default(7)
-  returnMaxNoAuth    Float?   @default(50)
-  autoCloseTime      String?  // e.g. "22:00"
+  cashOpeningAmount Float?  @default(100)
+  cashAlertMax      Float?  @default(500)
+  returnPolicyDays  Int?    @default(7)
+  returnMaxNoAuth   Float?  @default(50)
+  autoCloseTime     String? // e.g. "22:00"
 
   // ── Delivery (Mejora M55-M62) ──
-  deliveryZonesJson  String?  // JSON array: [{ name, fee, estimatedMin }]
-  freeDeliveryMin    Float?   @default(0)
-  deliveryMaxRadius  Float?   @default(10)
-  deliveryHoursJson  String?  // JSON: { morning, afternoon, evening }
-  ridersJson         String?  // JSON array: [{ name, phone, zone }]
+  deliveryZonesJson String? // JSON array: [{ name, fee, estimatedMin }]
+  freeDeliveryMin   Float?  @default(0)
+  deliveryMaxRadius Float?  @default(10)
+  deliveryHoursJson String? // JSON: { morning, afternoon, evening }
+  ridersJson        String? // JSON array: [{ name, phone, zone }]
 
   // ── Notificaciones (Mejora M63-M70) ──
-  smtpHost           String?
-  smtpPort           Int?
-  smtpUser           String?
-  smtpPass           String?
-  smtpFrom           String?
-  whatsappApiToken   String?
+  smtpHost            String?
+  smtpPort            Int?
+  smtpUser            String?
+  smtpPass            String?
+  smtpFrom            String?
+  whatsappApiToken    String?
   whatsappBusinessNum String?
-  whatsappWebhookUrl String?
-  notifChannelsJson  String?  // JSON: { newOrder: true, orderReady: true, abandonedCart: false }
+  whatsappWebhookUrl  String?
+  notifChannelsJson   String? // JSON: { newOrder: true, orderReady: true, abandonedCart: false }
   reorderReminderDays Int?
 
   // ── Integraciones (Mejora M71-M78) ──
-  plinEnabled        Boolean  @default(false)
+  plinEnabled        Boolean @default(false)
   plinImage          String?
   plinName           String?
   plinPhone          String?
-  sunatProvider      String?  // nubefact | efact | none
+  sunatProvider      String? // nubefact | efact | none
   sunatApiKey        String?
   googleAnalyticsId  String?
   googleTagManagerId String?
 
   // ── Auditoría (Mejora M87-M92) ──
-  logRetentionDays   Int?     @default(90)
-  logActions         String?  @default("sales,edits,access") // what to log
+  logRetentionDays Int?    @default(90)
+  logActions       String? @default("sales,edits,access") // what to log
 
   // ── Respaldo (Mejora M93-M98) ──
-  backupSchedule     String?  @default("none") // none | daily | weekly
-  lastBackupAt       DateTime?
+  backupSchedule String?   @default("none") // none | daily | weekly
+  lastBackupAt   DateTime?
 
   // ── Suscripción (Mejora M99-M104) ──
-  planName           String?  @default("free")
+  planName           String?   @default("free")
   planExpiresAt      DateTime?
-  maxProducts        Int?     @default(500)
-  maxUsers           Int?     @default(3)
-  maxBranches        Int?     @default(1)
-  enabledModulesJson String?  // JSON array: ["inventario","facturacion","ia"]
+  maxProducts        Int?      @default(500)
+  maxUsers           Int?      @default(3)
+  maxBranches        Int?      @default(1)
+  enabledModulesJson String? // JSON array: ["inventario","facturacion","ia"]
 
   // ── Métodos de pago adicionales ──
-  transferEnabled    Boolean  @default(false)
-  transferBankName   String?
-  transferAccountNum String?
+  transferEnabled       Boolean @default(false)
+  transferBankName      String?
+  transferAccountNum    String?
   transferAccountHolder String?
 
   // ── Plantilla de tienda ──
-  productCategoriesJson String?  // JSON array: ["Abarrotes","Bebidas",...] — pre-cargado desde plantilla en onboarding
+  productCategoriesJson String? // JSON array: ["Abarrotes","Bebidas",...] — pre-cargado desde plantilla en onboarding
 
   // ── StoreCustomizer ──
-  storeThemeJson        String?  // JSON: StoreCustomizer theme data
+  storeThemeJson String? // JSON: StoreCustomizer theme data
 }
 
 // ─── Suppliers ──────────────────────────────────────────
 model Supplier {
-  id        String   @id
-  name      String
-  ruc       String?
-  phone     String?
-  email     String?
-  address   String?
-  notes     String?
+  id      String  @id
+  name    String
+  ruc     String?
+  phone   String?
+  email   String?
+  address String?
+  notes   String?
 
   // ── Identificación ──
-  tipoPersona        String?   // "natural" | "juridica"
-  tipoDocumento      String?   // "DNI" | "RUC" | "CE" | "PASAPORTE"
-  documento          String?   // número de documento
-  razonSocial        String?   // nombre formal si es jurídica
-  estado             String?   @default("activo") // activo | inactivo
+  tipoPersona   String? // "natural" | "juridica"
+  tipoDocumento String? // "DNI" | "RUC" | "CE" | "PASAPORTE"
+  documento     String? // número de documento
+  razonSocial   String? // nombre formal si es jurídica
+  estado        String? @default("activo") // activo | inactivo
 
   // ── Contacto ──
   whatsappSecundario String?
   personaContacto    String?
 
   // ── Ubicación ──
-  departamento       String?
-  provincia          String?
-  distrito           String?
-  direccion          String?
+  departamento String?
+  provincia    String?
+  distrito     String?
+  direccion    String?
 
   // ── Comercial ──
-  categoria          String?   // "mayorista" | "fabricante" | "distribuidor" | "importador"
-  condicionPago      String?   // "contado" | "credito_7" | "credito_15" | "credito_30"
-  diasCredito        Int?      @default(0)
-  cuentaBancaria     String?
-  banco              String?
+  categoria      String? // "mayorista" | "fabricante" | "distribuidor" | "importador"
+  condicionPago  String? // "contado" | "credito_7" | "credito_15" | "credito_30"
+  diasCredito    Int?    @default(0)
+  cuentaBancaria String?
+  banco          String?
 
   // ── Adicionales ──
-  observaciones      String?
+  observaciones String?
 
   tenantId  String
   createdAt DateTime @default(now())
@@ -590,28 +590,30 @@ enum PurchaseStatus {
   recibido
   parcial
   cancelado
-  auto_generated  // Creado por AI Demand Forecasting — requiere aprobación del admin
+  auto_generated // Creado por AI Demand Forecasting — requiere aprobación del admin
 }
 
 model PurchaseOrder {
-  id           String         @id
-  supplierId   String
-  supplierName String
-  total        Float
+  id            String         @id
+  supplierId    String
+  supplierName  String
+  total         Float
   status        PurchaseStatus @default(pendiente)
   notes         String?
   paymentMethod String?
   deliveryDate  DateTime?
   discount      Float?         @default(0)
   tenantId      String
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   items    PurchaseItem[]
   supplier Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
   @@index([supplierId])
   @@index([tenantId])
+  // TD-020 / ADR-017 — aplicado en prod 2026-04-09 via scripts/apply-ola1-indices.ts
+  @@index([tenantId, status], map: "PurchaseOrder_tenantId_status_idx")
 }
 
 model PurchaseItem {
@@ -643,13 +645,13 @@ model Sale {
   createdAt     DateTime @default(now())
 
   // Mejora 1: Tipo de comprobante
-  comprobanteTipo   String?  @default("ticket")
+  comprobanteTipo   String? @default("ticket")
   comprobanteRuc    String?
   comprobanteNumero String?
 
   // Mejora 4: Descuento global sobre la venta
-  descuentoMonto      Decimal?  @db.Decimal(10,2)
-  descuentoPorcentaje Decimal?  @db.Decimal(5,2)
+  descuentoMonto      Decimal? @db.Decimal(10, 2)
+  descuentoPorcentaje Decimal? @db.Decimal(5, 2)
 
   // Pago mixto / fiado
   paymentDetails String?
@@ -718,6 +720,8 @@ model Payable {
   @@index([supplierId])
   @@index([tenantId])
   @@index([dueDate])
+  // TD-020 / ADR-017 — aplicado en prod 2026-04-09 via scripts/apply-ola1-indices.ts
+  @@index([tenantId, status], map: "Payable_tenantId_status_idx")
 }
 
 model Payment {
@@ -740,16 +744,16 @@ enum CashRegisterStatus {
 }
 
 model CashRegister {
-  id            String             @id @default(cuid())
-  openedAt      DateTime           @default(now())
-  closedAt      DateTime?
-  openingAmount Float              @default(0)
-  closingAmount Float?
+  id             String             @id @default(cuid())
+  openedAt       DateTime           @default(now())
+  closedAt       DateTime?
+  openingAmount  Float              @default(0)
+  closingAmount  Float?
   expectedAmount Float?
-  difference    Float?
-  status        CashRegisterStatus @default(abierta)
-  notes         String?
-  tenantId      String
+  difference     Float?
+  status         CashRegisterStatus @default(abierta)
+  notes          String?
+  tenantId       String
 
   movements CashMovement[]
 
@@ -759,7 +763,7 @@ model CashRegister {
 model CashMovement {
   id             String   @id @default(cuid())
   cashRegisterId String
-  type           String   // venta, ingreso, egreso, apertura, cierre
+  type           String // venta, ingreso, egreso, apertura, cierre
   amount         Float
   method         String   @default("efectivo") // efectivo, yape, plin, tarjeta, transferencia
   description    String   @default("")
@@ -773,19 +777,19 @@ model CashMovement {
 
 // ─── Inventory Movements ────────────────────────────────
 model InventoryMovement {
-  id          String   @id @default(cuid())
-  productId   Int
-  type        String   // compra, venta, venta_online, devolucion, ajuste_positivo, ajuste_negativo, merma
-  lossType    String?  // damages, theft, expiry, obsolescence (only relevant when type=merma)
-  quantity    Int
-  previousStock Int    @default(0)
-  newStock    Int      @default(0)
-  reference   String?  // saleId, orderId, purchaseId, etc.
+  id            String   @id @default(cuid())
+  productId     Int
+  type          String // compra, venta, venta_online, devolucion, ajuste_positivo, ajuste_negativo, merma
+  lossType      String? // damages, theft, expiry, obsolescence (only relevant when type=merma)
+  quantity      Int
+  previousStock Int      @default(0)
+  newStock      Int      @default(0)
+  reference     String? // saleId, orderId, purchaseId, etc.
   notes         String?
-  warehouseId   String?   // Which warehouse originated this movement
-  createdBy     String?   // Username of the admin who created this movement
+  warehouseId   String? // Which warehouse originated this movement
+  createdBy     String? // Username of the admin who created this movement
   tenantId      String
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime @default(now())
 
   product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   warehouse Warehouse? @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
@@ -800,19 +804,19 @@ model InventoryMovement {
 
 // ─── Coupons ────────────────────────────────────────────
 model Coupon {
-  id              String    @id @default(cuid())
-  code            String
-  tenantId        String
-  description     String    @default("")
-  discountType    String    @default("percent") // percent | fixed | giftcard
-  discountValue   Float     @default(0)
-  balance         Float?    // remaining balance for giftcard type
-  minPurchase     Float?
-  maxUses         Int?
-  usedCount       Int       @default(0)
-  active          Boolean   @default(true)
-  expiresAt       DateTime?
-  createdAt       DateTime  @default(now())
+  id            String    @id @default(cuid())
+  code          String
+  tenantId      String
+  description   String    @default("")
+  discountType  String    @default("percent") // percent | fixed | giftcard
+  discountValue Float     @default(0)
+  balance       Float? // remaining balance for giftcard type
+  minPurchase   Float?
+  maxUses       Int?
+  usedCount     Int       @default(0)
+  active        Boolean   @default(true)
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -820,16 +824,16 @@ model Coupon {
 
 // ─── Returns / Refunds ──────────────────────────────────
 model Return {
-  id              String       @id @default(cuid())
-  saleId          String?
-  orderId         String?
-  reason          String       @default("")
-  total           Float        @default(0)
-  photoUrl        String?
-  customerPhone   String?
-  creditApplied   Boolean      @default(false)
-  tenantId        String
-  createdAt       DateTime     @default(now())
+  id            String   @id @default(cuid())
+  saleId        String?
+  orderId       String?
+  reason        String   @default("")
+  total         Float    @default(0)
+  photoUrl      String?
+  customerPhone String?
+  creditApplied Boolean  @default(false)
+  tenantId      String
+  createdAt     DateTime @default(now())
 
   items ReturnItem[]
 
@@ -896,8 +900,8 @@ model PriceHistory {
 model DeliverySlot {
   id        String   @id @default(cuid())
   orderId   String   @unique
-  date      String   // YYYY-MM-DD
-  slot      String   // manana, tarde, noche
+  date      String // YYYY-MM-DD
+  slot      String // manana, tarde, noche
   notes     String?
   tenantId  String
   createdAt DateTime @default(now())
@@ -908,7 +912,7 @@ model DeliverySlot {
 // ─── Admin Chat Messages ────────────────────────────────
 model AdminMessage {
   id        String   @id @default(cuid())
-  sender    String   // admin, cajero, almacenero
+  sender    String // admin, cajero, almacenero
   message   String
   tenantId  String
   createdAt DateTime @default(now())
@@ -918,15 +922,15 @@ model AdminMessage {
 
 // ─── Supplier Evaluations ───────────────────────────────
 model SupplierEvaluation {
-  id            String   @id @default(cuid())
-  supplierId    String
-  purchaseId    String?
-  punctuality   Int      @default(3) // 1-5
-  quality       Int      @default(3) // 1-5
-  price         Int      @default(3) // 1-5
-  notes         String?
-  tenantId      String
-  createdAt     DateTime @default(now())
+  id          String   @id @default(cuid())
+  supplierId  String
+  purchaseId  String?
+  punctuality Int      @default(3) // 1-5
+  quality     Int      @default(3) // 1-5
+  price       Int      @default(3) // 1-5
+  notes       String?
+  tenantId    String
+  createdAt   DateTime @default(now())
 
   supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
 
@@ -937,7 +941,7 @@ model SupplierEvaluation {
 // ─── Expenses (Operating Costs) ─────────────────────────
 model Expense {
   id          String   @id @default(cuid())
-  category    String   // alquiler, servicios, personal, transporte, limpieza, marketing, otros
+  category    String // alquiler, servicios, personal, transporte, limpieza, marketing, otros
   description String   @default("")
   amount      Float
   date        DateTime @default(now())
@@ -952,14 +956,14 @@ model Expense {
 
 // ─── Product Bundles (Combos) ───────────────────────────
 model Bundle {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
-  description String    @default("")
-  price       Float     // bundle price (usually less than sum of items)
-  image       String    @default("")
-  active      Boolean   @default(true)
+  description String   @default("")
+  price       Float // bundle price (usually less than sum of items)
+  image       String   @default("")
+  active      Boolean  @default(true)
   tenantId    String
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime @default(now())
 
   items BundleItem[]
 
@@ -980,8 +984,8 @@ model BundleItem {
 // ─── Activity Log (Admin Audit Trail) ─────────────────
 model ActivityLog {
   id        String   @id @default(cuid())
-  action    String   // create, update, delete, view, login, etc.
-  entity    String   // product, order, customer, settings, etc.
+  action    String // create, update, delete, view, login, etc.
+  entity    String // product, order, customer, settings, etc.
   entityId  String?
   detail    String   @default("")
   user      String   @default("admin")
@@ -1013,18 +1017,18 @@ model PushSubscription {
 
 // ─── Admin Users ─────────────────────────────────────────
 model AdminUser {
-  id           String   @id @default(cuid())
-  username     String
-  tenantId     String
-  passwordHash String
-  role         String   @default("admin") // admin, cajero, almacenero
-  name         String   @default("")
-  active       Boolean  @default(true)
+  id                    String    @id @default(cuid())
+  username              String
+  tenantId              String
+  passwordHash          String
+  role                  String    @default("admin") // admin, cajero, almacenero
+  name                  String    @default("")
+  active                Boolean   @default(true)
   onboardingCompletedAt DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  turnos       Turno[]
+  turnos Turno[]
 
   @@unique([tenantId, username])
   @@index([tenantId])
@@ -1033,8 +1037,8 @@ model AdminUser {
 // ─── WhatsApp Notification Log ──────────────────────────
 model NotificationLog {
   id        String   @id @default(cuid())
-  type      String   // order_confirmed, order_shipped, order_delivered, promotion, low_stock
-  recipient String   // phone number
+  type      String // order_confirmed, order_shipped, order_delivered, promotion, low_stock
+  recipient String // phone number
   message   String
   status    String   @default("sent") // sent, failed
   orderId   String?
@@ -1044,16 +1048,18 @@ model NotificationLog {
   @@index([type])
   @@index([createdAt])
   @@index([tenantId])
+  // TD-020 / ADR-017 — aplicado en prod 2026-04-09 via scripts/apply-ola1-indices.ts
+  @@index([tenantId, createdAt(sort: Desc)], map: "NotificationLog_tenantId_createdAt_idx")
 }
 
 // ─── Customer Notification Inbox ────────────────────────
 model CustomerNotification {
   id            String   @id @default(cuid())
   customerPhone String
-  type          String   // order, promo, stock, coupon, general
+  type          String // order, promo, stock, coupon, general
   title         String
   body          String
-  link          String?  // deep-link inside the app
+  link          String? // deep-link inside the app
   read          Boolean  @default(false)
   tenantId      String
   createdAt     DateTime @default(now())
@@ -1077,10 +1083,10 @@ enum PageStatus {
 }
 
 model Page {
-  id              String     @id @default(cuid())
-  slug            String
-  title           String
-  description     String?
+  id          String  @id @default(cuid())
+  slug        String
+  title       String
+  description String?
 
   // SEO Metadata
   metaTitle       String?
@@ -1088,19 +1094,19 @@ model Page {
   ogImage         String?
 
   // Publishing
-  status          PageStatus @default(DRAFT)
-  publishedAt     DateTime?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  status      PageStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   // Layout
-  layout          String     @default("default")
-  settings        Json?      // { headerVisible: true, footerVisible: true }
-  tenantId        String
+  layout   String @default("default")
+  settings Json? // { headerVisible: true, footerVisible: true }
+  tenantId String
 
   // Relations
-  blocks          PageBlock[]
-  versions        PageVersion[]
+  blocks   PageBlock[]
+  versions PageVersion[]
 
   @@unique([tenantId, slug])
   @@index([slug])
@@ -1111,47 +1117,47 @@ model Page {
 
 // ─── Page Blocks ────────────────────────────────────────
 model PageBlock {
-  id          String   @id @default(cuid())
-  pageId      String
-  page        Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(cuid())
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
   // Block config
-  type        String   // hero, about, benefits, products, cta, etc.
-  order       Int      // Display order
-  visible     Boolean  @default(true)
-  
+  type    String // hero, about, benefits, products, cta, etc.
+  order   Int // Display order
+  visible Boolean @default(true)
+
   // Content
-  props       Json     // Component props
-  styles      Json?    // Custom styles
-  mobileProps Json?    // Mobile-specific props
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  props       Json // Component props
+  styles      Json? // Custom styles
+  mobileProps Json? // Mobile-specific props
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([pageId, order])
   @@index([type])
 }
 
 // ─── Block Templates ────────────────────────────────────
 model BlockTemplate {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
   description String?
-  type        String   // hero, cta, etc.
-  category    String   // marketing, informativo, producto
+  type        String // hero, cta, etc.
+  category    String // marketing, informativo, producto
 
   // Template data
-  props       Json
-  styles      Json?
-  preview     String?  // Preview image URL
+  props   Json
+  styles  Json?
+  preview String? // Preview image URL
 
   // Usage tracking
-  isPublic    Boolean  @default(false)
-  usageCount  Int      @default(0)
-  tenantId    String?  // null = global template, set = tenant-specific
+  isPublic   Boolean @default(false)
+  usageCount Int     @default(0)
+  tenantId   String? // null = global template, set = tenant-specific
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([type])
   @@index([category])
@@ -1160,35 +1166,35 @@ model BlockTemplate {
 
 // ─── Media Library ──────────────────────────────────────
 model Media {
-  id          String    @id @default(cuid())
+  id String @id @default(cuid())
 
   // File info
-  filename    String
-  url         String
-  mimeType    String
-  size        Int       // bytes
+  filename String
+  url      String
+  mimeType String
+  size     Int // bytes
 
   // Metadata
-  alt         String?
-  title       String?
-  caption     String?
+  alt     String?
+  title   String?
+  caption String?
 
   // Organization
-  folder      String    @default("general")
-  tags        String[]
+  folder String   @default("general")
+  tags   String[]
 
   // Image-specific
-  width       Int?
-  height      Int?
-  blurhash    String?
+  width    Int?
+  height   Int?
+  blurhash String?
 
   // Usage tracking
-  usageCount  Int       @default(0)
-  lastUsedAt  DateTime?
-  tenantId    String
+  usageCount Int       @default(0)
+  lastUsedAt DateTime?
+  tenantId   String
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([folder])
   @@index([mimeType])
@@ -1197,51 +1203,51 @@ model Media {
 
 // ─── Page Versions ──────────────────────────────────────
 model PageVersion {
-  id        String   @id @default(cuid())
-  pageId    String
-  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(cuid())
+  pageId String
+  page   Page   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
   // Snapshot
-  title     String
-  blocks    Json     // Complete blocks array snapshot
-  settings  Json?
-  
+  title    String
+  blocks   Json // Complete blocks array snapshot
+  settings Json?
+
   // Metadata
   comment   String?
   createdBy String?
   createdAt DateTime @default(now())
-  
+
   @@index([pageId, createdAt])
 }
 
 // ─── Theme Settings ─────────────────────────────────────
 model ThemeSettings {
-  id         String   @id @default(cuid())
-  tenantId   String   @unique
+  id       String @id @default(cuid())
+  tenantId String @unique
 
   // Design
-  colors     Json     // { primary, secondary, accent, ... }
-  fonts      Json     // { heading, body }
-  spacing    Json?    // { section, container }
+  colors  Json // { primary, secondary, accent, ... }
+  fonts   Json // { heading, body }
+  spacing Json? // { section, container }
 
   // Components
-  header     Json?    // { sticky, transparent }
-  footer     Json?    // { showSocial }
+  header Json? // { sticky, transparent }
+  footer Json? // { showSocial }
 
   // Effects
-  animations Json?    // { enabled, speed }
+  animations Json? // { enabled, speed }
 
-  updatedAt  DateTime @updatedAt
+  updatedAt DateTime @updatedAt
 
   @@index([tenantId])
 }
 
 // ─── Navigation ─────────────────────────────────────────
 model Navigation {
-  id        String   @id @default(cuid())
-  tenantId  String   @unique
-  items     Json     // Array of { label, href, icon?, children? }
-  settings  Json?    // { position, style }
+  id       String @id @default(cuid())
+  tenantId String @unique
+  items    Json // Array of { label, href, icon?, children? }
+  settings Json? // { position, style }
 
   updatedAt DateTime @updatedAt
 
@@ -1252,11 +1258,11 @@ model Navigation {
 model TenantWhatsAppConfig {
   id                 String   @id @default(cuid())
   tenantId           String   @unique
-  phoneNumberId      String                // Phone Number ID de Meta Business
-  whatsappToken      String                // Token de acceso (Bearer)
-  webhookVerifyToken String                // Token de verificación del webhook
-  businessName       String?               // Nombre que aparece al responder
-  yapeNumber         String?               // Número Yape para instrucciones de pago
+  phoneNumberId      String // Phone Number ID de Meta Business
+  whatsappToken      String // Token de acceso (Bearer)
+  webhookVerifyToken String // Token de verificación del webhook
+  businessName       String? // Nombre que aparece al responder
+  yapeNumber         String? // Número Yape para instrucciones de pago
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
 
@@ -1267,12 +1273,12 @@ model TenantWhatsAppConfig {
 model WhatsAppConversation {
   id              String   @id @default(cuid())
   tenantId        String
-  phone           String                    // número del cliente (formato E.164 sin +)
+  phone           String // número del cliente (formato E.164 sin +)
   state           String   @default("idle") // idle | browsing | cart | checkout | awaiting_payment | completed
-  cartItems       Json     @default("[]")   // [{productId, name, quantity, price, unit}]
+  cartItems       Json     @default("[]") // [{productId, name, quantity, price, unit}]
   deliveryAddress String?
   lastMessageAt   DateTime @default(now())
-  expiresAt       DateTime                  // conversación expira en 30 min sin actividad
+  expiresAt       DateTime // conversación expira en 30 min sin actividad
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -1285,15 +1291,15 @@ model WhatsAppConversation {
 // Stores events that failed to be processed (e.g. DB unavailable).
 // A cron job (POST /api/billing/webhook-replay) drains this queue.
 model StripeWebhookQueue {
-  id          String   @id @default(cuid())
-  stripeId    String   @unique          // Stripe event ID (idempotency key)
-  eventType   String                    // e.g. "checkout.session.completed"
-  payload     String                    // Raw JSON of the Stripe.Event object
-  attempts    Int      @default(0)      // How many replay attempts have failed
-  lastError   String?                   // Last error message for debugging
-  nextRetryAt DateTime @default(now())  // Earliest time to retry
-  processedAt DateTime?                 // Set when successfully replayed
-  createdAt   DateTime @default(now())
+  id          String    @id @default(cuid())
+  stripeId    String    @unique // Stripe event ID (idempotency key)
+  eventType   String // e.g. "checkout.session.completed"
+  payload     String // Raw JSON of the Stripe.Event object
+  attempts    Int       @default(0) // How many replay attempts have failed
+  lastError   String? // Last error message for debugging
+  nextRetryAt DateTime  @default(now()) // Earliest time to retry
+  processedAt DateTime? // Set when successfully replayed
+  createdAt   DateTime  @default(now())
 
   @@index([processedAt])
   @@index([nextRetryAt])
@@ -1303,15 +1309,15 @@ model StripeWebhookQueue {
 // Maps MP preference/preapproval IDs to the intended plan so webhooks
 // can resolve the plan reliably without inferring from price amounts.
 model MpPendingPlan {
-  id              String   @id @default(cuid())
-  tenantSlug      String
-  plan            String                    // "pro" | "business" | "enterprise"
-  preferenceId    String?  @unique          // ID de preferencia (pago único)
-  preapprovalId   String?  @unique          // ID de preapproval (suscripción)
-  externalRef     String                    // external_reference enviado a MP
-  status          String   @default("pending") // pending | approved | cancelled | expired
-  createdAt       DateTime @default(now())
-  resolvedAt      DateTime?                 // cuando el webhook procesó el pago
+  id            String    @id @default(cuid())
+  tenantSlug    String
+  plan          String // "pro" | "business" | "enterprise"
+  preferenceId  String?   @unique // ID de preferencia (pago único)
+  preapprovalId String?   @unique // ID de preapproval (suscripción)
+  externalRef   String // external_reference enviado a MP
+  status        String    @default("pending") // pending | approved | cancelled | expired
+  createdAt     DateTime  @default(now())
+  resolvedAt    DateTime? // cuando el webhook procesó el pago
 
   @@index([tenantSlug])
   @@index([externalRef])
@@ -1336,8 +1342,8 @@ model MessageTemplate {
   id            String   @id @default(cuid())
   tenantId      String
   name          String
-  channel       String   // whatsapp | email | sms
-  category      String   // ventas | cobranza | delivery | promociones | atención | general
+  channel       String // whatsapp | email | sms
+  category      String // ventas | cobranza | delivery | promociones | atención | general
   subject       String?
   body          String
   variablesJson String   @default("[]") // JSON array of variable names
@@ -1355,7 +1361,7 @@ model Reminder {
   tenantId      String
   title         String
   description   String   @default("")
-  type          String   // pago | inventario | tarea | vencimiento | cliente | general
+  type          String // pago | inventario | tarea | vencimiento | cliente | general
   priority      String   @default("media") // alta | media | baja
   status        String   @default("pendiente") // pendiente | completado | vencido
   dueDate       DateTime
@@ -1383,8 +1389,8 @@ model Batch {
   expiryDate      DateTime
   costUnit        Float    @default(0)
   notes           String   @default("")
-  productId       Int?                  // FK to Product catalogue (optional, backward compat)
-  warehouseId     String?               // FK to Warehouse where this batch is stored
+  productId       Int? // FK to Product catalogue (optional, backward compat)
+  warehouseId     String? // FK to Warehouse where this batch is stored
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -1418,7 +1424,7 @@ model ChatMessage {
   id            String   @id @default(cuid())
   customerPhone String
   customerName  String   @default("Cliente")
-  sender        String   // "customer" | "admin"
+  sender        String // "customer" | "admin"
   message       String
   read          Boolean  @default(false)
   tenantId      String
@@ -1434,7 +1440,7 @@ model ABTest {
   id          String   @id @default(cuid())
   name        String
   description String   @default("")
-  variants    Json     // Array of { id: string, label: string, weight: number }
+  variants    Json // Array of { id: string, label: string, weight: number }
   active      Boolean  @default(true)
   tenantId    String
   createdAt   DateTime @default(now())
@@ -1447,9 +1453,9 @@ model ABTestEvent {
   id        String   @id @default(cuid())
   testId    String
   variantId String
-  visitorId String   // anonymous cookie or phone
-  event     String   // "impression" | "conversion"
-  value     Float?   // optional conversion value
+  visitorId String // anonymous cookie or phone
+  event     String // "impression" | "conversion"
+  value     Float? // optional conversion value
   tenantId  String
   createdAt DateTime @default(now())
 
@@ -1463,7 +1469,7 @@ model SurveyResponse {
   id            String   @id @default(cuid())
   orderId       String
   customerPhone String?
-  rating        Int      // 1-5 stars
+  rating        Int // 1-5 stars
   comment       String   @default("")
   type          String   @default("nps") // nps, csat, etc.
   tenantId      String
@@ -1479,10 +1485,10 @@ model SurveyResponse {
 // Superadmin or tenant admins can invite users via signed email links.
 model TenantInvitation {
   id        String   @id @default(cuid())
-  tenantId  String   // slug of the target tenant
+  tenantId  String // slug of the target tenant
   email     String
   role      String   @default("editor") // admin | editor | viewer
-  token     String   @unique            // 32-byte random hex, single-use
+  token     String   @unique // 32-byte random hex, single-use
   status    String   @default("pending") // pending | accepted | expired
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -1494,14 +1500,14 @@ model TenantInvitation {
 
 // ─── Order Status History ────────────────────────────────
 model OrderStatusHistory {
-  id        String      @id @default(cuid())
-  orderId   String
+  id         String       @id @default(cuid())
+  orderId    String
   fromStatus OrderStatus?
-  toStatus  OrderStatus
-  changedBy String?              // admin user identifier or "system"
-  note      String?
-  tenantId  String
-  createdAt DateTime    @default(now())
+  toStatus   OrderStatus
+  changedBy  String? // admin user identifier or "system"
+  note       String?
+  tenantId   String
+  createdAt  DateTime     @default(now())
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
@@ -1586,20 +1592,20 @@ model Transfer {
 }
 
 model Location {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   code        String
   zone        String
-  aisle       String    @default("")
-  shelf       String    @default("")
-  bin         String    @default("")
+  aisle       String   @default("")
+  shelf       String   @default("")
+  bin         String   @default("")
   warehouseId String
   productId   Int?
-  qty         Int       @default(0)
-  capacity    Int       @default(0)
-  category    String    @default("")
+  qty         Int      @default(0)
+  capacity    Int      @default(0)
+  category    String   @default("")
   tenantId    String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
   product   Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
@@ -1614,9 +1620,9 @@ model Location {
 // Programmatic access for Business-tier tenants via Bearer tokens.
 model ApiKey {
   id         String    @id @default(cuid())
-  tenantId   String    // slug of the owning tenant
-  name       String    // human-readable label
-  keyPrefix  String    // first 10 chars of the raw key (shown in UI)
+  tenantId   String // slug of the owning tenant
+  name       String // human-readable label
+  keyPrefix  String // first 10 chars of the raw key (shown in UI)
   keyHash    String    @unique // SHA-256 of the full raw key
   active     Boolean   @default(true)
   createdAt  DateTime  @default(now())
@@ -1631,7 +1637,7 @@ model ApiKey {
 model VisitorWelcome {
   id        String   @id @default(cuid())
   name      String
-  devices   String   // JSON array: ["celular","tablet","computadora"]
+  devices   String // JSON array: ["celular","tablet","computadora"]
   userAgent String?
   tenantId  String
   createdAt DateTime @default(now())
@@ -1646,7 +1652,7 @@ model Campaign {
   tenantId      String
   name          String
   message       String    @db.Text
-  segment       String    @default("todos")    // todos | vip | inactivos | cumpleanos | deudores
+  segment       String    @default("todos") // todos | vip | inactivos | cumpleanos | deudores
   channel       String    @default("whatsapp") // whatsapp | inapp | ambos
   status        String    @default("borrador") // borrador | programada | activa | completada | cancelada
   scheduledAt   DateTime?
@@ -1666,19 +1672,19 @@ model Campaign {
 
 // ─── Commission Rules (tiered % per employee) ─────────────────────────────────
 model CommissionRule {
-  id         String   @id @default(cuid())
-  tenantId   String
-  cashierId  String                         // matches adminUser.username
-  label      String   @default("")          // e.g. "Nivel base", "Objetivo Q1"
-  minSales   Float    @default(0)           // minimum revenue to qualify
-  maxSales   Float?                         // null = no upper limit
-  rate       Float    @default(0)           // commission % applied to revenue
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  tenantId  String
+  cashierId String // matches adminUser.username
+  label     String   @default("") // e.g. "Nivel base", "Objetivo Q1"
+  minSales  Float    @default(0) // minimum revenue to qualify
+  maxSales  Float? // null = no upper limit
+  rate      Float    @default(0) // commission % applied to revenue
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  @@unique([tenantId, cashierId, minSales])
   @@index([tenantId])
   @@index([cashierId])
-  @@unique([tenantId, cashierId, minSales])
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1686,25 +1692,26 @@ model CommissionRule {
 // ═══════════════════════════════════════════════════════
 
 model DailySummary {
-  id                String   @id @default(cuid())
-  tenantId          String
-  fecha             DateTime
-  totalVentas       Decimal  @db.Decimal(10,2) @default(0)
-  cantidadVentas    Int      @default(0)
-  ticketPromedio    Decimal  @db.Decimal(10,2) @default(0)
-  efectivoContado   Decimal? @db.Decimal(10,2)
-  efectivoEsperado  Decimal  @db.Decimal(10,2) @default(0)
-  diferenciaCaja    Decimal  @db.Decimal(10,2) @default(0)
-  fiadosCobrados    Decimal  @db.Decimal(10,2) @default(0)
-  fiadosNuevos      Decimal  @db.Decimal(10,2) @default(0)
-  fiadosVencidos    Int      @default(0)
-  mejorHora         String?
-  productoTop       String?
-  stockAlertas      String?  // JSON string
-  notas             String?
-  creadoPor         String
-  createdAt         DateTime @default(now())
-  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+  id               String   @id @default(cuid())
+  tenantId         String
+  fecha            DateTime
+  totalVentas      Decimal  @default(0) @db.Decimal(10, 2)
+  cantidadVentas   Int      @default(0)
+  ticketPromedio   Decimal  @default(0) @db.Decimal(10, 2)
+  efectivoContado  Decimal? @db.Decimal(10, 2)
+  efectivoEsperado Decimal  @default(0) @db.Decimal(10, 2)
+  diferenciaCaja   Decimal  @default(0) @db.Decimal(10, 2)
+  fiadosCobrados   Decimal  @default(0) @db.Decimal(10, 2)
+  fiadosNuevos     Decimal  @default(0) @db.Decimal(10, 2)
+  fiadosVencidos   Int      @default(0)
+  mejorHora        String?
+  productoTop      String?
+  stockAlertas     String? // JSON string
+  notas            String?
+  creadoPor        String
+  createdAt        DateTime @default(now())
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+
   @@index([tenantId, fecha])
   @@index([tenantId])
 }
@@ -1721,19 +1728,20 @@ enum FiadoStatus {
 }
 
 model Fiado {
-  id          String      @id @default(cuid())
+  id          String       @id @default(cuid())
   tenantId    String
   customerId  String
-  total       Decimal     @db.Decimal(10,2)
-  saldo       Decimal     @db.Decimal(10,2)
+  total       Decimal      @db.Decimal(10, 2)
+  saldo       Decimal      @db.Decimal(10, 2)
   descripcion String?
-  status      FiadoStatus @default(ACTIVO)
+  status      FiadoStatus  @default(ACTIVO)
   fechaVence  DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  tenant      Tenant      @relation(fields: [tenantId], references: [id])
-  customer    Customer    @relation(fields: [customerId], references: [phone])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  customer    Customer     @relation(fields: [customerId], references: [phone])
   cuotas      FiadoCuota[]
+
   @@index([tenantId, status])
   @@index([customerId])
 }
@@ -1741,11 +1749,12 @@ model Fiado {
 model FiadoCuota {
   id        String    @id @default(cuid())
   fiadoId   String
-  monto     Decimal   @db.Decimal(10,2)
+  monto     Decimal   @db.Decimal(10, 2)
   pagadoEn  DateTime?
   notas     String?
   createdAt DateTime  @default(now())
   fiado     Fiado     @relation(fields: [fiadoId], references: [id], onDelete: Cascade)
+
   @@index([fiadoId])
 }
 
@@ -1759,19 +1768,20 @@ enum TurnoStatus {
 }
 
 model Turno {
-  id             String       @id @default(cuid())
+  id             String      @id @default(cuid())
   tenantId       String
   adminUserId    String
-  inicioEfectivo Decimal      @db.Decimal(10,2) @default(0)
-  cierreEfectivo Decimal?     @db.Decimal(10,2)
-  ventasTotal    Decimal      @db.Decimal(10,2) @default(0)
-  status         TurnoStatus  @default(ABIERTO)
-  abrioEn        DateTime     @default(now())
+  inicioEfectivo Decimal     @default(0) @db.Decimal(10, 2)
+  cierreEfectivo Decimal?    @db.Decimal(10, 2)
+  ventasTotal    Decimal     @default(0) @db.Decimal(10, 2)
+  status         TurnoStatus @default(ABIERTO)
+  abrioEn        DateTime    @default(now())
   cerroEn        DateTime?
   notas          String?
-  createdAt      DateTime     @default(now())
-  tenant         Tenant       @relation(fields: [tenantId], references: [id])
-  adminUser      AdminUser    @relation(fields: [adminUserId], references: [id])
+  createdAt      DateTime    @default(now())
+  tenant         Tenant      @relation(fields: [tenantId], references: [id])
+  adminUser      AdminUser   @relation(fields: [adminUserId], references: [id])
+
   @@index([tenantId, status])
   @@index([adminUserId])
 }
@@ -1786,7 +1796,7 @@ model Receta {
   nombre       String
   descripcion  String?
   productoId   Int?
-  costoTotal   Decimal             @db.Decimal(10,2) @default(0)
+  costoTotal   Decimal             @default(0) @db.Decimal(10, 2)
   activa       Boolean             @default(true)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
@@ -1794,17 +1804,19 @@ model Receta {
   producto     Product?            @relation("RecetaProducto", fields: [productoId], references: [id])
   ingredientes RecetaIngrediente[]
   producciones ProduccionLote[]
+
   @@index([tenantId])
 }
 
 model RecetaIngrediente {
-  id         String   @id @default(cuid())
+  id         String  @id @default(cuid())
   recetaId   String
   productoId Int
-  cantidad   Decimal  @db.Decimal(10,3)
-  unidad     String   @default("unidad")
-  receta     Receta   @relation(fields: [recetaId], references: [id], onDelete: Cascade)
-  producto   Product  @relation("IngredienteProducto", fields: [productoId], references: [id])
+  cantidad   Decimal @db.Decimal(10, 3)
+  unidad     String  @default("unidad")
+  receta     Receta  @relation(fields: [recetaId], references: [id], onDelete: Cascade)
+  producto   Product @relation("IngredienteProducto", fields: [productoId], references: [id])
+
   @@index([recetaId])
 }
 
@@ -1812,12 +1824,13 @@ model ProduccionLote {
   id          String   @id @default(cuid())
   tenantId    String
   recetaId    String
-  cantidad    Decimal  @db.Decimal(10,2)
-  costoReal   Decimal  @db.Decimal(10,2) @default(0)
+  cantidad    Decimal  @db.Decimal(10, 2)
+  costoReal   Decimal  @default(0) @db.Decimal(10, 2)
   notas       String?
   producidoEn DateTime @default(now())
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   receta      Receta   @relation(fields: [recetaId], references: [id])
+
   @@index([tenantId])
   @@index([recetaId])
 }
@@ -1859,42 +1872,42 @@ enum PrestamoSistemaAmortizacion {
 }
 
 model Prestamo {
-  id                    String                      @id @default(cuid())
-  tenantId              String
-  customerId            String?
+  id                  String                      @id @default(cuid())
+  tenantId            String
+  customerId          String?
   // ── Tipo y dirección ──
-  tipo                  PrestamoTipo                @default(PERSONAL)
-  direccion             PrestamoDireccion           @default(DADO)
+  tipo                PrestamoTipo                @default(PERSONAL)
+  direccion           PrestamoDireccion           @default(DADO)
   // ── Entidad (banco/persona/proveedor) ──
-  entidadNombre         String?
-  entidadTipo           PrestamoEntidadTipo?
-  nroOperacion          String?
+  entidadNombre       String?
+  entidadTipo         PrestamoEntidadTipo?
+  nroOperacion        String?
   // ── Montos y tasas ──
-  monto                 Decimal                     @db.Decimal(12,2)
-  moneda                String                      @default("PEN")
-  tasaInteres           Decimal                     @db.Decimal(5,2) @default(0)
-  tea                   Decimal?                    @db.Decimal(6,4)
-  moraInteres           Decimal                     @db.Decimal(5,2) @default(0)
+  monto               Decimal                     @db.Decimal(12, 2)
+  moneda              String                      @default("PEN")
+  tasaInteres         Decimal                     @default(0) @db.Decimal(5, 2)
+  tea                 Decimal?                    @db.Decimal(6, 4)
+  moraInteres         Decimal                     @default(0) @db.Decimal(5, 2)
   // ── Cuotas y amortización ──
-  numeroCuotas          Int                         @default(1)
-  sistemaAmortizacion   PrestamoSistemaAmortizacion @default(FRANCES)
-  periodoGracia         Int                         @default(0)
+  numeroCuotas        Int                         @default(1)
+  sistemaAmortizacion PrestamoSistemaAmortizacion @default(FRANCES)
+  periodoGracia       Int                         @default(0)
   // ── Estado ──
-  status                PrestamoStatus              @default(ACTIVO)
+  status              PrestamoStatus              @default(ACTIVO)
   // ── Fechas ──
-  fechaDesembolso       DateTime?
-  fechaVencimiento      DateTime?
+  fechaDesembolso     DateTime?
+  fechaVencimiento    DateTime?
   // ── Extras ──
-  garantia              String?
-  notas                 String?
+  garantia            String?
+  notas               String?
   // ── Timestamps ──
-  createdAt             DateTime                    @default(now())
-  updatedAt             DateTime                    @updatedAt
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
   // ── Relations ──
-  tenant                Tenant                      @relation(fields: [tenantId], references: [id])
-  customer              Customer?                   @relation(fields: [customerId], references: [phone])
-  cuotas                PrestamoCuota[]
-  documentos            PrestamoDocumento[]
+  tenant              Tenant                      @relation(fields: [tenantId], references: [id])
+  customer            Customer?                   @relation(fields: [customerId], references: [phone])
+  cuotas              PrestamoCuota[]
+  documentos          PrestamoDocumento[]
 
   @@index([tenantId, status])
   @@index([tenantId, tipo])
@@ -1903,29 +1916,31 @@ model Prestamo {
 }
 
 model PrestamoCuota {
-  id              String    @id @default(cuid())
-  prestamoId      String
-  numeroCuota     Int
-  monto           Decimal   @db.Decimal(12,2)
-  capital         Decimal   @db.Decimal(12,2) @default(0)
-  interes         Decimal   @db.Decimal(12,2) @default(0)
-  fechaVence      DateTime
-  pagadoEn        DateTime?
-  montoPagado     Decimal?  @db.Decimal(12,2)
-  moraCalculada   Decimal   @db.Decimal(12,2) @default(0)
-  prestamo        Prestamo  @relation(fields: [prestamoId], references: [id], onDelete: Cascade)
+  id            String    @id @default(cuid())
+  prestamoId    String
+  numeroCuota   Int
+  monto         Decimal   @db.Decimal(12, 2)
+  capital       Decimal   @default(0) @db.Decimal(12, 2)
+  interes       Decimal   @default(0) @db.Decimal(12, 2)
+  fechaVence    DateTime
+  pagadoEn      DateTime?
+  montoPagado   Decimal?  @db.Decimal(12, 2)
+  moraCalculada Decimal   @default(0) @db.Decimal(12, 2)
+  prestamo      Prestamo  @relation(fields: [prestamoId], references: [id], onDelete: Cascade)
+
   @@index([prestamoId])
   @@index([fechaVence])
 }
 
 model PrestamoDocumento {
-  id          String   @id @default(cuid())
-  prestamoId  String
-  nombre      String
-  tipo        String   @default("otro")
-  url         String
-  createdAt   DateTime @default(now())
-  prestamo    Prestamo @relation(fields: [prestamoId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  prestamoId String
+  nombre     String
+  tipo       String   @default("otro")
+  url        String
+  createdAt  DateTime @default(now())
+  prestamo   Prestamo @relation(fields: [prestamoId], references: [id], onDelete: Cascade)
+
   @@index([prestamoId])
 }
 
@@ -1960,24 +1975,24 @@ enum TreasuryMovimientoOrigen {
 }
 
 model TreasuryCuenta {
-  id              String               @id @default(cuid())
-  tenantId        String
-  nombre          String               // "BCP Ahorro", "Caja principal", "Yape"
-  tipo            TreasuryCuentaTipo
-  banco           String?              // "BCP", "Interbank", "BBVA", etc.
-  numeroCuenta    String?              // Número de cuenta bancaria
-  cci             String?              // Código interbancario
-  moneda          String               @default("PEN")
-  saldo           Decimal              @db.Decimal(12,2) @default(0)
-  saldoInicial    Decimal              @db.Decimal(12,2) @default(0)
-  activa          Boolean              @default(true)
-  color           String?              // Color para UI: "#3b82f6"
-  notas           String?
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  id           String             @id @default(cuid())
+  tenantId     String
+  nombre       String // "BCP Ahorro", "Caja principal", "Yape"
+  tipo         TreasuryCuentaTipo
+  banco        String? // "BCP", "Interbank", "BBVA", etc.
+  numeroCuenta String? // Número de cuenta bancaria
+  cci          String? // Código interbancario
+  moneda       String             @default("PEN")
+  saldo        Decimal            @default(0) @db.Decimal(12, 2)
+  saldoInicial Decimal            @default(0) @db.Decimal(12, 2)
+  activa       Boolean            @default(true)
+  color        String? // Color para UI: "#3b82f6"
+  notas        String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
-  tenant          Tenant               @relation(fields: [tenantId], references: [id])
-  movimientos     TreasuryMovimiento[]
+  tenant                Tenant                  @relation(fields: [tenantId], references: [id])
+  movimientos           TreasuryMovimiento[]
   transferenciasOrigen  TreasuryTransferencia[] @relation("TransferenciaOrigen")
   transferenciasDestino TreasuryTransferencia[] @relation("TransferenciaDestino")
 
@@ -1986,21 +2001,21 @@ model TreasuryCuenta {
 }
 
 model TreasuryMovimiento {
-  id              String                    @id @default(cuid())
-  tenantId        String
-  cuentaId        String
-  tipo            TreasuryMovimientoTipo
-  origen          TreasuryMovimientoOrigen  @default(MANUAL)
-  monto           Decimal                   @db.Decimal(12,2)
-  saldoAnterior   Decimal                   @db.Decimal(12,2) @default(0)
-  saldoPosterior  Decimal                   @db.Decimal(12,2) @default(0)
-  descripcion     String                    @default("")
-  referencia      String?                   // ID de venta, gasto, préstamo, etc.
-  categoria       String?                   // Para agrupar: "ventas", "nómina", etc.
-  createdAt       DateTime                  @default(now())
+  id             String                   @id @default(cuid())
+  tenantId       String
+  cuentaId       String
+  tipo           TreasuryMovimientoTipo
+  origen         TreasuryMovimientoOrigen @default(MANUAL)
+  monto          Decimal                  @db.Decimal(12, 2)
+  saldoAnterior  Decimal                  @default(0) @db.Decimal(12, 2)
+  saldoPosterior Decimal                  @default(0) @db.Decimal(12, 2)
+  descripcion    String                   @default("")
+  referencia     String? // ID de venta, gasto, préstamo, etc.
+  categoria      String? // Para agrupar: "ventas", "nómina", etc.
+  createdAt      DateTime                 @default(now())
 
-  tenant          Tenant                    @relation(fields: [tenantId], references: [id])
-  cuenta          TreasuryCuenta            @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
+  tenant Tenant         @relation(fields: [tenantId], references: [id])
+  cuenta TreasuryCuenta @relation(fields: [cuentaId], references: [id], onDelete: Cascade)
 
   @@index([tenantId, createdAt])
   @@index([cuentaId, createdAt])
@@ -2008,17 +2023,17 @@ model TreasuryMovimiento {
 }
 
 model TreasuryTransferencia {
-  id            String          @id @default(cuid())
-  tenantId      String
-  origenId      String
-  destinoId     String
-  monto         Decimal         @db.Decimal(12,2)
-  descripcion   String          @default("")
-  createdAt     DateTime        @default(now())
+  id          String   @id @default(cuid())
+  tenantId    String
+  origenId    String
+  destinoId   String
+  monto       Decimal  @db.Decimal(12, 2)
+  descripcion String   @default("")
+  createdAt   DateTime @default(now())
 
-  tenant        Tenant          @relation(fields: [tenantId], references: [id])
-  origen        TreasuryCuenta  @relation("TransferenciaOrigen", fields: [origenId], references: [id])
-  destino       TreasuryCuenta  @relation("TransferenciaDestino", fields: [destinoId], references: [id])
+  tenant  Tenant         @relation(fields: [tenantId], references: [id])
+  origen  TreasuryCuenta @relation("TransferenciaOrigen", fields: [origenId], references: [id])
+  destino TreasuryCuenta @relation("TransferenciaDestino", fields: [destinoId], references: [id])
 
   @@index([tenantId, createdAt])
 }
@@ -2037,24 +2052,25 @@ enum CotizacionStatus {
 }
 
 model Cotizacion {
-  id            String             @id @default(cuid())
+  id            String           @id @default(cuid())
   tenantId      String
-  numero        String             // correlativo: COT-0001
+  numero        String // correlativo: COT-0001
   customerId    String?
   clienteNombre String
   clienteRuc    String?
   validoHasta   DateTime
-  status        CotizacionStatus   @default(BORRADOR)
-  subtotal      Decimal            @db.Decimal(10,2) @default(0)
-  igv           Decimal            @db.Decimal(10,2) @default(0)
-  total         Decimal            @db.Decimal(10,2) @default(0)
+  status        CotizacionStatus @default(BORRADOR)
+  subtotal      Decimal          @default(0) @db.Decimal(10, 2)
+  igv           Decimal          @default(0) @db.Decimal(10, 2)
+  total         Decimal          @default(0) @db.Decimal(10, 2)
   notas         String?
   createdBy     String
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  tenant        Tenant             @relation(fields: [tenantId], references: [id])
-  customer      Customer?          @relation(fields: [customerId], references: [phone])
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  tenant        Tenant           @relation(fields: [tenantId], references: [id])
+  customer      Customer?        @relation(fields: [customerId], references: [phone])
   items         CotizacionItem[]
+
   @@index([tenantId, status])
   @@index([numero])
 }
@@ -2064,11 +2080,12 @@ model CotizacionItem {
   cotizacionId String
   productoId   String?
   descripcion  String
-  cantidad     Decimal    @db.Decimal(10,3)
-  precioUnit   Decimal    @db.Decimal(10,2)
-  descuento    Decimal    @db.Decimal(5,2) @default(0)
-  subtotal     Decimal    @db.Decimal(10,2)
+  cantidad     Decimal    @db.Decimal(10, 3)
+  precioUnit   Decimal    @db.Decimal(10, 2)
+  descuento    Decimal    @default(0) @db.Decimal(5, 2)
+  subtotal     Decimal    @db.Decimal(10, 2)
   cotizacion   Cotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+
   @@index([cotizacionId])
 }
 
@@ -2085,11 +2102,11 @@ enum GuiaStatus {
 }
 
 model GuiaRemision {
-  id                    String       @id @default(cuid())
+  id                    String             @id @default(cuid())
   tenantId              String
-  numero                String       // GRR-0001
+  numero                String // GRR-0001
   orderId               String?
-  motivoTraslado        String       // VENTA, TRASLADO_ALMACEN, DEVOLUCION, etc.
+  motivoTraslado        String // VENTA, TRASLADO_ALMACEN, DEVOLUCION, etc.
   fechaTraslado         DateTime
   destinatarioNombre    String
   destinatarioRuc       String?
@@ -2100,19 +2117,20 @@ model GuiaRemision {
   conductorNombre       String?
   conductorDni          String?
   bultos                Int?
-  documentoRef          String?        // Factura, boleta u orden que ampara el traslado
+  documentoRef          String? // Factura, boleta u orden que ampara el traslado
   puntoPartida          String
   puntoLlegada          String
-  status                GuiaStatus   @default(BORRADOR)
-  pesoTotal             Decimal?     @db.Decimal(10,3)
-  pesoBruto             Decimal?     @db.Decimal(10,3)
+  status                GuiaStatus         @default(BORRADOR)
+  pesoTotal             Decimal?           @db.Decimal(10, 3)
+  pesoBruto             Decimal?           @db.Decimal(10, 3)
   notas                 String?
   createdBy             String
-  createdAt             DateTime     @default(now())
-  updatedAt             DateTime     @updatedAt
-  tenant                Tenant       @relation(fields: [tenantId], references: [id])
-  order                 Order?       @relation(fields: [orderId], references: [id])
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  tenant                Tenant             @relation(fields: [tenantId], references: [id])
+  order                 Order?             @relation(fields: [orderId], references: [id])
   items                 GuiaRemisionItem[]
+
   @@index([tenantId, status])
   @@index([numero])
 }
@@ -2122,10 +2140,11 @@ model GuiaRemisionItem {
   guiaId       String
   productoId   String?
   descripcion  String
-  cantidad     Decimal      @db.Decimal(10,3)
+  cantidad     Decimal      @db.Decimal(10, 3)
   unidad       String       @default("NIU")
-  pesoUnitario Decimal?     @db.Decimal(10,3)
+  pesoUnitario Decimal?     @db.Decimal(10, 3)
   guia         GuiaRemision @relation(fields: [guiaId], references: [id], onDelete: Cascade)
+
   @@index([guiaId])
 }
 
@@ -2140,23 +2159,24 @@ enum NotaCreditoStatus {
 }
 
 model NotaCredito {
-  id              String            @id @default(cuid())
-  tenantId        String
-  numero          String            // NC-0001
-  orderId         String?
-  saleId          String?
-  motivoCodigo    String            // 01=anulación, 02=anulación por error RUC, etc.
-  motivoDesc      String
-  monto           Decimal           @db.Decimal(10,2)
-  igv             Decimal           @db.Decimal(10,2) @default(0)
-  total           Decimal           @db.Decimal(10,2)
-  status          NotaCreditoStatus @default(BORRADOR)
-  notas           String?
-  createdBy       String
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  tenant          Tenant            @relation(fields: [tenantId], references: [id])
-  order           Order?            @relation(fields: [orderId], references: [id])
+  id           String            @id @default(cuid())
+  tenantId     String
+  numero       String // NC-0001
+  orderId      String?
+  saleId       String?
+  motivoCodigo String // 01=anulación, 02=anulación por error RUC, etc.
+  motivoDesc   String
+  monto        Decimal           @db.Decimal(10, 2)
+  igv          Decimal           @default(0) @db.Decimal(10, 2)
+  total        Decimal           @db.Decimal(10, 2)
+  status       NotaCreditoStatus @default(BORRADOR)
+  notas        String?
+  createdBy    String
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  tenant       Tenant            @relation(fields: [tenantId], references: [id])
+  order        Order?            @relation(fields: [orderId], references: [id])
+
   @@index([tenantId, status])
   @@index([numero])
 }
@@ -2168,8 +2188,8 @@ model NotaCredito {
 model Notification {
   id          String    @id @default(cuid())
   tenantId    String
-  type        String    // FIADO_VENCIDO, STOCK_CRITICO, VENTA_ALTA, TURNO_SIN_CERRAR, DIFERENCIA_CAJA, PROVEEDOR_VENCIDO, META_ALCANZADA, CLIENTE_INACTIVO
-  severity    String    // HIGH, MEDIUM, LOW
+  type        String // FIADO_VENCIDO, STOCK_CRITICO, VENTA_ALTA, TURNO_SIN_CERRAR, DIFERENCIA_CAJA, PROVEEDOR_VENCIDO, META_ALCANZADA, CLIENTE_INACTIVO
+  severity    String // HIGH, MEDIUM, LOW
   title       String
   body        String
   actionUrl   String?
@@ -2188,27 +2208,29 @@ model Notification {
 // ═══════════════════════════════════════════════════════
 
 model ConteoFisico {
-  id          String    @id @default(cuid())
+  id          String             @id @default(cuid())
   tenantId    String
-  tipo        String    @default("completo") // completo, categoria, ubicacion
-  status      String    @default("INICIADO") // INICIADO, EN_PROGRESO, CERRADO
+  tipo        String             @default("completo") // completo, categoria, ubicacion
+  status      String             @default("INICIADO") // INICIADO, EN_PROGRESO, CERRADO
   creadoPor   String
-  fechaInicio DateTime  @default(now())
+  fechaInicio DateTime           @default(now())
   fechaCierre DateTime?
   items       ConteoFisicoItem[]
-  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  tenant      Tenant             @relation(fields: [tenantId], references: [id])
+
   @@index([tenantId, status])
 }
 
 model ConteoFisicoItem {
-  id            String  @id @default(cuid())
-  conteoId      String
-  productId     Int
-  stockSistema  Int
-  stockContado  Int?
-  diferencia    Int?
-  ajustado      Boolean @default(false)
-  conteo        ConteoFisico @relation(fields: [conteoId], references: [id], onDelete: Cascade)
+  id           String       @id @default(cuid())
+  conteoId     String
+  productId    Int
+  stockSistema Int
+  stockContado Int?
+  diferencia   Int?
+  ajustado     Boolean      @default(false)
+  conteo       ConteoFisico @relation(fields: [conteoId], references: [id], onDelete: Cascade)
+
   @@index([conteoId])
 }
 
@@ -2216,7 +2238,7 @@ model ConteoFisicoItem {
 model DiscountRule {
   id          String   @id @default(cuid())
   nombre      String
-  tipo        String   // porcentaje, 2x1, 3x2, combo, monto_fijo
+  tipo        String // porcentaje, 2x1, 3x2, combo, monto_fijo
   valor       Float    @default(0)
   categorias  String   @default("[]") // JSON array
   condicion   String?
@@ -2265,7 +2287,7 @@ model ComplianceItem {
   id          String    @id @default(cuid())
   title       String
   entity      String
-  category    String    // sunat, municipal, sanitario, seguridad
+  category    String // sunat, municipal, sanitario, seguridad
   frequency   String
   nextDue     DateTime
   status      String    @default("pendiente") // vigente, por-vencer, vencido, pendiente
@@ -2309,52 +2331,53 @@ model CustomKpi {
 // ══════════════════════════════════════════════════════════
 
 model Store {
-  id              String   @id @default(cuid())
-  tenantId        String
-  tenant          Tenant   @relation(fields: [tenantId], references: [id])
-  slug            String   @unique
-  name            String
-  description     String?
-  logo            String?
-  banner          String?
-  category        String   @default("bodega")
-  zone            String?
-  rating          Float    @default(0)
-  reviewCount     Int      @default(0)
-  isPublished     Boolean  @default(false)
-  vacationMode    Boolean  @default(false)
-  vacationMessage String?
-  commission      Float    @default(5.0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  products             StoreProduct[]
-  permissions          StorePermission[]
-  reviews              Review[]
-  banners              StoreBanner[]
-  stockoutPredictions  StockoutPrediction[]
-  salesAnomalies       SalesAnomaly[]
-  sponsoredBoosts      SponsoredBoost[]
-  deliveryRoutes       DeliveryRoute[]
-  conversationThreads  ConversationThread[]
+  id                  String               @id @default(cuid())
+  tenantId            String
+  tenant              Tenant               @relation(fields: [tenantId], references: [id])
+  slug                String               @unique
+  name                String
+  description         String?
+  logo                String?
+  banner              String?
+  category            String               @default("bodega")
+  zone                String?
+  rating              Float                @default(0)
+  reviewCount         Int                  @default(0)
+  isPublished         Boolean              @default(false)
+  vacationMode        Boolean              @default(false)
+  vacationMessage     String?
+  commission          Float                @default(5.0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  products            StoreProduct[]
+  permissions         StorePermission[]
+  reviews             Review[]
+  banners             StoreBanner[]
+  stockoutPredictions StockoutPrediction[]
+  salesAnomalies      SalesAnomaly[]
+  sponsoredBoosts     SponsoredBoost[]
+  deliveryRoutes      DeliveryRoute[]
+  conversationThreads ConversationThread[]
+
   @@index([tenantId])
 }
 
 model StoreBanner {
-  id         String    @id @default(cuid())
-  storeId    String
-  store      Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  title      String
-  subtitle   String?
-  imageUrl   String
-  linkUrl    String?
-  position   Int       @default(0)
-  section    String    @default("hero")
-  isActive   Boolean   @default(true)
-  startDate  DateTime?
-  endDate    DateTime?
-  tenantId   String
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id        String    @id @default(cuid())
+  storeId   String
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  title     String
+  subtitle  String?
+  imageUrl  String
+  linkUrl   String?
+  position  Int       @default(0)
+  section   String    @default("hero")
+  isActive  Boolean   @default(true)
+  startDate DateTime?
+  endDate   DateTime?
+  tenantId  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([storeId])
   @@index([tenantId])
@@ -2362,54 +2385,56 @@ model StoreBanner {
 }
 
 model StoreProduct {
-  id                  String  @id @default(cuid())
+  id                  String               @id @default(cuid())
   storeId             String
-  store               Store   @relation(fields: [storeId], references: [id])
+  store               Store                @relation(fields: [storeId], references: [id])
   productId           Int
-  product             Product @relation(fields: [productId], references: [id])
+  product             Product              @relation(fields: [productId], references: [id])
   retailPrice         Float
   wholesalePrice      Float?
-  minOrderQty         Int     @default(1)
-  isActive            Boolean @default(true)
-  volumePricingTiers  Json?   // [{ minQty: 10, discount: 5 }, ...]
+  minOrderQty         Int                  @default(1)
+  isActive            Boolean              @default(true)
+  volumePricingTiers  Json? // [{ minQty: 10, discount: 5 }, ...]
   stockoutPredictions StockoutPrediction[]
+
   @@unique([storeId, productId])
   @@index([storeId])
   @@index([productId])
 }
 
 model DeliveryPartner {
-  id          String   @id @default(cuid())
+  id          String               @id @default(cuid())
   name        String
   phone       String
   email       String?
   zone        String
-  vehicleType String   @default("moto")
-  isActive    Boolean  @default(true)
-  rating      Float    @default(5.0)
-  fee         Float    @default(5.0)
-  notes       String?  // JSON: { notifyWhatsApp, notifyEmail, notifyUrgent }
+  vehicleType String               @default("moto")
+  isActive    Boolean              @default(true)
+  rating      Float                @default(5.0)
+  fee         Float                @default(5.0)
+  notes       String? // JSON: { notifyWhatsApp, notifyEmail, notifyUrgent }
   tenantId    String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime             @default(now())
   assignments DeliveryAssignment[]
 
   @@index([tenantId])
 }
 
 model DeliveryAssignment {
-  id          String   @id @default(cuid())
-  orderId     String   @unique
-  order       Order    @relation(fields: [orderId], references: [id])
+  id          String          @id @default(cuid())
+  orderId     String          @unique
+  order       Order           @relation(fields: [orderId], references: [id])
   partnerId   String
   partner     DeliveryPartner @relation(fields: [partnerId], references: [id])
-  status      String   @default("assigned")
+  status      String          @default("assigned")
   fee         Float
   pickedUpAt  DateTime?
   deliveredAt DateTime?
   notes       String?
   tenantId    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
   @@index([orderId])
   @@index([partnerId])
   @@index([tenantId])
@@ -2424,7 +2449,7 @@ model DeliveryTracking {
   id           String   @id
   tenantId     String
   orderId      String
-  status       String   // preparing|ready|picked_up|in_transit|nearby|delivered|failed|cancelled
+  status       String // preparing|ready|picked_up|in_transit|nearby|delivered|failed|cancelled
   description  String?
   lat          Float?
   lng          Float?
@@ -2445,24 +2470,24 @@ model DeliveryTracking {
 }
 
 model DeliveryRoute {
-  id              String    @id
-  tenantId        String
-  storeId         String
-  driverId        String
-  driverName      String
-  driverPhone     String?
-  vehicleType     String    @default("moto") // moto|bici|auto|caminando
-  status          String    @default("planned") // planned|in_progress|completed|cancelled
-  plannedStartAt  DateTime
-  actualStartAt   DateTime?
-  completedAt     DateTime?
-  totalStops      Int       @default(0)
-  completedStops  Int       @default(0)
-  totalDistanceM  Int?
-  optimizedByAi   Boolean   @default(false)
-  notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String    @id
+  tenantId       String
+  storeId        String
+  driverId       String
+  driverName     String
+  driverPhone    String?
+  vehicleType    String    @default("moto") // moto|bici|auto|caminando
+  status         String    @default("planned") // planned|in_progress|completed|cancelled
+  plannedStartAt DateTime
+  actualStartAt  DateTime?
+  completedAt    DateTime?
+  totalStops     Int       @default(0)
+  completedStops Int       @default(0)
+  totalDistanceM Int?
+  optimizedByAi  Boolean   @default(false)
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   store Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
   stops DeliveryRouteStop[]
@@ -2526,7 +2551,7 @@ model ConversationThread {
   unreadForSeller Int       @default(0)
   lastMessageAt   DateTime?
   lastMessageText String?
-  lastSenderType  String?   // buyer|seller|system
+  lastSenderType  String? // buyer|seller|system
   closedAt        DateTime?
   closedReason    String?
   createdAt       DateTime  @default(now())
@@ -2548,7 +2573,7 @@ model ConversationMessage {
   id             String    @id
   tenantId       String
   threadId       String
-  senderType     String    // buyer|seller|system
+  senderType     String // buyer|seller|system
   senderId       String?
   senderName     String
   body           String
@@ -2569,16 +2594,17 @@ model ConversationMessage {
 }
 
 model WholesaleOrder {
-  id             String   @id @default(cuid())
+  id             String               @id @default(cuid())
   buyerTenantId  String
   sellerTenantId String
-  status         String   @default("pending")
+  status         String               @default("pending")
   total          Float
-  commission     Float    @default(0)
+  commission     Float                @default(0)
   notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
   items          WholesaleOrderItem[]
+
   @@index([buyerTenantId])
   @@index([sellerTenantId])
 }
@@ -2593,6 +2619,7 @@ model WholesaleOrderItem {
   unitPrice        Float
   total            Float
   appliedDiscount  Float          @default(0) // porcentaje de descuento por volumen aplicado
+
   @@index([wholesaleOrderId])
   @@index([productId])
 }
@@ -2606,6 +2633,7 @@ model StorePermission {
   permissions String
   grantedBy   String
   createdAt   DateTime @default(now())
+
   @@unique([storeId, userId, userType])
   @@index([storeId])
   @@index([userId])
@@ -2623,6 +2651,7 @@ model CommissionLedger {
   settledAt DateTime?
   tenantId  String
   createdAt DateTime  @default(now())
+
   @@index([orderId])
   @@index([storeId])
   @@index([status])
@@ -2638,26 +2667,29 @@ model SupplierPortal {
   isActive    Boolean  @default(true)
   autoPublish Boolean  @default(true)
   createdAt   DateTime @default(now())
+
   @@index([apiKey])
 }
 
 // ─── Support Tickets ─────────────────────────────────────
 model SupportTicket {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   subject   String
   message   String
-  priority  String   @default("medium") // low, medium, high
-  status    String   @default("open")   // open, replied, closed
+  priority  String    @default("medium") // low, medium, high
+  status    String    @default("open") // open, replied, closed
   reply     String?
   repliedAt DateTime?
   tenantId  String
-  createdBy String   @default("admin")  // username
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdBy String    @default("admin") // username
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([tenantId])
   @@index([status])
   @@index([tenantId, createdAt])
+  // TD-020 / ADR-017 — aplicado en prod 2026-04-09 via scripts/apply-ola1-indices.ts
+  @@index([tenantId, status], map: "SupportTicket_tenantId_status_idx")
 }
 
 // ══════════════════════════════════════════════════════════
@@ -2668,21 +2700,21 @@ model SupportTicket {
 model TenantSunatConfig {
   id              String   @id @default(cuid())
   tenantId        String   @unique
-  ruc             String                    // RUC del negocio (11 dígitos)
-  razonSocial     String                    // Razón social registrada en SUNAT
-  direccionFiscal String?                   // Dirección fiscal
-  ubigeo          String?                   // Código ubigeo SUNAT (6 dígitos)
-  nubefactToken   String                    // Token API Nubefact
+  ruc             String // RUC del negocio (11 dígitos)
+  razonSocial     String // Razón social registrada en SUNAT
+  direccionFiscal String? // Dirección fiscal
+  ubigeo          String? // Código ubigeo SUNAT (6 dígitos)
+  nubefactToken   String // Token API Nubefact
   nubefactUrl     String   @default("https://api.nubefact.com/api/v1")
   boletaSeries    String   @default("B001")
   facturaSeries   String   @default("F001")
   lastBoletaNum   Int      @default(0)
   lastFacturaNum  Int      @default(0)
-  isProduction    Boolean  @default(false)  // false = sandbox Nubefact
+  isProduction    Boolean  @default(false) // false = sandbox Nubefact
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  invoices        SunatInvoice[]
+  invoices SunatInvoice[]
 
   @@index([tenantId])
 }
@@ -2691,27 +2723,27 @@ model TenantSunatConfig {
 model SunatInvoice {
   id           String    @id @default(cuid())
   tenantId     String
-  orderId      String?                        // orden de venta relacionada (opcional)
-  type         String                         // "boleta" | "factura" | "nota_credito" | "baja"
-  series       String                         // "B001" | "F001" | "BC01" | "FC01"
-  number       Int                            // correlativo
-  customerRuc  String?                        // RUC del receptor (solo facturas)
-  customerName String                         // nombre/razón social del receptor
-  subtotal     Float                          // monto gravado (sin IGV)
-  igv          Float                          // monto IGV
-  total        Float                          // total con IGV
-  xmlContent   String?                        // XML UBL 2.1 generado (texto)
-  cdrResponse  String?                        // CDR XML devuelto por SUNAT
-  sunatStatus  String    @default("pending")  // pending | accepted | rejected | voided
-  nubefactId   String?                        // ID interno Nubefact
-  pdfUrl       String?                        // URL del PDF generado por Nubefact
-  errorMessage String?                        // mensaje de error si sunatStatus=rejected
-  sentAt       DateTime?                      // cuándo se envió a Nubefact
-  acceptedAt   DateTime?                      // cuándo SUNAT aceptó el CDR
+  orderId      String? // orden de venta relacionada (opcional)
+  type         String // "boleta" | "factura" | "nota_credito" | "baja"
+  series       String // "B001" | "F001" | "BC01" | "FC01"
+  number       Int // correlativo
+  customerRuc  String? // RUC del receptor (solo facturas)
+  customerName String // nombre/razón social del receptor
+  subtotal     Float // monto gravado (sin IGV)
+  igv          Float // monto IGV
+  total        Float // total con IGV
+  xmlContent   String? // XML UBL 2.1 generado (texto)
+  cdrResponse  String? // CDR XML devuelto por SUNAT
+  sunatStatus  String    @default("pending") // pending | accepted | rejected | voided
+  nubefactId   String? // ID interno Nubefact
+  pdfUrl       String? // URL del PDF generado por Nubefact
+  errorMessage String? // mensaje de error si sunatStatus=rejected
+  sentAt       DateTime? // cuándo se envió a Nubefact
+  acceptedAt   DateTime? // cuándo SUNAT aceptó el CDR
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  config       TenantSunatConfig? @relation(fields: [tenantId], references: [tenantId])
+  config TenantSunatConfig? @relation(fields: [tenantId], references: [tenantId])
 
   @@unique([tenantId, series, number])
   @@index([tenantId])
@@ -2724,16 +2756,16 @@ model SunatInvoice {
 model TenantHealthScore {
   id                 String   @id @default(cuid())
   tenantId           String
-  score              Int                        // 0-100 (100 = muy saludable)
+  score              Int // 0-100 (100 = muy saludable)
   loginsLast7d       Int      @default(0)
   loginsLast30d      Int      @default(0)
   ordersLast7d       Int      @default(0)
   ordersLast30d      Int      @default(0)
-  featuresUsed       Int      @default(0)       // de 47 recursos RBAC, cuántos usó
+  featuresUsed       Int      @default(0) // de 47 recursos RBAC, cuántos usó
   daysSinceLastOrder Int      @default(0)
   daysSinceLastLogin Int      @default(0)
-  trialDaysLeft      Int?                       // null si no está en trial
-  riskLevel          String   @default("low")   // low | medium | high | critical
+  trialDaysLeft      Int? // null si no está en trial
+  riskLevel          String   @default("low") // low | medium | high | critical
   calculatedAt       DateTime @default(now())
 
   @@index([tenantId])
@@ -2743,16 +2775,16 @@ model TenantHealthScore {
 
 // ─── Anti-Churn: Señales de riesgo ──────────────────────
 model ChurnSignal {
-  id          String    @id @default(cuid())
-  tenantId    String
-  signalType  String                     // "login_drop" | "order_drop" | "trial_expiring" | "support_unresolved" | "plan_downgrade_intent"
-  severity    String    @default("medium") // low | medium | high | critical
-  detail      String
-  resolved    Boolean   @default(false)
-  resolvedAt  DateTime?
-  resolvedBy  String?                    // "auto" | "manual" | username
-  intervention String?                  // qué acción se tomó
-  createdAt   DateTime  @default(now())
+  id           String    @id @default(cuid())
+  tenantId     String
+  signalType   String // "login_drop" | "order_drop" | "trial_expiring" | "support_unresolved" | "plan_downgrade_intent"
+  severity     String    @default("medium") // low | medium | high | critical
+  detail       String
+  resolved     Boolean   @default(false)
+  resolvedAt   DateTime?
+  resolvedBy   String? // "auto" | "manual" | username
+  intervention String? // qué acción se tomó
+  createdAt    DateTime  @default(now())
 
   @@index([tenantId])
   @@index([severity, resolved])
@@ -2762,13 +2794,13 @@ model ChurnSignal {
 // ─── Anti-Churn: Playbooks de intervención ───────────────
 model ChurnPlaybook {
   id              String   @id @default(cuid())
-  name            String                     // "trial_expiring_3d" | "login_drop_7d" | "order_drop_50pct"
-  triggerSignal   String                     // signal type que lo activa
-  triggerSeverity String   @default("high")  // mínima severity para activar
-  action          String                     // "email" | "whatsapp" | "discount" | "call"
-  templateId      String?                    // ID de template de email/WhatsApp
-  discountPercent Int?                       // si action = "discount"
-  discountDays    Int?                       // duración del descuento
+  name            String // "trial_expiring_3d" | "login_drop_7d" | "order_drop_50pct"
+  triggerSignal   String // signal type que lo activa
+  triggerSeverity String   @default("high") // mínima severity para activar
+  action          String // "email" | "whatsapp" | "discount" | "call"
+  templateId      String? // ID de template de email/WhatsApp
+  discountPercent Int? // si action = "discount"
+  discountDays    Int? // duración del descuento
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
 
@@ -2780,26 +2812,26 @@ model ChurnPlaybook {
 // ═══════════════════════════════════════════════════════
 
 model CreditProfile {
-  id              String   @id @default(cuid())
-  tenantId        String
-  customerId      String
-  creditScore     Int      @default(0)        // 0-1000
-  creditLimit     Float    @default(0)        // monto máximo de crédito en PEN
-  usedCredit      Float    @default(0)        // crédito utilizado actualmente
-  availableCredit Float    @default(0)        // creditLimit - usedCredit
-  riskLevel       String   @default("none")   // none | low | medium | high
-  totalLoans      Int      @default(0)        // total de préstamos dados
-  paidOnTime      Int      @default(0)        // pagados a tiempo
-  paidLate        Int      @default(0)        // pagados tarde
-  defaulted       Int      @default(0)        // impagos
-  avgTicket       Float    @default(0)        // ticket promedio de compra
-  purchaseFreqDays Float?                     // frecuencia de compra en días
-  lastScoreUpdate DateTime @default(now())
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(cuid())
+  tenantId         String
+  customerId       String
+  creditScore      Int      @default(0) // 0-1000
+  creditLimit      Float    @default(0) // monto máximo de crédito en PEN
+  usedCredit       Float    @default(0) // crédito utilizado actualmente
+  availableCredit  Float    @default(0) // creditLimit - usedCredit
+  riskLevel        String   @default("none") // none | low | medium | high
+  totalLoans       Int      @default(0) // total de préstamos dados
+  paidOnTime       Int      @default(0) // pagados a tiempo
+  paidLate         Int      @default(0) // pagados tarde
+  defaulted        Int      @default(0) // impagos
+  avgTicket        Float    @default(0) // ticket promedio de compra
+  purchaseFreqDays Float? // frecuencia de compra en días
+  lastScoreUpdate  DateTime @default(now())
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  installments    CreditInstallment[]
+  installments CreditInstallment[]
 
   @@unique([tenantId, customerId])
   @@index([tenantId])
@@ -2810,18 +2842,18 @@ model CreditInstallment {
   id                String   @id @default(cuid())
   tenantId          String
   creditProfileId   String
-  orderId           String?                   // orden que generó este crédito
-  totalAmount       Float                     // monto total del crédito
-  installments      Int                       // número de cuotas (2, 3, 4)
-  installmentAmount Float                     // monto por cuota
-  interestRate      Float    @default(0)      // tasa de interés mensual (ej: 0.05 = 5%)
+  orderId           String? // orden que generó este crédito
+  totalAmount       Float // monto total del crédito
+  installments      Int // número de cuotas (2, 3, 4)
+  installmentAmount Float // monto por cuota
+  interestRate      Float    @default(0) // tasa de interés mensual (ej: 0.05 = 5%)
   paidAmount        Float    @default(0)
   paidInstallments  Int      @default(0)
   status            String   @default("active") // active | paid | overdue | defaulted
   nextDueDate       DateTime
   createdAt         DateTime @default(now())
 
-  creditProfile     CreditProfile @relation(fields: [creditProfileId], references: [id])
+  creditProfile CreditProfile @relation(fields: [creditProfileId], references: [id])
 
   @@index([tenantId])
   @@index([creditProfileId])
@@ -2832,15 +2864,15 @@ model CreditInstallment {
 // Registro de predicciones de demanda por SKU.
 // El campo actualQty se llena después para medir accuracy real.
 model ForecastLog {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   tenantId     String
   productId    Int
   predictedQty Float
-  actualQty    Float?                    // se llena después para medir accuracy
-  confidence   Float                     // 0-1
-  trend        String                    // "up" | "stable" | "down"
+  actualQty    Float? // se llena después para medir accuracy
+  confidence   Float // 0-1
+  trend        String // "up" | "stable" | "down"
   daysAhead    Int
-  forecastDate DateTime  @default(now())
+  forecastDate DateTime @default(now())
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
@@ -2872,13 +2904,13 @@ model SupplierRating {
   id              String   @id @default(cuid())
   tenantId        String
   supplierId      String
-  period          String                      // "2026-03"
+  period          String // "2026-03"
   ordersPlaced    Int      @default(0)
   ordersDelivered Int      @default(0)
   ordersOnTime    Int      @default(0)
   avgDeliveryDays Float?
-  fillRate        Float?                      // % items entregados vs pedidos
-  qualityScore    Float?                      // 0-5 rating promedio
+  fillRate        Float? // % items entregados vs pedidos
+  qualityScore    Float? // 0-5 rating promedio
   calculatedAt    DateTime @default(now())
 
   @@unique([tenantId, supplierId, period])
@@ -2909,13 +2941,13 @@ model SupplierOffer {
 // Multi-turn conversation history for AI assistant (support + coaching).
 // Allows the AI to remember context across multiple messages.
 model AIConversation {
-  id        String       @id @default(cuid())
-  tenantId  String       // Required — multi-tenant isolation
-  user      String       // Username of the user who started this conversation
-  channel   String       @default("assistant") // "assistant", "coach", "whatsapp"
-  title     String       @default("") // Auto-generated from first message or user-provided
-  updatedAt DateTime     @updatedAt
-  createdAt DateTime     @default(now())
+  id        String      @id @default(cuid())
+  tenantId  String // Required — multi-tenant isolation
+  user      String // Username of the user who started this conversation
+  channel   String      @default("assistant") // "assistant", "coach", "whatsapp"
+  title     String      @default("") // Auto-generated from first message or user-provided
+  updatedAt DateTime    @updatedAt
+  createdAt DateTime    @default(now())
   messages  AIMessage[]
 
   @@index([tenantId])
@@ -2927,7 +2959,7 @@ model AIConversation {
 model AIMessage {
   id             String   @id @default(cuid())
   conversationId String
-  role           String   // "user" or "assistant"
+  role           String // "user" or "assistant"
   content        String   @db.Text // Up to 10,000 chars for longer responses
   feedback       String? // "up" or "down" — user rating of assistant response
   feedbackNote   String? // User's comment on why they rated it
@@ -2977,13 +3009,13 @@ model StockoutPrediction {
   storeId                 String
   productId               Int
   storeProductId          String
-  predictedDaysToStockout Float                        // días hasta agotamiento
-  avgDailyUnits           Float                        // promedio de unidades vendidas por día
-  currentStock            Int                          // stock al momento del cálculo
-  confidence              Float                        // 0-1
-  severity                String                       // low | medium | high | critical
+  predictedDaysToStockout Float // días hasta agotamiento
+  avgDailyUnits           Float // promedio de unidades vendidas por día
+  currentStock            Int // stock al momento del cálculo
+  confidence              Float // 0-1
+  severity                String // low | medium | high | critical
   computedAt              DateTime
-  expiresAt               DateTime                     // cuándo caduca esta predicción
+  expiresAt               DateTime // cuándo caduca esta predicción
 
   store        Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
   product      Product      @relation(fields: [productId], references: [id])
@@ -3001,14 +3033,14 @@ model SalesAnomaly {
   id             String    @id @default(cuid())
   tenantId       String
   storeId        String
-  date           DateTime                           // día analizado
-  comparisonDate DateTime                           // ej: mismo día semana anterior
-  metric         String                             // revenue | orders | units | aov
+  date           DateTime // día analizado
+  comparisonDate DateTime // ej: mismo día semana anterior
+  metric         String // revenue | orders | units | aov
   expected       Float
   actual         Float
-  deltaPct       Float                              // diferencia porcentual
-  severity       String                             // low | medium | high | critical
-  direction      String                             // drop | spike
+  deltaPct       Float // diferencia porcentual
+  severity       String // low | medium | high | critical
+  direction      String // drop | spike
   notifiedAt     DateTime?
   acknowledgedAt DateTime?
   createdAt      DateTime  @default(now())
@@ -3029,14 +3061,14 @@ model SponsoredBoost {
   tenantId         String
   storeId          String
   productId        Int
-  bidAmount        Decimal  @db.Decimal(10, 2)         // PEN por día
+  bidAmount        Decimal  @db.Decimal(10, 2) // PEN por día
   startDate        DateTime
   endDate          DateTime
-  status           String   @default("active")          // active | paused | expired | exhausted
+  status           String   @default("active") // active | paused | expired | exhausted
   impressionsCount Int      @default(0)
   clicksCount      Int      @default(0)
   conversionsCount Int      @default(0)
-  totalSpentPen    Decimal  @db.Decimal(10, 2) @default(0)
+  totalSpentPen    Decimal  @default(0) @db.Decimal(10, 2)
   maxBudgetPen     Decimal  @db.Decimal(10, 2)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -3057,8 +3089,8 @@ model SponsoredBoost {
 model SearchSuggestion {
   id               String   @id @default(cuid())
   tenantId         String
-  query            String                              // texto original del usuario
-  normalizedQuery  String                              // lowercase + sin tildes
+  query            String // texto original del usuario
+  normalizedQuery  String // lowercase + sin tildes
   resultCount      Int
   clickedProductId Int?
   lastSearchedAt   DateTime
