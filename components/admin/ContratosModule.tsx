@@ -4,14 +4,10 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
-  FileText, User, Calendar, Printer, Hash, DollarSign, Trash2,
-  RefreshCw, Clock, CheckCircle, BookOpen, FileSignature, LayoutGrid, List,
-  Download, Copy, Eye, Edit3, ArrowRight, ArrowLeft, ChevronDown,
-  Shield, Briefcase, Truck, Home, Handshake, Package, Users,
-  Lock, TreePine, Scale, PenTool, Save, BarChart3, PieChart,
-  TrendingUp, AlertCircle, Filter, MoreHorizontal, ClipboardCopy,
-  MapPin, Info,
-} from "lucide-react";
+  FileText, User, Printer, DollarSign, Clock, CheckCircle, BookOpen, FileSignature, LayoutGrid, List,
+  Download, Copy, Eye, Edit3, ArrowRight, ArrowLeft, Briefcase, Truck, Home, Package, Users,
+  Lock, TreePine, Scale, PenTool, Save, BarChart3, AlertCircle, ClipboardCopy,
+  MapPin, Info } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart as RechartsPie, Pie, Cell, Legend,
@@ -54,7 +50,7 @@ interface ContractVersion {
   savedAt: string;
 }
 
-interface Contract {
+interface _Contract {
   id: string;
   templateId: string;
   numero: string;
@@ -596,7 +592,7 @@ function formatDatePeru(iso: string) {
   } catch { return iso; }
 }
 
-function formatDateLong(iso: string) {
+function _formatDateLong(iso: string) {
   if (!iso) return "---";
   try {
     const d = new Date(iso.includes("T") ? iso : iso + "T00:00:00");
@@ -846,7 +842,7 @@ const LUGAR_ENTREGA_OPTIONS = [
   "Puerto de Pucallpa", "Terminal terrestre de Pucallpa", "Otro (escribir)",
 ];
 
-const MONEDA_OPTIONS = ["Soles (S/)", "Dolares (US$)"];
+const _MONEDA_OPTIONS = ["Soles (S/)", "Dolares (US$)"];
 
 // ── Main Component ──────────────────────────────────────────────────────
 
@@ -2213,7 +2209,7 @@ ${content.split("\n\n").map(p => `<p>${p}</p>`).join("")}
                   <button
                     onClick={() => {
                       const tpl = PLANTILLAS.find(t => {
-                        const c = getContractContent(selected);
+                        const _c = getContractContent(selected);
                         try { const data = JSON.parse(localStorage.getItem(`contract-content-${selected.id}`) || "{}"); return data.templateId === t.id; } catch { return false; }
                       });
                       if (tpl) {

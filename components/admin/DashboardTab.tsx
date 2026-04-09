@@ -3,22 +3,16 @@
 import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "react";
 import {
   TrendingUp, DollarSign, ShoppingCart, Users, Package,
-  AlertTriangle, BarChart3, Clock,
-  CreditCard, Banknote,
-  AlertCircle, PackageX, Timer, Truck, Star, Receipt, Percent,
+  AlertTriangle, BarChart3, Clock, Banknote,
+  AlertCircle, PackageX, Truck, Receipt, Percent,
   ShoppingBasket, RefreshCw, Lightbulb, Zap, CalendarDays,
   UserCheck, TrendingDown, Download, Search, Target, X, type LucideIcon,
-  ArrowUp, ArrowDown, Trophy, CheckCircle2, Edit3,
-  Beaker, Sparkles, Gift, Plus, ChevronRight, Sun, Maximize2, Minimize2, LayoutDashboard,
-} from "lucide-react";
+  ArrowUp, ArrowDown, Trophy, Edit3,
+  Beaker, Plus, ChevronRight, Sun, Maximize2, Minimize2, LayoutDashboard } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 import { OrderStats } from "@/components/OrderStats";
 import { useTheme } from "@/contexts/theme-context";
 import type { Product, Sale, Purchase, Supplier, Customer } from "@/types/erp";
-import BatchStatsWidget from "@/components/admin/dashboard/BatchStatsWidget";
-import ExpiringBatchesAlert from "@/components/admin/dashboard/ExpiringBatchesAlert";
-import ExpiredBatchesWidget from "@/components/admin/dashboard/ExpiredBatchesWidget";
-import PushNotificationBanner from "@/components/admin/dashboard/PushNotificationBanner";
 import dynamic from "next/dynamic";
 const S = () => (<div className="flex items-center justify-center py-12"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>);
 const DashboardVentasSection = dynamic(() => import("./dashboard/DashboardVentasSection"), { ssr: false, loading: S });
@@ -53,7 +47,7 @@ function fmtDate(iso: string) {
 function fmtDateFull(iso: string) {
   try { return new Date(iso).toLocaleDateString("es-PE", { day: "2-digit", month: "short", year: "numeric" }); } catch { return iso; }
 }
-function fmtTime(iso: string) {
+function _fmtTime(iso: string) {
   try { return new Date(iso).toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }); } catch { return ""; }
 }
 function inPeriod(dateStr: string, period: Period): boolean {
@@ -1107,13 +1101,13 @@ export default function DashboardTab() {
     }
   }, [orders, sales, products, customers, period, st]);
 
-  const [topTab, setTopTab] = useState<"revenue"|"profit"|"units">("revenue");
-  const [recentFilter, setRecentFilter] = useState<"all"|"pendiente"|"en_camino"|"entregado">("all");
-  const [recentPage, setRecentPage] = useState(1);
+  const [topTab, _setTopTab] = useState<"revenue"|"profit"|"units">("revenue");
+  const [_recentFilter, _setRecentFilter] = useState<"all"|"pendiente"|"en_camino"|"entregado">("all");
+  const [_recentPage, _setRecentPage] = useState(1);
   const [dashSearch, setDashSearch] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [selectedClientPhone, setSelectedClientPhone] = useState<string|null>(null);
+  const [_dateFrom, _setDateFrom] = useState("");
+  const [_dateTo, _setDateTo] = useState("");
+  const [_selectedClientPhone, _setSelectedClientPhone] = useState<string|null>(null);
   /* V3: Review filter */
   const [reviewFilter, setReviewFilter] = useState<number>(0);
 
@@ -1147,7 +1141,7 @@ export default function DashboardTab() {
     try { localStorage.setItem("bsm-daily-summary", new Date().toDateString()); } catch {}
   };
   const topList = topTab==="revenue"?st.topRev:topTab==="profit"?st.topProfit:st.topUnits;
-  const topMax = topList.length>0?Math.max(...topList.map(p=>topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue)):1;
+  const _topMax = topList.length>0?Math.max(...topList.map(p=>topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue)):1;
 
   // C2 — Quick order status changes
   const [quickStatusMap, setQuickStatusMap] = useState<Record<string, Order["status"]>>({});
@@ -1212,7 +1206,7 @@ ${o.notes ? `<hr><p style="font-size:11px">📝 ${o.notes}</p>` : ""}
   }, []);
 
   // C3 — Export sales CSV
-  const exportVentas = useCallback(() => {
+  const _exportVentas = useCallback(() => {
     const orderRows = orders
       .filter(o => inPeriod(o.createdAt, period))
       .map(o => ({
@@ -2992,7 +2986,7 @@ function DBadge({ children, color }: { children: React.ReactNode; color: "green"
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
-function FlowRow({ label, value, color }: { label: string; value: string; color: string }) {
+function _FlowRow({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-xs text-gray-500 dark:text-muted">{label}</span>
@@ -3003,24 +2997,6 @@ function FlowRow({ label, value, color }: { label: string; value: string; color:
 
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) {
   return <div className="py-8 text-center text-xs text-gray-300 dark:text-muted">{text}</div>;
-}
-
-/* V1: Elapsed timer component */
-function ElapsedTimer({ createdAt }: { createdAt: string }) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 60000);
-    return () => clearInterval(t);
-  }, []);
-  const mins = Math.floor((now - new Date(createdAt).getTime()) / 60000);
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  const color = mins > 60 ? "text-red-500" : mins > 30 ? "text-amber-500" : "text-emerald-500";
-  return (
-    <div className={cn("text-[10px] font-bold mt-0.5", color)}>
-      ⏱ {h > 0 ? `${h}h ${m}m` : `${m}m`}
-    </div>
-  );
 }
 
 function Donut({ data, total, size = 96 }: { data: { total: number; color: string }[]; total: number; size?: number }) {

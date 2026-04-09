@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import dynamic from "next/dynamic";
 import {
   Store,
   DollarSign,
@@ -12,11 +11,9 @@ import {
   RefreshCw,
   ArrowUpDown,
   ExternalLink,
-  Loader2,
   AlertCircle,
   BarChart3,
-  MapPin,
-} from "lucide-react";
+  MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Leaflet solo en cliente (sin SSR) ────────────────────────────────────────

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useMemo, KeyboardEvent } from "react";
+import { useState, useRef, useCallback, KeyboardEvent } from "react";
 import { Send, Clock, BarChart3, Lightbulb, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "./AICommandCenter";

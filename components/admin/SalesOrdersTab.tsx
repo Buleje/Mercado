@@ -258,7 +258,7 @@ export default function SalesOrdersTab() {
       setError("Error al cargar pedidos");
     }
     setLoading(false);
-  }, []);
+  }, [soundEnabled]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -1454,23 +1454,6 @@ function OrdersEmptyChart({ message }: { message: string }) {
   );
 }
 
-// Mejora 5: Favoritos Pedidos
-function useOrdersFavCharts(key: string) {
-  const [favs, setFavs] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try { return JSON.parse(localStorage.getItem(`fav-charts-${key}`) || "[]"); } catch { return []; }
-  });
-  const toggle = (id: string) => setFavs(prev => {
-    const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
-    localStorage.setItem(`fav-charts-${key}`, JSON.stringify(next));
-    return next;
-  });
-  return { favs, toggle, isFav: (id: string) => favs.includes(id) };
-}
-function OrdersFavStar({ id, favs }: { id: string; favs: ReturnType<typeof useOrdersFavCharts> }) {
-  return <button onClick={() => favs.toggle(id)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors text-sm">{favs.isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300 dark:text-gray-600">&#9734;</span>}</button>;
-}
-
 function OrdersDashboard({ orders }: { orders: Order[] }) {
   const today = new Date().toISOString().split('T')[0];
   const nowHour = new Date().getHours();
@@ -1481,8 +1464,6 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
   // Mejora 3: Auto-refresh
   const [ordLastRefresh] = useState(new Date());
   const [ordMinAgo, setOrdMinAgo] = useState(0);
-  // Mejora 5: Favoritos
-  const ordFavs = useOrdersFavCharts("pedidos");
 
   useEffect(() => {
     const id = setInterval(() => setOrdMinAgo(Math.floor((Date.now() - ordLastRefresh.getTime()) / 60000)), 60000);
@@ -1647,7 +1628,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
                 outerRadius={95}
                 dataKey="value"
                 paddingAngle={2}
-                label={(entry: any) => `${entry.name} ${((entry.percent ?? 0) * 100).toFixed(0)}%`}
+                label={(entry: { name?: string; percent?: number }) => `${entry.name} ${((entry.percent ?? 0) * 100).toFixed(0)}%`}
               >
                 {statusData.map((s, i) => (
                   <Cell key={i} fill={DASH_STATUS_COLORS[s.key] || DASH_COLORS[i % DASH_COLORS.length]} />
@@ -1698,7 +1679,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
                 outerRadius={85}
                 dataKey="value"
                 paddingAngle={2}
-                label={(entry: any) => `${entry.name} ${((entry.percent ?? 0) * 100).toFixed(0)}%`}
+                label={(entry: { name?: string; percent?: number }) => `${entry.name} ${((entry.percent ?? 0) * 100).toFixed(0)}%`}
               >
                 {paymentData.map((entry, i) => (
                   <Cell key={i} fill={entry.color} />
@@ -1914,7 +1895,7 @@ function OrdersDashboard({ orders }: { orders: Order[] }) {
             <ResponsiveContainer width="100%" height={500}>
               <PieChart>
                 <Pie data={statusData} innerRadius={100} outerRadius={200} dataKey="value" paddingAngle={2} label>
-                  {statusData.map((s: any, i: number) => <Cell key={i} fill={DASH_STATUS_COLORS[s.key] || DASH_COLORS[i % DASH_COLORS.length]} />)}
+                  {statusData.map((s, i) => <Cell key={i} fill={DASH_STATUS_COLORS[s.key] || DASH_COLORS[i % DASH_COLORS.length]} />)}
                 </Pie>
                 <Tooltip content={<DashTooltip />} />
                 <Legend />

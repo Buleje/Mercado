@@ -3,12 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Palette, Store, Layout, Phone, Settings2, Image as ImageIcon,
-  Save, Loader2, Check, GripVertical, Eye, EyeOff,
+  Save, Loader2, Check, Eye, EyeOff,
   Megaphone, Grid3x3, ShoppingBag, Tag, Package, BookOpen,
-  MessageSquare, HelpCircle, Map, ToggleLeft, ToggleRight,
-  ChevronUp, ChevronDown, Sun, Moon, Type, Sliders,
-  Paintbrush, FileText,
-} from "lucide-react";
+  MessageSquare, HelpCircle, Map, ToggleLeft, ToggleRight, Sun, Moon, Type, Sliders,
+  Paintbrush, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StorefrontEditor from "./StorefrontEditor";
 import type { SectionKey } from "./StorefrontEditor";
@@ -291,7 +289,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 
 // ── Preview en vivo ───────────────────────────────────────────────────────────
 
-function StorePreview({ theme }: { theme: StoreTheme }) {
+function _StorePreview({ theme }: { theme: StoreTheme }) {
   const fontMap: Record<string, string> = {
     sistema: "system-ui, sans-serif",
     geist: "'Geist', sans-serif",
@@ -467,9 +465,9 @@ export default function StoreCustomizer() {
   // Detecta si hay cambios pendientes comparando con la última versión guardada
   const hasUnsavedChanges = JSON.stringify(theme) !== JSON.stringify(savedTheme);
 
-  const logoInputRef = useRef<HTMLInputElement>(null);
-  const heroImageInputRef = useRef<HTMLInputElement>(null);
-  const faviconInputRef = useRef<HTMLInputElement>(null);
+  const _logoInputRef = useRef<HTMLInputElement>(null);
+  const _heroImageInputRef = useRef<HTMLInputElement>(null);
+  const _faviconInputRef = useRef<HTMLInputElement>(null);
 
   // ── Cargar settings existentes ─────────────────────────────────────────────
 
@@ -514,7 +512,7 @@ export default function StoreCustomizer() {
     setSaved(false);
   }, []);
 
-  const handleImageUpload = (
+  const _handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
     field: "logo" | "heroImage" | "favicon"
   ) => {
@@ -557,7 +555,7 @@ export default function StoreCustomizer() {
 
   // ── Drag & drop de secciones ───────────────────────────────────────────────
 
-  const handleDragEnd = (overIdx: number) => {
+  const _handleDragEnd = (overIdx: number) => {
     if (dragIdx === null || dragIdx === overIdx) return;
     const next = [...theme.sections];
     const [moved] = next.splice(dragIdx, 1);
@@ -566,21 +564,21 @@ export default function StoreCustomizer() {
     setDragIdx(null);
   };
 
-  const moveSectionUp = (idx: number) => {
+  const _moveSectionUp = (idx: number) => {
     if (idx === 0) return;
     const next = [...theme.sections];
     [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
     update("sections", next);
   };
 
-  const moveSectionDown = (idx: number) => {
+  const _moveSectionDown = (idx: number) => {
     if (idx === theme.sections.length - 1) return;
     const next = [...theme.sections];
     [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
     update("sections", next);
   };
 
-  const toggleSection = (key: SectionKey) => {
+  const _toggleSection = (key: SectionKey) => {
     const has = theme.sections.includes(key);
     if (has) {
       update("sections", theme.sections.filter((k) => k !== key));
@@ -590,7 +588,7 @@ export default function StoreCustomizer() {
   };
 
   // Ordenar SECTION_LIST según el orden actual de theme.sections
-  const orderedSections = [
+  const _orderedSections = [
     ...theme.sections
       .map((k) => SECTION_LIST.find((s) => s.key === k))
       .filter(Boolean) as SectionMeta[],

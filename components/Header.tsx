@@ -5,8 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   Menu, X, ShoppingCart, Store,
   ChevronDown, ChevronLeft, ChevronRight, Leaf, Package, Beef, Milk, GlassWater, Sparkles, UserCircle, Settings,
-  Search, Trophy, Gift, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList,
-} from "lucide-react";
+  Search, Trophy, History, PackageCheck, User, Mic, Flame, ChefHat, Globe, ClipboardList } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/contexts/cart-context";
@@ -98,7 +97,7 @@ export default function Header() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [orderStatusChanged, setOrderStatusChanged] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [_isAdmin, setIsAdmin] = useState(false);
   /* X4: Voice search + ordering */
   const [listening, setListening] = useState(false);
   const [voiceResult, setVoiceResult] = useState<{ type: "added"; product: string; qty: number } | null>(null);

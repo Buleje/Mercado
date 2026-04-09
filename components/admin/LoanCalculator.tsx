@@ -1,7 +1,7 @@
 "use client";
  
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { Calculator, TrendingDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 

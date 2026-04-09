@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Award, AlertTriangle, TrendingUp, Clock, CheckCircle2, DollarSign } from "lucide-react";
+import { AlertTriangle, TrendingUp, Clock, CheckCircle2, DollarSign } from "lucide-react";
 
 type ScorecardData = {
   score: number | null;

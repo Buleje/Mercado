@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
-  Calendar, DollarSign, Hash, FileX, Download, ArrowUpDown, ArrowUp,
+  Calendar, DollarSign, FileX, Download, ArrowUpDown, ArrowUp,
   ArrowDown, Copy, LayoutGrid, LayoutList, Trash2, Send, TrendingUp,
   TrendingDown, Filter, CheckSquare, FileText, Receipt, CreditCard,
   Keyboard, History, AlertCircle, Minus, Package,
@@ -603,7 +603,11 @@ export default function NotasCreditoModule() {
   // ── Bulk operations ───────────────────────────────────────────────────────
   const allChecked = paginated.length > 0 && paginated.every(nc => checkedIds.has(nc.id));
   const someChecked = checkedIds.size > 0;
-  const toggleCheck = (id: string) => setCheckedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleCheck = (id: string) => setCheckedIds(prev => {
+    const n = new Set(prev);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
   const toggleAll = () => { if (allChecked) setCheckedIds(new Set()); else setCheckedIds(new Set(paginated.map(nc => nc.id))); };
 
   const exportCSV = () => {

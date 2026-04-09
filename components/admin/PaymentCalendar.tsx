@@ -111,7 +111,7 @@ function buildCalendarDays(year: number, month: number, payablesByDay: Map<strin
 
 // ── Status color helper ───────────────────────────────────────────────────────
 
-function statusDot(status: Payable["status"]) {
+function _statusDot(status: Payable["status"]) {
   return status === "paid"
     ? "bg-emerald-500"
     : status === "overdue"

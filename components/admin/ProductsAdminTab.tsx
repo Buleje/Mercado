@@ -4,10 +4,8 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
   Plus, Pencil, Trash2, Search, X, Package, CheckCircle, XCircle,
-  ChevronUp, ChevronDown, RefreshCw, Eye, EyeOff, Save, AlertTriangle,
-  ImageOff, LayoutGrid, List, Filter, Download, Upload, Tag,
-  Loader2, Globe, Camera,
-} from "lucide-react";
+  ChevronUp, ChevronDown, RefreshCw, Eye, EyeOff, Save, AlertTriangle, LayoutGrid, List, Filter, Download, Upload, Tag,
+  Loader2, Globe, Camera } from "lucide-react";
 import TagBadge, { TAG_COLORS, type TagColor, type Tag as TagType } from "./TagBadge";
 import { cn } from "@/lib/utils";
 import { categories } from "@/data/products";

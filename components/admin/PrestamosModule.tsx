@@ -1,16 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Plus, X, DollarSign, Loader2, AlertTriangle,
-  ChevronLeft, ChevronRight, User, Calendar, Landmark,
+  ChevronLeft, ChevronRight, User, Landmark,
   Clock, CheckCircle2, XCircle, Ban, Calculator, FileText, Printer, TrendingUp, BarChart3,
-  ArrowUpDown, ArrowDownToLine, ArrowUpFromLine, Building2, Download,
-  RefreshCcw, Paperclip, Shield, Hash, Coins, FileSpreadsheet,
+  ArrowUpDown, ArrowDownToLine, ArrowUpFromLine, Building2,
+  RefreshCcw, Paperclip, Shield, Coins,
   Filter, ChevronDown, ChevronUp, Trash2, AlertCircle, Bell,
-  RotateCcw, History, Scale, FileDown,
-} from "lucide-react";
+  RotateCcw, History, Scale, FileDown } from "lucide-react";
 import { BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, LineChart, Line } from "recharts";
 import { cn } from "@/lib/utils";
 import PrestamoTimeline from "@/components/admin/prestamos/PrestamoTimeline";

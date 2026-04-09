@@ -6,8 +6,7 @@ import {
   DollarSign, TrendingUp, AlertTriangle, BarChart3, Clock,
   CreditCard, Receipt, ShoppingCart, ShoppingBasket,
   Download, Target, CheckCircle2, Lightbulb, TrendingDown,
-  Users, type LucideIcon, Edit3,
-} from "lucide-react";
+  Users, type LucideIcon } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
@@ -67,15 +66,15 @@ type OrderStatus = "pendiente"|"confirmado"|"en_camino"|"entregado"|"cancelado";
 interface Order { id: string; status: OrderStatus; [key: string]: any; }
 
 export default function DashboardVentasSection({ st, expandAll, orders, sales, period, quickStatusMap, changingStatusId, handleQuickStatus, printTicket, adminNotes, saveAdminNote, selectedOrders, setSelectedOrders, toggleOrderSelection, handleBulkStatus, bulkUpdating, expandedHistory, toggleHistory }: any) {
-  const [topTab, setTopTab] = useState<"revenue"|"profit"|"units">("revenue");
+  const [topTab, _setTopTab] = useState<"revenue"|"profit"|"units">("revenue");
   const [recentFilter, setRecentFilter] = useState<"all"|"pendiente"|"en_camino"|"entregado">("all");
   const [recentPage, setRecentPage] = useState(1);
-  const [dashSearch, setDashSearch] = useState("");
+  const [dashSearch, _setDashSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [selectedClientPhone, setSelectedClientPhone] = useState<string|null>(null);
+  const [_selectedClientPhone, _setSelectedClientPhone] = useState<string|null>(null);
   const topList = topTab==="revenue"?st.topRev:topTab==="profit"?st.topProfit:st.topUnits;
-  const topMax = topList.length>0?Math.max(...topList.map((p: any)=>topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue)):1;
+  const _topMax = topList.length>0?Math.max(...topList.map((p: any)=>topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue)):1;
   const exportVentas = useCallback(() => {
     const orderRows = orders.filter((o: any) => o.status !== "cancelado").map((o: any) => ({ Tipo: "Delivery", Fecha: o.createdAt.slice(0,10), ID: o.id.slice(-8), Cliente: o.customer.name, "Total S/": o.total.toFixed(2), Pago: o.paymentMethod ?? "", Estado: o.status }));
     const saleRows = sales.map((s: any) => ({ Tipo: "POS", Fecha: s.createdAt.slice(0,10), ID: s.id.slice(-8), Cliente: "POS", "Total S/": s.total.toFixed(2), Pago: s.payment, Estado: "entregado" }));

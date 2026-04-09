@@ -842,7 +842,7 @@ export default function POSView() {
   const [showScanner, setShowScanner] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [paymentMethod] = useState<PaymentMethod>("efectivo");
-  const [amountPaid, setAmountPaid] = useState("");
+  const [_amountPaid, setAmountPaid] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [processing, setProcessing] = useState(false);
   const [saleComplete, setSaleComplete] = useState<{ id: string; change: number } | null>(null);
@@ -854,8 +854,8 @@ export default function POSView() {
   const [salesHistory, setSalesHistory] = useState<SaleRecord[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [editingDiscount, setEditingDiscount] = useState<number | null>(null);
-  const [splitMode, setSplitMode] = useState(false);
-  const [splitPayments, setSplitPayments] = useState<SplitEntry[]>([]);
+  const [_splitMode, setSplitMode] = useState(false);
+  const [_splitPayments, setSplitPayments] = useState<SplitEntry[]>([]);
   const searchRef = useRef<HTMLInputElement>(null);
   const [showYapeQR, setShowYapeQR] = useState<"yape" | "plin" | null>(null);
   const [saleError, setSaleError] = useState<string | null>(null);
@@ -2460,7 +2460,7 @@ export default function POSView() {
                   onClick={async () => {
                     const valorTrueque = Number(truequeValor);
                     const diferencia = Math.max(0, cartTotal - valorTrueque);
-                    const truequeDetails = JSON.stringify({ tipo: "TRUEQUE", descripcion: truequeDesc, valorEstimado: valorTrueque, diferenciaPagada: diferencia });
+                    const _truequeDetails = JSON.stringify({ tipo: "TRUEQUE", descripcion: truequeDesc, valorEstimado: valorTrueque, diferenciaPagada: diferencia });
                     // Fire sale through normal flow with TRUEQUE payment
                     await handlePaymentConfirm(
                       [{ method: (diferencia > 0 ? "efectivo" : "efectivo") as "efectivo", amount: diferencia > 0 ? diferencia : cartTotal }],

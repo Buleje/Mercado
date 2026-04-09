@@ -58,7 +58,7 @@ try {
   }
 
   // Step 4: Handle duplicate Settings (same tenant may have settings under both slug and CUID)
-  for (const [slug, cuid] of Object.entries(slugToId)) {
+  for (const [_slug, cuid] of Object.entries(slugToId)) {
     const { rows: dupes } = await pool.query(
       `SELECT id, "tenantId", "businessName" FROM "Settings" WHERE "tenantId" = $1`,
       [cuid]

@@ -52,7 +52,7 @@ export default function PostDeliverySurveyTrigger() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSubmit = useCallback((rating: number, _comment: string) => {
+  const handleSubmit = useCallback((_rating: number, _comment: string) => {
     if (!pendingSurvey) return;
     // Remove from localStorage
     try { localStorage.removeItem(LS_PREFIX + pendingSurvey.orderId); } catch { /* silent */ }

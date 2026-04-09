@@ -137,7 +137,7 @@ export default function ActivityTracker({
   className,
 }: ActivityTrackerProps) {
   const handleClick = useCallback(
-    async (e: React.MouseEvent) => {
+    async (_e: React.MouseEvent) => {
       // Allow the original click to proceed, then track
       if (onBeforeTrack) {
         const shouldProceed = await onBeforeTrack();

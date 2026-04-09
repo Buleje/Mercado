@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Download, FileText, Clock, ChevronDown, ChevronUp, MessageCircle, TrendingUp, TrendingDown, Minus, AlertTriangle, CheckCircle2, BarChart3, Star } from "lucide-react";
+import { Download, FileText, Clock, ChevronDown, ChevronUp, MessageCircle, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "./AICommandCenter";
 

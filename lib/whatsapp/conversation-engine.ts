@@ -1,6 +1,5 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
-import { ProductsDB } from "@/lib/db/products.db";
 import { OrdersDB } from "@/lib/db/orders.db";
 import { logger } from "@/lib/logger";
 import { toNumOrZero } from "@/lib/decimal-utils";

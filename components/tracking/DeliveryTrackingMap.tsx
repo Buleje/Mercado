@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  MapPin,
   Loader2,
   AlertCircle,
   Phone,
@@ -10,8 +9,7 @@ import {
   CheckCircle,
   Bike,
   Package,
-  Navigation,
-} from "lucide-react";
+  Navigation } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────────────────

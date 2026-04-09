@@ -7,7 +7,6 @@ import {
   ShoppingCart,
   DollarSign,
   RefreshCw,
-  Edit2,
   Eye,
   EyeOff,
   CheckCircle,
@@ -26,8 +25,7 @@ import {
   Gift,
   ExternalLink,
   Zap,
-  ArrowRight,
-} from "lucide-react";
+  ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";

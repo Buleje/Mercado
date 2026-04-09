@@ -25,7 +25,7 @@ import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
 // ── Spinner compacto ──
-const Spinner = () => (
+const _Spinner = () => (
   <div className="flex items-center justify-center py-12">
     <div className="h-8 w-8 border-4 border-[#00B4A6] border-t-transparent rounded-full animate-spin" />
   </div>

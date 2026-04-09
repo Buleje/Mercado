@@ -1,10 +1,9 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
-  TrendingUp, ShoppingCart, Package, Timer, Gift, Target, ShoppingBasket,
-} from "lucide-react";
+  TrendingUp, ShoppingCart, Package, Timer, Target, ShoppingBasket } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
@@ -34,7 +33,7 @@ function Card({ title, icon: Icon, children, action }: { title: string; icon: Re
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-gray-300 dark:text-muted">{text}</div>; }
 
-export default function DashboardProductosSection({ st, expandAll, products }: any) {
+export default function DashboardProductosSection({ st, expandAll, _products }: any) {
   const [topTab, setTopTab] = useState<"revenue"|"profit"|"units">("revenue");
   const topList = topTab==="revenue"?st.topRev:topTab==="profit"?st.topProfit:st.topUnits;
   const topMax = topList.length>0?Math.max(...topList.map((p: any)=>topTab==="units"?p.units:topTab==="profit"?p.profit:p.revenue)):1;

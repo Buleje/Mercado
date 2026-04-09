@@ -57,7 +57,7 @@ export function useMarketplaceCart() {
   useEffect(() => {
     const stored = readStorage().items;
     if (stored.length === 0) return;
-    const productIds = [...new Set(stored.map(i => i.productId))];
+    const _productIds = [...new Set(stored.map(i => i.productId))];
     fetch("/api/products?active=true")
       .then(r => r.ok ? r.json() : null)
       .then(data => {

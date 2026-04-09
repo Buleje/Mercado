@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       costosMesItems,
       costosMesAnteriorItems,
       fiadosPendientes,
-      stockCritico,
+      _stockCritico,
     ] = await withDbRetry(() => Promise.all([
       // 1. Ventas hoy
       prisma.sale.aggregate({
@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
     const ticketPromedioMesAnt = txMesAnt > 0 ? ingresosMesAnt / txMesAnt : 0;
 
     const costosHoy = calcCost(costosHoyItems);
-    const costosMes = calcCost(costosMesItems);
+    const _costosMes = calcCost(costosMesItems);
     const costosMesAnt = calcCost(costosMesAnteriorItems);
 
     const margenHoy = ingresosHoy > 0 ? ((ingresosHoy - costosHoy) / ingresosHoy) * 100 : 0;

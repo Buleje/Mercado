@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  AlertTriangle, Package, ShoppingCart, ChevronDown,
-  ChevronUp, Check, Loader2, TrendingDown,
-} from "lucide-react";
+  ShoppingCart, ChevronDown,
+  ChevronUp, Check, Loader2, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Urgency = "CRITICO" | "URGENTE" | "PLANIFICAR";

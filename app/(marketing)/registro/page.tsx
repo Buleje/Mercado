@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { RegistrationForm } from "@/components/marketing/RegistrationForm";
-import { PLANS, type PlanId } from "@/lib/plans";
+import { type PlanId } from "@/lib/plans";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 // ─── Tipos ────────────────────────────────────────────────────

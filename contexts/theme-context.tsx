@@ -20,9 +20,9 @@ interface ThemeCtx {
 }
 
 const ThemeContext = createContext<ThemeCtx | null>(null);
-const STORAGE_KEY = "bsm-theme";
+const _STORAGE_KEY = "bsm-theme";
 
-function getSystemTheme(): "light" | "dark" {
+function _getSystemTheme(): "light" | "dark" {
   if (typeof window === "undefined") return "light";
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
@@ -30,20 +30,20 @@ function getSystemTheme(): "light" | "dark" {
 }
 
 // Tema por hora (modo "auto"): oscuro desde las 19h hasta las 6am
-function getTimeBasedTheme(): "light" | "dark" {
+function _getTimeBasedTheme(): "light" | "dark" {
   const hour = new Date().getHours();
   return hour >= 19 || hour < 6 ? "dark" : "light";
 }
 
 // Tema por horario configurado (modo "auto-schedule"): oscuro desde las 18h (6pm)
-function getScheduleBasedTheme(): "light" | "dark" {
+function _getScheduleBasedTheme(): "light" | "dark" {
   const hour = new Date().getHours();
   return hour >= 18 || hour < 6 ? "dark" : "light";
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("light");
-  const [resolved, setResolved] = useState<"light" | "dark">("light");
+  const [theme, _setThemeState] = useState<Theme>("light");
+  const [resolved, _setResolved] = useState<"light" | "dark">("light");
 
   // Always force light mode — dark mode toggle is only in Settings module
   useEffect(() => {

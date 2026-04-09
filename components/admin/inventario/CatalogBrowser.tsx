@@ -4,8 +4,7 @@ import { useState, useMemo, useCallback } from "react";
 import {
   Search, Grid3x3, List, Plus, Trash2, ShoppingCart,
   Loader2, Check, Package, ChevronDown, ChevronUp,
-  Filter, DollarSign, Boxes, CheckCheck,
-} from "lucide-react";
+  Filter, Boxes, CheckCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PERU_CATALOG, CATALOG_STATS } from "@/lib/catalog/peru-abarrotes-catalog";
 import { CATALOG_CATEGORIES } from "@/lib/catalog/catalog-categories";

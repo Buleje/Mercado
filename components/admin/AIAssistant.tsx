@@ -6,9 +6,8 @@ import {
   AlertTriangle, TrendingUp, Package, Users, Lightbulb,
   Loader2, Maximize2, Minimize2, Trash2,
   Volume2, VolumeX, Play, Clock, BarChart3, WifiOff, Bell, Check, XCircle,
-  History, Star, Command, ChevronRight, ArrowRight, Zap, Heart,
-  Table, BarChart, GraduationCap, Activity, Search,
-} from "lucide-react";
+  History, Star, Command, ChevronRight, ArrowRight, Zap,
+  Table, BarChart, Activity, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { escapeHtml } from "@/lib/safe-html";
 

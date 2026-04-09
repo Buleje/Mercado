@@ -2,11 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  CreditCard, Loader2, Plus, X, RefreshCw, Download, AlertTriangle,
-  CheckCircle, Clock, Search, MessageSquare, Users, TrendingUp, ShieldAlert,
-} from "lucide-react";
+  CreditCard, Plus, X, RefreshCw, Download, AlertTriangle,
+  CheckCircle, Clock, Search } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
 
@@ -62,12 +60,12 @@ function getStatus(ar: AccountReceivable): ARStatus {
 const EMPTY_FORM = { customerName: "", customerPhone: "", description: "", totalAmount: "", dueDate: "", notes: "" };
 
 type RiskLevel = "bajo" | "medio" | "alto";
-function getRiskLevel(balance: number): RiskLevel {
+function _getRiskLevel(balance: number): RiskLevel {
   if (balance > 200) return "alto";
   if (balance >= 50) return "medio";
   return "bajo";
 }
-const RISK_CONFIG: Record<RiskLevel, { label: string; color: string; bg: string; dot: string }> = {
+const _RISK_CONFIG: Record<RiskLevel, { label: string; color: string; bg: string; dot: string }> = {
   bajo:  { label: "Bajo",  color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/20", dot: "bg-emerald-500" },
   medio: { label: "Medio", color: "text-amber-600",   bg: "bg-amber-50 dark:bg-amber-950/20",    dot: "bg-amber-500" },
   alto:  { label: "Alto",  color: "text-red-600",     bg: "bg-red-50 dark:bg-red-950/20",        dot: "bg-red-500" },

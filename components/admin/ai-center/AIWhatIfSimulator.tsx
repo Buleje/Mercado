@@ -226,7 +226,7 @@ function simulate(
     validOrders.filter((o) => (o.createdAt?.slice(0, 10) ?? "") >= monthAgo).length +
     sales.filter((s) => (s.createdAt?.slice(0, 10) ?? "") >= monthAgo).length;
 
-  const avgTicket = monthTxns > 0 ? monthRev / monthTxns : 50;
+  const _avgTicket = monthTxns > 0 ? monthRev / monthTxns : 50;
   const expMonth = data.expenses.totalMonth ?? monthRev * 0.7;
   const currentMargin = monthRev > 0 ? Math.max(0, (monthRev - expMonth) / monthRev) : 0.25;
   const currentProfit = monthRev * currentMargin;

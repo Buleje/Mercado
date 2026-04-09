@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Copy, Check, Plus, X, Pencil, MessageSquare, Trash2 } from "lucide-react";
+import { Copy, Check, Plus, Pencil, MessageSquare, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

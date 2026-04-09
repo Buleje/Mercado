@@ -1,12 +1,11 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any -- pre-existing warnings pending dedicated cleanup sprint (post-TD-018) */
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
   Lightbulb, ClipboardList, Users, PackageCheck,
   Truck, BarChart3,
   ShoppingCart, ShoppingBasket, Clock, DollarSign, Building2, AlertTriangle, CreditCard,
-  TrendingUp, CheckCircle2, RefreshCw, FileDown, Maximize2, X as XIcon,
+  CheckCircle2, RefreshCw, FileDown, Maximize2, X as XIcon,
 } from "lucide-react";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import type { AdminTab } from "@/components/admin/shared/AdminTabBar";
@@ -16,8 +15,43 @@ import { ChartTooltip } from "@/lib/chart-tooltip";
 import {
   PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area,
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend, ReferenceLine,
+  ResponsiveContainer, Legend,
 } from "recharts";
+
+// ── Tipos de datos de API ───────────────────────────────────────────────────
+interface PurchaseRecord {
+  id?: string | number;
+  status?: string;
+  total?: number;
+  grandTotal?: number;
+  createdAt?: string;
+  date?: string;
+  orderDate?: string;
+  supplierName?: string;
+  supplier?: string | { name?: string };
+}
+
+interface SupplierRecord {
+  id?: string | number;
+  name?: string;
+}
+
+interface PayableRecord {
+  id?: string | number;
+  status?: string;
+  amount?: number;
+  balance?: number;
+  dueDate?: string;
+  supplierName?: string;
+  supplier?: string | { name?: string };
+}
+
+interface ComprasData {
+  purchases: PurchaseRecord[];
+  suppliers: SupplierRecord[];
+  payables: PayableRecord[];
+}
+
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -73,7 +107,7 @@ function ComprasFavStar({ id, favs }: { id: string; favs: ReturnType<typeof useC
 }
 
 function ComprasDashboard() {
-  const [data, setData] = useState<any>({ purchases: [], suppliers: [], payables: [] });
+  const [data, setData] = useState<ComprasData>({ purchases: [], suppliers: [], payables: [] });
   const [loading, setLoading] = useState(true);
   // Mejora 12: Click-to-filter PieChart proveedores
   const [pieFilter, setPieFilter] = useState<string | null>(null);
@@ -113,14 +147,14 @@ function ComprasDashboard() {
   /* ── KPIs ── */
   const kpis = useMemo(() => {
     const totalOC = data.purchases.length;
-    const ocPendientes = data.purchases.filter((p: any) => p.status !== 'completed' && p.status !== 'recibido' && p.status !== 'cancelado').length;
-    const totalGastado = data.purchases.reduce((s: number, p: any) => s + (p.total || p.grandTotal || 0), 0);
+    const ocPendientes = data.purchases.filter((p) => p.status !== 'completed' && p.status !== 'recibido' && p.status !== 'cancelado').length;
+    const totalGastado = data.purchases.reduce((s, p) => s + (p.total || p.grandTotal || 0), 0);
     const totalProveedores = data.suppliers.length;
-    const deudaTotal = data.payables.reduce((s: number, p: any) => s + (p.amount || p.balance || 0), 0);
+    const deudaTotal = data.payables.reduce((s, p) => s + (p.amount || p.balance || 0), 0);
     const now = new Date();
     const deudaVencida = data.payables
-      .filter((p: any) => p.status !== 'pagado' && p.status !== 'paid' && p.dueDate && new Date(p.dueDate) < now)
-      .reduce((s: number, p: any) => s + (p.amount || p.balance || 0), 0);
+      .filter((p) => p.status !== 'pagado' && p.status !== 'paid' && p.dueDate && new Date(p.dueDate) < now)
+      .reduce((s, p) => s + (p.amount || p.balance || 0), 0);
     return { totalOC, ocPendientes, totalGastado, totalProveedores, deudaTotal, deudaVencida };
   }, [data]);
 
@@ -135,7 +169,7 @@ function ComprasDashboard() {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       months[key] = { total: 0, count: 0 };
     }
-    data.purchases.forEach((p: any) => {
+    data.purchases.forEach((p) => {
       const d = new Date(p.createdAt || p.date || p.orderDate || nowTs);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       if (months[key]) {
@@ -144,7 +178,7 @@ function ComprasDashboard() {
       }
     });
     return Object.entries(months).map(([key, val]) => {
-      const [y, m] = key.split('-');
+      const [, m] = key.split('-');
       return { mes: monthNames[parseInt(m) - 1], total: Math.round(val.total), count: val.count };
     });
   }, [data.purchases, nowTs]);
@@ -152,8 +186,12 @@ function ComprasDashboard() {
   /* ── Gasto por proveedor ── */
   const supplierSpend = useMemo(() => {
     const g: Record<string, { name: string; total: number; count: number }> = {};
-    data.purchases.forEach((p: any) => {
-      const name = p.supplierName || p.supplier?.name || p.supplier || 'Sin proveedor';
+    data.purchases.forEach((p) => {
+      const supplierField = p.supplier;
+      const name = p.supplierName
+        || (typeof supplierField === "object" && supplierField !== null ? supplierField.name : undefined)
+        || (typeof supplierField === "string" ? supplierField : undefined)
+        || 'Sin proveedor';
       const id = name;
       if (!g[id]) g[id] = { name, total: 0, count: 0 };
       g[id].total += (p.total || p.grandTotal || 0);
@@ -174,7 +212,7 @@ function ComprasDashboard() {
       const key = `${monthNames[d.getMonth()]}`;
       months[key] = { Pendiente: 0, 'En proceso': 0, Recibido: 0, Cancelado: 0 };
     }
-    data.purchases.forEach((p: any) => {
+    data.purchases.forEach((p) => {
       const d = new Date(p.createdAt || p.date || p.orderDate || nowTs);
       const key = monthNames[d.getMonth()];
       if (!months[key]) return;
@@ -192,8 +230,12 @@ function ComprasDashboard() {
   const debtBySupplier = useMemo(() => {
     const g: Record<string, { name: string; total: number; vencida: number; dueDate: string }> = {};
     const now = new Date();
-    data.payables.forEach((p: any) => {
-      const name = p.supplierName || p.supplier?.name || p.supplier || 'Sin nombre';
+    data.payables.forEach((p) => {
+      const supplierField = p.supplier;
+      const name = p.supplierName
+        || (typeof supplierField === "object" && supplierField !== null ? supplierField.name : undefined)
+        || (typeof supplierField === "string" ? supplierField : undefined)
+        || 'Sin nombre';
       if (!g[name]) g[name] = { name, total: 0, vencida: 0, dueDate: '' };
       const amt = p.amount || p.balance || 0;
       g[name].total += amt;
@@ -211,14 +253,18 @@ function ComprasDashboard() {
   const nextPayments = useMemo(() => {
     const now = new Date();
     return [...data.payables]
-      .filter((p: any) => p.status !== 'pagado' && p.status !== 'paid')
-      .sort((a: any, b: any) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime())
+      .filter((p) => p.status !== 'pagado' && p.status !== 'paid')
+      .sort((a, b) => new Date(a.dueDate || 0).getTime() - new Date(b.dueDate || 0).getTime())
       .slice(0, 5)
-      .map((p: any) => {
+      .map((p) => {
         const due = new Date(p.dueDate || nowTs);
         const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const supplierField = p.supplier;
         return {
-          name: p.supplierName || p.supplier?.name || p.supplier || 'Proveedor',
+          name: p.supplierName
+            || (typeof supplierField === "object" && supplierField !== null ? supplierField.name : undefined)
+            || (typeof supplierField === "string" ? supplierField : undefined)
+            || 'Proveedor',
           amount: p.amount || p.balance || 0,
           dueDate: p.dueDate,
           days: diffDays,
@@ -267,7 +313,16 @@ function ComprasDashboard() {
     </div>
   );
 
-  const kpiCards = [
+  interface KpiCard {
+    label: string;
+    value: number | string;
+    icon: typeof ShoppingCart;
+    color: string;
+    borderColor: string;
+    change?: number;
+    bad?: boolean;
+  }
+  const kpiCards: KpiCard[] = [
     { label: "OC totales", value: kpis.totalOC, icon: ShoppingCart, color: "#457b9d", borderColor: "border-l-[#457b9d]", change: kpiChanges.oc != null ? Math.round(kpiChanges.oc * 10) / 10 : undefined },
     { label: "OC pendientes", value: kpis.ocPendientes, icon: Clock, color: "#f97316", borderColor: "border-l-[#f97316]" },
     { label: "Total gastado", value: `S/ ${kpis.totalGastado.toLocaleString()}`, icon: DollarSign, color: "#00B4A6", borderColor: "border-l-[#00B4A6]", change: kpiChanges.gastado != null ? Math.round(kpiChanges.gastado * 10) / 10 : undefined },
@@ -313,11 +368,11 @@ function ComprasDashboard() {
                 <div>
                   <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{k.label}</p>
                   <div className="flex items-center gap-1">
-                    <p className={cn("text-2xl font-mono font-bold mt-1", (k as any).bad ? "text-red-600" : "text-gray-900")}>{k.value}</p>
+                    <p className={cn("text-2xl font-mono font-bold mt-1", k.bad ? "text-red-600" : "text-gray-900")}>{k.value}</p>
                   </div>
-                  {(k as any).change != null && (
-                    <p className={cn("text-[10px] font-medium mt-0.5", (k as any).change >= 0 ? "text-emerald-600" : "text-red-500")}>
-                      {(k as any).change >= 0 ? "+" : ""}{(k as any).change}% vs mes ant.
+                  {k.change != null && (
+                    <p className={cn("text-[10px] font-medium mt-0.5", k.change >= 0 ? "text-emerald-600" : "text-red-500")}>
+                      {k.change >= 0 ? "+" : ""}{k.change}% vs mes ant.
                     </p>
                   )}
                 </div>
@@ -344,13 +399,16 @@ function ComprasDashboard() {
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
-            <Tooltip content={({ active, payload, label }: any) => {
+            <Tooltip content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
+              const rawVal = payload[0]?.value;
+              const val = typeof rawVal === "number" ? rawVal : 0;
+              const count = (payload[0]?.payload as { count?: number } | undefined)?.count || 0;
               return (
                 <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3">
-                  <p className="text-xs font-semibold text-gray-900">{label}</p>
+                  <p className="text-xs font-semibold text-gray-900">{String(label ?? "")}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    S/ {(payload[0]?.value || 0).toLocaleString()} ({payload[0]?.payload?.count || 0} OCs)
+                    S/ {val.toLocaleString()} ({count} OCs)
                   </p>
                 </div>
               );
@@ -378,7 +436,7 @@ function ComprasDashboard() {
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie data={supplierSpend} innerRadius={55} outerRadius={90} dataKey="total" paddingAngle={2} className="cursor-pointer"
-                label={({ name, percent }: any) => `${(name || "").substring(0, 10)} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                label={({ name, percent }: { name?: string; percent?: number }) => `${(name || "").substring(0, 10)} ${((percent ?? 0) * 100).toFixed(0)}%`}
                 onClick={(_: unknown, idx: number) => setPieFilter(prev => prev === supplierSpend[idx]?.name ? null : supplierSpend[idx]?.name ?? null)}
               >
                 {supplierSpend.map((_, i) => (
@@ -432,7 +490,7 @@ function ComprasDashboard() {
             <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
             <YAxis tick={{ fontSize: 11 }} className="fill-gray-500" />
             <Tooltip content={<ChartTooltip />} />
-            <Legend iconType="circle" formatter={(value: any) => <span className="text-xs text-gray-600">{value}</span>} />
+            <Legend iconType="circle" formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
             <Bar dataKey="Pendiente" stackId="a" fill="#f97316" radius={[0, 0, 0, 0]} />
             <Bar dataKey="En proceso" stackId="a" fill="#457b9d" />
             <Bar dataKey="Recibido" stackId="a" fill="#00B4A6" />
@@ -513,7 +571,7 @@ function ComprasDashboard() {
             <XAxis dataKey="mes" tick={{ fontSize: 11 }} className="fill-gray-500" />
             <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `S/${v.toLocaleString()}`} className="fill-gray-500" />
             <Tooltip content={<ChartTooltip />} />
-            <Legend iconType="circle" formatter={(value: any) => <span className="text-xs text-gray-600">{value}</span>} />
+            <Legend iconType="circle" formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
             <Bar dataKey="total" fill="#00B4A6" radius={[6, 6, 0, 0]} name="Gasto real" barSize={28} fillOpacity={0.85} />
             <Line type="monotone" dataKey="promedio" stroke="#f97316" strokeWidth={2.5} dot={{ r: 4, fill: "#f97316", strokeWidth: 0 }} name="Prom. movil 3m" />
           </ComposedChart>

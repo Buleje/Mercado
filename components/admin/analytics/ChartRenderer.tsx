@@ -250,7 +250,7 @@ export function WaterfallChart({ data, height = 200, className, formatValue = (v
   const range = maxVal - minVal || 1;
 
   const toY = (v: number) => ((maxVal - v) / range) * (height - 40);
-  const barWidth = `${100 / data.length}%`;
+  const _barWidth = `${100 / data.length}%`;
 
   return (
     <div className={cn("relative", className)} style={{ height }}>

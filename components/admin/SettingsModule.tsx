@@ -5,15 +5,15 @@ import { cn } from "@/lib/utils";
 import type { StoreMode } from "@/lib/jsondb";
 import dynamic from "next/dynamic";
 import {
-  Store, Phone, MapPin, Clock, AlignLeft, Image as ImageIcon, Upload, Lock, X, Search,
-  ShoppingCart, MessageCircle, HandCoins, Link as LinkIcon, Pencil, Check,
-  Loader2, Eye, EyeOff, ArrowUp, ArrowDown, AlertTriangle, Shield, Download,
-  CheckCircle, UserCog, Palette, User, Truck, Settings, Bell, Package,
-  DollarSign, FileText, Zap, CreditCard, Landmark, Globe, Hash, Percent,
-  Calendar, Timer, Layers, Smartphone, Mail, Key, Wifi, WifiOff,
-  BarChart3, Database, Crown, ChevronRight, ChevronDown, Save, RefreshCw,
-  Plus, Minus, Trash2, Copy, Send, ToggleLeft, ToggleRight, Activity,
-  HardDrive, ClipboardList, Users, Power, Monitor
+  Store, Phone, MapPin, Clock, AlignLeft, Upload, Lock, X, Search,
+  ShoppingCart, MessageCircle, Check,
+  Loader2, Eye, EyeOff, ArrowUp, ArrowDown, AlertTriangle, Download,
+  CheckCircle, Palette, User, Truck, Settings, Bell, Package,
+  DollarSign, FileText, Zap, Landmark, Globe, Hash, Percent,
+  Calendar, Timer, Layers, Mail, Key, Wifi, WifiOff,
+  BarChart3, Crown, ChevronRight, ChevronDown, Save,
+  Plus, Trash2, Copy, Send, Activity,
+  HardDrive, ClipboardList, Monitor
 } from "lucide-react";
 
 const LeafletMap = dynamic(() => import("@/components/LeafletMap"), { ssr: false });

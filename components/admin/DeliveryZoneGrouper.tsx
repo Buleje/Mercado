@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { MapPin, Truck, Package, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface Order {
   id: string;

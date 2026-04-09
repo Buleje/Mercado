@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   Circle,
-  Clock,
   MessageCircle,
   RotateCcw,
   Star,
@@ -16,11 +15,8 @@ import {
   Focus,
   Users,
   BarChart3,
-  ChevronDown,
-  ChevronUp,
   Flame,
-  Award,
-} from "lucide-react";
+  Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BusinessData } from "./AICommandCenter";
 
@@ -410,7 +406,7 @@ export default function AIActionPlan({ data }: { data: BusinessData }) {
   const [focusMode, setFocusMode] = useState(false);
   const [showDelegation, setShowDelegation] = useState(false);
   const [streak, setStreak] = useState(0);
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [_expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const timeSlot = useMemo(() => getCurrentTimeSlot(), []);
 
   // Load tasks + restore state from localStorage

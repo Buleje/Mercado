@@ -4,11 +4,8 @@ import { useState, useEffect, useCallback, useMemo, useRef, type FormEvent } fro
 import {
   Search, Plus, Minus, Trash2, ShoppingCart, Package,
   Users, ChevronDown, ChevronUp, X, Send, ScanBarcode,
-  FileText, History, Star, Filter, ArrowUpDown,
-  Check, AlertTriangle, Eye, Repeat, RotateCcw, Loader2,
-  Tag, DollarSign, Hash, Layers, Building2, Phone,
-  Calculator, Percent, FileDown, Printer, Clock,
-} from "lucide-react";
+  FileText, History, Filter,
+  Check, AlertTriangle, Repeat, RotateCcw, Loader2, Hash, Building2, Phone, Percent, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import dynamic from "next/dynamic";
@@ -256,7 +253,7 @@ export default function PuntoDeCompraTab() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [lastOrderId, setLastOrderId] = useState<string | null>(null);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
-  const [reorderMode, setReorderMode] = useState(false);
+  const [_reorderMode, _setReorderMode] = useState(false);
 
   /* ── State: New supplier form ── */
   const [newSupName, setNewSupName] = useState("");

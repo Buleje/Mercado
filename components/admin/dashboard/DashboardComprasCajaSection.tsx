@@ -1,7 +1,6 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useMemo } from "react";
 import {
   DollarSign, TrendingUp, AlertCircle, CreditCard, Banknote, Truck, Star, BarChart3,
 } from "lucide-react";

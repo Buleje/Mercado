@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { withCronRetry } from "@/lib/cron-retry";
-import { ProductsDB } from "@/lib/db/products.db";
 import { NotificationLogsDB } from "@/lib/db/notifications.db";
 import { sendPushToPhone } from "@/lib/push-sender";
 import { enqueueNotification } from "@/lib/queue";

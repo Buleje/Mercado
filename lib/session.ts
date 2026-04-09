@@ -15,7 +15,7 @@ const ACCESS_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 const REFRESH_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 /** @deprecated Use ACCESS_DURATION_MS — kept for backward compatibility */
-const SESSION_DURATION_MS = ACCESS_DURATION_MS;
+const _SESSION_DURATION_MS = ACCESS_DURATION_MS;
 
 function getSecret(): string {
   const secret = process.env.AUTH_SECRET;

@@ -257,7 +257,7 @@ export async function issueBirthdayCouponsForTenant(
     return { issued: 0, skipped: 0 };
   }
 
-  const today = new Date();
+  const _today = new Date();
   let issued = 0;
   let skipped = 0;
 

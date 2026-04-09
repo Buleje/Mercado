@@ -230,7 +230,7 @@ function formatCurrencyShort(n: number, config: RegionalConfig): string {
   return `${symbol}${n.toFixed(0)}`;
 }
 
-function formatRegionalDate(iso: string, config: RegionalConfig): string {
+function _formatRegionalDate(iso: string, config: RegionalConfig): string {
   try {
     const locale = config.dateFormat === "MM/DD/YYYY" ? "en-US" : "es-PE";
     return new Date(iso).toLocaleDateString(locale);
@@ -703,8 +703,8 @@ export default function SmartDashboardTab({
   });
 
   // Combo state
-  const [comboActivated, setComboActivated] = useState(false);
-  const [comboSeed, setComboSeed] = useState(() => new Date().getDate());
+  const [_comboActivated, _setComboActivated] = useState(false);
+  const [comboSeed, _setComboSeed] = useState(() => new Date().getDate());
 
   // Active charts state
   const [activeCharts, setActiveCharts] = useState<ChartType[]>(() => {
@@ -950,7 +950,7 @@ export default function SmartDashboardTab({
 
   // ── Derived: productos vendidos period ────────────────────────────────────
 
-  const productosVendidosFiltered = useMemo(() => {
+  const _productosVendidosFiltered = useMemo(() => {
     let count = 0;
     for (const s of filteredSales) {
       const items: Array<{ quantity: number }> = s.items ?? [];
@@ -1150,7 +1150,7 @@ export default function SmartDashboardTab({
 
   // ── Derived: Clientes con ventas del mes ────────────────────────────────
 
-  const clientesConVentasMes = useMemo(() => {
+  const _clientesConVentasMes = useMemo(() => {
     const phones = new Set<string>();
     for (const s of sales) {
       if (!isThisMonth(s.createdAt)) continue;
@@ -1430,7 +1430,7 @@ export default function SmartDashboardTab({
     return days;
   }, [sales]);
 
-  const max7Day = useMemo(() => Math.max(1, ...last7DaysData.map(d => d.total)), [last7DaysData]);
+  const _max7Day = useMemo(() => Math.max(1, ...last7DaysData.map(d => d.total)), [last7DaysData]);
 
   // ── Derived: rentabilidad ─────────────────────────────────────────────────
 
@@ -1524,14 +1524,14 @@ export default function SmartDashboardTab({
   // ── Meta del dia ──────────────────────────────────────────────────────────
 
   const [dailyGoal, setDailyGoal] = useState<number>(800);
-  const [editingGoal, setEditingGoal] = useState(false);
+  const [_editingGoal, setEditingGoal] = useState(false);
   useEffect(() => {
     try {
       const stored = localStorage.getItem("daily-goal");
       if (stored) setDailyGoal(Number(stored) || 800);
     } catch { /* ignore */ }
   }, []);
-  const saveDailyGoal = (val: number) => {
+  const _saveDailyGoal = (val: number) => {
     const safe = Math.max(100, Math.min(99999, val));
     setDailyGoal(safe);
     localStorage.setItem("daily-goal", String(safe));

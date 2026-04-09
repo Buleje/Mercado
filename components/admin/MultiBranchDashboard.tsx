@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Building2, TrendingUp, TrendingDown, DollarSign, Package, Users, RefreshCw, ArrowRight } from "lucide-react";
+import { Building2, DollarSign, Package, Users, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BranchData {
@@ -23,7 +23,7 @@ const fmt = (n: number) => `S/${n.toFixed(2)}`;
 export default function MultiBranchDashboard() {
   const [branches, setBranches] = useState<BranchData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState<"current" | "previous">("current");
+  const [_selectedMonth, _setSelectedMonth] = useState<"current" | "previous">("current");
 
   const load = useCallback(async () => {
     try {

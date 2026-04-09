@@ -3,16 +3,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search, Plus, X, DollarSign, Calendar, User, FileText,
+  Plus, X, DollarSign, Calendar, User, FileText,
   ChevronLeft, ChevronRight, Loader2, AlertTriangle, CreditCard,
-  Clock, CheckCircle2, XCircle, Ban, MessageCircle,
-  Camera, Printer, PenTool, Shield, Download,
+  Clock, CheckCircle2, XCircle, Ban, MessageCircle, Printer, PenTool, Download,
   ArrowUp, ArrowDown, Maximize2, Minimize2,
-  LayoutList, Columns3, MapPin, TrendingUp, Phone,
-  Navigation,
-} from "lucide-react";
+  LayoutList, Columns3, MapPin } from "lucide-react";
 import EmptyState from "@/components/admin/shared/EmptyState";
-import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Line, ComposedChart, PieChart, Pie, Cell } from "recharts";
+import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Line, ComposedChart } from "recharts";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import ClienteFormModal from "./clientes/ClienteFormModal";
@@ -467,8 +464,8 @@ export default function FiadosModule() {
   } | null>(null);
 
   // Mejora M2: Calendario de vencimientos state
-  const [calMes, setCalMes] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
-  const [calDiaSeleccionado, setCalDiaSeleccionado] = useState<string | null>(null);
+  const [_calMes, _setCalMes] = useState(() => { const d = new Date(); return { year: d.getFullYear(), month: d.getMonth() }; });
+  const [_calDiaSeleccionado, _setCalDiaSeleccionado] = useState<string | null>(null);
 
   // Mejora 3: Cobro masivo
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

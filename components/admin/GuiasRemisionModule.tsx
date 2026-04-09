@@ -5,10 +5,8 @@ import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
-  Truck, User, Calendar, Printer, MapPin, Hash, Package,
-  FileText, CheckCircle, XCircle, Filter, Download, Copy,
-  MessageCircle, ChevronDown, ChevronUp, Clock, Link2, RefreshCw,
-} from "lucide-react";
+  Truck, User, Calendar, Printer, MapPin, Package,
+  FileText, CheckCircle, XCircle, Filter, Copy, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -95,7 +93,7 @@ const STATUS_META: Record<GuiaStatus, { label: string; color: string; bg: string
   ANULADA:     { label: "Anulada",     color: "text-red-700 dark:text-red-400",         bg: "bg-red-100 dark:bg-red-900/30",         dot: "bg-red-500" },
 };
 
-const STATUS_ORDER: GuiaStatus[] = ["BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA"];
+const _STATUS_ORDER: GuiaStatus[] = ["BORRADOR", "EMITIDA", "EN_TRANSITO", "ENTREGADA"];
 
 const MOTIVOS = [
   "VENTA",
@@ -106,7 +104,7 @@ const MOTIVOS = [
   "OTROS",
 ];
 
-const PILL_COLORS: Record<string, { active: string; inactive: string }> = {
+const _PILL_COLORS: Record<string, { active: string; inactive: string }> = {
   "":          { active: "bg-[#00B4A6] text-white",  inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
   BORRADOR:    { active: "bg-gray-600 text-white",    inactive: "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400" },
   EMITIDA:     { active: "bg-blue-600 text-white",    inactive: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" },
@@ -147,7 +145,7 @@ function emptyItem(): DraftItem {
 
 // ── ValidationBadge ──────────────────────────────────────────────────────────
 
-function ValidationBadge({ status }: { status: "valid" | "invalid" | "empty" }) {
+function _ValidationBadge({ status }: { status: "valid" | "invalid" | "empty" }) {
   if (status === "empty") return null;
   return status === "valid"
     ? <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -209,7 +207,7 @@ function GuiaHoverRow({ children, preview }: { children: ReactNode; preview: Rea
 
 // ── OrderPickerCard ──────────────────────────────────────────────────────────
 
-function OrderPickerCard({ order, isSelected, onSelect }: {
+function _OrderPickerCard({ order, isSelected, onSelect }: {
   order: OrderSummary;
   isSelected: boolean;
   onSelect: () => void;
@@ -253,150 +251,9 @@ function OrderPickerCard({ order, isSelected, onSelect }: {
   );
 }
 
-// ── FilterPanel ──────────────────────────────────────────────────────────────
-
-function FilterPanel({ filters, onChange }: {
-  filters: AdvancedFilters;
-  onChange: (f: AdvancedFilters) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const hasActive = Object.values(filters).some(v => v.trim() !== "");
-  const activeCount = Object.values(filters).filter(v => v.trim() !== "").length;
-
-  return (
-    <div className="border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen(prev => !prev)}
-        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors text-sm font-semibold text-gray-700 dark:text-gray-300"
-      >
-        <span className="flex items-center gap-2">
-          <Filter className="h-4 w-4" />
-          Filtros avanzados
-          {hasActive && (
-            <span className="px-1.5 py-0.5 bg-[#00B4A6] text-white rounded-full text-[9px] font-bold">{activeCount}</span>
-          )}
-        </span>
-        {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 border-t border-gray-200 dark:border-white/10 bg-white dark:bg-card">
-              <div>
-                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Desde</label>
-                <input type="date" value={filters.from} onChange={e => onChange({ ...filters, from: e.target.value })}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Hasta</label>
-                <input type="date" value={filters.to} onChange={e => onChange({ ...filters, to: e.target.value })}
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">RUC transportista</label>
-                <input type="text" value={filters.transportistaRuc} onChange={e => onChange({ ...filters, transportistaRuc: e.target.value })} placeholder="20XXXXXXXXX"
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Punto de llegada</label>
-                <input type="text" value={filters.puntoLlegada} onChange={e => onChange({ ...filters, puntoLlegada: e.target.value })} placeholder="Ciudad o dirección"
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Placa vehículo</label>
-                <input type="text" value={filters.vehiculoPlaca} onChange={e => onChange({ ...filters, vehiculoPlaca: e.target.value })} placeholder="ABC-123"
-                  className="w-full px-2.5 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#00B4A6]/30" />
-              </div>
-              <div className="flex items-end">
-                <button type="button"
-                  onClick={() => onChange({ from: "", to: "", transportistaRuc: "", puntoLlegada: "", vehiculoPlaca: "" })}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors">
-                  Limpiar filtros
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-// ── AnularModal ──────────────────────────────────────────────────────────────
-
-function AnularModal({ guia, onConfirm, onCancel, loading }: {
-  guia: GuiaRemision;
-  onConfirm: (motivo: string) => void;
-  onCancel: () => void;
-  loading: boolean;
-}) {
-  const [motivo, setMotivo] = useState("");
-  const [error, setError] = useState("");
-
-  const handleConfirm = () => {
-    if (!motivo.trim()) { setError("El motivo es obligatorio"); return; }
-    onConfirm(motivo.trim());
-  };
-
-  return (
-    <>
-      <motion.div key="anular-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-60 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
-      <motion.div key="anular-modal" initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 10 }} transition={{ duration: 0.18, ease: "easeOut" }}
-        className="fixed inset-0 z-70 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-10 w-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900 dark:text-white text-base">Anular guía</h3>
-              <p className="text-xs text-gray-500 font-mono">{guia.numero}</p>
-            </div>
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-            Esta acción no se puede deshacer. La guía quedará como <strong>ANULADA</strong>.
-          </p>
-          <div className="mb-4">
-            <label className="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1.5">
-              Motivo de anulación <span className="text-red-500">*</span>
-            </label>
-            <textarea value={motivo} onChange={e => { setMotivo(e.target.value); if (error) setError(""); }} rows={3}
-              placeholder="Describe el motivo..."
-              className={cn(
-                "w-full px-3 py-2 rounded-xl border bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2",
-                error ? "border-red-400 focus:ring-red-400/30" : "border-gray-200 dark:border-white/10 focus:ring-[#00B4A6]/30"
-              )} />
-            {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
-          </div>
-          <div className="flex gap-2">
-            <button onClick={onCancel} disabled={loading}
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 transition-colors disabled:opacity-50">
-              Cancelar
-            </button>
-            <button onClick={handleConfirm} disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
-              Anular
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </>
-  );
-}
-
 // ── DashboardSection ─────────────────────────────────────────────────────────
 
-function DashboardSection({ resumen, loading }: { resumen: Resumen | null; loading: boolean }) {
+function _DashboardSection({ resumen, loading }: { resumen: Resumen | null; loading: boolean }) {
   if (loading) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -547,18 +404,18 @@ export default function GuiasRemisionModule() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<GuiaStatus | "">("");
-  const [advFilters, setAdvFilters] = useState<AdvancedFilters>({ from: "", to: "", transportistaRuc: "", puntoLlegada: "", vehiculoPlaca: "" });
+  const [advFilters, _setAdvFilters] = useState<AdvancedFilters>({ from: "", to: "", transportistaRuc: "", puntoLlegada: "", vehiculoPlaca: "" });
   const [page, setPage] = useState(1);
 
   // ── Dashboard ──
-  const [resumen, setResumen] = useState<Resumen | null>(null);
-  const [resumenLoading, setResumenLoading] = useState(true);
+  const [_resumen, setResumen] = useState<Resumen | null>(null);
+  const [_resumenLoading, setResumenLoading] = useState(true);
 
   // ── Detail panel ──
   const [selected, setSelected] = useState<GuiaRemision | null>(null);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [_actionLoading, setActionLoading] = useState(false);
   const [showAnular, setShowAnular] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
+  const [_copiedLink, setCopiedLink] = useState(false);
 
   // ── New form ──
   const [showNew, setShowNew] = useState(false);
@@ -586,15 +443,15 @@ export default function GuiasRemisionModule() {
   const [newItems, setNewItems] = useState<DraftItem[]>([emptyItem()]);
 
   // ── Order picker ──
-  const [orderSearch, setOrderSearch] = useState("");
-  const [orderResults, setOrderResults] = useState<OrderSummary[]>([]);
-  const [orderSearching, setOrderSearching] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState<OrderSummary | null>(null);
+  const [_orderSearch, setOrderSearch] = useState("");
+  const [_orderResults, setOrderResults] = useState<OrderSummary[]>([]);
+  const [_orderSearching, setOrderSearching] = useState(false);
+  const [_selectedOrder, setSelectedOrder] = useState<OrderSummary | null>(null);
   const orderSearchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Derived validations ──
-  const rucStatus = validateRuc(form.transportistaRuc);
-  const placaStatus = validatePlaca(form.vehiculoPlaca);
+  const _rucStatus = validateRuc(form.transportistaRuc);
+  const _placaStatus = validatePlaca(form.vehiculoPlaca);
 
   // ── Debounce search ──
   useEffect(() => {
@@ -668,7 +525,7 @@ export default function GuiasRemisionModule() {
   useEffect(() => { fetchResumen(); }, [fetchResumen]);
 
   // ── Order search ──
-  const searchOrders = useCallback((q: string) => {
+  const _searchOrders = useCallback((q: string) => {
     if (orderSearchTimer.current) clearTimeout(orderSearchTimer.current);
     if (!q.trim()) { setOrderResults([]); return; }
     orderSearchTimer.current = setTimeout(async () => {
@@ -686,7 +543,7 @@ export default function GuiasRemisionModule() {
     }, 300);
   }, []);
 
-  const handleSelectOrder = (order: OrderSummary) => {
+  const _handleSelectOrder = (order: OrderSummary) => {
     setSelectedOrder(order);
     setForm(prev => ({
       ...prev,
@@ -770,7 +627,7 @@ export default function GuiasRemisionModule() {
   const addItem = () => setNewItems(prev => [...prev, emptyItem()]);
 
   // ── Actions ──
-  const handleAnular = async (motivo: string) => {
+  const _handleAnular = async (motivo: string) => {
     if (!selected) return;
     setActionLoading(true);
     try {
@@ -811,7 +668,7 @@ export default function GuiasRemisionModule() {
     }
   };
 
-  const handleCopyReceptionLink = async () => {
+  const _handleCopyReceptionLink = async () => {
     if (!selected) return;
     const url = `buleje.pe/recepcion/guia/${selected.id}`;
     await navigator.clipboard.writeText(url).catch(() => {});
@@ -819,7 +676,7 @@ export default function GuiasRemisionModule() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const handleExport = () => {
+  const _handleExport = () => {
     const params = new URLSearchParams();
     if (statusFilter) params.set("status", statusFilter);
     if (advFilters.from) params.set("from", advFilters.from);
@@ -827,7 +684,7 @@ export default function GuiasRemisionModule() {
     window.open(`/api/guias-remision/exportar?${params}`, "_blank");
   };
 
-  const handlePrintSunat = (g: GuiaRemision) => {
+  const _handlePrintSunat = (g: GuiaRemision) => {
     const placa = getPlaca(g);
     const items = g.items ?? [];
     const pesoTotal = items.reduce((sum, it) => sum + it.cantidad * (it.pesoUnitario || 0), 0);

@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Plus, X, ChevronLeft, ChevronRight, Loader2, AlertTriangle,
   FileText, User, Calendar, Printer, Send, Check, XCircle, ShoppingCart,
-  Trash2, Hash, Percent, Bookmark, Copy, List, Clock, MessageCircle, RefreshCw, BarChart3,
-} from "lucide-react";
+  Trash2, Hash, Bookmark, Copy, List, Clock, MessageCircle, RefreshCw, BarChart3 } from "lucide-react";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
 import ClienteFormModal from "./clientes/ClienteFormModal";
@@ -1316,7 +1315,7 @@ export default function CotizacionesModule() {
                       );
                     }
                     if (diasEnviada > 3) {
-                      const phone = selected.customerId || "";
+                      const _phone = selected.customerId || "";
                       const waText = `Hola ${selected.clienteNombre}, te enviamos la cotización ${String(selected.numero).padStart(4, "0")} por S/${selected.total.toFixed(2)}. ¿Te interesa?`;
                       return (
                         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-3 space-y-2">

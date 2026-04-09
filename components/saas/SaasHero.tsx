@@ -305,7 +305,7 @@ export default function SaasHero() {
     if (mockupRef.current) mockupRef.current.style.transform = "perspective(1000px) rotateY(0deg) rotateX(0deg)";
   }, []);
 
-  const scrollToPlanes = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+  const _scrollToPlanes = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     document.getElementById("planes")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);

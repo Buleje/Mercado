@@ -240,7 +240,7 @@ export default function VentasHeatmap() {
               {HOURS.map((hour) => {
                 const cell = grid.get(`${dow}::${hour}`);
                 const avgTotal = cell?.avgTotal ?? 0;
-                const count = cell?.count ?? 0;
+                const _count = cell?.count ?? 0;
                 return (
                   <div
                     key={hour}

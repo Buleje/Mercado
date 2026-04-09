@@ -87,7 +87,7 @@ const BODY_BOLETA = {
 };
 
 // Body válido para factura (requiere RUC)
-const BODY_FACTURA = {
+const _BODY_FACTURA = {
   orderId: "order-001",
   tipoDoc: "01",
   clienteNombre: "Empresa SAC",

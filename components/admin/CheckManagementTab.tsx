@@ -3,9 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   Wallet, Download, Search, Eye, X,
-  Calendar, AlertTriangle, Clock,
-  ArrowUpDown, Ban, Loader2, RefreshCw, CheckCircle,
-} from "lucide-react";
+  Calendar, AlertTriangle, Clock, Ban, Loader2, RefreshCw, CheckCircle } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 // ── Types ─────────────────────────────────────────────────────────────────────

@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
       }
 
-      const { phone, points, description, orderId } = parsed.data;
+      const { phone, points } = parsed.data;
 
       // Verify customer exists
       const customer = await prisma.customer.findUnique({ where: { phone } });
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
       }
 
-      const { phone, points, description, orderId } = parsed.data;
+      const { phone, points } = parsed.data;
 
       const customer = await prisma.customer.findUnique({
         where: { phone },

@@ -9,8 +9,7 @@ import {
 import {
   ShoppingCart, Wallet, CreditCard, Scale, ClipboardList, HandCoins,
   Banknote, History, ArrowRight, Clock, BarChart3, Maximize2, X, RefreshCw, FileDown,
-  Brain, Activity, TrendingUp, Package, Users, AlertTriangle, DollarSign,
-} from "lucide-react";
+  Brain, Activity, Package, Users, AlertTriangle, DollarSign } from "lucide-react";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import { cn } from "@/lib/utils";
@@ -51,7 +50,7 @@ function EmptyChart({ message }: { message: string }) {
 // ── Sales Dashboard helpers ───────────────────────────────────────────────────
 const DASHBOARD_COLORS = ["#00B4A6", "#f97316", "#457b9d", "#9b5de5", "#e63946", "#2dd4bf"];
 
-function KpiCard({ label, value, color, onClick }: { label: string; value: string; color: string; onClick?: () => void }) {
+function _KpiCard({ label, value, color, onClick }: { label: string; value: string; color: string; onClick?: () => void }) {
   return (
     <div
       onClick={onClick}
@@ -203,7 +202,7 @@ function SalesDashboard({ cachedData, onDataLoaded, onNavigate }: { cachedData?:
   // Mejora 12: Click-to-filter en PieChart de metodos de pago
   const [pieFilter, setPieFilter] = useState<string | null>(null);
   // Mejora 14: Drag reorder sections
-  const [sectionOrder, setSectionOrder] = useState<string[]>(() => {
+  const [_sectionOrder, _setSectionOrder] = useState<string[]>(() => {
     try { return JSON.parse(localStorage.getItem("dashboard-section-order-ventas") || "[]"); } catch { return []; }
   });
   // Mejora 20: Comparar meses
@@ -886,7 +885,7 @@ const TABS = [
 ];
 
 // Índices tras los cuales insertar separador visual (entre grupos lógicos)
-const SEPARATOR_AFTER_INDICES = [1, 3, 4]; // Después de Dashboard (idx 1), Turnos (idx 3), Caja Registradora (idx 4)
+const _SEPARATOR_AFTER_INDICES = [1, 3, 4]; // Después de Dashboard (idx 1), Turnos (idx 3), Caja Registradora (idx 4)
 
 type TabId = typeof TABS[number]["id"];
 

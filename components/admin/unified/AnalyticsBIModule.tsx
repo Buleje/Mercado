@@ -3,11 +3,10 @@ import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  BarChart3, Flame, TrendingUp, RefreshCw,
+  BarChart3, Flame, TrendingUp,
   CreditCard, Users, Trophy, Package,
-  LayoutDashboard, DollarSign, ShoppingBasket,
-  Target, Clock, AlertTriangle,
-} from "lucide-react";
+  LayoutDashboard, DollarSign,
+  Target, Clock, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Sale, Customer } from "@/types/erp";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
@@ -28,7 +27,7 @@ const PeakHoursTab = dynamic(() => import("@/components/admin/PeakHoursTab"), { 
 const PredictiveAnalyticsTab = dynamic(() => import("@/components/admin/PredictiveAnalyticsTab"), { loading: S });
 
 // ── New Analytics PRO components (React.lazy) ────────────────────────────────
-const AnalyticsKPIBarV2 = lazy(() => import("@/components/admin/analytics/AnalyticsKPIBarV2"));
+const _AnalyticsKPIBarV2 = lazy(() => import("@/components/admin/analytics/AnalyticsKPIBarV2"));
 const SalesTrendChart = lazy(() => import("@/components/admin/analytics/SalesTrendChart"));
 const VentasHeatmap = lazy(() => import("@/components/admin/analytics/VentasHeatmap"));
 const MarginWaterfallChart = lazy(() => import("@/components/admin/analytics/MarginWaterfallChart"));
@@ -43,7 +42,7 @@ export type AnalyticsPeriod = "1d" | "7d" | "30d" | "90d" | "1y";
 type SectionId = "resumen" | "ventas" | "productos" | "clientes" | "predicciones";
 
 // ── Constants ────────────────────────────────────────────────────────────────
-const PERIODS: { key: AnalyticsPeriod; label: string }[] = [
+const _PERIODS: { key: AnalyticsPeriod; label: string }[] = [
   { key: "1d",  label: "Hoy" },
   { key: "7d",  label: "7 dias" },
   { key: "30d", label: "30 dias" },
@@ -51,7 +50,7 @@ const PERIODS: { key: AnalyticsPeriod; label: string }[] = [
   { key: "1y",  label: "1 ano" },
 ];
 
-const PERIOD_DISPLAY: Record<AnalyticsPeriod, string> = {
+const _PERIOD_DISPLAY: Record<AnalyticsPeriod, string> = {
   "1d": "Hoy",
   "7d": "Ultimos 7 dias",
   "30d": "Ultimos 30 dias",
@@ -101,7 +100,7 @@ function AnalyticsCard({ title, subtitle, icon: Icon, children, className }: {
 }
 
 // ── SectionHeader — encabezado de cada seccion ───────────────────────────────
-function SectionHeader({ title, description }: { title: string; description: string }) {
+function _SectionHeader({ title, description }: { title: string; description: string }) {
   return (
     <div className="mb-2">
       <h2 className="text-xl font-bold text-gray-900">{title}</h2>
@@ -557,10 +556,10 @@ function RFMWrapper({ refreshKey }: { refreshKey: number }) {
 // ══════════════════════════════════════════════════════════════════════════════
 export default function AnalyticsBIModule() {
   const [activeSection, setActiveSection] = useState<SectionId>("resumen");
-  const [period, setPeriod] = useState<AnalyticsPeriod>("30d");
+  const [period, _setPeriod] = useState<AnalyticsPeriod>("30d");
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const handleRefresh = useCallback(() => {
+  const _handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);
   }, []);
 

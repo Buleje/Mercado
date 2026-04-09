@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  ChevronLeft, ChevronRight, DollarSign,
-  AlertTriangle, Check, Clock, Calendar,
-} from "lucide-react";
+  ChevronLeft, ChevronRight,
+  AlertTriangle, Check, Clock, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type CalendarEntry = {

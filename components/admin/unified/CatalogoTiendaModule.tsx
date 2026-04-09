@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars -- pre-existing warnings pending dedicated cleanup sprint */
 import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import {
@@ -17,6 +16,8 @@ import {
   ComposedChart, Line, ScatterChart, Scatter, ZAxis,
   CartesianGrid, ReferenceLine,
 } from "recharts";
+import type { TooltipContentProps } from "recharts";
+import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 const S = () => (
   <div className="flex items-center justify-center py-12">
@@ -45,16 +46,18 @@ const TABS: AdminTab[] = [
 
 const CHART_COLORS = ['#00B4A6', '#f97316', '#457b9d', '#e63946', '#9b5de5', '#2dd4bf', '#264653', '#6b705c'];
 
-function ChartTooltip({ active, payload, label }: any) {
+type LocalChartTooltipProps = Partial<TooltipContentProps<ValueType, NameType>>;
+
+function ChartTooltip({ active, payload, label }: LocalChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3 min-w-[160px]">
-      <p className="text-xs font-semibold text-gray-900 mb-1">{label}</p>
-      {payload.map((p: any, i: number) => (
+      <p className="text-xs font-semibold text-gray-900 mb-1">{String(label ?? "")}</p>
+      {payload.map((p, i) => (
         <p key={i} className="text-xs flex justify-between gap-4">
-          <span className="text-gray-500">{p.name || p.dataKey}</span>
+          <span className="text-gray-500">{String(p.name ?? (typeof p.dataKey === "string" || typeof p.dataKey === "number" ? p.dataKey : ""))}</span>
           <span className="font-mono font-medium" style={{ color: p.color }}>
-            {typeof p.value === 'number' ? (p.value > 100 ? `S/ ${p.value.toLocaleString()}` : p.value.toFixed(1)) : p.value}
+            {typeof p.value === 'number' ? (p.value > 100 ? `S/ ${p.value.toLocaleString()}` : p.value.toFixed(1)) : String(p.value ?? "")}
           </span>
         </p>
       ))}
@@ -81,8 +84,26 @@ function CatFavStar({ id, favs }: { id: string; favs: ReturnType<typeof useCatFa
   return <button onClick={() => favs.toggle(id)} className="p-1 hover:bg-gray-100 rounded transition-colors text-sm">{favs.isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300">&#9734;</span>}</button>;
 }
 
+// ── Tipo de producto (desde /api/products) ─────────────────────────────────
+interface ProductRecord {
+  id?: string | number;
+  name?: string;
+  price?: number;
+  cost?: number;
+  costPrice?: number;
+  stock?: number;
+  categoryId?: string | number;
+  category?: string | { name?: string };
+  categoryName?: string;
+  imageUrl?: string;
+  image?: string;
+  minStock?: number;
+  status?: string;
+  active?: boolean;
+}
+
 function ProductsDashboard() {
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<ProductRecord[]>([]);
   const [loading, setLoading] = useState(true);
   // Mejora 12: Click-to-filter PieChart categorias
   const [pieFilter, setPieFilter] = useState<string | null>(null);
@@ -112,6 +133,13 @@ function ProductsDashboard() {
     return () => clearInterval(id);
   }, [lastRefresh]);
 
+  // Helper: extrae nombre de categoria (string o objeto)
+  const categoryName = (p: ProductRecord): string => {
+    if (typeof p.category === "string") return p.category;
+    if (p.category && typeof p.category === "object" && p.category.name) return p.category.name;
+    return p.categoryName || "Otros";
+  };
+
   /* ── KPIs ── */
   const kpis = useMemo(() => {
     const total = products.length;
@@ -119,11 +147,15 @@ function ProductsDashboard() {
     const sinStock = products.filter((p) => (p.stock || 0) === 0).length;
     const stockBajo = products.filter((p) => (p.stock || 0) > 0 && (p.stock || 0) <= (p.minStock || 5)).length;
     const precioAvg = total > 0 ? products.reduce((s, p) => s + (p.price || 0), 0) / total : 0;
-    const conCosto = products.filter((p) => p.costPrice > 0);
+    const conCosto = products.filter((p) => (p.costPrice ?? 0) > 0);
     const margenAvg = conCosto.length > 0
-      ? conCosto.reduce((s, p) => s + ((p.price - p.costPrice) / p.price) * 100, 0) / conCosto.length
+      ? conCosto.reduce((s, p) => {
+          const price = p.price || 0;
+          const costPrice = p.costPrice || 0;
+          return s + (price > 0 ? ((price - costPrice) / price) * 100 : 0);
+        }, 0) / conCosto.length
       : 0;
-    const cats = new Set(products.map((p) => p.category)).size;
+    const cats = new Set(products.map((p) => categoryName(p))).size;
     const sinImagen = products.filter((p) => !p.image).length;
     const sinCosto = products.filter((p) => !p.costPrice || p.costPrice === 0).length;
     return { total, conStock, sinStock, stockBajo, precioAvg, margenAvg, cats, sinImagen, sinCosto };
@@ -132,7 +164,10 @@ function ProductsDashboard() {
   /* ── Datos por categoría ── */
   const categoryData = useMemo(() => {
     const g: Record<string, number> = {};
-    products.forEach((p) => { g[p.category || "Otros"] = (g[p.category || "Otros"] || 0) + 1; });
+    products.forEach((p) => {
+      const cat = categoryName(p);
+      g[cat] = (g[cat] || 0) + 1;
+    });
     return Object.entries(g).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
   }, [products]);
 
@@ -140,7 +175,7 @@ function ProductsDashboard() {
   const inventoryByCat = useMemo(() => {
     const g: Record<string, number> = {};
     products.forEach((p) => {
-      const cat = p.category || "Otros";
+      const cat = categoryName(p);
       g[cat] = (g[cat] || 0) + (p.stock || 0) * (p.costPrice || p.price || 0);
     });
     return Object.entries(g).map(([name, value]) => ({ name, value: Math.round(value) })).sort((a, b) => b.value - a.value);
@@ -177,11 +212,15 @@ function ProductsDashboard() {
   /* ── Top 10 por valor en stock ── */
   const top10Stock = useMemo(() => {
     return [...products]
-      .map((p) => ({
-        name: (p.name || "").substring(0, 22),
-        valor: Math.round((p.stock || 0) * (p.costPrice || p.price || 0)),
-        margen: p.costPrice > 0 ? Math.round(((p.price - p.costPrice) / p.price) * 100) : 0,
-      }))
+      .map((p) => {
+        const price = p.price || 0;
+        const costPrice = p.costPrice || 0;
+        return {
+          name: (p.name || "").substring(0, 22),
+          valor: Math.round((p.stock || 0) * (costPrice || price)),
+          margen: costPrice > 0 && price > 0 ? Math.round(((price - costPrice) / price) * 100) : 0,
+        };
+      })
       .sort((a, b) => b.valor - a.valor)
       .slice(0, 10);
   }, [products]);
@@ -189,14 +228,18 @@ function ProductsDashboard() {
   /* ── Scatter data (margen vs precio) ── */
   const scatterData = useMemo(() => {
     return products
-      .filter((p) => p.costPrice > 0 && p.price > 0)
-      .map((p) => ({
-        name: (p.name || "").substring(0, 25),
-        precio: p.price,
-        margen: Math.round(((p.price - p.costPrice) / p.price) * 100),
-        stock: p.stock || 1,
-        costo: p.costPrice,
-      }));
+      .filter((p) => (p.costPrice ?? 0) > 0 && (p.price ?? 0) > 0)
+      .map((p) => {
+        const price = p.price || 0;
+        const costPrice = p.costPrice || 0;
+        return {
+          name: (p.name || "").substring(0, 25),
+          precio: price,
+          margen: price > 0 ? Math.round(((price - costPrice) / price) * 100) : 0,
+          stock: p.stock || 1,
+          costo: costPrice,
+        };
+      });
   }, [products]);
 
   /* ── Estado stock (gauge) ── */
@@ -289,7 +332,7 @@ function ProductsDashboard() {
           <ResponsiveContainer width="100%" height={280}>
             <RadialBarChart cx="50%" cy="50%" innerRadius="20%" outerRadius="90%" data={radialData} startAngle={180} endAngle={-180}>
               <RadialBar dataKey="value" background={{ fill: "rgba(0,0,0,0.05)" }} cornerRadius={6} />
-              <Legend iconSize={10} formatter={(value: any) => <span className="text-xs text-gray-600">{value}</span>} />
+              <Legend iconSize={10} formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
               <Tooltip content={<ChartTooltip />} />
             </RadialBarChart>
           </ResponsiveContainer>
@@ -311,7 +354,7 @@ function ProductsDashboard() {
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie data={inventoryByCat.slice(0, 8)} innerRadius={55} outerRadius={90} dataKey="value" paddingAngle={2} className="cursor-pointer"
-                label={({ name, percent }: any) => `${(name || "").substring(0, 12)} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                label={({ name, percent }: { name?: string; percent?: number }) => `${(name || "").substring(0, 12)} ${((percent ?? 0) * 100).toFixed(0)}%`}
                 onClick={(_: unknown, idx: number) => setPieFilter(prev => prev === inventoryByCat[idx]?.name ? null : inventoryByCat[idx]?.name ?? null)}
               >
                 {inventoryByCat.slice(0, 8).map((_, i) => (
@@ -340,13 +383,14 @@ function ProductsDashboard() {
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
             <XAxis dataKey="rango" tick={{ fontSize: 11 }} className="fill-gray-500" />
             <YAxis tick={{ fontSize: 11 }} className="fill-gray-500" />
-            <Tooltip content={({ active, payload, label }: any) => {
+            <Tooltip content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               const total = products.length || 1;
-              const val = payload[0]?.value || 0;
+              const rawVal = payload[0]?.value;
+              const val = typeof rawVal === "number" ? rawVal : 0;
               return (
                 <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3">
-                  <p className="text-xs font-semibold text-gray-900">{label}</p>
+                  <p className="text-xs font-semibold text-gray-900">{String(label ?? "")}</p>
                   <p className="text-xs text-gray-500 mt-1">{val} productos ({((val / total) * 100).toFixed(0)}%)</p>
                 </div>
               );
@@ -387,22 +431,26 @@ function ProductsDashboard() {
             <YAxis dataKey="margen" name="Margen %" tick={{ fontSize: 10 }} tickFormatter={(v) => `${v}%`} className="fill-gray-500" />
             <ZAxis dataKey="stock" range={[30, 300]} name="Stock" />
             <ReferenceLine y={20} stroke="#f97316" strokeDasharray="6 3" label={{ value: "Objetivo 20%", position: "right", fontSize: 10, fill: "#f97316" }} />
-            <Tooltip content={({ active, payload }: any) => {
+            <Tooltip content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
-              const d = payload[0]?.payload;
+              const d = payload[0]?.payload as
+                | { name?: string; precio?: number; costo?: number; margen?: number; stock?: number }
+                | undefined;
               if (!d) return null;
+              const margen = d.margen ?? 0;
               return (
                 <div className="bg-white rounded-xl shadow-lg border border-gray-100 px-4 py-3 min-w-[180px]">
                   <p className="text-xs font-bold text-gray-900 mb-1">{d.name}</p>
                   <p className="text-xs text-gray-500">Precio: <span className="font-mono font-medium text-gray-800">S/ {d.precio?.toFixed(2)}</span></p>
                   <p className="text-xs text-gray-500">Costo: <span className="font-mono font-medium text-gray-800">S/ {d.costo?.toFixed(2)}</span></p>
-                  <p className="text-xs text-gray-500">Margen: <span className={cn("font-mono font-medium", d.margen >= 25 ? "text-green-600" : d.margen >= 10 ? "text-amber-600" : "text-red-600")}>{d.margen}%</span></p>
+                  <p className="text-xs text-gray-500">Margen: <span className={cn("font-mono font-medium", margen >= 25 ? "text-green-600" : margen >= 10 ? "text-amber-600" : "text-red-600")}>{margen}%</span></p>
                   <p className="text-xs text-gray-500">Stock: <span className="font-mono font-medium text-gray-800">{d.stock}</span></p>
                 </div>
               );
             }} />
-            <Scatter data={scatterData} shape={(props: any) => {
-              const { cx, cy, payload } = props;
+            <Scatter data={scatterData} shape={(props: unknown) => {
+              const p = props as { cx?: number; cy?: number; payload?: { margen?: number; stock?: number } };
+              const { cx = 0, cy = 0, payload } = p;
               const m = payload?.margen ?? 0;
               const color = m >= 25 ? "#00B4A6" : m >= 10 ? "#f97316" : "#e63946";
               const r = Math.min(Math.max((payload?.stock || 1) * 0.4, 4), 14);
@@ -428,7 +476,7 @@ function ProductsDashboard() {
               ))}
             </Pie>
             <Tooltip content={<ChartTooltip />} />
-            <Legend iconType="circle" formatter={(value: any) => <span className="text-xs text-gray-600">{value}</span>} />
+            <Legend iconType="circle" formatter={(value) => <span className="text-xs text-gray-600">{value}</span>} />
             <text x="50%" y="70%" textAnchor="middle" dominantBaseline="central" className="fill-gray-900 text-2xl font-bold font-mono">
               {kpis.total}
             </text>

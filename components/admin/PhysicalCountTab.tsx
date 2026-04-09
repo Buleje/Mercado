@@ -89,7 +89,7 @@ function diff(row: CountRow): number {
 
 export default function PhysicalCountTab() {
   const [view, setView] = useState<"start" | "counting" | "reconcile" | "history">("start");
-  const [products, setProducts] = useState<Product[]>([]);
+  const [_products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(false);

@@ -15,7 +15,7 @@ const AICommandCenter = dynamic(
   { loading: S }
 );
 
-const MODULE_ID = "ai-command";
+const _MODULE_ID = "ai-command";
 
 export default function AICommandModule() {
   return (

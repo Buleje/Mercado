@@ -1,11 +1,10 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
-  Users, UserCheck, Star, TrendingDown,
-  Download, Trophy, AlertTriangle, BarChart3,
-} from "lucide-react";
+  Users, UserCheck, Star,
+  Download, AlertTriangle, BarChart3 } from "lucide-react";
 import { cn, exportToCSV } from "@/lib/utils";
 
 function fmt(n: number) { return `S/${n.toFixed(2)}`; }
@@ -41,12 +40,12 @@ function Card({ title, icon: Icon, children, action }: { title: string; icon: Re
   return (<div className="bg-white dark:bg-card rounded-xl border border-gray-100 dark:border-card-border p-4"><div className="flex items-center justify-between mb-4"><h3 className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-gray-400 dark:text-muted" style={{letterSpacing:"0.06em"}}><Icon className="h-3 w-3 text-gray-300 dark:text-muted" />{title.toUpperCase()}</h3>{action}</div>{children}</div>);
 }
 function Empty({ text = "Sin datos en este periodo" }: { text?: string }) { return <div className="py-8 text-center text-xs text-gray-300 dark:text-muted">{text}</div>; }
-function DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
+function _DBadge({ children, color }: { children: React.ReactNode; color: "green"|"red"|"amber"|"blue"|"purple"|"gray" }) {
   const m: Record<string,string> = { green:"bg-emerald-50 text-emerald-600", red:"bg-red-50 text-red-600", amber:"bg-amber-50 text-amber-600", blue:"bg-blue-50 text-blue-600", purple:"bg-purple-50 text-purple-600", gray:"bg-gray-100 text-gray-500" };
   return <span className={cn("inline-flex px-1.5 py-0.5 rounded text-xs font-semibold",m[color])}>{children}</span>;
 }
 
-export default function DashboardClientesSection({ st, expandAll, orders, customers, products, showCohortRetention, setShowCohortRetention, showCrossSell, setShowCrossSell, selectedProductForCrossSell, setSelectedProductForCrossSell, reviewFilter, setReviewFilter, reviews, period }: any) {
+export default function DashboardClientesSection({ st, expandAll, orders, customers, _products, showCohortRetention, setShowCohortRetention, _showCrossSell, _setShowCrossSell, _selectedProductForCrossSell, _setSelectedProductForCrossSell, reviewFilter, setReviewFilter, reviews, period }: any) {
   const [selectedClientPhone, setSelectedClientPhone] = useState<string | null>(null);
   return (
         <div className={cn("space-y-4", expandAll && "bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border p-4")}>

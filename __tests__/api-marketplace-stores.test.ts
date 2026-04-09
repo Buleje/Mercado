@@ -129,7 +129,7 @@ describe("GET /api/marketplace/stores", () => {
     mockStoreFindMany.mockResolvedValue([STORE_B]);
 
     const res = await GET(makeReq("https://host/api/marketplace/stores?category=Bebidas"));
-    const body = await res.json();
+    const _body = await res.json();
 
     expect(res.status).toBe(200);
     const callArgs = mockStoreFindMany.mock.calls[0][0];
@@ -140,7 +140,7 @@ describe("GET /api/marketplace/stores", () => {
     mockStoreFindMany.mockResolvedValue([STORE_A]);
 
     const res = await GET(makeReq("https://host/api/marketplace/stores?search=San+Martín"));
-    const body = await res.json();
+    const _body = await res.json();
 
     expect(res.status).toBe(200);
     const callArgs = mockStoreFindMany.mock.calls[0][0];

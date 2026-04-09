@@ -1,7 +1,7 @@
 ﻿"use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Bot, X, Activity, Bell, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bot, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";

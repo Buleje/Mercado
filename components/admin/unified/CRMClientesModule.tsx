@@ -1,6 +1,5 @@
 "use client";
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars -- pre-existing warnings pending dedicated cleanup sprint */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import {
@@ -76,32 +75,22 @@ function DashboardSkeleton() {
   );
 }
 
-// Mejora 5: Favoritos CRM
-function useCrmFavCharts(storageKey: string) {
-  const [favs, setFavs] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try { return JSON.parse(localStorage.getItem(storageKey) || "[]"); } catch { return []; }
-  });
-  const toggle = useCallback((id: string) => {
-    setFavs(prev => {
-      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      return next;
-    });
-  }, [storageKey]);
-  const isFav = useCallback((id: string) => favs.includes(id), [favs]);
-  return { favs, toggle, isFav };
-}
-function CrmFavStar({ id, favs }: { id: string; favs: ReturnType<typeof useCrmFavCharts> }) {
-  return (
-    <button onClick={() => favs.toggle(id)} className="p-1 hover:bg-gray-100 rounded transition-colors text-sm" title={favs.isFav(id) ? "Quitar de favoritos" : "Agregar a favoritos"}>
-      {favs.isFav(id) ? <span className="text-amber-400">&#9733;</span> : <span className="text-gray-300">&#9734;</span>}
-    </button>
-  );
+// ── Tipo de cliente (desde /api/customers) ─────────────────────────────────
+interface CustomerRecord {
+  id?: string | number;
+  name?: string;
+  fullName?: string;
+  phone?: string;
+  telefono?: string;
+  totalSpent?: number;
+  lastOrderAt?: string;
+  createdAt?: string;
+  orderCount?: number;
+  totalOrders?: number;
 }
 
 function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void }) {
-  const [customers, setCustomers] = useState<Record<string, any>[]>([]);
+  const [customers, setCustomers] = useState<CustomerRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterSegment, setFilterSegment] = useState<string | null>(null); // Mejora 16
   // Mejora 13: Expand chart
@@ -115,8 +104,6 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
   const [kpiMockChanges] = useState<number[]>(() =>
     Array.from({ length: 6 }, () => Math.round((Math.random() - 0.3) * 30))
   );
-  // Mejora 5: Favoritos
-  const crmFavs = useCrmFavCharts("fav-charts-crm");
 
   useEffect(() => {
     fetch("/api/customers")
@@ -300,15 +287,22 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
   ).length;
 
   // ── Pie label renderer ──
+  interface PieLabelProps {
+    cx?: number;
+    cy?: number;
+    midAngle?: number;
+    outerRadius?: number;
+    name?: string;
+    value?: number;
+  }
   const renderPieLabel = ({
-    cx,
-    cy,
-    midAngle,
-    _innerRadius,
-    outerRadius,
+    cx = 0,
+    cy = 0,
+    midAngle = 0,
+    outerRadius = 0,
     name,
-    value,
-  }: Record<string, any>) => {
+    value = 0,
+  }: PieLabelProps) => {
     const RADIAN = Math.PI / 180;
     const radius = outerRadius + 20;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -486,7 +480,7 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
                   dataKey="value"
                   label={renderPieLabel}
                   strokeWidth={2}
-                  onClick={(data: any) => setFilterSegment(data?.name === filterSegment ? null : data?.name ?? null)}
+                  onClick={(data: { name?: string } | undefined) => setFilterSegment(data?.name === filterSegment ? null : data?.name ?? null)}
                   className="cursor-pointer"
                 >
                   {segmentos.map((s, i) => (
@@ -696,8 +690,8 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
             const pm = new Date(now.getFullYear(), now.getMonth() - i - 1, 1);
             const ncm = new Date(cm.getFullYear(), cm.getMonth() + 1, 1);
             const npm2 = new Date(pm.getFullYear(), pm.getMonth() + 1, 1);
-            const prevIds = new Set(customers.filter((c: Record<string, any>) => c.lastOrderAt && new Date(c.lastOrderAt) >= pm && new Date(c.lastOrderAt) < npm2).map((c: Record<string, any>) => c.id || c.name));
-            const currIds = new Set(customers.filter((c: Record<string, any>) => c.lastOrderAt && new Date(c.lastOrderAt) >= cm && new Date(c.lastOrderAt) < ncm).map((c: Record<string, any>) => c.id || c.name));
+            const prevIds = new Set(customers.filter((c) => c.lastOrderAt && new Date(c.lastOrderAt) >= pm && new Date(c.lastOrderAt) < npm2).map((c) => c.id || c.name));
+            const currIds = new Set(customers.filter((c) => c.lastOrderAt && new Date(c.lastOrderAt) >= cm && new Date(c.lastOrderAt) < ncm).map((c) => c.id || c.name));
             const ret = [...prevIds].filter(id => currIds.has(id)).length;
             retData.push({ mes: monthNames[cm.getMonth()], retencion: prevIds.size > 0 ? Math.round((ret / prevIds.size) * 100) : 0 });
           }

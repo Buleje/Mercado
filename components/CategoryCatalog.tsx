@@ -402,7 +402,7 @@ export default function CategoryCatalog({
   // useStoreProducts NUNCA cae en fallback a data/products
   // Si el tenant no tiene productos, retorna [] — empty state correcto
   const isLoading = isStoreLoading;
-  const isError = false;
+  const _isError = false;
 
   // Only products for this category (solo productos reales del tenant)
   const categoryProducts = useMemo(

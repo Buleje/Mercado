@@ -209,7 +209,7 @@ export async function chatCompletion(
 // delega a lib/llm-router). Mantenida solo por si hay callers directos
 // desconocidos. Eliminar en sesión de limpieza futura.
 
-async function callOpenAICompatible(
+async function _callOpenAICompatible(
   provider: AIProviderConfig,
   messages: AIChatMessage[],
   maxTokens: number,
@@ -249,7 +249,7 @@ async function callOpenAICompatible(
 // ── Google Gemini call ─────────────────────────────────────────────────────
 // @deprecated 2026-04-06 — ver nota en callOpenAICompatible arriba.
 
-async function callGoogleGemini(
+async function _callGoogleGemini(
   provider: AIProviderConfig,
   messages: AIChatMessage[],
   maxTokens: number,

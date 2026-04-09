@@ -5,15 +5,13 @@ import dynamic from "next/dynamic";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   Trash2, Plus, ChevronDown, ChevronUp, Package,
-  X, Truck, FileText, ScanBarcode, History,
-  TrendingUp, BarChart3, Download, PackageCheck, Copy, RotateCcw, ShoppingBag,
-} from "lucide-react";
+  X, FileText, ScanBarcode, History,
+  TrendingUp, BarChart3, Download, PackageCheck, Copy, ShoppingBag } from "lucide-react";
 import type { DbPurchaseOrder, DbSupplier, DbProduct, PurchaseStatus } from "@/lib/jsondb";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
 import EmptyState from "@/components/admin/shared/EmptyState";
 import TableSkeleton from "@/components/admin/shared/TableSkeleton";
-import PurchaseOrderPDF from "./PurchaseOrderPDF";
 import OCPDFExport from "./compras/OCPDFExport";
 import SupplierPriceComparison, { QuotationComparator } from "./compras/SupplierPriceComparison";
 
@@ -287,7 +285,7 @@ export default function PurchaseOrdersTab() {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
   };
 
-  const receiveOrder = async (id: string) => {
+  const _receiveOrder = async (id: string) => {
     await updateStatus(id, "recibido");
     const po = orders.find(o => o.id === id);
     if (po) {

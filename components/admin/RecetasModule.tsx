@@ -294,9 +294,9 @@ export default function RecetasModule() {
   const [producirError, setProducirError] = useState<string | null>(null);
 
   // Produccion tab
-  const [lotes, setLotes] = useState<ProduccionLote[]>([]);
-  const [lotesLoading, setLotesLoading] = useState(false);
-  const [lotesPage, setLotesPage] = useState(1);
+  const [lotes, _setLotes] = useState<ProduccionLote[]>([]);
+  const [_lotesLoading, _setLotesLoading] = useState(false);
+  const [lotesPage, _setLotesPage] = useState(1);
 
   // ── Fetch recetas ──────────────────────────────────────────────────────────
 
@@ -452,14 +452,14 @@ export default function RecetasModule() {
 
   // ── Calculated cost for new receta preview ─────────────────────────────────
 
-  const estimatedCost = newIngredientes.reduce((sum, i) => {
+  const _estimatedCost = newIngredientes.reduce((sum, i) => {
     const c = parseFloat(i.cantidad);
     return sum + (isNaN(c) ? 0 : c);
   }, 0);
 
   // Lotes — totales
-  const lotesTotalPages = Math.max(1, Math.ceil(lotes.length / PER_PAGE));
-  const lotesPaginated = lotes.slice((lotesPage - 1) * PER_PAGE, lotesPage * PER_PAGE);
+  const _lotesTotalPages = Math.max(1, Math.ceil(lotes.length / PER_PAGE));
+  const _lotesPaginated = lotes.slice((lotesPage - 1) * PER_PAGE, lotesPage * PER_PAGE);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -1213,7 +1213,7 @@ function ProduccionTab() {
       try {
         const res = await fetch("/api/recetas");
         if (!res.ok) throw new Error();
-        const recetas: Receta[] = await res.json();
+        const _recetas: Receta[] = await res.json();
         // Intentar obtener lotes de produccion
         try {
           const lotesRes = await fetch("/api/produccion");

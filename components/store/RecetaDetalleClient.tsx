@@ -69,8 +69,8 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [showConfetti, setShowConfetti] = useState(false);
-  const [porciones, setPorciones] = useState<number>(4);
-  const [porcionesBase, setPorcionesBase] = useState<number>(4);
+  const [_porciones, _setPorciones] = useState<number>(4);
+  const [_porcionesBase, _setPorcionesBase] = useState<number>(4);
 
   // Load recetas
   useEffect(() => {

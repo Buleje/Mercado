@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   DollarSign, AlertTriangle, Package, PackageX, Timer, Truck,
   Sparkles, Gift, ChevronRight, Zap, TrendingDown, Clock,
