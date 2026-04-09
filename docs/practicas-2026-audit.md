@@ -4,13 +4,15 @@
 **Fuente:** `Mejores_Practicas_Codigo_2026.xlsx` (48 prácticas: 36 básicas + 12 avanzadas)
 **Resultado real:** 32 ✅ aplicadas / 9 ⚠️ parciales / 3 ❌ faltan / 4 ➖ N/A
 
-### Δ del turno 2026-04-08 (audit next-phase)
+### Δ del turno 2026-04-08 (audit next-phase + proxy refactor)
 
 - **#12 CI/CD con gates reales**: ⚠️ → ✅ — `ci.yml` quitó `continue-on-error: true` de lint y tests, agregó step `tsc --noEmit` dedicado. ADR 008 ahora es ejecutable.
 - **#25 Pre-commit hooks bloqueantes**: ⚠️ → ✅ — `.husky/pre-commit` corre `lint-staged` + `tsc --noEmit` con exit 1. TD-026 cerrado.
 - **#28 Documentación de arquitectura**: ⚠️ → ✅ — creados `docs/ARCHITECTURE.md`, `docs/ONBOARDING.md`, `docs/plans/README.md` + template, `docs/instructions-index.md`.
+- **#2 SOLID (SRP)**: ⚠️ → ✅ — `proxy.ts` 398 → 117 líneas split en 6 módulos (`lib/middleware/*`). TD-013 cerrado. ADR 014.
+- **#3 Arquitectura por dominio**: ⚠️ → ✅ — `lib/middleware/` ahora es una carpeta explícita con módulos focalizados; ya no hay "god file" de middleware.
 - **Safety snapshot WIP**: 288 archivos del turno anterior guardados en branch `wip/marketplace-modals-safety-2026-04-08` antes de tocar nada más.
-- Score solido: **~82% → ~87%** (+5pp)
+- Score solido: **~82% → ~90%** (+8pp)
 
 ### Δ del turno 2026-04-07
 
