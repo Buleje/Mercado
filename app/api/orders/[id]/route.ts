@@ -42,7 +42,7 @@ export async function GET(
 
   const { id } = await params;
   try {
-    const order = await OrdersDB.getById(id);
+    const order = await OrdersDB.getById(auth.tenantId, id);
     if (!order) return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
     return NextResponse.json(order);
   } catch (e) {
@@ -74,7 +74,7 @@ export async function PATCH(
   }
 
   try {
-    const existing = await OrdersDB.getById(id);
+    const existing = await OrdersDB.getById(auth.tenantId, id);
     if (!existing) return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
 
     // Validate status transition if attempting to change status
@@ -88,7 +88,7 @@ export async function PATCH(
       }
     }
 
-    const updated = await OrdersDB.update(id, parsed.data as Partial<DbOrder>);
+    const updated = await OrdersDB.update(auth.tenantId, id, parsed.data as Partial<DbOrder>);
     if (!updated) return NextResponse.json({ error: "Error al actualizar" }, { status: 500 });
 
     const statusChanged = parsed.data.status != null && parsed.data.status !== existing.status;
@@ -282,7 +282,7 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    await OrdersDB.delete(id);
+    await OrdersDB.delete(auth.tenantId, id);
     const reqId = req.headers.get("x-request-id") ?? undefined;
     logActivity("Eliminar", "pedido", `Pedido ${id.slice(-6)} eliminado`, id, "admin", reqId).catch(() => {});
     invalidate(`dashboard:${auth.tenantId}`);

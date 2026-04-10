@@ -201,8 +201,16 @@ export const OrdersDB = {
     return { orders: items.map(mapOrder), nextCursor, total };
   },
 
-  async getById(id: string): Promise<DbOrder | null> {
-    const row = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+  /**
+   * Fetch a single order scoped to the given tenant.
+   * Returns null if the order does not exist OR belongs to a different tenant.
+   * Do not distinguish the two cases to the caller — prevents oracle attacks.
+   */
+  async getById(tenantId: string, id: string): Promise<DbOrder | null> {
+    const row = await prisma.order.findFirst({
+      where: { id, tenantId },
+      include: { items: true },
+    });
     return row ? mapOrder(row) : null;
   },
   async getByCustomerPhone(phone: string): Promise<DbOrder[]> {
@@ -372,8 +380,13 @@ export const OrdersDB = {
 
     return mappedOrder;
   },
-  async update(id: string, patch: Partial<DbOrder>): Promise<DbOrder | null> {
-    const existing = await prisma.order.findUnique({ where: { id } });
+  /**
+   * Update an order scoped to the given tenant.
+   * Returns null if the order does not exist OR belongs to a different tenant.
+   */
+  async update(tenantId: string, id: string, patch: Partial<DbOrder>): Promise<DbOrder | null> {
+    // Tenant-scoped existence check — returns null for cross-tenant IDs
+    const existing = await prisma.order.findFirst({ where: { id, tenantId } });
     if (!existing) return null;
     const data: Record<string, unknown> = {};
     if (patch.status) data.status = patch.status;
@@ -392,8 +405,13 @@ export const OrdersDB = {
     const row = await prisma.order.update({ where: { id }, data, include: { items: true } });
     return mapOrder(row);
   },
-  async delete(id: string): Promise<void> {
-    await prisma.order.delete({ where: { id } }).catch(() => {});
+  /**
+   * Delete an order scoped to the given tenant.
+   * Silently no-ops when the order does not exist OR belongs to a different tenant.
+   * Uses deleteMany (does not throw on zero matches) instead of delete.
+   */
+  async delete(tenantId: string, id: string): Promise<void> {
+    await prisma.order.deleteMany({ where: { id, tenantId } }).catch(() => {});
   },
 
   /**

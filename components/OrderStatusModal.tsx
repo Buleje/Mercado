@@ -107,9 +107,26 @@ function getStoredOrder(): TrackedOrder | null {
   }
 }
 
+/** Reads customerPhone from bsm-last-order so the public lookup can prove ownership. */
+function getStoredPhone(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem("bsm-last-order");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { customerPhone?: string };
+    return parsed.customerPhone ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchLiveStatus(orderId: string): Promise<TrackedOrder["status"] | null> {
   try {
-    const res = await fetch(`/api/orders/${orderId}/public`, { cache: "no-store" });
+    const phone = getStoredPhone();
+    const url = phone
+      ? `/api/orders/${orderId}/public?phone=${encodeURIComponent(phone)}`
+      : `/api/orders/${orderId}/public`;
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
       // Order no longer exists on the server (purged, expired, or never persisted) —
       // clear stale tracking data so we stop hammering a dead endpoint.

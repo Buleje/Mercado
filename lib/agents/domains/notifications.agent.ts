@@ -37,7 +37,8 @@ async function sendOrderUpdate(
     };
   }
 
-  const order = await OrdersDB.getById(orderId);
+  // Scope to the task's tenant — prevents cross-tenant notifications (HOTFIX-002)
+  const order = await OrdersDB.getById(task.tenantId, orderId);
   if (!order) {
     return { success: false, error: `Pedido no encontrado: ${orderId}` };
   }

@@ -125,7 +125,7 @@ export function useCheckoutSubmit({
         const data = (await res.json()) as { id: string };
         dispatch({ type: "SET_UI", patch: { orderId: data.id } });
 
-        saveLastOrder(data.id, items, finalTotal);
+        saveLastOrder(data.id, items, finalTotal, effective.phone);
 
         cartActions.clear();
         cartActions.closeCart();

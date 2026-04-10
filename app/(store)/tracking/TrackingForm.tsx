@@ -198,6 +198,7 @@ function OrderResult({ order }: { order: PublicOrder }) {
 
 export default function TrackingForm() {
   const [query, setQuery]   = useState("");
+  const [phone, setPhone]   = useState("");
   const [order, setOrder]   = useState<PublicOrder | null>(null);
   const [error, setError]   = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -205,16 +206,24 @@ export default function TrackingForm() {
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const id = query.trim();
+    const phoneTrim = phone.trim();
     if (!id) return;
+    if (!phoneTrim) {
+      setError("Ingresa tu telefono para proteger tu privacidad.");
+      return;
+    }
 
     setOrder(null);
     setError(null);
 
     startTransition(async () => {
       try {
-        const res = await fetch(`/api/orders/${encodeURIComponent(id)}/public`);
+        // HOTFIX-003: the public endpoint verifies the caller's phone against
+        // the order's customerPhone — mismatches return 404 on purpose.
+        const url = `/api/orders/${encodeURIComponent(id)}/public?phone=${encodeURIComponent(phoneTrim)}`;
+        const res = await fetch(url);
         if (res.status === 404) {
-          setError("No encontramos ese pedido. Verifica el numero e intenta de nuevo.");
+          setError("No encontramos ese pedido. Verifica el numero y telefono e intenta de nuevo.");
           return;
         }
         if (!res.ok) {
@@ -231,12 +240,25 @@ export default function TrackingForm() {
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="flex gap-2">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Numero de pedido (ej. abc12345)"
+          required
+          className={cn(
+            "flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground",
+            "focus:outline-none focus:ring-2 focus:ring-[#00B4A6]",
+            "dark:bg-card dark:border-border dark:text-foreground dark:placeholder:text-muted",
+          )}
+        />
+        <input
+          type="tel"
+          inputMode="numeric"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="Tu telefono"
           required
           className={cn(
             "flex-1 rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground",

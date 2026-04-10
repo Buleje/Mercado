@@ -72,10 +72,10 @@ async function deliverySchedule(
 
   const slots = await DeliverySlotsDB.getByDate(date);
 
-  // Enrich with order data
+  // Enrich with order data — scope to the task's tenant (HOTFIX-002)
   const enrichedSlots = await Promise.all(
     slots.map(async (slot) => {
-      const order = await OrdersDB.getById(slot.orderId);
+      const order = await OrdersDB.getById(task.tenantId, slot.orderId);
       return {
         slotId: slot.id,
         orderId: slot.orderId,

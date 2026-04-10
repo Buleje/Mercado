@@ -78,7 +78,7 @@ async function executeAction(action: { type: string; payload: Record<string, unk
       if (!orderId || !validStatuses.includes(status)) {
         return { ok: false, message: `orderId y status válido (${validStatuses.join(", ")}) son requeridos.` };
       }
-      const order = await OrdersDB.update(orderId, { status: status as "pendiente" });
+      const order = await OrdersDB.update(tenantId, orderId, { status: status as "pendiente" });
       if (!order) return { ok: false, message: `Pedido ${orderId} no encontrado.` };
       return { ok: true, message: `Pedido ${orderId} actualizado a "${status}".` };
     }

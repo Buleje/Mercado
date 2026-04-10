@@ -139,11 +139,18 @@ export async function POST(req: NextRequest) {
     return rateLimitResponse;
   }
 
+  // ── Tenant resolution ───────────────────────────────────────────────────────
+  // HOTFIX-004: must run BEFORE the idempotency lookup so the key is scoped
+  // by tenant — otherwise tenant B can replay tenant A's key and leak the order.
+  const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
+  const tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
+
   // ── Idempotency: return existing order if same key is reused ────────────────
+  // HOTFIX-004: scoped by tenantId — two tenants can use the same key safely.
   const idempotencyKey = req.headers.get("x-idempotency-key")?.slice(0, 128) || undefined;
   if (idempotencyKey) {
     const existing = await prisma.order.findFirst({
-      where: { idempotencyKey },
+      where: { idempotencyKey, tenantId },
     }).catch(() => null);
     if (existing) {
       // Duplicate request — return the already-created order with 200
@@ -151,10 +158,6 @@ export async function POST(req: NextRequest) {
     }
   }
   // ─────────────────────────────────────────────────────────────────────────────
-
-  // ── Tenant resolution & plan limit ──────────────────────────────────────────
-  const rawTenantId = req.headers.get("x-tenant-id") ?? "main";
-  const tenantId = (await resolveTenantSlug(rawTenantId)) ?? "main";
 
   // Fetch tenant plan and enforce maxOrdersPerMonth
   const tenantRow = await prisma.tenant.findFirst({ where: { OR: [{ id: tenantId }, { slug: tenantId }] }, select: { plan: true } });
@@ -192,9 +195,42 @@ export async function POST(req: NextRequest) {
     }
     const body = parsed.data;
 
-    // â”€â”€ Server-side total recomputation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Prevents price manipulation: always compute from item prices Ã— quantities
-    const itemsTotal = body.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    // ── HOTFIX-001: Server-authoritative pricing ────────────────────────────
+    // NEVER trust body.items[i].price — attacker can send price=0.01 and have
+    // the server persist the manipulated total. Resolve the selling price AND
+    // the COGS straight from the DB, scoped by tenantId so items from another
+    // tenant are rejected. Reject any order whose productId is deleted,
+    // cross-tenant or outright fake.
+    const productIds = body.items.map(i => i.id);
+    const serverPriceMap = new Map<number, number>();
+    const costMap = new Map<number, number>();
+    if (productIds.length > 0) {
+      const products = await prisma.product.findMany({
+        where: { tenantId, id: { in: productIds } },
+        select: { id: true, price: true, costPrice: true },
+      });
+      for (const p of products) {
+        const priceNum = toNumOrZero(p.price);
+        const costNum = toNumOrZero(p.costPrice);
+        serverPriceMap.set(p.id, priceNum);
+        costMap.set(p.id, costNum || priceNum * 0.7);
+      }
+    }
+    for (const i of body.items) {
+      if (!serverPriceMap.has(i.id)) {
+        return NextResponse.json(
+          { error: "invalid_product", productId: i.id },
+          { status: 400 },
+        );
+      }
+    }
+
+    // ── Server-side total recomputation ─────────────────────────────────────
+    // Always computed from DB prices × quantities — never from the client.
+    const itemsTotal = body.items.reduce(
+      (sum, i) => sum + (serverPriceMap.get(i.id) ?? 0) * i.quantity,
+      0,
+    );
 
     // Re-verify coupon server-side when code is present
     let serverCouponDiscount = 0;
@@ -274,23 +310,12 @@ export async function POST(req: NextRequest) {
 
     const now = new Date().toISOString();
 
-    // Look up costPrice for each product to capture COGS at order time
-    // TD-018: product.costPrice y product.price son Decimal
-    const productIds = body.items.map(i => i.id).filter(id => id > 0);
-    const costMap = new Map<number, number>();
-    if (productIds.length > 0) {
-      const products = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, costPrice: true, price: true } });
-      for (const p of products) {
-        const costNum = toNumOrZero(p.costPrice);
-        const priceNum = toNumOrZero(p.price);
-        costMap.set(p.id, costNum || priceNum * 0.7);
-      }
-    }
-
+    // HOTFIX-001: price comes from serverPriceMap (DB), NOT body.items[i].price.
+    // costMap was already populated above from the same authoritative query.
     const orderItems = body.items.map(i => ({
       id: i.id,
       name: i.name,
-      price: i.price,
+      price: serverPriceMap.get(i.id) ?? 0,
       costPrice: costMap.get(i.id),
       quantity: i.quantity,
       unit: i.unit ?? "und",
