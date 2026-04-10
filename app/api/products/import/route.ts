@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { requireAdmin } from "@/lib/require-admin";
 import { ProductsDB } from "@/lib/db/products.db";
 import { logActivity } from "@/lib/activity-logger";
@@ -81,6 +81,48 @@ function toNumber(val: unknown): number | undefined {
   return isNaN(n) ? undefined : n;
 }
 
+/**
+ * Lee un workbook de exceljs y devuelve filas como objetos {header: value}.
+ * Toma la primera hoja, asume que la primera fila son headers.
+ */
+function workbookToJson(workbook: ExcelJS.Workbook): Record<string, unknown>[] {
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return [];
+
+  const rows: Record<string, unknown>[] = [];
+  let headers: string[] = [];
+
+  sheet.eachRow({ includeEmpty: false }, (row: ExcelJS.Row, rowNumber: number) => {
+    const values = row.values as unknown[];
+    // exceljs values[] es 1-indexed; index 0 es siempre undefined
+    const cells = values.slice(1).map((v) => {
+      if (v === null || v === undefined) return "";
+      // Si es objeto rich-text de exceljs, sacar el texto plano
+      if (typeof v === "object" && "richText" in (v as object)) {
+        const rt = (v as { richText: { text: string }[] }).richText;
+        return rt.map((r) => r.text).join("");
+      }
+      // Si es objeto formula, usar el resultado
+      if (typeof v === "object" && "result" in (v as object)) {
+        return (v as { result: unknown }).result ?? "";
+      }
+      return v;
+    });
+
+    if (rowNumber === 1) {
+      headers = cells.map((c) => String(c ?? ""));
+    } else {
+      const obj: Record<string, unknown> = {};
+      for (let i = 0; i < headers.length; i++) {
+        obj[headers[i]] = cells[i] ?? "";
+      }
+      rows.push(obj);
+    }
+  });
+
+  return rows;
+}
+
 // ── Handler ────────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -105,16 +147,20 @@ export async function POST(req: NextRequest) {
       size: (file as File).size,
     });
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const workbook = XLSX.read(buffer, { type: "buffer" });
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = new ExcelJS.Workbook();
+    // exceljs internamente acepta cualquier dato binario (Buffer, ArrayBuffer,
+    // Uint8Array) via toBuffer(), pero sus @types exportan la firma vieja
+    // `load(buffer: Buffer)` que choca con el `Buffer<ArrayBufferLike>` del
+    // @types/node reciente. Cast pragmático para evitar el mismatch estructural.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await workbook.xlsx.load(Buffer.from(arrayBuffer) as any);
 
-    const sheetName = workbook.SheetNames[0];
-    if (!sheetName) {
+    if (workbook.worksheets.length === 0) {
       return NextResponse.json({ error: "El archivo no contiene hojas" }, { status: 400 });
     }
 
-    const sheet = workbook.Sheets[sheetName];
-    const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+    const rawRows = workbookToJson(workbook);
 
     if (rawRows.length === 0) {
       logger.warn("[products/import] Archivo vacío", { requestId, user: auth.username });
@@ -245,24 +291,32 @@ export async function GET(req: NextRequest) {
     },
   ];
 
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(template);
-  // Ancho de columnas
-  ws["!cols"] = [
-    { wch: 30 }, // nombre
-    { wch: 15 }, // categoria
-    { wch: 10 }, // precio
-    { wch: 12 }, // precio_costo
-    { wch: 8 },  // stock
-    { wch: 12 }, // stock_minimo
-    { wch: 10 }, // unidad
-    { wch: 18 }, // codigo_barras
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Bodega San Martin";
+  workbook.created = new Date();
+  const worksheet = workbook.addWorksheet("Productos");
+
+  worksheet.columns = [
+    { header: "nombre", key: "nombre", width: 30 },
+    { header: "categoria", key: "categoria", width: 15 },
+    { header: "precio", key: "precio", width: 10 },
+    { header: "precio_costo", key: "precio_costo", width: 12 },
+    { header: "stock", key: "stock", width: 8 },
+    { header: "stock_minimo", key: "stock_minimo", width: 12 },
+    { header: "unidad", key: "unidad", width: 10 },
+    { header: "codigo_barras", key: "codigo_barras", width: 18 },
   ];
-  XLSX.utils.book_append_sheet(wb, ws, "Productos");
 
-  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+  // Estilizar header
+  worksheet.getRow(1).font = { bold: true };
 
-  return new Response(buf, {
+  for (const row of template) {
+    worksheet.addRow(row);
+  }
+
+  const buf = await workbook.xlsx.writeBuffer();
+
+  return new Response(buf as ArrayBuffer, {
     headers: {
       "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "Content-Disposition": 'attachment; filename="plantilla-productos.xlsx"',
