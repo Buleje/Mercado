@@ -1,0 +1,112 @@
+# slo.yaml — Service Level Objectives para Bodega San Martin
+# Ref: ADR-034 (SLOs Operational Contract)
+# Ultima actualizacion: 2026-04-09
+
+slos:
+  - name: checkout_success_rate
+    description: "Porcentaje de checkouts que completan exitosamente sin error 5xx ni timeout"
+    sentry_query: "event.type:transaction transaction:/api/orders/create !http.status_code:5*"
+    otel_metric: "checkout.success.rate"
+    target: 0.995
+    window_days: 30
+    error_budget_calculated: "21 min downtime/month (0.5% of 30d = 216 min, ~21 min degraded service)"
+    owner_agent: "sre-observability"
+    alerting:
+      thresholds:
+        - level: 50
+          description: "50% del error budget consumido"
+          action: "notify-slack"
+          severity: "info"
+        - level: 75
+          description: "75% del error budget consumido"
+          action: "notify-slack + page-oncall"
+          severity: "warning"
+        - level: 90
+          description: "90% del error budget consumido — deploy gate activado"
+          action: "block-deploys + page-oncall"
+          severity: "critical"
+        - level: 100
+          description: "100% del error budget agotado — freeze total"
+          action: "block-deploys + incident-channel + page-lead"
+          severity: "exhausted"
+
+  - name: api_p99_latency
+    description: "Latencia P99 de todas las APIs debe ser menor a 500ms"
+    sentry_query: "event.type:transaction p99(transaction.duration):<500"
+    otel_metric: "http.server.request.duration.p99"
+    target: 0.999
+    window_days: 7
+    error_budget_calculated: "0.1% slow requests (max ~604 requests of 604,800 in 7d at 1rps)"
+    owner_agent: "performance-engineer"
+    alerting:
+      thresholds:
+        - level: 50
+          description: "50% del error budget consumido"
+          action: "notify-slack"
+          severity: "info"
+        - level: 75
+          description: "75% del error budget consumido"
+          action: "notify-slack + performance-review"
+          severity: "warning"
+        - level: 90
+          description: "90% del error budget consumido — deploy gate activado"
+          action: "block-deploys + page-oncall"
+          severity: "critical"
+        - level: 100
+          description: "100% del error budget agotado — freeze total"
+          action: "block-deploys + incident-channel + page-lead"
+          severity: "exhausted"
+
+  - name: boleta_sunat_success
+    description: "Porcentaje de boletas/facturas enviadas exitosamente a SUNAT sin rechazo"
+    sentry_query: "event.type:transaction transaction:/api/sunat/boleta status:ok"
+    otel_metric: "sunat.boleta.success.rate"
+    target: 0.999
+    window_days: 30
+    error_budget_calculated: "4 failures per 1000 boletas (0.1% failure rate over 30d window)"
+    owner_agent: "integration-specialist"
+    alerting:
+      thresholds:
+        - level: 50
+          description: "50% del error budget consumido — 2+ fallos de 1000"
+          action: "notify-slack"
+          severity: "info"
+        - level: 75
+          description: "75% del error budget consumido — 3+ fallos de 1000"
+          action: "notify-slack + review-sunat-logs"
+          severity: "warning"
+        - level: 90
+          description: "90% del error budget consumido — deploy gate activado"
+          action: "block-deploys + page-oncall + sunat-audit"
+          severity: "critical"
+        - level: 100
+          description: "100% del error budget agotado — freeze total"
+          action: "block-deploys + incident-channel + page-lead"
+          severity: "exhausted"
+
+  - name: whatsapp_delivery
+    description: "Porcentaje de mensajes WhatsApp entregados exitosamente al destinatario"
+    sentry_query: "event.type:transaction transaction:/api/whatsapp/send status:delivered"
+    otel_metric: "whatsapp.message.delivery.rate"
+    target: 0.98
+    window_days: 30
+    error_budget_calculated: "14 hrs degraded/month (2% of 30d = 14.4 hrs allowed degradation)"
+    owner_agent: "integration-specialist"
+    alerting:
+      thresholds:
+        - level: 50
+          description: "50% del error budget consumido — ~7 hrs degraded"
+          action: "notify-slack"
+          severity: "info"
+        - level: 75
+          description: "75% del error budget consumido — ~10.5 hrs degraded"
+          action: "notify-slack + review-whatsapp-provider"
+          severity: "warning"
+        - level: 90
+          description: "90% del error budget consumido — deploy gate activado"
+          action: "block-deploys + page-oncall"
+          severity: "critical"
+        - level: 100
+          description: "100% del error budget agotado — freeze total"
+          action: "block-deploys + incident-channel + page-lead"
+          severity: "exhausted"

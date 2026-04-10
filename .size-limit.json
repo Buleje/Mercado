@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Initial JS bundle",
+    "path": ".next/static/chunks/**/*.js",
+    "limit": "300 KB",
+    "gzip": true
+  },
+  {
+    "name": "Route chunks (largest)",
+    "path": ".next/static/chunks/pages/**/*.js",
+    "limit": "100 KB",
+    "gzip": true
+  },
+  {
+    "name": "App shell (layout + framework)",
+    "path": ".next/static/chunks/framework-*.js",
+    "limit": "150 KB",
+    "gzip": true
+  }
+]

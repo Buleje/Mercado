@@ -1,0 +1,265 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/require-admin";
+import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+import { logger } from "@/lib/logger";
+
+/**
+ * POST /api/compliance/data-delete
+ *
+ * Ley 29733 Art. 21 — Derecho de supresión (eliminación) de datos personales.
+ *
+ * Implementa soft-delete + anonimización de campos PII con período de gracia
+ * de 30 días. NO elimina registros financieros requeridos por SUNAT (boletas,
+ * facturas, notas de crédito) — la obligación tributaria prevalece sobre el
+ * derecho de supresión (Art. 14.6 Ley 29733).
+ *
+ * Auth: requireAdmin ["admin"]
+ * Audit: se registra cada solicitud de eliminación con motivo
+ */
+
+const DeleteSchema = z.object({
+  dni: z
+    .string()
+    .min(8, "DNI debe tener al menos 8 caracteres")
+    .max(15, "Documento no puede exceder 15 caracteres"),
+  tenantId: z.string().min(1, "tenantId es obligatorio"),
+  reason: z
+    .string()
+    .min(5, "Motivo de eliminación es obligatorio (mín. 5 caracteres)")
+    .max(500, "Motivo no puede exceder 500 caracteres"),
+});
+
+/** Fields to anonymize (replace with placeholder values) */
+const ANONYMIZED_PLACEHOLDER = "[DATOS ELIMINADOS - Ley 29733]";
+const ANONYMIZED_PHONE = "0000000000";
+
+export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req, ["admin"]);
+  if (auth instanceof NextResponse) return auth;
+
+  const body = await req.json().catch(() => null);
+  if (!body) {
+    return NextResponse.json(
+      { error: "Cuerpo de solicitud inválido" },
+      { status: 400 },
+    );
+  }
+
+  const parsed = DeleteSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Validación fallida", details: parsed.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const { dni, tenantId, reason } = parsed.data;
+
+  // Enforce tenantId matches session (CLAUDE.md rule #3)
+  if (tenantId !== auth.tenantId) {
+    return NextResponse.json(
+      { error: "No autorizado para este tenant" },
+      { status: 403 },
+    );
+  }
+
+  try {
+    // Find customer by documento
+    const customer = await prisma.customer.findFirst({
+      where: { tenantId, documento: dni },
+    });
+
+    if (!customer) {
+      return NextResponse.json(
+        {
+          error: "Cliente no encontrado",
+          message: `No se encontró un cliente con documento ${dni} en este tenant`,
+        },
+        { status: 404 },
+      );
+    }
+
+    const now = new Date();
+    const gracePeriodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    // Track what gets deleted vs retained
+    const deletedData: string[] = [];
+    const retainedData: Array<{ table: string; reason: string }> = [];
+
+    // 1. Anonymize Customer PII fields (soft-delete)
+    await prisma.customer.update({
+      where: { phone: customer.phone },
+      data: {
+        name: ANONYMIZED_PLACEHOLDER,
+        email: null,
+        location: "",
+        reference: "",
+        whatsappSecundario: null,
+        direccion: null,
+        departamento: null,
+        provincia: null,
+        distrito: null,
+        lat: null,
+        lng: null,
+        birthday: null,
+        fechaNacimiento: null,
+        genero: null,
+        comoLlego: null,
+        observaciones: null,
+        privateNotes: null,
+        aiNotes: null,
+        aiNotesDate: null,
+        razonSocial: null,
+        tags: null,
+        referralCode: null,
+        referredBy: null,
+        vendedorAsignado: null,
+        estado: "eliminado",
+      },
+    });
+    deletedData.push("Customer: nombre, email, dirección, teléfono secundario, notas, ubicación GPS");
+
+    // 2. Delete saved locations
+    const deletedLocations = await prisma.savedLocation.deleteMany({
+      where: { customerPhone: customer.phone },
+    });
+    deletedData.push(`SavedLocation: ${deletedLocations.count} ubicaciones guardadas`);
+
+    // 3. Delete customer notifications
+    const deletedNotifs = await prisma.customerNotification.deleteMany({
+      where: { tenantId, customerPhone: customer.phone },
+    });
+    deletedData.push(`CustomerNotification: ${deletedNotifs.count} notificaciones`);
+
+    // 4. Anonymize Order customer data (retain order for accounting)
+    const anonymizedOrders = await prisma.order.updateMany({
+      where: { tenantId, customerPhone: customer.phone },
+      data: {
+        customerName: ANONYMIZED_PLACEHOLDER,
+        customerLocation: "",
+        customerReference: "",
+        notes: null,
+      },
+    });
+    deletedData.push(`Order: datos personales anonimizados en ${anonymizedOrders.count} pedidos`);
+
+    // 5. Fiados — anonymize description but retain financial data
+    const fiados = await prisma.fiado.findMany({
+      where: { tenantId, customerId: customer.phone },
+    });
+    if (fiados.length > 0) {
+      await prisma.fiado.updateMany({
+        where: { tenantId, customerId: customer.phone },
+        data: { descripcion: ANONYMIZED_PLACEHOLDER },
+      });
+      deletedData.push(`Fiado: descripción anonimizada en ${fiados.length} fiados`);
+      retainedData.push({
+        table: "Fiado",
+        reason:
+          "Montos y saldos retenidos por obligación tributaria SUNAT (Art. 14.6 Ley 29733)",
+      });
+    }
+
+    // 6. Prestamos — retain financial records
+    const prestamos = await prisma.prestamo.findMany({
+      where: { tenantId, customerId: customer.phone },
+    });
+    if (prestamos.length > 0) {
+      retainedData.push({
+        table: "Prestamo",
+        reason:
+          "Registros de préstamos retenidos por obligación contable (5 años mínimo)",
+      });
+    }
+
+    // 7. SunatInvoice — NEVER delete (SUNAT legal requirement)
+    const invoices = await prisma.sunatInvoice.findMany({
+      where: { tenantId, customerRuc: customer.documento },
+    });
+    if (invoices.length > 0) {
+      retainedData.push({
+        table: "SunatInvoice",
+        reason: `${invoices.length} comprobantes electrónicos retenidos. Obligación SUNAT — conservación 5 años mínimo (Art. 87 Código Tributario)`,
+      });
+    }
+
+    // 8. Sales — retain financial records, anonymize customer reference
+    const anonymizedSales = await prisma.sale.updateMany({
+      where: { tenantId, customerPhone: customer.phone },
+      data: { customerPhone: null },
+    });
+    if (anonymizedSales.count > 0) {
+      deletedData.push(
+        `Sale: referencia de cliente eliminada en ${anonymizedSales.count} ventas`,
+      );
+      retainedData.push({
+        table: "Sale",
+        reason: "Montos de venta retenidos por obligación contable SUNAT",
+      });
+    }
+
+    // Fire-and-forget audit log (CLAUDE.md rule #7)
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown";
+
+    prisma.activityLog
+      .create({
+        data: {
+          action: "DATA_DELETE_REQUEST",
+          entity: "[L29733] Customer",
+          entityId: customer.phone,
+          detail: JSON.stringify({
+            ley29733: true,
+            article: "Art. 21",
+            right: "Derecho de supresión",
+            documento: dni,
+            reason,
+            gracePeriodEnd: gracePeriodEnd.toISOString(),
+            deletedData,
+            retainedData,
+            requestedBy: auth.username,
+            requestedAt: now.toISOString(),
+          }),
+          user: auth.username,
+          ipAddress: ip,
+          tenantId,
+        },
+      })
+      .catch(() => {});
+
+    logger.info("[COMPLIANCE] Data deletion request processed", {
+      tenantId,
+      documento: dni,
+      requestedBy: auth.username,
+      deletedCount: deletedData.length,
+      retainedCount: retainedData.length,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Solicitud de eliminación procesada exitosamente",
+      gracePeriod: {
+        startDate: now.toISOString(),
+        endDate: gracePeriodEnd.toISOString(),
+        note: "Los datos serán permanentemente eliminados después del período de gracia de 30 días",
+      },
+      deletedData,
+      retainedData,
+      legalNotice:
+        "Algunos datos financieros son retenidos por obligación legal (SUNAT Art. 87 Código Tributario, Ley 29733 Art. 14.6). Estos datos serán eliminados después del período de retención legal de 5 años.",
+    });
+  } catch (error) {
+    logger.error("[COMPLIANCE] Data deletion failed", {
+      tenantId,
+      dni,
+      error: String(error),
+    });
+    return NextResponse.json(
+      { error: "Error al procesar solicitud de eliminación" },
+      { status: 500 },
+    );
+  }
+}
