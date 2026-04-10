@@ -28,6 +28,7 @@ const eslintConfig = defineConfig([
       }],
       "react-hooks/set-state-in-effect": "warn",
       "@next/next/no-html-link-for-pages": "warn",
+      "react-compiler/react-compiler": "warn",
     },
   },
   // Prettier compat — must be LAST to disable formatting rules that conflict with Prettier
