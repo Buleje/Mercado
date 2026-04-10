@@ -28,13 +28,13 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_PE",
     siteName: "Buleje",
-    images: [{ url: "https://www.buleje.pe/og-image.jpg", width: 1200, height: 630, alt: "Buleje — Software ERP para Bodegas del Peru" }],
+    images: [{ url: "https://www.buleje.pe/api/og", width: 1200, height: 630, alt: "Buleje — Software ERP para Bodegas del Peru" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Catalogo — Buleje ERP",
     description: "Productos gestionados con Buleje. Software para bodegas del Peru.",
-    images: ["https://www.buleje.pe/og-image.jpg"],
+    images: ["https://www.buleje.pe/api/og"],
   },
 };
 

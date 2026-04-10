@@ -105,7 +105,7 @@ export default async function DynamicPage({
             publisher: {
               "@type": "Organization",
               name: "Buleje",
-              logo: { "@type": "ImageObject", url: "https://www.buleje.pe/og-image.jpg" },
+              logo: { "@type": "ImageObject", url: "https://www.buleje.pe/api/og" },
             },
             // TD-018/Next16: page.createdAt/updatedAt siempre existen (Prisma required fields).
             // El fallback a new Date() violaba cacheComponents ("non-deterministic data during prerender").

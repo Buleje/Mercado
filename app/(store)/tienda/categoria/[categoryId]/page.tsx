@@ -94,13 +94,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: categoryUrl,
       locale: "es_PE",
       siteName: "Buleje",
-      images: [{ url: "https://www.buleje.pe/og-image.jpg", width: 1200, height: 630, alt: `${cat.label} — Buleje` }],
+      images: [{ url: "https://www.buleje.pe/api/og", width: 1200, height: 630, alt: `${cat.label} — Buleje` }],
     },
     twitter: {
       card: "summary_large_image",
       title: `${cat.emoji} ${cat.label} — Buleje`,
       description: desc,
-      images: ["https://www.buleje.pe/og-image.jpg"],
+      images: ["https://www.buleje.pe/api/og"],
     },
     alternates: {
       canonical: categoryUrl,

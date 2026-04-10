@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     url: BASE_URL,
     images: [
       {
-        url: `${BASE_URL}/og-image.png`,
+        url: `${BASE_URL}/api/og`,
         width: 1200,
         height: 630,
         alt: "Buleje ERP — Tu bodega, en línea",

@@ -70,7 +70,7 @@ export const metadata: Metadata = {
       "Sistema completo para tu bodega: inventario, ventas POS, delivery, fiado digital y facturacion SUNAT. Funciona con Yape y efectivo. Disponible en todo el Peru.",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/api/og",
         width: 1200,
         height: 630,
         alt: "Buleje — Software ERP para Bodegas y Tiendas del Peru",
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
     title: "Buleje — Software para Bodegas del Peru",
     description:
       "Inventario, POS, delivery, fiado digital y facturacion SUNAT. Todo en un solo sistema. Empieza gratis.",
-    images: ["/og-image.jpg"],
+    images: ["/api/og"],
   },
   robots: process.env.VERCEL_ENV === "preview" || process.env.VERCEL_ENV === "development"
     ? { index: false, follow: false }

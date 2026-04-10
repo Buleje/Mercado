@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     locale: "es_PE",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/api/og",
         width: 1200,
         height: 630,
         alt: "Buleje — Software ERP para Bodegas y Tiendas del Peru",
