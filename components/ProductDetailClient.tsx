@@ -253,6 +253,21 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
     showToast(product.name, product.image);
   };
 
+  const handleBulkAdd = (targetQty: number) => {
+    if (isOutOfStock) return;
+    const effectivePrice = variantFinalPrice ?? product.price;
+    const currentQty = cartItem?.quantity ?? 0;
+    const maxStock = product.stock ?? 999;
+    const safeQty = Math.min(targetQty, maxStock);
+    if (safeQty <= currentQty) return;
+    // Add the difference to reach target quantity
+    for (let i = currentQty; i < safeQty; i++) {
+      addItem({ ...product, price: effectivePrice });
+    }
+    if (currentQty === 0) trackAddToCart(product.id);
+    showToast(`${safeQty}x ${product.name}`, product.image);
+  };
+
   const handleShare = async () => {
     const url = window.location.href;
     if (navigator.share) {
@@ -557,6 +572,35 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                   </span>
                 </div>
               )}
+            </div>
+
+            {/* Quick quantity buttons — bulk buy shortcuts */}
+            {!isOutOfStock && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">Comprar:</span>
+                {[2, 6, 12].map((n) => {
+                  const maxStock = product.stock ?? 999;
+                  if (n > maxStock) return null;
+                  const isActive = qty >= n;
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => handleBulkAdd(n)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                        isActive
+                          ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                          : "border-slate-200 text-slate-500 hover:border-emerald-300 hover:text-emerald-600"
+                      }`}
+                    >
+                      {n}x — S/{(product.price * n).toFixed(2)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Action buttons row */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => toggleFav(String(product.id))}
                 className={cn(
