@@ -4,8 +4,11 @@ import type { CheckoutDispatch } from "./useCheckoutState";
 
 /**
  * useStockCheck — al abrir el modal, valida que cada item del carrito
- * tenga stock disponible. Genera warnings que se muestran en UI sin
- * bloquear el checkout (la verificación final se hace server-side).
+ * tenga stock disponible.
+ *
+ * - Items AGOTADOS (stock === 0) → BLOQUEAN el checkout (hasBlockingStockError)
+ * - Items con stock bajo (stock < quantity) → WARNING visible pero no bloquea
+ * - La verificación final atómica es server-side (api/orders 409 Conflict)
  */
 
 type Args = {
@@ -26,21 +29,32 @@ export function useStockCheck({ enabled, items, dispatch }: Args) {
         if (!res.ok || cancelled) return;
         const data: { id: number; stock: number | null }[] = await res.json();
         const warnings: string[] = [];
+        let hasBlockingError = false;
+
         for (const item of items) {
           const info = data.find((d) => d.id === item.id);
           if (info && info.stock !== null && item.quantity > info.stock) {
-            warnings.push(
-              info.stock === 0
-                ? `"${item.name}" está agotado`
-                : `"${item.name}" solo tiene ${info.stock} en stock (tienes ${item.quantity})`
-            );
+            if (info.stock === 0) {
+              warnings.push(`"${item.name}" esta agotado — retiralo del carrito para continuar`);
+              hasBlockingError = true;
+            } else {
+              warnings.push(
+                `"${item.name}" solo tiene ${info.stock} en stock (tienes ${item.quantity})`
+              );
+            }
           }
         }
         if (!cancelled) {
-          dispatch({ type: "SET_UI", patch: { stockWarnings: warnings } });
+          dispatch({
+            type: "SET_UI",
+            patch: {
+              stockWarnings: warnings,
+              hasBlockingStockError: hasBlockingError,
+            },
+          });
         }
       } catch {
-        /* no bloqueamos checkout si la API falla */
+        // Si la API falla, no bloqueamos — server-side catch final en api/orders
       }
     })();
 

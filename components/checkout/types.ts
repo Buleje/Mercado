@@ -85,6 +85,7 @@ export type UiState = {
   showRefSuggestions: boolean;
   pendingOrdersCount: number;
   stockWarnings: string[];
+  hasBlockingStockError: boolean;
 };
 
 /** Estado completo del wizard. */

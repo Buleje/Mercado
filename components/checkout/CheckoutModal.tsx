@@ -166,6 +166,8 @@ export default function CheckoutModal() {
         finalTotal={finalTotal}
         onBack={() => dispatch({ type: "SET_STEP", step: "pago" })}
         onConfirm={handlers.handleFinalConfirm}
+        hasBlockingStockError={state.ui.hasBlockingStockError}
+        stockWarnings={state.ui.stockWarnings}
       />
     ) : null;
 

@@ -52,6 +52,8 @@ export type StepConfirmarFooterProps = {
   finalTotal: number;
   onBack: () => void;
   onConfirm: () => void;
+  hasBlockingStockError?: boolean;
+  stockWarnings?: string[];
 };
 
 function fmt(n: number) {
@@ -268,9 +270,27 @@ export function StepConfirmarFooter({
   finalTotal,
   onBack,
   onConfirm,
+  hasBlockingStockError = false,
+  stockWarnings = [],
 }: StepConfirmarFooterProps) {
+  const isBlocked = submitting || hasBlockingStockError;
+
   return (
     <div className="px-6 py-4">
+      {/* Stock blocking error */}
+      {hasBlockingStockError && stockWarnings.length > 0 && (
+        <div className="mb-3 rounded-xl bg-red-50 dark:bg-red-950/20 px-4 py-2 border border-red-200/50 dark:border-red-800/30">
+          <p className="text-xs font-medium text-red-700 dark:text-red-400 mb-1">
+            No se puede completar el pedido:
+          </p>
+          {stockWarnings.map((w, i) => (
+            <p key={i} className="text-xs text-red-600 dark:text-red-400">
+              • {w}
+            </p>
+          ))}
+        </div>
+      )}
+
       {submitError && (
         <p className="mb-3 rounded-xl bg-red-50 dark:bg-red-950/20 px-4 py-2 text-xs text-red-700 dark:text-red-400 border border-red-200/50 dark:border-red-800/30">
           {submitError}
@@ -291,7 +311,7 @@ export function StepConfirmarFooter({
         <button
           type="button"
           onClick={onConfirm}
-          disabled={submitting}
+          disabled={isBlocked}
           className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl font-bold text-sm transition-all bg-linear-to-r from-primary to-emerald-600 text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 active:scale-[0.98] disabled:opacity-70 disabled:pointer-events-none"
         >
           {submitting ? (

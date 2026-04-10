@@ -73,6 +73,7 @@ const INITIAL_UI: UiState = {
   showRefSuggestions: false,
   pendingOrdersCount: 0,
   stockWarnings: [],
+  hasBlockingStockError: false,
 };
 
 const INITIAL_DNI_LOOKUP: DniLookupState = {
