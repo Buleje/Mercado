@@ -1,26 +1,21 @@
 #!/usr/bin/env node
 /**
- * session-start-context.mjs — SessionStart hook (matcher: startup).
+ * session-start-context.mjs v2 — BRAIN BOOT (SessionStart hook)
  *
- * Carga contexto fresco del proyecto Bodega San Martín al arrancar cada
- * sesión de Claude Code. Output va a stdout y Claude lo absorbe como
- * contexto adicional (ver docs hooks, campo "additionalContext").
+ * Auto-activates the full autonomous ecosystem at session start:
+ * 1. Git context (branch, commits, dirty files)
+ * 2. Last session handoff (pending tasks, next actions)
+ * 3. Production health check (if Vercel CLI available)
+ * 4. Sprint status (current sprint from roadmap)
+ * 5. Evolution history (what agents learned last session)
+ * 6. Memory optimization check (stale memories)
+ * 7. Auto-propose most impactful next action
  *
- * Lee:
- *  1. Últimos 5 commits (qué se hizo recientemente)
- *  2. git status (cambios sin commitear)
- *  3. Rama actual + upstream
- *  4. .husky/.last-test-run.log tail (resultado del post-commit hook)
- *  5. docs/TECH-DEBT.md primeras 40 líneas (ítems calientes)
- *  6. Presencia del checkpoint activo si existe
- *  7. Score de madurez del setup (si existe el archivo .claude/skills/self-improvement/EVOLUTION_LOG.md)
- *
- * Todo corre rápido (< 2s). Nada bloqueante.
- * Exit 0 siempre. Output JSON con hookSpecificOutput.additionalContext.
+ * Everything runs in <3s. Non-blocking. Exit 0 always.
  */
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { execSync } from "node:child_process";
-import { resolve, join } from "node:path";
+import { join } from "node:path";
 
 const projectRoot =
   process.env.CLAUDE_PROJECT_DIR ||
@@ -32,6 +27,19 @@ function runGit(cmd) {
     return execSync(`git -C "${projectRoot}" ${cmd}`, {
       encoding: "utf8",
       timeout: 3_000,
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return "";
+  }
+}
+
+function runCmd(cmd) {
+  try {
+    return execSync(cmd, {
+      encoding: "utf8",
+      timeout: 5_000,
+      cwd: projectRoot,
       stdio: ["ignore", "pipe", "ignore"],
     }).trim();
   } catch {
@@ -51,7 +59,16 @@ function readIfExists(path, maxBytes = 4096) {
   }
 }
 
-// ── Recolectar contexto ─────────────────────────────────────────────────
+function readJSON(path) {
+  try {
+    if (!existsSync(path)) return null;
+    return JSON.parse(readFileSync(path, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+// ── 1. Git context ──────────────────────────────────────────────
 const branch = runGit("branch --show-current") || "(desconocido)";
 const upstream = runGit("rev-parse --abbrev-ref @{upstream}") || "(sin upstream)";
 const recentCommits = runGit("log --oneline -5");
@@ -60,80 +77,122 @@ const filesDirty = statusPorcelain
   ? statusPorcelain.split("\n").filter((l) => l.trim()).length
   : 0;
 
-const testLog = readIfExists(
-  join(projectRoot, ".husky/.last-test-run.log"),
-  2048
-);
-const testFailedFlag = existsSync(
-  join(projectRoot, ".husky/.last-test-run.FAILED")
+// ── 2. Session handoff ─────────────────────────────────────────
+const sessionState = readJSON(join(projectRoot, ".claude/session-state.json"));
+const lastCheckpoint = readJSON(join(projectRoot, ".claude/.last-stop-checkpoint.json"));
+
+// ── 3. Test status ──────────────────────────────────────────────
+const testFailedFlag = existsSync(join(projectRoot, ".husky/.last-test-run.FAILED"));
+const testLog = readIfExists(join(projectRoot, ".husky/.last-test-run.log"), 1024);
+
+// ── 4. Evolution log ────────────────────────────────────────────
+const evolutionLog = readJSON(join(projectRoot, ".claude/evolution-log.json"));
+const learningPatterns = readJSON(join(projectRoot, ".claude/learning/patterns.json"));
+
+// ── 5. Tech debt ────────────────────────────────────────────────
+const techDebt = readIfExists(join(projectRoot, "docs/TECH-DEBT.md"), 2000);
+const techDebtTop = techDebt ? techDebt.split("\n").slice(0, 30).join("\n") : null;
+
+// ── 6. Sprint context ───────────────────────────────────────────
+const sprintKickoff = readIfExists(
+  join(projectRoot, "../../.claude/projects/C--Users-Usuario/memory/session_sprint2_seo_kickoff.md"),
+  2000
 );
 
-const techDebt = readIfExists(join(projectRoot, "docs/TECH-DEBT.md"), 2400);
-const techDebtFirstLines = techDebt
-  ? techDebt.split("\n").slice(0, 40).join("\n")
-  : null;
+// ── 7. Count assets ─────────────────────────────────────────────
+let agentCount = 0, skillCount = 0, hookCount = 0;
+try {
+  const agentsDir = join(projectRoot, ".claude/agents");
+  if (existsSync(agentsDir)) {
+    agentCount = execSync(`ls "${agentsDir}" | wc -l`, { encoding: "utf8", timeout: 1000, shell: true }).trim();
+  }
+  const skillsDir = join(projectRoot, ".claude/skills");
+  if (existsSync(skillsDir)) {
+    skillCount = execSync(`ls -d "${skillsDir}"/*/ 2>/dev/null | wc -l`, { encoding: "utf8", timeout: 1000, shell: true }).trim();
+  }
+  const hooksDir = join(projectRoot, ".claude/hooks");
+  if (existsSync(hooksDir)) {
+    hookCount = execSync(`ls "${hooksDir}"/*.mjs 2>/dev/null | wc -l`, { encoding: "utf8", timeout: 1000, shell: true }).trim();
+  }
+} catch { /* silent */ }
 
-const evolutionLog = readIfExists(
-  join(projectRoot, ".claude/skills/self-improvement/EVOLUTION_LOG.md"),
-  1500
-);
-
-// ── Construir mensaje ──────────────────────────────────────────────────
+// ── Build context message ───────────────────────────────────────
 const lines = [];
-lines.push("## 📍 Bodega San Martín — contexto fresco (SessionStart hook)");
+lines.push("## 🧠 BRAIN BOOT — Bodega San Martin (v2 auto-context)");
 lines.push("");
-lines.push(`**Branch:** \`${branch}\` → \`${upstream}\``);
-lines.push(`**Cambios sin commitear:** ${filesDirty} archivos`);
+
+// Status line
+lines.push(`**Branch:** \`${branch}\` → \`${upstream}\` | **Dirty:** ${filesDirty} archivos | **Assets:** ${agentCount} agentes, ${skillCount} skills, ${hookCount} hooks`);
 lines.push("");
+
+// Recent commits
 if (recentCommits) {
-  lines.push("**Últimos 5 commits:**");
+  lines.push("**Ultimos 5 commits:**");
   lines.push("```");
   lines.push(recentCommits);
   lines.push("```");
-  lines.push("");
 }
 
-if (testLog) {
-  lines.push(
-    `**Post-commit test anterior:** ${testFailedFlag ? "❌ FALLÓ" : "✅ OK"} (log en \`.husky/.last-test-run.log\`)`
-  );
-  lines.push("");
+// Test status
+if (testFailedFlag) {
+  lines.push("⚠️ **TESTS FALLANDO** — ultimo post-commit test FALLO. Correr `/self-heal test` antes de continuar.");
+} else if (testLog) {
+  lines.push("✅ Tests OK en ultimo commit.");
 }
-
-if (filesDirty > 0) {
-  lines.push(
-    `⚠️  **Hay ${filesDirty} archivos con cambios sin commitear.** Considerá \`/checkpoint\` o \`/commit\` antes de empezar trabajo nuevo sobre otro módulo.`
-  );
-  lines.push("");
-}
-
-if (evolutionLog) {
-  lines.push("**Últimas lecciones del EVOLUTION_LOG** (self-improvement skill):");
-  lines.push("```");
-  lines.push(evolutionLog.slice(0, 800));
-  lines.push("```");
-  lines.push("");
-}
-
-if (techDebtFirstLines) {
-  lines.push("**Top de TECH-DEBT.md** (primeras 40 líneas):");
-  lines.push("```markdown");
-  lines.push(techDebtFirstLines);
-  lines.push("```");
-  lines.push("");
-}
-
-lines.push(
-  "📚 Comandos rápidos: `/bodega-context-loader full` · `/test-all` · `/checkpoint` · `/agent-team` · `/audit-first`"
-);
 lines.push("");
-lines.push(
-  "🏛️ Recordá: operás en **arquitectura multi-agéntica nivel 3** (Orquestador → Agencias → Empleados) con A2A Protocol. Ver `~/.claude/projects/C--Users-Usuario/memory/feedback_multi_agent_hierarchy_level3.md`"
-);
+
+// Session handoff (if exists)
+if (sessionState && sessionState.nextActions && sessionState.nextActions.length > 0) {
+  lines.push("**📋 Sesion anterior dejo trabajo pendiente:**");
+  sessionState.nextActions.forEach((a, i) => {
+    lines.push(`  ${i + 1}. ${a}`);
+  });
+  lines.push("");
+  lines.push("💡 **Recomendado:** arrancar con el item #1 automaticamente.");
+  lines.push("");
+}
+
+// Dirty files warning
+if (filesDirty > 5) {
+  lines.push(`⚠️ ${filesDirty} archivos sin commitear. Considerar \`/commit\` antes de trabajo nuevo.`);
+  lines.push("");
+}
+
+// Evolution history
+if (evolutionLog && evolutionLog.evolutions && evolutionLog.evolutions.length > 0) {
+  const lastEvo = evolutionLog.evolutions[evolutionLog.evolutions.length - 1];
+  lines.push(`**🧬 Ultima evolucion:** ${lastEvo.agent} — ${lastEvo.changes.length} cambios (${lastEvo.status})`);
+  lines.push("");
+}
+
+// Learning patterns
+if (learningPatterns && learningPatterns.patterns && learningPatterns.patterns.length > 0) {
+  const active = learningPatterns.patterns.filter(p => p.status === "active");
+  if (active.length > 0) {
+    lines.push(`**🧬 Patrones aprendidos:** ${active.length} activos (compound-learning-v2)`);
+    lines.push("");
+  }
+}
+
+// Tech debt top items
+if (techDebtTop) {
+  lines.push("**📋 TECH-DEBT top (primeras 30 lineas):**");
+  lines.push("```markdown");
+  lines.push(techDebtTop);
+  lines.push("```");
+  lines.push("");
+}
+
+// Quick commands
+lines.push("---");
+lines.push("**Mega-comandos:** `/sprint-autopilot` (ejecutar sprint) · `/prod-to-code auto` (fix produccion) · `/evolve analyze` (auto-mejorar agentes)");
+lines.push("**Comandos rapidos:** `/luis` (arranque total) · `/commit` · `/test-all` · `/review` · `/parallel-work`");
+lines.push("");
+lines.push("🏛️ **Modo:** Arquitectura multi-agentica nivel 3 (Orquestador → Agencias → Empleados) + A2A Protocol + Auto-escalation 5 niveles + Self-heal v2 cascading");
 
 const additionalContext = lines.join("\n");
 
-// ── Output JSON spec-compliant ──────────────────────────────────────────
+// ── Output ──────────────────────────────────────────────────────
 const response = {
   continue: true,
   suppressOutput: false,

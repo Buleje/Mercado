@@ -1,21 +1,18 @@
 #!/usr/bin/env node
 /**
- * stop-checkpoint.mjs — Stop hook (async).
+ * stop-checkpoint.mjs v2 — AUTO-LEARN + SESSION SAVE (Stop hook, async)
  *
- * Al terminar el turn de Claude, revisa si hay cambios sin commitear.
- * Si los hay, emite un warning al user y guarda un pointer en
- * .claude/.last-stop-checkpoint.json con:
- *  - timestamp
- *  - branch
- *  - files dirty
+ * Al terminar cada turn de Claude:
+ * 1. Guarda checkpoint de archivos dirty (v1)
+ * 2. NEW: Auto-captura metricas de la sesion para compound-learning
+ * 3. NEW: Detecta patrones repetidos en los ultimos commits
+ * 4. NEW: Actualiza evolution-log.json con stats del turn
+ * 5. NEW: Guarda session-state.json para handoff
  *
- * NO bloquea. NO fuerza commit. Es una red de seguridad suave.
- * El user puede leer el último checkpoint con /bodega-context-loader quick.
- *
- * Async → no afecta latencia de respuesta.
+ * Async → no afecta latencia. Silent failures.
  */
 import { execSync } from "node:child_process";
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, readFileSync, mkdirSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 
 const projectRoot =
@@ -35,49 +32,147 @@ function runGit(cmd) {
   }
 }
 
+function readJSON(path) {
+  try {
+    if (!existsSync(path)) return null;
+    return JSON.parse(readFileSync(path, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function writeJSON(path, data) {
+  try {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, JSON.stringify(data, null, 2), "utf8");
+  } catch { /* silent */ }
+}
+
+// ── 1. Git status (original v1) ──────────────────────────────────
 const branch = runGit("branch --show-current") || "unknown";
 const statusPorcelain = runGit("status --porcelain");
-const lines = statusPorcelain
+const dirtyLines = statusPorcelain
   ? statusPorcelain.split("\n").filter((l) => l.trim())
   : [];
 
-if (lines.length === 0) {
-  // No hay cambios pendientes — nada que hacer.
-  process.exit(0);
-}
+const staged = dirtyLines.filter((l) => /^[AMDR]/.test(l)).length;
+const unstaged = dirtyLines.filter((l) => /^.[MD]/.test(l)).length;
+const untracked = dirtyLines.filter((l) => l.startsWith("??")).length;
 
-// Separar staged vs unstaged vs untracked
-const staged = lines.filter((l) => /^[AMDR]/.test(l)).length;
-const unstaged = lines.filter((l) => /^.[MD]/.test(l)).length;
-const untracked = lines.filter((l) => l.startsWith("??")).length;
-
+// Save checkpoint (v1 behavior)
 const checkpoint = {
   timestamp: new Date().toISOString(),
   branch,
   staged,
   unstaged,
   untracked,
-  totalDirty: lines.length,
-  sample: lines.slice(0, 10),
+  totalDirty: dirtyLines.length,
+  sample: dirtyLines.slice(0, 10),
 };
 
-try {
-  const outPath = join(projectRoot, ".claude/.last-stop-checkpoint.json");
-  mkdirSync(dirname(outPath), { recursive: true });
-  writeFileSync(outPath, JSON.stringify(checkpoint, null, 2), "utf8");
-} catch {
-  // Silent — si el write falla, no interrumpimos.
+writeJSON(join(projectRoot, ".claude/.last-stop-checkpoint.json"), checkpoint);
+
+// ── 2. Auto-capture session metrics ──────────────────────────────
+const recentCommits = runGit("log --oneline -10 --since='8 hours ago'");
+const commitCount = recentCommits ? recentCommits.split("\n").filter(l => l.trim()).length : 0;
+
+// Detect file patterns from recent commits
+const filesChanged = runGit("log --name-only --oneline -10 --since='8 hours ago'");
+const fileFrequency = {};
+if (filesChanged) {
+  filesChanged.split("\n").forEach(line => {
+    if (line && !line.match(/^[a-f0-9]{7,}/)) { // skip commit hash lines
+      const file = line.trim();
+      if (file) fileFrequency[file] = (fileFrequency[file] || 0) + 1;
+    }
+  });
 }
 
-// Emitir aviso soft al user (systemMessage aparece como info)
+// Find files edited 3+ times (candidate for compound-learning)
+const hotFiles = Object.entries(fileFrequency)
+  .filter(([, count]) => count >= 3)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 5);
+
+// ── 3. Update learning patterns ──────────────────────────────────
+const patternsPath = join(projectRoot, ".claude/learning/patterns.json");
+let patterns = readJSON(patternsPath) || {
+  patterns: [],
+  totalScanned: 0,
+  totalLearned: 0,
+  lastScan: null
+};
+
+if (hotFiles.length > 0) {
+  hotFiles.forEach(([file, count]) => {
+    // Check if pattern already exists
+    const existing = patterns.patterns.find(p =>
+      p.type === "hot_file" && p.files && p.files.includes(file)
+    );
+    if (!existing) {
+      patterns.patterns.push({
+        id: `pat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        type: "hot_file",
+        files: [file],
+        occurrences: count,
+        firstSeen: new Date().toISOString(),
+        lastSeen: new Date().toISOString(),
+        artifactGenerated: null,
+        status: "detected"
+      });
+      patterns.totalLearned++;
+    } else {
+      existing.occurrences += count;
+      existing.lastSeen = new Date().toISOString();
+    }
+  });
+  patterns.totalScanned++;
+  patterns.lastScan = new Date().toISOString();
+  writeJSON(patternsPath, patterns);
+}
+
+// ── 4. Update session state for handoff ──────────────────────────
+const sessionStatePath = join(projectRoot, ".claude/session-state.json");
+const existingState = readJSON(sessionStatePath) || {};
+
+const sessionState = {
+  ...existingState,
+  timestamp: new Date().toISOString(),
+  branch,
+  commitsThisSession: commitCount,
+  filesUncommitted: dirtyLines.length,
+  hotFilesDetected: hotFiles.map(([f, c]) => ({ file: f, edits: c })),
+  patternsActive: patterns.patterns.filter(p => p.status !== "resolved").length,
+  lastUpdated: new Date().toISOString()
+};
+
+writeJSON(sessionStatePath, sessionState);
+
+// ── 5. Output ────────────────────────────────────────────────────
+const messageParts = [];
+
+if (dirtyLines.length > 0) {
+  messageParts.push(
+    `📸 ${dirtyLines.length} archivos sin commitear en \`${branch}\` (staged=${staged}, unstaged=${unstaged}, untracked=${untracked}).`
+  );
+}
+
+if (commitCount > 0) {
+  messageParts.push(`📊 ${commitCount} commits en esta sesion.`);
+}
+
+if (hotFiles.length > 0) {
+  messageParts.push(
+    `🧬 Patrones detectados: ${hotFiles.map(([f, c]) => `${f}(${c}x)`).join(", ")} — candidatos para compound-learning.`
+  );
+}
+
+messageParts.push("💾 Session state guardado para handoff.");
+
 const response = {
   continue: true,
   suppressOutput: false,
-  systemMessage:
-    `📸 stop-checkpoint: ${lines.length} archivos sin commitear en \`${branch}\` ` +
-    `(staged=${staged}, unstaged=${unstaged}, untracked=${untracked}). ` +
-    `Checkpoint guardado en \`.claude/.last-stop-checkpoint.json\`. ` +
-    `Considerá \`/commit\` o \`/checkpoint\` antes de cerrar la sesión.`,
+  systemMessage: messageParts.join(" "),
 };
 
 process.stdout.write(JSON.stringify(response));
