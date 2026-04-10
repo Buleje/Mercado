@@ -185,8 +185,8 @@ async function main() {
     indexesByTable.set(row.tablename, arr);
   }
 
-  let needsCreate: string[] = [];
-  let alreadyExists: string[] = [];
+  const needsCreate: string[] = [];
+  const alreadyExists: string[] = [];
 
   // TD-019 / TD-021 (deberían existir en el schema)
   for (const entry of EXPECTED_INDEXES["TD-019 / TD-021 (deberían existir)"]) {
