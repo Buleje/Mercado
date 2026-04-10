@@ -49,10 +49,30 @@ const STATUS_CONFIG: Record<
   string,
   { label: string; color: string; icon: React.ElementType; step: number }
 > = {
-  assigned:  { label: "Asignado",  color: "text-amber-600 dark:text-amber-400",   icon: Clock,        step: 1 },
-  picked_up: { label: "Recogido",  color: "text-blue-600 dark:text-blue-400",     icon: Package,      step: 2 },
-  en_camino: { label: "En camino", color: "text-[#00B4A6] dark:text-teal-400",    icon: Navigation,   step: 3 },
-  delivered: { label: "Entregado", color: "text-emerald-600 dark:text-emerald-400", icon: CheckCircle, step: 4 },
+  assigned: {
+    label: "Asignado",
+    color: "text-amber-600 dark:text-amber-400",
+    icon: Clock,
+    step: 1,
+  },
+  picked_up: {
+    label: "Recogido",
+    color: "text-blue-600 dark:text-blue-400",
+    icon: Package,
+    step: 2,
+  },
+  en_camino: {
+    label: "En camino",
+    color: "text-[#00B4A6] dark:text-teal-400",
+    icon: Navigation,
+    step: 3,
+  },
+  delivered: {
+    label: "Entregado",
+    color: "text-emerald-600 dark:text-emerald-400",
+    icon: CheckCircle,
+    step: 4,
+  },
 };
 
 function getStatusConfig(status: string) {
@@ -217,13 +237,15 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
           }
         } else {
           riderMarkerRef.current = L.marker([riderLat, riderLng], { icon: riderIcon })
-            .bindPopup(`
+            .bindPopup(
+              `
               <div style="min-width:150px;">
                 <p style="font-weight:700;margin:0 0 4px;">🏍️ ${data.partnerName}</p>
                 <p style="margin:0 0 2px;font-size:12px;color:#555;">Tel: ${data.partnerPhone}</p>
                 <p style="margin:0;font-size:11px;color:#888;">Actualizado: ${formatTime(data.trackingUpdatedAt)}</p>
               </div>
-            `)
+            `,
+            )
             .addTo(map);
         }
         prevLatLng.current = [riderLat, riderLng];
@@ -259,14 +281,18 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
           map.removeLayer(polylineRef.current);
         }
         polylineRef.current = L.polyline(
-          [[riderLat, riderLng], [dLat, dLng]],
-          { color: "#00B4A6", weight: 2, opacity: 0.6, dashArray: "8 6" }
+          [
+            [riderLat, riderLng],
+            [dLat, dLng],
+          ],
+          { color: "#00B4A6", weight: 2, opacity: 0.6, dashArray: "8 6" },
         ).addTo(map);
 
         // Ajustar vista para mostrar ambos marcadores
-        const bounds = L.latLngBounds(
-          [[riderLat, riderLng], [dLat, dLng]]
-        );
+        const bounds = L.latLngBounds([
+          [riderLat, riderLng],
+          [dLat, dLng],
+        ]);
         map.fitBounds(bounds.pad(0.25), { maxZoom: 16 });
       } else {
         map.setView([dLat, dLng], 15);
@@ -282,7 +308,12 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
 
   if (error) {
     return (
-      <div className={cn("flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/30 dark:bg-red-900/10", className)}>
+      <div
+        className={cn(
+          "flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900/30 dark:bg-red-900/10",
+          className,
+        )}
+      >
         <AlertCircle className="h-5 w-5 shrink-0 text-red-500" />
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       </div>
@@ -315,11 +346,13 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
           </div>
         </div>
 
-        <span className={cn(
-          "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold",
-          "bg-gray-100 dark:bg-gray-800",
-          statusCfg.color,
-        )}>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold",
+            "bg-gray-100 dark:bg-gray-800",
+            statusCfg.color,
+          )}
+        >
           <StatusIcon className="h-4 w-4" />
           {statusCfg.label}
         </span>
@@ -334,29 +367,33 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
           return (
             <div key={key} className="flex min-w-0 flex-1 items-center">
               <div className="flex flex-col items-center gap-1">
-                <div className={cn(
-                  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors",
-                  isActive
-                    ? "bg-[#00B4A6] text-white"
-                    : "bg-gray-200 text-gray-400 dark:bg-gray-700",
-                  isCurrent && "ring-2 ring-[#00B4A6] ring-offset-2 dark:ring-offset-gray-900",
-                )}>
+                <div
+                  className={cn(
+                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors",
+                    isActive
+                      ? "bg-[#00B4A6] text-white"
+                      : "bg-gray-200 text-gray-400 dark:bg-gray-700",
+                    isCurrent && "ring-2 ring-[#00B4A6] ring-offset-2 dark:ring-offset-gray-900",
+                  )}
+                >
                   <StepIcon className="h-3.5 w-3.5" />
                 </div>
-                <span className={cn(
-                  "whitespace-nowrap text-[10px] font-medium",
-                  isActive ? "text-[#00B4A6]" : "text-gray-400 dark:text-gray-600",
-                )}>
+                <span
+                  className={cn(
+                    "whitespace-nowrap text-[10px] font-medium",
+                    isActive ? "text-[#00B4A6]" : "text-gray-400 dark:text-gray-600",
+                  )}
+                >
                   {cfg.label}
                 </span>
               </div>
               {idx < arr.length - 1 && (
-                <div className={cn(
-                  "mx-1 h-0.5 flex-1 rounded-full transition-colors",
-                  cfg.step < statusCfg.step
-                    ? "bg-[#00B4A6]"
-                    : "bg-gray-200 dark:bg-gray-700",
-                )} />
+                <div
+                  className={cn(
+                    "mx-1 h-0.5 flex-1 rounded-full transition-colors",
+                    cfg.step < statusCfg.step ? "bg-[#00B4A6]" : "bg-gray-200 dark:bg-gray-700",
+                  )}
+                />
               )}
             </div>
           );
