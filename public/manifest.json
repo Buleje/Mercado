@@ -1,0 +1,51 @@
+{
+  "name": "Buleje — ERP para Bodegas del Peru",
+  "short_name": "Buleje",
+  "description": "Software ERP para bodegas y tiendas. Inventario, ventas, delivery, fiado digital.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#00B4A6",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "es-PE",
+  "categories": ["business", "shopping", "productivity"],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Ver Tienda",
+      "short_name": "Tienda",
+      "url": "/tienda",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mis Pedidos",
+      "short_name": "Pedidos",
+      "url": "/mis-pedidos"
+    },
+    {
+      "name": "Panel Admin",
+      "short_name": "Admin",
+      "url": "/admin"
+    }
+  ]
+}
