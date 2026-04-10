@@ -65,18 +65,48 @@ function parseCSV(text: string): { headers: string[]; rows: RawRow[] } {
 }
 
 // ─── XLSX parser (dynamic import) ────────────────────────────────────────────
+// Usa exceljs en lugar de xlsx (vuln Prototype Pollution + ReDoS sin fix — ADR-025)
 
 async function parseXLSX(file: File): Promise<{ headers: string[]; rows: RawRow[] }> {
-  const XLSX = await import("xlsx");
+  const ExcelJS = (await import("exceljs")).default;
   const buffer = await file.arrayBuffer();
-  const wb = XLSX.read(buffer, { type: "array" });
-  const sheetName = wb.SheetNames[0];
-  if (!sheetName) return { headers: [], rows: [] };
-  const sheet = wb.Sheets[sheetName];
-  const rawRows = XLSX.utils.sheet_to_json<RawRow>(sheet, { defval: "" });
-  if (rawRows.length === 0) return { headers: [], rows: [] };
-  const headers = Object.keys(rawRows[0]);
-  return { headers, rows: rawRows };
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buffer);
+  const sheet = wb.worksheets[0];
+  if (!sheet) return { headers: [], rows: [] };
+
+  const rows: RawRow[] = [];
+  let headers: string[] = [];
+
+  // Tipos inline minimos porque el tipo Row de exceljs solo es accesible desde
+  // un import top-level estatico, y aqui usamos dynamic import por bundle size.
+  sheet.eachRow({ includeEmpty: false }, (row: { values: unknown }, rowNumber: number) => {
+    const values = (row.values as unknown[]).slice(1); // exceljs es 1-indexed
+    const cells = values.map((v): string | number | null | undefined => {
+      if (v === null || v === undefined) return "";
+      if (typeof v === "object" && v !== null && "richText" in (v as object)) {
+        return (v as { richText: { text: string }[] }).richText.map((r) => r.text).join("");
+      }
+      if (typeof v === "object" && v !== null && "result" in (v as object)) {
+        const r = (v as { result: unknown }).result;
+        return typeof r === "string" || typeof r === "number" ? r : String(r ?? "");
+      }
+      if (typeof v === "string" || typeof v === "number") return v;
+      return String(v);
+    });
+
+    if (rowNumber === 1) {
+      headers = cells.map((c) => String(c ?? ""));
+    } else {
+      const obj: RawRow = {};
+      for (let i = 0; i < headers.length; i++) {
+        obj[headers[i]] = cells[i];
+      }
+      rows.push(obj);
+    }
+  });
+
+  return { headers, rows };
 }
 
 // ─── Validators ───────────────────────────────────────────────────────────────
@@ -225,12 +255,18 @@ export default function ExcelProductImporter() {
 
     try {
       // Importar usando el endpoint batch /api/products/import
-      const XLSX = await import("xlsx");
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(rows);
-      XLSX.utils.book_append_sheet(wb, ws, "Productos");
-      const buf: ArrayBuffer = XLSX.write(wb, { type: "array", bookType: "xlsx" });
-      const blob = new Blob([buf], {
+      // Usa exceljs (no xlsx) — ADR-025
+      const ExcelJS = (await import("exceljs")).default;
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Productos");
+      if (rows.length > 0) {
+        ws.columns = Object.keys(rows[0]).map((key) => ({ header: key, key }));
+        for (const row of rows) {
+          ws.addRow(row);
+        }
+      }
+      const buf = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buf as ArrayBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
