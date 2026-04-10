@@ -19,13 +19,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Acerca de Nosotros — Buleje | Tu bodega de confianza",
+  title: "Acerca de Nosotros — Buleje | Software ERP para Bodegas",
   description:
-    "Buleje es una bodega familiar que ofrece productos frescos, delivery rápido y precios justos. Conoce nuestra historia, horarios y cómo contactarnos.",
+    "Buleje es un software ERP para bodegas y tiendas de todo el Peru. Inventario, POS, delivery, fiado digital y facturacion SUNAT. Creado en Pucallpa.",
   openGraph: {
     title: "Acerca de Nosotros — Buleje",
     description:
-      "Bodega familiar con productos frescos, delivery rápido y los mejores precios. Conoce nuestra historia.",
+      "Software ERP para bodegas creado en Pucallpa. Inventario, delivery y facturacion SUNAT para todo el Peru.",
     type: "website",
     locale: "es_PE",
     url: "https://www.buleje.pe/about",
@@ -111,7 +111,7 @@ export default async function AboutPage() {
           <div className="relative mx-auto max-w-4xl px-4 sm:px-6 text-center">
             <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold mb-6 bg-white/15 text-white/90 border border-white/20 backdrop-blur-sm">
               <Store className="h-4 w-4" />
-              Bodega familiar
+              Powered by Buleje
             </div>
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-4">
               {businessName}
