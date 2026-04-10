@@ -1,0 +1,93 @@
+/**
+ * GET /api/me/referral-status
+ *
+ * Customer referral program status — shows:
+ * - My referral code
+ * - How many people used it
+ * - Total rewards earned
+ * - List of referrals with status
+ *
+ * Auth: requireCustomer
+ */
+
+import "server-only";
+import { type NextRequest, NextResponse } from "next/server";
+import { requireCustomer } from "@/lib/auth/require-customer";
+import { prisma } from "@/lib/prisma";
+import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
+
+export async function GET(req: NextRequest) {
+  const customer = await requireCustomer(req);
+  if (customer instanceof NextResponse) return customer;
+
+  const { tenantId, customerId: customerPhone } = customer;
+
+  if (!customerPhone) {
+    return NextResponse.json({ error: "Cuenta no vinculada" }, { status: 400 });
+  }
+
+  try {
+    // Get my referral code
+    const me = await prisma.customer.findUnique({
+      where: { phone: customerPhone },
+      select: {
+        referralCode: true,
+        loyaltyPoints: true,
+        name: true,
+      },
+    });
+
+    if (!me?.referralCode) {
+      return NextResponse.json({
+        hasReferralCode: false,
+        referralCode: null,
+        referrals: [],
+        totalReferred: 0,
+        shareUrl: null,
+      });
+    }
+
+    // Find all customers who used my referral code
+    const referrals = await prisma.customer.findMany({
+      where: {
+        referredBy: me.referralCode,
+        tenantId,
+      },
+      select: {
+        name: true,
+        createdAt: true,
+        totalSpent: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    });
+
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
+    const shareUrl = `${baseUrl}/registro?ref=${me.referralCode}`;
+
+    // Calculate rewards (10 points per referral is the default)
+    const pointsPerReferral = 10;
+    const totalPointsEarned = referrals.length * pointsPerReferral;
+
+    return NextResponse.json({
+      hasReferralCode: true,
+      referralCode: me.referralCode,
+      shareUrl,
+      shareMessage: `Usa mi codigo ${me.referralCode} en Buleje y ambos ganamos puntos! ${shareUrl}`,
+      totalReferred: referrals.length,
+      totalPointsEarned,
+      currentPoints: me.loyaltyPoints,
+      referrals: referrals.map((r) => ({
+        name: r.name,
+        joinedAt: r.createdAt,
+        totalSpent: toNumOrZero(r.totalSpent),
+        isActive: toNumOrZero(r.totalSpent) > 0,
+      })),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    logger.error("[me/referral-status] Error", { tenantId, error: message });
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
