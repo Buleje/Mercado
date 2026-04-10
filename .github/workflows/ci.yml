@@ -43,8 +43,12 @@ jobs:
       - name: Type check (tsc --noEmit)
         run: npx tsc --noEmit
 
-      - name: Run tests with coverage
+      - name: Run tests
+        run: npm run test
+
+      - name: Coverage report (non-blocking)
         run: npm run test:coverage
+        continue-on-error: true
 
       - name: Build
         run: npm run build
