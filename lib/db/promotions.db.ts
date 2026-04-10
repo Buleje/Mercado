@@ -1,9 +1,11 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { Prisma } from "@/lib/generated/prisma/client";
 import type {
   Promotion as PPromotion,
   Coupon as PCoupon,
+  Prisma as PrismaTypes,
 } from "@/lib/generated/prisma/client";
 import {
   type DbPromotion,
@@ -111,9 +113,24 @@ export const CouponsDB = {
     if (tenantId) where.tenantId = tenantId;
     return (await prisma.coupon.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapCoupon);
   },
-  async getByCode(code: string): Promise<DbCoupon | null> {
-    const row = await prisma.coupon.findFirst({ where: { code: code.toUpperCase().trim() } });
+  // RED-007: tenant-scoped lookup. The function accepts both shapes — legacy
+  // (code) and secure (tenantId, code) — and the typed cast below exposes
+  // overloaded signatures so new callers can supply the tenantId. Always
+  // prefer the (tenantId, code) form to prevent cross-tenant coupon reuse.
+  getByCode: (async (
+    a: string,
+    b?: string,
+  ): Promise<DbCoupon | null> => {
+    const scoped = b !== undefined;
+    const code = (scoped ? (b as string) : a).toUpperCase().trim();
+    const where: PrismaTypes.CouponWhereInput = scoped
+      ? { code, tenantId: a }
+      : { code };
+    const row = await prisma.coupon.findFirst({ where });
     return row ? mapCoupon(row) : null;
+  }) as {
+    (code: string): Promise<DbCoupon | null>;
+    (tenantId: string, code: string): Promise<DbCoupon | null>;
   },
   async add(c: Omit<DbCoupon, "id" | "createdAt" | "usedCount">, tenantId = "main"): Promise<DbCoupon> {
     const row = await prisma.coupon.create({
@@ -143,22 +160,84 @@ export const CouponsDB = {
     const row = await prisma.coupon.update({ where: { id }, data });
     return mapCoupon(row);
   },
-  async redeem(code: string, deductAmount?: number): Promise<DbCoupon | null> {
-    const row = await prisma.coupon.findFirst({ where: { code: code.toUpperCase().trim() } });
-    if (!row || !row.active) return null;
-    if (row.expiresAt && row.expiresAt < new Date()) return null;
-    if (row.maxUses && row.usedCount >= row.maxUses) return null;
-    const data: Record<string, unknown> = { usedCount: row.usedCount + 1 };
-    // Deduct balance for giftcard type
-    if (row.discountType === "giftcard" && deductAmount != null) {
-      // TD-018: balance / discountValue son Decimal
-      const currentBalance = toNumOrZero(row.balance) || toNumOrZero(row.discountValue);
-      const newBalance = Math.max(0, currentBalance - deductAmount);
-      data.balance = newBalance;
-      if (newBalance <= 0) data.active = false;
+  // RED-006 + RED-007: atomic, tenant-scoped redemption. The conditional UPDATE
+  // executes server-side in PostgreSQL so two parallel callers cannot both
+  // read usedCount=N and both bump to N+1 (only one wins, the other gets 0
+  // affected rows). The typed cast below exposes overloaded signatures —
+  // prefer (tenantId, code, amount).
+  redeem: (async (
+    a: string,
+    b?: string | number,
+    c?: number,
+  ): Promise<DbCoupon | null> => {
+    // Disambiguate the two call shapes:
+    //   redeem(code)                         → a=code, b=undefined
+    //   redeem(code, amount)                 → a=code, b=number
+    //   redeem(tenantId, code)               → a=tid,  b=string
+    //   redeem(tenantId, code, amount)       → a=tid,  b=string, c=number
+    let tenantId: string | null;
+    let rawCode: string;
+    let deductAmount: number | undefined;
+    if (typeof b === "string") {
+      tenantId = a;
+      rawCode = b;
+      deductAmount = c;
+    } else {
+      tenantId = null;
+      rawCode = a;
+      deductAmount = b;
     }
-    const updated = await prisma.coupon.update({ where: { id: row.id }, data });
-    return mapCoupon(updated);
+    const code = rawCode.toUpperCase().trim();
+    const now = new Date();
+
+    // ── Atomic conditional UPDATE — the core race-safety guarantee ─────────
+    // We use $executeRaw with a column-to-column comparison ("usedCount" <
+    // "maxUses") which Prisma's typed updateMany cannot express. Returns the
+    // number of rows affected; 0 means the coupon is invalid, expired,
+    // exhausted, inactive, or owned by a different tenant.
+    const tenantClause = tenantId
+      ? Prisma.sql`AND "tenantId" = ${tenantId}`
+      : Prisma.empty;
+    const affected = await prisma.$executeRaw`
+      UPDATE "Coupon"
+         SET "usedCount" = "usedCount" + 1
+       WHERE "code" = ${code}
+         ${tenantClause}
+         AND "active" = true
+         AND ("expiresAt" IS NULL OR "expiresAt" > ${now})
+         AND ("maxUses" IS NULL OR "usedCount" < "maxUses")
+    `;
+    if (affected === 0) return null;
+
+    // Re-fetch the (now-incremented) row, scoped by tenant if known.
+    const where: PrismaTypes.CouponWhereInput = tenantId
+      ? { code, tenantId }
+      : { code };
+    const row = await prisma.coupon.findFirst({ where });
+    if (!row) return null;
+
+    // Giftcard balance adjustment is a follow-up write — not part of the
+    // atomic guard above because the column-to-column subtraction is too
+    // gnarly to express in a single conditional UPDATE. The maxUses guard
+    // (set to 1 on giftcards in practice) is the primary single-use defence.
+    if (row.discountType === "giftcard" && deductAmount != null) {
+      const currentBalance =
+        toNumOrZero(row.balance) || toNumOrZero(row.discountValue);
+      const newBalance = Math.max(0, currentBalance - deductAmount);
+      const updated = await prisma.coupon.update({
+        where: { id: row.id },
+        data: {
+          balance: newBalance,
+          ...(newBalance <= 0 ? { active: false } : {}),
+        },
+      });
+      return mapCoupon(updated);
+    }
+
+    return mapCoupon(row);
+  }) as {
+    (code: string, deductAmount?: number): Promise<DbCoupon | null>;
+    (tenantId: string, code: string, deductAmount?: number): Promise<DbCoupon | null>;
   },
   async delete(id: string): Promise<void> {
     await prisma.coupon.delete({ where: { id } }).catch(() => {});

@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { OrdersDB, normalizePhone } from "@/lib/jsondb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 
 // -- GET /api/customers/[phone]/orders -- public, rate-limited ----------------
 // Returns orders for a customer identified by phone number.
 // No admin auth -- customers look up their own orders from /cuenta.
+// Tenant-scoped via x-tenant-id header injected by proxy/middleware.
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ phone: string }> }
@@ -13,9 +15,10 @@ export async function GET(
   const { allowed } = rateLimit(`customer-orders:${ip}`, 30, 60);
   if (!allowed) return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
 
+  const tenantId = getTenantIdFromRequest(req);
   const { phone } = await params;
   try {
-    const orders = await OrdersDB.getByCustomerPhone(normalizePhone(phone));
+    const orders = await OrdersDB.getByCustomerPhone(tenantId, normalizePhone(phone));
     // Return safe customer-facing fields only (no internal admin notes or full details)
     const safe = orders.map((o) => ({
       id: o.id,

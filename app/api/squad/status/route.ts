@@ -1,22 +1,28 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { readFile, stat } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { requireAdmin } from "@/lib/require-admin";
+import { logger } from "@/lib/logger";
 
 /**
  * Squad Dashboard Status Endpoint
  *
- * Exposes the current state of the Alpha/Beta/Gamma autonomous squad for the
- * admin panel. Reads `.claude/squad/orchestrator.json` from disk (it is the
- * shared brain, not a database record) and returns a summarized view with
- * per-task status, agent state, and recent events.
+ * Returns a minimal summary of the Alpha/Beta/Gamma autonomous squad for the
+ * engineering dashboard. This endpoint exposes INTERNAL engineering state and
+ * must NEVER be reachable by customer admins in a multi-tenant production
+ * deployment. Defense in depth (HOTFIX-007):
  *
- * Access: admin + superadmin only. Not tenant-scoped because the orchestrator
- * is a global engineering artifact, not per-tenant data.
+ *   1. `requireAdmin(req, ["admin"])` — baseline role gate.
+ *   2. `NODE_ENV !== "production"` OR an explicit `SQUAD_STATUS_ALLOWLIST`
+ *      username match — hard wall against tenant admins in prod.
+ *   3. Any unmet condition answers with 404 (not 401/403/503) so the route
+ *      itself is indistinguishable from an unknown path.
+ *   4. Response body is intentionally minimal: no locked_files, no raw
+ *      events log, no file paths, no task titles, no assignees, no roadmap.
  *
- * Caching: intentionally not cached. This endpoint must reflect the latest
- * squad state on every call. `requireAdmin` reads cookies, so Next 16 will
- * auto-detect this route as dynamic (no need for a segment config).
+ * Access: superadmin allowlist only. Not tenant-scoped — the orchestrator
+ * is a global engineering artifact, not per-tenant data. `requireAdmin`
+ * reads cookies, so Next 16 auto-detects this route as dynamic.
  */
 
 type TaskStatus =
@@ -29,33 +35,10 @@ type TaskStatus =
 interface OrchestratorTask {
   task_id: string;
   module: string;
-  title: string;
-  description: string;
-  priority: "high" | "medium" | "low";
   status: TaskStatus;
-  assigned_agent: string | null;
-  allowed_agents: string[];
-  started_at: string | null;
-  completed_at: string | null;
-  reviewed_by: string | null;
-  files_to_modify?: string[];
-  acceptance_criteria?: string[];
 }
 
 interface OrchestratorFile {
-  version: string;
-  project: string;
-  last_updated: string;
-  shared_state: {
-    current_sprint: number;
-    sprint_name?: string;
-    active_agents: unknown[];
-    locked_files: Array<{ path: string; agent: string; since: string }>;
-  };
-  agents: Record<
-    string,
-    { role: string; status: string; owns?: string[] }
-  >;
   tasks: OrchestratorTask[];
 }
 
@@ -65,12 +48,12 @@ const ORCHESTRATOR_PATH = path.join(
   "squad",
   "orchestrator.json",
 );
-const EVENTS_PATH = path.join(
-  process.cwd(),
-  ".claude",
-  "squad",
-  "events.log",
-);
+
+const NOT_FOUND_BODY = { error: "not found" } as const;
+
+function notFound(): NextResponse {
+  return NextResponse.json(NOT_FOUND_BODY, { status: 404 });
+}
 
 async function readOrchestrator(): Promise<OrchestratorFile | null> {
   try {
@@ -81,44 +64,44 @@ async function readOrchestrator(): Promise<OrchestratorFile | null> {
   }
 }
 
-async function readRecentEvents(limit = 20): Promise<string[]> {
-  try {
-    const raw = await readFile(EVENTS_PATH, "utf8");
-    return raw
-      .split("\n")
-      .filter((line) => line.trim().length > 0)
-      .slice(-limit);
-  } catch {
-    return [];
-  }
-}
+/**
+ * Gate callers behind NODE_ENV or an explicit allowlist. In dev/preview the
+ * endpoint is open to any admin; in production it is only reachable by
+ * usernames listed in `SQUAD_STATUS_ALLOWLIST` (comma separated).
+ */
+function isCallerAllowed(username: string): boolean {
+  if (process.env.NODE_ENV !== "production") return true;
 
-async function readFileMtime(absPath: string): Promise<string | null> {
-  try {
-    const info = await stat(absPath);
-    return info.mtime.toISOString();
-  } catch {
-    return null;
-  }
+  const raw = process.env.SQUAD_STATUS_ALLOWLIST ?? "";
+  const allowlist = raw
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry) => entry.length > 0);
+
+  if (allowlist.length === 0) return false;
+  return allowlist.includes(username.toLowerCase());
 }
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin"]);
-  if (auth instanceof NextResponse) return auth;
+  if (auth instanceof NextResponse) {
+    // Mask 401/403 as 404 — the existence of this route is itself secret.
+    return notFound();
+  }
+
+  if (!isCallerAllowed(auth.username)) {
+    logger.warn("[squad-status] Caller outside allowlist", {
+      username: auth.username,
+      role: auth.role,
+    });
+    return notFound();
+  }
 
   const data = await readOrchestrator();
   if (!data) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "orchestrator.json not found or unparseable",
-      },
-      { status: 503 },
-    );
+    // 404 (not 503) to avoid an existence oracle for the orchestrator path.
+    return notFound();
   }
-
-  const events = await readRecentEvents(20);
-  const orchestratorMtime = await readFileMtime(ORCHESTRATOR_PATH);
 
   const counts: Record<TaskStatus, number> = {
     pending: 0,
@@ -131,34 +114,24 @@ export async function GET(req: NextRequest) {
     counts[t.status] = (counts[t.status] ?? 0) + 1;
   }
 
+  // Minimal task summary — task_id, status, module only. No titles, no files,
+  // no assignees, no timestamps.
   const tasksSummary = data.tasks.map((t) => ({
     task_id: t.task_id,
-    module: t.module,
-    title: t.title,
-    priority: t.priority,
     status: t.status,
-    assigned_agent: t.assigned_agent,
-    allowed_agents: t.allowed_agents,
-    started_at: t.started_at,
-    completed_at: t.completed_at,
-    reviewed_by: t.reviewed_by,
+    module: t.module,
   }));
+
+  // Audit trail: record every successful caller.
+  logger.info("[squad-status] Access granted", {
+    username: auth.username,
+    role: auth.role,
+  });
 
   return NextResponse.json({
     ok: true,
-    project: data.project,
-    version: data.version,
-    last_updated: data.last_updated,
-    orchestrator_file_mtime: orchestratorMtime,
-    sprint: {
-      number: data.shared_state.current_sprint,
-      name: data.shared_state.sprint_name ?? null,
-    },
-    agents: data.agents,
-    locked_files: data.shared_state.locked_files,
     counts,
     total_tasks: data.tasks.length,
     tasks: tasksSummary,
-    recent_events: events,
   });
 }

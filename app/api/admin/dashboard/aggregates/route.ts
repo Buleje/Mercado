@@ -39,6 +39,11 @@ export async function GET(req: NextRequest) {
     const data = await AnalyticsDB.getDashboardAggregates(auth.tenantId);
     return NextResponse.json(data);
   } catch (e) {
+    // HOTFIX-006: AnalyticsDB.getDashboardAggregates intentionally throws on
+    // DB failure so Next 16 Cache Components does NOT cache a zero-fallback
+    // placeholder. This route is the designated owner of the 500 response —
+    // it MUST keep its try/catch (otherwise the Next runtime would surface a
+    // generic error page and poison the user experience for the whole session).
     logger.error("[api/admin/dashboard/aggregates] GET failed", {
       tenantId: auth.tenantId,
       error: (e as Error).message,

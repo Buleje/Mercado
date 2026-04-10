@@ -2,7 +2,6 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag } from "next/cache";
 import { toNumOrZero } from "@/lib/decimal-utils";
-import { logger } from "@/lib/logger";
 
 /**
  * lib/db/analytics.db.ts
@@ -81,7 +80,20 @@ export const AnalyticsDB = {
    * - `expire:     300` — hard TTL, evict after 5 min
    * - tag `tenant:${tenantId}:dashboard` — surgical invalidation from writes
    *
+   * Error propagation (HOTFIX-006):
+   * This function intentionally has NO try/catch around the Prisma calls.
+   * Next 16 Cache Components only cache SUCCESSFUL resolutions of a
+   * `"use cache"` function — thrown errors are NOT cached. If we were to
+   * catch a transient DB failure and return an all-zero fallback, Next would
+   * happily store those zeros under `tenant:${tenantId}:dashboard` for up to
+   * `expire:300` seconds, blinding the dashboard for 5 minutes after the DB
+   * has recovered. Letting the error bubble keeps the cache clean; the route
+   * handler at `app/api/admin/dashboard/aggregates/route.ts` owns the
+   * HTTP 500 response so the client sees a real error and can retry.
+   *
    * @param tenantId — tenant scope. MANDATORY first argument per rule #3.
+   * @throws propagates any Prisma error. Do NOT wrap this call in a catch
+   *   that swallows the error and returns a placeholder — it will be cached.
    */
   async getDashboardAggregates(tenantId: string): Promise<DashboardAggregates> {
     "use cache";
@@ -91,85 +103,71 @@ export const AnalyticsDB = {
     const todayStart = startOfToday();
     const weekStart = startOfLastWeek();
 
-    try {
-      // All five queries run in parallel against the DB. Each returns only
-      // aggregated numbers (no rows), so the total payload stays tiny.
-      const [
-        todayAgg,
-        weekAgg,
-        activeCartsCount,
-        lowStockCount,
-      ] = await Promise.all([
-        prisma.order.aggregate({
-          where: {
-            tenantId,
-            deletedAt: null,
-            status: { in: [...COMPLETED_STATUSES] },
-            createdAt: { gte: todayStart },
-          },
-          _sum: { total: true },
-          _count: { _all: true },
-        }),
-        prisma.order.aggregate({
-          where: {
-            tenantId,
-            deletedAt: null,
-            status: { in: [...COMPLETED_STATUSES] },
-            createdAt: { gte: weekStart },
-          },
-          _sum: { total: true },
-          _count: { _all: true },
-        }),
-        prisma.order.count({
-          where: {
-            tenantId,
-            deletedAt: null,
-            status: { in: [...ACTIVE_CART_STATUSES] },
-          },
-        }),
-        // Low stock: products where stock is set, stockMin is set, and
-        // stock <= stockMin. Prisma cannot express column-to-column comparison
-        // with its fluent API, so we use a parameterized raw query ($1).
-        prisma.$queryRaw<{ count: bigint }[]>`
-          SELECT COUNT(*)::bigint AS count
-          FROM "Product"
-          WHERE "tenantId" = ${tenantId}
-            AND "deletedAt" IS NULL
-            AND "active" = true
-            AND "stock" IS NOT NULL
-            AND "stockMin" IS NOT NULL
-            AND "stock" <= "stockMin"
-        `,
-      ]);
+    // All four queries run in parallel against the DB. Each returns only
+    // aggregated numbers (no rows), so the total payload stays tiny. Any
+    // rejection short-circuits Promise.all and propagates out of the cached
+    // function, which prevents Next from caching a failure shape.
+    const [
+      todayAgg,
+      weekAgg,
+      activeCartsCount,
+      lowStockCount,
+    ] = await Promise.all([
+      prisma.order.aggregate({
+        where: {
+          tenantId,
+          deletedAt: null,
+          status: { in: [...COMPLETED_STATUSES] },
+          createdAt: { gte: todayStart },
+        },
+        _sum: { total: true },
+        _count: { _all: true },
+      }),
+      prisma.order.aggregate({
+        where: {
+          tenantId,
+          deletedAt: null,
+          status: { in: [...COMPLETED_STATUSES] },
+          createdAt: { gte: weekStart },
+        },
+        _sum: { total: true },
+        _count: { _all: true },
+      }),
+      prisma.order.count({
+        where: {
+          tenantId,
+          deletedAt: null,
+          status: { in: [...ACTIVE_CART_STATUSES] },
+        },
+      }),
+      // Low stock: products where stock is set, stockMin is set, and
+      // stock <= stockMin. Prisma cannot express column-to-column comparison
+      // with its fluent API, so we use a parameterized raw query ($1).
+      prisma.$queryRaw<{ count: bigint }[]>`
+        SELECT COUNT(*)::bigint AS count
+        FROM "Product"
+        WHERE "tenantId" = ${tenantId}
+          AND "deletedAt" IS NULL
+          AND "active" = true
+          AND "stock" IS NOT NULL
+          AND "stockMin" IS NOT NULL
+          AND "stock" <= "stockMin"
+      `,
+    ]);
 
-      return {
-        tenantId,
-        today: {
-          salesCount: todayAgg._count._all,
-          revenue: toNumOrZero(todayAgg._sum.total),
-        },
-        week: {
-          salesCount: weekAgg._count._all,
-          revenue: toNumOrZero(weekAgg._sum.total),
-        },
-        activeCarts: activeCartsCount,
-        lowStockCount: lowStockCount[0]?.count != null ? Number(lowStockCount[0].count) : 0,
-        generatedAt: new Date().toISOString(),
-      };
-    } catch (e) {
-      logger.error("[analytics.db] getDashboardAggregates failed", {
-        tenantId,
-        error: (e as Error).message,
-      });
-      // Fail safe: return an empty shape so the frontend degrades gracefully.
-      return {
-        tenantId,
-        today: { salesCount: 0, revenue: 0 },
-        week: { salesCount: 0, revenue: 0 },
-        activeCarts: 0,
-        lowStockCount: 0,
-        generatedAt: new Date().toISOString(),
-      };
-    }
+    return {
+      tenantId,
+      today: {
+        salesCount: todayAgg._count._all,
+        revenue: toNumOrZero(todayAgg._sum.total),
+      },
+      week: {
+        salesCount: weekAgg._count._all,
+        revenue: toNumOrZero(weekAgg._sum.total),
+      },
+      activeCarts: activeCartsCount,
+      lowStockCount: lowStockCount[0]?.count != null ? Number(lowStockCount[0].count) : 0,
+      generatedAt: new Date().toISOString(),
+    };
   },
 };

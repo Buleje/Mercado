@@ -284,3 +284,55 @@ describe("AnalyticsDB.getDashboardAggregates — tenant isolation", () => {
     expect(res.lowStockCount).toBe(0);
   });
 });
+
+// ──────────────────────────────────────────────────────────────────────────
+// HOTFIX-006 — cache poisoning regression guard
+//
+// Before the fix, getDashboardAggregates wrapped its Prisma calls in a
+// try/catch INSIDE the `"use cache"` scope and returned an all-zero fallback
+// on failure. Next 16 Cache Components would happily store those zeros under
+// `tenant:${tenantId}:dashboard` for up to `expire:300` seconds, blinding
+// the dashboard for five minutes after a two-second DB hiccup.
+//
+// The fix removes the inner catch so Prisma errors propagate. Next does NOT
+// cache thrown errors, so the next request after the DB recovers gets fresh
+// numbers. This test asserts the function REJECTS on DB failure — if a future
+// refactor re-introduces a swallowing catch, this test will catch it.
+// ──────────────────────────────────────────────────────────────────────────
+describe("AnalyticsDB.getDashboardAggregates — error propagation (HOTFIX-006)", () => {
+  it("rejects on prisma failure (must NOT return a zero fallback that would poison the cache)", async () => {
+    const dbError = new Error("connection terminated unexpectedly");
+    // First aggregate call rejects; Promise.all short-circuits and the
+    // rejection bubbles out of the cached function. Mock the other queries
+    // too so a stray resolution can't mask the failure if the call order
+    // changes in the future.
+    mockPrisma.order.aggregate.mockRejectedValueOnce(dbError);
+    mockPrisma.order.aggregate.mockRejectedValueOnce(dbError);
+    mockPrisma.order.count.mockRejectedValueOnce(dbError);
+    mockPrisma.$queryRaw.mockRejectedValueOnce(dbError);
+
+    await expect(
+      AnalyticsDB.getDashboardAggregates(TENANT_A),
+    ).rejects.toThrow("connection terminated unexpectedly");
+  });
+
+  it("does not swallow errors into an all-zero DashboardAggregates shape", async () => {
+    // Regression guard: the old fallback returned an object with
+    // today.salesCount === 0, activeCarts === 0, etc. If that behaviour ever
+    // comes back, this assertion fails because the promise resolves instead
+    // of rejecting.
+    mockPrisma.order.aggregate.mockRejectedValueOnce(new Error("boom"));
+    mockPrisma.order.aggregate.mockRejectedValueOnce(new Error("boom"));
+    mockPrisma.order.count.mockRejectedValueOnce(new Error("boom"));
+    mockPrisma.$queryRaw.mockRejectedValueOnce(new Error("boom"));
+
+    let resolved = false;
+    try {
+      await AnalyticsDB.getDashboardAggregates(TENANT_A);
+      resolved = true;
+    } catch {
+      // expected
+    }
+    expect(resolved).toBe(false);
+  });
+});

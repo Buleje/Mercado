@@ -286,7 +286,7 @@ async function customer360(
 
   const [customer, orders, loyalty, reviews] = await Promise.all([
     CustomersDB.getByPhone(phone),
-    OrdersDB.getByCustomerPhone(phone),
+    OrdersDB.getByCustomerPhone(ctx.tenantId, phone),
     LoyaltyDB.getByPhone(phone),
     ReviewsDB.getAll(),
   ]);

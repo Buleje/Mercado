@@ -213,9 +213,27 @@ export const OrdersDB = {
     });
     return row ? mapOrder(row) : null;
   },
-  async getByCustomerPhone(phone: string): Promise<DbOrder[]> {
+  /**
+   * HOTFIX-005 / SN-1 — Fetch orders for a given phone, scoped to a tenant.
+   *
+   * Two call shapes are accepted during the migration window:
+   *   - `(tenantId, phone)` — secure, tenant-scoped path. Use this everywhere.
+   *   - `(phone)` — legacy, cross-tenant. @deprecated, do not use in new code.
+   *     Still accepted so that app/api/orders/route.ts (Beta-Charlie's file,
+   *     locked during this hotfix) keeps compiling until its call site is
+   *     migrated in a follow-up PR. When `phone` is omitted the first arg is
+   *     treated as the phone and NO tenant filter is applied.
+   */
+  async getByCustomerPhone(
+    tenantIdOrPhone: string,
+    phone?: string,
+  ): Promise<DbOrder[]> {
+    const where: Record<string, unknown> =
+      phone !== undefined
+        ? { tenantId: tenantIdOrPhone, customerPhone: normalizePhone(phone) }
+        : { customerPhone: normalizePhone(tenantIdOrPhone) };
     return (await prisma.order.findMany({
-      where: { customerPhone: normalizePhone(phone) },
+      where,
       include: { items: true },
       orderBy: { createdAt: "desc" },
     })).map(mapOrder);

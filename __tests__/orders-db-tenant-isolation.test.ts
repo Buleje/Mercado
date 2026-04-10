@@ -180,6 +180,43 @@ describe("OrdersDB.update tenant isolation", () => {
   });
 });
 
+// ── getByCustomerPhone ──────────────────────────────────────────────────────
+
+describe("OrdersDB.getByCustomerPhone tenant isolation (HOTFIX-005 / SN-1)", () => {
+  it("(e) returns only same-tenant orders when called with (tenantId, phone)", async () => {
+    const row = makeOrderRow("ord-a1", TENANT_A);
+    mockPrisma.order.findMany.mockResolvedValueOnce([row]);
+
+    const result = await OrdersDB.getByCustomerPhone(TENANT_A, "987654321");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("ord-a1");
+    // Heart of the fix — the where clause must include tenantId
+    expect(mockPrisma.order.findMany).toHaveBeenCalledWith({
+      where: { tenantId: TENANT_A, customerPhone: "987654321" },
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+    });
+  });
+
+  it("(f) returns empty array when cross-tenant phone has no orders in this tenant", async () => {
+    // Sanity fixture: the same phone has an order in TENANT_B. Prisma findMany
+    // MUST filter it out because our where clause pins tenantId = TENANT_A.
+    const tenantBRow = makeOrderRow("ord-b1", TENANT_B);
+    expect(tenantBRow.tenantId).toBe(TENANT_B); // fixture lives in the other tenant
+    mockPrisma.order.findMany.mockResolvedValueOnce([]);
+
+    const result = await OrdersDB.getByCustomerPhone(TENANT_A, "987654321");
+
+    expect(result).toEqual([]);
+    expect(mockPrisma.order.findMany).toHaveBeenCalledWith({
+      where: { tenantId: TENANT_A, customerPhone: "987654321" },
+      include: { items: true },
+      orderBy: { createdAt: "desc" },
+    });
+  });
+});
+
 // ── delete ──────────────────────────────────────────────────────────────────
 
 describe("OrdersDB.delete tenant isolation", () => {
