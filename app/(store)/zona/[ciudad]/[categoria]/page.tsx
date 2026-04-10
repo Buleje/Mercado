@@ -1,10 +1,12 @@
 /**
- * /zona/[ciudad]/[categoria] — City x Category product listing for Programmatic SEO
+ * /zona/[ciudad]/[categoria] — City x Category page for Programmatic SEO
  *
- * Targets: "comprar abarrotes Pucallpa", "bebidas delivery Pucallpa"
+ * Buleje = Software SaaS ERP para bodegas y tiendas de todo Peru.
  *
- * Renders product grid with prices, JSON-LD (ItemList + FAQPage),
- * breadcrumbs, optimized meta tags for local search.
+ * Targets: "vender abarrotes con software Pucallpa",
+ *          "sistema para bodega de bebidas Lima"
+ *
+ * Shows the product catalog a bodega could sell using Buleje.
  */
 
 import type { Metadata } from "next";
@@ -20,6 +22,7 @@ import { ProductsDB } from "@/lib/db/products.db";
 import {
   generateItemListLD,
   generateFAQPageLD,
+  generateSoftwareApplicationLD,
   zoneBreadcrumbs,
 } from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
@@ -66,8 +69,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const cat = realCategories.find((c) => c.id === categoria);
   if (!zone || !cat) return { title: "No encontrado" };
 
-  const title = `${cat.label} en ${zone.name} — Comprar con Delivery | Buleje`;
-  const description = `Compra ${cat.label.toLowerCase()} con delivery rapido en ${zone.name}. Precios de bodega, paga con Yape o efectivo. Delivery gratis desde S/50 en ${zone.districts.join(", ")}.`;
+  const title = `Vender ${cat.label} en ${zone.name} — Buleje ERP para Bodegas`;
+  const description = `Usa Buleje para gestionar ${cat.label.toLowerCase()} en tu bodega de ${zone.name}. Inventario, precios, delivery y facturacion SUNAT integrados. Software gratuito para empezar.`;
   const url = `${BASE_URL}/zona/${zone.slug}/${cat.id}`;
 
   return {
@@ -84,7 +87,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary",
-      title: `${cat.label} delivery en ${zone.name}`,
+      title: `${cat.label} con Buleje en ${zone.name}`,
       description,
     },
   };
@@ -110,7 +113,7 @@ function ProductSEOCard({
       <div className="relative aspect-square bg-slate-50">
         <Image
           src={product.image}
-          alt={`${product.name} — comprar con delivery`}
+          alt={`${product.name} — gestiona con Buleje`}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           className="object-contain p-3 group-hover:scale-105 transition-transform"
@@ -166,13 +169,23 @@ async function CategoryZoneContent({
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
-            generateItemListLD(
-              `${cat.label} en ${zone.name}`,
-              productItems,
-            ),
+            generateSoftwareApplicationLD(zone),
           ),
         }}
       />
+      {products.length > 0 && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(
+              generateItemListLD(
+                `${cat.label} en ${zone.name} — Buleje`,
+                productItems,
+              ),
+            ),
+          }}
+        />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -185,13 +198,17 @@ async function CategoryZoneContent({
 
       {/* Hero H1 */}
       <header className="mb-8">
+        <div className="inline-block rounded-full bg-emerald-50 px-3 py-0.5 text-xs font-medium text-emerald-700 mb-2">
+          Buleje ERP
+        </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
           {cat.emoji} {cat.label} en {zone.name}
         </h1>
         <p className="mt-2 text-slate-600">
-          {products.length} productos de {cat.label.toLowerCase()} con
-          delivery en {zone.districts.join(", ")}.
-          Precios de bodega, paga con Yape o efectivo.
+          {products.length > 0
+            ? `${products.length} productos de ${cat.label.toLowerCase()} que puedes vender con Buleje en ${zone.name}.`
+            : `Gestiona ${cat.label.toLowerCase()} en tu bodega de ${zone.name} con Buleje.`}
+          {" "}Inventario, precios y delivery integrados.
         </p>
       </header>
 
@@ -203,19 +220,36 @@ async function CategoryZoneContent({
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
+        <div className="text-center py-12 rounded-2xl border border-dashed border-slate-200 bg-slate-50">
           <p className="text-slate-500">
-            Aun no hay productos de {cat.label.toLowerCase()} en{" "}
-            {zone.name}. Estamos agregando mas pronto.
+            Empieza a vender {cat.label.toLowerCase()} con Buleje en{" "}
+            {zone.name}.
           </p>
           <Link
-            href={`/zona/${zone.slug}`}
-            className="mt-4 inline-block text-emerald-600 hover:text-emerald-700 font-medium"
+            href="/registro"
+            className="mt-4 inline-block rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white hover:bg-emerald-700"
           >
-            Ver todas las categorias
+            Registrate gratis
           </Link>
         </div>
       )}
+
+      {/* CTA */}
+      <div className="mt-8 p-6 rounded-2xl bg-emerald-50 border border-emerald-100 text-center">
+        <h2 className="text-lg font-bold text-slate-800">
+          Empieza a vender {cat.label.toLowerCase()} online
+        </h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Buleje te da inventario, POS, delivery y facturacion SUNAT
+          todo en un solo lugar.
+        </p>
+        <Link
+          href="/registro"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm text-white font-semibold shadow hover:bg-emerald-700 transition-colors"
+        >
+          Probar gratis
+        </Link>
+      </div>
 
       {/* Cross-links to other categories */}
       <section className="mt-10">
@@ -273,23 +307,35 @@ async function CategoryZoneContent({
         </div>
       </section>
 
-      {/* CTA */}
-      <div className="mt-8 text-center">
-        <Link
-          href="/tienda"
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-sm text-white font-semibold shadow hover:bg-emerald-700 transition-colors"
-        >
-          Ver todo el catalogo
-        </Link>
-      </div>
+      {/* Other zones */}
+      <section className="mt-8">
+        <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          Buleje en otras ciudades
+        </h2>
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {zones
+            .filter((z) => z.slug !== zone.slug)
+            .slice(0, 6)
+            .map((z) => (
+              <Link
+                key={z.slug}
+                href={`/zona/${z.slug}/${cat.id}`}
+                className="text-xs text-slate-400 hover:text-emerald-600 transition-colors"
+              >
+                {cat.label} en {z.name}
+              </Link>
+            ))}
+        </div>
+      </section>
 
       {/* SEO footer */}
       <footer className="mt-10 border-t border-slate-100 pt-4">
         <p className="text-xs text-slate-400 leading-relaxed">
-          Compra {cat.label.toLowerCase()} online en {zone.name},{" "}
-          {zone.region} con delivery a domicilio. Buleje es tu bodega de
-          confianza con precios de mayorista. Aceptamos Yape, Plin y
-          efectivo. Delivery gratis en pedidos desde S/50.
+          Buleje es un software ERP para bodegas y tiendas creado en
+          Pucallpa, Peru. Gestiona {cat.label.toLowerCase()} y todas las
+          categorias de tu negocio en {zone.name} con inventario, POS,
+          delivery, fiado digital y facturacion SUNAT. Disponible en todo
+          el Peru.
         </p>
       </footer>
     </div>

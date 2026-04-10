@@ -1,37 +1,137 @@
 /**
  * Zone/city definitions for Programmatic SEO pages.
  *
- * Each zone generates:
- *   /zona/[slug]                → City landing page
- *   /zona/[slug]/[categoria]    → City × Category product listing
+ * Buleje es un Software SaaS ERP para bodegas y tiendas de todo el Peru.
+ * Creado en Pucallpa, con cobertura nacional.
  *
- * Designed to target local search queries like:
- *   "bodega delivery Pucallpa", "comprar abarrotes Pucallpa"
+ * Cada zona genera:
+ *   /zona/[slug]                → City landing page
+ *   /zona/[slug]/[categoria]    → City × Category page
+ *
+ * Targets local search queries like:
+ *   "software para bodegas Lima", "sistema ERP tienda Arequipa",
+ *   "app de bodega Pucallpa", "gestion de inventario tienda Cusco"
  */
 
 export type Zone = {
   slug: string;
   name: string;
   region: string;
-  /** Short SEO description of the zone */
+  /** Short SEO description for this zone */
   description: string;
   /** Lat/Lon center for geo structured data */
   geo: { lat: number; lon: number };
-  /** Distritos que cubre esta zona */
+  /** Districts/areas principales */
   districts: string[];
-  /** Delivery available? */
+  /** Is delivery active in this zone for tenants? */
   deliveryActive: boolean;
 };
 
 export const zones: Zone[] = [
+  // ── Selva ──
   {
     slug: "pucallpa",
     name: "Pucallpa",
     region: "Ucayali",
     description:
-      "Tu bodega online en Pucallpa con delivery rapido. Abarrotes, bebidas, carnes, frutas y mas a precios de bodega.",
+      "Buleje nacio en Pucallpa. Software ERP para bodegas y tiendas con delivery, inventario, ventas POS, fiado digital y facturacion SUNAT. Cobertura completa en Ucayali.",
     geo: { lat: -8.3791, lon: -74.5539 },
-    districts: ["Calleria", "Manantay", "Yarinacocha"],
+    districts: ["Calleria", "Manantay", "Yarinacocha", "Campo Verde"],
+    deliveryActive: true,
+  },
+  {
+    slug: "iquitos",
+    name: "Iquitos",
+    region: "Loreto",
+    description:
+      "Buleje para bodegas y tiendas en Iquitos. Gestiona tu inventario, ventas, delivery y facturacion electronica desde tu celular. Funciona con Yape y efectivo.",
+    geo: { lat: -3.7491, lon: -73.2538 },
+    districts: ["Iquitos", "San Juan Bautista", "Punchana", "Belen"],
+    deliveryActive: true,
+  },
+  {
+    slug: "tarapoto",
+    name: "Tarapoto",
+    region: "San Martin",
+    description:
+      "Software de gestion para bodegas en Tarapoto. Control de inventario, ventas POS, delivery y reportes automaticos. Creado para negocios de la selva peruana.",
+    geo: { lat: -6.4874, lon: -76.3600 },
+    districts: ["Tarapoto", "Morales", "La Banda de Shilcayo"],
+    deliveryActive: true,
+  },
+  // ── Costa ──
+  {
+    slug: "lima",
+    name: "Lima",
+    region: "Lima",
+    description:
+      "Buleje ERP para bodegas y tiendas en Lima. Sistema completo de inventario, POS, delivery, fiado digital y facturacion SUNAT. Ideal para bodegas de barrio y minimarkets.",
+    geo: { lat: -12.0464, lon: -77.0428 },
+    districts: [
+      "San Juan de Lurigancho", "Comas", "Villa El Salvador",
+      "San Martin de Porres", "Los Olivos", "Ate", "Callao",
+    ],
+    deliveryActive: true,
+  },
+  {
+    slug: "arequipa",
+    name: "Arequipa",
+    region: "Arequipa",
+    description:
+      "Software ERP para bodegas y tiendas en Arequipa. Gestiona ventas, inventario, delivery y boletas electronicas. Paga con Yape, Plin o efectivo.",
+    geo: { lat: -16.4090, lon: -71.5375 },
+    districts: ["Cercado", "Cayma", "Cerro Colorado", "Jose Luis Bustamante y Rivero", "Paucarpata"],
+    deliveryActive: true,
+  },
+  {
+    slug: "trujillo",
+    name: "Trujillo",
+    region: "La Libertad",
+    description:
+      "Buleje para negocios en Trujillo. Sistema de gestion de bodegas con POS, inventario en tiempo real, delivery y facturacion electronica SUNAT.",
+    geo: { lat: -8.1116, lon: -79.0288 },
+    districts: ["Trujillo", "La Esperanza", "El Porvenir", "Victor Larco Herrera"],
+    deliveryActive: true,
+  },
+  {
+    slug: "chiclayo",
+    name: "Chiclayo",
+    region: "Lambayeque",
+    description:
+      "Software para bodegas y minimarkets en Chiclayo. Control total de inventario, ventas POS, delivery a domicilio y fiado digital con score de credito.",
+    geo: { lat: -6.7714, lon: -79.8409 },
+    districts: ["Chiclayo", "Jose Leonardo Ortiz", "La Victoria"],
+    deliveryActive: true,
+  },
+  {
+    slug: "piura",
+    name: "Piura",
+    region: "Piura",
+    description:
+      "Buleje ERP para tiendas en Piura. Administra tu bodega desde el celular: inventario, ventas, delivery, reportes diarios y facturacion SUNAT.",
+    geo: { lat: -5.1945, lon: -80.6328 },
+    districts: ["Piura", "Castilla", "26 de Octubre", "Catacaos"],
+    deliveryActive: true,
+  },
+  // ── Sierra ──
+  {
+    slug: "cusco",
+    name: "Cusco",
+    region: "Cusco",
+    description:
+      "Software de gestion para bodegas y tiendas en Cusco. Sistema ERP completo con POS, inventario, delivery, fiado digital y boletas SUNAT.",
+    geo: { lat: -13.5320, lon: -71.9675 },
+    districts: ["Cusco", "Wanchaq", "Santiago", "San Sebastian", "San Jeronimo"],
+    deliveryActive: true,
+  },
+  {
+    slug: "huancayo",
+    name: "Huancayo",
+    region: "Junin",
+    description:
+      "Buleje para bodegas en Huancayo. Gestiona tu negocio completo: inventario, ventas, delivery, credito a clientes y facturacion electronica.",
+    geo: { lat: -12.0651, lon: -75.2049 },
+    districts: ["Huancayo", "El Tambo", "Chilca"],
     deliveryActive: true,
   },
 ];
@@ -46,32 +146,38 @@ export function findZone(slug: string): Zone | undefined {
 
 /**
  * FAQ items per zone — used for FAQPage JSON-LD.
- * Programmatic: each zone gets localized questions.
+ * About the Buleje platform, not a single store.
  */
 export function getZoneFAQs(zone: Zone) {
   return [
     {
-      question: `¿Hacen delivery en ${zone.name}?`,
-      answer: `Si, hacemos delivery en ${zone.name} y los distritos de ${zone.districts.join(", ")}. Delivery gratis en pedidos desde S/50.`,
+      question: `¿Que es Buleje y como funciona en ${zone.name}?`,
+      answer: `Buleje es un software ERP para bodegas y tiendas. Con Buleje puedes manejar tu inventario, hacer ventas POS, ofrecer delivery, dar fiado digital con score de credito y emitir boletas SUNAT. Funciona en ${zone.name} y en todo el Peru.`,
     },
     {
-      question: `¿Que metodos de pago aceptan en ${zone.name}?`,
+      question: `¿Cuanto cuesta Buleje para mi bodega en ${zone.name}?`,
       answer:
-        "Aceptamos Yape, Plin, efectivo contra entrega y transferencia bancaria. Puedes pagar como te sea mas comodo.",
+        "Buleje tiene plan gratuito para empezar. Los planes de pago incluyen mas productos, delivery, fiado digital y reportes avanzados. Puedes probar gratis sin compromiso.",
     },
     {
-      question: `¿Cuanto demora el delivery en ${zone.name}?`,
-      answer: `El delivery en ${zone.name} demora entre 30 a 60 minutos dependiendo de tu distrito. Pedidos realizados antes de las 8pm llegan el mismo dia.`,
-    },
-    {
-      question: `¿Tienen precios de bodega?`,
+      question: `¿Buleje funciona con Yape y Plin?`,
       answer:
-        "Si, nuestros precios son de bodega — sin sobrecostos de supermercado. Compramos directo de mayoristas para darte el mejor precio.",
+        "Si, Buleje acepta Yape, Plin, efectivo contra entrega y transferencia bancaria. Tus clientes pueden pagar como les sea mas comodo.",
     },
     {
-      question: `¿Puedo comprar al credito (fiado)?`,
+      question: `¿Puedo usar Buleje desde mi celular?`,
       answer:
-        "Si, ofrecemos Fiado Digital para clientes frecuentes. Tu score de credito se calcula automaticamente y puedes ver tu limite en /mi-credito.",
+        "Si, Buleje es una app web que funciona desde cualquier celular, tablet o computadora. No necesitas instalar nada especial, solo abres el navegador.",
+    },
+    {
+      question: `¿Buleje emite boletas y facturas electronicas?`,
+      answer:
+        "Si, Buleje tiene integracion con SUNAT via Nubefact. Puedes emitir boletas y facturas electronicas directamente desde el sistema, con IGV calculado automaticamente.",
+    },
+    {
+      question: `¿Que es el Fiado Digital de Buleje?`,
+      answer:
+        "El Fiado Digital es un sistema de credito automatico para tus clientes frecuentes. Buleje calcula un score de credito basado en historial de compras y puntualidad de pagos. Tus clientes ven su credito en /mi-credito.",
     },
   ];
 }

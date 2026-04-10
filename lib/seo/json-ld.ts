@@ -1,8 +1,8 @@
 /**
  * JSON-LD structured data generators for Programmatic SEO.
  *
- * Used by zone pages (/zona/[ciudad]) and category pages
- * to inject Google-friendly structured data.
+ * Buleje = Software SaaS ERP para bodegas y tiendas de todo Peru.
+ * Created in Pucallpa, national coverage.
  */
 
 import type { Zone } from "@/data/zones";
@@ -10,6 +10,62 @@ import type { Category } from "@/data/products";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.buleje.pe";
+
+// ── SoftwareApplication (main platform schema) ─────────────────────
+
+export function generateSoftwareApplicationLD(zone?: Zone) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Buleje",
+    alternateName: "Buleje ERP",
+    description:
+      "Software ERP para bodegas y tiendas del Peru. Inventario, ventas POS, delivery, fiado digital, facturacion SUNAT y reportes automaticos.",
+    url: BASE_URL,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web, Android, iOS",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "PEN",
+      description: "Plan gratuito disponible. Planes de pago desde S/49/mes.",
+    },
+    creator: {
+      "@type": "Organization",
+      name: "Buleje",
+      url: BASE_URL,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Pucallpa",
+        addressRegion: "Ucayali",
+        addressCountry: "PE",
+      },
+    },
+    ...(zone
+      ? {
+          areaServed: {
+            "@type": "City",
+            name: zone.name,
+          },
+        }
+      : {
+          areaServed: {
+            "@type": "Country",
+            name: "Peru",
+          },
+        }),
+    featureList: [
+      "Inventario en tiempo real",
+      "Punto de venta POS",
+      "Delivery a domicilio",
+      "Fiado digital con score de credito",
+      "Facturacion electronica SUNAT",
+      "Reportes automaticos WhatsApp",
+      "Multi-tienda",
+      "Yape y Plin integrados",
+    ],
+  };
+}
 
 // ── ItemList (category product listing) ─────────────────────────────
 
@@ -74,41 +130,42 @@ export function generateFAQPageLD(faqs: FAQItem[]) {
   };
 }
 
-// ── OfferCatalog for zone pages ─────────────────────────────────────
+// ── Zone landing (SaaS platform in a city) ──────────────────────────
 
-export function generateOfferCatalogLD(
+export function generateZoneLandingLD(
   zone: Zone,
   categories: Category[],
 ) {
   return {
     "@context": "https://schema.org",
-    "@type": "GroceryStore",
-    name: `Buleje — Bodega en ${zone.name}`,
+    "@type": "WebPage",
+    name: `Buleje — Software para Bodegas en ${zone.name}`,
     description: zone.description,
     url: `${BASE_URL}/zona/${zone.slug}`,
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: zone.name,
-      addressRegion: zone.region,
-      addressCountry: "PE",
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Buleje",
+      url: BASE_URL,
     },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: zone.geo.lat,
-      longitude: zone.geo.lon,
+    about: {
+      "@type": "SoftwareApplication",
+      name: "Buleje ERP",
+      applicationCategory: "BusinessApplication",
+      areaServed: {
+        "@type": "City",
+        name: zone.name,
+        containedInPlace: {
+          "@type": "AdministrativeArea",
+          name: zone.region,
+        },
+      },
     },
-    areaServed: {
-      "@type": "City",
-      name: zone.name,
-    },
-    priceRange: "S/1 - S/200",
-    currenciesAccepted: "PEN",
-    paymentAccepted: "Efectivo, Yape, Plin",
-    hasOfferCatalog: {
-      "@type": "OfferCatalog",
-      name: `Productos disponibles en ${zone.name}`,
-      itemListElement: categories.map((cat) => ({
-        "@type": "OfferCatalog",
+    mainEntity: {
+      "@type": "ItemList",
+      name: `Categorias de productos en ${zone.name}`,
+      itemListElement: categories.map((cat, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
         name: cat.label,
         url: `${BASE_URL}/zona/${zone.slug}/${cat.id}`,
       })),
@@ -123,7 +180,7 @@ export function zoneBreadcrumbs(
   category?: { id: string; label: string },
 ) {
   const items = [
-    { name: "Inicio", url: BASE_URL },
+    { name: "Buleje", url: BASE_URL },
     { name: zone.name, url: `${BASE_URL}/zona/${zone.slug}` },
   ];
   if (category) {

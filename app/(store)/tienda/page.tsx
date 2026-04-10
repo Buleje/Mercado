@@ -241,7 +241,7 @@ export default async function TiendaPage() {
       <section className="bg-slate-50 dark:bg-slate-900/50 py-8 border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4">
-            Delivery por zona
+            Buleje — Software para bodegas en todo el Peru
           </h2>
           <div className="flex flex-wrap gap-2">
             {zones.map((zone) => (
@@ -251,16 +251,6 @@ export default async function TiendaPage() {
                 className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
               >
                 {zone.name}
-              </Link>
-            ))}
-            {zones.length > 0 && <span className="text-slate-300">|</span>}
-            {categories.filter((c) => c.id !== "todos").map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/zona/pucallpa/${cat.id}`}
-                className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
-              >
-                {cat.label} Pucallpa
               </Link>
             ))}
           </div>

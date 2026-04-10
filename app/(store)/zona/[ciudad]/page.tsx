@@ -1,10 +1,12 @@
 /**
  * /zona/[ciudad] — City landing page for Programmatic SEO
  *
- * Targets: "bodega delivery Pucallpa", "tienda online Pucallpa"
+ * Buleje = Software SaaS ERP para bodegas y tiendas de todo Peru.
  *
- * Renders category grid with product counts, FAQ section,
- * JSON-LD (GroceryStore + FAQPage), optimized meta tags.
+ * Targets: "software para bodegas Lima", "sistema ERP tienda Arequipa",
+ *          "app de bodega Pucallpa", "gestion inventario tienda Peru"
+ *
+ * Renders category grid, platform features, FAQ, JSON-LD.
  */
 
 import type { Metadata } from "next";
@@ -16,7 +18,11 @@ import { cacheLife, cacheTag } from "next/cache";
 import { categories } from "@/data/products";
 import { zones, findZone, getZoneFAQs } from "@/data/zones";
 import { ProductsDB } from "@/lib/db/products.db";
-import { generateOfferCatalogLD, generateFAQPageLD } from "@/lib/seo/json-ld";
+import {
+  generateSoftwareApplicationLD,
+  generateZoneLandingLD,
+  generateFAQPageLD,
+} from "@/lib/seo/json-ld";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 
 const BASE_URL =
@@ -56,8 +62,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const zone = findZone(ciudad);
   if (!zone) return { title: "Zona no encontrada" };
 
-  const title = `Bodega Online en ${zone.name} — Delivery de Abarrotes, Bebidas y Mas | Buleje`;
-  const description = `Compra abarrotes, bebidas, carnes, frutas y productos de limpieza con delivery rapido en ${zone.name}. Precios de bodega, paga con Yape o efectivo. ${zone.districts.join(", ")}.`;
+  const title = `Software para Bodegas en ${zone.name} — Buleje ERP | Inventario, POS y Delivery`;
+  const description = `Buleje: sistema ERP para bodegas y tiendas en ${zone.name}, ${zone.region}. Inventario en tiempo real, punto de venta POS, delivery, fiado digital y facturacion SUNAT. Funciona con Yape y efectivo.`;
   const url = `${BASE_URL}/zona/${zone.slug}`;
 
   return {
@@ -74,7 +80,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary",
-      title: `Bodega delivery en ${zone.name} | Buleje`,
+      title: `Buleje — Software para Bodegas en ${zone.name}`,
       description,
     },
   };
@@ -104,9 +110,45 @@ function CategoryCard({
         {category.label}
       </h2>
       <p className="text-sm text-slate-500">
-        {count} {count === 1 ? "producto" : "productos"} en {zoneName}
+        {count > 0
+          ? `${count} productos disponibles`
+          : "Categoria disponible"}
       </p>
     </Link>
+  );
+}
+
+// ── Platform features section ───────────────────────────────────────
+const FEATURES = [
+  { icon: "📦", title: "Inventario", desc: "Control de stock en tiempo real con alertas" },
+  { icon: "🛒", title: "Ventas POS", desc: "Punto de venta rapido desde celular o PC" },
+  { icon: "🛵", title: "Delivery", desc: "Tus clientes piden y tu entregas a domicilio" },
+  { icon: "💳", title: "Fiado Digital", desc: "Credito automatico con score para clientes" },
+  { icon: "🧾", title: "SUNAT", desc: "Boletas y facturas electronicas integradas" },
+  { icon: "📊", title: "Reportes", desc: "Resumen diario por WhatsApp con IA" },
+];
+
+function FeaturesGrid({ zoneName }: { zoneName: string }) {
+  return (
+    <section className="mt-10">
+      <h2 className="text-xl font-bold text-slate-800 mb-4">
+        Todo lo que necesita tu bodega en {zoneName}
+      </h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {FEATURES.map((f) => (
+          <div
+            key={f.title}
+            className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-center"
+          >
+            <span className="text-2xl">{f.icon}</span>
+            <h3 className="mt-1 text-sm font-semibold text-slate-700">
+              {f.title}
+            </h3>
+            <p className="mt-0.5 text-xs text-slate-500">{f.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -117,7 +159,7 @@ function FAQSection({ zone }: { zone: (typeof zones)[0] }) {
   return (
     <section className="mt-12">
       <h2 className="text-xl font-bold text-slate-800 mb-4">
-        Preguntas frecuentes sobre delivery en {zone.name}
+        Preguntas frecuentes sobre Buleje en {zone.name}
       </h2>
       <div className="space-y-4">
         {faqs.map((faq) => (
@@ -128,7 +170,7 @@ function FAQSection({ zone }: { zone: (typeof zones)[0] }) {
             <summary className="cursor-pointer px-5 py-4 font-medium text-slate-700 hover:text-emerald-700 transition-colors list-none flex items-center justify-between">
               {faq.question}
               <svg
-                className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180"
+                className="w-5 h-5 text-slate-400 transition-transform group-open:rotate-180 shrink-0"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -168,7 +210,15 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(
-            generateOfferCatalogLD(zone, realCategories),
+            generateSoftwareApplicationLD(zone),
+          ),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            generateZoneLandingLD(zone, realCategories),
           ),
         }}
       />
@@ -182,53 +232,34 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
       {/* Breadcrumbs */}
       <BreadcrumbSchema
         items={[
-          { name: "Inicio", url: BASE_URL },
+          { name: "Buleje", url: BASE_URL },
           { name: zone.name, url: `${BASE_URL}/zona/${zone.slug}` },
         ]}
       />
 
       {/* Hero H1 */}
       <header className="text-center mb-10">
+        <div className="inline-block rounded-full bg-emerald-50 px-4 py-1 text-sm font-medium text-emerald-700 mb-4">
+          Software ERP para Bodegas
+        </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight">
-          Bodega Online en {zone.name}
+          Buleje en {zone.name}
         </h1>
         <p className="mt-3 text-lg text-slate-600 max-w-2xl mx-auto">
           {zone.description}
         </p>
         <p className="mt-2 text-sm text-emerald-600 font-medium">
-          Delivery en {zone.districts.join(", ")} — Gratis desde S/50
+          Disponible en {zone.districts.join(", ")} y todo {zone.region}
         </p>
       </header>
 
-      {/* Category grid */}
-      <section>
-        <h2 className="sr-only">
-          Categorias de productos en {zone.name}
-        </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {realCategories.map((cat) => (
-            <CategoryCard
-              key={cat.id}
-              category={cat}
-              count={counts[cat.id] ?? 0}
-              zoneName={zone.name}
-              zoneSlug={zone.slug}
-            />
-          ))}
-        </div>
-        <p className="mt-6 text-center text-sm text-slate-500">
-          {counts._total ?? 0} productos disponibles con delivery en{" "}
-          {zone.name}
-        </p>
-      </section>
-
-      {/* CTA */}
-      <div className="mt-8 text-center">
+      {/* CTA principal */}
+      <div className="text-center mb-10">
         <Link
-          href="/tienda"
+          href="/registro"
           className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 text-white font-semibold shadow-md hover:bg-emerald-700 transition-colors"
         >
-          Ver todos los productos
+          Prueba Buleje gratis
           <svg
             className="w-4 h-4"
             fill="none"
@@ -243,19 +274,64 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
             />
           </svg>
         </Link>
+        <p className="mt-2 text-xs text-slate-400">
+          Sin tarjeta de credito. Empieza en 5 minutos.
+        </p>
       </div>
+
+      {/* Category grid */}
+      <section>
+        <h2 className="text-lg font-bold text-slate-800 mb-4 text-center">
+          Categorias que puedes vender con Buleje
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {realCategories.map((cat) => (
+            <CategoryCard
+              key={cat.id}
+              category={cat}
+              count={counts[cat.id] ?? 0}
+              zoneName={zone.name}
+              zoneSlug={zone.slug}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Features */}
+      <FeaturesGrid zoneName={zone.name} />
 
       {/* FAQ */}
       <FAQSection zone={zone} />
 
+      {/* Other zones */}
+      <section className="mt-10">
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          Buleje tambien esta en
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {zones
+            .filter((z) => z.slug !== zone.slug)
+            .map((z) => (
+              <Link
+                key={z.slug}
+                href={`/zona/${z.slug}`}
+                className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
+              >
+                {z.name}
+              </Link>
+            ))}
+        </div>
+      </section>
+
       {/* SEO footer text */}
       <footer className="mt-12 border-t border-slate-100 pt-6">
         <p className="text-xs text-slate-400 leading-relaxed">
-          Buleje es tu bodega de confianza en {zone.name}, {zone.region}.
-          Hacemos delivery de abarrotes, bebidas, carnes, frutas, verduras,
-          lacteos y productos de limpieza a los distritos de{" "}
-          {zone.districts.join(", ")}. Precios de bodega sin sobrecostos.
-          Paga con Yape, Plin o efectivo contra entrega.
+          Buleje es un software ERP creado en Pucallpa para bodegas y
+          tiendas de todo el Peru. Disponible en {zone.name},{" "}
+          {zone.region} y en mas de 10 ciudades del pais.
+          Inventario, ventas POS, delivery, fiado digital, facturacion
+          SUNAT y reportes automaticos por WhatsApp.
+          Funciona con Yape, Plin y efectivo.
         </p>
       </footer>
     </div>
@@ -264,14 +340,12 @@ async function ZoneContent({ ciudad }: { ciudad: string }) {
 
 // ── Page component ──────────────────────────────────────────────────
 export default function ZonaCiudadPage({ params }: Props) {
-  // We need to unwrap the promise synchronously for Suspense to work
-  // Use an inner async component that awaits params
   return (
     <Suspense
       fallback={
         <div className="flex min-h-[40vh] items-center justify-center">
           <div className="animate-pulse text-sm text-slate-400">
-            Cargando productos de tu zona...
+            Cargando informacion de tu zona...
           </div>
         </div>
       }
