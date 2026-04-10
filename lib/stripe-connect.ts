@@ -1,6 +1,6 @@
 /**
  * lib/stripe-connect.ts
- * Stripe Connect — split payments para el marketplace de Bodega San Martín.
+ * Stripe Connect — split payments para el marketplace de Buleje.
  * Usa la misma instancia de Stripe definida en lib/stripe.ts para no duplicar el cliente.
  */
 

@@ -46,7 +46,7 @@ export async function handleSendEmail(envelope: JobEnvelope): Promise<void> {
     });
 
     await transporter.sendMail({
-      from: `"Bodega San Martín" <${smtpUser}>`,
+      from: `"Buleje" <${smtpUser}>`,
       to,
       subject,
       html,

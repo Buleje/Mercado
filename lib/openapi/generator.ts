@@ -7,10 +7,10 @@ export function generateOpenAPIDoc() {
   return generator.generateDocument({
     openapi: "3.1.0",
     info: {
-      title: "Bodega San Martín API",
+      title: "Buleje API",
       version: "0.1.0",
       description:
-        "ERP/e-commerce multi-tenant API para Bodega San Martín. " +
+        "ERP/e-commerce multi-tenant API para Buleje. " +
         "Todos los endpoints de /admin requieren autenticación JWT con rol válido.",
     },
     servers: [{ url: "/api", description: "API Server" }],

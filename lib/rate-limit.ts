@@ -1,7 +1,7 @@
 /**
  * lib/rate-limit.ts
  *
- * Rate limiting module for Bodega San Martín.
+ * Rate limiting module for Buleje ERP.
  *
  * Two APIs live here:
  *

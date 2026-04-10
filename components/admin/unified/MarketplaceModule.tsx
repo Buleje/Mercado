@@ -705,7 +705,7 @@ function TiendaTab() {
               type="text"
               value={store.name}
               onChange={(e) => setStore((p) => ({ ...p, name: e.target.value }))}
-              placeholder="Bodega San Martín"
+              placeholder="Mi Bodega"
               className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 outline-none focus:ring-2 focus:ring-[#00B4A6]/30 focus:border-[#00B4A6] transition-all"
             />
           </div>

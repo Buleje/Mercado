@@ -136,7 +136,7 @@ export function WebhooksConfigTab() {
         body: JSON.stringify({
           event: "ping",
           timestamp: new Date().toISOString(),
-          data: { message: "Test desde Bodega San Martin" },
+          data: { message: "Test desde Buleje" },
         }),
         signal: AbortSignal.timeout(5_000),
       });

@@ -1,7 +1,7 @@
 /**
  * lib/slo/budget-calculator.ts
  *
- * SLO error budget calculator for Bodega San Martin.
+ * SLO error budget calculator for Buleje ERP.
  * Tracks burn rate, remaining budget, and deploy-gate decisions.
  *
  * Ref: ADR-034 (SLOs Operational Contract)

@@ -81,8 +81,8 @@ export default function TicketPrinter({ data, className, variant = "button" }: T
 </head>
 <body>
   <div class="center">
-    <div class="store-name">BODEGA SAN MARTIN</div>
-    <div>Pucallpa, Ucayali</div>
+    <div class="store-name">MI TIENDA</div>
+    <div>Powered by Buleje</div>
     <div style="font-size:10px">RUC: ${process.env.NEXT_PUBLIC_RUC ?? "----------"}</div>
   </div>
   <div class="line"></div>

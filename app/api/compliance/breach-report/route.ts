@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
       autoridad:
         "Autoridad Nacional de Protección de Datos Personales (ANPD) — Ministerio de Justicia y Derechos Humanos",
       seccion_1_responsable: {
-        razon_social: tenant?.name ?? "Bodega San Martín",
+        razon_social: tenant?.name ?? "Mi Tienda",
         identificador_tenant: tenantId,
         contacto_email: tenant?.ownerEmail ?? "[COMPLETAR]",
         contacto_telefono: tenant?.ownerPhone ?? "[COMPLETAR]",

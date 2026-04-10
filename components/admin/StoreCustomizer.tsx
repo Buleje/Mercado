@@ -63,8 +63,8 @@ interface StoreTheme {
 
 const DEFAULT_THEME: StoreTheme = {
   logo: "",
-  storeName: "Bodega San Martin",
-  slogan: "Tu bodega de confianza en Pucallpa",
+  storeName: "Mi Tienda",
+  slogan: "Tu tienda de confianza",
   description: "Abarrotes, bebidas y productos de primera necesidad con delivery a domicilio.",
   primaryColor: "#00B4A6",
   secondaryColor: "#f4a261",
