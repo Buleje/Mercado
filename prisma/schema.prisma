@@ -65,6 +65,7 @@ model Tenant {
   treasuryMovimientos    TreasuryMovimiento[]
   treasuryTransferencias TreasuryTransferencia[]
   stores                 Store[]
+  featureFlags           TenantFeatureFlag[]
 
   @@index([slug])
   @@index([active])
@@ -595,6 +596,17 @@ model Supplier {
   // ── Adicionales ──
   observaciones String?
 
+  // ── Self-signup & approval workflow (ADR item #15) ──
+  // NB: Suppliers son cross-tenant en el marketplace; los registros creados via
+  // self-signup usan tenantId = "__platform__" hasta ser aprobados y asignados.
+  contactName     String?
+  appliedAt       DateTime? @default(now())
+  approvedAt      DateTime?
+  approvedBy      String?
+  rejectedAt      DateTime?
+  rejectedBy      String?
+  rejectionReason String?
+
   tenantId  String
   createdAt DateTime @default(now())
 
@@ -604,6 +616,8 @@ model Supplier {
   portal      SupplierPortal?
 
   @@index([tenantId])
+  @@index([estado])
+  @@index([ruc])
 }
 
 // ─── Purchase Orders ────────────────────────────────────
@@ -829,6 +843,7 @@ model Coupon {
   id            String    @id @default(cuid())
   code          String
   tenantId      String
+  storeId       String?   // TD-032: cupón específico de tienda marketplace (null = aplica a todo el tenant)
   description   String    @default("")
   discountType  String    @default("percent") // percent | fixed | giftcard
   discountValue Decimal   @default(0) @db.Decimal(12, 2)
@@ -842,6 +857,7 @@ model Coupon {
 
   @@unique([tenantId, code])
   @@index([tenantId])
+  @@index([storeId, code])
 }
 
 // ─── Returns / Refunds ──────────────────────────────────
@@ -2888,22 +2904,22 @@ model CreditInstallment {
 // (customer sees "your score went from X to Y") and analytics.
 // ADR-021 §3: immutable, tenant-isolated, write-only after creation.
 model CreditScoreHistory {
-  id              String        @id @default(cuid())
-  tenantId        String
-  customerId      String
-  creditProfileId String
-  score           Int // 0-1000 at snapshot time
-  creditLimit     Decimal       @db.Decimal(12, 2)
-  riskLevel       String // none | low | medium | high
+  id                          String   @id @default(cuid())
+  tenantId                    String
+  customerId                  String
+  creditProfileId             String
+  score                       Int // 0-1000 at snapshot time
+  creditLimit                 Decimal  @db.Decimal(12, 2)
+  riskLevel                   String // none | low | medium | high
   // Breakdown at snapshot time (for transparency explainability)
-  breakdownPurchaseHistory  Int @default(0)
-  breakdownPaymentPunctuality Int @default(0)
-  breakdownAvgTicket        Int @default(0)
-  breakdownSeniority        Int @default(0)
-  breakdownLoyaltyPoints    Int @default(0)
+  breakdownPurchaseHistory    Int      @default(0)
+  breakdownPaymentPunctuality Int      @default(0)
+  breakdownAvgTicket          Int      @default(0)
+  breakdownSeniority          Int      @default(0)
+  breakdownLoyaltyPoints      Int      @default(0)
   // What triggered this snapshot
-  trigger         String        @default("manual") // manual | weekly_recalc | payment | fiado_close
-  createdAt       DateTime      @default(now())
+  trigger                     String   @default("manual") // manual | weekly_recalc | payment | fiado_close
+  createdAt                   DateTime @default(now())
 
   creditProfile CreditProfile @relation(fields: [creditProfileId], references: [id])
 
@@ -2917,16 +2933,16 @@ model CreditScoreHistory {
 // can only produce one reminder. Prevents double-sends on cron retries.
 // ADR-021 §4: stages escalate T-3 → T-1 → T0 → T+1 → T+7 → T+30.
 model CreditReminder {
-  id          String   @id @default(cuid())
-  tenantId    String
-  fiadoId     String
-  customerId  String
-  stage       String // pre_3d | pre_1d | due_day | post_1d | post_7d | post_30d
-  channel     String   @default("whatsapp") // whatsapp | notification | sms
-  message     String   @db.Text
-  sentAt      DateTime @default(now())
+  id             String   @id @default(cuid())
+  tenantId       String
+  fiadoId        String
+  customerId     String
+  stage          String // pre_3d | pre_1d | due_day | post_1d | post_7d | post_30d
+  channel        String   @default("whatsapp") // whatsapp | notification | sms
+  message        String   @db.Text
+  sentAt         DateTime @default(now())
   // Idempotency: unique constraint ensures one reminder per fiado+stage+day
-  idempotencyKey String @unique // format: {fiadoId}:{stage}:{YYYY-MM-DD}
+  idempotencyKey String   @unique // format: {fiadoId}:{stage}:{YYYY-MM-DD}
 
   @@index([tenantId])
   @@index([fiadoId])
@@ -3208,4 +3224,22 @@ model PlatformSetting {
   value     Json
   updatedAt DateTime @updatedAt
   updatedBy String?
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// TenantFeatureFlag — per-tenant DB overrides for feature flags.
+/// Allows toggling features at the tenant level without env var changes.
+/// Referenced by lib/feature-flags.ts (isFeatureEnabled with DB fallback).
+/// ─────────────────────────────────────────────────────────────────────────────
+model TenantFeatureFlag {
+  id        String   @id @default(cuid())
+  tenantId  String
+  flagKey   String
+  enabled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, flagKey])
+  @@index([tenantId])
 }

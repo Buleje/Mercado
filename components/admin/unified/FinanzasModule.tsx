@@ -41,6 +41,7 @@ const BudgetAlertWidget = dynamic(() => import("@/components/admin/BudgetAlertWi
 const MonthProjectionCard = dynamic(() => import("@/components/admin/MonthProjectionCard"), { loading: S });
 const ProfitLossAutoCard = dynamic(() => import("@/components/admin/ProfitLossAutoCard"), { loading: S });
 const CashFlowProjection = dynamic(() => import("@/components/admin/CashFlowProjection"), { loading: S });
+const CashflowRollingTable = dynamic(() => import("@/components/admin/finance/CashflowRollingTable"), { loading: S });
 const BreakEvenDashboard = dynamic(() => import("@/components/admin/BreakEvenDashboard"), { loading: S });
 // LoanCalculator → movido a PrestamosModule (evitar duplicación)
 // CommissionCalculator → movido a POSCajaModule (es operativo de ventas)
@@ -1921,9 +1922,18 @@ export default function FinanzasModule() {
         </div>
       )}
       {sub === "flujo-caja" && (
-        <div className="space-y-4">
-          <CashFlowProjection />
-          <WeeklyCashFlowTable />
+        <div className="space-y-6">
+          {/* Nuevo — diferenciador #1 vs Loyverse/Alegra/Vendemás */}
+          <CashflowRollingTable />
+          <div className="pt-4 border-t border-gray-200 dark:border-white/10">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+              Proyección legacy (30 días)
+            </p>
+            <div className="space-y-4 opacity-90">
+              <CashFlowProjection />
+              <WeeklyCashFlowTable />
+            </div>
+          </div>
         </div>
       )}
       {sub === "reporte-mensual" && <ReporteMensualTab />}
