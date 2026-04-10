@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       (settings as { sunatDenominacion?: string | null } | null)?.sunatDenominacion ??
       settings?.businessName ??
       process.env.RAZON_SOCIAL_EMISOR ??
-      "Bodega San Martín";
+      "Mi Tienda";
 
     const ruc =
       (settings as { sunatRuc?: string | null } | null)?.sunatRuc ??

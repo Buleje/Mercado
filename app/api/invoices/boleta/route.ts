@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       moneda: "PEN",
       emisor: {
         ruc: process.env.SUNAT_RUC ?? "00000000000",
-        razonSocial: process.env.SUNAT_RAZON_SOCIAL ?? "BODEGA SAN MARTIN",
+        razonSocial: process.env.SUNAT_RAZON_SOCIAL ?? "MI TIENDA",
         direccion: process.env.SUNAT_DIRECCION ?? "Pucallpa, Ucayali",
         ubigeo: "250101",
       },

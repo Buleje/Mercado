@@ -10,16 +10,16 @@ import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
 
 export const metadata: Metadata = {
-  title: "Buleje — Abarrotes con Delivery | Yape y Efectivo",
+  title: "Buleje — Software ERP para Bodegas del Peru | Inventario, POS, Delivery",
   description:
-    "Compra abarrotes, bebidas, carnes, pollo, golosinas y productos de limpieza online. Delivery rápido a domicilio. Paga con Yape o efectivo. +500 productos, precios de bodega.",
+    "Buleje: el sistema completo para tu bodega. Inventario, punto de venta POS, delivery, fiado digital y facturacion SUNAT. Funciona con Yape y efectivo. Disponible en todo el Peru.",
   alternates: {
     canonical: "https://www.buleje.pe",
   },
   openGraph: {
-    title: "Buleje — Abarrotes con Delivery",
+    title: "Buleje — Software para Bodegas del Peru",
     description:
-      "Tu bodega online. +500 productos frescos con delivery rápido. Paga con Yape o efectivo.",
+      "Sistema ERP completo: inventario, POS, delivery, fiado digital y SUNAT. Empieza gratis.",
     url: "https://www.buleje.pe",
     type: "website",
     locale: "es_PE",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Buleje — Tienda de Abarrotes con delivery a domicilio",
+        alt: "Buleje — Software ERP para Bodegas y Tiendas del Peru",
       },
     ],
   },

@@ -292,7 +292,7 @@ export async function GET(req: NextRequest) {
   ];
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Bodega San Martin";
+  workbook.creator = "Buleje ERP";
   workbook.created = new Date();
   const worksheet = workbook.addWorksheet("Productos");
 

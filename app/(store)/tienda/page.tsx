@@ -15,25 +15,25 @@ import { zones } from "@/data/zones";
 import { categories } from "@/data/products";
 
 export const metadata: Metadata = {
-  title: "Tienda Online de Abarrotes — Buleje",
+  title: "Catalogo de Productos — Buleje ERP",
   description:
-    "Explora nuestro catálogo completo de abarrotes, bebidas, carnes, snacks, limpieza y más. Delivery gratis desde S/50. Paga con Yape o efectivo.",
+    "Explora el catalogo completo de productos: abarrotes, bebidas, carnes, limpieza y mas. Gestionado con Buleje, el software ERP para bodegas del Peru.",
   alternates: {
     canonical: "https://www.buleje.pe/tienda",
   },
   openGraph: {
-    title: "Tienda Online — Buleje",
-    description: "Más de 500 productos con delivery gratis. Abarrotes, bebidas, carnes, snacks y más. Paga con Yape o efectivo.",
+    title: "Catalogo de Productos — Buleje",
+    description: "Abarrotes, bebidas, carnes, limpieza y mas. Gestionado con Buleje ERP. Delivery con Yape y efectivo.",
     url: "https://www.buleje.pe/tienda",
     type: "website",
     locale: "es_PE",
     siteName: "Buleje",
-    images: [{ url: "https://www.buleje.pe/og-image.jpg", width: 1200, height: 630, alt: "Tienda online Buleje — Abarrotes" }],
+    images: [{ url: "https://www.buleje.pe/og-image.jpg", width: 1200, height: 630, alt: "Buleje — Software ERP para Bodegas del Peru" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tienda Online — Buleje",
-    description: "Más de 500 productos con delivery gratis.",
+    title: "Catalogo — Buleje ERP",
+    description: "Productos gestionados con Buleje. Software para bodegas del Peru.",
     images: ["https://www.buleje.pe/og-image.jpg"],
   },
 };
