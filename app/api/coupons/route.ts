@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   const { code, description, discountType, discountValue, minPurchase, maxUses, active, expiresAt } = parsed.data;
 
   try {
-    const existing = await CouponsDB.getByCode(code);
+    const existing = await CouponsDB.getByCode(auth.tenantId, code);
     if (existing) return NextResponse.json({ error: "Ya existe un cupón con ese código" }, { status: 409 });
 
     const coupon = await CouponsDB.add({

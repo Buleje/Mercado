@@ -594,7 +594,8 @@ export async function POST(req: NextRequest) {
       (async () => {
         try {
           // Count all orders by this phone via the JSON customer.phone field stored in OrdersDB
-          const customerOrders = await OrdersDB.getByCustomerPhone(customerPhone);
+          // Wave 4 F-1: tenant-scoped lookup — prevents cross-tenant loyalty counter leakage
+          const customerOrders = await OrdersDB.getByCustomerPhone(tenantId, customerPhone);
           const orderCount = customerOrders.length;
           if (orderCount > 0 && orderCount % 5 === 0) {
             const discountPct = orderCount % 10 === 0 ? 15 : 10; // 15% on 10th, 20th…; 10% on 5th, 15th…

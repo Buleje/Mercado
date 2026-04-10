@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { CouponsDB } from "@/lib/jsondb";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 
 const SpinSchema = z.object({
   prize: z.string().min(1).max(50),
@@ -39,11 +40,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Premio no reconocido" }, { status: 400 });
     }
 
+    const tenantId = getTenantIdFromRequest(req);
+
     // Generate unique code (retry up to 5 times on collision)
     let code = "";
     for (let i = 0; i < 5; i++) {
       code = generateCode();
-      const existing = await CouponsDB.getByCode(code);
+      const existing = await CouponsDB.getByCode(tenantId, code);
       if (!existing) break;
     }
 

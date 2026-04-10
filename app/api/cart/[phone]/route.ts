@@ -1,21 +1,42 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { verifyCartToken } from "@/lib/auth/cart-token";
 
 /**
- * GET /api/cart/[phone] — Retrieve saved cart for a customer
- * PUT /api/cart/[phone] — Save/update cart for a customer
- * DELETE /api/cart/[phone] — Clear saved cart
+ * GET    /api/cart/[phone]?token=...  — Retrieve saved cart for a customer
+ * PUT    /api/cart/[phone]?token=...  — Save/update cart for a customer
+ * DELETE /api/cart/[phone]?token=...  — Clear saved cart
+ *
+ * Access control (RED-009): the caller is anonymous but must prove
+ * ownership of the phone by presenting an HMAC-SHA256 token generated
+ * server-side via `signCartToken(phone)`. Any auth failure returns 404
+ * (not 401/403) to avoid an existence oracle on phone numbers.
  */
 
+function notFound(): NextResponse {
+  return NextResponse.json({ error: "Not found" }, { status: 404 });
+}
+
+/**
+ * Validate the phone param and the `?token=` query string. Returns the
+ * normalized phone on success or null on any auth/shape failure. Callers
+ * must translate a null result into a 404 response.
+ */
+function authorize(req: NextRequest, rawPhone: string): string | null {
+  const clean = rawPhone.replace(/\D/g, "");
+  if (clean.length < 6) return null;
+  const token = req.nextUrl.searchParams.get("token");
+  if (!verifyCartToken(clean, token)) return null;
+  return clean;
+}
+
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ phone: string }> },
 ) {
   const { phone } = await params;
-  const clean = phone.replace(/\D/g, "");
-  if (clean.length < 6) {
-    return NextResponse.json({ items: [] });
-  }
+  const clean = authorize(req, phone);
+  if (!clean) return notFound();
 
   const saved = await prisma.savedCart.findUnique({
     where: { customerPhone: clean },
@@ -36,10 +57,8 @@ export async function PUT(
   { params }: { params: Promise<{ phone: string }> },
 ) {
   const { phone } = await params;
-  const clean = phone.replace(/\D/g, "");
-  if (clean.length < 6) {
-    return NextResponse.json({ error: "Invalid phone" }, { status: 400 });
-  }
+  const clean = authorize(req, phone);
+  if (!clean) return notFound();
 
   const body = await req.json();
   const items = body.items;
@@ -65,11 +84,13 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ phone: string }> },
 ) {
   const { phone } = await params;
-  const clean = phone.replace(/\D/g, "");
+  const clean = authorize(req, phone);
+  if (!clean) return notFound();
+
   await prisma.savedCart.deleteMany({ where: { customerPhone: clean } });
   return NextResponse.json({ ok: true });
 }

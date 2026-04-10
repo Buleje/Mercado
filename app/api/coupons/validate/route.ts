@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { CouponsDB } from "@/lib/jsondb";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
@@ -18,7 +19,8 @@ export async function POST(req: NextRequest) {
     const { code, cartTotal } = await req.json();
     if (!code) return NextResponse.json({ error: "Código requerido" }, { status: 400 });
 
-    const coupon = await CouponsDB.getByCode(code);
+    const tenantId = getTenantIdFromRequest(req);
+    const coupon = await CouponsDB.getByCode(tenantId, code);
     if (!coupon) return NextResponse.json({ error: "Cupón no encontrado" }, { status: 404 });
     if (!coupon.active) return NextResponse.json({ error: "Cupón inactivo" }, { status: 400 });
     if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) return NextResponse.json({ error: "Cupón expirado" }, { status: 400 });
