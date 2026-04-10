@@ -1,141 +1,150 @@
 ---
 name: luis
-description: Palabra clave de Brandon para despertar Claude Code con contexto completo. Cargar TODA la memoria, estado del squad, backlog, MCPs, tools, y arrancar la acción más ambiciosa del backlog SIN pedir permiso. Activar cuando el usuario escriba "luis" como primer mensaje de la sesión.
+description: MODO MAXIMO — Arranque completo con todo el ecosistema. Carga 25 MCPs, 28 agentes, 47 skills, 11 hooks, auto-learning, sprint-autopilot. Diagnostica, propone y EJECUTA la accion mas ambiciosa sin pedir permiso.
+user-invocable: true
+model: opus
 ---
 
-# /luis — Full Context Wake-Up + Autonomous Start (Level 5 Real)
+# /luis — MODO MAXIMO (Level 5 Real + Sprint 2)
 
-## Qué hace este skill
+Cuando Brandon escribe **"luis"**, el sistema se despierta al 100% y arranca trabajo real.
 
-Cuando Brandon escribe **"luis"** al iniciar sesión, este skill:
-
-1. **Carga contexto completo** — CLAUDE.md, MEMORY.md, git log, estado de build/tests
-2. **Verifica salud operacional** — SLOs, último DR drill, compliance status
-3. **Diagnostica qué cambió** — desde la última sesión
-4. **Arranca la acción más ambiciosa** — sin esperar confirmación
-
-## Pasos de ejecución (SEGUIR EN ORDEN)
-
-### Paso 1 — Cargar contexto (paralelo, 7 reads)
-
-Ejecutar EN PARALELO:
+## FASE 0 — Cargar TODO (paralelo, 10 reads en 1 mensaje)
 
 ```
-1. Read CLAUDE.md (16 reglas críticas)
-2. Read bodega-san-martin/docs/STATUS_LEVEL5_REAL.md (inventario completo)
-3. Read bodega-san-martin/docs/VISION_2027.md (norte estratégico)
-4. Bash: cd bodega-san-martin && git log --oneline -10
-5. Bash: cd bodega-san-martin && git status --short | head -20
-6. Bash: cd bodega-san-martin && npx tsc --noEmit 2>&1 | tail -5
-7. Bash: cd bodega-san-martin && npm run test 2>&1 | tail -10
+1. Read CLAUDE.md (16 reglas criticas)
+2. Read bodega-san-martin/docs/ROADMAP-24-WEEKS.md (Sprint 2 activo)
+3. Read bodega-san-martin/docs/VISION_2027.md (norte: 100 bodegas 2027)
+4. Read bodega-san-martin/docs/STATUS_LEVEL5_REAL.md (inventario)
+5. Read ~/.claude/projects/.../memory/session_sprint2_seo_kickoff.md (ultimo sprint)
+6. Read ~/.claude/projects/.../memory/MEMORY.md (indice de memorias)
+7. Read bodega-san-martin/.claude/session-state.json (handoff sesion anterior)
+8. Read bodega-san-martin/.claude/learning/patterns.json (patrones aprendidos)
+9. Read bodega-san-martin/.claude/evolution-log.json (evoluciones de agentes)
+10. Bash: cd bodega-san-martin && git log --oneline -10
 ```
 
-### Paso 2 — Verificar salud operacional (Level 5 checks)
+## FASE 1 — Diagnostico rapido (paralelo)
 
 ```
-8.  /slo-status all (verificar 4 SLOs: checkout, api, sunat, whatsapp)
-9.  Verificar último DR drill: ls -t reports/dr-drills/*.md | head -1
-10. Verificar compliance: ls app/api/compliance/*/route.ts | wc -l (debe ser 5)
-11. Verificar runbooks: ls runbooks/*.md | wc -l (debe ser 8)
-12. Verificar feature flags: grep -c "FLAG_DEFAULTS" lib/flags/index.ts
+11. Bash: cd bodega-san-martin && git status --short | wc -l
+12. Bash: cd bodega-san-martin && npx tsc --noEmit 2>&1 | tail -3
+13. Bash: cd bodega-san-martin && npm run lint 2>&1 | tail -3
+14. Bash: cd bodega-san-martin && git branch --show-current
 ```
 
-### Paso 3 — Reportar estado (tabla concisa)
+## FASE 2 — Tabla de estado (SIEMPRE mostrar)
 
 ```markdown
-## 🏁 Estado al arrancar — [fecha]
+## MODO MAXIMO — [fecha]
 
-| Check | Estado |
-|-------|--------|
-| Último commit | 🟢/🔴 <hash> <subject> |
-| TypeScript | 🟢/🔴 tsc exit code |
-| Tests | 🟢/🔴 N passing / N failing |
-| SLOs | 🟢/🟡/🔴 budget burn % |
-| Último DR drill | 🟢 (<35d) / 🔴 (>35d) |
-| Compliance | 🟢 5 endpoints / 🔴 missing |
-| Runbooks | 🟢 8 / 🔴 missing |
-| Feature flags | 🟢 12 / 🔴 missing |
+| Sistema | Estado | Detalle |
+|---------|--------|---------|
+| Branch | [nombre] | [commits ahead/behind] |
+| TypeScript | OK/FAIL | [N errores si hay] |
+| Lint | OK/FAIL | [N warnings] |
+| Archivos dirty | [N] | [commit pendiente?] |
+| Session anterior | [tiene handoff?] | [tareas pendientes?] |
+| Patrones aprendidos | [N] | [auto-learn activo?] |
+| Evoluciones agentes | [N] | [mejoras pendientes?] |
 
-🔥 **Acción más ambiciosa:** [descripción]
+### Ecosistema activo
+| Recurso | Cantidad |
+|---------|----------|
+| Agentes | 28 (incl. 3 squads + orchestrator-config) |
+| Skills | 47 (incl. sprint-autopilot, prod-to-code, evolve) |
+| Hooks | 11 (incl. auto-learn, brain-boot, stop-checkpoint v2) |
+| MCPs | 25 (11 local + 8 OAuth + 6 HTTP: Sentry, n8n, Composio, Stripe, Linear, Semgrep) |
+| Cron jobs | 5 (hourly health, morning boot/dispatch, nightly improve/sweep) |
+| Learning stores | 3 (patterns.json, edit-log.json, evolution-log.json) |
+
+### Integraciones activas
+| Servicio | API Key | Estado |
+|----------|---------|--------|
+| Resend (email) | re_F9jP... | ACTIVA |
+| PostHog (analytics) | phc_CdhJ... | ACTIVA |
+| Exa (web search) | 8e0d... | ACTIVA |
+| Firecrawl (scraping) | fc-dd9f... | ACTIVA |
+| VAPID (push) | BKYE9... | ACTIVA |
+| NubeFact (SUNAT) | — | PENDIENTE token |
+| WhatsApp (Meta) | — | PENDIENTE token |
+| Sentry (errors) | — | PENDIENTE OAuth |
+| Stripe MCP | — | PENDIENTE OAuth |
+| Linear MCP | — | PENDIENTE OAuth |
 ```
 
-### Paso 4 — Prioridades de arranque
+## FASE 3 — Detectar la accion mas ambiciosa
 
-1. 🔴 **Build/tsc roto** → `/self-heal build` (regla #13)
-2. 🔴 **Tests rotos** → `/self-heal test`
-3. 🔴 **SLO >90% burned** → investigar y mitigar (regla #16)
-4. 🔴 **DR drill >35 días** → `/dr-drill latest`
-5. 🟠 **HOTFIX pendientes** en backlog
-6. 🟡 **Features** del roadmap VISION_2027
-7. 🟢 **Mejoras** — optimización, refactoring, docs
+Leer en este orden de prioridad:
 
-### Paso 5 — Ejecutar (max ambition, zero input)
+1. **ROJO: Build/tsc roto** → `/self-heal` inmediato
+2. **ROJO: Tests fallando** → `/self-heal test`
+3. **NARANJA: Handoff pendiente** → continuar donde quedo la sesion anterior
+4. **NARANJA: Patrones 3+ sin artifacts** → `/compound-learning-v2 generate`
+5. **AMARILLO: Sprint 2 items pendientes** → leer ROADMAP, elegir el de mayor impacto
+6. **VERDE: Todo OK** → proponer feature del VISION_2027
 
-Per `feedback_max_ambition_default.md`:
+### Sprint 2 prioridades (ADR-041)
+1. Programmatic SEO — 7 zone URLs
+2. pgvector recommender (AI embeddings)
+3. WhatsApp Concierge compradores frecuentes
+4. Billing metering endpoint
 
-1. Identificar tarea de **máximo impacto** del backlog/VISION_2027
-2. Declarar: "🏛️ Orquestador Principal: voy a hacer X"
-3. Declarar agencias + empleados (nivel 3 obligatorio)
-4. **ARRANCAR INMEDIATAMENTE** — agents en background, no esperar
-5. Usar routing económico: Haiku para tareas simples, Sonnet para dev, Opus para arquitectura
+### Features criticas pendientes (investigacion 2026-04-10)
+1. Onboarding Wizard → IMPLEMENTADO, falta conectar a DB
+2. SUNAT NubeFact → IMPLEMENTADO, falta token
+3. WhatsApp Bot → IMPLEMENTADO, falta Meta token
+4. PWA Push → IMPLEMENTADO, VAPID keys activas
+5. Loyalty gamificado → pendiente
+6. AI Demand Forecasting FEFO → pendiente
 
-## Ecosistema disponible (Level 5 Real)
+## FASE 4 — Declarar y EJECUTAR (zero input)
 
-### 24 agentes
-director, initiative, solution-architect, backend, frontend, database, qa, devops, checkout-specialist, security-auditor, security-pentester, performance, integration, data-analyst, product-uiux, seo-growth, mobile, migration-planner, bug-hunter, code-reviewer, visual-qa, finops-guard, sre-observability, growth-specialist
+```markdown
+🏛️ **Orquestador Principal:** [yo, declarando que voy a hacer]
 
-### 35 skills
-luis, commit, deploy, new-feature, review, test-all, fix, checkpoint, bodega-context-loader, checkout-squad, audit-first, session-recap, self-improvement, enterprise-initiative-orchestration, tool-acquisition, self-heal, adr, token-optimizer, showcase, production-sync, optimize-context, infrastructure-map, showcase-auto, cost-kill, db-restore, eval, four-table-closing, slo-status, dr-drill, compliance-status, gdpr-export, audit-search, runbook, flag, chaos
+**Objetivo:** [1 frase]
+**Agencias:** [lista]
+**DAG:** ARQ → DB → BACKEND → FRONTEND → QA
+**Empleados:** [tabla por agencia]
 
-### 4 MCPs
-Playwright, Context7, Sequential-Thinking, Bodega San Martín (5 tools negocio)
+Arranco con [Fase 1 del DAG] ahora.
+```
 
-### 16 reglas CLAUDE.md
-1-12 (técnicas), 13 (autonomía), 14 (pentest), 15 (rentabilidad), 16 (SLO+canary+DR)
+Lanzar agents en background inmediatamente.
+NO esperar "si" de Brandon.
+Per feedback_max_ambition_default: SIEMPRE la opcion mas grande.
 
-### Infraestructura operacional
-- 4 SLOs con error budgets + hook bloqueante
-- 8 runbooks ejecutables (P0-P2)
-- Canary deploys 3 fases + auto-rollback
-- 12 feature flags PostHog + env fallback
-- Compliance Ley 29733 (5 endpoints + audit log + hash chain)
-- DR drill mensual automático
-- Chaos engineering nocturno (7 experimentos)
-- 41 ADRs documentados
-- 6 CI/CD workflows
+## FASE 5 — Mega-comandos disponibles
 
-## Reglas duras durante arranque
+| Comando | Que hace |
+|---------|---------|
+| `/sprint-autopilot [items]` | Ejecuta sprint completo autonomo |
+| `/prod-to-code auto` | Detecta errores produccion → auto-fix → deploy |
+| `/evolve analyze` | Agentes se auto-mejoran basado en metricas |
+| `/parallel-work [N]` | N agentes en worktrees aislados |
+| `/agent-router [tarea]` | Auto-selecciona agente optimo |
+| `/pre-task-intel [area]` | Carga ADRs + tests + commits del area |
+| `/compound-learning-v2 scan` | Detecta patrones → genera skills |
+| `/session-handoff save` | Guarda estado para siguiente sesion |
 
-- **Nunca AskUserQuestion** — proponer con tabla
-- **Español para Brandon**, inglés para código
-- **Formato Feynman** — simple, tablas, emojis
-- **Nivel 4 paralelización** — ≥3 agents simultáneos
-- **Nivel 3 jerarquía** — ARQ → Backend/DB → Frontend → QA
-- **Routing económico** — no Opus para lint fixes
-- **Phase 2+3 OS activo** — self-heal, pentest, SLOs, canary
+## Reglas duras
 
-## Qué NO hacer
+- **Español** para Brandon, ingles para codigo
+- **Feynman** — palabras de niño, tablas, emojis con proposito
+- **Nivel 3** jerarquia obligatoria (Orquestador → Agencias → Empleados)
+- **Nivel 4** paralelizacion (>=3 agents, >=4 reads simultaneos)
+- **Nunca AskUserQuestion** — proponer con tabla Si/No/Despues
+- **Self-heal** antes de escalar (3 basicos + 2 especialistas)
+- **Auto-escalation** si agente falla (5 niveles)
+- **Post-task** siempre 4 tablas de cierre
+- **Routing economico**: Haiku simple, Sonnet dev, Opus arquitectura
+- **No deploy** sin SLO healthy + canary + DR <35d
 
-- NO recargar todo si backlog vacío — preguntar a Brandon
-- NO `prisma migrate deploy` sin confirmación (irreversible)
+## Que NO hacer
+
+- NO recargar todo si backlog vacio — proponer mejora de VISION_2027
+- NO `prisma migrate deploy` sin confirmacion (irreversible)
 - NO tocar zona peligrosa sin `/audit-first`
-- NO deploy sin SLO healthy (regla #16)
-- NO gastar >$10 en primer minuto
-
-## Output esperado
-
-```
-🟢 Último commit: abc1234 feat(slo): add 4 SLOs with error budgets
-🟢 tsc: exit 0
-🟢 tests: 134 evals + 1400 unit passing
-🟢 SLOs: 4/4 healthy (checkout 12%, api 5%, sunat 0%, whatsapp 8%)
-🟢 DR drill: hace 3 días
-🟢 Compliance: 5/5 endpoints activos
-📋 Backlog VISION_2027: onboarding wizard, fiado Phase 2, SUNAT real
-🔥 Acción: arrancar fiado Phase 2 (diferenciador #1)
-
-🏛️ Orquestador: ejecutando fiado Phase 2
-🏢 Agencias: BACKEND + DATABASE + FRONTEND + QA
-📜 DAG: DB schema → backend API → frontend UI → evals
-[Spawning 3 agents...]
-```
+- NO gastar >$15 en primer minuto
+- NO crear mas infrastructure — USAR la que ya existe para FEATURES DE NEGOCIO
