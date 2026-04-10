@@ -401,6 +401,32 @@ export default function AIDailyBriefing({ data }: Props) {
   const hasOverdue = fiadosData?.fiados?.some((f) => f.dueDate && new Date(f.dueDate) < new Date()) ?? false;
   const dayScore = useMemo(() => analysis ? computeDayScore(analysis, hasOverdue) : null, [analysis, hasOverdue]);
 
+  // ── WhatsApp share ─────────────────────────────────────────────────────────
+  const shareBriefingWhatsApp = useCallback(() => {
+    if (!analysis || !dayScore) return;
+    const _revDelta = analysis.yestRevenue > 0 ? parseFloat(pct(analysis.todayRevenue, analysis.yestRevenue)) : 0;
+    const _fiadosActive = fiadosData?.fiados?.length ?? 0;
+    const _fiadosTotal = fiadosData?.totalBalance ?? fiadosData?.fiados?.reduce((s, f) => s + (f.balance ?? 0), 0) ?? 0;
+    const _cashAvailable = analysis.cashSales - analysis.expensesToday;
+    const _lines = [
+      `📋 *Briefing ${new Date().toLocaleDateString("es-PE")}* ${dayScore.emoji} (${dayScore.score}/10)`,
+      "",
+      `💰 Ventas: ${fmt(analysis.todayRevenue)} (${analysis.todayTxns} txn)`,
+      analysis.yestRevenue > 0 ? `   vs ayer: ${_revDelta >= 0 ? "+" : ""}${_revDelta.toFixed(1)}%` : "",
+      `📦 Semana: ${fmt(analysis.weekRevenue)}`,
+      "",
+    ];
+    if (analysis.outOfStock.length > 0) _lines.push(`🚫 ${analysis.outOfStock.length} agotados`);
+    if (analysis.lowStock.length > 0) _lines.push(`⚠️ ${analysis.lowStock.length} stock bajo`);
+    if (analysis.pendingOrders > 0) _lines.push(`📦 ${analysis.pendingOrders} pedidos pendientes`);
+    if (_fiadosActive > 0) _lines.push(`💳 ${_fiadosActive} fiados: ${fmt(_fiadosTotal)}`);
+    _lines.push("", `💵 Caja: ${fmt(_cashAvailable)}`);
+    _lines.push("", `📅 ${calendar.dayTip}`);
+    const text = _lines.filter(Boolean).join("\n");
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  }, [analysis, dayScore, fiadosData, calendar.dayTip]);
+
+
   if (!analysis || !dayScore) {
     return <BriefingCard><p className="text-gray-500 dark:text-gray-400 text-sm">Cargando datos del negocio...</p></BriefingCard>;
   }
@@ -444,28 +470,6 @@ export default function AIDailyBriefing({ data }: Props) {
 
   // ── Urgent items count ─────────────────────────────────────────────────────
   const urgentCount = analysis.outOfStock.length + (hasOverdue ? 1 : 0) + (analysis.pendingOrders > 5 ? 1 : 0);
-
-  // ── WhatsApp share ─────────────────────────────────────────────────────────
-  const shareBriefingWhatsApp = useCallback(() => {
-    const lines = [
-      `📋 *Briefing ${new Date().toLocaleDateString("es-PE")}* ${dayScore.emoji} (${dayScore.score}/10)`,
-      "",
-      `💰 Ventas: ${fmt(analysis.todayRevenue)} (${analysis.todayTxns} txn)`,
-      analysis.yestRevenue > 0 ? `   vs ayer: ${revDelta >= 0 ? "+" : ""}${revDelta.toFixed(1)}%` : "",
-      `📦 Semana: ${fmt(analysis.weekRevenue)}`,
-      "",
-    ];
-    if (analysis.outOfStock.length > 0) lines.push(`🚫 ${analysis.outOfStock.length} agotados`);
-    if (analysis.lowStock.length > 0) lines.push(`⚠️ ${analysis.lowStock.length} stock bajo`);
-    if (analysis.pendingOrders > 0) lines.push(`📦 ${analysis.pendingOrders} pedidos pendientes`);
-    if (fiadosActive > 0) lines.push(`💳 ${fiadosActive} fiados: ${fmt(fiadosTotal)}`);
-    lines.push("", `💵 Caja: ${fmt(cashAvailable)}`);
-    lines.push("", `📅 ${calendar.dayTip}`);
-
-    const text = lines.filter(Boolean).join("\n");
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
-  }, [analysis, dayScore, revDelta, fiadosActive, fiadosTotal, cashAvailable, calendar.dayTip]);
-
   return (
     <BriefingCard>
       {/* ── Day Score Banner ────────────────────────────────────────────── */}
