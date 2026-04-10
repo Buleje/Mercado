@@ -91,7 +91,7 @@ async function sendStockAlert(
 
   log.info("Sending stock alert", { action: task.action });
 
-  const lowStockProducts = await AutoReorderDB.getLowStockProducts();
+  const lowStockProducts = await AutoReorderDB.getLowStockProducts(task.tenantId);
 
   if (lowStockProducts.length === 0) {
     return {
@@ -310,7 +310,7 @@ async function digestPending(
     cache.getOrSet("notifications:recent-logs", 60, () =>
       NotificationLogsDB.getAll(),
     ),
-    AutoReorderDB.getLowStockProducts(),
+    AutoReorderDB.getLowStockProducts(task.tenantId),
   ]);
 
   // Check for unsent notifications in the last 24h

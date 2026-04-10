@@ -191,7 +191,7 @@ async function reorderSuggestions(
   const lowStockProducts = await cache.getOrSet(
     "inventory:low-stock-products",
     120,
-    () => AutoReorderDB.getLowStockProducts(),
+    () => AutoReorderDB.getLowStockProducts(task.tenantId),
   );
 
   // Estimate daily sales velocity from recent movements

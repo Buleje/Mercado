@@ -313,9 +313,10 @@ export const WarehousesDB = {
 // ── Auto-Reorder Helper ───────────────────────────────────────────────────────
 
 export const AutoReorderDB = {
-  async getLowStockProducts(): Promise<{ id: number; name: string; stock: number; stockMin: number; stockMax: number; category: string; unit: string }[]> {
+  async getLowStockProducts(tenantId: string): Promise<{ id: number; name: string; stock: number; stockMin: number; stockMax: number; category: string; unit: string }[]> {
     const prods = await prisma.product.findMany({
-      where: { active: true, stock: { not: null }, stockMin: { not: null } },
+      where: { tenantId, active: true, stock: { not: null }, stockMin: { not: null } },
+      select: { id: true, name: true, stock: true, stockMin: true, stockMax: true, category: true, unit: true },
     });
     return prods
       .filter(p => p.stock !== null && p.stockMin !== null && p.stock <= p.stockMin)

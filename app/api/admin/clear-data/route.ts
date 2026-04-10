@@ -129,30 +129,32 @@ export async function POST(req: NextRequest) {
     const deleted: string[] = [];
     const failed: string[] = [];
 
+    const { tenantId } = auth;
+
     if (!categories || categories.length === 0) {
-      // Full nuclear delete in correct FK order
+      // Full nuclear delete in correct FK order — SCOPED TO TENANT
       for (const [model, label] of FULL_DELETE_ORDER) {
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (prisma[model] as any).deleteMany();
+          await (prisma[model] as any).deleteMany({ where: { tenantId } });
           deleted.push(label);
         } catch (e) {
-          logger.warn("[CLEAR-DATA] skip", { label, error: (e as Error).message });
+          logger.warn("[CLEAR-DATA] skip", { label, tenantId, error: (e as Error).message });
           failed.push(label);
         }
       }
     } else {
-      // Delete only selected categories (FK-safe per category)
+      // Delete only selected categories (FK-safe per category) — SCOPED TO TENANT
       for (const key of categories) {
         const pairs = CATEGORY_DELETIONS[key];
         if (!pairs) continue;
         for (const [model, label] of pairs) {
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (prisma[model] as any).deleteMany();
+            await (prisma[model] as any).deleteMany({ where: { tenantId } });
             deleted.push(label);
           } catch (e) {
-            logger.warn("[CLEAR-DATA] skip", { label, error: (e as Error).message });
+            logger.warn("[CLEAR-DATA] skip", { label, tenantId, error: (e as Error).message });
             failed.push(label);
           }
         }
@@ -166,7 +168,7 @@ export async function POST(req: NextRequest) {
       message: `Datos eliminados correctamente (${deleted.length} tablas). ${failed.length > 0 ? `${failed.length} omitidas.` : ""}`,
     });
   } catch (e) {
-    console.error("[CLEAR-DATA]", e);
+    logger.error("[CLEAR-DATA] Fatal error", { tenantId: auth.tenantId, error: (e as Error).message });
     return NextResponse.json({ error: `Error al eliminar datos: ${(e as Error).message}` }, { status: 500 });
   }
 }
