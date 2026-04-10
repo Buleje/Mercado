@@ -166,9 +166,9 @@ export default function HeroIllustration({ className = "" }: { className?: strin
       <rect x="376" y="142" width="16" height="18" fill="#c7d2fe" opacity="0.55" rx="1" />
       <rect x="310" y="168" width="16" height="18" fill="#c7d2fe" className="win-blink" opacity="0.45" rx="1" />
       <rect x="332" y="168" width="16" height="18" fill="#fbbf24" opacity="0.4" rx="1" />
-      {/* Sign San Martin */}
+      {/* Sign Buleje */}
       <rect x="308" y="220" width="94" height="22" fill="#f59e0b" rx="4" />
-      <text x="355" y="234" textAnchor="middle" fill="#1e1b4b" fontSize="7" fontWeight="bold" fontFamily="sans-serif">SAN MARTÍN</text>
+      <text x="355" y="234" textAnchor="middle" fill="#1e1b4b" fontSize="7" fontWeight="bold" fontFamily="sans-serif">BULEJE</text>
 
       {/* Smaller building — right */}
       <rect x="420" y="175" width="70" height="125" fill="#312e81" rx="2" />

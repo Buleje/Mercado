@@ -547,7 +547,7 @@ export default function OrderStatusModal({ isOpen, onClose }: OrderStatusModalPr
                       </div>
                       <div>
                         <p className="text-xs font-bold text-white">{order.status === "en_camino" ? "🚚 Delivery en ruta" : "📍 Buleje"}</p>
-                        <p className="text-[10px] text-white/60">Jr. San Martín · Callería, Ucayali</p>
+                        <p className="text-[10px] text-white/60">Buleje — Software ERP para Bodegas</p>
                       </div>
                     </div>
                     {order.status === "en_camino" && (

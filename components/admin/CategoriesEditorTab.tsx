@@ -115,8 +115,8 @@ export default function CategoriesEditorTab() {
     const cat = cats[idx];
     if (!cat) return;
     const metaTitle = `${cat.label} - Buleje | Compra Online`;
-    const metaDescription = `Descubre nuestra selección de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rápida a domicilio en San Martín de Porres. ¡Compra ahora!`;
-    const keywords = [cat.label.toLowerCase(), "delivery", "san martín", "compra online"];
+    const metaDescription = `Descubre nuestra seleccion de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rapida a domicilio. Compra ahora en Buleje!`;
+    const keywords = [cat.label.toLowerCase(), "delivery", "buleje", "compra online"];
     const slug = cat.id;
     
     setCats((prev) => prev.map((c, i) => {
@@ -140,8 +140,8 @@ export default function CategoriesEditorTab() {
       seo: {
         ...cat.seo,
         metaTitle: `${cat.label} - Buleje | Compra Online`,
-        metaDescription: `Descubre nuestra selección de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rápida a domicilio en San Martín de Porres. ¡Compra ahora!`,
-        keywords: [cat.label.toLowerCase(), "delivery", "san martín", "compra online"],
+        metaDescription: `Descubre nuestra seleccion de ${cat.label.toLowerCase()} frescos y de calidad. Entrega rapida a domicilio. Compra ahora en Buleje!`,
+        keywords: [cat.label.toLowerCase(), "delivery", "buleje", "compra online"],
         slug: cat.id,
       }
     })));
