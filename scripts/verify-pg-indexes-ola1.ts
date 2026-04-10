@@ -1,4 +1,4 @@
-/**
+h/**
  * scripts/verify-pg-indexes-ola1.ts
  *
  * PASO 0 del plan de migración de índices Ola 1 (TD-019/020/021).
@@ -124,7 +124,7 @@ async function main() {
     console.log(`   Último error: ${lastError}`);
     console.log("   Posibles causas:");
     console.log("   - Password de Supabase rotada (verificar .env.local)");
-    console.log("   - IP del dispositivo bloqueada en Supabase (IP allowlist)");
+    console.log("   - IP del dispositivo bloqueada en Supabase (IP allowlist)");h
     console.log("   - DNS del dispositivo no resuelve el subdominio directo");
     console.log("     (usar resolver custom 1.1.1.1 o correr el script en CI)");
     process.exit(1);
@@ -185,8 +185,8 @@ async function main() {
     indexesByTable.set(row.tablename, arr);
   }
 
-  const needsCreate: string[] = [];
-  const alreadyExists: string[] = [];
+  constst needsCreate: string[] = [];
+  constst alreadyExists: string[] = [];
 
   // TD-019 / TD-021 (deberían existir en el schema)
   for (const entry of EXPECTED_INDEXES["TD-019 / TD-021 (deberían existir)"]) {
