@@ -11,11 +11,11 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// No pre-rendered pages — products are dynamic (DB-based)
+// cacheComponents requiere que generateStaticParams devuelva al menos 1 resultado
+// para validacion build-time. Usamos un placeholder que Next.js descarta en runtime.
 export async function generateStaticParams() {
-  return [];
+  return [{ slug: "__build-placeholder__" }];
 }
-// dynamicParams removed — incompatible con cacheComponents (regla CLAUDE.md #4, ADR-019)
 
 async function getProductBySlugFromDB(slug: string): Promise<Product | null> {
   const hdrs = await headers();
