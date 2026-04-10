@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import {
@@ -45,6 +45,7 @@ const TABS = [
   { id: "resenas" as const, label: "Opiniones", icon: Star },
   { id: "fidelizacion" as const, label: "Clientes frecuentes", icon: Award },
   { id: "segmentos" as const, label: "Segmentos", icon: Layers },
+  { id: "rfm" as const, label: "Segmentos RFM", icon: TrendingUp },
   { id: "riesgo" as const, label: "En riesgo", icon: AlertTriangle },
   { id: "mapa" as const, label: "Mapa clientes", icon: MapPin },
   { id: "importar" as const, label: "Importar", icon: FileUp },
@@ -781,12 +782,204 @@ function ClientesDashboard({ onNavigate }: { onNavigate?: (tab: string) => void 
   );
 }
 
+// ── RFMWrapper — consume /api/customers/rfm (7 segmentos, source of truth) ───
+// Renderiza cards de segmento + tabla y permite "enviar mensaje masivo al
+// segmento" saltando a la tab `mensajes` con teléfonos preseleccionados.
+//
+// Item 7 del Master Roadmap: unificar RFM a 7 segmentos (VIP, Leal, Nuevo,
+// Prometedor, En riesgo, Dormido, Perdido) desde el endpoint autoritativo.
+// El `RFMSegmentationPanel` client-side (6 segmentos) sigue existiendo para
+// AnalyticsBIModule pero NO se usa aquí — evitamos duplicar lógica.
+type RfmApiCustomer = {
+  phone: string;
+  name: string;
+  recencyDays: number;
+  frequency: number;
+  monetary: number;
+  rScore: number;
+  fScore: number;
+  mScore: number;
+  segment: string;
+  segmentColor: string;
+};
+
+function RFMWrapper({ onSendToSegment }: { onSendToSegment: (phones: string[], label: string) => void }) {
+  const [rfmData, setRfmData] = useState<RfmApiCustomer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSegment, setSelectedSegment] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch("/api/customers/rfm", { credentials: "include" });
+        if (!alive) return;
+        if (res.ok) {
+          const data = await res.json();
+          setRfmData(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        // network/parse failure — leave empty
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
+
+  const segmentCounts = useMemo(() => {
+    const counts: Record<string, { count: number; revenue: number; color: string; phones: string[] }> = {};
+    for (const c of rfmData) {
+      if (!counts[c.segment]) counts[c.segment] = { count: 0, revenue: 0, color: c.segmentColor, phones: [] };
+      counts[c.segment].count += 1;
+      counts[c.segment].revenue += c.monetary;
+      counts[c.segment].phones.push(c.phone);
+    }
+    return counts;
+  }, [rfmData]);
+
+  const visible = useMemo(() => {
+    if (!selectedSegment) return rfmData;
+    return rfmData.filter((c) => c.segment === selectedSegment);
+  }, [rfmData, selectedSegment]);
+
+  if (loading) return <S />;
+
+  if (rfmData.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <div className="text-5xl mb-4">📊</div>
+        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Sin datos para segmentación RFM</h3>
+        <p className="text-sm text-gray-500 mt-1">Necesitas clientes con historial de compras para ver los segmentos</p>
+      </div>
+    );
+  }
+
+  const segmentEntries = Object.entries(segmentCounts).sort((a, b) => b[1].count - a[1].count);
+
+  return (
+    <div className="flex flex-col gap-4 text-sm">
+      {/* Segment cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+        {segmentEntries.map(([segment, data]) => (
+          <button
+            key={segment}
+            onClick={() => setSelectedSegment(selectedSegment === segment ? null : segment)}
+            className={cn(
+              "rounded-xl border-2 p-3 text-left transition-all hover:shadow-md",
+              selectedSegment === segment ? "ring-2 ring-offset-1 ring-[#00B4A6]" : "",
+            )}
+            style={{ borderColor: data.color, backgroundColor: `${data.color}15` }}
+          >
+            <p className="text-xs font-bold leading-tight truncate" style={{ color: data.color }}>
+              {segment}
+            </p>
+            <p className="text-2xl font-mono font-extrabold text-gray-800 dark:text-foreground">
+              {data.count}
+            </p>
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+              {formatCurrency(data.revenue)}
+            </p>
+          </button>
+        ))}
+      </div>
+
+      {/* Action button to send to segment */}
+      {selectedSegment && segmentCounts[selectedSegment] && (
+        <div className="flex items-center justify-between rounded-xl border border-[#00B4A6]/30 bg-[#00B4A6]/5 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-[#00B4A6]" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              {segmentCounts[selectedSegment].count} clientes en &ldquo;{selectedSegment}&rdquo;
+            </span>
+          </div>
+          <button
+            onClick={() => onSendToSegment(segmentCounts[selectedSegment].phones, selectedSegment)}
+            className="rounded-lg bg-[#00B4A6] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#009690] transition-colors"
+          >
+            Enviar mensaje masivo a este segmento →
+          </button>
+        </div>
+      )}
+
+      {/* Customer table */}
+      <div className="overflow-auto max-h-96 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <th className="text-left px-3 py-2 font-semibold text-gray-600 dark:text-gray-300">Cliente</th>
+              <th className="text-center px-2 py-2 font-semibold text-gray-600 dark:text-gray-300">Segmento</th>
+              <th className="text-right px-2 py-2 font-semibold text-gray-600 dark:text-gray-300">R-F-M</th>
+              <th className="text-right px-2 py-2 font-semibold text-gray-600 dark:text-gray-300">R(días)</th>
+              <th className="text-right px-2 py-2 font-semibold text-gray-600 dark:text-gray-300">F(ped)</th>
+              <th className="text-right px-2 py-2 font-semibold text-gray-600 dark:text-gray-300">M(total)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.slice(0, 200).map((c, idx) => (
+              <tr
+                key={c.phone}
+                className={cn(
+                  "border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors",
+                  idx % 2 === 1 && "bg-gray-50/50 dark:bg-gray-800/20",
+                )}
+              >
+                <td className="px-3 py-2">
+                  <p className="font-medium text-gray-800 dark:text-foreground truncate max-w-[120px]">{c.name}</p>
+                  <p className="text-gray-400 dark:text-gray-500">{c.phone}</p>
+                </td>
+                <td className="px-2 py-2 text-center">
+                  <span
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                    style={{ backgroundColor: `${c.segmentColor}20`, color: c.segmentColor, borderColor: c.segmentColor }}
+                  >
+                    {c.segment}
+                  </span>
+                </td>
+                <td className="px-2 py-2 text-right font-mono text-gray-600 dark:text-gray-300">
+                  {c.rScore}-{c.fScore}-{c.mScore}
+                </td>
+                <td className="px-2 py-2 text-right font-mono text-gray-600 dark:text-gray-300">
+                  {c.recencyDays}
+                </td>
+                <td className="px-2 py-2 text-right font-mono text-gray-600 dark:text-gray-300">
+                  {c.frequency}
+                </td>
+                <td className="px-2 py-2 text-right font-mono font-medium text-[#00B4A6] dark:text-[#2dd4bf]">
+                  {formatCurrency(c.monetary)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {visible.length > 200 && (
+          <p className="text-center text-xs text-gray-400 dark:text-gray-500 py-2">
+            Mostrando 200 de {visible.length} clientes
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function CRMClientesModule() {
   const [sub, setSub] = useState(() => {
     if (typeof window === "undefined") return TABS[0].id;
     return (localStorage.getItem(`admin-last-tab-${MODULE_ID}`) as typeof TABS[number]["id"]) || TABS[0].id;
   });
   useEffect(() => { localStorage.setItem(`admin-last-tab-${MODULE_ID}`, sub); }, [sub]);
+
+  // Item 7 del Master Roadmap: el tab "Segmentos RFM" permite disparar
+  // un envío masivo al segmento seleccionado. Guardamos la selección y
+  // saltamos a la tab "mensajes" con los teléfonos preseleccionados.
+  const [rfmTargetPhones, setRfmTargetPhones] = useState<string[] | null>(null);
+  const [rfmTargetLabel, setRfmTargetLabel] = useState<string | null>(null);
+
+  const handleSendToSegment = (phones: string[], label: string) => {
+    setRfmTargetPhones(phones);
+    setRfmTargetLabel(label);
+    setSub("mensajes" as typeof sub);
+  };
 
   return (
     <div className="space-y-4">
@@ -801,7 +994,14 @@ export default function CRMClientesModule() {
       <AdminTabBar
         tabs={TABS}
         activeTab={sub}
-        onTabChange={(id) => setSub(id as typeof sub)}
+        onTabChange={(id) => {
+          // Limpiar preselección si el usuario deja la tab de mensajes manualmente
+          if (sub === "mensajes" && id !== "mensajes") {
+            setRfmTargetPhones(null);
+            setRfmTargetLabel(null);
+          }
+          setSub(id as typeof sub);
+        }}
         moduleId="crm"
       />
       {sub === "dashboard" && <ClientesDashboard onNavigate={(tab) => setSub(tab as typeof sub)} />}
@@ -810,6 +1010,7 @@ export default function CRMClientesModule() {
       {sub === "resenas" && <NPSTab />}
       {sub === "fidelizacion" && <LoyaltyTab />}
       {sub === "segmentos" && <AutoSegments />}
+      {sub === "rfm" && <RFMWrapper onSendToSegment={handleSendToSegment} />}
       {sub === "riesgo" && <ChurnPrediction />}
       {sub === "mapa" && (
         <div className="space-y-8">
@@ -818,7 +1019,12 @@ export default function CRMClientesModule() {
         </div>
       )}
       {sub === "importar" && <CustomerImporter />}
-      {sub === "mensajes" && <MassMessageSender />}
+      {sub === "mensajes" && (
+        <MassMessageSender
+          preselectedPhones={rfmTargetPhones ?? undefined}
+          presetLabel={rfmTargetLabel ?? undefined}
+        />
+      )}
     </div>
   );
 }

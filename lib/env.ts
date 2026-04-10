@@ -89,9 +89,22 @@ const REQUIRED: EnvSpec[] = [
 //
 // WhatsApp:
 //   WHATSAPP_API_URL, WHATSAPP_API_TOKEN
+//   NOTIFY_PHONE / WHATSAPP_OWNER_PHONE — fallback owner phone for single-tenant mode
+//   DAILY_DIGEST_WA_ENABLED — feature flag (default: enabled). Set to "false"
+//                             to skip WhatsApp delivery of the daily digest
+//                             while keeping the email path intact (Roadmap #5
+//                             gradual rollout).
 //
 // Analytics:
 //   NEXT_PUBLIC_GA_MEASUREMENT_ID — Google Analytics 4
+//
+// Churn engine (ver app/api/cron/churn-score/route.ts):
+//   CHURN_AUTORUN          — "true" para ejecutar playbooks automáticamente en
+//                            el cron /api/cron/churn-score. Cualquier otro
+//                            valor (o vacío) mantiene el motor en dry-run
+//                            (calcula y persiste scores + signals pero NO
+//                            dispara emails/WhatsApp/descuentos). Default:
+//                            dry-run (safe-by-default).
 //
 // LLM providers (ver lib/llm-router.ts y ADR-010):
 //   GROQ_API_KEY           — Groq (primario) — ya usado por lib/ai-assistant

@@ -5,41 +5,7 @@ import { Mic, MicOff, Volume2, X, Loader2, CheckCircle, AlertCircle } from "luci
 import { cn } from "@/lib/utils";
 
 // ── Speech Recognition shim types ────────────────────────────────────────────
-
-type SpeechRecognitionCtor = new () => SpeechRecognitionInstance;
-
-interface SpeechRecognitionInstance {
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  maxAlternatives: number;
-  start(): void;
-  stop(): void;
-  onstart: (() => void) | null;
-  onresult: ((event: SpeechRecognitionResultEvent) => void) | null;
-  onerror: (() => void) | null;
-  onend: (() => void) | null;
-}
-
-interface SpeechRecognitionResultEvent {
-  resultIndex: number;
-  results: SpeechRecognitionResultList;
-}
-
-interface SpeechRecognitionResultList {
-  length: number;
-  [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResult {
-  isFinal: boolean;
-  0: { transcript: string };
-}
-
-interface WindowWithSpeech extends Window {
-  SpeechRecognition?: SpeechRecognitionCtor;
-  webkitSpeechRecognition?: SpeechRecognitionCtor;
-}
+// Uses global types declared in types/speech-recognition.d.ts
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -126,12 +92,11 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
   const [lastAction, setLastAction] = useState("");
   const [isOpen, setIsOpen] = useState(false);
 
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const w = window as WindowWithSpeech;
-    const SpeechRec = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    const SpeechRec = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     setSupported(!!SpeechRec);
   }, []);
 
@@ -195,8 +160,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
   const startListening = useCallback(() => {
     if (!supported) return;
 
-    const w = window as WindowWithSpeech;
-    const SpeechRec = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    const SpeechRec = window.SpeechRecognition ?? window.webkitSpeechRecognition;
 
     if (!SpeechRec) return;
 
@@ -215,7 +179,7 @@ export default function VoiceCommandPOS({ onAddProduct, onCheckout, className }:
       setStatusMsg("Escuchando...");
     };
 
-    recognition.onresult = (event: SpeechRecognitionResultEvent) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       let interim = "";
       let final = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {

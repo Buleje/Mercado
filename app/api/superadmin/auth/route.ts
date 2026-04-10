@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   // ── Step 2: Verify 2FA code ──────────────────────────────────────────────
   if (body.challengeId && body.code) {
-    const result = verify2FACode(body.challengeId, body.code);
+    const result = await verify2FACode(body.challengeId, body.code);
     if (!result.valid || !result.username) {
       logActivity("2fa_failed", "superadmin", `2FA fallido: challengeId=${body.challengeId}`, undefined, "superadmin").catch(() => {});
       return NextResponse.json({ error: "Código inválido o expirado" }, { status: 401 });

@@ -1,21 +1,38 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendDailyDigestEmail } from "@/lib/mailer-digest";
+import { sendDailyDigestEmail, sendDailyDigestWhatsApp } from "@/lib/mailer-digest";
+import { sendWhatsAppText } from "@/lib/whatsapp";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 /**
- * GET /api/daily-digest — Send a daily operations summary email to admin.
+ * GET /api/daily-digest — Resumen diario de operaciones.
  * Triggered via Vercel Cron at 9 PM every day.
+ *
+ * Roadmap item #5 (daily-briefing-whatsapp-dueno):
+ * - Envía WhatsApp AL DUEÑO (no solo email)
+ * - Envía AUNQUE no haya ventas ("Hoy no se registraron ventas. ¿Todo bien?")
+ * - Cumple la promesa del Step 5 del onboarding
  */
 
-async function buildAndSendDigest() {
+interface DigestData {
+  date: string;
+  totalOrders: number;
+  deliveredOrders: number;
+  cancelledOrders: number;
+  pendingOrders: number;
+  totalRevenue: number;
+  avgOrderValue: number;
+  topProducts: { name: string; qty: number }[];
+  paymentBreakdown: { method: string; count: number; total: number }[];
+}
+
+async function buildDigestData(): Promise<DigestData> {
   const now = new Date();
-  // Summarize "today" in Lima timezone (UTC-5)
   const limaOffset = -5 * 60;
   const limaNow = new Date(now.getTime() + (limaOffset + now.getTimezoneOffset()) * 60_000);
   const startOfDay = new Date(limaNow);
   startOfDay.setHours(0, 0, 0, 0);
-  // Convert back to UTC for DB query
   const startUTC = new Date(startOfDay.getTime() - (limaOffset + now.getTimezoneOffset()) * 60_000);
   const endUTC = new Date(startUTC.getTime() + 24 * 60 * 60_000);
 
@@ -31,20 +48,14 @@ async function buildAndSendDigest() {
     include: { items: true },
   });
 
-  if (orders.length === 0) {
-    return { sent: false, reason: "No orders today" };
-  }
-
   const delivered = orders.filter(o => o.status === "entregado").length;
   const cancelled = orders.filter(o => o.status === "cancelado").length;
   const pending = orders.filter(o => o.status !== "entregado" && o.status !== "cancelado").length;
-  // TD-018: o.total es Decimal
   const totalRevenue = orders
     .filter(o => o.status !== "cancelado")
     .reduce((sum, o) => sum + toNumOrZero(o.total), 0);
   const avgOrderValue = totalRevenue / Math.max(orders.length - cancelled, 1);
 
-  // Top products by quantity
   const productMap = new Map<string, number>();
   for (const o of orders) {
     if (o.status === "cancelado") continue;
@@ -57,7 +68,6 @@ async function buildAndSendDigest() {
     .slice(0, 10)
     .map(([name, qty]) => ({ name, qty }));
 
-  // Payment breakdown
   const payMap = new Map<string, { count: number; total: number }>();
   for (const o of orders) {
     if (o.status === "cancelado") continue;
@@ -68,7 +78,7 @@ async function buildAndSendDigest() {
   }
   const paymentBreakdown = [...payMap.entries()].map(([method, d]) => ({ method, ...d }));
 
-  await sendDailyDigestEmail({
+  return {
     date: dateLabel,
     totalOrders: orders.length,
     deliveredOrders: delivered,
@@ -78,9 +88,120 @@ async function buildAndSendDigest() {
     avgOrderValue,
     topProducts,
     paymentBreakdown,
-  });
+  };
+}
 
-  return { sent: true, orders: orders.length, revenue: totalRevenue };
+// ── WhatsApp briefing al dueño (Roadmap #5) ─────────────────────────────────
+
+function buildWhatsAppBriefing(data: DigestData): string {
+  if (data.totalOrders === 0) {
+    return [
+      `📊 *Resumen del día* — ${data.date}`,
+      ``,
+      `Hoy no se registraron ventas.`,
+      `¿Todo bien? Si necesitas ayuda, escríbenos.`,
+      ``,
+      `— Buleje`,
+    ].join("\n");
+  }
+
+  const topList = data.topProducts
+    .slice(0, 5)
+    .map((p, i) => `${i + 1}. ${p.name} (${p.qty} uds)`)
+    .join("\n");
+
+  const payList = data.paymentBreakdown
+    .map(p => `  ${p.method}: ${p.count} pedidos · S/${p.total.toFixed(0)}`)
+    .join("\n");
+
+  return [
+    `📊 *Resumen del día* — ${data.date}`,
+    ``,
+    `📦 Pedidos: *${data.totalOrders}*`,
+    `  ✅ Entregados: ${data.deliveredOrders}`,
+    data.pendingOrders > 0 ? `  ⏳ Pendientes: ${data.pendingOrders}` : null,
+    data.cancelledOrders > 0 ? `  ❌ Cancelados: ${data.cancelledOrders}` : null,
+    ``,
+    `💰 Ingresos: *S/${data.totalRevenue.toFixed(2)}*`,
+    `📊 Ticket promedio: S/${data.avgOrderValue.toFixed(2)}`,
+    ``,
+    `🏆 *Top productos:*`,
+    topList,
+    ``,
+    `💳 *Pagos:*`,
+    payList,
+    ``,
+    `— Buleje`,
+  ].filter(Boolean).join("\n");
+}
+
+async function sendDigest() {
+  // ── 1. Compute global digest (legacy single-tenant behavior) ─────────────
+  const data = await buildDigestData();
+
+  // ── 2. Multi-tenant WhatsApp briefing ─ Roadmap #5 ──────────────────────
+  // Loop over active tenants and fire sendDailyDigestWhatsApp in parallel.
+  // Uses Promise.allSettled so one tenant's failure doesn't break the batch.
+  let tenantsBriefed = 0;
+  let tenantsTotal = 0;
+  try {
+    const activeTenants = await prisma.tenant.findMany({
+      where: { active: true },
+      select: { id: true },
+    });
+    tenantsTotal = activeTenants.length;
+
+    if (tenantsTotal > 0) {
+      const results = await Promise.allSettled(
+        activeTenants.map((t) => sendDailyDigestWhatsApp(t.id)),
+      );
+
+      for (const r of results) {
+        if (r.status === "fulfilled" && r.value.sent) tenantsBriefed += 1;
+        if (r.status === "rejected") {
+          logger.warn("[daily-digest] tenant WA briefing rejected", {
+            reason: r.reason instanceof Error ? r.reason.message : String(r.reason),
+          });
+        }
+      }
+    }
+  } catch (err) {
+    logger.error("[daily-digest] tenant loop failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  // ── 3. Legacy fallback: single-tenant env-driven briefing ───────────────
+  // If no tenants were briefed above, fall back to the previous NOTIFY_PHONE
+  // path so existing single-tenant deploys (without Tenant rows) keep working.
+  const fallbackPhone = process.env.NOTIFY_PHONE ?? process.env.WHATSAPP_OWNER_PHONE;
+  if (tenantsBriefed === 0 && fallbackPhone) {
+    const message = buildWhatsAppBriefing(data);
+    sendWhatsAppText(fallbackPhone, message).catch((err) => {
+      logger.error("[daily-digest] WhatsApp fallback al dueño falló", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }
+
+  // ── 4. Email al admin (solo si hay ventas, como antes) ──────────────────
+  if (data.totalOrders > 0) {
+    sendDailyDigestEmail(data).catch((err) => {
+      logger.error("[daily-digest] Email falló", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }
+
+  return {
+    sent: true,
+    orders: data.totalOrders,
+    revenue: data.totalRevenue,
+    tenantsTotal,
+    tenantsBriefed,
+    whatsappFallbackSent: tenantsBriefed === 0 && !!fallbackPhone,
+    emailSent: data.totalOrders > 0,
+  };
 }
 
 export async function GET(req: NextRequest) {
@@ -89,10 +210,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const result = await buildAndSendDigest();
+    const result = await sendDigest();
     return NextResponse.json(result);
   } catch (e) {
-    console.error("[daily-digest] error:", e);
+    logger.error("[daily-digest] error", {
+      error: e instanceof Error ? e.message : String(e),
+    });
     return NextResponse.json({ error: "Failed to send digest" }, { status: 500 });
   }
 }

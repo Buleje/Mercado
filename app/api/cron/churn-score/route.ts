@@ -45,8 +45,16 @@ export async function GET(req: NextRequest) {
         return { ok: true, processed: 0, message: "Sin tenants activos" };
       }
 
+      // Feature flag: CHURN_AUTORUN controla si los playbooks se ejecutan de verdad
+      // o si sólo corremos en modo dry-run (calcular+persistir score + detectar
+      // signals, pero NO enviar emails/WhatsApp/etc). Default: dry-run.
+      // Para activar en producción: CHURN_AUTORUN=true en Vercel env.
+      const churnAutorun = (process.env.CHURN_AUTORUN ?? "").toLowerCase() === "true";
+
       let processed = 0;
       let errors = 0;
+      let playbookExecutions = 0;
+      let playbookDryRuns = 0;
       const riskSummary: Record<string, number> = {
         low: 0,
         medium: 0,
@@ -72,6 +80,17 @@ export async function GET(req: NextRequest) {
 
             // 5. Ejecutar playbooks para cada signal (fire-and-forget por signal)
             for (const signal of signals) {
+              if (!churnAutorun) {
+                // Dry-run: solo loguear la intención sin despachar intervención
+                playbookDryRuns++;
+                logger.info("[cron/churn-score] Dry-run (CHURN_AUTORUN=false): skip playbook", {
+                  slug: tenant.slug,
+                  signalType: signal.signalType,
+                  severity: signal.severity,
+                });
+                continue;
+              }
+              playbookExecutions++;
               executePlaybook(signal, {
                 id: tenant.id,
                 slug: tenant.slug,
@@ -105,6 +124,9 @@ export async function GET(req: NextRequest) {
         processed,
         errors,
         riskSummary,
+        churnAutorun,
+        playbookExecutions,
+        playbookDryRuns,
       });
 
       return {
@@ -113,6 +135,9 @@ export async function GET(req: NextRequest) {
         errors,
         total: tenants.length,
         riskSummary,
+        churnAutorun,
+        playbookExecutions,
+        playbookDryRuns,
       };
     });
 
