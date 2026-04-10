@@ -1,6 +1,9 @@
 import type { MetadataRoute } from "next";
 import { categories } from "@/data/products";
+import { zones } from "@/data/zones";
 import { prisma } from "@/lib/prisma";
+
+const realCategories = categories.filter((c) => c.id !== "todos");
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl =
@@ -145,11 +148,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB unavailable during static build
   }
 
+  // Programmatic SEO — zone pages (/zona/[ciudad] + /zona/[ciudad]/[categoria])
+  const zonePages: MetadataRoute.Sitemap = [];
+  for (const zone of zones) {
+    // City landing page
+    zonePages.push({
+      url: `${baseUrl}/zona/${zone.slug}`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.85,
+    });
+    // City × category pages
+    for (const cat of realCategories) {
+      zonePages.push({
+        url: `${baseUrl}/zona/${zone.slug}/${cat.id}`,
+        lastModified,
+        changeFrequency: "daily",
+        priority: 0.8,
+      });
+    }
+  }
+
   return [
     ...staticPages,
     ...categoryPages,
     ...dbCategoryPages,
     ...productPages,
     ...marketplaceStorePages,
+    ...zonePages,
   ];
 }

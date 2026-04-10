@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import Header from "@/components/Header";
 import Hero from "@/components/Hero";
 import { AnnouncementBar, StatsCounter, Benefits, CTABanner, RecommendedProducts } from "@/components/ClientSections";
 import type { SectionKey } from "@/components/admin/StorefrontEditor";
+import { zones } from "@/data/zones";
+import { categories } from "@/data/products";
 
 export const metadata: Metadata = {
   title: "Buleje — Abarrotes con Delivery | Yape y Efectivo",
@@ -233,6 +236,36 @@ export default async function Home() {
           <ReferralBanner />
         </Suspense>
       </main>
+
+      {/* SEO: Zone internal links for crawl discovery + local ranking */}
+      <nav className="bg-slate-50 dark:bg-slate-900/50 py-6 border-t border-slate-200 dark:border-slate-800" aria-label="Zonas de delivery">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+            Hacemos delivery en
+          </h2>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {zones.map((zone) => (
+              <Link
+                key={zone.slug}
+                href={`/zona/${zone.slug}`}
+                className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
+              >
+                Bodega en {zone.name}
+              </Link>
+            ))}
+            {categories.filter((c) => c.id !== "todos").map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/zona/pucallpa/${cat.id}`}
+                className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
+              >
+                {cat.label} en Pucallpa
+              </Link>
+            ))}
+          </div>
+        </div>
+      </nav>
+
       <Footer />
       <HomeClientShell />
     </>

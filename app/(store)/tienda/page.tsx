@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
@@ -10,6 +11,8 @@ import {
   ProductGridSkeleton,
   SectionSkeleton,
 } from "@/components/LoadingSkeleton";
+import { zones } from "@/data/zones";
+import { categories } from "@/data/products";
 
 export const metadata: Metadata = {
   title: "Tienda Online de Abarrotes — Buleje",
@@ -233,6 +236,37 @@ export default async function TiendaPage() {
         {/* Below-fold sections + modals (client-only shell) */}
         <TiendaClientShell {...shellVisibility} />
       </main>
+
+      {/* SEO: Internal links to zone pages for crawl discovery */}
+      <section className="bg-slate-50 dark:bg-slate-900/50 py-8 border-t border-slate-200 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-4">
+            Delivery por zona
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {zones.map((zone) => (
+              <Link
+                key={zone.slug}
+                href={`/zona/${zone.slug}`}
+                className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
+              >
+                {zone.name}
+              </Link>
+            ))}
+            {zones.length > 0 && <span className="text-slate-300">|</span>}
+            {categories.filter((c) => c.id !== "todos").map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/zona/pucallpa/${cat.id}`}
+                className="text-sm text-slate-500 hover:text-emerald-600 transition-colors"
+              >
+                {cat.label} Pucallpa
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </>
   );
