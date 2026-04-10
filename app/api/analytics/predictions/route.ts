@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
         phone: c.phone ?? "",
         daysAgo,
         whatsappUrl: c.phone
-          ? `https://wa.me/${c.phone.replace(/\D/g, "")}?text=${encodeURIComponent("Hola! Te extrañamos en Bodega San Martín. Tenemos ofertas especiales para ti.")}`
+          ? `https://wa.me/${c.phone.replace(/\D/g, "")}?text=${encodeURIComponent("Hola! Te extrañamos. Tenemos ofertas especiales para ti.")}`
           : null,
       };
     });

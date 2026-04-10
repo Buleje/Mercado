@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           partnerId: assignment.partnerId,
           orderId,
-          message: `Tu pedido fue entregado por ${assignment.partner.name}. Gracias por tu compra en Bodega San Martin!`,
+          message: `Tu pedido fue entregado por ${assignment.partner.name}. Gracias por tu compra!`,
         }),
       }).catch(() => {});
     }
