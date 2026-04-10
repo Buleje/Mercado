@@ -50,12 +50,12 @@ export default function CartSidebar() {
   /* Y4: WhatsApp message preview */
   const [showPreview, setShowPreview] = useState(false);
 
-  /* Z3: Coupon field in cart (prepared for future use) */
-  const [_couponOpen, _setCouponOpen] = useState(false);
-  const [couponCode, _setCouponCode] = useState("");
+  /* Z3: Coupon field in cart */
+  const [couponOpen, setCouponOpen] = useState(false);
+  const [couponCode, setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
-  const [_couponMsg, _setCouponMsg] = useState("");
-  const [_validatingCoupon, _setValidatingCoupon] = useState(false);
+  const [couponMsg, setCouponMsg] = useState("");
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
 
   /* Smart cross-sell: real co-purchase data */
   type CoPurchased = { id: number; name: string; image: string; price: number; unit: string };
@@ -81,22 +81,22 @@ export default function CartSidebar() {
       fetchCoPurchased(ids);
     }
   }, [isOpen, items, fetchCoPurchased]);
-  const _validateCoupon = async () => {
+  const validateCoupon = async () => {
     if (!couponCode.trim()) return;
-    _setValidatingCoupon(true);
-    _setCouponMsg("");
+    setValidatingCoupon(true);
+    setCouponMsg("");
     try {
       const res = await fetch("/api/coupons/validate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: couponCode.trim(), cartTotal: total }) });
       const data = await res.json();
       if (res.ok && data.valid) {
         setCouponDiscount(data.discount ?? 0);
-        _setCouponMsg(`-S/${(data.discount ?? 0).toFixed(2)}`);
+        setCouponMsg(`-S/${(data.discount ?? 0).toFixed(2)}`);
       } else {
         setCouponDiscount(0);
-        _setCouponMsg(data.message ?? "Cupón inválido");
+        setCouponMsg(data.message ?? "Cupon invalido");
       }
-    } catch { _setCouponMsg("Error al validar"); setCouponDiscount(0); }
-    _setValidatingCoupon(false);
+    } catch { setCouponMsg("Error al validar"); setCouponDiscount(0); }
+    setValidatingCoupon(false);
   };
 
   /* Mejora 18: Guardar carrito para después con link compartible */
@@ -725,6 +725,47 @@ export default function CartSidebar() {
                      "🏆 ¡Eres nuestro mejor cliente hoy!"}
                   </p>
                 )}
+
+                {/* Coupon input */}
+                <div className="mb-3">
+                  {!couponOpen ? (
+                    <button
+                      onClick={() => setCouponOpen(true)}
+                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium"
+                    >
+                      ¿Tienes un cupon?
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                        placeholder="Codigo de cupon"
+                        maxLength={20}
+                        className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-xs bg-white dark:bg-slate-800 dark:text-white"
+                        onKeyDown={(e) => e.key === "Enter" && validateCoupon()}
+                      />
+                      <button
+                        onClick={validateCoupon}
+                        disabled={validatingCoupon || !couponCode.trim()}
+                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                      >
+                        {validatingCoupon ? "..." : "Aplicar"}
+                      </button>
+                    </div>
+                  )}
+                  {couponMsg && (
+                    <p className={`text-xs mt-1 ${couponDiscount > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                      {couponMsg}
+                    </p>
+                  )}
+                  {couponDiscount > 0 && (
+                    <p className="text-xs text-emerald-600 font-medium mt-1">
+                      Descuento aplicado: -S/{couponDiscount.toFixed(2)}
+                    </p>
+                  )}
+                </div>
 
                 {/* Order Button — WhatsApp or Checkout depending on mode */}
                 {mode === "checkout" ? (
