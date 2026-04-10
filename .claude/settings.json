@@ -5,7 +5,10 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "CLAUDE_CODE_TEAMMATE_MODE": "in-process",
     "BSM_PROJECT_ROOT": "${CLAUDE_PROJECT_DIR}",
-    "BSM_HOOKS_DEBUG": "0"
+    "BSM_HOOKS_DEBUG": "0",
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "",
+    "OTEL_SERVICE_NAME": "bodega-san-martin-claude"
   },
   "hooks": {
     "PreToolUse": [
@@ -28,6 +31,36 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-deploy-enterprise-gate.mjs",
+            "timeout": 180
+          }
+        ]
+      },
+      {
+        "matcher": "Skill|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-deploy-db-snapshot.mjs",
+            "timeout": 120
+          }
+        ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-deploy-slo-gate.mjs",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -38,6 +71,17 @@
             "type": "command",
             "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-tool-lint.mjs",
             "timeout": 30,
+            "async": true
+          }
+        ]
+      },
+      {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ${CLAUDE_PROJECT_DIR}/.claude/hooks/post-deploy-sentinel.mjs",
+            "timeout": 60,
             "async": true
           }
         ]

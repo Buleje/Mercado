@@ -1,0 +1,170 @@
+{
+  "_comment": "God-mode orchestration config — mapa maestro de task types → agent combinations. Usado por agent-router y el Orquestador Principal para auto-seleccionar el equipo optimo.",
+  "version": 2,
+  "lastUpdated": "2026-04-10",
+
+  "taskRoutes": {
+    "bug-simple": {
+      "description": "Bug en 1-2 archivos, area clara",
+      "agents": ["bug-hunter"],
+      "model": "sonnet",
+      "maxTurns": 20,
+      "verification": ["lint", "tsc", "test"],
+      "escalation": "bug-hunter-opus"
+    },
+    "bug-complex": {
+      "description": "Bug cross-layer o intermitente",
+      "agents": ["bug-hunter", "qa-reliability-engineer"],
+      "model": "opus",
+      "maxTurns": 40,
+      "verification": ["lint", "tsc", "test", "build"],
+      "escalation": "full-stack-squad"
+    },
+    "feature-frontend": {
+      "description": "Componente React nuevo o modificacion UI",
+      "agents": ["frontend-engineer"],
+      "model": "sonnet",
+      "maxTurns": 40,
+      "verification": ["lint", "tsc", "test"],
+      "preTask": ["pre-task-intel:frontend"]
+    },
+    "feature-backend": {
+      "description": "Endpoint API nuevo o logica de negocio",
+      "agents": ["backend-platform-engineer"],
+      "model": "sonnet",
+      "maxTurns": 40,
+      "verification": ["lint", "tsc", "test"],
+      "preTask": ["pre-task-intel:backend"]
+    },
+    "feature-fullstack": {
+      "description": "Feature que toca DB + API + UI",
+      "squad": "full-stack-squad",
+      "model": "opus",
+      "maxTurns": 50,
+      "verification": ["lint", "tsc", "test", "build"],
+      "preTask": ["pre-task-intel:general"],
+      "postTask": ["code-reviewer"]
+    },
+    "feature-checkout": {
+      "description": "Cualquier cosa que toque checkout/pagos/carrito",
+      "squad": "checkout-squad",
+      "model": "opus",
+      "maxTurns": 50,
+      "verification": ["lint", "tsc", "test", "build", "eval:checkout"],
+      "preTask": ["pre-task-intel:checkout", "audit-first:checkout"],
+      "mandatory": true
+    },
+    "security-audit": {
+      "description": "Auditoria de seguridad pre-merge",
+      "squad": "security-squad",
+      "model": "opus",
+      "maxTurns": 40,
+      "verification": ["pentest-report"],
+      "blocking": true
+    },
+    "performance-optimize": {
+      "description": "Optimizacion CWV, bundle, cache",
+      "squad": "performance-squad",
+      "model": "opus",
+      "maxTurns": 40,
+      "verification": ["lighthouse", "bundle-analysis"]
+    },
+    "database-migration": {
+      "description": "Cambio de schema Prisma o migracion",
+      "agents": ["database-engineer", "migration-planner"],
+      "model": "opus",
+      "maxTurns": 30,
+      "verification": ["prisma-validate", "tsc", "test"],
+      "preTask": ["pre-task-intel:database", "audit-first:database"],
+      "requiresConfirmation": true
+    },
+    "refactor": {
+      "description": "Refactoring sin cambio funcional",
+      "agents": ["refactoring-expert"],
+      "model": "sonnet",
+      "maxTurns": 35,
+      "verification": ["lint", "tsc", "test", "build"],
+      "postTask": ["code-reviewer"]
+    },
+    "seo": {
+      "description": "SEO, metadata, sitemap, JSON-LD",
+      "agents": ["seo-growth-strategist"],
+      "model": "sonnet",
+      "maxTurns": 20,
+      "verification": ["lint", "tsc", "build"]
+    },
+    "integration": {
+      "description": "API externa (WhatsApp, Stripe, SUNAT)",
+      "agents": ["integration-specialist"],
+      "model": "sonnet",
+      "maxTurns": 30,
+      "verification": ["lint", "tsc", "test"],
+      "preTask": ["pre-task-intel:integration"]
+    },
+    "deploy": {
+      "description": "Deploy a Vercel",
+      "agents": ["devops-release-engineer"],
+      "model": "sonnet",
+      "maxTurns": 20,
+      "gates": ["slo-gate", "enterprise-gate", "db-snapshot", "canary"],
+      "postTask": ["sentinel-health-check"]
+    },
+    "sprint-planning": {
+      "description": "Planificacion de sprint o iniciativa grande",
+      "agents": ["solution-architect", "initiative-orchestrator"],
+      "model": "opus",
+      "maxTurns": 30,
+      "output": ["adr", "roadmap-update"]
+    },
+    "test-writing": {
+      "description": "Escribir tests para codigo existente",
+      "agents": ["test-writer"],
+      "model": "sonnet",
+      "maxTurns": 40,
+      "verification": ["test", "coverage"]
+    }
+  },
+
+  "squads": {
+    "full-stack-squad": {
+      "agents": ["solution-architect", "database-engineer", "backend-platform-engineer", "frontend-engineer", "qa-reliability-engineer"],
+      "protocol": "A2A-sequential",
+      "order": ["architect", "database", "backend", "frontend", "qa"]
+    },
+    "checkout-squad": {
+      "agents": ["checkout-specialist", "backend-platform-engineer", "frontend-engineer", "qa-reliability-engineer"],
+      "protocol": "A2A-sequential",
+      "order": ["checkout", "backend", "frontend", "qa"],
+      "dangerZone": true
+    },
+    "security-squad": {
+      "agents": ["security-auditor", "security-pentester", "qa-reliability-engineer"],
+      "protocol": "parallel-then-merge",
+      "order": ["auditor+pentester-parallel", "qa-merge"]
+    },
+    "performance-squad": {
+      "agents": ["performance-engineer", "frontend-engineer", "finops-guard"],
+      "protocol": "parallel-then-merge",
+      "order": ["all-parallel", "consolidate"]
+    }
+  },
+
+  "escalationChain": {
+    "default": ["sonnet-specialist", "opus-specialist", "squad", "orchestrator-direct", "brandon"],
+    "maxLevels": 4,
+    "costCap": 5.00,
+    "timeoutMinutes": 10
+  },
+
+  "globalRules": {
+    "alwaysVerify": ["lint", "tsc"],
+    "alwaysPreTask": ["session-context"],
+    "alwaysPostTask": ["four-table-closing"],
+    "neverSkip": ["qa-for-critical-zones"],
+    "parallelismTarget": {
+      "reads": 4,
+      "agents": 3,
+      "edits": 3
+    }
+  }
+}

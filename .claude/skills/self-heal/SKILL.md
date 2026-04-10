@@ -113,23 +113,59 @@ Después de cada intento (éxito o fallo):
 - Tiempo: [Xs]
 ```
 
-## Si los 3 intentos fallan → escalar
+## Si los 3 intentos fallan → escalacion en cascada (v2, 2026-04-10)
+
+Antes de escalar a Brandon, intentar escalacion automatica a agentes especialistas:
+
+```
+intento 1-3: fix automatico basico (tabla de clasificacion arriba)
+    ↓ si falla
+intento 4: escalar a agente especialista segun tipo de error:
+    - Error TypeScript complejo → Agent(subagent_type="ecc:build-error-resolver")
+    - Error de test/logica → Agent(subagent_type="bug-hunter")
+    - Error de lint complejo → Agent(subagent_type="refactoring-expert")
+    - Error de build/webpack → Agent(subagent_type="performance-engineer")
+    ↓ si el agente especialista tampoco resuelve
+intento 5: ESCALAR A BRANDON con reporte completo
+```
+
+### Formato de escalacion a agente especialista (intento 4)
+
+```
+Agent({
+  description: "Self-heal escalation: [tipo de error]",
+  subagent_type: "[agente-especialista]",
+  prompt: "El self-heal basico fallo 3 veces con este error:
+    [error completo]
+    
+    Archivos involucrados: [lista]
+    Fixes intentados: [lista de diffs]
+    
+    Tu trabajo: diagnosticar la causa raiz y aplicar el fix correcto.
+    Despues de tu fix, ejecuta: [comando que fallo]
+    Si pasa, reporta exito. Si no, reporta por que no se puede auto-reparar."
+})
+```
+
+### Si todo falla → escalar a Brandon
 
 ```markdown
 ## 🚨 Self-Heal agotado — escalando a Brandon
 
 **Comando:** `npm run test`
-**Intentos:** 3/3 sin convergencia
+**Intentos:** 3 basicos + 1 agente especialista = 4/4 sin convergencia
 
 ### Diff acumulado
 [diff de todos los cambios aplicados, sin commitear]
 
-### Por qué no convergió
-[1 párrafo: el bug parece más profundo, conflicto entre tests, lógica de negocio, etc.]
+### Agente especialista consultado
+- Agente: [nombre]
+- Diagnostico: [resumen de 1 linea]
+- Por que no convergio: [explicacion]
 
 ### Sugerencia
-- Acción manual recomendada: [...]
-- ¿Revertir mis cambios? (sí/no)
+- Accion manual recomendada: [...]
+- Revertir mis cambios? (si/no)
 ```
 
 ## Reglas duras del skill
