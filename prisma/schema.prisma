@@ -2854,6 +2854,7 @@ model CreditProfile {
   updatedAt        DateTime @updatedAt
 
   installments CreditInstallment[]
+  scoreHistory CreditScoreHistory[]
 
   @@unique([tenantId, customerId])
   @@index([tenantId])
@@ -2880,6 +2881,57 @@ model CreditInstallment {
   @@index([tenantId])
   @@index([creditProfileId])
   @@index([status, nextDueDate])
+}
+
+// ─── Credit Score History (Fiado Digital Phase 1) ─────────────────────────────
+// Append-only timeline of credit score snapshots. Used for transparency
+// (customer sees "your score went from X to Y") and analytics.
+// ADR-021 §3: immutable, tenant-isolated, write-only after creation.
+model CreditScoreHistory {
+  id              String        @id @default(cuid())
+  tenantId        String
+  customerId      String
+  creditProfileId String
+  score           Int // 0-1000 at snapshot time
+  creditLimit     Decimal       @db.Decimal(12, 2)
+  riskLevel       String // none | low | medium | high
+  // Breakdown at snapshot time (for transparency explainability)
+  breakdownPurchaseHistory  Int @default(0)
+  breakdownPaymentPunctuality Int @default(0)
+  breakdownAvgTicket        Int @default(0)
+  breakdownSeniority        Int @default(0)
+  breakdownLoyaltyPoints    Int @default(0)
+  // What triggered this snapshot
+  trigger         String        @default("manual") // manual | weekly_recalc | payment | fiado_close
+  createdAt       DateTime      @default(now())
+
+  creditProfile CreditProfile @relation(fields: [creditProfileId], references: [id])
+
+  @@index([tenantId, customerId])
+  @@index([creditProfileId, createdAt])
+  @@index([createdAt])
+}
+
+// ─── Credit Reminder (Fiado Digital Phase 2) ──────────────────────────────────
+// Idempotent reminder tracking. Each (fiadoId, stage, date) combination
+// can only produce one reminder. Prevents double-sends on cron retries.
+// ADR-021 §4: stages escalate T-3 → T-1 → T0 → T+1 → T+7 → T+30.
+model CreditReminder {
+  id          String   @id @default(cuid())
+  tenantId    String
+  fiadoId     String
+  customerId  String
+  stage       String // pre_3d | pre_1d | due_day | post_1d | post_7d | post_30d
+  channel     String   @default("whatsapp") // whatsapp | notification | sms
+  message     String   @db.Text
+  sentAt      DateTime @default(now())
+  // Idempotency: unique constraint ensures one reminder per fiado+stage+day
+  idempotencyKey String @unique // format: {fiadoId}:{stage}:{YYYY-MM-DD}
+
+  @@index([tenantId])
+  @@index([fiadoId])
+  @@index([customerId])
+  @@index([sentAt])
 }
 
 // ─── AI Demand Forecasting ───────────────────────────────

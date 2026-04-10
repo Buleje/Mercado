@@ -284,6 +284,44 @@ export async function calculateCreditScore(
 }
 
 /**
+ * Persiste un snapshot inmutable del score actual en CreditScoreHistory.
+ * Usado por el cron semanal de recálculo y tras pagos/cierres de fiado.
+ * ADR-021 §3: append-only, nunca se edita ni se borra.
+ */
+export async function snapshotCreditScore(
+  tenantId: string,
+  customerId: string,
+  trigger: "manual" | "weekly_recalc" | "payment" | "fiado_close" = "manual",
+): Promise<{ snapshotId: string; score: number } | null> {
+  const profile = await prisma.creditProfile.findUnique({
+    where: { tenantId_customerId: { tenantId, customerId } },
+  });
+
+  if (!profile) return null;
+
+  const result = await calculateCreditScore(tenantId, customerId);
+
+  const snapshot = await prisma.creditScoreHistory.create({
+    data: {
+      tenantId,
+      customerId,
+      creditProfileId: profile.id,
+      score: result.score,
+      creditLimit: result.creditLimit,
+      riskLevel: result.riskLevel,
+      breakdownPurchaseHistory: result.breakdown.purchaseHistory,
+      breakdownPaymentPunctuality: result.breakdown.paymentPunctuality,
+      breakdownAvgTicket: result.breakdown.avgTicket,
+      breakdownSeniority: result.breakdown.seniority,
+      breakdownLoyaltyPoints: result.breakdown.loyaltyPoints,
+      trigger,
+    },
+  });
+
+  return { snapshotId: snapshot.id, score: result.score };
+}
+
+/**
  * Recalcula y persiste el CreditProfile completo de un cliente.
  * Crea el perfil si no existe.
  */

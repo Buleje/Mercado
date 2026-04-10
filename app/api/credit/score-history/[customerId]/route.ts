@@ -1,48 +1,17 @@
 /**
- * app/api/credit/score-history/[customerId]/route.ts
+ * GET /api/credit/score-history/[customerId]
  *
- * Fiado Digital Ola 2 — Phase 1 scaffold.
+ * Fiado Digital Phase 1 — Credit score history timeline.
  *
- * Endpoint GET que eventualmente devolverá el timeline inmutable de
- * `CreditScoreHistory` para un cliente (US-F1-02 y US-F1-03).
+ * Returns the append-only CreditScoreHistory snapshots for a customer,
+ * ordered by date. Admin-facing (requireAdmin with admin/cajero roles).
  *
- * Ver plan: `docs/fiado-digital-ola2-plan.md` §3 (tabla de endpoints,
- * fila `/api/credit/score-history/[customerId]`).
- * Ver ADR: `docs/adr/021-fiado-digital-ola2.md` §Principios §3.
+ * When Phase 1 flag is off, returns 404 silently (prevents leaking
+ * endpoint existence pre-launch).
  *
- * ### Estado actual: stub controlado por feature flag
- *
- * Este handler está **deliberadamente vacío** porque depende de:
- *
- * 1. TD-030 `LoyaltyTransaction` aplicado en prod (bloqueante duro).
- * 2. Tabla `CreditScoreHistory` en `schema.prisma` (Phase 1 migration).
- * 3. Helper `snapshotCreditScore()` en `lib/credit/scoring-engine.ts`.
- *
- * Mientras esas 3 piezas no existan, el endpoint:
- *
- * - Exige auth (`requireAdmin` con roles `admin` + `cajero`).
- * - Valida el feature flag `FIADO_DIGITAL_V2_PHASE1`.
- * - Retorna 404 si la fase 1 está apagada (para no filtrar que existe).
- * - Retorna 200 con `history: []` + mensaje explícito si la fase 1 está on
- *   pero el schema aún no tiene la tabla. Esto permite que el frontend
- *   muestre "timeline vacío" sin romper.
- *
- * Cuando TD-030 aterrice, reemplazar el stub por una query real:
- *
- * ```ts
- * const history = await prisma.creditScoreHistory.findMany({
- *   where: { tenantId: auth.tenantId, customerId },
- *   orderBy: { createdAt: "desc" },
- *   take: 50,
- * });
- * ```
- *
- * ### ADRs respetados
- *
- * - ADR-019: no usa `export const dynamic = "force-dynamic"`. El runtime
- *   auto-detecta dinámica al leer cookies via `requireAdmin`.
- * - ADR-014: middleware valida tenant previamente.
- * - CLAUDE.md §3: cualquier query nueva usará `tenantId` como primer filtro.
+ * ADR-021 §3: immutable timeline, tenant-isolated.
+ * ADR-019: no segment config, runtime auto-detects dynamic via cookies.
+ * CLAUDE.md §3: tenantId as first WHERE filter.
  */
 
 import "server-only";
@@ -50,6 +19,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { logger } from "@/lib/logger";
 import { isFiadoDigitalPhase1Enabled } from "@/lib/feature-flags/fiado-digital";
+import { prisma } from "@/lib/prisma";
+import { calculateCreditScore } from "@/lib/credit/scoring-engine";
+import { toNumOrZero } from "@/lib/decimal-utils";
 
 export async function GET(
   req: NextRequest,
@@ -60,8 +32,7 @@ export async function GET(
 
   const { customerId } = await params;
 
-  // Feature flag gate: si la fase 1 no está activa, 404 silencioso —
-  // evitamos filtrar que el endpoint existe pre-lanzamiento.
+  // Feature flag gate
   if (!isFiadoDigitalPhase1Enabled()) {
     logger.info("[credit/score-history] Phase 1 disabled — 404", {
       customerId,
@@ -73,21 +44,72 @@ export async function GET(
     );
   }
 
-  // TODO(TD-030): reemplazar este stub con query real a CreditScoreHistory
-  // una vez que:
-  //   1. prisma.creditScoreHistory.findMany esté disponible (schema merged)
-  //   2. snapshotCreditScore() esté poblando la tabla
-  //   3. Filtro por tenantId sea obligatorio como primer WHERE (CLAUDE.md §3)
-  logger.info("[credit/score-history] Phase 1 scaffold hit", {
-    customerId,
-    tenantId: auth.tenantId,
+  // Fetch history snapshots (last 50, newest first)
+  const history = await prisma.creditScoreHistory.findMany({
+    where: { tenantId: auth.tenantId, customerId },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    select: {
+      id: true,
+      score: true,
+      creditLimit: true,
+      riskLevel: true,
+      breakdownPurchaseHistory: true,
+      breakdownPaymentPunctuality: true,
+      breakdownAvgTicket: true,
+      breakdownSeniority: true,
+      breakdownLoyaltyPoints: true,
+      trigger: true,
+      createdAt: true,
+    },
+  });
+
+  // Calculate current live score for comparison
+  const currentScore = await calculateCreditScore(auth.tenantId, customerId);
+
+  // Fetch current profile limits
+  const profile = await prisma.creditProfile.findUnique({
+    where: {
+      tenantId_customerId: { tenantId: auth.tenantId, customerId },
+    },
+    select: {
+      creditLimit: true,
+      usedCredit: true,
+      availableCredit: true,
+      riskLevel: true,
+      lastScoreUpdate: true,
+    },
   });
 
   return NextResponse.json({
-    history: [],
-    currentScore: null,
-    currentLimit: null,
-    message:
-      "Phase 1 scaffolding — awaiting TD-030 LoyaltyTransaction + CreditScoreHistory table. Endpoint listo; schema pendiente.",
+    customerId,
+    currentScore: currentScore.score,
+    currentLimit: currentScore.creditLimit,
+    currentRiskLevel: currentScore.riskLevel,
+    breakdown: currentScore.breakdown,
+    profile: profile
+      ? {
+          creditLimit: toNumOrZero(profile.creditLimit),
+          usedCredit: toNumOrZero(profile.usedCredit),
+          availableCredit: toNumOrZero(profile.availableCredit),
+          riskLevel: profile.riskLevel,
+          lastScoreUpdate: profile.lastScoreUpdate.toISOString(),
+        }
+      : null,
+    history: history.map((h) => ({
+      id: h.id,
+      score: h.score,
+      creditLimit: toNumOrZero(h.creditLimit),
+      riskLevel: h.riskLevel,
+      breakdown: {
+        purchaseHistory: h.breakdownPurchaseHistory,
+        paymentPunctuality: h.breakdownPaymentPunctuality,
+        avgTicket: h.breakdownAvgTicket,
+        seniority: h.breakdownSeniority,
+        loyaltyPoints: h.breakdownLoyaltyPoints,
+      },
+      trigger: h.trigger,
+      date: h.createdAt.toISOString(),
+    })),
   });
 }
