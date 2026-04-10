@@ -3,6 +3,7 @@ name: evolve
 description: Sistema de auto-evolucion que analiza el rendimiento de agentes y auto-modifica sus prompts, reglas y configuraciones para mejorar resultados. Los agentes se hacen mas inteligentes con cada sesion.
 user-invocable: true
 model: opus
+context: fork
 argument-hint: "[analyze|apply|history|reset]"
 ---
 

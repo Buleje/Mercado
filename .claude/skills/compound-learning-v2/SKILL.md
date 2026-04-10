@@ -3,6 +3,7 @@ name: compound-learning-v2
 description: Sistema de aprendizaje compuesto que auto-detecta patrones repetidos en el trabajo y genera nuevos skills, hooks, squads y reglas. Upgrade del self-improvement original.
 user-invocable: true
 model: opus
+context: fork
 argument-hint: "[scan|generate|history]"
 ---
 

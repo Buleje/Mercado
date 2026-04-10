@@ -3,6 +3,7 @@ name: luis
 description: MODO MAXIMO — Arranque completo con todo el ecosistema. Carga 25 MCPs, 28 agentes, 47 skills, 11 hooks, auto-learning, sprint-autopilot. Diagnostica, propone y EJECUTA la accion mas ambiciosa sin pedir permiso.
 user-invocable: true
 model: opus
+context: fork
 ---
 
 # /luis — MODO MAXIMO (Level 5 Real + Sprint 2)

@@ -3,6 +3,7 @@ name: sprint-autopilot
 description: Ejecuta un sprint completo de forma autonoma. Recibe una lista de features/fixes, descompone en tareas, lanza agentes en paralelo con worktrees, coordina dependencias via A2A, verifica cada entrega, y genera PRs. Un boton = sprint hecho.
 user-invocable: true
 model: opus
+context: fork
 argument-hint: "[sprint-items como lista o referencia a ROADMAP]"
 ---
 

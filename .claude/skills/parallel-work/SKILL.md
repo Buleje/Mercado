@@ -3,6 +3,7 @@ name: parallel-work
 description: Lanza N agentes en worktrees aislados para trabajar en features independientes en paralelo. Cada agente tiene su propia copia del repo sin conflictos.
 user-invocable: true
 model: opus
+context: fork
 ---
 
 # /parallel-work — Trabajo paralelo en worktrees aislados

@@ -3,6 +3,7 @@ name: prod-to-code
 description: Pipeline autonomo que conecta errores de produccion con fixes automaticos. Lee logs de Vercel/Sentry, crea issues, despacha agentes, arregla, testea y deploya. Zero human intervention para errores conocidos.
 user-invocable: true
 model: opus
+context: fork
 argument-hint: "[scan|fix|status]"
 ---
 
