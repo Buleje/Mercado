@@ -49,18 +49,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const storeUrl = `https://www.buleje.pe/marketplace/${slug}`;
+  const zone = data.zone ?? "Peru";
   const desc =
     data.description ??
-    `Compra en ${data.name}, ${data.category ?? "bodega"} en ${data.zone ?? "Pucallpa"}. Delivery rápido en Pucallpa. Paga con Yape o efectivo.`;
+    `Compra en ${data.name}, ${data.category ?? "tienda"} en ${zone}. Delivery rapido. Paga con Yape o efectivo. Marketplace Buleje.`;
 
   return {
-    title: `${data.name} — Tienda en Pucallpa | Marketplace Buleje`,
+    title: `${data.name} — ${data.category ?? "Tienda"} en ${zone} | Marketplace Buleje`,
     description: desc,
     alternates: {
       canonical: storeUrl,
     },
     openGraph: {
-      title: `${data.name} — Compra con delivery en Pucallpa`,
+      title: `${data.name} — Compra con delivery en ${zone}`,
       description: desc,
       url: storeUrl,
       siteName: "Buleje",

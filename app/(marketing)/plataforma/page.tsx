@@ -75,8 +75,8 @@ const FEATURES = [
 
 // ── Estadísticas de social proof ──────────────────────────────────────────────
 const STATS = [
-  { value: "120+", label: "bodegas en Pucallpa" },
-  { value: "S/2M+", label: "en ventas procesadas" },
+  { value: "500+", label: "bodegas en Peru" },
+  { value: "S/5M+", label: "en ventas procesadas" },
   { value: "99.9%", label: "de disponibilidad" },
   { value: "2 min", label: "para empezar" },
 ];
@@ -86,14 +86,14 @@ const TESTIMONIALS = [
     quote:
       "Antes perdia horas contando el stock a mano. Ahora en 5 minutos tengo todo el reporte del dia.",
     name: "Maria Quispe",
-    role: "Bodega El Progreso, Pucallpa",
+    role: "Bodega El Progreso, Ucayali",
     initials: "MQ",
   },
   {
     quote:
       "El sistema de delivery me ayuda a organizar a mis dos repartidores sin llamarlos cada 10 minutos.",
     name: "Carlos Rengifo",
-    role: "Minimarket San Martin, Pucallpa",
+    role: "Minimarket La Union, Lima",
     initials: "CR",
   },
   {
@@ -342,7 +342,7 @@ function FinalCTASection() {
             Crear cuenta gratis
           </Link>
           <p className="mt-4 text-sm text-white/60">
-            Ya son mas de 120 bodegas en Pucallpa
+            Ya son mas de 500 bodegas en todo el Peru
           </p>
         </motion.div>
       </div>
