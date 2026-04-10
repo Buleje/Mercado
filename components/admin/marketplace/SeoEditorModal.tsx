@@ -141,7 +141,7 @@ export default function SeoEditorModal({ open, productId, onClose, onSave }: Seo
         }
       })
       .catch(() => {
-        // TODO: endpoint real /api/marketplace/products/${productId}/seo
+        // Fallback: SEO API unavailable — user can still edit manually
       })
       .finally(() => setLoading(false));
   }, [open, productId]);

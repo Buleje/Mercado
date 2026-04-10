@@ -81,7 +81,7 @@ export default function ProductAnalyticsPanel({ productId, productName }: Produc
         const json = await res.json();
         setData(json?.data ?? json);
       } catch {
-        // TODO: endpoint real /api/marketplace/products/${productId}/analytics
+        // Fallback: mock data if analytics API returns error
         // Usando mock temporal para desarrollo
         const mockDays: AnalyticsDay[] = Array.from({ length: days }, (_, i) => {
           const d = new Date();
