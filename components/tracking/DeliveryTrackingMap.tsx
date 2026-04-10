@@ -129,7 +129,6 @@ export default function DeliveryTrackingMap({ orderId, destLat, destLng, classNa
     if (!containerRef.current || initRef.current) return;
     initRef.current = true;
 
-    // @ts-expect-error — CSS module import dinámico
     await import("leaflet/dist/leaflet.css");
     const L = await import("leaflet");
 
