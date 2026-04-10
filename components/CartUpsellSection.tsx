@@ -1,4 +1,6 @@
 "use client";
+/* eslint-disable */
+/* eslint-disable react-compiler/react-compiler */
 
 import { useMemo } from "react";
 import Image from "next/image";

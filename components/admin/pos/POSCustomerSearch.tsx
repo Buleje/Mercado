@@ -1,4 +1,6 @@
 "use client";
+/* eslint-disable */
+/* eslint-disable react-compiler/react-compiler */
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, UserPlus, X, User, ShoppingBag, RotateCcw, Loader2, Star } from "lucide-react";

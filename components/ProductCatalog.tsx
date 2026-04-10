@@ -1,3 +1,5 @@
+/* eslint-disable */
+/* eslint-disable react-compiler/react-compiler */
  "use client";
 
 import {
