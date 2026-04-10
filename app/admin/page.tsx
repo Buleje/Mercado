@@ -27,11 +27,33 @@ import {
 import { AdminImpersonationBanner } from "@/components/admin/AdminImpersonationBanner";
 import { AdminTenantBar } from "@/components/admin/AdminTenantBar";
 import { AdminTopHeader } from "@/components/admin/AdminTopHeader";
-import AdminCommandPalette from "@/components/admin/shared/AdminCommandPalette";
 import { AdminNavigation } from "./_components/AdminNavigation";
-import { AdminGlobalModals } from "./_components/AdminGlobalModals";
 import { AdminMainContent } from "./_components/AdminMainContent";
-import { AdminOverlaysLayer } from "./_components/AdminOverlaysLayer";
+
+// ── Deferred chrome (sessions 4-7) ─────────────────────────────────────────────
+// AdminCommandPalette, AdminGlobalModals and AdminOverlaysLayer are not on the
+// critical first-paint path. They are only visible on explicit user actions
+// (Ctrl+K, opening a modal, activating presentation/onboarding). Loading them
+// via next/dynamic removes their code from the initial admin chunk.
+// TASK-003 — companion tab wrappers live in @/components/admin/tabs/*.
+const AdminCommandPalette = dynamic(
+  () => import("@/components/admin/shared/AdminCommandPalette"),
+  { loading: () => null, ssr: false },
+);
+const AdminGlobalModals = dynamic(
+  () =>
+    import("./_components/AdminGlobalModals").then((mod) => ({
+      default: mod.AdminGlobalModals,
+    })),
+  { loading: () => null, ssr: false },
+);
+const AdminOverlaysLayer = dynamic(
+  () =>
+    import("./_components/AdminOverlaysLayer").then((mod) => ({
+      default: mod.AdminOverlaysLayer,
+    })),
+  { loading: () => null, ssr: false },
+);
 
 function AdminPage() {
   const router = useRouter();

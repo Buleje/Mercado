@@ -220,18 +220,40 @@ model Customer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  locations     SavedLocation[]
-  orders        Order[]
-  sales         Sale[]
-  savedCart     SavedCart?
-  notifications CustomerNotification[]
-  fiados        Fiado[]
-  prestamos     Prestamo[]
-  cotizaciones  Cotizacion[]
+  locations           SavedLocation[]
+  orders              Order[]
+  sales               Sale[]
+  savedCart           SavedCart?
+  notifications       CustomerNotification[]
+  fiados              Fiado[]
+  prestamos           Prestamo[]
+  cotizaciones        Cotizacion[]
+  loyaltyTransactions LoyaltyTransaction[]
 
   @@index([tenantId])
   @@index([tenantId, createdAt])
   @@index([createdAt])
+}
+
+// ─── Loyalty Ledger (ADR-024 — TD-030) ──────────────────
+// Append-only ledger for every change to Customer.loyaltyPoints.
+// Customer.loyaltyPoints stays as a denormalized materialized balance whose
+// only legal mutation path is `lib/db/loyalty.db.ts#addTransaction` inside
+// a `$transaction([insert, increment])` block. See docs/adr/024.
+model LoyaltyTransaction {
+  id         String   @id @default(cuid())
+  customerId String // FK to Customer.phone (Customer's @id is `phone`)
+  tenantId   String
+  amount     Int // positive = credit, negative = debit; never 0
+  reason     String // "purchase" | "promotion" | "redemption" | "manual" | "referral" | "expiry" | "adjustment" | "backfill"
+  metadata   Json? // free-form: { orderId, promoId, idempotencyKey, ... }
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [phone], onDelete: Cascade)
+
+  @@index([customerId, createdAt(sort: Desc)], map: "idx_loyalty_tx_customer_created_desc")
+  @@index([tenantId, createdAt(sort: Desc)], map: "idx_loyalty_tx_tenant_created_desc")
+  @@index([tenantId, reason])
 }
 
 // ─── Saved Carts (persistent across devices) ────────────
