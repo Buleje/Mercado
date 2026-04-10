@@ -167,8 +167,10 @@ export function planLimitPayload(resource: string, current: number, max: number,
 //   · app/api/superadmin/analytics/route.ts PLAN_PRICES (399) ← estaba mal
 //   · lib/plans.ts PLANS.enterprise.priceMonthly (399)        ← estaba mal
 //
-// Ahora TODOS leen desde aquí, y este helper intenta primero PlatformSetting
-// en la DB (key="plan-prices") y cae a DEFAULT_PLAN_PRICES si no hay override.
+// Los defaults canónicos viven acá (archivo client-safe). Los helpers runtime
+// `getPlanPrice` / `getAllPlanPrices` que consultan `PlatformSetting` viven en
+// `@/lib/plans-server` — ese archivo tiene `server-only` y NO debe importarse
+// desde Client Components (fetchear vía API en ese caso).
 
 /** Defaults canónicos — si no hay override en DB, se usan estos. */
 export const DEFAULT_PLAN_PRICES: Record<PlanId, number> = {
@@ -177,48 +179,3 @@ export const DEFAULT_PLAN_PRICES: Record<PlanId, number> = {
   business: 149,
   enterprise: 499,
 };
-
-/**
- * Single source of truth para el precio de UN plan específico.
- * Lee `PlatformSetting("plan-prices")` con cache 5min, fallback a DEFAULT_PLAN_PRICES.
- *
- * Server-only: no importar desde Client Components. En client, fetchear vía API.
- */
-export async function getPlanPrice(plan: PlanId): Promise<number> {
-  const all = await getAllPlanPrices();
-  return all[plan];
-}
-
-/**
- * Single source of truth para los precios de TODOS los planes.
- * Lee `PlatformSetting("plan-prices")` con cache 5min, fallback a DEFAULT_PLAN_PRICES.
- *
- * Server-only: importa dinámicamente `lib/db/platform-settings.db` para evitar
- * meter `server-only` en este archivo (que es re-usado en componentes cliente
- * para la catalog estática de PLANS).
- */
-export async function getAllPlanPrices(): Promise<Record<PlanId, number>> {
-  try {
-    const { PlatformSettingsDB } = await import("@/lib/db/platform-settings.db");
-    const override = await PlatformSettingsDB.get<Partial<Record<PlanId, number>>>(
-      "plan-prices",
-    );
-    if (!override) return { ...DEFAULT_PLAN_PRICES };
-    return {
-      free: typeof override.free === "number" ? override.free : DEFAULT_PLAN_PRICES.free,
-      pro: typeof override.pro === "number" ? override.pro : DEFAULT_PLAN_PRICES.pro,
-      business:
-        typeof override.business === "number"
-          ? override.business
-          : DEFAULT_PLAN_PRICES.business,
-      enterprise:
-        typeof override.enterprise === "number"
-          ? override.enterprise
-          : DEFAULT_PLAN_PRICES.enterprise,
-    };
-  } catch {
-    // Si la DB class o el modelo no existe aún (migración no corrida),
-    // caemos a defaults sin romper el build.
-    return { ...DEFAULT_PLAN_PRICES };
-  }
-}

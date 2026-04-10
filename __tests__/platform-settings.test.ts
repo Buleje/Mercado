@@ -65,11 +65,8 @@ vi.mock("@/lib/cache", () => ({
 
 // Imports AFTER los mocks — obligatorio para que los mocks se apliquen.
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
-import {
-  DEFAULT_PLAN_PRICES,
-  getPlanPrice,
-  getAllPlanPrices,
-} from "@/lib/plans";
+import { DEFAULT_PLAN_PRICES } from "@/lib/plans";
+import { getPlanPrice, getAllPlanPrices } from "@/lib/plans-server";
 
 // ── Reset entre tests ────────────────────────────────────────────────────────
 beforeEach(() => {
