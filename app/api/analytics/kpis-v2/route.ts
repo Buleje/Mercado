@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/analytics/kpis-v2
@@ -239,7 +240,7 @@ export async function GET(req: NextRequest) {
       rotacionInventario,
     });
   } catch (e) {
-    console.error("[analytics/kpis-v2] GET error:", e);
+    logger.error("[analytics/kpis-v2] GET error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

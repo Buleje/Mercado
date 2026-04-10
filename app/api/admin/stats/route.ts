@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/admin/stats
@@ -91,7 +92,7 @@ export async function GET(req: NextRequest) {
       generatedAt: now.toISOString(),
     });
   } catch (e) {
-    console.error("[admin/stats] error:", e);
+    logger.error("[admin/stats] error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

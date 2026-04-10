@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 type Anomalia = {
   type: "venta_baja" | "stock_muerto" | "fiado_vencido" | "margen_critico";
@@ -214,7 +215,7 @@ export async function GET(req: NextRequest) {
       timestamp: now.toISOString(),
     });
   } catch (e) {
-    console.error("[analytics/anomalias] GET error:", e);
+    logger.error("[analytics/anomalias] GET error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { withDbRetry } from "@/lib/db-retry";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 /**
  * GET /api/analytics/kpis
@@ -183,7 +184,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (e) {
-    console.error("[analytics/kpis] GET error:", e);
+    logger.error("[analytics/kpis] GET error", { error: (e as Error).message, tenantId: auth.tenantId });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
