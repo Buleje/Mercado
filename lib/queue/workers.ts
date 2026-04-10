@@ -52,7 +52,7 @@ const emailWorker = new Worker<EmailJobData>(
     });
 
     await transporter.sendMail({
-      from: from || process.env.SMTP_FROM || "noreply@buleje.com",
+      from: from || process.env.SMTP_FROM || "noreply@buleje.pe",
       to,
       subject,
       html,

@@ -179,7 +179,7 @@ const FLOW_STEPS: FlowStep[] = [
     n: 1,
     title: "El cliente abre la tienda",
     simple: "Entra al sitio web o la app del celular",
-    technical: "Next.js sirve la página del storefront con tenant por subdominio (slug.buleje.com)",
+    technical: "Next.js sirve la página del storefront con tenant por subdominio (slug.buleje.pe)",
     icon: <Smartphone className="w-5 h-5" />,
   },
   {
@@ -577,7 +577,7 @@ const SELL_PACKAGES: SellPackage[] = [
     includes: [
       "Todo lo del paquete 'Empresarial'",
       "Marca registrada 'Buleje' (logos, nombre)",
-      "Dominios (buleje.com y otros)",
+      "Dominios (buleje.pe y otros)",
       "Cuentas de GitHub, Vercel, Supabase transferidas",
       "6 meses de soporte full",
       "Capacitación 1 semana a tu equipo",

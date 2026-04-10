@@ -30,7 +30,7 @@ export async function sendWelcomeEmail(data: WelcomeEmailData): Promise<void> {
     auth: { user: smtpUser, pass: smtpPass },
   });
 
-  const storeUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.com"}/${data.slug}`;
+  const storeUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe"}/${data.slug}`;
   const adminUrl = `${storeUrl}/admin`;
   const planLabel = PLAN_LABELS[data.plan] ?? data.plan;
   const trialEnd = data.trialEndsAt.toLocaleDateString("es-PE", {

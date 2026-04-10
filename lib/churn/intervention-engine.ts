@@ -117,7 +117,7 @@ async function sendChurnWhatsApp(
 // ─── Templates de comunicación ───────────────────────────────────────────────
 
 function buildEmailHtml(templateId: string, tenant: TenantInfo): { subject: string; html: string } {
-  const dashboardUrl = `https://${tenant.slug}.buleje.com/admin`;
+  const dashboardUrl = `https://${tenant.slug}.buleje.pe/admin`;
 
   switch (templateId) {
     case "trial_expiring_cta":
@@ -183,7 +183,7 @@ function buildEmailHtml(templateId: string, tenant: TenantInfo): { subject: stri
 }
 
 function buildWhatsAppMessage(templateId: string, tenant: TenantInfo): string {
-  const dashboardUrl = `https://${tenant.slug}.buleje.com/admin`;
+  const dashboardUrl = `https://${tenant.slug}.buleje.pe/admin`;
 
   switch (templateId) {
     case "login_drop_wa":

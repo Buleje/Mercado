@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SocialProofToast from "@/components/marketing/SocialProofToast";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.com";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
 
 export const metadata: Metadata = {
   title: {

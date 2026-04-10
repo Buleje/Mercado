@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
   const in24Hours = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://buleje.pe";
   const alerts: string[] = [];
 
   // 1) New signups in the last hour

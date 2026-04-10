@@ -40,7 +40,7 @@ export async function sendWelcomeTenant(to: string, tenant: { name: string; slug
     html: `
       <h2>Bienvenido a Buleje</h2>
       <p>Tu bodega <strong>${tenant.name}</strong> ya esta lista.</p>
-      <p>Entra a tu panel: <a href="https://buleje.com/${tenant.slug}/admin">Panel de admin</a></p>
+      <p>Entra a tu panel: <a href="https://buleje.pe/${tenant.slug}/admin">Panel de admin</a></p>
       <p>Empieza agregando tus productos y configura tus horarios.</p>
     `,
   }).catch(() => {});

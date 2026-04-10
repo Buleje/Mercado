@@ -185,7 +185,7 @@ const TEMPLATE_ICONS: Record<string, React.ReactNode> = {
 
 // ─── Main component ───────────────────────────────────────────
 export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps) {
-  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "buleje.com";
+  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "buleje.pe";
 
   const [step,        setStep]        = useState<Step>(0);
   const [direction,   setDirection]   = useState<Direction>(1);
@@ -548,7 +548,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
                   <div className="space-y-1">
                     <div className="flex items-center border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#00B4A6]/40 transition-all border-gray-200 dark:border-gray-700">
                       <span className="px-3 py-2.5 text-sm text-muted-foreground bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 select-none whitespace-nowrap">
-                        buleje.com/
+                        buleje.pe/
                       </span>
                       <input
                         type="text"

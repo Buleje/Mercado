@@ -4,7 +4,7 @@
  * Resolves the active tenant slug from multiple sources (in priority order):
  *  1. sessionStorage "active-tenant-slug" (per-tab override, e.g. admin switching tenants)
  *  2. URL path /t/[slug]/ prefix
- *  3. Subdomain (demo.buleje.com → "demo")
+ *  3. Subdomain (demo.buleje.pe → "demo")
  *  4. localStorage "active-tenant-slug" (cross-tab fallback)
  *  5. Default: "main"
  *
@@ -18,7 +18,7 @@ const DEFAULT_TENANT = "main";
 const IGNORED_SUBDOMAINS = new Set(["www", "api", "mail", "ftp"]);
 
 /** Primary domains — subdomain detection is relative to these. */
-const PRIMARY_DOMAINS = ["buleje.com", "localhost", "vercel.app"];
+const PRIMARY_DOMAINS = ["buleje.pe", "localhost", "vercel.app"];
 
 /**
  * Extract tenant slug from the current window.location.pathname.
@@ -32,7 +32,7 @@ function getTenantFromPath(): string | null {
 
 /**
  * Extract tenant slug from the current hostname (subdomain-based).
- * e.g. demo.buleje.com → "demo"
+ * e.g. demo.buleje.pe → "demo"
  */
 function getTenantFromSubdomain(): string | null {
   if (typeof window === "undefined") return null;

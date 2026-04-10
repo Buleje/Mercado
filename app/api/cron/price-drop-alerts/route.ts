@@ -155,7 +155,7 @@ export async function GET(req: NextRequest) {
               productLines,
               data.products.length > 5 ? `  ...y ${data.products.length - 5} más` : "",
               ``,
-              `👉 Aprovecha antes de que suba: ${process.env.NEXT_PUBLIC_APP_URL || "https://buleje.com"}/tienda`,
+              `👉 Aprovecha antes de que suba: ${process.env.NEXT_PUBLIC_APP_URL || "https://buleje.pe"}/tienda`,
               ``,
               `─────`,
               `${tenant.name} 🏪`,

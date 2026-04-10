@@ -119,7 +119,7 @@ export default function OGImage() {
             color: "#475569",
           }}
         >
-          buleje.com — Pucallpa, Perú
+          buleje.pe — Pucallpa, Perú
         </p>
       </div>
     ),
