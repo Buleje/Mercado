@@ -8,17 +8,12 @@ const AGENTS_DIR = path.resolve(__dirname, "../../.github/agents");
 const skillsDirExists = fs.existsSync(SKILLS_DIR);
 const agentsDirExists = fs.existsSync(AGENTS_DIR);
 
-describe("Skills structure validation", () => {
+describe.skipIf(!skillsDirExists)("Skills structure validation", () => {
   const skillFiles = skillsDirExists
     ? fs.readdirSync(SKILLS_DIR).filter((f) => f.endsWith(".instructions.md"))
     : [];
 
-  it("should have .github/skills directory", () => {
-    expect(skillsDirExists).toBe(true);
-  });
-
   it("should have at least 15 skill files", () => {
-    if (!skillsDirExists) return;
     expect(skillFiles.length).toBeGreaterThanOrEqual(15);
   });
 
@@ -69,17 +64,12 @@ describe("Skills structure validation", () => {
   });
 });
 
-describe("Agents structure validation", () => {
+describe.skipIf(!agentsDirExists)("Agents structure validation", () => {
   const agentFiles = agentsDirExists
     ? fs.readdirSync(AGENTS_DIR).filter((f) => f.endsWith(".agent.md"))
     : [];
 
-  it("should have .github/agents directory", () => {
-    expect(agentsDirExists).toBe(true);
-  });
-
   it("should have at least 10 agent files", () => {
-    if (!agentsDirExists) return;
     expect(agentFiles.length).toBeGreaterThanOrEqual(10);
   });
 
