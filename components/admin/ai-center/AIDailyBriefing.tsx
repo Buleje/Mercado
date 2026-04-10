@@ -398,7 +398,10 @@ export default function AIDailyBriefing({ data }: Props) {
     setCollapsedSections((prev) => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
-  if (!analysis) {
+  const hasOverdue = fiadosData?.fiados?.some((f) => f.dueDate && new Date(f.dueDate) < new Date()) ?? false;
+  const dayScore = useMemo(() => analysis ? computeDayScore(analysis, hasOverdue) : null, [analysis, hasOverdue]);
+
+  if (!analysis || !dayScore) {
     return <BriefingCard><p className="text-gray-500 dark:text-gray-400 text-sm">Cargando datos del negocio...</p></BriefingCard>;
   }
 
@@ -437,12 +440,7 @@ export default function AIDailyBriefing({ data }: Props) {
   const fiadosActive = fiadosData?.fiados?.length ?? 0;
   const fiadosTotal = fiadosData?.totalBalance ?? fiadosData?.fiados?.reduce((s, f) => s + (f.balance ?? 0), 0) ?? 0;
   const topDeudores = fiadosData?.fiados?.sort((a, b) => (b.balance ?? 0) - (a.balance ?? 0)).slice(0, 3) ?? [];
-  const hasOverdue = fiadosData?.fiados?.some((f) => f.dueDate && new Date(f.dueDate) < new Date()) ?? false;
-
   const cashAvailable = analysis.cashSales - analysis.expensesToday;
-
-  // ── Day Score ─────────────────────────────────────────────────────────────
-  const dayScore = useMemo(() => computeDayScore(analysis, hasOverdue), [analysis, hasOverdue]);
 
   // ── Urgent items count ─────────────────────────────────────────────────────
   const urgentCount = analysis.outOfStock.length + (hasOverdue ? 1 : 0) + (analysis.pendingOrders > 5 ? 1 : 0);
