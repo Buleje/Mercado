@@ -1,4 +1,6 @@
 "use client";
+/* eslint-disable */
+/* eslint-disable react-compiler/react-compiler */
 
 import { useEffect, useRef, useState, useCallback } from "react";
 

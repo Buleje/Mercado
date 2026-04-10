@@ -91,3 +91,4 @@ build-output.txt
 /shot-*.png
 /screenshot-*.png
 
+.env*.local

@@ -70,8 +70,8 @@ function StarRating({ value }: { value: number }) {
             i < full
               ? "fill-amber-400 text-amber-400"
               : half && i === full
-              ? "fill-amber-200 text-amber-400"
-              : "fill-gray-200 text-gray-200 dark:fill-gray-700 dark:text-gray-700"
+                ? "fill-amber-200 text-amber-400"
+                : "fill-gray-200 text-gray-200 dark:fill-gray-700 dark:text-gray-700",
           )}
         />
       ))}
@@ -103,9 +103,7 @@ function DashboardSkeleton() {
 // ── Bar chart simple (sin recharts) ──────────────────────────────────────────
 
 function SalesBarChart({ stores }: { stores: StoreRow[] }) {
-  const top5 = [...stores]
-    .sort((a, b) => b.sales - a.sales)
-    .slice(0, 5);
+  const top5 = [...stores].sort((a, b) => b.sales - a.sales).slice(0, 5);
 
   const max = Math.max(...top5.map((s) => s.sales), 1);
 
@@ -156,7 +154,6 @@ function StoresMapInner({ stores }: { stores: StoreRow[] }) {
       if (!containerRef.current || initRef.current) return;
       initRef.current = true;
 
-      // @ts-expect-error — CSS module import dinámico
       await import("leaflet/dist/leaflet.css");
       const L = await import("leaflet");
 
@@ -179,7 +176,7 @@ function StoresMapInner({ stores }: { stores: StoreRow[] }) {
       // Añadir markers de tiendas (posición aleatoria en Pucallpa como demo)
       stores.forEach((store, idx) => {
         const lat = -8.3791 + (idx * 0.007 - 0.015);
-        const lng = -74.5539 + (idx * 0.005 - 0.010);
+        const lng = -74.5539 + (idx * 0.005 - 0.01);
         const icon = L.divIcon({
           className: "store-map-marker",
           html: `<div style="
@@ -194,7 +191,8 @@ function StoresMapInner({ stores }: { stores: StoreRow[] }) {
           popupAnchor: [0, -20],
         });
         L.marker([lat, lng], { icon })
-          .bindPopup(`
+          .bindPopup(
+            `
             <div style="min-width:140px;">
               <p style="font-weight:700;margin:0 0 4px;">${store.name}</p>
               <p style="margin:0 0 2px;font-size:12px;color:#555;">${store.zone ?? "Sin zona"}</p>
@@ -202,7 +200,8 @@ function StoresMapInner({ stores }: { stores: StoreRow[] }) {
                 Ventas: ${formatSoles(store.sales)}
               </p>
             </div>
-          `)
+          `,
+          )
           .addTo(map);
       });
 
@@ -252,40 +251,37 @@ export default function MultiStoreDashboard() {
   const [viewTab, setViewTab] = useState<ViewTab>("tabla");
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchStores = useCallback(
-    async (showRefreshing = false) => {
-      if (showRefreshing) setRefreshing(true);
-      else setLoading(true);
-      setError("");
+  const fetchStores = useCallback(async (showRefreshing = false) => {
+    if (showRefreshing) setRefreshing(true);
+    else setLoading(true);
+    setError("");
 
-      try {
-        const res = await fetch(`/api/marketplace/stores?limit=50`);
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          setError(body.error ?? "Error al cargar tiendas");
-          return;
-        }
-        const json = await res.json();
-        const raw: StoreRow[] = (json.data ?? []).map(
-          (s: Omit<StoreRow, "sales" | "orders" | "lowStockCount">) => ({
-            ...s,
-            // Métricas simuladas — en producción vendrían del API con período
-            sales: Math.random() * 15000 + 2000,
-            orders: Math.floor(Math.random() * 120 + 10),
-            lowStockCount: Math.floor(Math.random() * 8),
-            commission: (s as unknown as { commission?: number }).commission ?? 5,
-          })
-        );
-        setStores(raw);
-      } catch {
-        setError("No se pudo conectar con el servidor");
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
+    try {
+      const res = await fetch(`/api/marketplace/stores?limit=50`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? "Error al cargar tiendas");
+        return;
       }
-    },
-    []
-  );
+      const json = await res.json();
+      const raw: StoreRow[] = (json.data ?? []).map(
+        (s: Omit<StoreRow, "sales" | "orders" | "lowStockCount">) => ({
+          ...s,
+          // Métricas simuladas — en producción vendrían del API con período
+          sales: Math.random() * 15000 + 2000,
+          orders: Math.floor(Math.random() * 120 + 10),
+          lowStockCount: Math.floor(Math.random() * 8),
+          commission: (s as unknown as { commission?: number }).commission ?? 5,
+        }),
+      );
+      setStores(raw);
+    } catch {
+      setError("No se pudo conectar con el servidor");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchStores();
@@ -305,7 +301,8 @@ export default function MultiStoreDashboard() {
   const sorted = [...stores].sort((a, b) => {
     const va = a[sortKey] as number | string;
     const vb = b[sortKey] as number | string;
-    const cmp = typeof va === "string" ? va.localeCompare(vb as string) : (va as number) - (vb as number);
+    const cmp =
+      typeof va === "string" ? va.localeCompare(vb as string) : (va as number) - (vb as number);
     return sortDir === "asc" ? cmp : -cmp;
   });
 
@@ -314,9 +311,8 @@ export default function MultiStoreDashboard() {
   const totalSales = stores.reduce((s, st) => s + st.sales, 0);
   const totalOrders = stores.reduce((s, st) => s + st.orders, 0);
   const totalCommissions = stores.reduce((s, st) => s + (st.sales * st.commission) / 100, 0);
-  const avgRating = stores.length > 0
-    ? stores.reduce((s, st) => s + st.rating, 0) / stores.length
-    : 0;
+  const avgRating =
+    stores.length > 0 ? stores.reduce((s, st) => s + st.rating, 0) / stores.length : 0;
 
   // ── Column header helper ───────────────────────────────────────────────────
 
@@ -335,7 +331,7 @@ export default function MultiStoreDashboard() {
         className={cn(
           "cursor-pointer select-none whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-gray-500 hover:text-[#00B4A6] dark:text-gray-400",
           active && "text-[#00B4A6] dark:text-teal-400",
-          cx
+          cx,
         )}
         onClick={() => handleSort(sortK)}
       >
@@ -376,7 +372,7 @@ export default function MultiStoreDashboard() {
                   "px-3 py-1.5 text-xs font-medium transition-colors first:rounded-l-lg last:rounded-r-lg",
                   period === key
                     ? "bg-[#00B4A6] text-white"
-                    : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+                    : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800",
                 )}
               >
                 {label}
@@ -406,10 +402,30 @@ export default function MultiStoreDashboard() {
       {/* KPIs globales */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Ventas totales", value: formatSoles(totalSales), icon: DollarSign, color: "text-[#00B4A6]" },
-          { label: "Pedidos totales", value: totalOrders, icon: ShoppingCart, color: "text-blue-600 dark:text-blue-400" },
-          { label: "Comisiones", value: formatSoles(totalCommissions), icon: TrendingUp, color: "text-amber-600 dark:text-amber-400" },
-          { label: "Rating promedio", value: avgRating.toFixed(1), icon: Star, color: "text-amber-500" },
+          {
+            label: "Ventas totales",
+            value: formatSoles(totalSales),
+            icon: DollarSign,
+            color: "text-[#00B4A6]",
+          },
+          {
+            label: "Pedidos totales",
+            value: totalOrders,
+            icon: ShoppingCart,
+            color: "text-blue-600 dark:text-blue-400",
+          },
+          {
+            label: "Comisiones",
+            value: formatSoles(totalCommissions),
+            icon: TrendingUp,
+            color: "text-amber-600 dark:text-amber-400",
+          },
+          {
+            label: "Rating promedio",
+            value: avgRating.toFixed(1),
+            icon: Star,
+            color: "text-amber-500",
+          },
         ].map(({ label, value, icon: Icon, color }) => (
           <div
             key={label}
@@ -453,7 +469,7 @@ export default function MultiStoreDashboard() {
                   "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-medium transition-colors",
                   viewTab === id
                     ? "bg-white text-[#00B4A6] shadow-sm dark:bg-gray-900"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -476,7 +492,12 @@ export default function MultiStoreDashboard() {
                           onClick={() => handleSort("name")}
                         >
                           Tienda
-                          <ArrowUpDown className={cn("h-3 w-3", sortKey === "name" ? "opacity-100" : "opacity-30")} />
+                          <ArrowUpDown
+                            className={cn(
+                              "h-3 w-3",
+                              sortKey === "name" ? "opacity-100" : "opacity-30",
+                            )}
+                          />
                         </button>
                       </th>
                       <SortTh label="Ventas" sortK="sales" />
@@ -560,7 +581,7 @@ export default function MultiStoreDashboard() {
                               "inline-block rounded-full px-2 py-0.5 text-xs font-bold",
                               store.isPublished
                                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400"
+                                : "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
                             )}
                           >
                             {store.isPublished ? "Activa" : "Inactiva"}
@@ -609,9 +630,8 @@ export default function MultiStoreDashboard() {
       <div className="flex items-start gap-2 rounded-xl border border-[#00B4A6]/20 bg-[#00B4A6]/5 p-3 text-xs text-gray-600 dark:border-[#00B4A6]/30 dark:bg-[#00B4A6]/10 dark:text-gray-400">
         <TrendingUp className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#00B4A6]" />
         <p>
-          Vista disponible para planes <strong>Business</strong> y{" "}
-          <strong>Enterprise</strong>. Las métricas de ventas y pedidos se actualizan en
-          tiempo real desde el marketplace.
+          Vista disponible para planes <strong>Business</strong> y <strong>Enterprise</strong>. Las
+          métricas de ventas y pedidos se actualizan en tiempo real desde el marketplace.
         </p>
       </div>
     </div>

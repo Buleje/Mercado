@@ -61,6 +61,7 @@
     "bullmq": "^5.73.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
+    "exceljs": "^4.4.0",
     "framer-motion": "^12.35.0",
     "geist": "^1.7.0",
     "gsap": "^3.14.2",
@@ -70,7 +71,7 @@
     "leaflet.heat": "^0.2.0",
     "lucide-react": "^0.577.0",
     "mercadopago": "^2.12.0",
-    "next": "16.1.6",
+    "next": "^16.2.3",
     "next-sitemap": "^4.2.3",
     "nodemailer": "^8.0.1",
     "pg": "^8.20.0",
@@ -85,7 +86,6 @@
     "tailwind-merge": "^3.5.0",
     "web-push": "^3.6.7",
     "web-vitals": "^5.1.0",
-    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -101,7 +101,7 @@
     "@storybook/addon-a11y": "^8.6.18",
     "@storybook/addon-essentials": "^8.6.14",
     "@storybook/addon-interactions": "^8.6.14",
-    "@storybook/nextjs": "^8.6.18",
+    "@storybook/nextjs": "^7.0.14",
     "@storybook/react": "^8.6.18",
     "@storybook/react-webpack5": "^8.6.18",
     "@storybook/test": "^8.6.18",
