@@ -5,10 +5,19 @@ import path from 'path'
 const SKILLS_DIR = path.resolve(__dirname, '../../.github/skills')
 const AGENTS_DIR = path.resolve(__dirname, '../../.github/agents')
 
+const skillsDirExists = fs.existsSync(SKILLS_DIR)
+
 describe('Skills structure validation', () => {
-  const skillFiles = fs.readdirSync(SKILLS_DIR).filter(f => f.endsWith('.instructions.md'))
+  const skillFiles = skillsDirExists
+    ? fs.readdirSync(SKILLS_DIR).filter(f => f.endsWith('.instructions.md'))
+    : []
+
+  it('should have .github/skills directory', () => {
+    expect(skillsDirExists).toBe(true)
+  })
 
   it('should have at least 15 skill files', () => {
+    if (!skillsDirExists) return
     expect(skillFiles.length).toBeGreaterThanOrEqual(15)
   })
 
