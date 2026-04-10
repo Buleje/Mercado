@@ -92,3 +92,5 @@ build-output.txt
 /screenshot-*.png
 
 build-task003.log
+
+.env*.local
