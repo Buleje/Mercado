@@ -15,7 +15,7 @@ interface Props {
 export async function generateStaticParams() {
   return [];
 }
-export const dynamicParams = true;
+// dynamicParams removed — incompatible con cacheComponents (regla CLAUDE.md #4, ADR-019)
 
 async function getProductBySlugFromDB(slug: string): Promise<Product | null> {
   const hdrs = await headers();

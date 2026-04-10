@@ -17,7 +17,7 @@
  * Cache: `revalidate: 300` (5 minutos). No es data time-sensitive.
  */
 
-export const revalidate = 300;
+// revalidate removed — incompatible con cacheComponents (regla CLAUDE.md #4, ADR-019)
 
 import { NextResponse, type NextRequest } from "next/server";
 import { readFile } from "node:fs/promises";

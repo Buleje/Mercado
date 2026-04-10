@@ -21,8 +21,8 @@ const StickyCartBar = dynamic(() => import("@/components/StickyCartBar"));
 
 const realCategories = categories.filter((c) => c.id !== "todos");
 
-// ISR: regenerate category pages at most once per 5 minutes
-export const revalidate = 300;
+// revalidate removed — incompatible con cacheComponents (regla CLAUDE.md #4, ADR-019)
+// Para ISR usar "use cache" + cacheLife({ revalidate: 300 }) en la funcion de datos
 
 interface Props {
   params: Promise<{ categoryId: string }>;
