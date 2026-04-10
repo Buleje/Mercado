@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { createNotification } from "@/lib/create-notification";
+import { queue } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 import { isFiadoDigitalPhase2Enabled } from "@/lib/feature-flags/fiado-digital";
@@ -164,21 +165,15 @@ export async function GET(req: NextRequest) {
         entityId: `weekly-${now.toISOString().split("T")[0]}`,
       });
 
-      // If owner has phone, create WhatsApp link
+      // Send WhatsApp to owner directly via queue
       if (tenant.ownerPhone) {
-        const cleanPhone = tenant.ownerPhone.replace(/\D/g, "");
-        const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(report)}`;
-
-        await createNotification({
-          tenantId,
-          type: "CREDIT_WEEKLY_REPORT_WA",
-          severity: "LOW",
-          title: `Enviar reporte semanal por WhatsApp`,
-          body: `Reporte listo para enviar al dueño`,
-          actionUrl: waLink,
-          actionLabel: "Enviar por WhatsApp",
-          entityId: `weekly-wa-${now.toISOString().split("T")[0]}`,
-        });
+        queue
+          .enqueue("send-whatsapp", {
+            tenantId,
+            phone: tenant.ownerPhone,
+            message: report,
+          })
+          .catch(() => {});
       }
 
       reportsGenerated++;

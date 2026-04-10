@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { createNotification } from "@/lib/create-notification";
+import { queue } from "@/lib/queue";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 import { isFiadoDigitalPhase2Enabled } from "@/lib/feature-flags/fiado-digital";
@@ -177,6 +178,15 @@ export async function GET(req: NextRequest) {
           idempotencyKey,
         },
       });
+
+      // Send WhatsApp via queue (fire-and-forget)
+      queue
+        .enqueue("send-whatsapp", {
+          tenantId: fiado.tenantId,
+          phone,
+          message,
+        })
+        .catch(() => {});
 
       // Also create notification for the admin dashboard
       const cleanPhone = phone.replace(/\D/g, "");
