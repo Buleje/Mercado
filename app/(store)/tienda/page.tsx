@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { cacheLife, cacheTag } from "next/cache";
 import Header from "@/components/Header";
 import AnnouncementBar from "@/components/AnnouncementBar";
 import BreadcrumbSchema from "@/components/BreadcrumbSchema";
@@ -62,6 +63,31 @@ const TIENDA_DEFAULT_ORDER: TiendaSectionKey[] = [
 // Keys that default to OFF when no config exists
 const TIENDA_DEFAULT_DISABLED: Set<TiendaSectionKey> = new Set(["recipes"]);
 
+/**
+ * #42: Cached product fetcher — pure DB read without headers/cookies.
+ * tenantId is passed as param and becomes part of the cache key.
+ * Revalidates every 5 min. Invalidable via updateTag('tienda-products:*').
+ */
+async function getCachedProducts(tenantId: string) {
+  "use cache";
+  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
+  cacheTag("tienda-products", `tienda-products:${tenantId}`);
+  const { ProductsDB } = await import("@/lib/db/products.db");
+  const dbProducts = await ProductsDB.getAll(tenantId);
+  return dbProducts.filter((p) => p.active !== false);
+}
+
+/**
+ * #42: Cached section config — pure DB read for storefront layout.
+ */
+async function getCachedSectionConfig(tenantId: string) {
+  "use cache";
+  cacheLife({ revalidate: 300, stale: 60, expire: 900 });
+  cacheTag("tienda-sections", `tienda-sections:${tenantId}`);
+  const { SettingsDB } = await import("@/lib/db/settings.db");
+  return SettingsDB.get(tenantId);
+}
+
 // ── Read tienda section config from settings (server-side) ──────────────────
 async function getTiendaSectionConfig(): Promise<{
   visible: Set<TiendaSectionKey>;
@@ -71,8 +97,7 @@ async function getTiendaSectionConfig(): Promise<{
     const { headers } = await import("next/headers");
     const hdrs = await headers();
     const tenantId = hdrs.get("x-tenant-id") ?? "main";
-    const { SettingsDB } = await import("@/lib/db/settings.db");
-    const data = await SettingsDB.get(tenantId);
+    const data = await getCachedSectionConfig(tenantId);
 
     const storeTheme = data?.storeTheme as Record<string, unknown> | undefined;
 
@@ -116,15 +141,13 @@ export default async function TiendaPage() {
   const { visible, order } = await getTiendaSectionConfig();
   const show = (key: TiendaSectionKey) => visible.has(key);
 
-  // Server-side product prefetch — products load instantly on first visit
+  // Server-side product prefetch — #42: uses cached function for 5min revalidation
   let initialProducts: Array<Record<string, unknown>> = [];
   try {
     const { headers } = await import("next/headers");
     const hdrs = await headers();
     const tenantId = hdrs.get("x-tenant-id") ?? "main";
-    const { ProductsDB } = await import("@/lib/db/products.db");
-    const dbProducts = await ProductsDB.getAll(tenantId);
-    initialProducts = dbProducts.filter((p) => p.active !== false) as unknown as Array<Record<string, unknown>>;
+    initialProducts = await getCachedProducts(tenantId) as unknown as Array<Record<string, unknown>>;
   } catch {
     // Fallback to empty — client will retry via useCachedData
   }

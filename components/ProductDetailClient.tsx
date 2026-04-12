@@ -142,7 +142,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   const [restockPhone, setRestockPhone] = useState("");
   const [restockSubmitted, setRestockSubmitted] = useState(() => {
     if (typeof window === "undefined") return false;
-    try { return !!localStorage.getItem(`bsm-restock-${product.id}`); } catch { return false; }
+    try { return !!localStorage.getItem(`buleje-restock-${product.id}`); } catch { return false; }
   });
   const [restockLoading, setRestockLoading] = useState(false);
 
@@ -158,7 +158,7 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
       });
       if (res.ok) {
         setRestockSubmitted(true);
-        localStorage.setItem(`bsm-restock-${product.id}`, "1");
+        localStorage.setItem(`buleje-restock-${product.id}`, "1");
       }
     } catch { /* silent */ }
     setRestockLoading(false);
@@ -231,12 +231,12 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
   // Track recently viewed
   useEffect(() => {
     try {
-      const key = "bsm-recently-viewed";
+      const key = "buleje-recently-viewed";
       const saved: Product[] = JSON.parse(localStorage.getItem(key) || "[]");
       const filtered = saved.filter((p: Product) => p.id !== product.id);
       filtered.unshift(product);
       localStorage.setItem(key, JSON.stringify(filtered.slice(0, 12)));
-      window.dispatchEvent(new Event("bsm:productViewed"));
+      window.dispatchEvent(new Event("buleje:productViewed"));
     } catch {}
   }, [product]);
 
@@ -405,16 +405,20 @@ export default function ProductDetailClient({ product }: ProductDetailClientProp
                     "inline-block mt-3 text-xs font-semibold px-3 py-1 rounded-full",
                     stock <= 0
                       ? "bg-red-50 text-red-500 dark:bg-red-500/10"
-                      : stock <= stockMin
-                        ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10"
-                        : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10",
+                      : stock <= 5
+                        ? "bg-red-50 text-red-600 dark:bg-red-500/15 animate-pulse font-bold"
+                        : stock <= stockMin
+                          ? "bg-amber-50 text-amber-600 dark:bg-amber-500/10"
+                          : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10",
                   )}
                 >
                   {stock <= 0
                     ? "Agotado"
-                    : stock <= stockMin
-                      ? `¡Solo quedan ${stock}!`
-                      : `${stock} en stock`}
+                    : stock <= 5
+                      ? `Solo quedan ${stock} — ¡No te quedes sin el tuyo!`
+                      : stock <= stockMin
+                        ? `¡Solo quedan ${stock}!`
+                        : `${stock} en stock`}
                 </span>
               )}
               <div className="mt-3">

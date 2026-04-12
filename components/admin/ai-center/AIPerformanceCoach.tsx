@@ -131,37 +131,37 @@ function buildComparisons(data: BusinessData | null): MetricComparison[] {
   results.push(
     addMetric(
       "revenue-week", "Ingresos semanales",
-      thisWeek.rev, lastWeek.rev, "S/", "currency", "💰",
+      thisWeek.rev, lastWeek.rev, "S/", "currency", "",
       "Las ventas semanales crecen — mantene el ritmo y cuida el stock de los productos que mas rotan.",
       "Las ventas bajaron esta semana. Revisa si hay productos sin stock o si perdiste horarios de atencion."
     ),
     addMetric(
       "avg-ticket", "Ticket promedio",
-      thisAvgTicket, lastAvgTicket, "S/", "currency", "🎫",
+      thisAvgTicket, lastAvgTicket, "S/", "currency", "",
       "El ticket promedio sube — la estrategia de combos o precios esta funcionando bien.",
       "El ticket promedio bajo. Activa venta cruzada: sugiere combos en el punto de venta."
     ),
     addMetric(
       "sales-per-day", "Ventas por dia",
-      thisSalesPerDay, lastSalesPerDay, "txn", "number", "📊",
+      thisSalesPerDay, lastSalesPerDay, "txn", "number", "",
       "Mas transacciones diarias — tu capacidad de atencion esta mejorando.",
       "Menos transacciones por dia. Verifica si hay horas de baja demanda que puedas potenciar con promos."
     ),
     addMetric(
       "cancel-rate", "Tasa de cancelacion",
-      cancelRateThis, cancelRateLast, "%", "percent", "❌",
+      cancelRateThis, cancelRateLast, "%", "percent", "",
       cancelRateThis < 5 ? "Cancelaciones bajo control — excelente gestion de pedidos." : "Las cancelaciones bajaron, buena senal. Sigue monitoreando las causas mas comunes.",
       "Las cancelaciones subieron. Identifica las causas: stock, tiempo de espera o precios erroneos."
     ),
     addMetric(
       "new-customers", "Clientes nuevos",
-      newThisWeek, newLastWeek, "", "number", "👥",
+      newThisWeek, newLastWeek, "", "number", "",
       "Mas clientes nuevos esta semana — las acciones de captacion estan funcionando.",
       "Menos clientes nuevos. Considera una promocion de referidos o mayor visibilidad en redes."
     ),
     addMetric(
       "monthly-revenue", "Ingresos del mes",
-      thisMonth.rev, lastMonth.rev, "S/", "currency", "📅",
+      thisMonth.rev, lastMonth.rev, "S/", "currency", "",
       "El mes va mejor que el anterior. Enfocate en mantener el servicio y el stock.",
       "El mes va por debajo del anterior. Identifica que cambio: precios, competencia, temporada."
     )
@@ -203,11 +203,11 @@ function renderMarkdown(text: string): string {
 function getCoachMood(metrics: MetricComparison[]): { emoji: string; label: string; color: string } {
   const positives = metrics.filter((m) => m.tone === "positive").length;
   const negatives = metrics.filter((m) => m.tone === "negative").length;
-  if (negatives >= 3) return { emoji: "😟", label: "Preocupado", color: "text-red-500" };
-  if (negatives >= 2) return { emoji: "🤔", label: "Atento", color: "text-amber-500" };
-  if (positives >= 4) return { emoji: "🎉", label: "Celebrando", color: "text-emerald-500" };
-  if (positives >= 2) return { emoji: "😊", label: "Contento", color: "text-green-500" };
-  return { emoji: "😐", label: "Tranquilo", color: "text-gray-500" };
+  if (negatives >= 3) return { emoji: "", label: "Preocupado", color: "text-red-500" };
+  if (negatives >= 2) return { emoji: "", label: "Atento", color: "text-amber-500" };
+  if (positives >= 4) return { emoji: "", label: "Celebrando", color: "text-emerald-500" };
+  if (positives >= 2) return { emoji: "", label: "Contento", color: "text-green-500" };
+  return { emoji: "", label: "Tranquilo", color: "text-gray-500" };
 }
 
 // ── Peruvian Business Calendar ─────────────────────────────────────────────────
@@ -217,25 +217,25 @@ function getPeruvianBusinessEvents(): BusinessEvent[] {
   const year = now.getFullYear();
 
   const events: { month: number; day: number; icon: string; name: string; tip: string }[] = [
-    { month: 1, day: 1, icon: "🎆", name: "Ano Nuevo", tip: "Promociones de inicio de ano, liquidacion de stock viejo" },
-    { month: 2, day: 14, icon: "💝", name: "San Valentin", tip: "Stoquea chocolates, vinos, regalos y tarjetas" },
-    { month: 3, day: 8, icon: "👩", name: "Dia de la Mujer", tip: "Ofertas especiales en productos de cuidado personal y regalos" },
-    { month: 3, day: 22, icon: "💧", name: "Dia del Agua", tip: "Promocion en bebidas y productos de higiene" },
-    { month: 4, day: 17, icon: "✝️", name: "Semana Santa", tip: "Stoquea pescado enlatado, conservas y dulces" },
-    { month: 5, day: 1, icon: "👷", name: "Dia del Trabajo", tip: "Promociones para el hogar, comida para reuniones" },
-    { month: 5, day: 11, icon: "👩‍👦", name: "Dia de la Madre", tip: "Stoquea regalos, chocolates, flores y tarjetas" },
-    { month: 6, day: 15, icon: "👨‍👦", name: "Dia del Padre", tip: "Ofertas en licores, snacks y productos de barbacoa" },
-    { month: 6, day: 24, icon: "🌾", name: "San Juan (Selva)", tip: "Mayor demanda de juanes, arroz, platano — fecha clave en Pucallpa" },
-    { month: 7, day: 28, icon: "🇵🇪", name: "Fiestas Patrias", tip: "Alta demanda general, stoquea todo: carnes, bebidas, decoracion" },
-    { month: 7, day: 29, icon: "🇵🇪", name: "Fiestas Patrias (2do dia)", tip: "Continua la alta demanda, asegura stock de bebidas y snacks" },
-    { month: 8, day: 30, icon: "🌹", name: "Santa Rosa de Lima", tip: "Dia feriado, demanda moderada de alimentos para reunion" },
-    { month: 10, day: 8, icon: "⚔️", name: "Combate de Angamos", tip: "Feriado — demanda tipo fin de semana" },
-    { month: 10, day: 31, icon: "🎃", name: "Halloween", tip: "Stoquea dulces, golosinas y decoracion tematica" },
-    { month: 11, day: 1, icon: "🕯️", name: "Dia de Todos los Santos", tip: "Demanda de flores, velas y dulces tradicionales" },
-    { month: 12, day: 8, icon: "🙏", name: "Inmaculada Concepcion", tip: "Inicio de temporada navidena fuerte" },
-    { month: 12, day: 24, icon: "🎄", name: "Nochebuena", tip: "Maxima demanda: paneton, chocolate, pollo, sidra" },
-    { month: 12, day: 25, icon: "🎁", name: "Navidad", tip: "Regalos y alimentos para reunion familiar" },
-    { month: 12, day: 31, icon: "🥂", name: "Ano Nuevo (vispera)", tip: "Licores, espumantes, uvas, ropa interior amarilla" },
+    { month: 1, day: 1, icon: "", name: "Ano Nuevo", tip: "Promociones de inicio de ano, liquidacion de stock viejo" },
+    { month: 2, day: 14, icon: "", name: "San Valentin", tip: "Stoquea chocolates, vinos, regalos y tarjetas" },
+    { month: 3, day: 8, icon: "", name: "Dia de la Mujer", tip: "Ofertas especiales en productos de cuidado personal y regalos" },
+    { month: 3, day: 22, icon: "", name: "Dia del Agua", tip: "Promocion en bebidas y productos de higiene" },
+    { month: 4, day: 17, icon: "", name: "Semana Santa", tip: "Stoquea pescado enlatado, conservas y dulces" },
+    { month: 5, day: 1, icon: "", name: "Dia del Trabajo", tip: "Promociones para el hogar, comida para reuniones" },
+    { month: 5, day: 11, icon: "", name: "Dia de la Madre", tip: "Stoquea regalos, chocolates, flores y tarjetas" },
+    { month: 6, day: 15, icon: "", name: "Dia del Padre", tip: "Ofertas en licores, snacks y productos de barbacoa" },
+    { month: 6, day: 24, icon: "", name: "San Juan (Selva)", tip: "Mayor demanda de juanes, arroz, platano — fecha clave en Pucallpa" },
+    { month: 7, day: 28, icon: "", name: "Fiestas Patrias", tip: "Alta demanda general, stoquea todo: carnes, bebidas, decoracion" },
+    { month: 7, day: 29, icon: "", name: "Fiestas Patrias (2do dia)", tip: "Continua la alta demanda, asegura stock de bebidas y snacks" },
+    { month: 8, day: 30, icon: "", name: "Santa Rosa de Lima", tip: "Dia feriado, demanda moderada de alimentos para reunion" },
+    { month: 10, day: 8, icon: "", name: "Combate de Angamos", tip: "Feriado — demanda tipo fin de semana" },
+    { month: 10, day: 31, icon: "", name: "Halloween", tip: "Stoquea dulces, golosinas y decoracion tematica" },
+    { month: 11, day: 1, icon: "", name: "Dia de Todos los Santos", tip: "Demanda de flores, velas y dulces tradicionales" },
+    { month: 12, day: 8, icon: "", name: "Inmaculada Concepcion", tip: "Inicio de temporada navidena fuerte" },
+    { month: 12, day: 24, icon: "", name: "Nochebuena", tip: "Maxima demanda: paneton, chocolate, pollo, sidra" },
+    { month: 12, day: 25, icon: "", name: "Navidad", tip: "Regalos y alimentos para reunion familiar" },
+    { month: 12, day: 31, icon: "", name: "Ano Nuevo (vispera)", tip: "Licores, espumantes, uvas, ropa interior amarilla" },
   ];
 
   const upcoming: BusinessEvent[] = [];
@@ -261,8 +261,8 @@ function getPeruvianBusinessEvents(): BusinessEvent[] {
 
 function getCurrentSeason(): { icon: string; label: string } {
   const month = new Date().getMonth() + 1;
-  if (month >= 4 && month <= 9) return { icon: "☀️", label: "Temporada seca" };
-  return { icon: "🌧️", label: "Temporada de lluvias" };
+  if (month >= 4 && month <= 9) return { icon: "", label: "Temporada seca" };
+  return { icon: "", label: "Temporada de lluvias" };
 }
 
 // ── Goals helpers ──────────────────────────────────────────────────────────────
@@ -474,7 +474,7 @@ export default function AIPerformanceCoach({ data }: Props) {
         if (json.eventos && Array.isArray(json.eventos)) {
           setCalendarEvents(
             json.eventos.slice(0, 5).map((e: { nombre: string; fecha: string; diasHasta: number; impactoNegocio?: string }) => ({
-              icon: e.diasHasta <= 7 ? "🔴" : e.diasHasta <= 30 ? "🟡" : "📅",
+              icon: "",
               name: e.nombre,
               date: new Date(e.fecha).toLocaleDateString("es-PE", { day: "numeric", month: "short" }),
               daysUntil: e.diasHasta,
@@ -724,24 +724,24 @@ export default function AIPerformanceCoach({ data }: Props) {
   // ── WhatsApp share metrics ─────────────────────────────────────────────────
   const shareMetricsWhatsApp = useCallback(() => {
     const lines = [
-      `📊 *Resumen semanal del Coach* ${coachMood.emoji}`,
+      `*Resumen semanal del Coach*`,
       "",
       ...metrics.map((m) => {
         const { label } = calcDelta(m.current, m.previous);
-        return `${m.emoji} ${m.label}: ${formatValue(m.current, m.format, m.unit)} (${label})`;
+        return `${m.label}: ${formatValue(m.current, m.format, m.unit)} (${label})`;
       }),
     ];
     if (bestMetric) {
       const { label } = calcDelta(bestMetric.current, bestMetric.previous);
-      lines.push("", `⭐ Mejor: ${bestMetric.label} ${label}`);
+      lines.push("", `Mejor: ${bestMetric.label} ${label}`);
     }
     if (worstMetric) {
       const { label } = calcDelta(worstMetric.current, worstMetric.previous);
-      lines.push(`⚠️ A mejorar: ${worstMetric.label} ${label}`);
+      lines.push(`A mejorar: ${worstMetric.label} ${label}`);
     }
-    lines.push("", `📅 ${new Date().toLocaleDateString("es-PE")}`);
+    lines.push("", `${new Date().toLocaleDateString("es-PE")}`);
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank", "noopener,noreferrer");
-  }, [metrics, coachMood, bestMetric, worstMetric]);
+  }, [metrics, bestMetric, worstMetric]);
 
   // ── Proactive Alerts ───────────────────────────────────────────────────────
   const ALERT_DISMISS_KEY = "coach-alerts-dismissed";
@@ -792,7 +792,7 @@ export default function AIPerformanceCoach({ data }: Props) {
     const avgDay = dayValues.length > 0 ? dayValues.reduce((a, b) => a + b, 0) / dayValues.length : 0;
     for (const [day, rev] of Object.entries(dayRevMap)) {
       if (avgDay > 0 && rev < avgDay * 0.5) {
-        alerts.push({ id: "low-day", icon: "📉", text: `Tus ventas caen los ${day} — ¿Promocion especial?`, action: "Crear promo" });
+        alerts.push({ id: "low-day", icon: "", text: `Tus ventas caen los ${day} — ¿Promocion especial?`, action: "Crear promo" });
         break;
       }
     }
@@ -813,7 +813,7 @@ export default function AIPerformanceCoach({ data }: Props) {
     for (const [pid, qty] of Object.entries(prodQtyThis)) {
       const lastQty = prodQtyLast[pid] ?? 0;
       if (lastQty > 0 && qty > lastQty * 3) {
-        alerts.push({ id: `hot-${pid}`, icon: "🔥", text: `${prodNamesMap[pid]} se vende 3x mas esta semana — asegura stock`, action: "Ver stock" });
+        alerts.push({ id: `hot-${pid}`, icon: "", text: `${prodNamesMap[pid]} se vende 3x mas esta semana — asegura stock`, action: "Ver stock" });
         break;
       }
     }
@@ -826,7 +826,7 @@ export default function AIPerformanceCoach({ data }: Props) {
       return totalSpent > 200 && lastPurchase.slice(0, 10) < fifteenDaysAgo;
     });
     if (inactiveVIP.length > 0) {
-      alerts.push({ id: "inactive-vip", icon: "😴", text: `${inactiveVIP.length} clientes VIP no compran hace 15+ dias`, action: "Ver clientes" });
+      alerts.push({ id: "inactive-vip", icon: "", text: `${inactiveVIP.length} clientes VIP no compran hace 15+ dias`, action: "Ver clientes" });
     }
 
     // 4. Productos sin rotar
@@ -838,7 +838,7 @@ export default function AIPerformanceCoach({ data }: Props) {
     }
     const deadStock = activeProds.filter(p => !soldProductIds.has(String(p.id)));
     if (deadStock.length > 3) {
-      alerts.push({ id: "dead-stock", icon: "📦", text: `${deadStock.length} productos sin rotar hace 30+ dias — valora liquidar`, action: "Ver inventario" });
+      alerts.push({ id: "dead-stock", icon: "", text: `${deadStock.length} productos sin rotar hace 30+ dias — valora liquidar`, action: "Ver inventario" });
     }
 
     // 5. Productos con margen <10% pero buenas ventas
@@ -857,7 +857,7 @@ export default function AIPerformanceCoach({ data }: Props) {
       if (incremento > 0) {
         alerts.push({
           id: `price-${p.id}`,
-          icon: "💡",
+          icon: "",
           text: `${p.name}: margen solo ${margen.toFixed(0)}%. Sube S/${incremento.toFixed(2)} para ganar 20%`,
           action: "Ajustar precio",
         });
@@ -973,11 +973,11 @@ export default function AIPerformanceCoach({ data }: Props) {
       {dailyQuestion && !questionDismissed && (
         <div className="bg-gradient-to-br from-[#f97316]/10 to-[#f97316]/5 dark:from-[#f97316]/15 dark:to-[#f97316]/5 rounded-xl border border-[#f97316]/20 p-4 shadow-sm">
           <p className="text-xs font-bold text-[#f97316] uppercase tracking-wider mb-2 flex items-center gap-1.5">
-            🤔 Pregunta del dia
+            Pregunta del dia
           </p>
           <p className="text-sm font-semibold text-gray-800 dark:text-foreground mb-3">{dailyQuestion.pregunta}</p>
           {questionAnswer ? (
-            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">✅ Gracias por tu respuesta</p>
+            <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">Gracias por tu respuesta</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {dailyQuestion.opciones.map((opt) => (
@@ -997,11 +997,11 @@ export default function AIPerformanceCoach({ data }: Props) {
       {/* ── Proactive Alerts ─────────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4 shadow-sm">
         <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-          💡 El Coach detecto esto
+          El Coach detecto esto
         </p>
         {proactiveAlerts.length === 0 ? (
           <div className="flex items-center gap-2 py-2 text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
-            <span>✅</span> Todo se ve bien — ¡Sigue asi!
+            Todo se ve bien — ¡Sigue asi!
           </div>
         ) : (
           <div className="space-y-2">
@@ -1015,7 +1015,7 @@ export default function AIPerformanceCoach({ data }: Props) {
                     className="text-[10px] px-1.5 py-0.5 rounded bg-[#00B4A6]/10 text-[#00B4A6] dark:text-emerald-400 hover:bg-[#00B4A6]/20 transition-colors"
                     title="Preguntar al coach"
                   >
-                    💬
+                    <MessageCircle className="w-3 h-3" />
                   </button>
                   <button
                     onClick={() => dismissAlert(alert.id)}
@@ -1178,12 +1178,12 @@ export default function AIPerformanceCoach({ data }: Props) {
           <div className="flex flex-wrap gap-2 mb-4">
             {bestMetric && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-medium">
-                ⭐ Mejor: {bestMetric.label} ({calcDelta(bestMetric.current, bestMetric.previous).label})
+                Mejor: {bestMetric.label} ({calcDelta(bestMetric.current, bestMetric.previous).label})
               </span>
             )}
             {worstMetric && (
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 font-medium">
-                ⚠️ A mejorar: {worstMetric.label} ({calcDelta(worstMetric.current, worstMetric.previous).label})
+                A mejorar: {worstMetric.label} ({calcDelta(worstMetric.current, worstMetric.previous).label})
               </span>
             )}
           </div>
@@ -1220,7 +1220,7 @@ export default function AIPerformanceCoach({ data }: Props) {
                 )}
               >
                 {(isBest || isWorst) && (
-                  <span className="absolute -top-2 right-2 text-xs">{isBest ? "⭐" : "⚠️"}</span>
+                  <span className="absolute -top-2 right-2 text-xs">{isBest ? "+" : "−"}</span>
                 )}
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="text-sm">{m.emoji}</span>
@@ -1612,7 +1612,7 @@ export default function AIPerformanceCoach({ data }: Props) {
                         : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                     )}
                   >
-                    {isPrepped ? "✅ Preparado" : "☐ Marcar preparado"}
+                    {isPrepped ? "Preparado" : "Marcar preparado"}
                   </button>
                 </div>
               </div>

@@ -22,9 +22,9 @@ export type YapeConfig = {
 export type NavLinkItem = { id: string; visible: boolean };
 
 export const DEFAULT_NAV_LINKS: NavLinkItem[] = [
-  { id: "inicio", visible: true },
+  { id: "inicio", visible: false },
   { id: "tienda", visible: true },
-  { id: "recetas", visible: true },
+  { id: "recetas", visible: false },
   { id: "marketplace", visible: true },
   { id: "historial", visible: false },
   { id: "categorias", visible: false },

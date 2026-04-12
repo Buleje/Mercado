@@ -10,6 +10,7 @@ import {
 import EmptyState from "@/components/admin/shared/EmptyState";
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { cn } from "@/lib/utils";
+import type { RecetaCostBreakdown } from "@/lib/types/recetas";
 
 // ── Recetas Dashboard ─────────────────────────────────────────────────────────
 
@@ -264,6 +265,10 @@ export default function RecetasModule() {
   // Detail
   const [selected, setSelected] = useState<Receta | null>(null);
 
+  // Real cost breakdown from API (contract: RecetaCostBreakdown)
+  const [costData, setCostData] = useState<RecetaCostBreakdown | null>(null);
+  const [costLoading, setCostLoading] = useState(false);
+
   // New receta multi-step
   const [showNew, setShowNew] = useState(false);
   const [step, setStep] = useState(1);
@@ -344,14 +349,25 @@ export default function RecetasModule() {
 
   const openDetail = async (receta: Receta) => {
     setSelected(receta);
+    setCostData(null);
+    setCostLoading(true);
     try {
-      const res = await fetch(`/api/recetas/${receta.id}`);
-      if (res.ok) {
-        const detail: Receta = await res.json();
+      const [detailRes, costRes] = await Promise.allSettled([
+        fetch(`/api/recetas/${receta.id}`),
+        fetch(`/api/recetas/${receta.id}/cost-breakdown`),
+      ]);
+      if (detailRes.status === "fulfilled" && detailRes.value.ok) {
+        const detail: Receta = await detailRes.value.json();
         setSelected(detail);
+      }
+      if (costRes.status === "fulfilled" && costRes.value.ok) {
+        const cost: RecetaCostBreakdown = await costRes.value.json();
+        setCostData(cost);
       }
     } catch {
       // fallback to list data
+    } finally {
+      setCostLoading(false);
     }
   };
 
@@ -736,6 +752,80 @@ export default function RecetasModule() {
 
                 {selected.descripcion && (
                   <p className="text-sm text-gray-600 dark:text-gray-300">{selected.descripcion}</p>
+                )}
+
+                {/* ── Análisis de costo (contract RecetaCostBreakdown) ─────── */}
+                {costLoading && (
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#00B4A6]" />
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Cargando análisis de costo...</span>
+                  </div>
+                )}
+                {costData && (
+                  <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">Análisis de costo</p>
+                      <span className={cn(
+                        "text-xs font-bold px-2 py-0.5 rounded-lg",
+                        costData.margenPorcentaje >= 30
+                          ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                          : costData.margenPorcentaje >= 10
+                            ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"
+                            : "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                      )}>
+                        Margen: {costData.margenPorcentaje.toFixed(1)}%
+                      </span>
+                    </div>
+
+                    {/* Desglose por componente */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-white/60 dark:bg-white/5 rounded-lg p-2">
+                        <p className="text-[10px] uppercase text-gray-500">Ingredientes</p>
+                        <p className="font-bold font-mono text-gray-900 dark:text-white">{formatCurrency(costData.costoIngredientes)}</p>
+                      </div>
+                      <div className="bg-white/60 dark:bg-white/5 rounded-lg p-2">
+                        <p className="text-[10px] uppercase text-gray-500">Mano de obra</p>
+                        <p className="font-bold font-mono text-gray-900 dark:text-white">{formatCurrency(costData.costoManoObra)}</p>
+                      </div>
+                      <div className="bg-white/60 dark:bg-white/5 rounded-lg p-2">
+                        <p className="text-[10px] uppercase text-gray-500">Indirectos</p>
+                        <p className="font-bold font-mono text-gray-900 dark:text-white">{formatCurrency(costData.costoIndirectos)}</p>
+                      </div>
+                      <div className="bg-white dark:bg-white/10 rounded-lg p-2 border border-emerald-300 dark:border-emerald-700">
+                        <p className="text-[10px] uppercase text-emerald-700 dark:text-emerald-400">Total unitario</p>
+                        <p className="font-bold font-mono text-gray-900 dark:text-white">{formatCurrency(costData.costoTotalUnitario)}</p>
+                      </div>
+                    </div>
+
+                    {/* Precio venta + margen bruto */}
+                    <div className="flex items-center justify-between text-xs pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Precio venta: <span className="font-bold text-gray-900 dark:text-white">{formatCurrency(costData.precioVenta)}</span>
+                      </span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        Margen bruto: <span className={cn(
+                          "font-bold",
+                          costData.margenBruto >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400",
+                        )}>{formatCurrency(costData.margenBruto)}</span>
+                      </span>
+                    </div>
+
+                    {costData.ingredientes.length > 0 && (
+                      <div className="space-y-1.5 pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                        <p className="text-[10px] uppercase font-bold text-gray-500 dark:text-gray-400">Desglose de ingredientes</p>
+                        {costData.ingredientes.map((ing, i) => (
+                          <div key={i} className="flex items-center justify-between text-xs">
+                            <span className="text-gray-700 dark:text-gray-300 truncate flex-1 mr-2">
+                              {ing.nombre} ({ing.cantidad} {ing.unidad} x {formatCurrency(ing.costoUnitario)})
+                            </span>
+                            <span className="font-bold font-mono text-gray-900 dark:text-white shrink-0">
+                              {formatCurrency(ing.costoLinea)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {(() => {

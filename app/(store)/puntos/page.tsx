@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, startTransition } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, Award, Star, Trophy,
-  Loader2, ChevronRight,
+  Loader2, ChevronRight, TrendingUp, TrendingDown,
+  Clock,
 } from "lucide-react";
 import { useCustomer } from "@/contexts/customer-context";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,14 @@ type Reward = {
   icon: string;
 };
 
+type LoyaltyTransaction = {
+  id: string;
+  amount: number;
+  reason: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+};
+
 /* ── Tier styles ─────────────────────────────────────────────────── */
 
 const TIER_META: Record<string, { emoji: string; color: string; bg: string; border: string }> = {
@@ -66,6 +75,8 @@ export default function PuntosPage() {
 
   const [loyalty, setLoyalty] = useState<LoyaltyData | null>(null);
   const [rewards, setRewards] = useState<Reward[]>([]);
+  const [transactions, setTransactions] = useState<LoyaltyTransaction[]>([]);
+  const [txTotal, setTxTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -75,9 +86,10 @@ export default function PuntosPage() {
     setLoading(true);
     setError("");
     try {
-      const [loyaltyRes, rewardsRes] = await Promise.all([
+      const [loyaltyRes, rewardsRes, historyRes] = await Promise.all([
         fetch(`/api/loyalty/${encodeURIComponent(clean)}`),
         fetch("/api/loyalty/redeem"),
+        fetch(`/api/loyalty/${encodeURIComponent(clean)}/history?limit=10`),
       ]);
       if (loyaltyRes.ok) {
         const data: LoyaltyData = await loyaltyRes.json();
@@ -86,6 +98,13 @@ export default function PuntosPage() {
       if (rewardsRes.ok) {
         const data: Reward[] = await rewardsRes.json();
         startTransition(() => setRewards(data));
+      }
+      if (historyRes.ok) {
+        const data = await historyRes.json();
+        startTransition(() => {
+          setTransactions(data.transactions ?? []);
+          setTxTotal(data.total ?? 0);
+        });
       }
     } catch {
       setError("No pudimos cargar tus puntos. Intenta de nuevo.");
@@ -373,6 +392,71 @@ export default function PuntosPage() {
                 <p className="text-xs text-muted mt-3 text-center">
                   Para canjear una recompensa, pídelo al momento de pagar o escríbenos por WhatsApp.
                 </p>
+              </section>
+            )}
+
+            {/* ── Historial de transacciones ──────────────────── */}
+            {transactions.length > 0 && (
+              <section>
+                <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  Historial de puntos
+                </h2>
+                <div className="space-y-2">
+                  {transactions.map((tx) => {
+                    const isEarn = tx.amount > 0;
+                    const date = new Date(tx.createdAt);
+                    const now = new Date();
+                    const diffMs = now.getTime() - date.getTime();
+                    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                    const timeLabel =
+                      diffDays === 0 ? "Hoy" :
+                      diffDays === 1 ? "Ayer" :
+                      diffDays < 7 ? `Hace ${diffDays} días` :
+                      date.toLocaleDateString("es-PE", { day: "numeric", month: "short" });
+
+                    const reasonLabels: Record<string, string> = {
+                      purchase: "Compra",
+                      manual: "Ajuste manual",
+                      redemption: "Canje",
+                      referral: "Referido",
+                      bonus: "Bono",
+                      welcome: "Bienvenida",
+                    };
+                    const label = reasonLabels[tx.reason] ?? tx.reason;
+
+                    return (
+                      <div
+                        key={tx.id}
+                        className="flex items-center gap-3 rounded-xl border border-gray-100 dark:border-card-border bg-white dark:bg-card p-3"
+                      >
+                        <div className={cn(
+                          "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
+                          isEarn
+                            ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400"
+                            : "bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400"
+                        )}>
+                          {isEarn ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{label}</p>
+                          <p className="text-xs text-muted">{timeLabel}</p>
+                        </div>
+                        <p className={cn(
+                          "text-sm font-bold shrink-0",
+                          isEarn ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"
+                        )}>
+                          {isEarn ? "+" : ""}{tx.amount} pts
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+                {txTotal > transactions.length && (
+                  <p className="text-xs text-muted text-center mt-3">
+                    Mostrando {transactions.length} de {txTotal} movimientos
+                  </p>
+                )}
               </section>
             )}
 

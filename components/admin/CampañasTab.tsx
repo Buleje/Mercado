@@ -42,27 +42,27 @@ interface Campaign {
 
 const SEED: Campaign[] = [
   {
-    id: "c1", name: "Promo Fin de Semana 🛒", message: "¡Hola! Aprovecha nuestros descuentos de fin de semana. Hasta 20% en arroz, aceite y fideos. Solo sábado y domingo. 📦",
+    id: "c1", name: "Promo Fin de Semana", message: "Hola! Aprovecha nuestros descuentos de fin de semana. Hasta 20% en arroz, aceite y fideos. Solo sabado y domingo.",
     segment: "todos", channel: "ambos", status: "completada", scheduledAt: "2026-03-07T09:00", sentAt: "2026-03-07T09:01",
     totalAudience: 340, delivered: 328, opened: 189, conversions: 42, revenue: 1860, createdAt: "2026-03-06T18:00",
   },
   {
-    id: "c2", name: "Clientes VIP — Oferta Exclusiva ⭐", message: "Como cliente especial, tienes un 15% adicional en tu próxima compra. Código: VIP15. Válido hasta el viernes.",
+    id: "c2", name: "Clientes VIP — Oferta Exclusiva", message: "Como cliente especial, tienes un 15% adicional en tu proxima compra. Codigo: VIP15. Valido hasta el viernes.",
     segment: "vip", channel: "whatsapp", status: "completada", scheduledAt: "2026-03-10T10:00", sentAt: "2026-03-10T10:02",
     totalAudience: 48, delivered: 46, opened: 38, conversions: 21, revenue: 2430, createdAt: "2026-03-09T15:30",
   },
   {
-    id: "c3", name: "¡Te Extrañamos! ❤️", message: "Ha pasado un tiempo desde tu última compra. Vuelve y llévate S/5 de descuento en tu próximo pedido. ¡Te esperamos!",
+    id: "c3", name: "Te Extrañamos", message: "Ha pasado un tiempo desde tu ultima compra. Vuelve y llevate S/5 de descuento en tu proximo pedido. Te esperamos!",
     segment: "inactivos", channel: "whatsapp", status: "completada", scheduledAt: "2026-03-12T11:00", sentAt: "2026-03-12T11:00",
     totalAudience: 67, delivered: 61, opened: 29, conversions: 8, revenue: 540, createdAt: "2026-03-11T09:00",
   },
   {
-    id: "c4", name: "Feliz Cumpleaños 🎂", message: "¡Feliz cumpleaños! 🎂 De parte de Buleje, tienes un regalo: 10% descuento hoy en toda tu compra.",
+    id: "c4", name: "Feliz Cumpleaños", message: "Feliz cumpleaños! De parte de Buleje, tienes un regalo: 10% descuento hoy en toda tu compra.",
     segment: "cumpleanos", channel: "ambos", status: "activa", scheduledAt: null, sentAt: null,
     totalAudience: 12, delivered: 0, opened: 0, conversions: 0, revenue: 0, createdAt: "2026-03-17T08:00",
   },
   {
-    id: "c5", name: "Nuevo Horario de Delivery 🚴", message: "¡Buenas noticias! Ahora hacemos delivery hasta las 9pm. Pide antes de las 8pm y recibe en el día.",
+    id: "c5", name: "Nuevo Horario de Delivery", message: "Buenas noticias! Ahora hacemos delivery hasta las 9pm. Pide antes de las 8pm y recibe en el dia.",
     segment: "todos", channel: "inapp", status: "programada", scheduledAt: "2026-03-20T08:00", sentAt: null,
     totalAudience: 340, delivered: 0, opened: 0, conversions: 0, revenue: 0, createdAt: "2026-03-17T10:00",
   },
@@ -170,7 +170,7 @@ function CreateModal({ onClose, onSave }: ModalProps) {
           {/* Name */}
           <div>
             <label className="block text-sm font-bold text-gray-700 dark:text-foreground mb-1">Nombre de la campaña</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="ej: Promo de verano 🌞" className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="ej: Promo de verano" className="w-full border border-gray-300 dark:border-card-border rounded-xl px-3 py-2 text-sm bg-white dark:bg-surface text-gray-900 dark:text-foreground" />
           </div>
           {/* Message + Template picker */}
           <div>
@@ -365,7 +365,7 @@ export default function CampañasTab() {
       setCampaigns(prev => prev.map(c => c.id === id ? { ...c, status: "completada", sentAt: now, delivered, opened } : c));
     }
     setSending(null);
-    showToast("Campaña enviada correctamente ✓");
+    showToast("Campaña enviada correctamente");
   }
 
   async function handleDelete(id: string) {

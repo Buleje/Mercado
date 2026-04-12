@@ -17,6 +17,7 @@ export async function generateAIResponse(
     recentProducts?: string[];
     hasOpenOrder?: boolean;
     hasFiado?: boolean;
+    tenantId: string;
   }
 ): Promise<string> {
   const provider = getActiveProvider();
@@ -39,7 +40,7 @@ export async function generateAIResponse(
     const productKeywords = ["precio", "cuanto", "cuesta", "tienen", "hay", "stock", "disponible", "busco"];
     if (productKeywords.some(k => lower.includes(k))) {
       try {
-        const allProducts = await ProductsDB.getAll();
+        const allProducts = await ProductsDB.getAll(context.tenantId);
         const active = allProducts.filter(p => p.active !== false);
         // Find matching products by keyword
         const terms = lower.split(/\s+/).filter(t => t.length >= 3);

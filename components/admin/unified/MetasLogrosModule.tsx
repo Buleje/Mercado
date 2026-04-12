@@ -466,14 +466,14 @@ export default function MetasLogrosModule({ tenantId: _tenantId }: Props) {
         activeTab={tab}
         onTabChange={(id) => setTab(id as TabId)}
         moduleId={MODULE_ID}
-      />
-
-      <div>
-        {tab === "mis-metas"  && <GoalsTab />}
-        {tab === "hoy"        && <DailyGoalTracker />}
-        {tab === "semana-mes" && <SemaMesTab />}
-        {tab === "logros"     && <LogrosTab />}
-      </div>
+      >
+        <div>
+          {tab === "mis-metas"  && <GoalsTab />}
+          {tab === "hoy"        && <DailyGoalTracker />}
+          {tab === "semana-mes" && <SemaMesTab />}
+          {tab === "logros"     && <LogrosTab />}
+        </div>
+      </AdminTabBar>
     </div>
   );
 }

@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const supplierId = searchParams.get("supplierId");
-    if (supplierId) return NextResponse.json(await withDbRetry(() => PayablesDB.getBySupplierId(supplierId)));
+    if (supplierId) return NextResponse.json(await withDbRetry(() => PayablesDB.getBySupplierId(auth.tenantId, supplierId)));
     return NextResponse.json(await withDbRetry(() => PayablesDB.getAll(auth.tenantId)));
   } catch (e) {
     console.error("[payables] GET error:", e);
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "supplierId and amount required" }, { status: 400 });
   }
   const id = `pay-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const payable = await PayablesDB.add({
+  const payable = await PayablesDB.add(auth.tenantId, {
     id,
     supplierId: body.supplierId,
     supplierName: body.supplierName || "",

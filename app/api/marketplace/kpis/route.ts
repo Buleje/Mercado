@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       publishedProducts,
       monthOrders,
-      pendingCommissions: pendingCommissions._sum.amount ?? 0,
+      pendingCommissions: Number(pendingCommissions._sum.amount ?? 0),
     });
   } catch (err) {
     const { payload, status } = toErrorPayload(err, traceId);

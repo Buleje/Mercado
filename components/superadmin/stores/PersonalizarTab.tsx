@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   Eye, EyeOff, Percent, Globe, RefreshCw, Check, X,
   ShoppingBag, Star, Crown, Palette, Image as ImageIcon,
@@ -114,8 +115,7 @@ export function PersonalizarTab({ stores, onRefresh }: PersonalizarTabProps) {
                 {/* Logo */}
                 <div className="w-10 h-10 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center overflow-hidden shrink-0">
                   {store.logo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={store.logo} alt={store.name} className="w-full h-full object-cover" />
+                    <Image src={store.logo} alt={store.name} width={40} height={40} className="object-cover" />
                   ) : (
                     <ShoppingBag className="w-5 h-5 text-primary" />
                   )}

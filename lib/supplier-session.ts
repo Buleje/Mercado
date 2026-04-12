@@ -13,7 +13,7 @@ function getSecret(): string {
     if (process.env.NODE_ENV === "production") {
       throw new Error("AUTH_SECRET environment variable is required in production");
     }
-    return "bsm-dev-fallback-2024-change-in-production";
+    return "buleje-dev-fallback-2024-change-in-production";
   }
   return secret;
 }

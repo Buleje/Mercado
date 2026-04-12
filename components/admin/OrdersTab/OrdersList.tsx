@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { Check, X, MapPin, Trash2, Bike } from "lucide-react";
+import { Check, X, MapPin, Trash2, Bike, ShoppingBasket } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/admin/EmptyState";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 import { formatDate, parseGps, haversineKm } from "@/lib/admin-helpers";
 import { googleMapsUrl } from "@/lib/order-utils";
@@ -72,9 +73,12 @@ export function OrdersList({
 
   if (activeOrders.length === 0) {
     return (
-      <div className="h-40 flex items-center justify-center text-gray-400 dark:text-muted bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl">
-        No hay pedidos activos
-      </div>
+      <EmptyState
+        icon={<ShoppingBasket className="h-10 w-10 text-gray-300" />}
+        title="No hay pedidos activos"
+        description="Los pedidos nuevos aparecerán aquí en tiempo real."
+        actions={[{ label: "Ver todos los pedidos", href: "/admin?tab=pedidos", variant: "secondary" }]}
+      />
     );
   }
 

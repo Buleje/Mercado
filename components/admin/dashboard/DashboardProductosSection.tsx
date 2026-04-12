@@ -176,7 +176,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
 
               {/* Action insights */}
               <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">💡 Recomendaciones</div>
+                <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Recomendaciones</div>
                 <ul className="space-y-0.5 text-blue-600 dark:text-blue-300 text-[10px]">
                   <li>• <strong>Clase A:</strong> Nunca dejar agotar. Prioridad en inventario y proveedores.</li>
                   <li>• <strong>Clase B:</strong> Mantener stock moderado. Revisar rotación mensual.</li>
@@ -232,7 +232,7 @@ export default function DashboardProductosSection({ st, expandAll, _products }: 
                   </div>
                 ))}
                 <div className="bg-violet-50 dark:bg-violet-950/30 rounded-lg p-3 text-xs mt-1">
-                  <div className="font-semibold text-violet-700 dark:text-violet-400 mb-1">💡 Oportunidad de venta</div>
+                  <div className="font-semibold text-violet-700 dark:text-violet-400 mb-1">Oportunidad de venta</div>
                   <p className="text-violet-600 dark:text-violet-300 text-[10px]">
                     Estos productos se compran juntos frecuentemente. Crea combos o colócalos cerca en el local para impulsar ventas cruzadas.
                   </p>

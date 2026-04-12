@@ -1003,28 +1003,29 @@ export default function CRMClientesModule() {
           setSub(id as typeof sub);
         }}
         moduleId="crm"
-      />
-      {sub === "dashboard" && <ClientesDashboard onNavigate={(tab) => setSub(tab as typeof sub)} />}
-      {sub === "crm" && <CRMTab />}
-      {sub === "delivery" && <DeliveryRoutesTab />}
-      {sub === "resenas" && <NPSTab />}
-      {sub === "fidelizacion" && <LoyaltyTab />}
-      {sub === "segmentos" && <AutoSegments />}
-      {sub === "rfm" && <RFMWrapper onSendToSegment={handleSendToSegment} />}
-      {sub === "riesgo" && <ChurnPrediction />}
-      {sub === "mapa" && (
-        <div className="space-y-8">
-          <CustomerGeoMap />
-          <CustomerHeatmap />
-        </div>
-      )}
-      {sub === "importar" && <CustomerImporter />}
-      {sub === "mensajes" && (
-        <MassMessageSender
-          preselectedPhones={rfmTargetPhones ?? undefined}
-          presetLabel={rfmTargetLabel ?? undefined}
-        />
-      )}
+      >
+        {sub === "dashboard" && <ClientesDashboard onNavigate={(tab) => setSub(tab as typeof sub)} />}
+        {sub === "crm" && <CRMTab />}
+        {sub === "delivery" && <DeliveryRoutesTab />}
+        {sub === "resenas" && <NPSTab />}
+        {sub === "fidelizacion" && <LoyaltyTab />}
+        {sub === "segmentos" && <AutoSegments />}
+        {sub === "rfm" && <RFMWrapper onSendToSegment={handleSendToSegment} />}
+        {sub === "riesgo" && <ChurnPrediction />}
+        {sub === "mapa" && (
+          <div className="space-y-8">
+            <CustomerGeoMap />
+            <CustomerHeatmap />
+          </div>
+        )}
+        {sub === "importar" && <CustomerImporter />}
+        {sub === "mensajes" && (
+          <MassMessageSender
+            preselectedPhones={rfmTargetPhones ?? undefined}
+            presetLabel={rfmTargetLabel ?? undefined}
+          />
+        )}
+      </AdminTabBar>
     </div>
   );
 }

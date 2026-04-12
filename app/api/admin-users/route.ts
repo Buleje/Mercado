@@ -6,6 +6,7 @@ import { hash } from "bcryptjs";
 import { z } from "zod";
 import { getPlanLimits, withinLimit, planLimitPayload } from "@/lib/plans";
 import { enqueueActivityLog } from "@/lib/queue";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CreateSchema = z.object({
   username: z.string().min(3).max(32).regex(/^[a-z0-9_.]+$/i, "Solo letras, números, punto y guión bajo"),
@@ -38,6 +39,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin-users – create a new team member
 export async function POST(req: NextRequest) {
+  const rateLimitResult = applyRateLimit(req, "STRICT", "admin-users-post");
+  if (rateLimitResult) return rateLimitResult;
+
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -78,6 +82,9 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/admin-users – update name, role, password or active status
 export async function PATCH(req: NextRequest) {
+  const rateLimitResult = applyRateLimit(req, "STRICT", "admin-users-patch");
+  if (rateLimitResult) return rateLimitResult;
+
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 
@@ -114,6 +121,9 @@ export async function PATCH(req: NextRequest) {
 
 // DELETE /api/admin-users?id=xxx – remove a team member
 export async function DELETE(req: NextRequest) {
+  const rateLimitResult = applyRateLimit(req, "STRICT", "admin-users-delete");
+  if (rateLimitResult) return rateLimitResult;
+
   const auth = await requireAdmin(req, ["admin"]);
   if (auth instanceof NextResponse) return auth;
 

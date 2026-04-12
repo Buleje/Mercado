@@ -128,8 +128,12 @@ export default function DailySpecial() {
                   <Zap className="w-3 h-3" />
                   Ahorras S/{savings.toFixed(2)}
                 </span>
-                <span className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full">
-                  <Timer className="w-3 h-3" />
+                <span
+                  className="inline-flex items-center gap-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full"
+                  aria-live="polite"
+                  aria-label={countdown ? `Oferta termina en ${countdown}` : "Solo por hoy"}
+                >
+                  <Timer className="w-3 h-3" aria-hidden="true" />
                   {countdown ? `Termina en ${countdown}` : "Solo por hoy"}
                 </span>
               </div>
@@ -138,9 +142,10 @@ export default function DailySpecial() {
               <button
                 type="button"
                 onClick={() => addItem(product)}
+                aria-label={qty > 0 ? `${product.name} en el carrito, cantidad ${qty}` : `Agregar ${product.name} al carrito`}
                 className="inline-flex items-center gap-2 bg-primary text-white font-bold text-sm px-6 py-3.5 rounded-xl hover:bg-primary/90 active:scale-[0.97] transition-all shadow-lg shadow-primary/25"
               >
-                <ShoppingCart className="w-5 h-5" />
+                <ShoppingCart className="w-5 h-5" aria-hidden="true" />
                 {qty > 0 ? `En el carrito (${qty})` : "Agregar al carrito"}
               </button>
             </div>

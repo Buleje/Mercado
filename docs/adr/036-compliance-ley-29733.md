@@ -9,7 +9,7 @@
 
 ## 1. Contexto
 
-La Ley 29733 de Protección de Datos Personales aplica a TODO tratamiento de datos personales en Perú. Bodega San Martín procesa: nombres, DNI, teléfonos, direcciones, historial de compras, datos de fiado (crédito), y datos de pago. Como SaaS multi-tenant, el riesgo se multiplica por cada bodega conectada.
+La Ley 29733 de Protección de Datos Personales aplica a TODO tratamiento de datos personales en Perú. Buleje procesa: nombres, DNI, teléfonos, direcciones, historial de compras, datos de fiado (crédito), y datos de pago. Como SaaS multi-tenant, el riesgo se multiplica por cada bodega conectada.
 
 **Multa máxima:** 100 UIT (~S/500,000). No es teórica — la ANPD ha multado a empresas peruanas.
 

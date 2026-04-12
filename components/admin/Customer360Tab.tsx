@@ -147,7 +147,7 @@ type FavoriteProduct = {
   freqPerMonth: number;
 };
 
-const MEDAL_ICONS = ["🥇", "🥈", "🥉", "4.", "5."];
+const MEDAL_ICONS = ["1.", "2.", "3.", "4.", "5."];
 
 function FavoriteProductsSection({ phone }: { phone: string }) {
   const [favorites, setFavorites] = useState<FavoriteProduct[]>([]);
@@ -744,10 +744,10 @@ export default function Customer360Tab({ phone, onClose }: Props) {
                 const dias = Math.floor((Date.now() - new Date(firstOrder.createdAt).getTime()) / 86400000);
                 const meses = Math.floor(dias / 30);
                 const anos = Math.floor(dias / 365);
-                if (dias < 30) return <span className="text-[10px] text-gray-400">🆕 Nuevo (hace {dias}d)</span>;
+                if (dias < 30) return <span className="text-[10px] text-gray-400">Nuevo (hace {dias}d)</span>;
                 if (dias < 90) return <span className="text-[10px] text-gray-400">Cliente hace {dias} dias</span>;
                 if (dias < 365) return <span className="text-[10px] text-gray-400">Cliente hace {meses} meses</span>;
-                return <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">🏆 Cliente hace {anos}+ ano(s)</span>;
+                return <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Cliente hace {anos}+ ano(s)</span>;
               })()}
               <HealthBadge score={customer.healthScore} />
               <span className={cn("text-[10px] font-extrabold px-2 py-0.5 rounded-full border", segCfg.bg, segCfg.color, segCfg.border)}>

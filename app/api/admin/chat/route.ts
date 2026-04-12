@@ -9,11 +9,11 @@ export async function GET(req: NextRequest) {
 
   const phone = req.nextUrl.searchParams.get("phone");
   if (phone) {
-    await ChatDB.markRead(phone);
-    const messages = await ChatDB.getByPhone(phone);
+    await ChatDB.markRead(auth.tenantId, phone);
+    const messages = await ChatDB.getByPhone(auth.tenantId, phone);
     return NextResponse.json(messages);
   }
-  const conversations = await ChatDB.getConversations();
+  const conversations = await ChatDB.getConversations(auth.tenantId);
   return NextResponse.json(conversations);
 }
 
@@ -29,6 +29,6 @@ export async function POST(req: NextRequest) {
   if (message.trim().length > 500) {
     return NextResponse.json({ error: "Mensaje máx 500 chars" }, { status: 400 });
   }
-  const msg = await ChatDB.add(phone, "Admin", "admin", message.trim());
+  const msg = await ChatDB.add(auth.tenantId, phone, "Admin", "admin", message.trim());
   return NextResponse.json(msg, { status: 201 });
 }

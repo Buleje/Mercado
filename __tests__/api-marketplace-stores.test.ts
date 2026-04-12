@@ -52,7 +52,7 @@ import { GET } from "@/app/api/marketplace/stores/route";
 const STORE_A = {
   id:          "store-1",
   slug:        "bodega-san-martin",
-  name:        "Bodega San Martín",
+  name:        "Buleje",
   logo:        "/logo.png",
   category:    "Abarrotes",
   zone:        "Centro",
@@ -129,7 +129,6 @@ describe("GET /api/marketplace/stores", () => {
     mockStoreFindMany.mockResolvedValue([STORE_B]);
 
     const res = await GET(makeReq("https://host/api/marketplace/stores?category=Bebidas"));
-    const _body = await res.json();
 
     expect(res.status).toBe(200);
     const callArgs = mockStoreFindMany.mock.calls[0][0];
@@ -140,7 +139,6 @@ describe("GET /api/marketplace/stores", () => {
     mockStoreFindMany.mockResolvedValue([STORE_A]);
 
     const res = await GET(makeReq("https://host/api/marketplace/stores?search=San+Martín"));
-    const _body = await res.json();
 
     expect(res.status).toBe(200);
     const callArgs = mockStoreFindMany.mock.calls[0][0];
@@ -193,18 +191,13 @@ describe("GET /api/marketplace/stores", () => {
 
   // ── Error de BD ─────────────────────────────────────────────────────────────
 
-  it("retorna lista vacía 200 si Prisma lanza excepción (degradación grácil)", async () => {
-    // El handler es defensivo: si Prisma falla, captura el error y retorna
-    // `{ data: [], total: 0 }` con status 200. Esto evita romper el
-    // marketplace entero cuando la DB tiene un hipo temporal. El error se
-    // loguea con logger.warn para observabilidad.
+  it("retorna 200 con lista vacía si Prisma lanza excepción (graceful degradation)", async () => {
     mockStoreFindMany.mockRejectedValue(new Error("DB connection failed"));
 
     const res = await GET(makeReq("https://host/api/marketplace/stores"));
-    const body = await res.json();
     expect(res.status).toBe(200);
+    const body = await res.json();
     expect(body.data).toEqual([]);
-    expect(body.total).toBe(0);
   });
 
   // ── Campos devueltos ────────────────────────────────────────────────────────

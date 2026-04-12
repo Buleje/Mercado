@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Shield, X } from "lucide-react";
 
-const CONSENT_KEY = "bsm-cookie-consent";
+const CONSENT_KEY = "buleje-cookie-consent";
 
 export default function CookieConsent() {
   const [show, setShow] = useState(false);

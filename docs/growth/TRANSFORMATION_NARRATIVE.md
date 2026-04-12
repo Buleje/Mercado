@@ -1,4 +1,4 @@
-# La Historia de Bodega San Martín
+# La Historia de Buleje
 
 > Cómo una bodega familiar en la selva de Perú construyó un sistema de software que se mejora solo.
 
@@ -6,7 +6,7 @@
 
 ## Capítulo 1: De Excel a ERP Digital
 
-En Pucallpa, una ciudad en la Amazonía peruana, la Bodega San Martín llevaba sus cuentas en un cuaderno. Las ventas se anotaban a mano. El inventario se contaba de memoria. Los fiados (crédito informal a vecinos) se perdían cuando se mojaba la libreta.
+En Pucallpa, una ciudad en la Amazonía peruana, la Buleje llevaba sus cuentas en un cuaderno. Las ventas se anotaban a mano. El inventario se contaba de memoria. Los fiados (crédito informal a vecinos) se perdían cuando se mojaba la libreta.
 
 Brandon, el dueño, decidió que su bodega merecía mejor tecnología. No un software genérico de Lima — uno hecho a medida, que entendiera cómo funciona una bodega en la selva.
 

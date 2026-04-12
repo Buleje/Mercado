@@ -47,13 +47,13 @@ export default function VentasMarketingModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "campanas" && <CampañasTab />}
-      {sub === "marketing" && <MarketingAutomationTab />}
-      {sub === "forecast" && <SalesForecastTab />}
-      {sub === "metricas" && <ConversionMetricsTab />}
-      {sub === "referidos" && <ReferralTab />}
+      >
+        {sub === "campanas" && <CampañasTab />}
+        {sub === "marketing" && <MarketingAutomationTab />}
+        {sub === "forecast" && <SalesForecastTab />}
+        {sub === "metricas" && <ConversionMetricsTab />}
+        {sub === "referidos" && <ReferralTab />}
+      </AdminTabBar>
     </div>
   );
 }

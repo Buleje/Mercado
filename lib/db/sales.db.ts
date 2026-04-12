@@ -92,9 +92,8 @@ function mapCashRegister(r: PCashRegister & { movements: PCashMovement[] }): DbC
 // ── POS Sales DB ──────────────────────────────────────────────────────────────
 
 export const SalesDB = {
-  async getAll(tenantId?: string): Promise<DbSale[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbSale[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.sale.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapSale);
   },
   async getById(id: string): Promise<DbSale | null> {
@@ -140,9 +139,8 @@ export const SalesDB = {
 // ── Cash Registers DB ─────────────────────────────────────────────────────────
 
 export const CashRegistersDB = {
-  async getAll(tenantId?: string): Promise<DbCashRegister[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbCashRegister[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.cashRegister.findMany({ where, include: { movements: { orderBy: { createdAt: "desc" } } }, orderBy: { openedAt: "desc" } })).map(mapCashRegister);
   },
   async getAllPaginated(limit = 25, cursor?: string): Promise<{ items: DbCashRegister[]; nextCursor: string | null }> {
@@ -156,8 +154,8 @@ export const CashRegistersDB = {
     const items = hasMore ? rows.slice(0, limit) : rows;
     return { items: items.map(mapCashRegister), nextCursor: hasMore ? items[items.length - 1].id : null };
   },
-  async getOpen(): Promise<DbCashRegister | null> {
-    const row = await prisma.cashRegister.findFirst({ where: { status: "abierta" }, include: { movements: { orderBy: { createdAt: "desc" } } } });
+  async getOpen(tenantId: string): Promise<DbCashRegister | null> {
+    const row = await prisma.cashRegister.findFirst({ where: { tenantId, status: "abierta" }, include: { movements: { orderBy: { createdAt: "desc" } } } });
     return row ? mapCashRegister(row) : null;
   },
   async getById(id: string): Promise<DbCashRegister | null> {

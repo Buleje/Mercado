@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req, ["admin", "almacenero"]);
   if (auth instanceof NextResponse) return auth;
 
-  const warehouses = await WarehousesDB.ensureDefault();
+  const warehouses = await WarehousesDB.ensureDefault(auth.tenantId);
   return NextResponse.json(warehouses);
 }
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const warehouse = await WarehousesDB.create(parsed.data);
+  const warehouse = await WarehousesDB.create({ ...parsed.data, tenantId: auth.tenantId });
   logActivity("create", "warehouse", `Almacén creado: ${warehouse.name} (${warehouse.code})`, warehouse.id, "admin");
   return NextResponse.json(warehouse, { status: 201 });
 }

@@ -64,7 +64,7 @@ const ACTION_COLOR: Record<ActionType, string> = {
   apply_discount: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
 };
 
-const STORAGE_KEY = "bsm_business_rules";
+const STORAGE_KEY = "buleje_business_rules";
 const MAX_RULES = 10;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

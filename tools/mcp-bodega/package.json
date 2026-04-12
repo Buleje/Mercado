@@ -1,7 +1,7 @@
 {
   "name": "@bodega-san-martin/mcp-server",
   "version": "1.0.0",
-  "description": "MCP server for Bodega San Martin - live DB queries, WhatsApp, SUNAT invoicing",
+  "description": "MCP server for Buleje - live DB queries, WhatsApp, SUNAT invoicing",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {

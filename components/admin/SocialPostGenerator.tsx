@@ -48,7 +48,7 @@ const TYPE_COLORS: Record<PostType, string> = {
     "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
 };
 
-const LS_KEY = "bsm_post_history";
+const LS_KEY = "buleje_post_history";
 
 // ── Template generator ──────────────────────────────────────────────────────
 

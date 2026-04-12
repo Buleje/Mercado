@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { useScrollLock } from "@/hooks/use-scroll-lock";
 import {
   Plus, Trash2, X, Check, Search, Loader2, AlertTriangle,
@@ -620,9 +621,8 @@ export default function PromotionsTab() {
                     <div className="flex flex-wrap items-start gap-3">
                       {/* Image preview */}
                       {p.imageUrl && (
-                        <div className="w-14 h-14 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={p.imageUrl} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                        <div className="relative w-14 h-14 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden shrink-0">
+                          <Image src={p.imageUrl} alt="" fill className="object-cover" sizes="56px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
@@ -733,9 +733,8 @@ export default function PromotionsTab() {
                 <input type="url" value={form.imageUrl} onChange={e => setForm(f => ({ ...f, imageUrl: e.target.value }))}
                   className="w-full mt-1 px-3 py-2 text-sm rounded-xl border border-gray-200 dark:border-card-border outline-none focus:border-primary" placeholder="https://..." />
                 {form.imageUrl && (
-                  <div className="mt-2 w-32 h-32 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={form.imageUrl} alt="preview" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  <div className="relative mt-2 w-32 h-32 rounded-xl bg-gray-100 dark:bg-accent overflow-hidden">
+                    <Image src={form.imageUrl} alt="preview" fill className="object-cover" sizes="128px" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                   </div>
                 )}
               </div>
@@ -826,9 +825,8 @@ export default function PromotionsTab() {
             </div>
             <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
               {detailPromo.imageUrl && (
-                <div className="rounded-xl overflow-hidden bg-gray-100 dark:bg-accent">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={detailPromo.imageUrl} alt="" className="w-full max-h-48 object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                <div className="relative rounded-xl overflow-hidden bg-gray-100 dark:bg-accent h-48">
+                  <Image src={detailPromo.imageUrl} alt="" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 </div>
               )}
               <div className="flex flex-wrap gap-2">

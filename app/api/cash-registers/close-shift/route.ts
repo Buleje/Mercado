@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const open = await CashRegistersDB.getOpen();
+    const open = await CashRegistersDB.getOpen(auth.tenantId);
 
     if (!open) {
       return NextResponse.json(

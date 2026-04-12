@@ -15,7 +15,11 @@ export default function CompareBar() {
   return (
     <>
       {/* Floating bar */}
-      <div className="fixed bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 animate-[fadeUp_0.3s_ease-out_both]">
+      <div
+        role="region"
+        aria-label="Comparar productos"
+        className="fixed bottom-20 sm:bottom-4 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl shadow-2xl px-4 py-3 flex items-center gap-3 animate-[fadeUp_0.3s_ease-out_both]"
+      >
         <GitCompareArrows className="h-5 w-5 text-primary shrink-0" />
         <div className="flex items-center gap-2">
           {items.map(p => (
@@ -25,7 +29,7 @@ export default function CompareBar() {
               ) : (
                 <div className="h-full w-full flex items-center justify-center text-gray-300"><Package className="h-4 w-4" /></div>
               )}
-              <button onClick={() => remove(p.id)} className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full flex items-center justify-center">
+              <button onClick={() => remove(p.id)} aria-label={`Quitar ${p.name} de comparación`} className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white rounded-full flex items-center justify-center">
                 <X className="h-2.5 w-2.5" />
               </button>
             </div>
@@ -43,7 +47,7 @@ export default function CompareBar() {
         >
           Comparar ({items.length})
         </button>
-        <button onClick={clear} className="text-gray-400 hover:text-red-500 transition-colors">
+        <button onClick={clear} aria-label="Limpiar comparación" className="text-gray-400 hover:text-red-500 transition-colors">
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
@@ -77,13 +81,20 @@ function CompareModal() {
   const maxRating = Math.max(...items.map(p => p.rating ?? 0));
 
   return (
-    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)}>
-      <div className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto border border-gray-200 dark:border-card-border" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4" onClick={() => setOpen(false)} aria-hidden="true">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Comparar productos"
+        className="bg-white dark:bg-card rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-auto border border-gray-200 dark:border-card-border"
+        onClick={e => e.stopPropagation()}
+        aria-hidden="false"
+      >
         <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-card-border">
           <h2 className="text-lg font-extrabold text-foreground flex items-center gap-2">
             <GitCompareArrows className="h-5 w-5 text-primary" /> Comparar productos
           </h2>
-          <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
+          <button onClick={() => setOpen(false)} aria-label="Cerrar comparación" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-accent transition-colors">
             <X className="h-5 w-5 text-gray-400" />
           </button>
         </div>
@@ -146,6 +157,7 @@ function CompareModal() {
             <div key={`action-${p.id}`} className="flex justify-center">
               <button
                 onClick={() => { addItem(p as never); showToast(p.name, p.image); }}
+                aria-label={`Agregar ${p.name} al carrito`}
                 className="flex items-center gap-1.5 bg-primary text-white rounded-xl px-3 py-2 text-xs font-bold hover:bg-primary-dark active:scale-95 transition-all"
               >
                 <Plus className="h-3.5 w-3.5" /> Agregar

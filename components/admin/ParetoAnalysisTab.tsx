@@ -121,7 +121,7 @@ export default function ParetoAnalysisTab() {
 
       {/* Insight */}
       <div className="bg-indigo-50 dark:bg-indigo-950/20 rounded-2xl border border-indigo-200 dark:border-indigo-800 p-3 sm:p-5">
-        <h3 className="font-extrabold text-indigo-800 dark:text-indigo-300 text-sm">💡 Insight Pareto</h3>
+        <h3 className="font-extrabold text-indigo-800 dark:text-indigo-300 text-sm">Insight Pareto</h3>
         <p className="text-sm text-indigo-700 dark:text-indigo-400 mt-2">
           <strong>{topCount} productos ({topPct}% del catálogo)</strong> generan <strong>{topRevPct}%</strong> del {metric === "revenue" ? "ingreso" : metric === "units" ? "volumen" : "margen"}.
           Enfoca promociones, stock y negociación con proveedores en estos productos para máximo impacto.

@@ -96,7 +96,7 @@ function resolveCustomerPhone(urlPhone: string | null): string | null {
   if (urlPhone) return urlPhone;
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem("bsm-last-order");
+    const raw = localStorage.getItem("buleje-last-order");
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { customerPhone?: string };
     return parsed.customerPhone ?? null;
@@ -472,7 +472,7 @@ function PostDeliveryReview({ orderId, customerName }: { orderId: string; custom
   const [hover, setHover] = useState(0);
   const [text, setText] = useState("");
   const [sent, setSent] = useState(() => {
-    try { return localStorage.getItem(`bsm-review-${orderId}`) === "1"; } catch { return false; }
+    try { return localStorage.getItem(`buleje-review-${orderId}`) === "1"; } catch { return false; }
   });
   const [sending, setSending] = useState(false);
 
@@ -492,7 +492,7 @@ function PostDeliveryReview({ orderId, customerName }: { orderId: string; custom
       });
       if (res.ok) {
         setSent(true);
-        try { localStorage.setItem(`bsm-review-${orderId}`, "1"); } catch {}
+        try { localStorage.setItem(`buleje-review-${orderId}`, "1"); } catch {}
       }
     } catch { /* silent */ }
     setSending(false);

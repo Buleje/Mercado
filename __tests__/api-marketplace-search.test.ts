@@ -105,7 +105,7 @@ const RESULT_ARROZ = {
   },
   store: {
     id:     "store-1",
-    name:   "Bodega San Martín",
+    name:   "Buleje",
     slug:   "bodega-san-martin",
     logo:   "/logo.png",
     zone:   "Centro",

@@ -1,7 +1,7 @@
 # Squad — Autonomous Multi-Agent Environment
 
 > Three Claude Code instances (Alpha, Beta, Gamma) work in parallel on the
-> Bodega San Martin ERP, coordinating through a shared JSON brain.
+> Buleje ERP, coordinating through a shared JSON brain.
 > Created 2026-04-09.
 
 ## What is this

@@ -59,7 +59,7 @@ describe.skipIf(!hasDrUrl)('DR Restore Validation', () => {
   // 1. Tenant count > 0
   // -------------------------------------------------------------------------
   it('should have at least 1 tenant', async () => {
-    // Every backup must contain at least the primary tenant (Bodega San Martin).
+    // Every backup must contain at least the primary tenant (Buleje).
     // If this fails, the backup is empty or the restore missed the Tenant table.
     const result = await drQuery('SELECT COUNT(*)::int AS count FROM "Tenant"')
     const count = result.rows[0]?.count as number

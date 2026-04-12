@@ -1,6 +1,6 @@
 ---
 name: bodega-context-loader
-description: Carga el contexto completo del proyecto Bodega San Martín al iniciar una nueva sesión o al cambiar de tarea. Lee ARCHITECTURE, TECH-DEBT, últimos commits, estado del sprint y checkpoints activos para dejar a Claude con todo el background antes de tocar código. Usar al arrancar sesión o cuando Brandon pida "contexto" o "ponte al día".
+description: Carga el contexto completo del proyecto Buleje al iniciar una nueva sesión o al cambiar de tarea. Lee ARCHITECTURE, TECH-DEBT, últimos commits, estado del sprint y checkpoints activos para dejar a Claude con todo el background antes de tocar código. Usar al arrancar sesión o cuando Brandon pida "contexto" o "ponte al día".
 disable-model-invocation: false
 user-invocable: true
 allowed-tools: Read, Bash, Grep, Glob
@@ -93,7 +93,7 @@ Si hay un checkpoint reciente, leerlo — ahí está el estado de trabajo pendie
 Entregar UN SOLO mensaje con esta estructura (tablas cortas, estilo Feynman):
 
 ```markdown
-## 📊 Contexto cargado — Bodega San Martín
+## 📊 Contexto cargado — Buleje
 
 ### 🔖 Estado actual
 | Dato | Valor |

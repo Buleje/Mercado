@@ -41,10 +41,10 @@ export default function PanelPrincipalModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "dashboard" && <DashboardTab />}
-      {sub === "ejecutivo" && <ExecutiveDashboardTab />}
+      >
+        {sub === "dashboard" && <DashboardTab />}
+        {sub === "ejecutivo" && <ExecutiveDashboardTab />}
+      </AdminTabBar>
     </div>
   );
 }

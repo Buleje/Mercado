@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPlatformSession, PLATFORM_SESSION } from "@/lib/superadmin-session";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { sendWhatsAppText } from "@/lib/whatsapp";
+import { logger } from "@/lib/logger";
 
 // GET /api/superadmin/stores
 export async function GET(req: NextRequest) {
@@ -85,6 +87,38 @@ export async function PATCH(req: NextRequest) {
     where: { id: storeId },
     data: updateData,
   });
+
+  // Notify store owner via WhatsApp when their store gets published
+  if (data.isPublished === true) {
+    (async () => {
+      try {
+        const tenant = await prisma.tenant.findUnique({
+          where: { id: store.tenantId },
+          select: { ownerPhone: true, name: true },
+        });
+        const ownerPhone = tenant?.ownerPhone;
+        if (ownerPhone) {
+          const msg = [
+            `🎉 *¡Tu tienda fue aprobada!*`,
+            ``,
+            `Hola 👋, tu tienda *${store.name}* ya está visible en el Marketplace.`,
+            ``,
+            `✅ Los clientes pueden encontrarte y hacer pedidos`,
+            `📦 Asegúrate de tener tus productos actualizados`,
+            `💰 Los pedidos llegarán directo a tu panel`,
+            ``,
+            `¡Éxitos con tus ventas! 🚀`,
+            ``,
+            `─────`,
+            `Buleje 🏪`,
+          ].join("\n");
+          await sendWhatsAppText(ownerPhone, msg);
+        }
+      } catch (e) {
+        logger.warn("[superadmin/stores] WhatsApp notification failed", { error: String(e) });
+      }
+    })().catch(() => {});
+  }
 
   return NextResponse.json({ store });
 }

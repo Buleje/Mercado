@@ -35,6 +35,9 @@ const { mockPrisma } = vi.hoisted(() => ({
       aggregate: vi.fn(),
       count: vi.fn(),
     },
+    savedCart: {
+      findMany: vi.fn(),
+    },
     $queryRaw: vi.fn(),
   },
 }));
@@ -69,6 +72,7 @@ function mockAllQueries(opts: {
   mockPrisma.$queryRaw.mockResolvedValueOnce([
     { count: BigInt(opts.lowStock ?? 0) },
   ]);
+  mockPrisma.savedCart.findMany.mockResolvedValueOnce([]);
 }
 
 beforeEach(() => {
@@ -142,6 +146,7 @@ describe("AnalyticsDB.getDashboardAggregates — tenant isolation", () => {
       .mockResolvedValueOnce(EMPTY_AGGREGATE);
     mockPrisma.order.count.mockResolvedValueOnce(0);
     mockPrisma.$queryRaw.mockResolvedValueOnce([{ count: BigInt(0) }]);
+    mockPrisma.savedCart.findMany.mockResolvedValueOnce([]);
 
     const res = await AnalyticsDB.getDashboardAggregates("tenant-empty");
 
@@ -310,6 +315,7 @@ describe("AnalyticsDB.getDashboardAggregates — error propagation (HOTFIX-006)"
     mockPrisma.order.aggregate.mockRejectedValueOnce(dbError);
     mockPrisma.order.count.mockRejectedValueOnce(dbError);
     mockPrisma.$queryRaw.mockRejectedValueOnce(dbError);
+    mockPrisma.savedCart.findMany.mockRejectedValueOnce(dbError);
 
     await expect(
       AnalyticsDB.getDashboardAggregates(TENANT_A),
@@ -325,6 +331,7 @@ describe("AnalyticsDB.getDashboardAggregates — error propagation (HOTFIX-006)"
     mockPrisma.order.aggregate.mockRejectedValueOnce(new Error("boom"));
     mockPrisma.order.count.mockRejectedValueOnce(new Error("boom"));
     mockPrisma.$queryRaw.mockRejectedValueOnce(new Error("boom"));
+    mockPrisma.savedCart.findMany.mockRejectedValueOnce(new Error("boom"));
 
     let resolved = false;
     try {

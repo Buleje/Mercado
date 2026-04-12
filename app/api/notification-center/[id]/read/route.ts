@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 
 /**
  * PATCH /api/notification-center/[id]/read
@@ -7,14 +8,17 @@ import { prisma } from "@/lib/prisma";
  * Marca una notificación específica como leída.
  */
 export async function PATCH(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = await params;
 
   try {
     const notification = await prisma.notification.update({
-      where: { id },
+      where: { id, tenantId: auth.tenantId },
       data: { readAt: new Date() },
     });
 

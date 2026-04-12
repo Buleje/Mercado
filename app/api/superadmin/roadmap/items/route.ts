@@ -5,7 +5,7 @@
  * mutable (RoadmapItemStatus). Items sin row en DB se consideran "planned"
  * por default.
  *
- * Auth: superadmin platform session (bsm-platform-sess cookie).
+ * Auth: superadmin platform session (buleje-platform-sess cookie).
  * Multi-tenant: NO — es platform-level (global).
  *
  * Rate limit: GENEROUS (lecturas frecuentes del dashboard roadmap).

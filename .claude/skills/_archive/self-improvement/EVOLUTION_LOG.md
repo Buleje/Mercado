@@ -1,7 +1,7 @@
-# 🧬 EVOLUTION_LOG — Bodega San Martín Claude Code Compound Engineering
+# 🧬 EVOLUTION_LOG — Buleje Claude Code Compound Engineering
 
 Este archivo es el **registro histórico de aprendizajes del sistema Claude Code**
-que opera sobre el proyecto Bodega San Martín. Cada vez que el skill
+que opera sobre el proyecto Buleje. Cada vez que el skill
 `self-improvement` corre, agrega una entry nueva con:
 
 - Lecciones clave de la sesión

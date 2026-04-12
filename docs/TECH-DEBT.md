@@ -1,4 +1,4 @@
-# Deuda Técnica — Bodega San Martín
+# Deuda Técnica — Buleje
 
 > **Regla:** Dedicar ~20% de cada sesión a reducir deuda técnica.
 > Actualizar este archivo cuando se identifique o resuelva deuda.

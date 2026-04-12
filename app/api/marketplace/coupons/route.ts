@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { toErrorPayload, newTraceId } from "@/lib/api-error";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity-logger";
+import { CouponsDB } from "@/lib/db/coupons.db";
 
 const CreateCouponSchema = z.object({
   code: z
@@ -17,11 +18,13 @@ const CreateCouponSchema = z.object({
   minPurchase: z.number().min(0).optional().nullable(),
   maxUses: z.number().int().positive().optional().nullable(),
   expiresAt: z.string().datetime().optional().nullable(),
+  storeId: z.string().optional().nullable(),
 });
 
 /**
  * GET /api/marketplace/coupons
  * Lista cupones de la tienda del vendedor.
+ * Query param ?storeId=xxx filtra por tienda específica.
  */
 export async function GET(req: NextRequest) {
   const traceId = newTraceId();
@@ -38,12 +41,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ data: [] });
     }
 
-    // TECH-DEBT: campo storeId no está en schema Prisma (Coupon) — filtrar solo por tenant
-    // TODO: agregar storeId al modelo Coupon para soporte de cupones de marketplace
-    const coupons = await prisma.coupon.findMany({
-      where: { tenantId: auth.tenantId },
-      orderBy: { createdAt: "desc" },
-    });
+    const storeIdFilter = req.nextUrl.searchParams.get("storeId");
+    const coupons = await CouponsDB.list(auth.tenantId, storeIdFilter ?? store.id);
 
     return NextResponse.json({ data: coupons });
   } catch (err) {
@@ -55,6 +54,7 @@ export async function GET(req: NextRequest) {
 /**
  * POST /api/marketplace/coupons
  * Crear un nuevo cupón para la tienda del vendedor.
+ * Body acepta storeId opcional para cupones específicos de tienda.
  */
 export async function POST(req: NextRequest) {
   const traceId = newTraceId();
@@ -77,35 +77,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ issues: parsed.error.issues }, { status: 400 });
     }
 
-    const { code, description, discountType, discountValue, minPurchase, maxUses, expiresAt } = parsed.data;
+    const { code, description, discountType, discountValue, minPurchase, maxUses, expiresAt, storeId } = parsed.data;
 
     // Check for duplicate code in this tenant
-    const existing = await prisma.coupon.findUnique({
-      where: { tenantId_code: { tenantId: auth.tenantId, code } },
-    });
+    const existing = await CouponsDB.findByCode(auth.tenantId, code);
     if (existing) {
       return NextResponse.json({ error: "Ya existe un cupón con ese código" }, { status: 409 });
     }
 
-    const coupon = await prisma.coupon.create({
-      data: {
-        id: crypto.randomUUID(),
-        code,
-        description,
-        discountType,
-        discountValue,
-        minPurchase: minPurchase ?? null,
-        maxUses: maxUses ?? null,
-        expiresAt: expiresAt ? new Date(expiresAt) : null,
-        // TECH-DEBT: campo storeId no está en schema Prisma (Coupon) — removido temporalmente
-        tenantId: auth.tenantId,
-      },
+    const coupon = await CouponsDB.create(auth.tenantId, {
+      code,
+      storeId: storeId ?? store.id,
+      description,
+      discountType,
+      discountValue,
+      minPurchase: minPurchase ?? null,
+      maxUses: maxUses ?? null,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
     });
 
     logActivity(
       "coupon_created",
       "Coupon",
-      `Cupón ${code} creado para marketplace`,
+      `Cupón ${code} creado para tienda ${storeId ?? store.id}`,
       coupon.id,
       auth.username,
     ).catch(() => {});

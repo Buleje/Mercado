@@ -9,7 +9,7 @@
 
 ## 1. Contexto
 
-Bodega San Martin tiene backups automatizados (pre-deploy, pre-migrate, weekly) generados por el hook `pre-deploy-db-snapshot`. Sin embargo, **un backup que nunca se ha restaurado es ficcion**. No hay forma de saber si los backups son validos, completos, o si el proceso de restauracion funciona correctamente hasta que se prueba.
+Buleje tiene backups automatizados (pre-deploy, pre-migrate, weekly) generados por el hook `pre-deploy-db-snapshot`. Sin embargo, **un backup que nunca se ha restaurado es ficcion**. No hay forma de saber si los backups son validos, completos, o si el proceso de restauracion funciona correctamente hasta que se prueba.
 
 Riesgos identificados:
 - Backup corrupto por disco lleno o interrupcion durante pg_dump

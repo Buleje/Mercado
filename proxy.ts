@@ -18,6 +18,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { generateRequestId, generateNonce, checkRateLimit } from "@/lib/middleware-utils";
+import { ensureCsrfCookie, validateCsrfToken, csrfForbiddenResponse } from "@/lib/csrf";
 import {
   resolveTenantFromHost,
   resolveTenantMultiSource,
@@ -59,22 +60,33 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set("x-tenant-id", tenantId);
   requestHeaders.set("x-request-id", requestId);
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("x-next-pathname", pathname);
   const withTenant = { request: { headers: requestHeaders } };
 
-  // ── 4. API key Bearer auth pass-through ────────────────────────────────────
+  // ── 4. Rate limit all /api/* in non-dev ────────────────────────────────────
+  // Distributed via Upstash Redis REST (ADR-022, 2026-04-09). Edge-compatible.
+  // Must run BEFORE Bearer pass-through so external API keys are still rate-limited.
+  if (pathname.startsWith("/api/") && process.env.NODE_ENV !== "development") {
+    const rlResponse = await checkRateLimit(request);
+    if (rlResponse) return rlResponse;
+  }
+
+  // ── 4b. CSRF double-submit cookie validation on mutations ─────────────────
+  // Validates X-CSRF-Token header matches csrf-token cookie for POST/PATCH/PUT/DELETE.
+  // Skips API-key auth, webhooks, cron, and health endpoints (see lib/csrf.ts).
+  // Must run BEFORE Bearer pass-through so mutation endpoints stay protected.
+  if (!validateCsrfToken(request)) {
+    return csrfForbiddenResponse();
+  }
+
+  // ── 5. API key Bearer auth pass-through ────────────────────────────────────
   // Bearer sk_... on /api/* bypasses cookie-based auth entirely so route
   // handlers can call validateApiKey() from lib/api-keys.ts themselves.
+  // Placed AFTER rate limit + CSRF so both protections always apply (ADR-014).
   const bearerAuth = request.headers.get("authorization") ?? "";
   if (bearerAuth.startsWith("Bearer sk_") && pathname.startsWith("/api/")) {
     requestHeaders.set("x-api-key", bearerAuth.slice("Bearer ".length));
     return NextResponse.next({ request: { headers: requestHeaders } });
-  }
-
-  // ── 5. Rate limit all /api/* in non-dev ────────────────────────────────────
-  // Distributed via Upstash Redis REST (ADR-022, 2026-04-09). Edge-compatible.
-  if (pathname.startsWith("/api/") && process.env.NODE_ENV !== "development") {
-    const rlResponse = await checkRateLimit(request);
-    if (rlResponse) return rlResponse;
   }
 
   // ── 6. Always-public routes (short-circuit) ────────────────────────────────
@@ -103,6 +115,8 @@ export async function proxy(request: NextRequest) {
 
   // ── 12. Default response with tenant + security headers ───────────────────
   const response = NextResponse.next(withTenant);
+  // Ensure CSRF cookie is set on every response
+  ensureCsrfCookie(request, response);
   return applySecurityHeaders(response, pathname, nonce, requestId);
 }
 

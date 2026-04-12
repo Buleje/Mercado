@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { m, AnimatePresence } from "framer-motion";
 import { X, Star, Send, Pencil, Camera, ZoomIn } from "lucide-react";
 import { useReviews } from "@/contexts/reviews-context";
@@ -379,7 +380,7 @@ export default function ReviewModal() {
                       style={{ zIndex: 9100 }}
                       onClick={() => setPhotoPreviewFull(false)}
                     >
-                      <img src={photoBase64} alt="Foto ampliada" className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl object-contain" />
+                      <Image src={photoBase64} alt="Foto ampliada" width={800} height={600} className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl object-contain" unoptimized />
                       <button className="absolute top-4 right-4 p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors">
                         <X className="h-6 w-6" />
                       </button>

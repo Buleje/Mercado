@@ -50,10 +50,10 @@ const STATUS_CONFIG = {
 } as const;
 
 const OVERALL_CONFIG = {
-  healthy: { color: "#22c55e", label: "Todo funciona perfecto", emoji: "✅" },
-  warning: { color: "#f59e0b", label: "Funciona con advertencias", emoji: "⚠️" },
-  degraded: { color: "#f97316", label: "Algunos sistemas con problemas", emoji: "🟠" },
-  critical: { color: "#ef4444", label: "Problemas críticos detectados", emoji: "🔴" },
+  healthy: { color: "#22c55e", label: "Todo funciona perfecto", icon: CheckCircle2 },
+  warning: { color: "#f59e0b", label: "Funciona con advertencias", icon: AlertTriangle },
+  degraded: { color: "#f97316", label: "Algunos sistemas con problemas", icon: Activity },
+  critical: { color: "#ef4444", label: "Problemas críticos detectados", icon: XCircle },
 } as const;
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -127,6 +127,7 @@ export default function AIHealthPanel() {
   if (!data) return null;
 
   const overall = OVERALL_CONFIG[data.status];
+  const OverallIcon = overall.icon;
   const categories = Object.keys(CATEGORY_CONFIG) as (keyof typeof CATEGORY_CONFIG)[];
 
   return (
@@ -177,7 +178,10 @@ export default function AIHealthPanel() {
 
         <div className="text-center">
           <p className="text-lg font-semibold text-gray-900 dark:text-white">
-            {overall.emoji} {overall.label}
+            <span className="inline-flex items-center gap-2">
+              <OverallIcon className="h-5 w-5" style={{ color: overall.color }} />
+              <span>{overall.label}</span>
+            </span>
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {data.ok} activos · {data.warnings} advertencias · {data.errors} errores

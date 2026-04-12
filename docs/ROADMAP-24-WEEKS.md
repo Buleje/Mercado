@@ -1,4 +1,4 @@
-# Roadmap 24 Semanas — Bodega San Martín Enterprise Marketplace
+# Roadmap 24 Semanas — Buleje Enterprise Marketplace
 
 > Vista ejecutiva del Plan Maestro. Detalle arquitectónico completo en [ADR 016](./adr/016-plan-maestro-24-weeks.md).
 

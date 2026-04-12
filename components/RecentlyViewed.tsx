@@ -7,7 +7,7 @@ import { useCart } from "@/contexts/cart-context";
 import { useToast } from "@/contexts/toast-context";
 import type { Product } from "@/data/products";
 
-const STORAGE_KEY = "bsm-recently-viewed";
+const STORAGE_KEY = "buleje-recently-viewed";
 const MAX_ITEMS = 12;
 
 // ── Persist recently viewed products ──────────────────────────────────────────
@@ -21,7 +21,7 @@ export function trackView(product: Product) {
   items.unshift(product);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)));
   // Notify RecentlyViewed component to refresh its list
-  window.dispatchEvent(new Event("bsm:productViewed"));
+  window.dispatchEvent(new Event("buleje:productViewed"));
 }
 
 export default function RecentlyViewed() {
@@ -57,8 +57,8 @@ export default function RecentlyViewed() {
 
     // Re-check when product is viewed (custom event)
     const handler = () => startTransition(() => setItems(getRecent()));
-    window.addEventListener("bsm:productViewed", handler);
-    return () => window.removeEventListener("bsm:productViewed", handler);
+    window.addEventListener("buleje:productViewed", handler);
+    return () => window.removeEventListener("buleje:productViewed", handler);
   }, []);
 
   const clearAll = useCallback(() => {

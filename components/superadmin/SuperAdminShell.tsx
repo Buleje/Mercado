@@ -26,6 +26,7 @@ import {
   Package,
   Wrench,
   Map as MapIcon,
+  Cable,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -49,12 +50,14 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Centro Control",  icon: <Gauge           className="w-5 h-5 shrink-0" />, href: "/superadmin/control-center" },
   { label: "Roadmap",         icon: <MapIcon         className="w-5 h-5 shrink-0" />, href: "/superadmin/roadmap"         },
   { label: "Proyecto",        icon: <Package         className="w-5 h-5 shrink-0" />, href: "/superadmin/project-intel"   },
+  { label: "Integraciones",   icon: <Cable           className="w-5 h-5 shrink-0" />, href: "/superadmin/integraciones"   },
   { label: "Tiendas",         icon: <Building2       className="w-5 h-5 shrink-0" />, href: "/superadmin/tenants"         },
   { label: "Marketplace",     icon: <ShoppingBag     className="w-5 h-5 shrink-0" />, href: "/superadmin/stores"          },
   { label: "Analytics",       icon: <BarChart3       className="w-5 h-5 shrink-0" />, href: "/superadmin/analytics"       },
   { label: "Salud",           icon: <HeartPulse      className="w-5 h-5 shrink-0" />, href: "/superadmin/health"          },
   { label: "Setup Pendiente", icon: <Wrench          className="w-5 h-5 shrink-0" />, href: "/superadmin/setup"           },
   { label: "Actividad",       icon: <Activity        className="w-5 h-5 shrink-0" />, href: "/superadmin/activity"        },
+  { label: "Seguridad",       icon: <ShieldCheck     className="w-5 h-5 shrink-0" />, href: "/superadmin/security"        },
   { label: "Config",          icon: <Settings        className="w-5 h-5 shrink-0" />, href: "/superadmin/settings"        },
 ];
 
@@ -63,6 +66,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/superadmin/control-center":  "Centro de Control",
   "/superadmin/roadmap":         "Roadmap",
   "/superadmin/project-intel":   "Panorama del Proyecto",
+  "/superadmin/integraciones":   "Integraciones y funciones",
   "/superadmin/tenants":         "Tiendas",
   "/superadmin/stores":          "Marketplace",
   "/superadmin/analytics":       "Analytics",
@@ -160,6 +164,25 @@ export default function SuperAdminShell({ children, username, freshToken }: Supe
     };
     const timer = setInterval(check, 2 * 60 * 1000); // cada 2 min
     return () => { active = false; clearInterval(timer); };
+  }, []);
+
+  // Inactivity timeout — auto-logout after 30 min without interaction
+  useEffect(() => {
+    const INACTIVITY_MS = 30 * 60 * 1000; // 30 minutos
+    let timer: ReturnType<typeof setTimeout>;
+    const resetTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        setSessionExpired(true);
+      }, INACTIVITY_MS);
+    };
+    const events = ["mousedown", "keydown", "scroll", "touchstart"] as const;
+    events.forEach((e) => window.addEventListener(e, resetTimer, { passive: true }));
+    resetTimer();
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, resetTimer));
+    };
   }, []);
 
   const clearImpersonation = () => {

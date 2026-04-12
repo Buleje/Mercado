@@ -1,4 +1,4 @@
-# ADR-021: Fiado Digital Ola 2 — Diferenciador #1 de Bodega San Martín
+# ADR-021: Fiado Digital Ola 2 — Diferenciador #1 de Buleje
 
 ## Estado
 
@@ -14,7 +14,7 @@
 
 ## Contexto
 
-Bodega San Martín necesita definir, en términos arquitectónicos, cómo transforma el **fiado informal de cuaderno** en una experiencia software-first que sea **el diferenciador clave** frente a Mercado Libre, Rappi, Didi y cualquier player global presente en Perú.
+Buleje necesita definir, en términos arquitectónicos, cómo transforma el **fiado informal de cuaderno** en una experiencia software-first que sea **el diferenciador clave** frente a Mercado Libre, Rappi, Didi y cualquier player global presente en Perú.
 
 **Por qué el fiado es el diferenciador #1:**
 

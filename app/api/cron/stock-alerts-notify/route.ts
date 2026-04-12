@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
           recipient: `admin-${tenant.slug}`,
           message: `${alertas.length} producto(s) con stock bajo: ${nombresAlerta}${sufijo}`,
           status: "pending",
-        });
+        }, tenant.id);
 
         // Send push + WhatsApp to store owner
         (async () => {

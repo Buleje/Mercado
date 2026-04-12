@@ -67,6 +67,7 @@ async function executeAction(action: { type: string; payload: Record<string, unk
         stock: p.stock ?? 0,
         stockMin: p.stockMin ?? 5,
         active: true,
+        tenantId,
       });
       return { ok: true, message: `Producto "${newProduct.name}" creado (ID: ${newProduct.id}, S/${newProduct.price.toFixed(2)})`, data: { id: newProduct.id } };
     }

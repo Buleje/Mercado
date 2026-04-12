@@ -1,4 +1,4 @@
-# Project Growth Metrics — Bodega San Martín
+# Project Growth Metrics — Buleje
 
 **Última actualización:** 2026-04-10
 **Fuente:** Generado por `growth-specialist` agent

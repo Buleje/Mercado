@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { MessageSquare, X, Star, Send, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "bsm_beta_feedback_done";
+const STORAGE_KEY = "buleje_beta_feedback_done";
 
 export default function BetaFeedbackWidget() {
   const [mounted, setMounted] = useState(false);

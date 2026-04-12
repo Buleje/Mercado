@@ -31,7 +31,6 @@ type Difficulty = "facil" | "moderado" | "complejo";
 type Scenario = {
   id: ScenarioId;
   title: string;
-  emoji: string;
   description: string;
   riskLevel: RiskLevel;
   difficulty: Difficulty;
@@ -70,7 +69,6 @@ const SCENARIOS: Scenario[] = [
   {
     id: "price-increase",
     title: "Subir precios",
-    emoji: "💰",
     description: "Calcula el impacto en margen y volumen estimado si subes precios generales.",
     riskLevel: "medio",
     difficulty: "facil",
@@ -83,7 +81,6 @@ const SCENARIOS: Scenario[] = [
   {
     id: "promo-2x1",
     title: "Promoción 2x1",
-    emoji: "🎉",
     description: "Estima el impacto de una promoción 2x1 en productos seleccionados.",
     riskLevel: "bajo",
     difficulty: "facil",
@@ -97,7 +94,6 @@ const SCENARIOS: Scenario[] = [
   {
     id: "delivery",
     title: "Delivery nocturno",
-    emoji: "🛵",
     description: "Estima ingresos adicionales si ofreces delivery entre 7pm y 10pm.",
     riskLevel: "medio",
     difficulty: "moderado",
@@ -110,7 +106,6 @@ const SCENARIOS: Scenario[] = [
   {
     id: "whatsapp-store",
     title: "Tienda WhatsApp",
-    emoji: "📱",
     description: "Estima ingresos de vender por WhatsApp con catálogo digital.",
     riskLevel: "bajo",
     difficulty: "moderado",
@@ -124,7 +119,6 @@ const SCENARIOS: Scenario[] = [
   {
     id: "cambiar-proveedor",
     title: "Cambiar proveedor",
-    emoji: "🔄",
     description: "Evalúa el impacto de cambiar de proveedor para mejorar márgenes.",
     riskLevel: "medio",
     difficulty: "moderado",
@@ -138,7 +132,6 @@ const SCENARIOS: Scenario[] = [
   {
     id: "drop-category",
     title: "Eliminar categoría",
-    emoji: "✂️",
     description: "Calcula cuánto revenue perderías al eliminar tu categoría menos rentable.",
     riskLevel: "alto",
     difficulty: "moderado",
@@ -151,7 +144,6 @@ const SCENARIOS: Scenario[] = [
   {
     id: "second-store",
     title: "Segundo local",
-    emoji: "🏪",
     description: "Estima costos de apertura y revenue potencial basado en tu operación actual.",
     riskLevel: "alto",
     difficulty: "complejo",
@@ -164,7 +156,6 @@ const SCENARIOS: Scenario[] = [
   {
     id: "fiado-digital",
     title: "Fiado digital",
-    emoji: "📝",
     description: "Calcula el impacto de ofrecer crédito informal a clientes frecuentes.",
     riskLevel: "medio",
     difficulty: "facil",
@@ -178,7 +169,6 @@ const SCENARIOS: Scenario[] = [
   {
     id: "contratar-empleado",
     title: "Contratar empleado",
-    emoji: "👤",
     description: "Evalúa si un empleado extra genera más ventas que su costo total.",
     riskLevel: "medio",
     difficulty: "moderado",
@@ -192,7 +182,6 @@ const SCENARIOS: Scenario[] = [
   {
     id: "ampliar-horario",
     title: "Ampliar horario",
-    emoji: "🕐",
     description: "Estima ingresos extra si abres más horas (nocturno o domingos).",
     riskLevel: "bajo",
     difficulty: "facil",
@@ -616,19 +605,19 @@ export default function AIWhatIfSimulator({ data }: Props) {
   };
 
   const shareWhatsApp = useCallback(() => {
-    let msg = `🔮 *Simulación: ${scenario.title}*\n\n`;
-    msg += `📊 Parámetros:\n`;
+    let msg = `*Simulacion: ${scenario.title}*\n\n`;
+    msg += `Parametros:\n`;
     scenario.params.forEach((p) => {
       const v = getParam(p.id);
-      msg += `• ${p.label}: ${p.unit === "S/" ? `S/${v}` : `${v} ${p.unit}`}\n`;
+      msg += `- ${p.label}: ${p.unit === "S/" ? `S/${v}` : `${v} ${p.unit}`}\n`;
     });
-    msg += `\n📈 Resultados:\n`;
+    msg += `\nResultados:\n`;
     results.forEach((r) => {
       const fmt = (v: number) => r.unit === "S/" ? `S/${Math.round(v).toLocaleString("es-PE")}` : r.unit === "%" ? `${v.toFixed(1)}%` : `${Math.round(v)} ${r.unit}`;
-      msg += `${r.positive ? "✅" : "⚠️"} ${r.label}: ${fmt(r.after)}${r.before > 0 ? ` (antes: ${fmt(r.before)})` : ""}\n`;
+      msg += `${r.positive ? "[+]" : "[-]"} ${r.label}: ${fmt(r.after)}${r.before > 0 ? ` (antes: ${fmt(r.before)})` : ""}\n`;
     });
-    if (verdict) msg += `\n💡 *Veredicto:* ${verdict}`;
-    msg += `\n\n🎯 Confianza: ${confidence}%`;
+    if (verdict) msg += `\nVeredicto: ${verdict}`;
+    msg += `\n\nConfianza: ${confidence}%`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scenario, results, verdict, confidence]);
@@ -645,7 +634,6 @@ export default function AIWhatIfSimulator({ data }: Props) {
           className="w-full text-left p-3 rounded-lg bg-[#f97316]/10 dark:bg-[#f97316]/5 border border-[#f97316]/30 hover:bg-[#f97316]/15 transition-colors"
         >
           <div className="flex items-center gap-2">
-            <span className="text-sm">💡</span>
             <span className="text-xs font-medium text-[#f97316]">Recomendado para tu negocio</span>
           </div>
           <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{recommendation.reason}</p>
@@ -680,7 +668,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
                   )}
                 >
                   <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
-                    {sc?.emoji ?? ""} {s.scenarioTitle}
+                    {s.scenarioTitle}
                   </p>
                   <p className={cn("text-sm font-bold mt-0.5", s.beneficioNeto >= 0 ? "text-[#00B4A6] dark:text-[#2dd4bf]" : "text-red-600 dark:text-red-400")}>
                     {s.beneficioNeto >= 0 ? "+" : ""}S/{Math.round(s.beneficioNeto).toLocaleString("es-PE")}
@@ -688,10 +676,10 @@ export default function AIWhatIfSimulator({ data }: Props) {
                   <p className="text-[10px] text-gray-400 mt-0.5">{new Date(s.savedAt).toLocaleDateString("es-PE")}</p>
                   <div className="flex items-center gap-1 mt-2">
                     <button onClick={() => toggleCompare(s.id)} className={cn("px-2 py-0.5 rounded text-[10px] font-medium transition-colors", compareIds.includes(s.id) ? "bg-[#f97316] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200")}>
-                      {compareIds.includes(s.id) ? "✓" : "Comparar"}
+                      {compareIds.includes(s.id) ? "Seleccionado" : "Comparar"}
                     </button>
                     <button onClick={() => handleDeleteSaved(s.id)} className="px-2 py-0.5 rounded text-[10px] text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30">
-                      ✕
+                      Quitar
                     </button>
                   </div>
                 </div>
@@ -749,11 +737,11 @@ export default function AIWhatIfSimulator({ data }: Props) {
             onClick={shareWhatsApp}
             className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 hover:text-green-700 transition-colors px-2 py-1 rounded-md hover:bg-green-50 dark:hover:bg-green-950/30"
           >
-            📱 WhatsApp
+            WhatsApp
           </button>
         </div>
 
-        {/* Scenario selector - grid with emojis */}
+        {/* Scenario selector */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-5">
           {SCENARIOS.map((s) => (
             <button
@@ -766,9 +754,9 @@ export default function AIWhatIfSimulator({ data }: Props) {
                   : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]/50"
               )}
             >
-              <span className="text-base mr-1">{s.emoji}</span> {s.title}
+              {s.title}
               {recommendation?.scenarioId === s.id && activeScenario !== s.id && (
-                <span className="ml-1 text-[9px] bg-[#f97316] text-white px-1 rounded">💡</span>
+                <span className="ml-1 text-[9px] bg-[#f97316] text-white px-1 rounded">Recomendado</span>
               )}
             </button>
           ))}
@@ -783,7 +771,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
             Dificultad: {diffCfg.label} {"●".repeat(diffCfg.dots)}{"○".repeat(3 - diffCfg.dots)}
           </span>
           <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400">
-            ⏱ Resultados: {scenario.timeToResults}
+            Resultados: {scenario.timeToResults}
           </span>
           {confidence > 0 && (
             <span className={cn(
@@ -801,7 +789,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
           {/* Controls */}
           <div>
             <h3 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
-              {scenario.emoji} {scenario.title}
+              {scenario.title}
             </h3>
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">{scenario.description}</p>
             <div className="flex flex-col gap-5">
@@ -848,7 +836,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
                   ? "bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/40 text-emerald-800 dark:text-emerald-300"
                   : "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 text-amber-800 dark:text-amber-300"
               )}>
-                <span className="font-semibold">💡 Veredicto: </span>{verdict}
+                <span className="font-semibold">Veredicto: </span>{verdict}
               </div>
             )}
 
@@ -901,7 +889,7 @@ export default function AIWhatIfSimulator({ data }: Props) {
                     : "bg-[#00B4A6] text-white hover:bg-[#009690]"
                 )}
               >
-                {savedScenarios.length >= MAX_SAVED ? `Máximo ${MAX_SAVED}` : "💾 Guardar"}
+                {savedScenarios.length >= MAX_SAVED ? `Máximo ${MAX_SAVED}` : "Guardar"}
               </button>
             </div>
           </div>
@@ -910,3 +898,4 @@ export default function AIWhatIfSimulator({ data }: Props) {
     </div>
   );
 }
+

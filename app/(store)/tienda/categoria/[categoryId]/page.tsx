@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
@@ -108,7 +109,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function CategoryPage({ params }: Props) {
+async function CategoryPageContent({ params }: Props) {
+  await connection();
   const { categoryId } = await params;
   const cat = findCategory(categoryId);
 
@@ -269,5 +271,33 @@ export default async function CategoryPage({ params }: Props) {
       <StickyCartBar />
       <MobileBottomNav />
     </>
+  );
+}
+
+function CategoryPageSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 animate-pulse">
+      <div className="h-[6.75rem] sm:h-[7.75rem]" />
+      <section className="bg-gradient-to-br from-indigo-900 to-indigo-950 pt-32 pb-14">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <div className="h-14 w-14 bg-white/20 rounded mx-auto mb-4" />
+          <div className="h-10 w-48 bg-white/20 rounded mx-auto mb-4" />
+          <div className="h-5 w-64 bg-white/15 rounded mx-auto" />
+        </div>
+      </section>
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-4">
+          <ProductGridSkeleton />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default function CategoryPage({ params }: Props) {
+  return (
+    <Suspense fallback={<CategoryPageSkeleton />}>
+      <CategoryPageContent params={params} />
+    </Suspense>
   );
 }

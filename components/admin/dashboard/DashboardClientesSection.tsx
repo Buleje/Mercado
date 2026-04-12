@@ -97,7 +97,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <Kpi label="Total Clientes" value={String(st.totalCustomers)} icon={Users} accent="text-violet-500" />
             <Kpi label="Atendidos" value={String(st.clientesAtendidos)} icon={Users} accent="text-indigo-500" />
-            <Kpi label="Rating Prom." value={`★ ${st.avgRating.toFixed(1)}`} icon={Star} accent="text-amber-500" />
+            <Kpi label="Rating Prom." value={`${st.avgRating.toFixed(1)}`} icon={Star} accent="text-amber-500" />
             <Kpi label="Reseñas" value={String(reviews.length)} icon={Star} accent="text-amber-400" />
           </div>
 
@@ -148,10 +148,10 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                               ))
                             }
                             <a
-                              href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, ¡gracias por ser cliente de Buleje! 🛒`)}`}
+                              href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, ¡gracias por ser cliente de Buleje!`)}`}
                               target="_blank" rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 hover:underline mt-0.5"
-                            >📲 Contactar por WA</a>
+                            >Contactar por WA</a>
                           </div>
                         );
                       })()}
@@ -258,7 +258,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                   </div>
 
                   <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                    <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">💡 Interpretación</div>
+                    <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Interpretación</div>
                     <p className="text-blue-600 dark:text-blue-300 text-[10px]">
                       Verde (≥50%): Excelente retención. Naranja (30-49%): Retención aceptable. Rojo (&lt;30%): Requiere acción inmediata. 
                       Los primeros 30 días son críticos para fidelizar clientes.
@@ -299,12 +299,12 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                               <div className="text-[9px] text-gray-400">sin comprar</div>
                             </div>
                             <a
-                              href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, ¡te extrañamos en Buleje! 🛒\n\n¿Necesitas algo? Tenemos novedades y ofertas especiales para ti. 😊`)}`}
+                              href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, ¡te extrañamos en Buleje!\n\n¿Necesitas algo? Tenemos novedades y ofertas especiales para ti.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[10px] font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/50 px-2 py-1 rounded transition-colors"
                             >
-                              📲 Contactar
+                              Contactar
                             </a>
                           </div>
                         </div>
@@ -328,12 +328,12 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                             <span className="text-[10px] text-gray-500">{c.orderCount} pedidos totales • Último: hace {c.daysSinceLastOrder} días</span>
                           </div>
                           <a
-                            href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, esperamos que estés bien. En Buleje tenemos tus productos favoritos listos para ti. ¿Te enviamos algo? 🚀`)}`}
+                            href={`https://wa.me/51${c.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${c.name}, esperamos que estés bien. En Buleje tenemos tus productos favoritos listos para ti. ¿Te enviamos algo?`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-[10px] font-bold text-amber-700 bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/50 dark:hover:bg-amber-800/50 px-2 py-1 rounded transition-colors shrink-0"
                           >
-                            📲 Reactivar
+                            Reactivar
                           </a>
                         </div>
                       ))}
@@ -341,7 +341,7 @@ export default function DashboardClientesSection({ st, expandAll, orders, custom
                   </div>
                 )}
                 <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 text-xs">
-                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">💡 Retención proactiva</div>
+                  <div className="font-semibold text-blue-700 dark:text-blue-400 mb-1">Retención proactiva</div>
                   <p className="text-blue-600 dark:text-blue-300 text-[10px]">
                     Los clientes VIP (top 20% en gasto) que no compran en 3+ semanas tienen alto riesgo de irse. Un mensaje personalizado recupera hasta 30% de clientes inactivos.
                   </p>

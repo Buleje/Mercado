@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import { RotateCcw, Plus, Loader2, Check, X, Package, Camera, CreditCard, Image as ImageIcon } from "lucide-react";
 import type { Sale } from "@/types/erp";
 
@@ -140,8 +141,7 @@ export default function ReturnsTab() {
                 </button>
                 {photoDataUrl && (
                   <div className="mt-2 relative inline-block">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={photoDataUrl} alt="Evidencia" className="h-24 w-24 object-cover rounded-xl border border-gray-200 dark:border-card-border" />
+                    <Image src={photoDataUrl} alt="Evidencia" width={96} height={96} className="object-cover rounded-xl border border-gray-200 dark:border-card-border" unoptimized />
                     <button type="button" onClick={() => setPhotoDataUrl(null)} className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5"><X className="h-3 w-3" /></button>
                   </div>
                 )}
@@ -189,8 +189,7 @@ export default function ReturnsTab() {
                 {r.customerPhone && <p className="text-xs text-gray-400">Cliente: {r.customerPhone}</p>}
               </div>
               {r.photoUrl && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={r.photoUrl} alt="Evidencia" className="h-16 w-16 object-cover rounded-xl border border-gray-200 dark:border-card-border shrink-0 cursor-pointer" onClick={() => window.open(r.photoUrl)} />
+                <Image src={r.photoUrl} alt="Evidencia" width={64} height={64} className="object-cover rounded-xl border border-gray-200 dark:border-card-border shrink-0 cursor-pointer" onClick={() => window.open(r.photoUrl)} />
               )}
               <div className="text-right shrink-0">
                 <p className="font-extrabold text-red-600">-S/{r.total.toFixed(2)}</p>

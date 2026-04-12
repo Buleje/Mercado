@@ -75,7 +75,7 @@ async function getDocPrefix(tenantId: string): Promise<string> {
   } catch {
     // Settings table may not exist; fallback silently
   }
-  return "BSM";
+  return "Buleje";
 }
 
 export const NotasCreditoDB = {

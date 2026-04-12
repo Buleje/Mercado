@@ -19,7 +19,7 @@ function FirstPurchaseBanner() {
     if (typeof window === "undefined") return false;
     try {
       const hasPurchased = localStorage.getItem("has-purchased") === "true";
-      const dismissed = localStorage.getItem("bsm-first-purchase-dismissed");
+      const dismissed = localStorage.getItem("buleje-first-purchase-dismissed");
       if (hasPurchased) return false;
       if (dismissed && Date.now() - Number(dismissed) < 86_400_000) return false;
       return true;
@@ -38,7 +38,7 @@ function FirstPurchaseBanner() {
 
   const handleClose = () => {
     setVisible(false);
-    try { localStorage.setItem("bsm-first-purchase-dismissed", String(Date.now())); } catch { /* silent */ }
+    try { localStorage.setItem("buleje-first-purchase-dismissed", String(Date.now())); } catch { /* silent */ }
   };
 
   return (

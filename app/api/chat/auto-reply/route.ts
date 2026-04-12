@@ -82,7 +82,7 @@ function findAutoReply(message: string): string | null {
 
 // ── Product search for inventory queries ──────────────────────────────────────
 
-async function searchProducts(query: string): Promise<string | null> {
+async function searchProducts(query: string, tenantId: string): Promise<string | null> {
   const normalized = query
     .toLowerCase()
     .normalize("NFD")
@@ -98,7 +98,7 @@ async function searchProducts(query: string): Promise<string | null> {
   if (!isProductQuery) return null;
 
   try {
-    const allProducts = await ProductsDB.getAll();
+    const allProducts = await ProductsDB.getAll(tenantId);
     const activeProducts = allProducts.filter(p => p.active !== false);
 
     // Extract the product name from the query by removing known verbs/words
@@ -149,6 +149,7 @@ export async function POST(req: NextRequest) {
   }
 
   const message = parsed.data.message;
+  const tenantId = req.headers.get("x-tenant-id") ?? "main";
 
   // 1. Try FAQ first (instant, no API cost)
   const faqReply = findAutoReply(message);
@@ -160,7 +161,7 @@ export async function POST(req: NextRequest) {
   const provider = getActiveProvider();
   if (provider) {
     // Search for real product info if the customer asks about products
-    const productInfo = await searchProducts(message);
+    const productInfo = await searchProducts(message, tenantId);
 
     try {
       const systemContent = `Eres el asistente virtual de esta tienda, parte de la plataforma Buleje — software ERP para bodegas del Peru.
@@ -191,7 +192,7 @@ NO inventes precios ni stock. Si no encuentras el producto en los datos, sugiere
   }
 
   // 3. No AI available or AI failed — try direct product response, then generic fallback
-  const directProducts = await searchProducts(message);
+  const directProducts = await searchProducts(message, tenantId);
   if (directProducts) {
     return NextResponse.json({
       reply: `📋 Esto encontré en nuestro inventario:\n\n${directProducts}\n\n¿Te gustaría hacer un pedido? 🛒`,

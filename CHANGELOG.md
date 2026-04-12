@@ -12,7 +12,7 @@
 * **admin:** refactor masivo - 23 hooks + 5 components + setup page (PR [#3](https://github.com/Buleje/Mercado/issues/3)) ([df95f7d](https://github.com/Buleje/Mercado/commit/df95f7d64eea8778bb05dd4a8eeaa728781941b2))
 * always show bypass login button on admin login page ([8b88d04](https://github.com/Buleje/Mercado/commit/8b88d04ac4df1239148a2da7b2691bbfe59b5736))
 * bypass login admin, mejoras UI, correcciones generales\n\n- Agregar toggle 'Acceso sin login' en configuración admin\n- Nuevo endpoint /api/auth/bypass para sesión sin credenciales\n- Rediseño Hero (aurora, categorías, stats)\n- Mejoras Header (XSS fix, mega menu), Footer (WhatsApp CTA)\n- Mejoras ProductCatalog, MobileBottomNav, CheckoutModal, OrderProgress\n- Fix POST /api/orders (phone opcional), fix settings API syntax\n- Campo adminBypassLogin en Prisma schema\n- SW deshabilitado en dev, filtro errores extensiones" ([6b173f7](https://github.com/Buleje/Mercado/commit/6b173f72801cb0b148240857bd8b414de2cee507))
-* initial commit - Bodega San Martin Next.js app ([5e0861f](https://github.com/Buleje/Mercado/commit/5e0861f84d9d4b070f7f700cca95bfbf3b32c4bc))
+* initial commit - Buleje Next.js app ([5e0861f](https://github.com/Buleje/Mercado/commit/5e0861f84d9d4b070f7f700cca95bfbf3b32c4bc))
 * integrate runtime multi-agent system — 6 domain agents, orchestrator, API endpoints ([0288fb7](https://github.com/Buleje/Mercado/commit/0288fb7b7fc9d18e7b3058094323988d5d9f7957))
 * remove order confirmation modal, enhance order progress with animated warning icon, set light mode as default ([9420b5b](https://github.com/Buleje/Mercado/commit/9420b5b887cde9081f83273e3842334d5c555578))
 * reposicionar elementos flotantes y condicionar features a primera compra ([4a54e1b](https://github.com/Buleje/Mercado/commit/4a54e1b096f7a68ee2b351f70297aceb6aab8220))
@@ -75,7 +75,7 @@
 
 ## Changelog
 
-All notable changes to Bodega San Martín will be automatically documented in this file.
+All notable changes to Buleje will be automatically documented in this file.
 
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 

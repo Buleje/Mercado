@@ -68,7 +68,10 @@ export default async function AboutPage() {
   let settings: Record<string, string | number | null> = {};
   try {
     const { SettingsDB } = await import("@/lib/db/settings.db");
-    const data = await SettingsDB.get();
+    const { headers } = await import("next/headers");
+    const hdrs = await headers();
+    const tenantId = hdrs.get("x-tenant-id") ?? "main";
+    const data = await SettingsDB.get(tenantId);
     settings = data as unknown as Record<string, string | number | null>;
   } catch {
     // Settings unavailable — use defaults

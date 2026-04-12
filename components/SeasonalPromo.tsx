@@ -111,7 +111,7 @@ export default function SeasonalPromo() {
       el.scrollIntoView({ behavior: "smooth" });
       setTimeout(() => {
         window.dispatchEvent(
-          new CustomEvent("bsm:selectCategory", { detail: promo.category })
+          new CustomEvent("buleje:selectCategory", { detail: promo.category })
         );
       }, 400);
     }

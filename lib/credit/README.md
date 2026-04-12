@@ -1,6 +1,6 @@
 # `lib/credit/` — Módulo de crédito Fiado Digital
 
-Motor del diferenciador #1 de Bodega San Martín: convertir el fiado de
+Motor del diferenciador #1 de Buleje: convertir el fiado de
 cuaderno en una experiencia software-first, auditable, y con transparencia
 radical para el cliente.
 

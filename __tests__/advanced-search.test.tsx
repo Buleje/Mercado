@@ -354,7 +354,7 @@ describe('AdvancedSearchPanel Component', () => {
 
     expect(input.value).toBe('manzana');
 
-    const clearButton = screen.getByTitle('Limpiar búsqueda');
+    const clearButton = screen.getByLabelText('Limpiar búsqueda');
     await user.click(clearButton);
 
     expect(input.value).toBe('');
@@ -379,7 +379,7 @@ describe('AdvancedSearchPanel Component', () => {
       />
     );
 
-    const filterButton = screen.getByTitle('Filtros');
+    const filterButton = screen.getByLabelText('Mostrar filtros');
     await user.click(filterButton);
 
     await waitFor(() => {
@@ -408,7 +408,7 @@ describe('AdvancedSearchPanel Component', () => {
     );
 
     // Open filters
-    const filterButton = screen.getByTitle('Filtros');
+    const filterButton = screen.getByLabelText('Mostrar filtros');
     await user.click(filterButton);
 
     // Set price range
@@ -507,7 +507,7 @@ describe('AdvancedSearchPanel Component', () => {
     );
 
     // Open filters
-    const filterButton = screen.getByTitle('Filtros');
+    const filterButton = screen.getByLabelText('Mostrar filtros');
     await user.click(filterButton);
 
     // Select a category

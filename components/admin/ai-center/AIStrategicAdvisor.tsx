@@ -183,15 +183,15 @@ export default function AIStrategicAdvisor({ data }: { data: BusinessData }) {
             <h2 className="text-sm font-bold text-gray-900 dark:text-white">Asesor Estratégico IA</h2>
             <p className="text-[10px] text-gray-500">
               {aiAvailable
-                ? "🟢 IA conectada — pregunta cualquier cosa sobre tu negocio"
-                : "🟡 Sin IA — configura una API key para consultas inteligentes"}
+                ? "IA conectada — pregunta cualquier cosa sobre tu negocio"
+                : "Sin IA — configura una API key para consultas inteligentes"}
             </p>
           </div>
           <button
             onClick={() => setShowMetrics(!showMetrics)}
             className="px-2 py-1 rounded-lg text-[10px] font-medium text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
           >
-            {showMetrics ? "Ocultar métricas" : "📊 Métricas"}
+            {showMetrics ? "Ocultar métricas" : "Métricas"}
           </button>
           <div className={cn(
             "px-2.5 py-1 rounded-full text-[10px] font-bold",
@@ -243,7 +243,7 @@ export default function AIStrategicAdvisor({ data }: { data: BusinessData }) {
               <Package className="w-3 h-3 inline mr-0.5" />{metrics.productosActivos} productos
             </span>
             <span className="text-[9px] text-gray-400">
-              📦 {metrics.pedidosPendientes} pendientes
+              <Package className="w-3 h-3 inline mr-0.5" />{metrics.pedidosPendientes} pendientes
             </span>
           </div>
         </div>

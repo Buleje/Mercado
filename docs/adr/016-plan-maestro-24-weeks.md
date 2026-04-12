@@ -1,4 +1,4 @@
-# ADR 016 — Plan Maestro 24 Semanas: Bodega San Martín Enterprise Marketplace
+# ADR 016 — Plan Maestro 24 Semanas: Buleje Enterprise Marketplace
 
 **Status:** Accepted
 **Date:** 2026-04-08

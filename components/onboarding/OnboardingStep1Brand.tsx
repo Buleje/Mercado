@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, type ChangeEvent } from 'react';
+import Image from "next/image";
 
 interface BrandData {
   nombre: string;
@@ -56,11 +57,10 @@ export default function OnboardingStep1Brand({ data, onChange, onNext }: Props) 
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="w-24 h-24 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden hover:border-[#00B4A6] transition-colors cursor-pointer group"
+          className="relative w-24 h-24 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center overflow-hidden hover:border-[#00B4A6] transition-colors cursor-pointer group"
         >
           {logoPreview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
+            <Image src={logoPreview} alt="Logo" fill className="object-cover" sizes="96px" unoptimized />
           ) : (
             <div className="text-center">
               <svg className="w-8 h-8 mx-auto text-gray-400 group-hover:text-[#00B4A6] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">

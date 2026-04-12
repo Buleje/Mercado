@@ -1,4 +1,4 @@
-# Production Readiness Checklist — Bodega San Martín
+# Production Readiness Checklist — Buleje
 
 ## Pre-deploy (one-time setup)
 

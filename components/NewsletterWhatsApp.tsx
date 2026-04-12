@@ -23,10 +23,10 @@ export default function NewsletterWhatsApp() {
     }
 
     try {
-      const stored = JSON.parse(localStorage.getItem("bsm-newsletter-subs") || "[]") as string[];
+      const stored = JSON.parse(localStorage.getItem("buleje-newsletter-subs") || "[]") as string[];
       if (!stored.includes(cleaned)) {
         stored.push(cleaned);
-        localStorage.setItem("bsm-newsletter-subs", JSON.stringify(stored));
+        localStorage.setItem("buleje-newsletter-subs", JSON.stringify(stored));
       }
     } catch {
       // Ignore storage errors
@@ -44,6 +44,7 @@ export default function NewsletterWhatsApp() {
   return (
     <section
       ref={ref}
+      aria-label="Suscripción de ofertas por WhatsApp"
       className="relative py-16 sm:py-24 overflow-hidden"
     >
       {/* Rich gradient background — inline style avoids Tailwind purge of arbitrary hex values */}
@@ -132,7 +133,7 @@ export default function NewsletterWhatsApp() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form onSubmit={handleSubmit} aria-label="Formulario de suscripción por WhatsApp" className="space-y-5">
                   {/* Header */}
                   <div className="text-center">
                     <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#25D366]/10 mb-3">
@@ -183,6 +184,7 @@ export default function NewsletterWhatsApp() {
                   {/* Submit */}
                   <button
                     type="submit"
+                    aria-label="Suscribirme a ofertas por WhatsApp"
                     className="w-full flex items-center justify-center gap-2.5 px-6 py-4 rounded-2xl font-extrabold text-white text-base bg-[#25D366] hover:bg-[#1ebe5a] active:scale-[0.98] transition-all shadow-lg shadow-[#25D366]/30 hover:shadow-xl hover:shadow-[#25D366]/40"
                   >
                     <MessageCircle className="w-5 h-5 fill-white" />

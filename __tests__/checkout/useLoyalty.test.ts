@@ -30,11 +30,11 @@ describe("getTierDiscountPct", () => {
   it("retorna los porcentajes correctos por tier", () => {
     expect(getTierDiscountPct("plata")).toBe(2);
     expect(getTierDiscountPct("oro")).toBe(4);
-    expect(getTierDiscountPct("diamante")).toBe(7);
+    expect(getTierDiscountPct("diamante")).toBe(6);
   });
 
   it("la tabla TIER_DISCOUNT contiene los 3 niveles esperados", () => {
-    expect(TIER_DISCOUNT).toEqual({ plata: 2, oro: 4, diamante: 7 });
+    expect(TIER_DISCOUNT).toEqual({ plata: 2, oro: 4, diamante: 6 });
   });
 });
 

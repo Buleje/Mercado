@@ -57,18 +57,18 @@ export default function TesoreriaModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "tesoreria" && <TreasuryTab />}
-      {sub === "liquidez" && <LiquidityForecastTab />}
-      {sub === "cheques" && <CheckManagementTab />}
-      {sub === "conciliacion" && <BankReconciliationTab />}
-      {sub === "cobros" && <CollectionCenterTab />}
-      {sub === "cxc" && <AccountsReceivableTab />}
-      {sub === "cuentas-pagar" && <PayablesTab />}
-      {sub === "calendario-cxp" && <CxPCalendar />}
-      {sub === "pagos" && <PaymentCalendar />}
-      {sub === "calendario" && <PaymentCalendarView />}
+      >
+        {sub === "tesoreria" && <TreasuryTab />}
+        {sub === "liquidez" && <LiquidityForecastTab />}
+        {sub === "cheques" && <CheckManagementTab />}
+        {sub === "conciliacion" && <BankReconciliationTab />}
+        {sub === "cobros" && <CollectionCenterTab />}
+        {sub === "cxc" && <AccountsReceivableTab />}
+        {sub === "cuentas-pagar" && <PayablesTab />}
+        {sub === "calendario-cxp" && <CxPCalendar />}
+        {sub === "pagos" && <PaymentCalendar />}
+        {sub === "calendario" && <PaymentCalendarView />}
+      </AdminTabBar>
     </div>
   );
 }

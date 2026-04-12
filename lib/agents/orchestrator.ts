@@ -499,8 +499,8 @@ class Orchestrator {
 // ── Global singleton ──────────────────────────────────────────────────────────
 
 const globalForOrchestrator = global as typeof global & {
-  __bsmOrchestrator?: Orchestrator;
+  __bulejeOrchestrator?: Orchestrator;
 };
 
 export const orchestrator: Orchestrator =
-  (globalForOrchestrator.__bsmOrchestrator ??= new Orchestrator());
+  (globalForOrchestrator.__bulejeOrchestrator ??= new Orchestrator());

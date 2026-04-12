@@ -9,7 +9,7 @@
 
 ## 1. Contexto
 
-Después de 2 sesiones intensivas (2026-04-09 y 2026-04-10), el proyecto Bodega San Martín completó la transición de Nivel 4 a Nivel 5 de autonomía. Este ADR documenta el estado final y cierra el ciclo Phase 2 → Phase 3 → Level 5.
+Después de 2 sesiones intensivas (2026-04-09 y 2026-04-10), el proyecto Buleje completó la transición de Nivel 4 a Nivel 5 de autonomía. Este ADR documenta el estado final y cierra el ciclo Phase 2 → Phase 3 → Level 5.
 
 ## 2. Decisión
 

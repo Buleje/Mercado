@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
       notifOrderUpdates: true,
       notifPromotions: true,
       notifRestock: true,
-    });
+    }, auth.tenantId);
 
     // Update new ficha fields if provided
     const fichaUpdate: Record<string, unknown> = {};

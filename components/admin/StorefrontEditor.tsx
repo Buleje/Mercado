@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import {
   Save, Eye, Loader2, Check, GripVertical,
   Megaphone, Layout, Grid3x3, ShoppingBag, Tag,
@@ -262,13 +263,6 @@ type NavItem = {
 
 const NAV_ITEM_DEFAULTS: Omit<NavItem, "visible">[] = [
   {
-    id: "inicio",
-    label: "Inicio",
-    description: "Página principal con hero, categorías y ofertas",
-    icon: <Home className="h-4 w-4" />,
-    iconBg: "bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400",
-  },
-  {
     id: "tienda",
     label: "Tienda",
     description: "Catálogo completo de productos",
@@ -395,11 +389,39 @@ function SectionEditorModal({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/products")
-      .then(r => r.ok ? r.json() : [])
-      .then((data: Array<{ id: number; name: string; image: string; price: number; category: string }>) => {
-        setAllProducts(Array.isArray(data) ? data : []);
-      })
+    fetch("/api/products", { cache: "no-store" })
+        .then(r => r.ok ? r.json() : [])
+        .then((data: unknown) => {
+          const parsed = Array.isArray(data)
+            ? data
+            : Array.isArray((data as { products?: unknown[] })?.products)
+            ? (data as { products: unknown[] }).products
+            : [];
+
+          const normalized = parsed
+            .map((item) => {
+              const product = item as {
+                id?: number | string;
+                name?: string;
+                image?: string;
+                imageUrl?: string;
+                price?: number | string;
+                category?: string;
+              };
+              const id = Number(product.id);
+              if (!Number.isFinite(id) || !product.name) return null;
+              return {
+                id,
+                name: product.name,
+                image: product.image ?? product.imageUrl ?? "",
+                price: Number(product.price) || 0,
+                category: product.category ?? "",
+              };
+            })
+            .filter((item): item is { id: number; name: string; image: string; price: number; category: string } => item !== null);
+
+          setAllProducts(normalized);
+        })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -488,10 +510,9 @@ function SectionEditorModal({
               <div className="mt-2 space-y-1.5">
                 {assignedProducts.map((p, idx) => (
                   <div key={p.id} className="flex items-center gap-2 p-2 rounded-xl bg-gray-50 dark:bg-surface border border-gray-100 dark:border-card-border">
-                    <div className="h-9 w-9 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+                    <div className="relative h-9 w-9 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                       {p.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.image} alt="" className="h-full w-full object-cover" />
+                        <Image src={p.image} alt="" fill className="object-cover" sizes="36px" />
                       ) : (
                         <div className="h-full flex items-center justify-center text-gray-300"><Package className="h-4 w-4" /></div>
                       )}
@@ -547,10 +568,9 @@ function SectionEditorModal({
                     onClick={() => addProduct(p.id)}
                     className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left"
                   >
-                    <div className="h-8 w-8 rounded-lg overflow-hidden bg-gray-100 shrink-0">
+                    <div className="relative h-8 w-8 rounded-lg overflow-hidden bg-gray-100 shrink-0">
                       {p.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.image} alt="" className="h-full w-full object-cover" />
+                        <Image src={p.image} alt="" fill className="object-cover" sizes="32px" />
                       ) : (
                         <div className="h-full flex items-center justify-center text-gray-300"><Package className="h-4 w-4" /></div>
                       )}
@@ -698,10 +718,9 @@ function SortableRow({
 // ── Componente principal ──────────────────────────────────────────────────────
 
 export default function StorefrontEditor() {
-  const [sections, setSections] = useState<StorefrontSection[]>([]);
   const [tiendaSections, setTiendaSections] = useState<TiendaSection[]>([]);
   const [navItems, setNavItems] = useState<NavItem[]>([]);
-  const [activeTab, setActiveTab] = useState<"inicio" | "tienda" | "navegacion">("inicio");
+  const [activeTab, setActiveTab] = useState<"tienda" | "navegacion">("tienda");
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -720,15 +739,6 @@ export default function StorefrontEditor() {
     fetch("/api/settings", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((s) => {
-        // Home sections
-        const visibleKeys: SectionKey[] =
-          (s?.storeTheme?.sections as SectionKey[] | undefined) ??
-          (s?.homepage?.visibleSections as SectionKey[] | undefined) ??
-          [];
-        const orderKeys: SectionKey[] =
-          (s?.storeTheme?.sectionOrder as SectionKey[] | undefined) ?? [];
-        setSections(buildSectionsFromData(visibleKeys, orderKeys));
-
         // Tienda sections
         const tiendaVisible: TiendaSectionKey[] =
           (s?.storeTheme?.tiendaSections as TiendaSectionKey[] | undefined) ?? [];
@@ -749,7 +759,6 @@ export default function StorefrontEditor() {
         })));
       })
       .catch(() => {
-        setSections(buildSectionsFromData([], []));
         setTiendaSections(buildTiendaSectionsFromData([], []));
         setNavItems(NAV_ITEM_DEFAULTS.map(def => ({
           ...def,
@@ -757,13 +766,6 @@ export default function StorefrontEditor() {
         })));
       })
       .finally(() => setLoadingSettings(false));
-  }, []);
-
-  const toggleSection = useCallback((key: SectionKey) => {
-    setSections((prev) =>
-      prev.map((s) => (s.key === key ? { ...s, enabled: !s.enabled } : s))
-    );
-    setSaved(false);
   }, []);
 
   const toggleTiendaSection = useCallback((key: TiendaSectionKey) => {
@@ -784,27 +786,17 @@ export default function StorefrontEditor() {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    if (activeTab === "inicio") {
-      setSections((prev) => {
-        const oldIndex = prev.findIndex((s) => s.key === active.id);
-        const newIndex = prev.findIndex((s) => s.key === over.id);
-        return arrayMove(prev, oldIndex, newIndex);
-      });
-    } else {
-      setTiendaSections((prev) => {
-        const oldIndex = prev.findIndex((s) => s.key === active.id);
-        const newIndex = prev.findIndex((s) => s.key === over.id);
-        return arrayMove(prev, oldIndex, newIndex);
-      });
-    }
+    setTiendaSections((prev) => {
+      const oldIndex = prev.findIndex((s) => s.key === active.id);
+      const newIndex = prev.findIndex((s) => s.key === over.id);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
     setSaved(false);
-  }, [activeTab]);
+  }, []);
 
   // Guardar: persiste visibilidad + orden en storeTheme + navLinks
   const handleSave = useCallback(async () => {
     setSaving(true);
-    const visibleSections = sections.filter((s) => s.enabled).map((s) => s.key);
-    const sectionOrder = sections.map((s) => s.key);
     const tiendaVisible = tiendaSections.filter((s) => s.enabled).map((s) => s.key);
     const tiendaOrder = tiendaSections.map((s) => s.key);
     const navLinksPayload = navItems.map(n => ({ id: n.id, visible: n.visible }));
@@ -814,8 +806,6 @@ export default function StorefrontEditor() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           storeTheme: {
-            sections: visibleSections,
-            sectionOrder,
             tiendaSections: tiendaVisible,
             tiendaSectionOrder: tiendaOrder,
             sectionContent,
@@ -832,13 +822,13 @@ export default function StorefrontEditor() {
     } finally {
       setSaving(false);
     }
-  }, [sections, tiendaSections, navItems, sectionContent]);
+  }, [tiendaSections, navItems, sectionContent]);
 
-  const currentSections = activeTab === "inicio" ? sections : activeTab === "tienda" ? tiendaSections : [];
+  const currentSections = activeTab === "tienda" ? tiendaSections : [];
   const enabledCount = activeTab === "navegacion"
     ? navItems.filter(n => n.visible).length
-    : currentSections.filter((s) => s.enabled).length;
-  const totalCount = activeTab === "navegacion" ? navItems.length : currentSections.length;
+    : tiendaSections.filter((s) => s.enabled).length;
+  const totalCount = activeTab === "navegacion" ? navItems.length : tiendaSections.length;
 
   if (loadingSettings) {
     return (
@@ -862,7 +852,7 @@ export default function StorefrontEditor() {
 
         <div className="flex items-center gap-2 shrink-0">
           <a
-            href={activeTab === "inicio" ? "/" : "/tienda"}
+            href="/tienda"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-200 dark:border-card-border text-sm font-semibold text-foreground hover:bg-gray-50 dark:hover:bg-surface transition-colors min-h-[44px]"
@@ -895,21 +885,8 @@ export default function StorefrontEditor() {
         </div>
       </div>
 
-      {/* Page tabs: Inicio vs Tienda */}
+      {/* Page tabs: Tienda vs Navegación */}
       <div className="flex gap-1 p-1 bg-gray-100 dark:bg-surface rounded-xl">
-        <button
-          type="button"
-          onClick={() => setActiveTab("inicio")}
-          className={cn(
-            "flex items-center gap-2 flex-1 justify-center px-4 py-2 rounded-lg text-sm font-semibold transition-all",
-            activeTab === "inicio"
-              ? "bg-white dark:bg-card text-foreground shadow-sm"
-              : "text-muted hover:text-foreground"
-          )}
-        >
-          <Home className="h-4 w-4" />
-          Inicio
-        </button>
         <button
           type="button"
           onClick={() => setActiveTab("tienda")}
@@ -945,15 +922,13 @@ export default function StorefrontEditor() {
           <ToggleRight className="h-4 w-4 text-primary" />
         </div>
         <p className="text-xs text-foreground/70">
-          {activeTab === "inicio"
-            ? "Arrastra las filas para reordenar las secciones de la página principal."
-            : activeTab === "tienda"
+          {activeTab === "tienda"
             ? "Controla qué secciones ve el cliente en la tienda. Si desactivas una, el espacio se ajusta automáticamente."
             : "Elige qué enlaces aparecen en el menú de navegación de tu tienda."}
         </p>
       </div>
 
-      {/* Lista de secciones con dnd-kit (Inicio/Tienda tabs) */}
+      {/* Lista de secciones con dnd-kit (Tienda tab) */}
       {activeTab !== "navegacion" ? (
         <DndContext
           sensors={sensors}
@@ -965,16 +940,7 @@ export default function StorefrontEditor() {
             strategy={verticalListSortingStrategy}
           >
             <div className="space-y-2">
-              {activeTab === "inicio"
-                ? sections.map((section) => (
-                    <SortableRow
-                      key={section.key}
-                      section={section}
-                      onToggle={() => toggleSection(section.key)}
-                      onEdit={() => setEditingSection({ key: section.key, label: section.label })}
-                    />
-                  ))
-                : tiendaSections.map((section) => (
+              {tiendaSections.map((section) => (
                     <SortableRow
                       key={section.key}
                       section={section}
@@ -1037,9 +1003,7 @@ export default function StorefrontEditor() {
         <button
           type="button"
           onClick={() => {
-            if (activeTab === "inicio") {
-              setSections((prev) => prev.map((s) => ({ ...s, enabled: true })));
-            } else if (activeTab === "tienda") {
+            if (activeTab === "tienda") {
               setTiendaSections((prev) => prev.map((s) => ({ ...s, enabled: true })));
             } else {
               setNavItems((prev) => prev.map((n) => ({ ...n, visible: true })));
@@ -1053,9 +1017,7 @@ export default function StorefrontEditor() {
         <button
           type="button"
           onClick={() => {
-            if (activeTab === "inicio") {
-              setSections((prev) => prev.map((s) => ({ ...s, enabled: false })));
-            } else if (activeTab === "tienda") {
+            if (activeTab === "tienda") {
               setTiendaSections((prev) => prev.map((s) => ({ ...s, enabled: false })));
             } else {
               setNavItems((prev) => prev.map((n) => ({ ...n, visible: false })));

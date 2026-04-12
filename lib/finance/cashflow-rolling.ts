@@ -4,7 +4,7 @@ import { toNumOrZero } from "@/lib/decimal-utils";
 import { PlatformSettingsDB } from "@/lib/db/platform-settings.db";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Rolling 13-week cashflow projection — Bodega San Martín
+// Rolling 13-week cashflow projection — Buleje
 //
 // Item #11 del Master Roadmap. Diferenciador #1 vs Loyverse / Alegra / Vendemás.
 // Estas plataformas sólo muestran el saldo actual o una proyección lineal de

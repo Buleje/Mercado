@@ -9,7 +9,7 @@ function generateReferralCode(phone: string): string {
   const last4 = phone.replace(/\D/g, "").slice(-4);
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const sum = last4.split("").reduce((a, d) => a + parseInt(d, 10), 0);
-  return `BSM${last4}${chars[sum % chars.length]}`;
+  return `Buleje${last4}${chars[sum % chars.length]}`;
 }
 
 const STEPS = [
@@ -28,7 +28,7 @@ export default function ReferralBanner() {
   useEffect(() => {
     if (!customer?.phone) return;
     try {
-      const saved = localStorage.getItem(`bsm-referrals-${customer.phone}`);
+      const saved = localStorage.getItem(`buleje-referrals-${customer.phone}`);
       if (saved) startTransition(() => setReferralCount(parseInt(saved, 10) || 0));
     } catch {}
   }, [customer?.phone]);

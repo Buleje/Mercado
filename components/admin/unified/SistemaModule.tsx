@@ -38,11 +38,11 @@ export default function SistemaModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "salud" && <SystemHealthTab />}
-      {sub === "backup" && <BackupRestoreTab />}
-      {sub === "webhooks" && <WebhooksTab />}
+      >
+        {sub === "salud" && <SystemHealthTab />}
+        {sub === "backup" && <BackupRestoreTab />}
+        {sub === "webhooks" && <WebhooksTab />}
+      </AdminTabBar>
     </div>
   );
 }

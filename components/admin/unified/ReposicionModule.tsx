@@ -38,11 +38,11 @@ export default function ReposicionModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "auto" && <AutoReorderTab />}
-      {sub === "dinamico" && <DynamicReorderTab />}
-      {sub === "prediccion" && <DemandPredictionTab />}
+      >
+        {sub === "auto" && <AutoReorderTab />}
+        {sub === "dinamico" && <DynamicReorderTab />}
+        {sub === "prediccion" && <DemandPredictionTab />}
+      </AdminTabBar>
     </div>
   );
 }

@@ -482,7 +482,7 @@ export async function POST(req: NextRequest) {
     //    earliest-expiring Batch rows). Fire-and-forget per CLAUDE.md #7.
     for (const item of body.items) {
       if (item.id > 0) {
-        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, saved.id, "venta_online").catch(() => {});
+        InventoryMovementsDB.decrementFEFO(item.id, item.quantity, tenantId, saved.id, "venta_online").catch(() => {});
       }
     }
     // Fire-and-forget email notification (never blocks the response)
@@ -610,7 +610,7 @@ export async function POST(req: NextRequest) {
               maxUses: 1,
               active: true,
               expiresAt,
-            });
+            }, tenantId);
             // Notify via push notification
             sendPushToPhone(customerPhone, {
               title: `🎁 ¡Premio de fidelidad!`,

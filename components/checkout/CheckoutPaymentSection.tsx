@@ -8,6 +8,7 @@ import {
   Loader2,
   CheckCircle2,
   X,
+  Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { YapePaymentPanel } from "./YapePaymentPanel";
@@ -41,6 +42,10 @@ export interface CheckoutPaymentSectionProps {
   tierDiscount: number;
   tierDiscountPct: number;
   loyaltyTier: string | null;
+  // Loyalty redemption
+  loyaltyPoints: number | null;
+  redemptionSoles: number;
+  onRedemptionChange: (soles: number) => void;
   // Payment method
   paymentMethod: PaymentMethod | null;
   onPaymentMethodChange: (method: PaymentMethod) => void;
@@ -76,6 +81,9 @@ export function CheckoutPaymentSection({
   tierDiscount,
   tierDiscountPct,
   loyaltyTier,
+  loyaltyPoints,
+  redemptionSoles,
+  onRedemptionChange,
   paymentMethod,
   onPaymentMethodChange,
   yapeEnabled,
@@ -271,6 +279,44 @@ export function CheckoutPaymentSection({
             </span>
           </div>
         )}
+        {/* Loyalty points redemption */}
+        {loyaltyPoints !== null && loyaltyPoints >= 50 && (() => {
+          const PTS_PER_SOL = 50;
+          const maxSoles = Math.floor(loyaltyPoints / PTS_PER_SOL);
+          return (
+            <div className="px-4 py-3 bg-sky-50/50 dark:bg-sky-900/10 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sky-700 dark:text-sky-400 font-semibold text-sm flex items-center gap-1">
+                  <Gift className="h-3.5 w-3.5" /> Canjear puntos
+                  <span className="text-xs font-normal opacity-70">({loyaltyPoints} pts)</span>
+                </span>
+                {redemptionSoles > 0 && (
+                  <span className="font-bold text-sky-600 text-sm">
+                    &minus;S/{redemptionSoles.toFixed(2)}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="range"
+                  min={0}
+                  max={maxSoles}
+                  step={1}
+                  value={redemptionSoles}
+                  onChange={(e) => onRedemptionChange(Number(e.target.value))}
+                  className="flex-1 h-1.5 accent-sky-500 cursor-pointer"
+                  aria-label="Soles a canjear con puntos"
+                />
+                <span className="text-xs text-sky-600 font-bold w-16 text-right">
+                  S/{redemptionSoles} ({redemptionSoles * PTS_PER_SOL} pts)
+                </span>
+              </div>
+              <p className="text-[10px] text-sky-500 dark:text-sky-400/70">
+                50 puntos = S/ 1 · Máximo S/{maxSoles} con tus puntos
+              </p>
+            </div>
+          );
+        })()}
         {tip > 0 && (
           <div className="flex justify-between px-4 py-2.5 text-sm bg-amber-50/50 dark:bg-amber-900/10">
             <span className="text-amber-700 dark:text-amber-400 font-semibold">
@@ -294,6 +340,17 @@ export function CheckoutPaymentSection({
             S/{finalTotal.toFixed(2)}
           </m.span>
         </div>
+        {/* Points you'll earn with this purchase */}
+        {loyaltyPoints !== null && finalTotal >= 5 && (
+          <div className="flex justify-between items-center px-4 py-2 bg-primary/5 dark:bg-primary/10">
+            <span className="text-xs text-primary font-medium flex items-center gap-1">
+              ⭐ Ganarás con esta compra
+            </span>
+            <span className="text-xs font-bold text-primary">
+              +{Math.floor(finalTotal)} puntos
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Payment method */}

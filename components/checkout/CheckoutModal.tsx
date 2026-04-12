@@ -95,7 +95,7 @@ export default function CheckoutModal() {
   // El backend recompone — esto solo es UI/preview
   const finalTotal = Math.max(
     0,
-    cartTotal - discount - state.coupon.discount - tierDiscount + state.payment.tip
+    cartTotal - discount - state.coupon.discount - tierDiscount - state.loyalty.redemptionSoles + state.payment.tip
   );
 
   // ── Hooks de side effects ───────────────────────────────────────
@@ -231,6 +231,7 @@ export default function CheckoutModal() {
             tierDiscount={tierDiscount}
             tierDiscountPct={tierDiscountPct}
             effectiveCustomer={effectiveCustomer}
+            loyaltyPoints={state.loyalty.points}
             yape={yape}
             cashEnabled={cashEnabled}
             onValidateCoupon={coupon.validate}

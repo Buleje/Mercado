@@ -1,6 +1,6 @@
 # Cross-cutting — Research 2026-04-09
 
-Auditoría de capas transversales de Bodega San Martín. Inventario + top 13 mejoras estratégicas priorizadas por riesgo / velocidad / revenue. Scope: seguridad, performance, PWA/mobile, SEO, AI/ML, observabilidad, notificaciones, i18n, feature flags.
+Auditoría de capas transversales de Buleje. Inventario + top 13 mejoras estratégicas priorizadas por riesgo / velocidad / revenue. Scope: seguridad, performance, PWA/mobile, SEO, AI/ML, observabilidad, notificaciones, i18n, feature flags.
 
 ---
 

@@ -28,8 +28,8 @@ type ApprovalConfig = {
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 
-const ITEMS_KEY  = "bsm_approval_items";
-const CONFIG_KEY = "bsm_approval_config";
+const ITEMS_KEY  = "buleje_approval_items";
+const CONFIG_KEY = "buleje_approval_config";
 
 const DEFAULT_CONFIG: ApprovalConfig = {
   purchaseThreshold:    500,

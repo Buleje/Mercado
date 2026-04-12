@@ -78,10 +78,10 @@ function WhatsAppContactSection({
 
   // Pulse animation for first 3 visits
   useEffect(() => {
-    const visits = parseInt(sessionStorage.getItem("bsm-wa-visits") ?? "0", 10);
+    const visits = parseInt(sessionStorage.getItem("buleje-wa-visits") ?? "0", 10);
     if (visits < 3) {
       setShowPulse(true);
-      sessionStorage.setItem("bsm-wa-visits", String(visits + 1));
+      sessionStorage.setItem("buleje-wa-visits", String(visits + 1));
     }
   }, []);
 

@@ -27,7 +27,7 @@ type ProductSearchResult = {
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "bsm_price_schedules";
+const STORAGE_KEY = "buleje_price_schedules";
 
 function loadSchedules(): PriceSchedule[] {
   if (typeof window === "undefined") return [];

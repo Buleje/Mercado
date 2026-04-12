@@ -95,14 +95,14 @@ describe("checkoutReducer", () => {
       type: "RESET",
       initial: INITIAL_CHECKOUT_STATE,
     });
-    expect(reset.step).toBe("cuenta");
+    expect(reset.step).toBe("datos");
   });
 });
 
 describe("useCheckoutState", () => {
   it("expone state, dispatch y reset", () => {
     const { result } = renderHook(() => useCheckoutState());
-    expect(result.current.state.step).toBe("cuenta");
+    expect(result.current.state.step).toBe("datos");
     expect(typeof result.current.dispatch).toBe("function");
     expect(typeof result.current.reset).toBe("function");
   });
@@ -128,7 +128,7 @@ describe("useCheckoutState", () => {
     expect(result.current.state.customer.name).toBe("Brandon");
 
     act(() => result.current.reset());
-    expect(result.current.state.step).toBe("cuenta");
+    expect(result.current.state.step).toBe("datos");
     expect(result.current.state.customer.name).toBe("");
   });
 });

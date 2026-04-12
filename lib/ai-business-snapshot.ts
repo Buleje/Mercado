@@ -127,13 +127,13 @@ export async function generateBusinessSnapshot(
 
   const [products, orders, customers, sales, payables, purchases, reviews] =
     await Promise.all([
-      ProductsDB.getAll(),
-      OrdersDB.getAll(),
-      CustomersDB.getAll(),
-      SalesDB.getAll(),
-      PayablesDB.getAll(),
-      PurchasesDB.getAll(),
-      ReviewsDB.getAll(),
+      ProductsDB.getAll(tenantId),
+      OrdersDB.getAll(tenantId),
+      CustomersDB.getAll(tenantId),
+      SalesDB.getAll(tenantId),
+      PayablesDB.getAll(tenantId),
+      PurchasesDB.getAll(tenantId),
+      ReviewsDB.getAll(tenantId),
     ]);
 
   // Fiados, turnos, préstamos — use tenantId

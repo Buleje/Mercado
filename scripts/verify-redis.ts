@@ -12,7 +12,7 @@
  */
 
 async function main() {
-  console.log("🔍 Verificando Redis para Bodega San Martín...\n");
+  console.log("🔍 Verificando Redis para Buleje...\n");
 
   // Check 1: REDIS_URL
   const url = process.env.REDIS_URL;

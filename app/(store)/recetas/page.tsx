@@ -1,5 +1,12 @@
 import { Metadata } from "next";
+import dynamic from "next/dynamic";
 import RecetarioClient from "@/components/store/RecetarioClient";
+
+const MarketplaceNavbar = dynamic(
+  () => import("@/components/marketplace/MarketplaceNavbar"),
+  { ssr: true }
+);
+const Footer = dynamic(() => import("@/components/Footer"), { ssr: true });
 
 export const metadata: Metadata = {
   title: "Recetario Peruano — Buleje | Recetas con ingredientes de bodega",
@@ -19,5 +26,11 @@ export const metadata: Metadata = {
 };
 
 export default function RecetasPage() {
-  return <RecetarioClient />;
+  return (
+    <main id="main-content">
+      <MarketplaceNavbar />
+      <RecetarioClient />
+      <Footer />
+    </main>
+  );
 }

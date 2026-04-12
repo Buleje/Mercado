@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { tenantFetch } from "@/lib/tenant-fetch";
 import type { DbOrder, OrderStatus } from "@/lib/jsondb";
 
 interface UseOrderActionsProps {
@@ -18,7 +19,7 @@ export function useOrderActions({ orders, setOrders, setDetailOrder, load }: Use
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const updateStatus = async (id: string, status: OrderStatus) => {
-    const res = await fetch(`/api/orders/${id}`, {
+    const res = await tenantFetch(`/api/orders/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
@@ -36,7 +37,7 @@ export function useOrderActions({ orders, setOrders, setDetailOrder, load }: Use
   };
 
   const patchOrder = async (id: string, patch: Partial<DbOrder>) => {
-    await fetch(`/api/orders/${id}`, {
+    await tenantFetch(`/api/orders/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
@@ -49,7 +50,7 @@ export function useOrderActions({ orders, setOrders, setDetailOrder, load }: Use
 
   const rejectYape = async (id: string) => {
     if (!confirm("¿Rechazar este pedido? El Yape es inválido y se eliminará el pedido.")) return;
-    await fetch(`/api/orders/${id}`, { method: "DELETE" });
+    await tenantFetch(`/api/orders/${id}`, { method: "DELETE" });
     setOrders(prev => prev.filter(o => o.id !== id));
     setDetailOrder(prev => prev?.id === id ? null : prev);
   };
@@ -80,7 +81,7 @@ export function useOrderActions({ orders, setOrders, setDetailOrder, load }: Use
 
   const confirmDelete = async () => {
     if (!confirmDeleteId) return;
-    await fetch(`/api/orders/${confirmDeleteId}`, { method: "DELETE" });
+    await tenantFetch(`/api/orders/${confirmDeleteId}`, { method: "DELETE" });
     setConfirmDeleteId(null);
     void load();
   };

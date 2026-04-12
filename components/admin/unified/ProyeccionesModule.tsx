@@ -43,11 +43,11 @@ export default function ProyeccionesModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "simulador" && <ScenarioSimulatorTab />}
-      {sub === "estacionalidad" && <SeasonalityTab />}
-      {sub === "comparador" && <PeriodComparatorTab />}
+      >
+        {sub === "simulador" && <ScenarioSimulatorTab />}
+        {sub === "estacionalidad" && <SeasonalityTab />}
+        {sub === "comparador" && <PeriodComparatorTab />}
+      </AdminTabBar>
     </div>
   );
 }

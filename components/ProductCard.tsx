@@ -16,7 +16,7 @@ import { trackView } from "@/components/RecentlyViewed";
 type LiveProduct = Product & { stock?: number; stockMin?: number; rating?: number; reviewCount?: number; isTopSeller?: boolean; comparePrice?: number; promoEndDate?: string };
 
 /* U4: Selling fast tracker — counts add-to-cart events per product in a rolling 24h window */
-const SELLING_FAST_KEY = "bsm-selling-fast";
+const SELLING_FAST_KEY = "buleje-selling-fast";
 const SELLING_FAST_THRESHOLD = 3;
 function recordPurchaseActivity(productId: number) {
   try {
@@ -94,7 +94,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
   const [recentlyViewed, setRecentlyViewed] = useState(false);
   useEffect(() => {
     try {
-      const items: { id: number }[] = JSON.parse(localStorage.getItem("bsm-recently-viewed") || "[]");
+      const items: { id: number }[] = JSON.parse(localStorage.getItem("buleje-recently-viewed") || "[]");
       setRecentlyViewed(items.slice(0, 5).some((p) => p.id === product.id));
     } catch {}
   }, [product.id]);
@@ -127,6 +127,13 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
     product.stock != null &&
     product.stockMin != null &&
     product.stock <= product.stockMin;
+  /* #30: Scarcity real — badge "Solo quedan N" when stock <= 5, even without stockMin */
+  const isScarcity =
+    !isOutOfStock &&
+    !isLowStock &&
+    product.stock != null &&
+    product.stock <= 5 &&
+    product.stock > 1;
 
   // Guard against ghost clicks on mobile: prevents add/remove from firing within 300ms of each other
   const lastActionRef = useRef(0);
@@ -268,6 +275,12 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
       {isLowStock && product.stock !== 1 && (
         <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm bg-amber-500 animate-pulse">
           ¡Quedan {product.stock}!
+        </span>
+      )}
+      {/* #30: Scarcity real — stock <= 5 even when stockMin not configured */}
+      {isScarcity && (
+        <span className="absolute top-3 right-3 z-10 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm bg-red-500 animate-pulse">
+          Solo quedan {product.stock}
         </span>
       )}
 
@@ -418,6 +431,12 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                   ⚠ ¡Solo quedan {product.stock}!
                 </span>
               )}
+              {/* #30: Scarcity text below price */}
+              {isScarcity && (
+                <span className="block text-[9px] font-bold text-red-600 dark:text-red-400 mt-0.5 animate-pulse">
+                  ⚠ Solo quedan {product.stock}
+                </span>
+              )}
               {isOutOfStock && (
                 <Link
                   href={`/tienda/${getProductSlug(product)}`}
@@ -446,7 +465,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                 <button
                   onClick={handleDecrement}
                   className="flex items-center justify-center h-10 w-8 sm:h-11 sm:w-9 text-white hover:bg-primary-dark transition-colors"
-                  aria-label="Reducir"
+                  aria-label={`Reducir cantidad de ${product.name}`}
                 >
                   <Minus className="h-4 w-4" />
                 </button>
@@ -467,7 +486,7 @@ function ProductCardComponent({ product, onQuickView }: ProductCardProps) {
                 <button
                   onClick={handleAdd}
                   className="flex items-center justify-center h-10 w-8 sm:h-11 sm:w-9 text-white hover:bg-primary-dark transition-colors"
-                  aria-label="Aumentar"
+                  aria-label={`Aumentar cantidad de ${product.name}`}
                 >
                   <Plus className="h-4 w-4" />
                 </button>

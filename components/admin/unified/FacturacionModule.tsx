@@ -40,12 +40,12 @@ export default function FacturacionModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "facturacion" && <InvoicingTab />}
-      {sub === "e-factura" && <EInvoiceTab />}
-      {sub === "impuestos" && <TaxTab />}
-      {sub === "cxp" && <PayablesTab />}
+      >
+        {sub === "facturacion" && <InvoicingTab />}
+        {sub === "e-factura" && <EInvoiceTab />}
+        {sub === "impuestos" && <TaxTab />}
+        {sub === "cxp" && <PayablesTab />}
+      </AdminTabBar>
     </div>
   );
 }

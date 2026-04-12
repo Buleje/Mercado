@@ -23,7 +23,7 @@ async function requirePlatform(req: NextRequest) {
  * idéntico al que produce /api/auth/login y lo escribe en la cookie de sesión.
  */
 export async function POST(req: NextRequest) {
-  // 1. Verificar sesión SuperAdmin (cookie bsm-platform-sess)
+  // 1. Verificar sesión SuperAdmin (cookie buleje-platform-sess)
   const platformSession = await requirePlatform(req);
   if (!platformSession) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });

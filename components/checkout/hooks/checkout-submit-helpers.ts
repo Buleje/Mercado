@@ -168,7 +168,7 @@ export function saveLastOrder(
 ) {
   try {
     localStorage.setItem(
-      "bsm-last-order",
+      "buleje-last-order",
       JSON.stringify({
         id: orderId,
         items: items.map((i) => ({

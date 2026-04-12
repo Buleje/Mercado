@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Heart, Gift, Star, ListChecks } from "lucide-react";
+import { Heart, Gift, Star, ListChecks, BarChart3, Share2 } from "lucide-react";
 import AdminModuleHeader from "@/components/admin/shared/AdminModuleHeader";
 import AdminTabBar from "@/components/admin/shared/AdminTabBar";
 
@@ -15,12 +15,16 @@ const LoyaltyTab = dynamic(() => import("@/components/admin/LoyaltyTab"), { load
 const PointsProgramTab = dynamic(() => import("@/components/admin/PointsProgramTab"), { loading: S });
 const WishListAdminTab = dynamic(() => import("@/components/admin/WishListAdminTab"), { loading: S });
 const LoyaltyRedeemTab = dynamic(() => import("@/components/admin/LoyaltyRedeemTab"), { loading: S });
+const LoyaltyMetricsTab = dynamic(() => import("@/components/admin/LoyaltyMetricsTab"), { loading: S });
+const ReferralProgramTab = dynamic(() => import("@/components/admin/ReferralProgramTab"), { loading: S });
 
 const MODULE_ID = "fidelizacion";
 
 const TABS = [
   { id: "fidelizacion", label: "Fidelización", icon: Heart },
   { id: "canjear", label: "Canjear Puntos", icon: Gift },
+  { id: "metricas", label: "Métricas", icon: BarChart3 },
+  { id: "referidos", label: "Referidos", icon: Share2 },
   { id: "puntos", label: "Programa Puntos", icon: Star },
   { id: "wishlist", label: "Wish Lists", icon: ListChecks },
 ];
@@ -40,12 +44,14 @@ export default function FidelizacionModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "fidelizacion" && <LoyaltyTab />}
-      {sub === "canjear" && <LoyaltyRedeemTab />}
-      {sub === "puntos" && <PointsProgramTab />}
-      {sub === "wishlist" && <WishListAdminTab />}
+      >
+        {sub === "fidelizacion" && <LoyaltyTab />}
+        {sub === "canjear" && <LoyaltyRedeemTab />}
+        {sub === "metricas" && <LoyaltyMetricsTab />}
+        {sub === "referidos" && <ReferralProgramTab />}
+        {sub === "puntos" && <PointsProgramTab />}
+        {sub === "wishlist" && <WishListAdminTab />}
+      </AdminTabBar>
     </div>
   );
 }

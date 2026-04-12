@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       maxUses: 1,
       active: true,
       expiresAt,
-    });
+    }, tenantId);
 
     return NextResponse.json({ code: coupon.code, expiresAt }, { status: 201 });
   } catch {

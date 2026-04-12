@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import PostDeliverySurvey from "./PostDeliverySurvey";
 
-const LS_PREFIX = "bsm-pending-survey-";
+const LS_PREFIX = "buleje-pending-survey-";
 const MIN_WAIT_MS = 30 * 60 * 1000; // 30 minutes
 const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -16,7 +16,7 @@ const MAX_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours
  * shows a modal after 30 min but before 24h.
  *
  * To mark a survey as pending from anywhere:
- *   localStorage.setItem('bsm-pending-survey-{orderId}', Date.now().toString())
+ *   localStorage.setItem('buleje-pending-survey-{orderId}', Date.now().toString())
  */
 export default function PostDeliverySurveyTrigger() {
   const [pendingSurvey, setPendingSurvey] = useState<{ orderId: string; ts: number } | null>(null);
@@ -82,8 +82,8 @@ export default function PostDeliverySurveyTrigger() {
         } catch { /* silent */ }
       }
     };
-    window.addEventListener("bsm:orderDelivered", handler);
-    return () => window.removeEventListener("bsm:orderDelivered", handler);
+    window.addEventListener("buleje:orderDelivered", handler);
+    return () => window.removeEventListener("buleje:orderDelivered", handler);
   }, []);
 
   if (!pendingSurvey || dismissed) return null;

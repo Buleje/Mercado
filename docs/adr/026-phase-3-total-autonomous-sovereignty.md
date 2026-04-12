@@ -3,7 +3,7 @@
 **Status:** 🟢 Accepted
 **Fecha:** 2026-04-09
 **Autor:** Brandon (Buleje) + Claude Code (Lead Systems Architect)
-**Contexto del proyecto:** Bodega San Martín (ERP/e-commerce multi-tenant Pucallpa)
+**Contexto del proyecto:** Buleje (ERP/e-commerce multi-tenant Pucallpa)
 **Supersede:** ninguno · **Relacionado con:** ADR-025 (Phase 2 Autonomous OS), ADR-016 (plan 24 semanas)
 
 ---
@@ -92,7 +92,7 @@ Adicionalmente, el deploy carecía de gates enterprise automatizados y verificac
 |---|---|---|---|
 | **A: Quedarse en Phase 2** | Sin cambios, funciona | Sin FinOps, sin prod sync, sin growth | Brandon pidió Nivel 5 |
 | **B: Solo hooks de deploy** | Protege deploys | No capitaliza el legado ni conecta prod | Incompleto |
-| **C: Usar plugin ECC para todo** | Menos código propio | Genérico, no adaptado al stack BSM | No cubre growth ni finops específico |
+| **C: Usar plugin ECC para todo** | Menos código propio | Genérico, no adaptado al stack Buleje | No cubre growth ni finops específico |
 | **D: Phase 3 completa** (elegida) | Cubre los 3 gaps + deploy gates | Mayor complejidad | — |
 
 ## 5. Verificación

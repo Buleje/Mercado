@@ -76,7 +76,7 @@ describe("mailer-onboarding: sendWelcomeEmail", () => {
     await sendWelcomeEmail(sampleData);
 
     const call = mockSendMail.mock.calls[0][0];
-    expect(call.html).toContain("buleje.com/mi-bodega");
+    expect(call.html).toContain("buleje.pe/mi-bodega");
   });
 
   it("includes plan label for enterprise plan", async () => {

@@ -70,7 +70,7 @@ Hora 48-72: Notificación
 ```
 ASUNTO: Notificación de incidente de seguridad — Ley 29733 Art. 38
 
-Titular del Banco de Datos: [Brandon Buleje / Bodega San Martín]
+Titular del Banco de Datos: [Brandon Buleje / Buleje]
 RUC: [XXXXXXXXXXX]
 Fecha de detección: [YYYY-MM-DD HH:MM]
 Fecha de notificación: [YYYY-MM-DD] (dentro de 72 horas)
@@ -104,7 +104,7 @@ De acuerdo con la Ley 29733, usted tiene derecho a:
 Para ejercer estos derechos, contacte a: [email]
 
 Atentamente,
-Bodega San Martín
+Buleje
 ```
 
 ## 5. Lista de Encargados de Tratamiento

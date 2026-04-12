@@ -1,5 +1,5 @@
-const CACHE_NAME = "bsm-v8";
-const CATALOG_CACHE = "bsm-catalog-v2";
+const CACHE_NAME = "buleje-v8";
+const CATALOG_CACHE = "buleje-catalog-v2";
 const STATIC_URLS = [
   "/",
   "/tienda",
@@ -14,9 +14,9 @@ const STATIC_URLS = [
   "/offline",
   "/admin",
 ];
-const API_CACHE = "bsm-api-v4";
-const IMG_CACHE = "bsm-img-v4";
-const ASSET_CACHE = "bsm-assets-v3";
+const API_CACHE = "buleje-api-v4";
+const IMG_CACHE = "buleje-img-v4";
+const ASSET_CACHE = "buleje-assets-v3";
 
 // Max cached items per cache to prevent unbounded growth
 const IMG_CACHE_LIMIT = 200;
@@ -279,7 +279,7 @@ async function syncPendingSales() {
 
 function openOfflineDB() {
   return new Promise((resolve, reject) => {
-    const req = indexedDB.open("bsm-offline", 1);
+    const req = indexedDB.open("buleje-offline", 1);
     req.onupgradeneeded = (e) => {
       const db = e.target.result;
       if (!db.objectStoreNames.contains("pendingSales")) {

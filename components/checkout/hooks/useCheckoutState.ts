@@ -44,7 +44,7 @@ const INITIAL_COUPON: CouponState = {
   validating: false,
 };
 
-const INITIAL_LOYALTY: LoyaltyState = { points: null, tier: null };
+const INITIAL_LOYALTY: LoyaltyState = { points: null, tier: null, redemptionSoles: 0 };
 
 const INITIAL_PAYMENT: PaymentState = {
   method: null,
@@ -82,7 +82,7 @@ const INITIAL_DNI_LOOKUP: DniLookupState = {
 };
 
 export const INITIAL_CHECKOUT_STATE: CheckoutState = {
-  step: "cuenta",
+  step: "datos",
   customer: INITIAL_CUSTOMER,
   address: INITIAL_ADDRESS,
   coupon: INITIAL_COUPON,

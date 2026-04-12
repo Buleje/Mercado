@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "orderId, date, slot requeridos" }, { status: 400 });
     }
 
-    const result = await DeliverySlotsDB.set({ orderId, date, slot, notes });
+    const result = await DeliverySlotsDB.set({ orderId, date, slot, notes, tenantId: auth.tenantId });
     return NextResponse.json(result, { status: 201 });
   } catch (err) {
     const { payload, status } = toErrorPayload(err);

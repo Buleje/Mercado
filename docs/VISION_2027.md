@@ -1,4 +1,4 @@
-# VISION 2027 — Bodega San Martín
+# VISION 2027 — Buleje
 
 > De bodega familiar en Pucallpa a plataforma SaaS para 100 bodegas en Perú.
 
@@ -14,7 +14,7 @@
 Una bodega familiar en Pucallpa que vendía con cuaderno y calculadora. Hoy: un ERP digital con 131 modelos de datos, 485+ endpoints, sistema de pagos (Stripe + MercadoPago + Yape), y gestión de inventario FEFO.
 
 ### A dónde vamos
-**Bodega San Martín no es un software para UNA bodega. Es una PLATAFORMA para TODAS las bodegas.**
+**Buleje no es un software para UNA bodega. Es una PLATAFORMA para TODAS las bodegas.**
 
 | Fase | Período | Meta | Tenants | MRR objetivo |
 |---|---|---|---|---|
@@ -26,7 +26,7 @@ Una bodega familiar en Pucallpa que vendía con cuaderno y calculadora. Hoy: un 
 
 ### Propuesta de valor por tipo de bodega
 
-| Tipo | Dolor actual | Solución BSM | Precio sugerido |
+| Tipo | Dolor actual | Solución Buleje | Precio sugerido |
 |---|---|---|---|
 | **Bodega familiar** (1-2 personas) | Cuaderno, no sabe cuánto vende | POS digital + inventario + WhatsApp | $30/mes |
 | **Bodega mediana** (3-5 personas) | Excel, pierde dinero en fiados | Todo lo anterior + fiado digital + reportes | $50/mes |
@@ -69,7 +69,7 @@ LTV/CAC ratio: 12-30x (excepcional)
 
 ## 3. Tecnologías 2027 a Vigilar
 
-| Tecnología | Por qué importa para BSM | Cuándo evaluar |
+| Tecnología | Por qué importa para Buleje | Cuándo evaluar |
 |---|---|---|
 | **Claude 5 / Opus next-gen** | Agentes más baratos y capaces. Más autonomía nocturna. | Cuando salga |
 | **Edge AI (on-device)** | POS offline en zonas sin internet (selva). | 2027 Q1 |
@@ -104,7 +104,7 @@ LTV/CAC ratio: 12-30x (excepcional)
 
 ### ✅ Los 3 diferenciadores que sí importan
 
-1. **Fiado Digital** — Ningún software en Perú gestiona el fiado (crédito informal) bien. BSM tiene score crediticio + planes de pago + recordatorios WhatsApp. Esto SOLO existe aquí.
+1. **Fiado Digital** — Ningún software en Perú gestiona el fiado (crédito informal) bien. Buleje tiene score crediticio + planes de pago + recordatorios WhatsApp. Esto SOLO existe aquí.
 2. **Inventario FEFO** — Para bodegas que venden productos perecibles. Alerta de vencimiento + rotación automática. Casi ningún POS barato tiene esto.
 3. **Integración SUNAT nativa** — Boletas y facturas electrónicas sin terceros. El bodeguero no necesita un contador para cumplir con SUNAT.
 
@@ -114,7 +114,7 @@ LTV/CAC ratio: 12-30x (excepcional)
 
 | Métrica | Por qué importa | Meta 2027 |
 |---|---|---|
-| **Tenants activos** | Cuántas bodegas usan BSM diariamente | 100 |
+| **Tenants activos** | Cuántas bodegas usan Buleje diariamente | 100 |
 | **GMV mensual** | Volumen total de ventas procesadas | $500k+ |
 | **Retención 30 días** | % de bodegas que siguen usando después de 1 mes | > 80% |
 | **NPS** | ¿Lo recomendarían? | > 50 |

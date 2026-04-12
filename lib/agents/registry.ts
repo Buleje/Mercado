@@ -100,8 +100,8 @@ class AgentRegistry {
 // ── Global singleton ──────────────────────────────────────────────────────────
 
 const globalForRegistry = global as typeof global & {
-  __bsmAgentRegistry?: AgentRegistry;
+  __bulejeAgentRegistry?: AgentRegistry;
 };
 
 export const agentRegistry: AgentRegistry =
-  (globalForRegistry.__bsmAgentRegistry ??= new AgentRegistry());
+  (globalForRegistry.__bulejeAgentRegistry ??= new AgentRegistry());

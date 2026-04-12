@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { logActivity } from "@/lib/activity-logger";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { emitirBoleta } from "@/lib/integrations/sunat";
 
 /**
  * POST /api/invoices/boleta
@@ -101,21 +102,44 @@ export async function POST(req: NextRequest) {
       qrData: `${process.env.SUNAT_RUC ?? "00000000000"}|03|${serie}|${correlativo}|${igv.toFixed(2)}|${total.toFixed(2)}|${new Date().toISOString().slice(0, 10)}|${clienteDocTipo === "DNI" ? "1" : "6"}|${clienteDocNumero ?? "00000000"}`,
     };
 
-    // In production: send to SUNAT PSE here
-    // const sunatResponse = await sendToSunat(boleta);
+    // Enviar a SUNAT via Nubefact (fire-and-forget si falla, no bloquea la venta)
+    let sunatResult: { success: boolean; hash?: string; pdf_url?: string } = { success: false };
+    try {
+      sunatResult = await emitirBoleta(order.tenantId, {
+        orderId,
+        clienteDni: clienteDocNumero ?? undefined,
+        clienteNombre,
+        items: items.map((item) => ({
+          codigo: "-",
+          descripcion: item.name,
+          cantidad: item.quantity,
+          precioConIgv: item.price,
+          unidad: "NIU",
+        })),
+      });
+    } catch (sunatErr) {
+      logger.warn("[invoices/boleta] Nubefact call failed — boleta saved locally", { error: String(sunatErr) });
+    }
 
     logActivity(
       "boleta_generada",
       "facturacion",
-      `Boleta ${numero} generada para ${clienteNombre} - S/${total.toFixed(2)}`,
+      `Boleta ${numero} para ${clienteNombre} - S/${total.toFixed(2)} — SUNAT: ${sunatResult.success ? "OK" : "pendiente"}`,
     ).catch(() => {});
 
-    logger.info("[invoices/boleta] Boleta generada", { numero, total });
+    logger.info("[invoices/boleta] Boleta generada", { numero, total, sunat: sunatResult.success });
 
     return NextResponse.json({
       ok: true,
       boleta,
-      mensaje: "Boleta generada. Conectar con PSE (Nubefact/Efact) para envío a SUNAT.",
+      sunat: {
+        enviada: sunatResult.success,
+        hash: sunatResult.hash ?? null,
+        pdfUrl: sunatResult.pdf_url ?? null,
+      },
+      mensaje: sunatResult.success
+        ? `Boleta ${numero} emitida y enviada a SUNAT exitosamente.`
+        : `Boleta ${numero} guardada. Envío a SUNAT pendiente (se reintentará via cron).`,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

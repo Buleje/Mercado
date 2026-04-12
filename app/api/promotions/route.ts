@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       active: data.active ?? true,
       createdAt: new Date().toISOString(),
       expiresAt: data.expiresAt || undefined,
-    });
+    }, auth.tenantId);
     logger.info("[promotions] POST created", { id: promo.id, name: promo.name, requestId: req.headers.get("x-request-id") ?? undefined });
     return NextResponse.json(promo, { status: 201 });
   } catch (e) {

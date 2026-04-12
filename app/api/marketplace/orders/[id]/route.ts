@@ -41,7 +41,20 @@ export async function GET(
     return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
   }
 
-  return NextResponse.json({ data: order });
+  return NextResponse.json({
+    data: {
+      ...order,
+      total: Number(order.total),
+      couponDiscount: order.couponDiscount != null ? Number(order.couponDiscount) : null,
+      discountAmount: order.discountAmount != null ? Number(order.discountAmount) : null,
+      totalCogs: order.totalCogs != null ? Number(order.totalCogs) : null,
+      items: order.items.map((i) => ({
+        ...i,
+        price: Number(i.price),
+        costPrice: i.costPrice != null ? Number(i.costPrice) : null,
+      })),
+    },
+  });
 }
 
 // ── PATCH /api/marketplace/orders/[id] — update status ────────────────────────

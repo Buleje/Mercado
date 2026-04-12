@@ -90,7 +90,7 @@ export default function SmartRemindersTab() {
     setReminders(prev => prev.map(x => x.id === id ? { ...x, status: nextStatus } : x));
     try {
       await fetch(`/api/reminders?id=${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: nextStatus }) });
-      if (nextStatus === "completado") toast.success("Recordatorio completado ✓");
+      if (nextStatus === "completado") toast.success("Recordatorio completado");
     } catch { toast.error("Error al actualizar el recordatorio"); }
   };
 

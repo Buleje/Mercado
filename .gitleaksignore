@@ -1,1 +1,2 @@
-# Excluir cache de Turbopack (compiled bundles, no source secrets)
+# False positives — localStorage keys, not secrets
+.gitleaksignore:generic-api-key:2

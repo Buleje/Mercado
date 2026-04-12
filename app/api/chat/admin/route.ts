@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const msg = await ChatDB.add(
+      auth.tenantId,
       phone,
       typeof customerName === "string" ? customerName : "Cliente",
       "admin",
@@ -57,7 +58,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    await ChatDB.markRead(phone);
+    await ChatDB.markRead(auth.tenantId, phone);
     return NextResponse.json({ ok: true });
   } catch (e) {
     logger.error("[chat/admin] PATCH error", { err: e instanceof Error ? e.message : String(e) });

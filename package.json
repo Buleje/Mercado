@@ -26,6 +26,7 @@
     "cap:open:android": "npx cap open android",
     "cap:open:ios": "npx cap open ios",
     "app:build": "next build && npx cap sync",
+    "app:build:android": "next build && npx cap sync android && npx cap open android",
     "prepare": "husky",
     "openapi:generate": "tsx scripts/generate-openapi.ts",
     "storybook": "storybook dev -p 6006",
@@ -95,6 +96,7 @@
     "tailwind-merge": "^3.5.0",
     "web-push": "^3.6.7",
     "web-vitals": "^5.1.0",
+    "xstate": "^5.30.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

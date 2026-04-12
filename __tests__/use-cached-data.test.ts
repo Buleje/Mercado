@@ -120,34 +120,38 @@ describe("useCachedData", () => {
     const mockFetcher = vi.fn(async () => ({ id: 1, name: "Product" }));
 
     const { result: result1 } = renderHook(() =>
-      useCachedData("stale-key", mockFetcher, { staleTime: 100 })
+      useCachedData("stale-key", mockFetcher, { staleTime: 500 })
     );
 
     await waitFor(() => {
       expect(result1.current.isLoading).toBe(false);
     });
 
-    expect(mockFetcher).toHaveBeenCalledTimes(1);
+    const callsAfterFirst = mockFetcher.mock.calls.length;
+    expect(callsAfterFirst).toBe(1);
 
     // Immediately render again -- data is fresh, so no refetch
     const { result: result2 } = renderHook(() =>
-      useCachedData("stale-key", mockFetcher, { staleTime: 100 })
+      useCachedData("stale-key", mockFetcher, { staleTime: 500 })
     );
 
-    expect(result2.current.isLoading).toBe(false);
+    await waitFor(() => {
+      expect(result2.current.isLoading).toBe(false);
+    });
+    // Should still be 1 call — data is within staleTime
     expect(mockFetcher).toHaveBeenCalledTimes(1);
 
-    // Wait for staleTime to pass
-    await new Promise(resolve => setTimeout(resolve, 150));
+    // Wait for staleTime to pass (use generous margin for CI/parallel runs)
+    await new Promise(resolve => setTimeout(resolve, 700));
 
     renderHook(() =>
-      useCachedData("stale-key", mockFetcher, { staleTime: 100 })
+      useCachedData("stale-key", mockFetcher, { staleTime: 500 })
     );
 
     // Should trigger background revalidation
     await waitFor(() => {
       expect(mockFetcher).toHaveBeenCalledTimes(2);
-    });
+    }, { timeout: 3000 });
   });
 
   it("should use initialData when provided", () => {

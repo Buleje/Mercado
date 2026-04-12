@@ -85,6 +85,7 @@ export interface AdminNavigationSidebar {
   presentationMode: boolean;
   isSuperAdminImpersonating: boolean;
   activeTenantLogo: string | null | undefined;
+  activeTenantSlug: string | null | undefined;
   userName: string;
   userRole: string;
   openAccordionCategories: Set<string>;
@@ -166,6 +167,7 @@ export function AdminNavigation({
         isSuperAdminImpersonating={sidebar.isSuperAdminImpersonating}
         activeTenantName={shared.activeTenantName}
         activeTenantLogo={sidebar.activeTenantLogo}
+        activeTenantSlug={sidebar.activeTenantSlug}
         userName={sidebar.userName}
         userRole={sidebar.userRole}
         tab={shared.tab}

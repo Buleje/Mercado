@@ -130,7 +130,7 @@ export default function FiadoFormModal({
                         )}>
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-gray-900 dark:text-white">{clienteResumen.nombre}</span>
-                            <span className="text-xs text-amber-500">{"★".repeat(clienteResumen.score)}{"☆".repeat(5 - clienteResumen.score)} ({clienteResumen.score}/5)</span>
+                            <span className="text-xs text-amber-500">{clienteResumen.score}/5</span>
                           </div>
                           <p className="text-xs text-gray-600 dark:text-gray-400">
                             Historial: {clienteResumen.pagados} fiados pagados de {clienteResumen.total} total

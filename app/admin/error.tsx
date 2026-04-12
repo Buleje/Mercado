@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { AlertTriangle } from "lucide-react";
 
 export default function AdminError({
   error,
@@ -25,7 +26,11 @@ export default function AdminError({
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 p-8 shadow-lg text-center">
-        <div className="text-4xl mb-4">⚠️</div>
+        <div className="mb-4 flex justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-300">
+            <AlertTriangle className="h-7 w-7" />
+          </div>
+        </div>
         <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">
           Algo salio mal
         </h1>

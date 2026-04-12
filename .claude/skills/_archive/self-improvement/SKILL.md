@@ -1,7 +1,7 @@
 ---
 name: self-improvement
 description: |
-  Compound Engineering loop para Bodega San Martín. Activar AUTOMÁTICAMENTE al final
+  Compound Engineering loop para Buleje. Activar AUTOMÁTICAMENTE al final
   de cada sesión productiva o cuando Brandon diga "mejora tu setup", "qué aprendiste
   hoy", "auto-mejora", "evoluciona", "self-improvement", "compound", "aprendé de esta
   sesión". Este skill hace que Claude Code aprenda de cada sesión y codifique las
@@ -17,11 +17,11 @@ agent: Plan
 model: opus
 ---
 
-# Self-Improvement — Compound Engineering loop para Bodega San Martín
+# Self-Improvement — Compound Engineering loop para Buleje
 
 Este skill es el **motor de auto-mejora** del sistema Claude Code de Brandon.
 Cada vez que corre, el sistema se vuelve más inteligente sobre el proyecto
-Bodega San Martín y más resistente a los errores del pasado.
+Buleje y más resistente a los errores del pasado.
 
 ## Filosofía — Compound Engineering (EveryInc)
 
@@ -36,7 +36,7 @@ cada feature inyecta complejidad. Compound Engineering invierte esa ecuación:
 
 **Meta ambiciosa:** después de 30-50 ciclos de este skill, el sistema debería
 ser indistinguible de tener un equipo senior de 5 devs que llevan 2 años en
-Bodega San Martín.
+Buleje.
 
 ## Cuándo se activa
 

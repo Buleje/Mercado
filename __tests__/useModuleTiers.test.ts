@@ -15,7 +15,7 @@ describe("useModuleTiers", () => {
   });
 
   it("should restore saved tier from localStorage", () => {
-    localStorage.setItem("bsm-module-tier", "principal");
+    localStorage.setItem("buleje-module-tier", "principal");
     const { result } = renderHook(() => useModuleTiers());
     expect(result.current.tier).toBe("principal");
   });
@@ -26,11 +26,11 @@ describe("useModuleTiers", () => {
     act(() => result.current.setTier("intermedio"));
 
     expect(result.current.tier).toBe("intermedio");
-    expect(localStorage.getItem("bsm-module-tier")).toBe("intermedio");
+    expect(localStorage.getItem("buleje-module-tier")).toBe("intermedio");
   });
 
   it("should ignore invalid localStorage values and default to avanzado", () => {
-    localStorage.setItem("bsm-module-tier", "invalido");
+    localStorage.setItem("buleje-module-tier", "invalido");
     const { result } = renderHook(() => useModuleTiers());
     expect(result.current.tier).toBe("avanzado");
   });
@@ -48,7 +48,7 @@ describe("useModuleTiers", () => {
   });
 
   it("should hide avanzado modules when tier is principal", () => {
-    localStorage.setItem("bsm-module-tier", "principal");
+    localStorage.setItem("buleje-module-tier", "principal");
     const { result } = renderHook(() => useModuleTiers());
 
     // Principal modules visible
@@ -66,7 +66,7 @@ describe("useModuleTiers", () => {
   });
 
   it("should show principal + intermedio modules when tier is intermedio", () => {
-    localStorage.setItem("bsm-module-tier", "intermedio");
+    localStorage.setItem("buleje-module-tier", "intermedio");
     const { result } = renderHook(() => useModuleTiers());
 
     expect(result.current.isModuleVisible("ventas-caja")).toBe(true); // principal
@@ -75,7 +75,7 @@ describe("useModuleTiers", () => {
   });
 
   it("should treat unknown modules as always visible", () => {
-    localStorage.setItem("bsm-module-tier", "principal");
+    localStorage.setItem("buleje-module-tier", "principal");
     const { result } = renderHook(() => useModuleTiers());
     expect(result.current.isModuleVisible("modulo-inexistente")).toBe(true);
   });
@@ -97,7 +97,7 @@ describe("useModuleTiers", () => {
   // ── Stats ─────────────────────────────────────────────────────────────────
 
   it("should report correct stats for principal tier", () => {
-    localStorage.setItem("bsm-module-tier", "principal");
+    localStorage.setItem("buleje-module-tier", "principal");
     const { result } = renderHook(() => useModuleTiers());
 
     const principalCount = Object.values(MODULE_TIER_MAP).filter(t => t === "principal").length;
@@ -121,13 +121,13 @@ describe("useModuleTiers", () => {
 
   it("should restore overrides from localStorage", () => {
     const saved = { "analytics-bi": "principal" };
-    localStorage.setItem("bsm-module-tier-overrides", JSON.stringify(saved));
+    localStorage.setItem("buleje-module-tier-overrides", JSON.stringify(saved));
     const { result } = renderHook(() => useModuleTiers());
     expect(result.current.overrides).toEqual(saved);
   });
 
   it("should allow overriding a module tier", () => {
-    localStorage.setItem("bsm-module-tier", "principal");
+    localStorage.setItem("buleje-module-tier", "principal");
     const { result } = renderHook(() => useModuleTiers());
 
     // analytics-bi is avanzado by default — hidden in principal tier
@@ -158,7 +158,7 @@ describe("useModuleTiers", () => {
 
     act(() => result.current.setModuleTier("fiados", "principal"));
 
-    const stored = JSON.parse(localStorage.getItem("bsm-module-tier-overrides") || "{}");
+    const stored = JSON.parse(localStorage.getItem("buleje-module-tier-overrides") || "{}");
     expect(stored["fiados"]).toBe("principal");
   });
 
@@ -172,11 +172,11 @@ describe("useModuleTiers", () => {
     act(() => result.current.resetOverrides());
 
     expect(result.current.overrides).toEqual({});
-    expect(localStorage.getItem("bsm-module-tier-overrides")).toBeNull();
+    expect(localStorage.getItem("buleje-module-tier-overrides")).toBeNull();
   });
 
   it("should affect visibility when override changes module tier", () => {
-    localStorage.setItem("bsm-module-tier", "intermedio");
+    localStorage.setItem("buleje-module-tier", "intermedio");
     const { result } = renderHook(() => useModuleTiers());
 
     // rendimiento is avanzado — hidden in intermedio

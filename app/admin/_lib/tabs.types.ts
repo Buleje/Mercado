@@ -42,8 +42,16 @@ export type Tab =
   | "mi-perfil"
   // Módulo rendimiento técnico
   | "rendimiento"
+  // Facturación electrónica SUNAT
+  | "facturacion"
+  // Página individual de la tienda
+  | "pagina-inicio"
+  // Predicción de demanda y reorden automático
+  | "forecasting"
   // BullMQ Bull Board — monitoreo de colas
-  | "colas";
+  | "colas"
+  // Soporte unificado (WhatsApp + reviews pendientes)
+  | "support-inbox";
 
 /**
  * Subconjunto de Tabs cuya navegación directa por URL/hash/localStorage
@@ -73,10 +81,14 @@ export const VALID_TABS: readonly Tab[] = [
   "contratos",
   "sugerencias-ia",
   "metas-logros",
+  "forecasting",
   "marketplace",
   "delivery-partners",
   "delivery-live",
   "marketplace-chat",
   "store-customizer",
   "colas",
+  "support-inbox",
+  "facturacion",
+  "pagina-inicio",
 ] as const;

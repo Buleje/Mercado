@@ -42,13 +42,13 @@ export default function ProyectosTareasModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "proyectos" && <ProjectsTab />}
-      {sub === "tareas" && <TasksTab />}
-      {sub === "kanban" && <KanbanBoardTab />}
-      {sub === "metas" && <GoalsTab />}
-      {sub === "tablero" && <GoalTrackerTab />}
+      >
+        {sub === "proyectos" && <ProjectsTab />}
+        {sub === "tareas" && <TasksTab />}
+        {sub === "kanban" && <KanbanBoardTab />}
+        {sub === "metas" && <GoalsTab />}
+        {sub === "tablero" && <GoalTrackerTab />}
+      </AdminTabBar>
     </div>
   );
 }

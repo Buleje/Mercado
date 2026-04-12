@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { slugify, categories } from "@/data/products";
@@ -58,7 +60,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function ProductDetailPage({ params }: Props) {
+function ProductDetailSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 animate-pulse">
+      <div className="max-w-4xl mx-auto px-4 py-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="aspect-square bg-gray-200 dark:bg-gray-800 rounded-2xl" />
+          <div className="space-y-4 pt-4">
+            <div className="h-8 w-48 bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="h-6 w-24 bg-gray-200 dark:bg-gray-800 rounded" />
+            <div className="h-10 w-32 bg-gray-200 dark:bg-gray-800 rounded" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+async function ProductDetailContent({ params }: Props) {
+  await connection();
   const { slug } = await params;
   const product = await getProductBySlugFromDB(slug);
 
@@ -86,7 +106,7 @@ export default async function ProductDetailPage({ params }: Props) {
             "@type": "Product",
             name: product.name,
             image: product.image,
-            sku: `BSM-${product.id}`,
+            sku: `Buleje-${product.id}`,
             description: `${product.name} — ${category?.label ?? "Producto"} disponible con delivery. Paga con Yape o efectivo. Buleje.`,
             category: category?.label,
             brand: {
@@ -135,5 +155,13 @@ export default async function ProductDetailPage({ params }: Props) {
       />
       <ProductDetailClient product={product} />
     </>
+  );
+}
+
+export default function ProductDetailPage({ params }: Props) {
+  return (
+    <Suspense fallback={<ProductDetailSkeleton />}>
+      <ProductDetailContent params={params} />
+    </Suspense>
   );
 }

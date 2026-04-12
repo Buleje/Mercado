@@ -5,7 +5,7 @@ import { Shield, Zap, Rocket, X, Sparkles, Settings2, RotateCcw } from "lucide-r
 import { cn } from "@/lib/utils";
 import { type ModuleTier, TIER_LABELS, MODULE_TIER_MAP } from "@/hooks/useModuleTiers";
 
-const TOUR_KEY = "bsm-tier-tour-seen";
+const TOUR_KEY = "buleje-tier-tour-seen";
 
 const TIER_ICONS: Record<ModuleTier, React.ElementType> = {
   principal: Shield,

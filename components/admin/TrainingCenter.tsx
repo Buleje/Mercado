@@ -104,7 +104,7 @@ const TUTORIALS: Tutorial[] = [
   },
 ];
 
-const LS_PREFIX = "bsm_training_";
+const LS_PREFIX = "buleje_training_";
 
 // ── Component ────────────────────────────────────────────────────────────────
 

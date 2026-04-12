@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from "next/image";
 import dynamic from 'next/dynamic';
 
 const BarcodeScannerDynamic = dynamic(() => import('./BarcodeScanner'), { ssr: false });
@@ -358,9 +359,8 @@ export default function ConteoFisicoWizard() {
               {selected ? (
                 <div className="space-y-4">
                   {selected.product?.image && (
-                    <div className="w-20 h-20 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden mx-auto">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={selected.product.image} alt={selected.product.name} className="w-full h-full object-cover" />
+                    <div className="relative w-20 h-20 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden mx-auto">
+                      <Image src={selected.product.image} alt={selected.product.name} fill className="object-cover" sizes="80px" />
                     </div>
                   )}
                   <div className="text-center">

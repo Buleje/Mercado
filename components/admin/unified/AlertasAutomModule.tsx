@@ -59,12 +59,12 @@ export default function AlertasAutomModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "alertas" && <AutoAlertEngineTab />}
-      {sub === "recordatorios" && <SmartRemindersTab />}
-      {sub === "flujos" && <WorkflowTemplatesTab />}
-      {sub === "reglas" && <BusinessRulesTab />}
+      >
+        {sub === "alertas" && <AutoAlertEngineTab />}
+        {sub === "recordatorios" && <SmartRemindersTab />}
+        {sub === "flujos" && <WorkflowTemplatesTab />}
+        {sub === "reglas" && <BusinessRulesTab />}
+      </AdminTabBar>
     </div>
   );
 }

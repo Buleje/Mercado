@@ -72,7 +72,7 @@ run_claude_in_worktree() {
   (
     cd "$path"
     claude -p "
-    Estás en el worktree '${name}' del proyecto Bodega San Martín.
+    Estás en el worktree '${name}' del proyecto Buleje.
     Directorio: $(pwd)
     Branch: $(git branch --show-current)
 

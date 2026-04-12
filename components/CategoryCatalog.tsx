@@ -395,7 +395,7 @@ export default function CategoryCatalog({
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "grid";
     return (
-      (localStorage.getItem("bsm-view-mode") as "grid" | "list") || "grid"
+      (localStorage.getItem("buleje-view-mode") as "grid" | "list") || "grid"
     );
   });
 
@@ -575,7 +575,7 @@ export default function CategoryCatalog({
               <button
                 onClick={() => {
                   setViewMode("grid");
-                  localStorage.setItem("bsm-view-mode", "grid");
+                  localStorage.setItem("buleje-view-mode", "grid");
                 }}
                 className={cn(
                   "p-2.5 rounded-lg transition-all",
@@ -590,7 +590,7 @@ export default function CategoryCatalog({
               <button
                 onClick={() => {
                   setViewMode("list");
-                  localStorage.setItem("bsm-view-mode", "list");
+                  localStorage.setItem("buleje-view-mode", "list");
                 }}
                 className={cn(
                   "p-2.5 rounded-lg transition-all",

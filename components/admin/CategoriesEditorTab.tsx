@@ -437,9 +437,9 @@ export default function CategoriesEditorTab() {
                       seoScore === "warning" && "text-amber-700 dark:text-amber-400",
                       seoScore === "error" && "text-red-700 dark:text-red-400"
                     )}>
-                      {seoScore === "good" && "✓ SEO óptimo"}
-                      {seoScore === "warning" && "⚠ SEO mejorable"}
-                      {seoScore === "error" && "✕ SEO incompleto"}
+                      {seoScore === "good" && "SEO óptimo"}
+                      {seoScore === "warning" && "SEO mejorable"}
+                      {seoScore === "error" && "SEO incompleto"}
                     </div>
                     <div className={cn(
                       "text-[10px] space-y-0.5",

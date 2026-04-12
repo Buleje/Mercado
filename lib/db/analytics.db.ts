@@ -44,6 +44,11 @@ export interface DashboardAggregates {
   activeCarts: number;
   /** Products with stock at or below stockMin (only counts rows where stockMin is set). */
   lowStockCount: number;
+  /** Abandoned carts in the last 24h — count and estimated value. */
+  abandonedCarts: {
+    count: number;
+    estimatedValue: number;
+  };
   /** ISO timestamp of when the aggregates were computed. */
   generatedAt: string;
 }
@@ -112,6 +117,7 @@ export const AnalyticsDB = {
       weekAgg,
       activeCartsCount,
       lowStockCount,
+      abandonedCartsData,
     ] = await Promise.all([
       prisma.order.aggregate({
         where: {
@@ -153,6 +159,18 @@ export const AnalyticsDB = {
           AND "stockMin" IS NOT NULL
           AND "stock" <= "stockMin"
       `,
+      // Abandoned carts: SavedCart updated >2h ago, <24h, non-empty
+      prisma.savedCart.findMany({
+        where: {
+          tenantId,
+          updatedAt: {
+            lt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+            gt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          },
+          NOT: { itemsJson: "[]" },
+        },
+        select: { itemsJson: true },
+      }),
     ]);
 
     return {
@@ -167,6 +185,22 @@ export const AnalyticsDB = {
       },
       activeCarts: activeCartsCount,
       lowStockCount: lowStockCount[0]?.count != null ? Number(lowStockCount[0].count) : 0,
+      abandonedCarts: (() => {
+        let estimatedValue = 0;
+        for (const cart of abandonedCartsData) {
+          try {
+            const items = JSON.parse(cart.itemsJson) as { price?: number; qty?: number; quantity?: number }[];
+            if (Array.isArray(items)) {
+              for (const i of items) {
+                const qty = i.qty ?? i.quantity ?? 1;
+                const price = typeof i.price === "number" ? i.price : 0;
+                estimatedValue += price * qty;
+              }
+            }
+          } catch { /* skip invalid JSON */ }
+        }
+        return { count: abandonedCartsData.length, estimatedValue };
+      })(),
       generatedAt: new Date().toISOString(),
     };
   },

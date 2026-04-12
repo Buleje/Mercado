@@ -1,4 +1,4 @@
-# STATUS 100% — Bodega San Martín Autonomous OS
+# STATUS 100% — Buleje Autonomous OS
 
 > Snapshot completo del ecosistema al alcanzar Nivel 5 de Autonomía Total.
 
@@ -71,7 +71,7 @@
 | Playwright | Browser automation + E2E |
 | Context7 | Docs actualizadas de librerías |
 | Sequential-Thinking | Razonamiento extendido |
-| **Bodega San Martín** | 5 tools de negocio (fiado, ventas, inventario, WhatsApp, SUNAT) |
+| **Buleje** | 5 tools de negocio (fiado, ventas, inventario, WhatsApp, SUNAT) |
 
 ### Eval Harness (25 evals, 134 tests)
 
@@ -154,4 +154,4 @@ L5 ████████████ GitHub Actions 24/7 + eval harness + MCP
 ---
 
 > Generado el 2026-04-10 por Claude Code (Opus 4.6).
-> Bodega San Martín: de cuaderno a plataforma autónoma de software.
+> Buleje: de cuaderno a plataforma autónoma de software.

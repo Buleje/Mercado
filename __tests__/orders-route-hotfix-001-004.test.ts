@@ -157,6 +157,12 @@ vi.mock("@/lib/prisma", () => ({
     customerNotification: {
       create: mockCustomerNotifCreate,
     },
+    $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
+      const txProxy = {
+        $executeRaw: vi.fn(async () => 1),
+      };
+      return fn(txProxy);
+    }),
   },
 }));
 

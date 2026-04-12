@@ -40,12 +40,12 @@ export default function DevolucionesCalidadModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "devoluciones" && <ReturnsTab />}
-      {sub === "avanzadas" && <AdvancedReturnsTab />}
-      {sub === "calidad" && <QualityControlTab />}
-      {sub === "anomalias" && <AnomalyDetectionTab />}
+      >
+        {sub === "devoluciones" && <ReturnsTab />}
+        {sub === "avanzadas" && <AdvancedReturnsTab />}
+        {sub === "calidad" && <QualityControlTab />}
+        {sub === "anomalias" && <AnomalyDetectionTab />}
+      </AdminTabBar>
     </div>
   );
 }

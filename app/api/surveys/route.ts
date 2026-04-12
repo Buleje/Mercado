@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SurveyDB } from "@/lib/jsondb";
 import { requireAdmin } from "@/lib/require-admin";
+import { getTenantIdFromRequest } from "@/lib/tenant";
 
 // POST — submit a survey response (public, from customer)
 export async function POST(req: NextRequest) {
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
       rating: Math.round(rating),
       comment: comment?.slice(0, 500) ?? "",
       type: type ?? "nps",
+      tenantId: getTenantIdFromRequest(req),
     });
 
     return NextResponse.json(survey);
@@ -43,7 +45,7 @@ export async function GET(req: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const stats = await SurveyDB.stats();
-    const recent = await SurveyDB.getAll(undefined, 50);
+    const recent = await SurveyDB.getAll(auth.tenantId, 50);
 
     return NextResponse.json({ stats, recent });
   } catch (e) {

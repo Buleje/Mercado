@@ -24,7 +24,7 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
 
   useEffect(() => {
     // Check if already shown in this session
-    const shown = sessionStorage.getItem("bsm:exitIntentShown");
+    const shown = sessionStorage.getItem("buleje:exitIntentShown");
     if (shown === "true" && !forceShow) return;
 
     // Enable after delay
@@ -39,10 +39,10 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
     const handleMouseLeave = (e: MouseEvent) => {
       // Only trigger if mouse exits from top (y <= 0) and moving upward
       if (e.clientY <= 0 && e.movementY < 0) {
-        const shown = sessionStorage.getItem("bsm:exitIntentShown");
+        const shown = sessionStorage.getItem("buleje:exitIntentShown");
         if (shown !== "true" || forceShow) {
           setShow(true);
-          sessionStorage.setItem("bsm:exitIntentShown", "true");
+          sessionStorage.setItem("buleje:exitIntentShown", "true");
           // Track exit intent shown
           trackExitIntentShown(count > 0);
         }
@@ -58,13 +58,13 @@ export default function ExitIntentModal({ delay = 5000, forceShow = false }: Exi
     // Mobile: detect tab switch / background via visibilitychange
     const handleVisibilityChange = () => {
       if (document.visibilityState === "hidden") {
-        const shown = sessionStorage.getItem("bsm:exitIntentShown");
+        const shown = sessionStorage.getItem("buleje:exitIntentShown");
         if (shown !== "true" || forceShow) {
           // Show when user returns
           const handleReturn = () => {
             if (document.visibilityState === "visible") {
               setShow(true);
-              sessionStorage.setItem("bsm:exitIntentShown", "true");
+              sessionStorage.setItem("buleje:exitIntentShown", "true");
               trackExitIntentShown(count > 0);
               document.removeEventListener("visibilitychange", handleReturn);
             }

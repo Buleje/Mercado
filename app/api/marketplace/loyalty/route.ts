@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/require-admin";
 import { toErrorPayload, newTraceId, ApiError } from "@/lib/api-error";
 import { LoyaltyDB } from "@/lib/db/loyalty.db";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Marketplace loyalty route — TD-030 / ADR-024
@@ -70,8 +71,15 @@ function buildMetadata(input: {
 export async function GET(req: NextRequest) {
   const traceId = newTraceId();
   try {
+    // Allow public read (marketplace customers) — fallback to header tenantId
+    let tenantId = "main";
     const auth = await requireAdmin(req, ["admin", "manager", "cajero"]);
-    if (auth instanceof NextResponse) return auth;
+    if (auth instanceof NextResponse) {
+      // Not an admin — use x-tenant-id header (set by proxy) for public read
+      tenantId = req.headers.get("x-tenant-id") ?? "main";
+    } else {
+      tenantId = auth.tenantId;
+    }
 
     const parsed = HistoryQuerySchema.safeParse({
       phone: req.nextUrl.searchParams.get("phone"),
@@ -87,13 +95,21 @@ export async function GET(req: NextRequest) {
 
     const { phone, limit, offset } = parsed.data;
 
-    const page = await LoyaltyDB.getHistory(auth.tenantId, phone, limit, offset);
+    const [page, customer] = await Promise.all([
+      LoyaltyDB.getHistory(tenantId, phone, limit, offset),
+      prisma.customer.findUnique({
+        where: { phone },
+        select: { name: true, totalSpent: true },
+      }),
+    ]);
 
     return NextResponse.json({
       data: {
         phone,
+        name: customer?.name ?? "",
         points: page.balance,
         tier: tierFromPoints(page.balance),
+        totalSpent: Number(customer?.totalSpent ?? 0),
         transactions: page.transactions,
         total: page.total,
       },

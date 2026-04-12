@@ -94,7 +94,7 @@ const BADGE_DEFINITIONS: BadgeDefinition[] = [
 
 // ─── LocalStorage helpers ─────────────────────────────────────────────────────
 
-const STORAGE_KEY_PREFIX = "bsm_badges_";
+const STORAGE_KEY_PREFIX = "buleje_badges_";
 
 function getStorageKey(userId: string): string {
   return `${STORAGE_KEY_PREFIX}${userId}`;

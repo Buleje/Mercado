@@ -1,4 +1,4 @@
-# Case Studies — Bodega San Martín
+# Case Studies — Buleje
 
 > Casos reales de transformación digital. Cada ADR cerrado = un problema resuelto = un caso de estudio.
 

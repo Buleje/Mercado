@@ -1,10 +1,10 @@
 #!/bin/bash
-# Setup Doppler for Bodega San Martin
+# Setup Doppler for Buleje
 # Prerequisites: Install Doppler CLI -> https://docs.doppler.com/docs/install-cli
 
 set -e
 
-echo "Configurando Doppler para Bodega San Martin..."
+echo "Configurando Doppler para Buleje..."
 echo ""
 
 # Check if Doppler is installed

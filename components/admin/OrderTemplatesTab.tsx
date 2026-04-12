@@ -29,7 +29,7 @@ interface Props {
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "bsm_order_templates";
+const STORAGE_KEY = "buleje_order_templates";
 const MAX_TEMPLATES = 20;
 const MAX_ITEMS_PER_TEMPLATE = 30;
 

@@ -10,6 +10,7 @@ type Coupon = {
   balance?: number;
   minPurchase?: number; maxUses?: number; usedCount: number;
   active: boolean; expiresAt?: string; createdAt: string;
+  storeId?: string | null;
 };
 
 type AutoRule = {
@@ -35,10 +36,22 @@ type GeneratedCouponLog = {
   status: "sent" | "pending" | "used";
 };
 
+/** Reads the active store ID from sessionStorage or cookie for vendor context. */
+function getActiveStoreId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const ss = sessionStorage.getItem("active-tenant-id");
+    if (ss) return ss;
+  } catch { /* ignore */ }
+  const match = document.cookie.match(/(?:^|;\s*)active-tenant-id=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export default function CouponsTab() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [couponScope, setCouponScope] = useState<"tienda" | "plataforma">("plataforma");
   const [form, setForm] = useState({ code: "", description: "", discountType: "percent" as "percent" | "fixed" | "giftcard", discountValue: 10, balance: 0, minPurchase: 0, maxUses: 0, expiresAt: "" });
 
   // Auto-rules state
@@ -90,6 +103,7 @@ export default function CouponsTab() {
 
   const handleCreate = async () => {
     if (!form.code.trim() || !form.discountValue) return;
+    const storeId = couponScope === "tienda" ? getActiveStoreId() : null;
     const res = await fetch("/api/coupons", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -98,9 +112,10 @@ export default function CouponsTab() {
         minPurchase: form.minPurchase || undefined,
         maxUses: form.maxUses || undefined,
         expiresAt: form.expiresAt || undefined,
+        storeId: storeId || undefined,
       }),
     });
-    if (res.ok) { load(); setShowForm(false); setForm({ code: "", description: "", discountType: "percent", discountValue: 10, balance: 0, minPurchase: 0, maxUses: 0, expiresAt: "" }); }
+    if (res.ok) { load(); setShowForm(false); setCouponScope("plataforma"); setForm({ code: "", description: "", discountType: "percent", discountValue: 10, balance: 0, minPurchase: 0, maxUses: 0, expiresAt: "" }); }
   };
 
   const toggleActive = async (c: Coupon) => {
@@ -142,7 +157,7 @@ export default function CouponsTab() {
   const buildWhatsappMsg = (c: Coupon) => {
     const descuento = c.discountType === "percent" ? `${c.discountValue}%` : c.discountType === "giftcard" ? `Gift Card S/${c.discountValue}` : `S/${c.discountValue}`;
     const expira = c.expiresAt ? `\nValido hasta: ${new Date(c.expiresAt).toLocaleDateString("es-PE")}` : "";
-    return `🎟 ¡Cupon especial de Buleje!\nUsa el codigo: ${c.code}\nDescuento: ${descuento}${expira}\n¡No te lo pierdas! 🛒`;
+    return `¡Cupon especial de Buleje!\nUsa el codigo: ${c.code}\nDescuento: ${descuento}${expira}\n¡No te lo pierdas!`;
   };
 
   const sendWhatsapp = (phone: string, msg: string) => {
@@ -211,7 +226,7 @@ export default function CouponsTab() {
                       <p className="text-xs text-gray-400 dark:text-muted mt-1">
                         {rule.config.discountType === "percent" ? `${rule.config.discountValue}%` : `S/${rule.config.discountValue}`} descuento
                         {rule.config.validityDays && ` · ${rule.config.validityDays} días validez`}
-                        {rule.config.autoSend && " · 📤 Auto-envío"}
+                        {rule.config.autoSend && " · Auto-envío"}
                       </p>
                     )}
                   </div>
@@ -273,6 +288,43 @@ export default function CouponsTab() {
 
       {showForm && (
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-6 space-y-4">
+          {/* Scope toggle: Tienda vs Plataforma */}
+          <div>
+            <label className="text-xs font-bold text-gray-500 dark:text-muted mb-2 block">Alcance del cupon</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCouponScope("tienda")}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
+                  couponScope === "tienda"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+                )}
+              >
+                <Ticket className="h-4 w-4" />
+                Cupon de mi tienda
+              </button>
+              <button
+                type="button"
+                onClick={() => setCouponScope("plataforma")}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors min-h-[44px]",
+                  couponScope === "plataforma"
+                    ? "bg-purple-600 text-white shadow-sm"
+                    : "bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted hover:bg-gray-200 dark:hover:bg-accent"
+                )}
+              >
+                <Sparkles className="h-4 w-4" />
+                Cupon de plataforma
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-400 dark:text-muted mt-1">
+              {couponScope === "tienda"
+                ? "Este cupon sera valido solo para tu tienda"
+                : "Este cupon sera valido en toda la plataforma"}
+            </p>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
             <div>
               <label className="text-xs font-bold text-gray-500 dark:text-muted">Código *</label>
@@ -322,6 +374,11 @@ export default function CouponsTab() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono font-extrabold text-primary text-lg">{c.code}</span>
                 <button onClick={() => navigator.clipboard.writeText(c.code)} className="text-gray-400 hover:text-primary"><Copy className="h-3.5 w-3.5" /></button>
+                {c.storeId ? (
+                  <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-full font-bold">Tienda</span>
+                ) : (
+                  <span className="text-[10px] bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 px-2 py-0.5 rounded-full font-bold">Plataforma</span>
+                )}
                 {!c.active && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">Inactivo</span>}
               </div>
               <p className="text-sm text-gray-500 dark:text-muted">{c.description || "Sin descripción"}</p>

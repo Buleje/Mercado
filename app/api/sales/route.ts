@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { withDbRetry } from "@/lib/db-retry";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-logger";
+import { deductStockFEFO, hasBatchesWithStock } from "@/lib/inventory/fefo-deduct";
 
 const SaleItemSchema = z.object({
   productId: z.number().int().positive(),
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
   }
 
   const id = `sale-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-  const cashierId = !( auth instanceof NextResponse) ? auth.username : undefined;
+  const cashierId = auth.username;
 
   // ── Transacción ACID: venta + decremento de stock atómicos ──────────────────
   // Si el stock falla, la venta también se revierte. Ninguno queda a medias.
@@ -197,10 +198,7 @@ export async function POST(req: NextRequest) {
   let comprobanteNumero: string | undefined;
   if (data.comprobanteTipo && data.comprobanteTipo !== "ticket") {
     try {
-      comprobanteNumero = await generarNumeroComprobante(
-        !(auth instanceof NextResponse) ? auth.tenantId : "main",
-        data.comprobanteTipo
-      );
+      comprobanteNumero = await generarNumeroComprobante(auth.tenantId, data.comprobanteTipo);
       await prisma.sale.update({
         where: { id: sale.id },
         data: { comprobanteNumero },
@@ -215,7 +213,7 @@ export async function POST(req: NextRequest) {
   // ── Si es cotización, crear Cotizacion automática ──
   if (data.comprobanteTipo === "cotizacion") {
     try {
-      const tenantId = !(auth instanceof NextResponse) ? auth.tenantId : "main";
+      const tenantId = auth.tenantId;
       const cotNumero = comprobanteNumero || `COT-${Date.now()}`;
       const subtotal = finalTotal / 1.18;
       const igv = finalTotal - subtotal;
@@ -248,7 +246,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Decrement stock for each item sold (fire-and-forget)
+  // Registrar movimientos de inventario + descontar lotes FEFO (fire-and-forget)
   for (const item of data.items) {
     InventoryMovementsDB.record({
       productId: item.productId,
@@ -256,11 +254,21 @@ export async function POST(req: NextRequest) {
       quantity: item.quantity,
       reference: sale.id,
       notes: `Venta POS: ${item.name}`,
+      tenantId: auth.tenantId,
     }).catch(() => {});
+
+    // FEFO: si el producto tiene lotes, descontar del más cercano a vencer primero
+    hasBatchesWithStock(auth.tenantId, item.productId)
+      .then((hasBatches) => {
+        if (hasBatches) {
+          return deductStockFEFO(auth.tenantId, item.productId, item.quantity);
+        }
+      })
+      .catch(() => {});
   }
 
   // Register cash movement if a register is open (fire-and-forget)
-  CashRegistersDB.getOpen().then(async (reg) => {
+  CashRegistersDB.getOpen(auth.tenantId).then(async (reg) => {
     if (reg) {
       await CashRegistersDB.addMovement(reg.id, {
         type: "venta",

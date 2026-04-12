@@ -44,14 +44,14 @@ export default function ComunicacionesModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "inbox" && <WhatsAppInbox />}
-      {sub === "hub" && <CommunicationHubTab />}
-      {sub === "chat" && <AdminChatTab />}
-      {sub === "plantillas" && <MessageTemplatesTab />}
-      {sub === "whatsapp" && <WhatsAppTemplates />}
-      {sub === "notificaciones" && <NotificationsTab />}
+      >
+        {sub === "inbox" && <WhatsAppInbox />}
+        {sub === "hub" && <CommunicationHubTab />}
+        {sub === "chat" && <AdminChatTab />}
+        {sub === "plantillas" && <MessageTemplatesTab />}
+        {sub === "whatsapp" && <WhatsAppTemplates />}
+        {sub === "notificaciones" && <NotificationsTab />}
+      </AdminTabBar>
     </div>
   );
 }

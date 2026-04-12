@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Users, SlidersHorizontal, ArrowUpDown, RefreshCw } from "lucide-react";
+import { Users, SlidersHorizontal, ArrowUpDown, RefreshCw, GraduationCap } from "lucide-react";
 import { TabSpinner } from "@/app/admin/_lib/tab-spinner";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
@@ -46,12 +46,17 @@ const ScoringCrediticioTab      = dynamic(() => import("@/components/admin/Scori
 const StoreCustomizer           = dynamic(() => import("@/components/admin/StoreCustomizer"),           { loading: TabSpinner });
 const MiPerfilTab               = dynamic(() => import("@/components/admin/MiPerfilTab"),               { loading: TabSpinner });
 const ColasTab                  = dynamic(() => import("@/components/admin/ColasTab"),                  { loading: TabSpinner });
+const StorePageAdminPage        = dynamic(() => import("@/app/admin/store-page/page"),                  { loading: TabSpinner });
+const ForecastingDashboard      = dynamic(() => import("@/components/admin/forecasting/ForecastingDashboard"), { loading: TabSpinner });
 
 // ── Módulos de documentos ──────────────────────────────────────────────────────
 const CotizacionesModule   = dynamic(() => import("@/components/admin/CotizacionesModule"),   { loading: TabSpinner });
 const GuiasRemisionModule  = dynamic(() => import("@/components/admin/GuiasRemisionModule"),  { loading: TabSpinner });
 const NotasCreditoModule   = dynamic(() => import("@/components/admin/NotasCreditoModule"),   { loading: TabSpinner });
 const ContratosModule      = dynamic(() => import("@/components/admin/ContratosModule"),      { loading: TabSpinner });
+
+// ── Facturación electrónica SUNAT ──────────────────────────────────────────────
+const FacturacionModule    = dynamic(() => import("@/components/admin/unified/FacturacionModule"), { loading: TabSpinner });
 
 // ── Módulos especiales ─────────────────────────────────────────────────────────
 const OrdersTab      = dynamic(() => import("@/components/admin/OrdersTab"),      { loading: TabSpinner });
@@ -138,6 +143,9 @@ export function TabRouter({
   if (tab === "notas-credito") return <NotasCreditoModule />;
   if (tab === "contratos")     return <ContratosModule />;
 
+  // ── Facturación SUNAT ──
+  if (tab === "facturacion") return <FacturacionModule />;
+
   // ── Módulos nuevos ──
   if (tab === "auditoria")              return <AuditTab />;
   if (tab === "devoluciones-proveedor") return <DevolucionesProveedorModule />;
@@ -203,7 +211,7 @@ export function TabRouter({
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
-                <span className="text-xl">🎓</span>
+                <GraduationCap className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-gray-900 dark:text-foreground text-sm">Tutorial de bienvenida</p>
@@ -232,6 +240,7 @@ export function TabRouter({
 
   // ── Módulos avanzados ──
   if (tab === "analytics-pro")  return <ReportsTab />;
+  if (tab === "forecasting")    return <ForecastingDashboard />;
   if (tab === "ai-command")     return <AICommandModule />;
   if (tab === "sugerencias-ia") return <SugerenciasIAModule />;
   if (tab === "metas-logros")   return <MetasLogrosModule />;
@@ -249,6 +258,9 @@ export function TabRouter({
   if (tab === "store-customizer") return <StoreCustomizer />;
   if (tab === "colas")            return <ColasTab />;
   if (tab === "mi-perfil")        return <MiPerfilTab />;
+
+  // ── Página individual de la tienda ──
+  if (tab === "pagina-inicio") return <StorePageAdminPage />;
 
   return null;
 }

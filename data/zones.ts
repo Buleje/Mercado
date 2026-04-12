@@ -113,6 +113,26 @@ export const zones: Zone[] = [
     districts: ["Piura", "Castilla", "26 de Octubre", "Catacaos"],
     deliveryActive: true,
   },
+  {
+    slug: "tacna",
+    name: "Tacna",
+    region: "Tacna",
+    description:
+      "Buleje ERP para tiendas y bodegas en Tacna. Administra tu negocio desde el celular: inventario en tiempo real, ventas POS, delivery, fiado digital y boletas SUNAT.",
+    geo: { lat: -18.0146, lon: -70.2536 },
+    districts: ["Tacna", "Alto de la Alianza", "Ciudad Nueva", "Gregorio Albarracin"],
+    deliveryActive: true,
+  },
+  {
+    slug: "tumbes",
+    name: "Tumbes",
+    region: "Tumbes",
+    description:
+      "Software para bodegas y minimarkets en Tumbes. Gestion completa de inventario, ventas, delivery y facturacion electronica. Buleje funciona con Yape, Plin y efectivo.",
+    geo: { lat: -3.5669, lon: -80.4515 },
+    districts: ["Tumbes", "Zarumilla", "Aguas Verdes", "Corrales"],
+    deliveryActive: true,
+  },
   // ── Sierra ──
   {
     slug: "cusco",
@@ -132,6 +152,36 @@ export const zones: Zone[] = [
       "Buleje para bodegas en Huancayo. Gestiona tu negocio completo: inventario, ventas, delivery, credito a clientes y facturacion electronica.",
     geo: { lat: -12.0651, lon: -75.2049 },
     districts: ["Huancayo", "El Tambo", "Chilca"],
+    deliveryActive: true,
+  },
+  {
+    slug: "puno",
+    name: "Puno",
+    region: "Puno",
+    description:
+      "Software ERP para bodegas y tiendas en Puno. Buleje te ayuda a gestionar inventario, ventas POS, delivery y fiado digital en la region altiplanica. Funciona con Yape y efectivo.",
+    geo: { lat: -15.8402, lon: -70.0219 },
+    districts: ["Puno", "Juliaca", "Ayaviri", "Ilave"],
+    deliveryActive: true,
+  },
+  {
+    slug: "ayacucho",
+    name: "Ayacucho",
+    region: "Ayacucho",
+    description:
+      "Buleje para bodegas en Ayacucho. Sistema completo de inventario, punto de venta, delivery a domicilio y facturacion SUNAT. Ideal para negocios de la sierra central.",
+    geo: { lat: -13.1588, lon: -74.2236 },
+    districts: ["Ayacucho", "San Juan Bautista", "Carmen Alto", "Jesus Nazareno"],
+    deliveryActive: true,
+  },
+  {
+    slug: "huancavelica",
+    name: "Huancavelica",
+    region: "Huancavelica",
+    description:
+      "Software de gestion para bodegas en Huancavelica. Control de inventario, ventas, delivery y reportes automaticos. Creado para negocios de la sierra peruana.",
+    geo: { lat: -12.7868, lon: -74.9734 },
+    districts: ["Huancavelica", "Ascension", "Acoria"],
     deliveryActive: true,
   },
 ];

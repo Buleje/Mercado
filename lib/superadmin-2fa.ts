@@ -10,6 +10,26 @@
  * In development, the current code is printed to the server console.
  */
 import { logger } from "@/lib/logger";
+import { sendWhatsAppText } from "@/lib/whatsapp";
+
+// ── 2FA Method: "totp" (authenticator app) or "whatsapp" (code via WhatsApp) ─
+type TwoFAMethod = "totp" | "whatsapp";
+function get2FAMethod(): TwoFAMethod {
+  const method = process.env.SUPERADMIN_2FA_METHOD?.toLowerCase();
+  if (method === "whatsapp") return "whatsapp";
+  return "totp";
+}
+
+// ── WhatsApp challenge storage (6-digit code, 5 min TTL) ────────────────────
+const WHATSAPP_CODE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const whatsappChallenges = new Map<string, { code: string; username: string; expiresAt: number }>();
+
+function cleanExpiredChallenges(): void {
+  const now = Date.now();
+  for (const [id, entry] of whatsappChallenges) {
+    if (now > entry.expiresAt) whatsappChallenges.delete(id);
+  }
+}
 
 // ── TOTP Constants ──────────────────────────────────────────────────────────
 
@@ -143,11 +163,42 @@ export function generateSecret(): string {
 }
 
 /**
- * Create a 2FA challenge. Returns the current TOTP code for logging/sending.
- * The challengeId is now deterministic (based on the current time window),
- * so the caller just needs to call verify2FACode with the user's input.
+ * Create a 2FA challenge. For TOTP mode, uses the authenticator app.
+ * For WhatsApp mode, generates a random 6-digit code and sends it via WhatsApp.
  */
 export function create2FAChallenge(username: string): { challengeId: string; code: Promise<string> } {
+  const method = get2FAMethod();
+
+  // ── WhatsApp mode: random 6-digit code sent via WhatsApp ───────────────
+  if (method === "whatsapp") {
+    cleanExpiredChallenges();
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const challengeId = crypto.randomUUID();
+    whatsappChallenges.set(challengeId, {
+      code,
+      username,
+      expiresAt: Date.now() + WHATSAPP_CODE_TTL_MS,
+    });
+
+    const phone = process.env.SUPERADMIN_PHONE;
+    if (phone) {
+      const msg = `🔐 *Código de verificación — Buleje*\n\nTu código de acceso SuperAdmin es:\n\n*${code}*\n\nExpira en 5 minutos. No compartas este código.`;
+      sendWhatsAppText(phone, msg).catch(() => {
+        logger.error("[2FA] Failed to send WhatsApp code");
+      });
+    } else {
+      logger.warn("[2FA] SUPERADMIN_PHONE not configured — cannot send WhatsApp code");
+    }
+
+    if (process.env.NODE_ENV === "development") {
+      console.log(`\n[2FA-WhatsApp] Código para ${username}: ${code}\n`);
+    }
+
+    logger.info(`[2FA] WhatsApp challenge created for ${username}`);
+    return { challengeId, code: Promise.resolve(code) };
+  }
+
+  // ── TOTP mode: authenticator app ──────────────────────────────────────
   const secret = getSecret();
   if (!secret) {
     // Fallback: generate a random code and log it (dev-only behavior)
@@ -181,16 +232,36 @@ export function create2FAChallenge(username: string): { challengeId: string; cod
 }
 
 /**
- * Verify a TOTP code. Checks current time step and +-1 window
- * to account for clock drift (RFC 6238 recommendation).
- *
- * Returns { valid: true, username } if the code matches.
- * The username is returned as "superadmin" since TOTP is tied to the env secret.
+ * Verify a 2FA code. For WhatsApp mode, checks the stored challenge.
+ * For TOTP mode, checks current time step +-1 window.
  */
 export async function verify2FACode(
-  _challengeId: string,
+  challengeId: string,
   code: string,
 ): Promise<{ valid: boolean; username?: string }> {
+  // ── WhatsApp challenge verification ────────────────────────────────────
+  const whatsappChallenge = whatsappChallenges.get(challengeId);
+  if (whatsappChallenge) {
+    whatsappChallenges.delete(challengeId); // One-time use
+    if (Date.now() > whatsappChallenge.expiresAt) {
+      logger.warn("[2FA] WhatsApp code expired");
+      return { valid: false };
+    }
+    // Constant-time comparison
+    if (code.length !== whatsappChallenge.code.length) return { valid: false };
+    let result = 0;
+    for (let j = 0; j < code.length; j++) {
+      result |= code.charCodeAt(j) ^ whatsappChallenge.code.charCodeAt(j);
+    }
+    if (result === 0) {
+      logger.info("[2FA] WhatsApp code verified successfully");
+      return { valid: true, username: whatsappChallenge.username };
+    }
+    logger.warn("[2FA] WhatsApp code verification failed");
+    return { valid: false };
+  }
+
+  // ── TOTP verification ─────────────────────────────────────────────────
   const secret = getSecret();
 
   if (!secret) {

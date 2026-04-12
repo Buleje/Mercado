@@ -47,13 +47,13 @@ export default function ReportesDocModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "reportes" && <ReportsTab />}
-      {sub === "auto" && <AutoReportsTab />}
-      {sub === "importar-exportar" && <ImportExportTab />}
-      {sub === "documentos" && <DocumentManagerTab />}
-      {sub === "masiva" && <BulkInvoiceGenerator />}
+      >
+        {sub === "reportes" && <ReportsTab />}
+        {sub === "auto" && <AutoReportsTab />}
+        {sub === "importar-exportar" && <ImportExportTab />}
+        {sub === "documentos" && <DocumentManagerTab />}
+        {sub === "masiva" && <BulkInvoiceGenerator />}
+      </AdminTabBar>
     </div>
   );
 }

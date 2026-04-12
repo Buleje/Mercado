@@ -59,10 +59,10 @@ export interface AdminModuleManagerModalProps {
 }
 
 const PRIORITY_CONFIG: Record<ModulePriority, { label: string; cls: string; dot: string }> = {
-  core:   { label: "Esencial", cls: "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400",         dot: "● " },
-  high:   { label: "Alta",     cls: "bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400", dot: "● " },
-  medium: { label: "Media",    cls: "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",     dot: "● " },
-  low:    { label: "Normal",   cls: "bg-green-100 text-green-600 dark:bg-green-950/40 dark:text-green-400",     dot: "● " },
+  core:   { label: "Esencial", cls: "bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400",         dot: "" },
+  high:   { label: "Alta",     cls: "bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400", dot: "" },
+  medium: { label: "Media",    cls: "bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400",     dot: "" },
+  low:    { label: "Normal",   cls: "bg-green-100 text-green-600 dark:bg-green-950/40 dark:text-green-400",     dot: "" },
 };
 
 export function AdminModuleManagerModal({
@@ -129,10 +129,10 @@ export function AdminModuleManagerModal({
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide mr-1">Prioridad:</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400">● Esencial</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">● Alta</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">● Media</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-600 dark:bg-green-950/40 dark:text-green-400">● Normal</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-400">Esencial</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/40 dark:text-orange-400">Alta</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">Media</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-600 dark:bg-green-950/40 dark:text-green-400">Normal</span>
             </div>
           </div>
 
@@ -221,7 +221,7 @@ export function AdminModuleManagerModal({
                           )}
                           {info?.tip && (
                             <p className="text-[11px] text-primary/70 dark:text-primary/60 mt-0.5 leading-snug">
-                              💡 {info.tip}
+                              {info.tip}
                             </p>
                           )}
                         </div>

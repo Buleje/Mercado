@@ -20,7 +20,7 @@ interface ThemeCtx {
 }
 
 const ThemeContext = createContext<ThemeCtx | null>(null);
-const _STORAGE_KEY = "bsm-theme";
+const _STORAGE_KEY = "buleje-theme";
 
 function _getSystemTheme(): "light" | "dark" {
   if (typeof window === "undefined") return "light";

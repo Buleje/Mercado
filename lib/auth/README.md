@@ -1,6 +1,6 @@
 # `lib/auth/` — Autenticación, autorización y RBAC
 
-JWT propio (cookie `bsm-admin-sess`) + RBAC con 26 recursos × 6 roles.
+JWT propio (cookie `buleje-admin-sess`) + RBAC con 26 recursos × 6 roles.
 
 ## Por qué existe
 

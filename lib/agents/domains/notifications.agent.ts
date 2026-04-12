@@ -63,7 +63,7 @@ async function sendOrderUpdate(
     message,
     status: "sent",
     orderId,
-  }).catch(() => {});
+  }, task.tenantId).catch(() => {});
 
   log.info("Order update notification sent", {
     orderId,
@@ -124,7 +124,7 @@ async function sendStockAlert(
     recipient: "admin",
     message: alertMessage,
     status: "sent",
-  }).catch(() => {});
+  }, task.tenantId).catch(() => {});
 
   agentBus.emit("agent:alert", {
     domain: "notifications",
@@ -201,7 +201,7 @@ async function sendExpiryWarning(
     recipient: "admin",
     message: warningMessage,
     status: "sent",
-  }).catch(() => {});
+  }, task.tenantId).catch(() => {});
 
   agentBus.emit("agent:alert", {
     domain: "notifications",
@@ -242,7 +242,7 @@ async function sendPromotion(
     return { success: false, error: "Se requiere 'promoId'" };
   }
 
-  const allPromos = await PromotionsDB.getAll();
+  const allPromos = await PromotionsDB.getAll(task.tenantId);
   const promo = allPromos.find((p) => p.id === promoId);
   if (!promo) {
     return {
@@ -255,7 +255,7 @@ async function sendPromotion(
   let recipients: Array<{ phone: string; name: string }> = [];
 
   if (promo.targetType === "all" || !segment) {
-    const customers = await CustomersDB.getAll();
+    const customers = await CustomersDB.getAll(task.tenantId);
     recipients = customers
       .filter((c) => c.notifPromotions)
       .map((c) => ({ phone: c.phone, name: c.name }));
@@ -275,7 +275,7 @@ async function sendPromotion(
       recipient: r.phone,
       message,
       status: "sent",
-    }).catch(() => {});
+    }, task.tenantId).catch(() => {});
   }
 
   log.info("Promotional notifications queued", {
@@ -308,7 +308,7 @@ async function digestPending(
 
   const [recentLogs, lowStock] = await Promise.all([
     cache.getOrSet("notifications:recent-logs", 60, () =>
-      NotificationLogsDB.getAll(),
+      NotificationLogsDB.getAll(task.tenantId),
     ),
     AutoReorderDB.getLowStockProducts(task.tenantId),
   ]);
@@ -344,6 +344,7 @@ async function digestPending(
   // Pending orders without notification?
   const pendingOrders = await OrdersDB.getAllFiltered({
     status: "pendiente",
+    tenantId: task.tenantId,
   });
   if (pendingOrders.length > 3) {
     pendingActions.push({

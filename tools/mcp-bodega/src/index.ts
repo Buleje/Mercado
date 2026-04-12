@@ -1,5 +1,5 @@
 /**
- * MCP Server entry point for Bodega San Martin.
+ * MCP Server entry point for Buleje.
  * Exposes 5 tools for live business operations:
  *   - get_fiado_vencido: overdue credit lines
  *   - get_ventas_hoy: sales summary

@@ -1,4 +1,4 @@
-# Auditoría Prácticas de Código 2026 — Bodega San Martín
+# Auditoría Prácticas de Código 2026 — Buleje
 
 **Última actualización:** 2026-04-08 (audit next-phase — gates de CI reales + docs ancla)
 **Fuente:** `Mejores_Practicas_Codigo_2026.xlsx` (48 prácticas: 36 básicas + 12 avanzadas)

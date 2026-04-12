@@ -14,6 +14,13 @@ import { PLANS, type PlanId, type PlanDef } from "@/lib/plans";
 import { STORE_TEMPLATES_LIST, type TemplateId } from "@/lib/store-templates";
 import { trackEvent } from "@/lib/analytics";
 
+/** Read csrf-token cookie for double-submit protection */
+function getCsrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+  const m = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/);
+  return m ? m[1] : null;
+}
+
 // ─── Zod schema (espejo del schema del servidor) ─────────────
 const Step1Schema = z.object({
   storeName:  z.string().min(2, "Mínimo 2 caracteres").max(80, "Máximo 80 caracteres"),
@@ -358,7 +365,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
     try {
       const res = await fetch("/api/onboarding", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...(getCsrfToken() && { "x-csrf-token": getCsrfToken()! }) },
         body: JSON.stringify({
           type:          accountType,
           storeName:     form.storeName,
@@ -406,7 +413,7 @@ export function RegistrationForm({ initialPlan = "free" }: RegistrationFormProps
         try {
           const checkoutRes  = await fetch("/api/onboarding/checkout", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", ...(getCsrfToken() && { "x-csrf-token": getCsrfToken()! }) },
             body: JSON.stringify({ tenantSlug: data.tenantSlug ?? data.tenantId, plan: form.plan }),
           });
           const checkoutData = await checkoutRes.json() as { url?: string };

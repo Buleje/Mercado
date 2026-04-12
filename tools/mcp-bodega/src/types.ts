@@ -1,5 +1,5 @@
 /**
- * Shared types for the Bodega San Martin MCP server.
+ * Shared types for the Buleje MCP server.
  * Maps to the Prisma schema models in the main project.
  */
 

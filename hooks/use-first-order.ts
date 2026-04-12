@@ -14,7 +14,7 @@ export function useHasCompletedFirstOrder(): boolean | null {
 
   useEffect(() => {
     // Check localStorage first (fast path)
-    const local = localStorage.getItem("bsm-first-order-completed");
+    const local = localStorage.getItem("buleje-first-order-completed");
     if (local === "true") {
       startTransition(() => setHasOrder(true));
       return;
@@ -33,7 +33,7 @@ export function useHasCompletedFirstOrder(): boolean | null {
         const completed = Array.isArray(data) && data.length > 0;
         startTransition(() => setHasOrder(completed));
         if (completed) {
-          localStorage.setItem("bsm-first-order-completed", "true");
+          localStorage.setItem("buleje-first-order-completed", "true");
         }
       })
       .catch(() => startTransition(() => setHasOrder(false)));

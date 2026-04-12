@@ -38,11 +38,11 @@ export default function AgendaUtilidadesModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "calendario" && <SharedCalendarTab />}
-      {sub === "notas" && <QuickNotesTab />}
-      {sub === "filtros" && <SavedFiltersTab />}
+      >
+        {sub === "calendario" && <SharedCalendarTab />}
+        {sub === "notas" && <QuickNotesTab />}
+        {sub === "filtros" && <SavedFiltersTab />}
+      </AdminTabBar>
     </div>
   );
 }

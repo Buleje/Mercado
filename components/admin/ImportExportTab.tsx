@@ -304,7 +304,7 @@ export default function ImportExportTab() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3 font-bold text-gray-700 dark:text-foreground">{r.records}</td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3">
                     <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", r.status === "success" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : r.status === "partial" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400")}>
-                      {r.status === "success" ? "✓ Exitoso" : r.status === "partial" ? `⚠ ${r.errors} errores` : "✕ Error"}
+                      {r.status === "success" ? "Exitoso" : r.status === "partial" ? `${r.errors} errores` : "Error"}
                     </span>
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs text-gray-500 dark:text-muted">{fmtDate(r.date)}</td>

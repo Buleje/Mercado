@@ -54,6 +54,8 @@ const BarcodeScanner = dynamic(() => import("@/components/admin/inventario/Barco
 const ExpiryDashboardTab = dynamic(() => import("@/components/admin/ExpiryDashboardTab"), { loading: S });
 const ExpiryAlertsDashboard = dynamic(() => import("@/components/admin/ExpiryAlertsDashboard"), { ssr: false, loading: S });
 const CatalogBrowser = dynamic(() => import("@/components/admin/inventario/CatalogBrowser"), { loading: S });
+const ABCAnalysisTab = dynamic(() => import("@/components/admin/ABCAnalysisTab"), { loading: S });
+const ExpiryDashboardTabInline = dynamic(() => import("@/components/admin/ExpiryDashboardTab"), { loading: S });
 
 const MODULE_ID = "inventario";
 
@@ -863,7 +865,7 @@ export default function InventarioAlmacenesModule() {
         activeTab={sub}
         onTabChange={(id) => setSub(id as typeof sub)}
         moduleId="inventario"
-      />
+      >
 
       {/* Tab 1: Existencias */}
       {sub === "stock" && <div key={refreshKey}><InventoryTab /></div>}
@@ -914,19 +916,27 @@ export default function InventarioAlmacenesModule() {
         </div>
       )}
 
-      {/* Tab 6: Análisis (dashboard analítico + treemap + predicción + temporada) */}
+      {/* Tab 6: Análisis (dashboard analítico + treemap + predicción + temporada + ABC + vencimientos) */}
       {sub === "analisis" && (
         <div className="space-y-6">
           <InventoryAnalyticsDashboard />
-          <div className="border-t border-gray-200 pt-6">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Analisis ABC</h3>
+            <ABCAnalysisTab />
+          </div>
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Control de Vencimientos</h3>
+            <ExpiryDashboardTabInline />
+          </div>
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Mapa de Categorias</h3>
             <CategoryTreemapView />
           </div>
-          <div className="border-t border-gray-200 pt-6">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Prediccion de Stock</h3>
             <StockPredictionWidget />
           </div>
-          <div className="border-t border-gray-200 pt-6">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Estacionalidad</h3>
             <SeasonalityInsights />
           </div>
@@ -959,6 +969,8 @@ export default function InventarioAlmacenesModule() {
 
       {/* Tab 10: Catalogo de Reabastecimiento */}
       {sub === "catalogo" && <CatalogBrowser />}
+
+      </AdminTabBar>
 
       {/* ── Demand Forecast Modal ── */}
       {forecastProductId !== null && (

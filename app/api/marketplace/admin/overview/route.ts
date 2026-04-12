@@ -120,7 +120,7 @@ export async function GET(req: NextRequest) {
       },
       today: {
         orders: todayOrders._count,
-        revenue: todayOrders._sum.total ?? 0,
+        revenue: toNumOrZero(todayOrders._sum.total),
       },
       month: {
         orders: monthOrders._count,
@@ -129,18 +129,18 @@ export async function GET(req: NextRequest) {
       },
       pendingOrders,
       commissions: {
-        month: totalCommissions._sum.amount ?? 0,
+        month: toNumOrZero(totalCommissions._sum.amount),
       },
       topStores: topStores.map((s) => ({
         name: storeMap.get(s.tenantId)?.name ?? "Tienda",
         slug: storeMap.get(s.tenantId)?.slug ?? "",
         orders: s._count,
-        revenue: s._sum.total ?? 0,
+        revenue: toNumOrZero(s._sum.total),
       })),
       recentOrders: recentOrders.map((o) => ({
         id: o.id,
         customerName: o.customerName,
-        total: o.total,
+        total: Number(o.total),
         status: o.status,
         createdAt: o.createdAt.toISOString(),
         storeName: orderStoreMap.get(o.tenantId) ?? "Tienda",

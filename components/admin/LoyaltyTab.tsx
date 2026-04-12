@@ -186,7 +186,7 @@ export default function LoyaltyTab() {
   const generateWhatsAppMessage = (customer: Customer) => {
     const points = customer.loyaltyPoints;
     const value = (points * 0.1).toFixed(2);
-    return `🎁 ${customer.name}, tienes ${points} puntos en Buleje. ¡Canjéalos en tu próxima compra! Valor: S/${value}`;
+    return `${customer.name}, tienes ${points} puntos en Buleje. ¡Canjéalos en tu próxima compra! Valor: S/${value}`;
   };
 
   const openWhatsApp = (phone: string, message: string) => {
@@ -261,13 +261,12 @@ export default function LoyaltyTab() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
         {[
-          { label: "Clientes", value: customers.length, icon: "👥" },
-          { label: "Puntos Totales", value: totalPoints.toLocaleString(), icon: "⭐" },
-          { label: "Gasto Promedio", value: `S/${avgSpent.toFixed(0)}`, icon: "💰" },
-          { label: "Diamante", value: customers.filter(c => c.loyaltyTier === "diamante").length, icon: "💎" },
+          { label: "Clientes", value: customers.length },
+          { label: "Puntos Totales", value: totalPoints.toLocaleString() },
+          { label: "Gasto Promedio", value: `S/${avgSpent.toFixed(0)}` },
+          { label: "Diamante", value: customers.filter(c => c.loyaltyTier === "diamante").length },
         ].map(s => (
           <div key={s.label} className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 text-center">
-            <span className="text-xl sm:text-2xl">{s.icon}</span>
             <p className="text-xl font-extrabold text-gray-900 dark:text-foreground">{s.value}</p>
             <p className="text-xs text-gray-500 dark:text-muted">{s.label}</p>
           </div>
@@ -436,7 +435,7 @@ export default function LoyaltyTab() {
                     className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-primary hover:bg-primary/10 rounded-lg transition"
                   >
                     {copiedMessage === 'bulk-notify' ? (
-                      <>✓ Copiado</>
+                      <>Copiado</>
                     ) : (
                       <>
                         <MessageSquare className="h-3 w-3" />
@@ -485,7 +484,7 @@ export default function LoyaltyTab() {
                           className="p-1.5 hover:bg-primary/10 rounded transition"
                         >
                           {copiedMessage === 'referral-code' ? (
-                            <span className="text-xs text-emerald-600 font-bold">✓</span>
+                            <span className="text-xs text-emerald-600 font-bold">OK</span>
                           ) : (
                             <Copy className="h-4 w-4 text-primary" />
                           )}
@@ -523,7 +522,7 @@ export default function LoyaltyTab() {
                           className="absolute top-2 right-2 p-1 hover:bg-gray-200 dark:hover:bg-card rounded transition"
                         >
                           {copiedMessage === 'referral-message' ? (
-                            <span className="text-xs text-emerald-600 font-bold">✓</span>
+                            <span className="text-xs text-emerald-600 font-bold">OK</span>
                           ) : (
                             <Copy className="h-3 w-3 text-gray-400" />
                           )}

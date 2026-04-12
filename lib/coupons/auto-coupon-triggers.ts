@@ -130,6 +130,7 @@ async function issueCoupon(opts: {
   prefix: string;
   discountPercent: number;
   customerPhone: string;
+  customerName?: string;
   tenantId: string;
   description: string;
   trigger: CouponTriggerType;
@@ -159,14 +160,40 @@ async function issueCoupon(opts: {
 
   // Notificar al cliente por WhatsApp — fire-and-forget
   const marketplaceUrl = `${getBaseUrl()}/marketplace`;
-  const message =
-    `🎁 *Tienes un regalo de tu tienda favorita*\n` +
-    `━━━━━━━━━━━━━━━━━━━\n` +
-    `${opts.description}\n\n` +
-    `🏷️ Tu código: *${code}*\n` +
-    `💰 Descuento: ${opts.discountPercent}% en tu próxima compra\n` +
-    `📅 Válido por ${COUPON_VALIDITY_DAYS} días\n\n` +
-    `🛒 Úsalo en:\n${marketplaceUrl}`;
+
+  const message = opts.trigger === "birthday"
+    ? `🎂🎉 *¡Feliz Cumpleaños${opts.customerName ? `, ${opts.customerName}` : ""}!* 🎉🎂\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `En tu día especial, te tenemos un regalo:\n\n` +
+      `🎁 *${opts.discountPercent}% de descuento* en tu próxima compra\n` +
+      `🏷️ Tu código: *${code}*\n` +
+      `📅 Válido por ${COUPON_VALIDITY_DAYS} días\n\n` +
+      `¡Pásala increíble y consiéntete! 🥳\n` +
+      `🛒 Canjéalo aquí: ${marketplaceUrl}`
+    : opts.trigger === "first_purchase"
+    ? `🎉 *¡Bienvenido/a a nuestra tienda!*\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `Gracias por tu primera compra. Te damos un regalito:\n\n` +
+      `🏷️ Tu código: *${code}*\n` +
+      `💰 Descuento: ${opts.discountPercent}% en tu próxima compra\n` +
+      `📅 Válido por ${COUPON_VALIDITY_DAYS} días\n\n` +
+      `🛒 Canjéalo: ${marketplaceUrl}`
+    : opts.trigger === "loyal_customer"
+    ? `🏆 *¡Eres cliente VIP!*\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `Ya llevas 10 compras con nosotros. ¡Mereces un premio!\n\n` +
+      `🏷️ Tu código: *${code}*\n` +
+      `💰 Descuento: ${opts.discountPercent}% en tu próxima compra\n` +
+      `📅 Válido por ${COUPON_VALIDITY_DAYS} días\n\n` +
+      `Gracias por confiar en nosotros 💚\n` +
+      `🛒 Canjéalo: ${marketplaceUrl}`
+    : `🎁 *Tienes un regalo de tu tienda favorita*\n` +
+      `━━━━━━━━━━━━━━━━━━━\n` +
+      `${opts.description}\n\n` +
+      `🏷️ Tu código: *${code}*\n` +
+      `💰 Descuento: ${opts.discountPercent}% en tu próxima compra\n` +
+      `📅 Válido por ${COUPON_VALIDITY_DAYS} días\n\n` +
+      `🛒 Úsalo en:\n${marketplaceUrl}`;
 
   sendWhatsAppText(opts.customerPhone, message).catch((err) => {
     logger.error("[auto-coupon] Error enviando WhatsApp al cliente", {
@@ -283,6 +310,7 @@ export async function issueBirthdayCouponsForTenant(
       prefix:          "CUMPLEANOS",
       discountPercent: 15,
       customerPhone:   c.phone,
+      customerName:    c.name,
       tenantId,
       description:     `Feliz cumpleanos ${c.name}. Te regalamos un descuento especial.`,
       trigger:         "birthday",

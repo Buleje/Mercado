@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth;
 
   try {
-    const conversations = await ChatDB.getConversations();
+    const conversations = await ChatDB.getConversations(auth.tenantId);
     // Ordenar por último mensaje más reciente
     conversations.sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
     return NextResponse.json(conversations);

@@ -80,8 +80,64 @@ export function getActiveTenantSlug(): string {
 }
 
 /**
+ * Resolve the active tenant slug and fall back to the authenticated admin
+ * session when the browser storage still points to "main" or is empty.
+ */
+export async function resolveActiveTenantSlug(): Promise<string> {
+  const current = getActiveTenantSlug();
+  if (current && current !== DEFAULT_TENANT) return current;
+
+  try {
+    const authRes = await fetch("/api/auth/me", {
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!authRes.ok) return current || DEFAULT_TENANT;
+
+    const auth = (await authRes.json()) as { tenantId?: string | null };
+    if (!auth.tenantId) return current || DEFAULT_TENANT;
+
+    const tenantRes = await fetch(
+      `/api/tenants/resolve?slug=${encodeURIComponent(auth.tenantId)}`,
+      {
+        credentials: "include",
+        cache: "no-store",
+      },
+    );
+    if (!tenantRes.ok) return current || DEFAULT_TENANT;
+
+    const tenant = (await tenantRes.json()) as { slug?: string | null };
+    const resolved = tenant.slug?.trim();
+    if (!resolved) return current || DEFAULT_TENANT;
+
+    try {
+      sessionStorage.setItem("active-tenant-slug", resolved);
+    } catch {}
+    try {
+      localStorage.setItem("active-tenant-slug", resolved);
+    } catch {}
+
+    return resolved;
+  } catch {
+    return current || DEFAULT_TENANT;
+  }
+}
+
+/** HTTP methods that need CSRF token */
+const CSRF_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/**
+ * Read the csrf-token cookie value (set by middleware on every response).
+ */
+function getCsrfToken(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|;\s*)csrf-token=([^;]+)/);
+  return match ? match[1] : null;
+}
+
+/**
  * Tenant-aware fetch. Drop-in replacement for window.fetch() that
- * automatically injects x-tenant-id header.
+ * automatically injects x-tenant-id and X-CSRF-Token headers.
  */
 export function tenantFetch(
   input: RequestInfo | URL,
@@ -92,6 +148,15 @@ export function tenantFetch(
   const headers = new Headers(init?.headers);
   if (!headers.has("x-tenant-id")) {
     headers.set("x-tenant-id", tenantSlug);
+  }
+
+  // Auto-inject CSRF token for mutation methods
+  const method = (init?.method ?? "GET").toUpperCase();
+  if (CSRF_METHODS.has(method) && !headers.has("x-csrf-token")) {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      headers.set("x-csrf-token", csrfToken);
+    }
   }
 
   return fetch(input, { ...init, headers });

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -450,8 +451,8 @@ function StarProductCard({ refreshKey }: { refreshKey: number }) {
     <div className="rounded-xl bg-linear-to-br from-secondary/5 to-secondary/10 p-4 border border-secondary/20">
       <div className="flex items-start gap-3">
         {star.imageUrl && (
-          <div className="w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 border border-gray-200">
-            <img src={star.imageUrl} alt={star.name} className="w-full h-full object-cover" />
+          <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-white shrink-0 border border-gray-200">
+            <Image src={star.imageUrl} alt={star.name} fill className="object-cover" sizes="64px" />
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -811,20 +812,20 @@ export default function AnalyticsBIModule() {
         activeTab={activeSection}
         onTabChange={(id) => setActiveSection(id as SectionId)}
         moduleId={MODULE_ID}
-      />
-
-      {/* ── Section content with AnimatePresence ── */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeSection}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-        >
-          {renderSection()}
-        </motion.div>
-      </AnimatePresence>
+      >
+        {/* ── Section content with AnimatePresence ── */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeSection}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+          >
+            {renderSection()}
+          </motion.div>
+        </AnimatePresence>
+      </AdminTabBar>
     </div>
   );
 }

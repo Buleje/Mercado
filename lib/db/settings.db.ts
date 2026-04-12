@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
+import { getOrSet, invalidateByPrefix } from "@/lib/cache";
 import type {
   Settings as PSettings,
 } from "@/lib/generated/prisma/client";
@@ -91,15 +92,15 @@ function mapSettings(s: PSettings): DbSettings {
     ...(r.inventoryCountFreq != null && { inventoryCountFreq: r.inventoryCountFreq as string }),
 
     // ── Caja y pagos ──
-    ...(r.cashOpeningAmount != null && { cashOpeningAmount: r.cashOpeningAmount as number }),
-    ...(r.cashAlertMax != null && { cashAlertMax: r.cashAlertMax as number }),
+    ...(r.cashOpeningAmount != null && { cashOpeningAmount: Number(r.cashOpeningAmount) }),
+    ...(r.cashAlertMax != null && { cashAlertMax: Number(r.cashAlertMax) }),
     ...(r.returnPolicyDays != null && { returnPolicyDays: r.returnPolicyDays as number }),
-    ...(r.returnMaxNoAuth != null && { returnMaxNoAuth: r.returnMaxNoAuth as number }),
+    ...(r.returnMaxNoAuth != null && { returnMaxNoAuth: Number(r.returnMaxNoAuth) }),
     ...(r.autoCloseTime != null && { autoCloseTime: r.autoCloseTime as string }),
 
     // ── Delivery ──
     ...spreadJson(r.deliveryZonesJson as string, 'deliveryZones'),
-    ...(r.freeDeliveryMin != null && { freeDeliveryMin: r.freeDeliveryMin as number }),
+    ...(r.freeDeliveryMin != null && { freeDeliveryMin: Number(r.freeDeliveryMin) }),
     ...(r.deliveryMaxRadius != null && { deliveryMaxRadius: r.deliveryMaxRadius as number }),
     ...spreadJson(r.deliveryHoursJson as string, 'deliveryHours'),
     ...spreadJson(r.ridersJson as string, 'riders'),
@@ -156,21 +157,23 @@ function mapSettings(s: PSettings): DbSettings {
 // ── Settings DB ───────────────────────────────────────────────────────────────
 
 export const SettingsDB = {
-  async get(tenantId?: string): Promise<DbSettings> {
-    try {
-      const tid = tenantId ?? "main";
-      // Try by tenantId first (multi-tenant), fallback to id:1 (legacy)
-      const row = await prisma.settings.findUnique({ where: { tenantId: tid } })
-        ?? (tid === "main" ? await prisma.settings.findUnique({ where: { id: 1 } }) : null);
-      if (!row) return { mode: "whatsapp", adminBypassLogin: false };
-      return mapSettings(row);
-    } catch (error) {
-      logger.warn("[settings] falling back to defaults", { error: error instanceof Error ? error.message : String(error) });
-      return { mode: "whatsapp", adminBypassLogin: false };
-    }
+  async get(tenantId: string): Promise<DbSettings> {
+    return getOrSet<DbSettings>(`settings:${tenantId}`, 60, async () => {
+      try {
+        const tid = tenantId;
+        // Try by tenantId first (multi-tenant), fallback to id:1 (legacy)
+        const row = await prisma.settings.findUnique({ where: { tenantId: tid } })
+          ?? (tid === "main" ? await prisma.settings.findUnique({ where: { id: 1 } }) : null);
+        if (!row) return { mode: "whatsapp", adminBypassLogin: false };
+        return mapSettings(row);
+      } catch (error) {
+        logger.warn("[settings] falling back to defaults", { error: error instanceof Error ? error.message : String(error) });
+        return { mode: "whatsapp", adminBypassLogin: false };
+      }
+    });
   },
-  async set(s: DbSettings, tenantId?: string): Promise<DbSettings> {
-    const tid = tenantId ?? "main";
+  async set(s: DbSettings, tenantId: string): Promise<DbSettings> {
+    const tid = tenantId;
     const d: Record<string, unknown> = {
       mode: s.mode, businessName: s.businessName, businessPhone: s.businessPhone,
       businessAddress: s.businessAddress, logoUrl: s.logoUrl, description: s.description,
@@ -294,6 +297,7 @@ export const SettingsDB = {
       create: { tenantId: tid, ...d },
       update: d,
     });
+    invalidateByPrefix(`settings:${tid}`);
     return mapSettings(row);
   },
 };

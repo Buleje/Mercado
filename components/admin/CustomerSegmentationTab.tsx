@@ -178,7 +178,7 @@ export default function CustomerSegmentationTab() {
                 disabled={count === 0}
                 className={cn("w-full mt-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-bold transition-all", isSent ? "bg-emerald-500 text-white" : "bg-white/60 dark:bg-black/20 text-gray-600 dark:text-muted hover:bg-white dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed")}
               >
-                {isSent ? <>Enviado<span>✓</span></> : <><Send className="h-3 w-3" />Enviar campaña</>}
+                {isSent ? <>Enviado</> : <><Send className="h-3 w-3" />Enviar campaña</>}
               </button>
             </div>
           );

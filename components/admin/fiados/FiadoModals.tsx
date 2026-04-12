@@ -667,10 +667,10 @@ export default function FiadoModals({
                         ];
                         for (const [zone, items] of zones) {
                           const zoneTotal = items.reduce((s, f) => s + f.saldo, 0);
-                          lines.push("", `📍 ${zone} — ${items.length} deudor${items.length !== 1 ? "es" : ""} (S/${zoneTotal.toFixed(2)})`);
+                          lines.push("", `${zone} — ${items.length} deudor${items.length !== 1 ? "es" : ""} (S/${zoneTotal.toFixed(2)})`);
                           for (const f of items) {
                             const phone = f.customerId.replace(/\D/g, "");
-                            lines.push(`  → ${f.customerName || f.customerId} · S/${f.saldo.toFixed(2)} · ${phone.slice(0, 3)}XXXXXX ☐`);
+                            lines.push(`  -> ${f.customerName || f.customerId} · S/${f.saldo.toFixed(2)} · ${phone.slice(0, 3)}XXXXXX [ ]`);
                           }
                         }
                         lines.push("", `Total: S/${deudores.reduce((s, f) => s + f.saldo, 0).toFixed(2)} (${deudores.length} clientes)`);

@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     CustomersDB.getAll(tenantId),
     OrdersDB.getAll(tenantId),
     ReviewsDB.getAll(tenantId),
-    SettingsDB.get(),
+    SettingsDB.get(tenantId),
     SuppliersDB.getAll(tenantId),
     PurchasesDB.getAll(tenantId),
     SalesDB.getAll(tenantId),

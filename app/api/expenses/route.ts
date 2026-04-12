@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     const from = searchParams.get("from");
     const to = searchParams.get("to");
     if (from && to) {
-      return NextResponse.json(await ExpensesDB.getByDateRange(new Date(from), new Date(to)));
+      return NextResponse.json(await ExpensesDB.getByDateRange(auth.tenantId, new Date(from), new Date(to)));
     }
     return NextResponse.json(await ExpensesDB.getAll(auth.tenantId));
   } catch (err) {
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     if (!body.category || !body.amount) {
       return NextResponse.json({ error: "category and amount required" }, { status: 400 });
     }
-    const expense = await ExpensesDB.add({
+    const expense = await ExpensesDB.add(auth.tenantId, {
       category: body.category,
       description: body.description ?? "",
       amount: Number(body.amount),

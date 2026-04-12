@@ -49,9 +49,9 @@ export async function GET(req: NextRequest) {
         // Recopilar datos en paralelo
         const [allSales, todayOrders, allProducts, openCash] = await Promise.all([
           SalesDB.getAll(tenantId),
-          OrdersDB.getAllFiltered({ since: startOfDayISO }),
+          OrdersDB.getAllFiltered({ since: startOfDayISO, tenantId }),
           ProductsDB.getAll(tenantId),
-          CashRegistersDB.getOpen(),
+          CashRegistersDB.getOpen(tenantId),
         ]);
 
         // Ventas POS del día

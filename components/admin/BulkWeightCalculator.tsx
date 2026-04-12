@@ -17,7 +17,7 @@ type WeighEntry = {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const LS_KEY = "bsm_weight_history";
+const LS_KEY = "buleje_weight_history";
 
 const PRESETS = [
   { name: "Arroz extra", pricePerKg: 3.5 },

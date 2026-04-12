@@ -28,6 +28,8 @@ import BreadcrumbSchema from "@/components/BreadcrumbSchema";
 const CartSidebar = dynamic(() => import("@/components/CartSidebar"));
 const MobileBottomNav = dynamic(() => import("@/components/MobileBottomNav"));
 const CustomerMetricsPanel = dynamic(() => import("@/components/store/CustomerMetricsPanel"));
+// #24 Auto-reorder CTA
+const QuickReorderButton = dynamic(() => import("@/components/QuickReorderButton"));
 
 /* ── Types ───────────────────────────────────────────────────────── */
 
@@ -537,8 +539,18 @@ function PedidosTab({ orders, activeOrders, onReorder }: { orders: Order[]; acti
     return [...counts.values()].sort((a, b) => b.qty - a.qty).slice(0, 6);
   })();
 
+  // Items del ultimo pedido para QuickReorderButton
+  const lastOrderItems = safeOrders.find(o => o.status !== "cancelado")?.items ?? [];
+
   return (
     <div className="space-y-4">
+      {/* #24 Auto-reorder — CTA principal */}
+      {lastOrderItems.length > 0 && (
+        <div className="flex justify-center">
+          <QuickReorderButton items={lastOrderItems} />
+        </div>
+      )}
+
       {safeActiveOrders.length > 0 && (
         <div>
           <h3 className="text-xs font-bold text-gray-700 dark:text-foreground/80 mb-2 flex items-center gap-1.5">
@@ -1988,7 +2000,7 @@ type RecurringEntry = {
 
 function RecurrentesTab({ phone, orders }: { phone: string; orders: Order[] }) {
   const { addMultiple } = useCart();
-  const storageKey = `bsm-recurring-${phone.replace(/\D/g, "")}`;
+  const storageKey = `buleje-recurring-${phone.replace(/\D/g, "")}`;
 
   const [entries, setEntries] = useState<RecurringEntry[]>(() => {
     if (typeof window === "undefined") return [];

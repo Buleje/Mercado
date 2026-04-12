@@ -50,7 +50,7 @@ const STATUS_META: Record<TicketStatus, { label: string; color: string }> = {
 };
 
 const SOURCE_META: Record<TicketSource, string> = {
-  pedido: "📦 Pedido", chat: "💬 Chat", email: "📧 Email", telefono: "📞 Teléfono", presencial: "🏪 Presencial",
+  pedido: "Pedido", chat: "Chat", email: "Email", telefono: "Tel\u00e9fono", presencial: "Presencial",
 };
 
 // ── Seed Data ─────────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ export default function SupportTicketsTab() {
         {[
           { label: "Tickets abiertos", value: String(stats.open), color: "text-blue-600", bg: "bg-blue-50 dark:bg-blue-950/30" },
           { label: "SLA incumplido", value: String(stats.breached), color: "text-red-600", bg: "bg-red-50 dark:bg-red-950/30" },
-          { label: "Satisfacción prom.", value: `${stats.avgSatisfaction.toFixed(1)} ⭐`, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
+          { label: "Satisfacción prom.", value: `${stats.avgSatisfaction.toFixed(1)}/5`, color: "text-amber-600", bg: "bg-amber-50 dark:bg-amber-950/30" },
           { label: "Tiempo resolución prom.", value: `${stats.avgResolutionTime.toFixed(1)}h`, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
         ].map(({ label, value, color, bg }) => (
           <div key={label} className={cn("rounded-2xl p-4", bg)}>
@@ -136,7 +136,7 @@ export default function SupportTicketsTab() {
       {/* FAQ Panel */}
       {showFaq && (
         <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-3 sm:p-5">
-          <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground mb-3">📚 Base de conocimiento (FAQ)</h3>
+          <h3 className="font-extrabold text-sm text-gray-900 dark:text-foreground mb-3">Base de conocimiento (FAQ)</h3>
           <div className="space-y-3">
             {FAQ.map((f, i) => (
               <div key={i} className="bg-gray-50 dark:bg-surface rounded-xl p-3">
@@ -179,7 +179,7 @@ export default function SupportTicketsTab() {
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><span className={cn("text-xs font-bold", STATUS_META[t.status].color)}>{STATUS_META[t.status].label}</span></td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs">
                     <span className={cn("font-bold", t.slaBreached ? "text-red-600" : "text-emerald-600")}>{t.elapsedHours}h / {t.slaHours}h</span>
-                    {t.slaBreached && <span className="block text-red-500 text-[10px]">⚠️ Incumplido</span>}
+                    {t.slaBreached && <span className="block text-red-500 text-[10px]">Incumplido</span>}
                   </td>
                   <td className="px-2 sm:px-4 py-2 sm:py-3"><button onClick={() => setDetail(t)} className="text-primary hover:underline text-xs font-bold"><Eye className="h-3.5 w-3.5 inline" /></button></td>
                 </tr>
@@ -202,9 +202,9 @@ export default function SupportTicketsTab() {
                 ["Cliente", detail.clientName], ["Fuente", SOURCE_META[detail.source]],
                 ["Prioridad", PRIORITY_META[detail.priority].label], ["Estado", STATUS_META[detail.status].label],
                 ["Asignado a", detail.assignedTo], ["Mensajes", String(detail.messages)],
-                ["SLA", `${detail.elapsedHours}h / ${detail.slaHours}h`], ["SLA cumplido", detail.slaBreached ? "No ⚠️" : "Sí ✅"],
+                ["SLA", `${detail.elapsedHours}h / ${detail.slaHours}h`], ["SLA cumplido", detail.slaBreached ? "No" : "Si"],
                 ...(detail.orderRef ? [["Pedido relacionado", detail.orderRef]] : []),
-                ...(detail.satisfaction !== null ? [["Satisfacción", "⭐".repeat(detail.satisfaction)]] : []),
+                ...(detail.satisfaction !== null ? [["Satisfacción", `${detail.satisfaction}/5`]] : []),
               ].map(([k, v]) => (
                 <div key={k}><p className="text-xs text-gray-400">{k}</p><p className="font-bold text-gray-800 dark:text-foreground">{v}</p></div>
               ))}

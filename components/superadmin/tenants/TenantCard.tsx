@@ -4,7 +4,7 @@ import {
   ExternalLink, Mail, XCircle, CheckCircle2, Loader2,
   DollarSign, ArrowDownRight, ArrowUpRight, TrendingUp,
   ShoppingCart, Package, Users, Store, ShoppingBag,
-  BarChart3, Trash2, Eraser, LogIn,
+  BarChart3, Trash2, Eraser, LogIn, AlertCircle,
 } from "lucide-react";
 import type { TenantRow, PlanId } from "@/lib/superadmin-types";
 import { PlanBadge } from "@/components/superadmin/_shared";
@@ -27,6 +27,17 @@ interface TenantCardProps {
   onLoginAs: (tenant: TenantRow) => void;
   onDelete: (slug: string, name: string) => void;
   onPurge: (slug: string, name: string) => void;
+  onViewProducts?: (tenant: TenantRow) => void;
+}
+
+/** Computes a health score for the tenant. */
+function computeHealth(t: TenantRow): { ok: boolean; issues: string[] } {
+  const issues: string[] = [];
+  if ((t.usage?.products ?? 0) === 0) issues.push("Sin productos");
+  if ((t._count.AdminUser ?? 0) === 0) issues.push("Sin usuarios admin");
+  if (!t.active) issues.push("Tienda inactiva");
+  if ((t.stores?.length ?? 0) === 0) issues.push("Sin tienda en marketplace");
+  return { ok: issues.length === 0, issues };
 }
 
 export function TenantCard({
@@ -40,10 +51,12 @@ export function TenantCard({
   onLoginAs,
   onDelete,
   onPurge,
+  onViewProducts,
 }: TenantCardProps) {
   const t = tenant;
   const planColor = CARD_BG[t.plan] ?? CARD_BG.free;
   const initials = t.name.slice(0, 2).toUpperCase();
+  const health = computeHealth(t);
 
   const pctFn = (u: number, m: number) => (m === -1 ? 0 : Math.min(100, Math.round((u / m) * 100)));
   const totalUsagePct =
@@ -63,6 +76,11 @@ export function TenantCard({
   const revenue = t.monthRevenue ?? 0;
   const expenses = t.monthExpenses ?? 0;
   const profit = t.monthProfit ?? 0;
+  const hasVisibleAdminData =
+    (t.usage?.products ?? 0) > 0 ||
+    (t.monthOrders ?? 0) > 0 ||
+    revenue > 0 ||
+    (storeInfo?._count.products ?? 0) > 0;
 
   return (
     <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm hover:border-teal-300 dark:hover:border-teal-700 transition-all hover:shadow-md overflow-hidden">
@@ -93,6 +111,19 @@ export function TenantCard({
                 <ShoppingBag className="w-2.5 h-2.5" /> Marketplace
               </span>
             )}
+            {/* Health badge */}
+            {health.ok ? (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/40 text-[9px] font-semibold text-green-700 dark:text-green-300" title="Tienda configurada correctamente">
+                <CheckCircle2 className="w-2.5 h-2.5" /> OK
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-[9px] font-semibold text-red-700 dark:text-red-300 cursor-help"
+                title={health.issues.join(", ")}
+              >
+                <AlertCircle className="w-2.5 h-2.5" /> {health.issues.length} problema{health.issues.length !== 1 ? "s" : ""}
+              </span>
+            )}
           </div>
         </div>
 
@@ -115,20 +146,30 @@ export function TenantCard({
         {/* Resources */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { val: t.usage?.products ?? 0, lbl: "Productos", icon: Package, max: t.limits?.maxProducts ?? -1 },
-            { val: t._count.AdminUser, lbl: "Usuarios", icon: Users, max: t.limits?.maxUsers ?? -1 },
-            { val: storeInfo?._count.products ?? 0, lbl: "En Marketplace", icon: Store, max: -1 },
-          ].map(({ val, lbl, icon: Icon, max }) => {
+            { val: t.usage?.products ?? 0, lbl: "Productos", icon: Package, max: t.limits?.maxProducts ?? -1, clickable: true },
+            { val: t._count.AdminUser, lbl: "Usuarios", icon: Users, max: t.limits?.maxUsers ?? -1, clickable: false },
+            { val: storeInfo?._count.products ?? 0, lbl: "En Marketplace", icon: Store, max: -1, clickable: false },
+          ].map(({ val, lbl, icon: Icon, max, clickable }) => {
             const usagePct = max === -1 ? 0 : Math.min(100, Math.round((val / max) * 100));
             const isEmpty = val === 0 && lbl !== "Usuarios";
+            const canClick = clickable && Boolean(onViewProducts);
             return (
               <div
                 key={lbl}
-                className={`rounded-xl p-2.5 text-center ${isEmpty ? "bg-gray-50 dark:bg-gray-800/30 border border-dashed border-gray-200 dark:border-gray-700" : "bg-gray-50 dark:bg-gray-800/50"}`}
+                onClick={canClick ? () => onViewProducts?.(t) : undefined}
+                role={canClick ? "button" : undefined}
+                tabIndex={canClick ? 0 : undefined}
+                className={`rounded-xl p-2.5 text-center ${
+                  isEmpty
+                    ? "bg-gray-50 dark:bg-gray-800/30 border border-dashed border-gray-200 dark:border-gray-700"
+                    : "bg-gray-50 dark:bg-gray-800/50"
+                } ${canClick ? "cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-900/20 hover:border-teal-200 dark:hover:border-teal-800 border border-transparent transition-colors" : ""}`}
               >
                 <Icon className={`w-3.5 h-3.5 mx-auto mb-1 ${isEmpty ? "text-gray-300 dark:text-gray-600" : "text-gray-400"}`} />
                 <div className={`text-base font-bold ${isEmpty ? "text-gray-300 dark:text-gray-600" : "text-gray-900 dark:text-white"}`}>{val}</div>
-                <div className={`text-[9px] ${isEmpty ? "text-gray-300 dark:text-gray-600" : "text-gray-400"}`}>{isEmpty ? "Sin datos" : lbl}</div>
+                <div className={`text-[9px] ${isEmpty ? "text-gray-300 dark:text-gray-600" : "text-gray-400"}`}>
+                  {canClick ? (isEmpty ? "Sin datos ▸" : `${lbl} ▸`) : isEmpty ? "Sin datos" : lbl}
+                </div>
                 {max !== -1 && !isEmpty && (
                   <div className="h-1 bg-gray-200 dark:bg-gray-700 rounded-full mt-1 overflow-hidden">
                     <div className={`h-full rounded-full ${usagePct >= 100 ? "bg-red-500" : usagePct >= 80 ? "bg-amber-400" : "bg-teal-500"}`} style={{ width: `${usagePct}%` }} />
@@ -137,6 +178,33 @@ export function TenantCard({
               </div>
             );
           })}
+        </div>
+
+        {/* Panel data status */}
+        <div
+          className={`rounded-xl border px-3 py-2 ${
+            hasVisibleAdminData
+              ? "border-green-200 dark:border-green-800 bg-green-50/70 dark:bg-green-950/20"
+              : "border-red-200 dark:border-red-800 bg-red-50/70 dark:bg-red-950/20"
+          }`}
+        >
+          <div
+            className={`flex items-center gap-1.5 text-[11px] font-semibold ${
+              hasVisibleAdminData ? "text-green-700 dark:text-green-300" : "text-red-700 dark:text-red-300"
+            }`}
+          >
+            {hasVisibleAdminData ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+            {hasVisibleAdminData ? "Panel con información" : "Panel sin información útil"}
+          </div>
+          <p
+            className={`mt-0.5 text-[10px] ${
+              hasVisibleAdminData ? "text-green-700/80 dark:text-green-300/80" : "text-red-700/80 dark:text-red-300/80"
+            }`}
+          >
+            {hasVisibleAdminData
+              ? "Esta tienda ya muestra datos en su admin del negocio."
+              : "Faltan productos o movimientos; revisar la carga inicial de la tienda."}
+          </p>
         </div>
 
         {/* Plan usage bar */}

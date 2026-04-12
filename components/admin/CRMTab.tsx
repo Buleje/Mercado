@@ -701,9 +701,9 @@ export default function CRMTab() {
                     <td className="px-3 py-3 text-center">
                       {(() => {
                         const rank = rankingMap.get(c.phone) ?? 999;
-                        if (rank === 1) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 text-yellow-800 text-xs font-extrabold">🥇</span>;
-                        if (rank === 2) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-gray-800 text-xs font-extrabold">🥈</span>;
-                        if (rank === 3) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-800 text-xs font-extrabold">🥉</span>;
+                        if (rank === 1) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-yellow-100 text-yellow-800 text-xs font-extrabold">1</span>;
+                        if (rank === 2) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-gray-800 text-xs font-extrabold">2</span>;
+                        if (rank === 3) return <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100 text-amber-800 text-xs font-extrabold">3</span>;
                         if (rank <= 10) return <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-surface text-gray-600 dark:text-muted text-[10px] font-bold">#{rank}</span>;
                         return <span className="text-[10px] text-gray-300 dark:text-muted">—</span>;
                       })()}
@@ -761,7 +761,7 @@ export default function CRMTab() {
                             placeholder="0.00"
                           />
                           <button type="submit" className="text-[10px] px-1.5 py-1 bg-primary text-white rounded-lg font-bold">OK</button>
-                          <button type="button" onClick={() => setEditingCreditLimit(null)} className="text-[10px] text-gray-400 hover:text-gray-600">✕</button>
+                          <button type="button" onClick={() => setEditingCreditLimit(null)} className="text-[10px] text-gray-400 hover:text-gray-600">×</button>
                         </form>
                       ) : (
                         <button

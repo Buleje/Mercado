@@ -1549,7 +1549,7 @@ export default function NotasCreditoModule() {
                           <button onClick={() => setShowTemplates(s => !s)} className="flex items-center gap-2 w-full text-xs font-bold text-blue-700 dark:text-blue-400">
                             <Bookmark className="h-3.5 w-3.5" />
                             Mis templates guardados ({templates.length})
-                            <span className="ml-auto text-[10px] text-blue-400">{showTemplates ? "▲ Ocultar" : "▼ Ver"}</span>
+                            <span className="ml-auto text-[10px] text-blue-400">{showTemplates ? "Ocultar" : "Ver"}</span>
                           </button>
                           <AnimatePresence>
                             {showTemplates && (
@@ -1561,7 +1561,7 @@ export default function NotasCreditoModule() {
                                         <strong>{t.name}</strong> — [{t.codigoMotivo}] {t.descripcionMotivo}
                                       </span>
                                       <button onClick={() => loadTemplate(t)} className="text-[10px] font-bold text-blue-600 hover:underline shrink-0">Usar</button>
-                                      <button onClick={() => deleteTemplate(t.id)} className="text-[10px] text-red-400 hover:text-red-600 shrink-0">✕</button>
+                                      <button onClick={() => deleteTemplate(t.id)} className="text-[10px] text-red-400 hover:text-red-600 shrink-0">x</button>
                                     </div>
                                   ))}
                                 </div>

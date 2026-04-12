@@ -179,3 +179,20 @@ export const DEFAULT_PLAN_PRICES: Record<PlanId, number> = {
   business: 149,
   enterprise: 499,
 };
+
+/**
+ * Alias para consumidores que solo necesitan el mapa de precios.
+ * Client-safe — NO consulta DB. Para precios runtime (con overrides de
+ * superadmin), usar `getPlanPrice()` / `getAllPlanPrices()` de
+ * `@/lib/plans-server` (server-only).
+ */
+export const PLAN_PRICES: Record<string, number> = DEFAULT_PLAN_PRICES;
+
+/**
+ * Retorna el precio estático de un plan. Client-safe.
+ * Para precios runtime con overrides de DB, usar la versión de
+ * `@/lib/plans-server`.
+ */
+export function getPlanPrice(plan: string): number {
+  return PLAN_PRICES[plan] ?? 0;
+}

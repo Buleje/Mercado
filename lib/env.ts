@@ -56,6 +56,16 @@ const REQUIRED: EnvSpec[] = [
     description: "Stripe webhook signing secret (whsec_*) — required for billing",
     productionOnly: true,
   },
+  {
+    key: "STRIPE_STARTER_PRICE_ID",
+    description: "Stripe Price ID para el plan Starter (price_*) — S/49.00/mes",
+    productionOnly: true,
+  },
+  {
+    key: "STRIPE_PRO_PRICE_ID",
+    description: "Stripe Price ID para el plan Pro (price_*) — S/149.00/mes",
+    productionOnly: true,
+  },
   // ── Cron security ─────────────────────────────────────────────────────────
   {
     key: "CRON_SECRET",

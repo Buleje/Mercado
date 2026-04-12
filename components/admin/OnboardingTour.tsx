@@ -156,7 +156,6 @@ export function OnboardingTour({
         {/* Header with step counter */}
         <div className="flex items-center justify-between px-4 pt-3 pb-1">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{step.emoji}</span>
             <span className="text-xs font-bold text-[#00B4A6] dark:text-emerald-400 uppercase tracking-wider">
               Paso {currentStep + 1} de {totalSteps}
             </span>

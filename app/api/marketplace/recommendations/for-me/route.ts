@@ -4,7 +4,7 @@
  * Endpoint de marketplace que devuelve recomendaciones personalizadas
  * basadas en el historial de compras del cliente autenticado.
  *
- * Requiere sesión de customer (cookie bsm-customer-sess).
+ * Requiere sesión de customer (cookie buleje-customer-sess).
  * Si no hay sesión activa devuelve 401.
  */
 

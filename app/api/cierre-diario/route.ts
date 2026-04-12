@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { logActivity } from "@/lib/activity-logger";
 import { logger } from "@/lib/logger";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const CierreDiarioSchema = z.object({
   fecha: z.string().min(1),
@@ -24,6 +25,9 @@ const CierreDiarioSchema = z.object({
 
 // POST — Save daily summary
 export async function POST(req: NextRequest) {
+  const rateLimitResult = applyRateLimit(req, "STRICT", "cierre-diario-post");
+  if (rateLimitResult) return rateLimitResult;
+
   const auth = await requireAdmin(req);
   if (auth instanceof NextResponse) return auth;
 

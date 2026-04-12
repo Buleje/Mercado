@@ -29,6 +29,6 @@ export async function POST(req: NextRequest) {
     quality: Math.min(5, Math.max(1, quality ?? 3)),
     price: Math.min(5, Math.max(1, price ?? 3)),
     notes,
-  });
+  }, auth.tenantId);
   return NextResponse.json(evaluation, { status: 201 });
 }

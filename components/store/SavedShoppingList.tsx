@@ -22,7 +22,7 @@ interface SavedShoppingListProps {
   onApplyList: (items: ListItem[]) => void;
 }
 
-const STORAGE_KEY = "bsm_shopping_lists";
+const STORAGE_KEY = "buleje_shopping_lists";
 
 // ── Storage helpers ────────────────────────────────────────────────────────────
 

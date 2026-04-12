@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     const result = orders.map((o) => ({
       id: o.id,
       customerName: o.customerName,
-      total: o.total,
+      total: Number(o.total),
       status: o.status,
       createdAt: o.createdAt.toISOString(),
       itemsCount: o._count.items,
@@ -67,6 +67,7 @@ const CheckoutBodySchema = z.object({
   customerPhone:   z.string().min(6).max(20),
   customerAddress: z.string().min(5).max(300),
   notes:           z.string().max(500).optional(),
+  paymentMethod:   z.enum(["efectivo", "yape", "mercado_pago"]).optional(),
   items:           z.array(CartItemSchema).min(1).max(50),
 });
 
@@ -96,6 +97,7 @@ export async function POST(req: NextRequest) {
       customerPhone,
       customerAddress,
       notes,
+      paymentMethod,
       items,
     } = parsed.data;
 
@@ -122,6 +124,7 @@ export async function POST(req: NextRequest) {
       customerPhone,
       customerAddress,
       notes,
+      paymentMethod,
       items,
     });
 

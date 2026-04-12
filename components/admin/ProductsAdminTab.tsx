@@ -8,6 +8,7 @@ import {
   Loader2, Globe, Camera } from "lucide-react";
 import TagBadge, { TAG_COLORS, type TagColor, type Tag as TagType } from "./TagBadge";
 import { cn } from "@/lib/utils";
+import { EmptyState } from "@/components/admin/EmptyState";
 import { categories } from "@/data/products";
 import type { Product } from "@/types/erp";
 import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
@@ -280,8 +281,7 @@ function ProductFormModal({
                       className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-primary/5 dark:hover:bg-primary/10 transition-colors text-left border-b border-gray-50 dark:border-card-border last:border-0"
                     >
                       {r.image ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={r.image} alt="" className="h-10 w-10 rounded-lg object-cover bg-gray-100 shrink-0" />
+                        <Image src={r.image} alt="" width={40} height={40} className="rounded-lg object-cover bg-gray-100 shrink-0" />
                       ) : (
                         <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-surface flex items-center justify-center shrink-0">
                           <Package className="h-5 w-5 text-gray-300" />
@@ -852,11 +852,15 @@ export default function ProductsAdminTab() {
 
       {/* Empty state */}
       {filtered.length === 0 && (
-        <div className="text-center py-14 text-muted">
-          <Package className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-          <p className="font-semibold">No se encontraron productos</p>
-          <p className="text-sm mt-1">Intenta otro término de búsqueda o categoría</p>
-        </div>
+        <EmptyState
+          icon={<Package className="h-10 w-10 text-gray-300" />}
+          title="No se encontraron productos"
+          description="Intenta otro término de búsqueda o categoría, o agrega un producto nuevo."
+          actions={[
+            { label: "Nuevo producto", href: "/admin?tab=productos&new=1", variant: "primary" },
+            { label: "Limpiar filtros", onClick: () => {}, variant: "secondary" },
+          ]}
+        />
       )}
 
       {/* List view */}

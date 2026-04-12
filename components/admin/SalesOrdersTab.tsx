@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export-excel";
+import { tenantFetch } from "@/lib/tenant-fetch";
 import TicketPreview from "./TicketPreview";
 import OrderTimeline from "./pedidos/OrderTimeline";
 
@@ -280,7 +281,7 @@ export default function SalesOrdersTab() {
   const changeStatus = async (orderId: string, newStatus: string) => {
     setUpdatingId(orderId);
     try {
-      const res = await fetch(`/api/orders/${orderId}`, {
+      const res = await tenantFetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -1083,7 +1084,7 @@ export default function SalesOrdersTab() {
                           const existing = w[timeoutKey] as ReturnType<typeof setTimeout> | undefined;
                           if (existing) clearTimeout(existing);
                           w[timeoutKey] = setTimeout(() => {
-                            fetch(`/api/orders/${orderId}`, {
+                            tenantFetch(`/api/orders/${orderId}`, {
                               method: "PATCH",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({ notes: value ? `[ADMIN] ${value}` : "" }),

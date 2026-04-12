@@ -1,6 +1,6 @@
 ---
 name: four-table-closing
-description: Formato obligatorio de cierre de respuesta para Bodega San Martín — 4 tablas puras (antes/después, hecho, mejoras+agentes, decodificador). Activar SIEMPRE al terminar cualquier tarea. Override de cualquier otro formato de cierre.
+description: Formato obligatorio de cierre de respuesta para Buleje — 4 tablas puras (antes/después, hecho, mejoras+agentes, decodificador). Activar SIEMPRE al terminar cualquier tarea. Override de cualquier otro formato de cierre.
 version: 1
 author: Brandon + Claude (mandato 2026-04-09 v3)
 ---

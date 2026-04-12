@@ -225,6 +225,7 @@ export async function POST(req: NextRequest) {
           stockMin: data.stock_minimo,
           barcode: data.codigo_barras,
           active: true,
+          tenantId: auth.tenantId,
         });
         created++;
       } catch (dbErr) {

@@ -55,19 +55,18 @@ function mapExpense(e: PExpense): DbExpense {
 // ── Payables DB ───────────────────────────────────────────────────────────────
 
 export const PayablesDB = {
-  async getAll(tenantId?: string): Promise<DbPayable[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbPayable[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.payable.findMany({ where, include: { payments: true }, orderBy: { createdAt: "desc" } })).map(mapPayable);
   },
   async getById(tenantId: string, id: string): Promise<DbPayable | null> {
     const row = await prisma.payable.findFirst({ where: { id, tenantId }, include: { payments: true } });
     return row ? mapPayable(row) : null;
   },
-  async getBySupplierId(supplierId: string): Promise<DbPayable[]> {
-    return (await prisma.payable.findMany({ where: { supplierId }, include: { payments: true }, orderBy: { createdAt: "desc" } })).map(mapPayable);
+  async getBySupplierId(tenantId: string, supplierId: string): Promise<DbPayable[]> {
+    return (await prisma.payable.findMany({ where: { supplierId, tenantId }, include: { payments: true }, orderBy: { createdAt: "desc" } })).map(mapPayable);
   },
-  async add(p: DbPayable, tenantId = "main"): Promise<DbPayable> {
+  async add(tenantId: string, p: DbPayable): Promise<DbPayable> {
     const row = await prisma.payable.create({
       data: {
         id: p.id, supplierId: p.supplierId, supplierName: p.supplierName,
@@ -117,23 +116,21 @@ export const PayablesDB = {
 // ── Expenses DB ───────────────────────────────────────────────────────────────
 
 export const ExpensesDB = {
-  async getAll(tenantId?: string): Promise<DbExpense[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
-    return (await prisma.expense.findMany({ where, orderBy: { date: "desc" } })).map(mapExpense);
+  async getAll(tenantId: string): Promise<DbExpense[]> {
+    return (await prisma.expense.findMany({ where: { tenantId }, orderBy: { date: "desc" } })).map(mapExpense);
   },
-  async getByDateRange(from: Date, to: Date): Promise<DbExpense[]> {
-    return (await prisma.expense.findMany({ where: { date: { gte: from, lte: to } }, orderBy: { date: "desc" } })).map(mapExpense);
+  async getByDateRange(tenantId: string, from: Date, to: Date): Promise<DbExpense[]> {
+    return (await prisma.expense.findMany({ where: { tenantId, date: { gte: from, lte: to } }, orderBy: { date: "desc" } })).map(mapExpense);
   },
-  async add(data: Omit<DbExpense, "id" | "createdAt">, tenantId = "main"): Promise<DbExpense> {
+  async add(tenantId: string, data: Omit<DbExpense, "id" | "createdAt">): Promise<DbExpense> {
     const row = await prisma.expense.create({ data: { category: data.category, description: data.description, amount: data.amount, date: new Date(data.date), recurring: data.recurring, tenantId } });
     return mapExpense(row);
   },
   async delete(tenantId: string, id: string): Promise<void> {
     await prisma.expense.deleteMany({ where: { id, tenantId } }).catch(() => {});
   },
-  async getSummary(): Promise<{ category: string; total: number; count: number }[]> {
-    const groups = await prisma.expense.groupBy({ by: ["category"], _sum: { amount: true }, _count: true, orderBy: { _sum: { amount: "desc" } } });
+  async getSummary(tenantId: string): Promise<{ category: string; total: number; count: number }[]> {
+    const groups = await prisma.expense.groupBy({ by: ["category"], where: { tenantId }, _sum: { amount: true }, _count: true, orderBy: { _sum: { amount: "desc" } } });
     // TD-018: g._sum.amount es Decimal | null
     return groups.map(g => ({ category: g.category, total: toNumOrZero(g._sum.amount), count: g._count }));
   },

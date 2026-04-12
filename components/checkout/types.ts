@@ -56,6 +56,8 @@ export type CouponState = {
 export type LoyaltyState = {
   points: number | null;
   tier: string | null;
+  /** Soles a descontar por canje de puntos (50 pts = S/1). */
+  redemptionSoles: number;
 };
 
 export type PaymentState = {

@@ -33,11 +33,11 @@ export async function POST(req: NextRequest) {
     // 2. If whatsapp resumen requested, save to settings
     if (body.preferences?.whatsappResumen && body.preferences?.whatsappNumber) {
       try {
-        const current = await SettingsDB.get();
+        const current = await SettingsDB.get(auth.tenantId);
         await SettingsDB.set({
           ...current,
           businessPhone: body.preferences.whatsappNumber,
-        });
+        }, auth.tenantId);
       } catch {
         // Settings save is best-effort
       }

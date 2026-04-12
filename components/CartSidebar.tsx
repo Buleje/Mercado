@@ -107,7 +107,7 @@ export default function CartSidebar() {
 
   const saveCartForLater = () => {
     if (items.length === 0) return;
-    const code = "BSM-" + Date.now().toString(36).toUpperCase();
+    const code = "Buleje-" + Date.now().toString(36).toUpperCase();
     const cartData = {
       items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity, unit: i.unit, image: i.image })),
       savedAt: Date.now(),
@@ -210,7 +210,7 @@ export default function CartSidebar() {
   useEffect(() => {
     if (!isOpen) return;
     try {
-      const hasOrdered = localStorage.getItem("bsm-has-ordered");
+      const hasOrdered = localStorage.getItem("buleje-has-ordered");
       setIsFirstOrder(!hasOrdered);
     } catch { /* silent */ }
   }, [isOpen]);
@@ -278,7 +278,7 @@ export default function CartSidebar() {
     markOrderPending();
     // Dispatch order tracking event so OrderProgress widget appears
     const orderId = `WA-${Date.now().toString(36).toUpperCase()}`;
-    window.dispatchEvent(new CustomEvent("bsm:orderCreated", { detail: { orderId, customerName: customer?.name } }));
+    window.dispatchEvent(new CustomEvent("buleje:orderCreated", { detail: { orderId, customerName: customer?.name } }));
     setTimeout(() => openConfirmModal(), 1800);
   };
 

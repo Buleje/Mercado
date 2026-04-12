@@ -5,7 +5,7 @@
  * Syncs automatically when connection is restored.
  * ──────────────────────────────────────────────────────────────────── */
 
-const DB_NAME = "bsm-pos-offline";
+const DB_NAME = "buleje-pos-offline";
 const DB_VERSION = 1;
 const STORE_NAME = "pending-sales";
 

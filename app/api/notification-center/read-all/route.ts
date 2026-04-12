@@ -1,13 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 
 /**
  * PATCH /api/notification-center/read-all
  *
  * Marca todas las notificaciones del tenant como leídas.
  */
-export async function PATCH() {
-  const tenantId = "main";
+export async function PATCH(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth instanceof NextResponse) return auth;
+  const tenantId = auth.tenantId;
 
   try {
     const result = await prisma.notification.updateMany({

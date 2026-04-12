@@ -31,8 +31,8 @@ export async function POST(
       );
     }
 
-    const receta = await RecetasDB.getById(id);
-    if (!receta || receta.tenantId !== auth.tenantId) {
+    const receta = await RecetasDB.getById(auth.tenantId, id);
+    if (!receta) {
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
     if (!receta.activa) {

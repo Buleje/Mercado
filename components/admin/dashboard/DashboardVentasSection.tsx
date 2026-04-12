@@ -308,7 +308,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                 if (topHours.length === 0) return null;
                 return (
                   <div className="bg-emerald-50 dark:bg-emerald-950/30 rounded-lg p-3 text-xs">
-                    <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">💡 Horarios pico identificados</div>
+                    <div className="font-semibold text-emerald-700 dark:text-emerald-400 mb-1">Horarios pico identificados</div>
                     <div className="space-y-0.5 text-emerald-600 dark:text-emerald-300 text-[10px]">
                       {topHours.map(([key, count]) => {
                         const [dayIdx, hour] = key.split('-').map(Number);
@@ -444,7 +444,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                       <div>• <strong>Conversión baja ({st.overallConversionRate.toFixed(1)}%)</strong> - Optimiza landing pages, mejora fotos de productos y clarifica propuesta de valor.</div>
                     )}
                     <div className="pt-1 mt-1 border-t border-blue-200/50 dark:border-blue-800/50 text-blue-500 dark:text-blue-400\">
-                      💡 Nota: Datos del funnel son estimaciones basadas en pedidos completados. Implementa analytics real para métricas precisas.
+                      Nota: Datos del funnel son estimaciones basadas en pedidos completados. Implementa analytics real para métricas precisas.
                     </div>
                   </div>
                 </div>
@@ -572,7 +572,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                   className="px-1.5 py-0.5 rounded-md border border-gray-200 dark:border-card-border bg-white dark:bg-card text-[10px] text-gray-600 dark:text-foreground" />
                 {(dateFrom || dateTo) && (
                   <button onClick={() => { setDateFrom(""); setDateTo(""); }}
-                    className="text-[10px] text-red-400 hover:text-red-600 font-bold">✕</button>
+                    className="text-[10px] text-red-400 hover:text-red-600 font-bold">X</button>
                 )}
               </div>
             </div>
@@ -605,7 +605,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                     {(["confirmado","en_camino","entregado","cancelado"] as const).map(s => (
                       <button key={s} onClick={() => handleBulkStatus(s)} disabled={bulkUpdating}
                         className="text-[10px] font-bold px-2 py-1 rounded-lg bg-white dark:bg-card border border-gray-200 dark:border-card-border hover:border-primary hover:text-primary text-gray-500 transition-colors disabled:opacity-50">
-                        {s === "confirmado" ? "✓ Confirmar" : s === "en_camino" ? "🚚 Despachar" : s === "entregado" ? "✓ Entregado" : "✕ Cancelar"}
+                        {s === "confirmado" ? "Confirmar" : s === "en_camino" ? "Despachar" : s === "entregado" ? "Entregado" : "Cancelar"}
                       </button>
                     ))}
                     <button onClick={() => setSelectedOrders(new Set())} className="text-[10px] font-bold px-2 py-1 text-gray-400 hover:text-gray-600">Limpiar</button>
@@ -662,18 +662,18 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                             {/* J3 — New client badge */}
                             {o.customer.phone && (() => {
                               const otherOrders = orders.filter((ord: any) => ord.id !== o.id && ord.customer.phone === o.customer.phone);
-                              return otherOrders.length === 0 ? <span className="text-[9px] bg-indigo-50 text-indigo-600 font-bold px-1.5 py-0.5 rounded-full" title="Primera compra">🆕</span> : null;
+                              return otherOrders.length === 0 ? <span className="text-[9px] bg-indigo-50 text-indigo-600 font-bold px-1.5 py-0.5 rounded-full" title="Primera compra">Nuevo</span> : null;
                             })()}
                           </div>
                           {o.customer.phone && <div className="text-gray-300 font-mono">{o.customer.phone}</div>}
                           {/* E1 — WA quick contact */}
                           {o.customer.phone && (
                             <a
-                              href={`https://wa.me/51${o.customer.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${o.customer.name}, sobre tu pedido #${o.id.slice(-6)} en Buleje 🛒`)}`}
+                              href={`https://wa.me/51${o.customer.phone.replace(/\D/g,"")}?text=${encodeURIComponent(`Hola ${o.customer.name}, sobre tu pedido #${o.id.slice(-6)} en Buleje`)}`}
                               target="_blank" rel="noopener noreferrer"
                               className="text-[9px] text-emerald-600 font-bold hover:underline mt-0.5 flex items-center gap-0.5"
                               title="Contactar por WhatsApp"
-                            >📲 WA</a>
+                            >WA</a>
                           )}
                         </td>
                         <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-gray-400 hidden sm:table-cell max-w-40 truncate">
@@ -688,9 +688,9 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                           {(() => {
                             const effStatus = (quickStatusMap[o.id] ?? o.status) as Order["status"];
                             const NEXT: Partial<Record<Order["status"], { s: Order["status"]; label: string }>> = {
-                              pendiente:  { s: "confirmado", label: "✓ Confirmar" },
-                              confirmado: { s: "en_camino",  label: "🚚 Despachar" },
-                              en_camino:  { s: "entregado",  label: "✓ Entregado" },
+                              pendiente:  { s: "confirmado", label: "Confirmar" },
+                              confirmado: { s: "en_camino",  label: "Despachar" },
+                              en_camino:  { s: "entregado",  label: "Entregado" },
                             };
                             const next = NEXT[effStatus];
                             return (
@@ -715,7 +715,7 @@ export default function DashboardVentasSection({ st, expandAll, orders, sales, p
                         </td>
                         <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-right font-semibold text-gray-800 dark:text-foreground">
                           <span>{fmt(o.total)}</span>
-                          <button onClick={() => printTicket(o)} className="ml-1.5 text-gray-300 hover:text-primary transition-colors" title="Imprimir comanda">🖨️</button>
+                          <button onClick={() => printTicket(o)} className="ml-1.5 text-gray-300 hover:text-primary transition-colors" title="Imprimir comanda">Impr.</button>
                         </td>
                       </tr>
                       {/* U2: Admin note row */}

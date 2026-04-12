@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import {
   Palette, Store, Layout, Phone, Settings2, Image as ImageIcon,
   Save, Loader2, Check, Eye, EyeOff,
@@ -8,6 +9,7 @@ import {
   MessageSquare, HelpCircle, Map, ToggleLeft, ToggleRight, Sun, Moon, Type, Sliders,
   Paintbrush, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import StorefrontEditor from "./StorefrontEditor";
 import type { SectionKey } from "./StorefrontEditor";
 import ImageUpload from "./ImageUpload";
@@ -276,16 +278,42 @@ const inputCls =
 
 // ── Tabs del panel ─────────────────────────────────────────────────────────────
 
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: "identidad",  label: "Identidad",  icon: <Store className="h-4 w-4" /> },
-  { id: "colores",    label: "Colores",    icon: <Palette className="h-4 w-4" /> },
-  { id: "estilos",    label: "Estilos",    icon: <Paintbrush className="h-4 w-4" /> },
-  { id: "secciones",  label: "Secciones",  icon: <Layout className="h-4 w-4" /> },
-  { id: "hero",       label: "Hero",       icon: <ImageIcon className="h-4 w-4" /> },
-  { id: "contacto",   label: "Contacto",   icon: <Phone className="h-4 w-4" /> },
-  { id: "contenido",  label: "Contenido",  icon: <FileText className="h-4 w-4" /> },
-  { id: "avanzado",   label: "Avanzado",   icon: <Settings2 className="h-4 w-4" /> },
+const TAB_GROUPS: { group: string; icon: React.ReactNode; tabs: { id: Tab; label: string; icon: React.ReactNode }[] }[] = [
+  {
+    group: "Apariencia",
+    icon: <Palette className="h-3.5 w-3.5" />,
+    tabs: [
+      { id: "identidad", label: "Identidad", icon: <Store className="h-4 w-4" /> },
+      { id: "colores", label: "Colores", icon: <Palette className="h-4 w-4" /> },
+      { id: "estilos", label: "Estilos", icon: <Paintbrush className="h-4 w-4" /> },
+    ],
+  },
+  {
+    group: "Contenido",
+    icon: <FileText className="h-3.5 w-3.5" />,
+    tabs: [
+      { id: "hero", label: "Hero", icon: <ImageIcon className="h-4 w-4" /> },
+      { id: "secciones", label: "Secciones", icon: <Layout className="h-4 w-4" /> },
+      { id: "contenido", label: "Textos y Popup", icon: <FileText className="h-4 w-4" /> },
+    ],
+  },
+  {
+    group: "Negocio",
+    icon: <Phone className="h-3.5 w-3.5" />,
+    tabs: [
+      { id: "contacto", label: "Contacto", icon: <Phone className="h-4 w-4" /> },
+    ],
+  },
+  {
+    group: "Avanzado",
+    icon: <Settings2 className="h-3.5 w-3.5" />,
+    tabs: [
+      { id: "avanzado", label: "Avanzado", icon: <Settings2 className="h-4 w-4" /> },
+    ],
+  },
 ];
+
+const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = TAB_GROUPS.flatMap((g) => g.tabs);
 
 // ── Preview en vivo ───────────────────────────────────────────────────────────
 
@@ -319,7 +347,7 @@ function _StorePreview({ theme }: { theme: StoreTheme }) {
       >
         <div className="flex items-center gap-2 min-w-0">
           {theme.logo ? (
-            <img src={theme.logo} alt="logo" className="h-7 w-7 rounded-lg object-cover shrink-0" />
+            <Image src={theme.logo} alt="logo" width={28} height={28} className="rounded-lg object-cover shrink-0" />
           ) : (
             <div className="h-7 w-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
               <Store className="h-4 w-4 text-white" />
@@ -461,6 +489,7 @@ export default function StoreCustomizer() {
   const [previewWidth, setPreviewWidth] = useState(0); // 0 = full width (desktop)
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [activeTenantSlug, setActiveTenantSlug] = useState("main");
 
   // Detecta si hay cambios pendientes comparando con la última versión guardada
   const hasUnsavedChanges = JSON.stringify(theme) !== JSON.stringify(savedTheme);
@@ -472,32 +501,41 @@ export default function StoreCustomizer() {
   // ── Cargar settings existentes ─────────────────────────────────────────────
 
   useEffect(() => {
-    setLoading(true);
-    const tenantSlug = sessionStorage.getItem("active-tenant-slug") || localStorage.getItem("active-tenant-slug") || "main";
-    fetch("/api/settings", { headers: { "x-tenant-id": tenantSlug } })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data?.storeTheme) {
-          const loaded = { ...DEFAULT_THEME, ...data.storeTheme };
-          setTheme(loaded);
-          setSavedTheme(loaded);
-        } else {
-          // Rellenar con datos básicos que ya existan en settings
-          const loaded = {
-            ...DEFAULT_THEME,
-            storeName: data?.businessName || DEFAULT_THEME.storeName,
-            whatsapp: data?.whatsappNumber || DEFAULT_THEME.whatsapp,
-            phone: data?.contactPhone || DEFAULT_THEME.phone,
-            email: data?.contactEmail || DEFAULT_THEME.email,
-            address: data?.businessAddress || DEFAULT_THEME.address,
-          };
-          setTheme(loaded);
-          setSavedTheme(loaded);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    void load();
   }, []);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const tenantSlug = await resolveActiveTenantSlug();
+      setActiveTenantSlug(tenantSlug);
+
+      const res = await fetch("/api/settings", { headers: { "x-tenant-id": tenantSlug } });
+      const data = res.ok ? await res.json() : null;
+
+      if (data?.storeTheme) {
+        const loaded = { ...DEFAULT_THEME, ...data.storeTheme };
+        setTheme(loaded);
+        setSavedTheme(loaded);
+        return;
+      }
+
+      const loaded = {
+        ...DEFAULT_THEME,
+        storeName: data?.businessName || DEFAULT_THEME.storeName,
+        whatsapp: data?.whatsappNumber || DEFAULT_THEME.whatsapp,
+        phone: data?.contactPhone || DEFAULT_THEME.phone,
+        email: data?.contactEmail || DEFAULT_THEME.email,
+        address: data?.businessAddress || DEFAULT_THEME.address,
+      };
+      setTheme(loaded);
+      setSavedTheme(loaded);
+    } catch {
+      // Ignore load failures here; the component already has visual fallbacks.
+    } finally {
+      setLoading(false);
+    }
+  }
 
   // ── Helpers de actualización ───────────────────────────────────────────────
 
@@ -532,7 +570,7 @@ export default function StoreCustomizer() {
     setSaving(true);
     setError(null);
     try {
-      const tenantSlug = sessionStorage.getItem("active-tenant-slug") || localStorage.getItem("active-tenant-slug") || "main";
+      const tenantSlug = activeTenantSlug || await resolveActiveTenantSlug();
       const res = await fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json", "x-tenant-id": tenantSlug },
@@ -607,6 +645,8 @@ export default function StoreCustomizer() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  const activeTabMeta = TABS.find((t) => t.id === activeTab);
+
   return (
     <div className="flex flex-col h-full">
       {/* Toast de éxito */}
@@ -617,35 +657,52 @@ export default function StoreCustomizer() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 shrink-0">
+      {/* ── Header mejorado ───────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-teal-600/10 dark:bg-teal-500/20 flex items-center justify-center">
-            <Palette className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+          <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-md">
+            <Palette className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-extrabold text-foreground">Personalizar tienda</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-extrabold text-foreground">Personalizar tienda</h1>
+              {hasUnsavedChanges && (
+                <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold">
+                  Sin guardar
+                </span>
+              )}
+            </div>
             <p className="text-xs text-muted">Cambia el aspecto y contenido de tu tienda online</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowPreview(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors min-h-[44px]"
-        >
-          <Eye className="h-4 w-4" />
-          Vista previa
-        </button>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/t/${activeTenantSlug}?preview=true`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 dark:border-card-border text-muted text-xs font-semibold hover:text-foreground hover:border-gray-300 transition-colors min-h-[44px]"
+          >
+            <Store className="h-3.5 w-3.5" />
+            Ver tienda
+          </a>
+          <button
+            type="button"
+            onClick={() => setShowPreview(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors min-h-[44px]"
+          >
+            <Eye className="h-4 w-4" />
+            Vista previa
+          </button>
+        </div>
       </div>
 
-      {/* Layout: formulario arriba + preview abajo */}
-      <div className="flex flex-col flex-1 gap-6 min-h-0">
+      {/* ── Layout: sidebar tabs + contenido ──────────────────────── */}
+      <div className="flex flex-col lg:flex-row flex-1 gap-5 min-h-0">
 
-        {/* ── Panel principal (full width) ────────────────────────────────── */}
-        <div className="w-full flex flex-col gap-4 min-h-0">
-
-          {/* Tabs de navegación */}
-          <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide shrink-0">
+        {/* ── Sidebar de tabs (desktop: vertical, mobile: horizontal scroll) ── */}
+        <div className="lg:w-52 shrink-0">
+          {/* Mobile: horizontal tabs */}
+          <div className="flex lg:hidden gap-1 overflow-x-auto pb-1 scrollbar-hide">
             {TABS.map((t) => (
               <button
                 key={t.id}
@@ -664,8 +721,47 @@ export default function StoreCustomizer() {
             ))}
           </div>
 
+          {/* Desktop: grouped vertical sidebar */}
+          <nav className="hidden lg:flex flex-col gap-1 bg-gray-50/50 dark:bg-surface/50 rounded-2xl p-2.5 border border-gray-100 dark:border-card-border">
+            {TAB_GROUPS.map((group, gi) => (
+              <div key={group.group}>
+                {gi > 0 && <div className="border-t border-gray-100 dark:border-card-border my-1.5" />}
+                <p className="text-[10px] font-bold text-muted/70 uppercase tracking-widest px-2.5 pt-1.5 pb-1 flex items-center gap-1.5">
+                  {group.icon}
+                  {group.group}
+                </p>
+                {group.tabs.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setActiveTab(t.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-semibold transition-all text-left min-h-[40px]",
+                      activeTab === t.id
+                        ? "bg-teal-600 text-white shadow-sm"
+                        : "text-muted hover:text-foreground hover:bg-gray-100 dark:hover:bg-accent"
+                    )}
+                  >
+                    {t.icon}
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </nav>
+        </div>
+
+        {/* ── Panel de contenido ────────────────────────────────────── */}
+        <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-card rounded-2xl border border-gray-100 dark:border-card-border shadow-sm overflow-hidden">
+
+          {/* Tab header with active tab info */}
+          <div className="flex items-center gap-2.5 px-5 py-3.5 border-b border-gray-100 dark:border-card-border bg-gray-50/50 dark:bg-surface/30 shrink-0">
+            <span className="text-teal-600 dark:text-teal-400">{activeTabMeta?.icon}</span>
+            <p className="text-sm font-bold text-foreground">{activeTabMeta?.label}</p>
+          </div>
+
           {/* Contenido del tab activo */}
-          <div className="flex-1 overflow-y-auto space-y-5 pr-1">
+          <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
             {/* ── TAB: IDENTIDAD ─────────────────────────────────────── */}
             {activeTab === "identidad" && (
@@ -677,7 +773,7 @@ export default function StoreCustomizer() {
                     <div className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 dark:border-card-border bg-gray-50 dark:bg-surface flex items-center justify-center overflow-hidden cursor-pointer hover:border-primary transition-colors relative group">
                       {theme.logo ? (
                         <>
-                          <img src={theme.logo} alt="Logo" className="w-full h-full object-cover" />
+                          <Image src={theme.logo} alt="Logo" fill className="object-cover" sizes="80px" />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <button type="button" onClick={() => update("logo", "")} className="text-[9px] font-bold text-white bg-red-500/80 px-2 py-0.5 rounded">Quitar</button>
                           </div>
@@ -1115,9 +1211,9 @@ export default function StoreCustomizer() {
                   <p className="text-[10px] text-muted">Codigo QR para pegar en tu local fisico. Los clientes escanean y entran a tu tienda.</p>
                   <div className="flex items-center gap-4">
                     <div className="bg-white p-2 rounded-xl border border-gray-200 dark:border-card-border">
-                      {/* QR usando API publica de Google Charts */}
+                      {/* QR usando API publica */}
                       <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "https://tu-tienda.buleje.pe")}`}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "https://tu-tienda.buleje.pe")}`}
                         alt="QR de la tienda"
                         className="h-28 w-28"
                         loading="lazy"
@@ -1125,7 +1221,7 @@ export default function StoreCustomizer() {
                     </div>
                     <div className="space-y-2">
                       <a
-                        href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&format=png&data=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "")}`}
+                        href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&format=png&data=${encodeURIComponent(typeof window !== "undefined" ? `${window.location.origin}/t/${activeTenantSlug}` : "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-[11px] font-bold hover:opacity-90"
@@ -1264,7 +1360,7 @@ export default function StoreCustomizer() {
           </div>
 
           {/* Botón guardar — fijo abajo del panel */}
-          <div className="shrink-0 pt-3 border-t border-gray-100 dark:border-card-border space-y-2">
+          <div className="shrink-0 px-5 py-3 border-t border-gray-100 dark:border-card-border space-y-2 bg-white dark:bg-card">
             {error && (
               <p className="text-xs text-red-500 font-semibold text-center">{error}</p>
             )}
@@ -1295,7 +1391,6 @@ export default function StoreCustomizer() {
             </button>
           </div>
         </div>
-
       </div>
 
       {/* ── Modal fullscreen de preview ──────────────────────────── */}
@@ -1324,7 +1419,7 @@ export default function StoreCustomizer() {
               <button type="button" onClick={() => setPreviewKey((k) => k + 1)} className="text-xs text-teal-400 font-semibold hover:text-teal-300">
                 Recargar
               </button>
-              <a href="/" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-white">
+              <a href={`/t/${activeTenantSlug}?preview=true`} target="_blank" rel="noopener noreferrer" className="text-xs text-gray-400 hover:text-white">
                 Abrir en nueva pestaña
               </a>
               <button type="button" onClick={() => setShowPreview(false)}
@@ -1339,7 +1434,7 @@ export default function StoreCustomizer() {
               className="bg-white rounded-xl overflow-hidden shadow-2xl transition-all duration-300"
               style={{ width: previewWidth > 0 ? `${previewWidth}px` : "100%", maxWidth: "100%", height: "calc(100vh - 80px)" }}
             >
-              <iframe key={previewKey} src="/" title="Vista previa" className="w-full h-full border-0" />
+              <iframe key={previewKey} src={`/t/${activeTenantSlug}?preview=true`} title="Vista previa" className="w-full h-full border-0" />
             </div>
           </div>
         </div>

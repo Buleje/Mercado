@@ -108,12 +108,12 @@ export default function Header() {
   /* AC4: Track recent searches for trending suggestions */
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
-    try { return JSON.parse(localStorage.getItem("bsm-recent-searches") || "[]").slice(0, 5); } catch { return []; }
+    try { return JSON.parse(localStorage.getItem("buleje-recent-searches") || "[]").slice(0, 5); } catch { return []; }
   });
   const recordSearch = useCallback((term: string) => {
     setRecentSearches(prev => {
       const next = [term, ...prev.filter(s => s.toLowerCase() !== term.toLowerCase())].slice(0, 5);
-      try { localStorage.setItem("bsm-recent-searches", JSON.stringify(next)); } catch { /* silent */ }
+      try { localStorage.setItem("buleje-recent-searches", JSON.stringify(next)); } catch { /* silent */ }
       return next;
     });
   }, []);
@@ -166,7 +166,7 @@ export default function Header() {
       // Populate trending products once data is available
       try {
         const now = Date.now();
-        const data: Record<string, number[]> = JSON.parse(localStorage.getItem("bsm-selling-fast") || "{}");
+        const data: Record<string, number[]> = JSON.parse(localStorage.getItem("buleje-selling-fast") || "{}");
         const scored = Object.entries(data)
           .map(([id, timestamps]) => ({
             id: Number(id),
@@ -257,7 +257,7 @@ export default function Header() {
 
   // Detectar si hay cookie de admin para mostrar enlace al panel
   useEffect(() => {
-    setIsAdmin(document.cookie.includes("bsm-admin-sess"));
+    setIsAdmin(document.cookie.includes("buleje-admin-sess"));
   }, []);
 
   useEffect(() => {
@@ -332,7 +332,7 @@ export default function Header() {
   useEffect(() => {
     const checkOrder = () => {
       try {
-        const raw = localStorage.getItem("bsm-active-order");
+        const raw = localStorage.getItem("buleje-active-order");
         if (!raw) { setHasActiveOrder(false); prevOrderStatus.current = null; return; }
         const order = JSON.parse(raw);
         const age = Date.now() - new Date(order.createdAt).getTime();
@@ -350,10 +350,10 @@ export default function Header() {
     };
     checkOrder();
     const interval = setInterval(checkOrder, 30_000);
-    window.addEventListener("bsm:orderCreated", checkOrder);
+    window.addEventListener("buleje:orderCreated", checkOrder);
     return () => {
       clearInterval(interval);
-      window.removeEventListener("bsm:orderCreated", checkOrder);
+      window.removeEventListener("buleje:orderCreated", checkOrder);
     };
   }, []);
 

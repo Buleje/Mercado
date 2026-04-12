@@ -313,7 +313,7 @@ export async function sendOrder(
   const plainText = formatWhatsAppMessage(customer, items, total);
   const waUrl = `https://wa.me/51916409675?text=${encodeURIComponent(plainText)}`;
   const safeName = customer.name.replace(/\s+/g, "-");
-  const filename = `Pedido-BSM-${safeName}.png`;
+  const filename = `Pedido-Buleje-${safeName}.png`;
 
   // Check mobile share capability before any async (within gesture context)
   const testFile = new File([""], "test.png", { type: "image/png" });
@@ -338,7 +338,7 @@ export async function sendOrder(
     try {
       await navigator.share({
         files: [pngFile],
-        title: `Pedido BSM - ${customer.name}`,
+        title: `Pedido Buleje - ${customer.name}`,
         text: plainText,
       });
       return "shared";

@@ -188,7 +188,9 @@ function CotizacionesDashboard({ cotizaciones, loading: parentLoading }: { cotiz
 
   const emptyCot = (msg: string) => (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="text-4xl mb-3">📊</div>
+      <div className="h-12 w-12 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mb-3">
+        <BarChart3 className="h-6 w-6 text-gray-400 dark:text-muted" />
+      </div>
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{msg}</p>
       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando crees cotizaciones</p>
     </div>
@@ -833,7 +835,9 @@ export default function CotizacionesModule() {
               </div>
             ) : cotizaciones.length === 0 ? (
               <div className="text-center py-16 px-4">
-                <div className="text-6xl mb-4">📋</div>
+                <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+                  <FileText className="h-8 w-8 text-gray-400 dark:text-muted" />
+                </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Sin cotizaciones</h3>
                 <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">Envía presupuestos profesionales a tus clientes</p>
                 <button onClick={() => setActiveTab("nueva")} className="bg-[#00B4A6] text-white px-6 py-2.5 rounded-xl font-medium hover:bg-[#009690]">Nueva cotización</button>

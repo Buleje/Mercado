@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { logger } from "@/lib/logger";
+import { enqueueNotification } from "@/lib/queue";
 
 /**
  * GET /api/cron/first-purchase-coupon
@@ -21,63 +22,97 @@ export async function GET(req: NextRequest) {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
 
-    // Find customers registered in the last 24h
-    const newCustomers = await prisma.customer.findMany({
-      where: {
-        createdAt: { gte: yesterday },
-      },
-      select: { phone: true, name: true },
+    // Iterate over all active tenants (multi-tenant)
+    const tenants = await prisma.tenant.findMany({
+      where: { active: true },
+      select: { id: true },
     });
 
     let couponsCreated = 0;
+    let totalNewCustomers = 0;
 
-    for (const customer of newCustomers) {
-      // Check if customer already has orders
-      const orderCount = await prisma.order.count({
-        where: { customerPhone: customer.phone },
-      });
+    for (const tenant of tenants) {
+      const tenantId = tenant.id;
 
-      if (orderCount > 0) continue;
-
-      // Check if coupon already exists for this customer
-      const existingCoupon = await prisma.coupon.findFirst({
+      // Find customers registered in the last 24h for this tenant
+      const newCustomers = await prisma.customer.findMany({
         where: {
-          code: `BIENVENIDA-${customer.phone.slice(-4)}`,
+          tenantId,
+          createdAt: { gte: yesterday },
         },
+        select: { phone: true, name: true },
       });
+      totalNewCustomers += newCustomers.length;
 
-      if (existingCoupon) continue;
+      for (const customer of newCustomers) {
+        // Check if customer already has orders in this tenant
+        const orderCount = await prisma.order.count({
+          where: { tenantId, customerPhone: customer.phone },
+        });
 
-      // Create welcome coupon
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 30); // 30 days validity
+        if (orderCount > 0) continue;
 
-      await prisma.coupon.create({
-        data: {
+        // Check if coupon already exists for this customer in this tenant
+        const existingCoupon = await prisma.coupon.findFirst({
+          where: {
+            tenantId,
+            code: `BIENVENIDA-${customer.phone.slice(-4)}`,
+          },
+        });
+
+        if (existingCoupon) continue;
+
+        // Create welcome coupon
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 30); // 30 days validity
+
+        await prisma.coupon.create({
+          data: {
+            code: `BIENVENIDA-${customer.phone.slice(-4)}`,
+            discountType: "percent",
+            discountValue: 10,
+            maxUses: 1,
+            usedCount: 0,
+            minPurchase: 20,
+            active: true,
+            expiresAt: expiryDate,
+            tenantId,
+            description: "Cupon de bienvenida - 10% en tu primera compra",
+          },
+        });
+
+        couponsCreated++;
+
+        // Send WhatsApp with the coupon code
+        const firstName = customer.name?.split(" ")[0] ?? "vecino";
+        const couponCode = `BIENVENIDA-${customer.phone.slice(-4)}`;
+        const whatsappMsg =
+          `🎉 ¡Hola ${firstName}! Te damos la bienvenida.\n\n` +
+          `Tienes un cupón de *10% de descuento* en tu primera compra:\n\n` +
+          `🏷️ Código: *${couponCode}*\n` +
+          `💰 Mínimo de compra: S/ 20\n` +
+          `📅 Válido por 30 días\n\n` +
+          `¡Haz tu primer pedido ahora! 🛒`;
+        enqueueNotification({
+          type: "whatsapp",
+          recipient: customer.phone,
+          message: whatsappMsg,
+          tenantId,
+          metadata: { purpose: "first-purchase-coupon" },
+        }).catch(() => {});
+
+        logger.info("[cron/first-purchase-coupon] Cupón creado", {
+          tenantId,
+          customer: customer.name,
           code: `BIENVENIDA-${customer.phone.slice(-4)}`,
-          discountType: "percent",
-          discountValue: 10,
-          maxUses: 1,
-          usedCount: 0,
-          minPurchase: 20,
-          active: true,
-          expiresAt: expiryDate,
-          tenantId: "main",
-          description: "Cupon de bienvenida - 10% en tu primera compra",
-        },
-      });
-
-      couponsCreated++;
-      logger.info("[cron/first-purchase-coupon] Cupón creado", {
-        customer: customer.name,
-        code: `BIENVENIDA-${customer.phone.slice(-4)}`,
-      });
-    }
+        });
+      }
+    } // end for tenant
 
     return NextResponse.json({
       ok: true,
       processedAt: new Date().toISOString(),
-      newCustomers: newCustomers.length,
+      newCustomers: totalNewCustomers,
       couponsCreated,
     });
   } catch (err) {

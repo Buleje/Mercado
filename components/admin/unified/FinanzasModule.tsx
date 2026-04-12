@@ -790,9 +790,11 @@ function GaugeChart({ value, max, label, unit, color }: { value: number; max: nu
 function FinanzasEmptyChart({ message }: { message: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
-      <div className="text-4xl mb-3">📊</div>
-      <p className="text-sm font-medium text-gray-500">{message}</p>
-      <p className="text-xs text-gray-400 mt-1">Los datos apareceran cuando registres ventas</p>
+      <div className="h-12 w-12 rounded-xl bg-gray-100 dark:bg-surface flex items-center justify-center mb-3">
+        <BarChart3 className="h-6 w-6 text-gray-400 dark:text-muted" />
+      </div>
+      <p className="text-sm font-medium text-gray-500 dark:text-muted">{message}</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Los datos apareceran cuando registres ventas</p>
     </div>
   );
 }
@@ -1097,9 +1099,11 @@ function FinanzasDashboard() {
   if (Object.values(kpis).every(v => v === 0) && monthlyData.every(m => m.ingresos === 0 && m.gastos === 0)) {
     return (
       <div className="text-center py-16">
-        <div className="text-6xl mb-4">📊</div>
-        <h3 className="text-lg font-semibold text-gray-700">Sin datos financieros</h3>
-        <p className="text-sm text-gray-500 mt-1">Registra tus primeras ventas y gastos para ver el dashboard</p>
+        <div className="h-16 w-16 rounded-2xl bg-gray-100 dark:bg-surface flex items-center justify-center mx-auto mb-4">
+          <BarChart3 className="h-8 w-8 text-gray-400 dark:text-muted" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground">Sin datos financieros</h3>
+        <p className="text-sm text-muted mt-1">Registra tus primeras ventas y gastos para ver el dashboard</p>
       </div>
     );
   }
@@ -1888,7 +1892,7 @@ export default function FinanzasModule() {
         activeTab={sub}
         onTabChange={(id) => setSub(id as typeof TABS[number]["id"])}
         moduleId="finanzas"
-      />
+      >
       {sub === "dashboard" && (
         <div className="space-y-4" key={refreshKey}>
           <FinanzasDashboard />
@@ -1964,6 +1968,7 @@ export default function FinanzasModule() {
           </div>
         </Suspense>
       )}
+      </AdminTabBar>
     </div>
   );
 }

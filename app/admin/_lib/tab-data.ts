@@ -31,6 +31,9 @@ import {
   CircleUser,
   LayoutDashboard,
   MessageCircle,
+  TrendingUp,
+  Inbox,
+  Receipt,
 } from "lucide-react";
 import type { Tab } from "./tabs.types";
 
@@ -49,11 +52,14 @@ export const ALL_TABS = [
   { id: "pedidos" as Tab,             label: "Pedidos",             icon: ShoppingBasket },
   // — INTELIGENCIA —
   { id: "analytics-pro" as Tab,       label: "Analytics Pro",       icon: Activity },
+  { id: "forecasting" as Tab,         label: "Predicción Demanda",  icon: TrendingUp },
   // — FINANZAS EXTRA —
   { id: "prestamos" as Tab,           label: "Préstamos",           icon: Landmark },
   { id: "plan" as Tab,                label: "Plan & Límites",      icon: Zap },
   // — PRODUCCIÓN —
   { id: "recetas" as Tab,             label: "Recetas",             icon: FlaskConical },
+  // — FACTURACIÓN SUNAT —
+  { id: "facturacion" as Tab,          label: "Facturación SUNAT",   icon: Receipt },
   // — DOCUMENTOS COMERCIALES —
   { id: "cotizaciones" as Tab,        label: "Cotizaciones",        icon: ClipboardList },
   { id: "guias-remision" as Tab,      label: "Guías de Remisión",   icon: Truck },
@@ -69,6 +75,8 @@ export const ALL_TABS = [
   // — SISTEMA —
   { id: "colas" as Tab,               label: "Colas",               icon: Activity },
   { id: "mi-perfil" as Tab,           label: "Mi Perfil",           icon: CircleUser },
+  // — SOPORTE —
+  { id: "support-inbox" as Tab,       label: "Soporte",             icon: Inbox },
 ] as const;
 
 /** Tipo auxiliar para un elemento del array ALL_TABS */

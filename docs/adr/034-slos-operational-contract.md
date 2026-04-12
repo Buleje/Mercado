@@ -9,7 +9,7 @@
 
 ## 1. Contexto
 
-Sin numeros, "calidad" es solo una opinion. El proyecto Bodega San Martin necesita metricas objetivas que definan que significa "el sistema esta funcionando bien" y mecanismos automaticos que protejan esa calidad.
+Sin numeros, "calidad" es solo una opinion. El proyecto Buleje necesita metricas objetivas que definan que significa "el sistema esta funcionando bien" y mecanismos automaticos que protejan esa calidad.
 
 Actualmente no hay definicion formal de que porcentaje de checkouts deben ser exitosos, cual es la latencia maxima aceptable, ni cuanto margen de error tenemos antes de que un deploy sea riesgoso. Esto lleva a decisiones basadas en intuicion en vez de datos.
 

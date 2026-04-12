@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     message,
     status: "sent",
     orderId: order.id,
-  });
+  }, auth.tenantId);
 
   return NextResponse.json({ ...log, whatsappUrl }, { status: 201 });
 }

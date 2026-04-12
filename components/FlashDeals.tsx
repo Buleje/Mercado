@@ -51,8 +51,8 @@ function buildAdminDeals(allProducts: Product[], ids: number[], discount: number
   }));
 }
 
-const DEALS_KEY = "bsm-flash-deals";
-const DEALS_DATE_KEY = "bsm-flash-deals-date";
+const DEALS_KEY = "buleje-flash-deals";
+const DEALS_DATE_KEY = "buleje-flash-deals-date";
 
 function loadOrCreateDeals(allProducts: Product[], discount: number) {
   if (typeof window === "undefined") return pickDeals(allProducts, discount);

@@ -4,7 +4,7 @@
 **Fecha:** 2026-04-09
 **Autor:** solution-architect (subagente)
 **ADR asociado:** ADR-021 (`docs/adr/021-fiado-digital-ola2.md`)
-**Scope:** Diferenciador #1 de Bodega San Martín — "el fiado de cuaderno convertido en software"
+**Scope:** Diferenciador #1 de Buleje — "el fiado de cuaderno convertido en software"
 **Estado:** Propuesta — pendiente aprobación de Brandon antes de ejecutar Fase 1
 
 ---

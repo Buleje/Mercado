@@ -182,7 +182,7 @@ function computeReliabilityScore(fiados: Fiado[]): ReliabilityScore {
   else if (pctATiempo > 25) score = 2;
   else score = 1;
 
-  return { score, label: `${"★".repeat(score)}${"☆".repeat(5 - score)} (${score}/5)`, pagosATiempo, pagosTotal, diasPromedioPago, sufficientHistory: true };
+  return { score, label: `${score}/5`, pagosATiempo, pagosTotal, diasPromedioPago, sufficientHistory: true };
 }
 
 // ── Mejora QW-10h: Streak de pagos consecutivos a tiempo ────────────────────
@@ -1000,7 +1000,7 @@ export default function FiadosModule() {
                 const diasPasados = Math.floor((Date.now() - new Date(f.createdAt).getTime()) / 86400000);
                 const phone = f.customerId || "";
                 const displayPhone = phone.length > 3 ? phone.slice(0, 3) + "XXXXXX" : phone;
-                return `${i + 1}. ${f.customerName || f.customerId} · ${displayPhone} · S/ ${f.saldo.toFixed(2)} · ${diasPasados} dias ☐`;
+                return `${i + 1}. ${f.customerName || f.customerId} · ${displayPhone} · S/ ${f.saldo.toFixed(2)} · ${diasPasados} dias [ ]`;
               });
 
               const content = [
@@ -1013,7 +1013,7 @@ export default function FiadosModule() {
                 "",
                 "───────────────────────────────────────",
                 `Total por cobrar: S/ ${totalCobrar.toFixed(2)} (${deudores.length} clientes)`,
-                "☐ = marcar cuando se cobre",
+                "[ ] = marcar cuando se cobre",
                 "───────────────────────────────────────",
               ].join("\n");
 
@@ -1105,7 +1105,6 @@ export default function FiadosModule() {
                   <div className="px-4 pt-4 pb-2 border-b-2 border-amber-700/20 dark:border-amber-600/20">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">📓</span>
                         <span className="font-serif italic font-bold text-amber-900 text-base">{cliente.nombre}</span>
                       </div>
                       <span className="text-[10px] font-mono text-amber-600">Pag. {idx + 1}/{libretaClientes.length}</span>
@@ -1155,7 +1154,6 @@ export default function FiadosModule() {
             <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowQuickFiado(false)}>
               <div className="bg-amber-50 dark:bg-card rounded-2xl shadow-xl max-w-sm w-full p-5 space-y-3" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xl">📓</span>
                   <h3 className="text-base font-bold text-amber-900 dark:text-foreground font-serif italic">Anotar en la libreta</h3>
                 </div>
                 <input

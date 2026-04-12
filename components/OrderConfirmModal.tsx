@@ -27,11 +27,11 @@ export default function OrderConfirmModal() {
   const WA_NUMBER = extractWaNumber(homepage.footerWhatsApp);
   useScrollLock(confirmModalOpen);
 
-  // Load last order info — initial read from localStorage, updated by bsm:orderCreated event
+  // Load last order info — initial read from localStorage, updated by buleje:orderCreated event
   const [lastOrder, setLastOrder] = useState<LastOrder>(() => {
     if (typeof window === "undefined") return null;
     try {
-      const raw = localStorage.getItem("bsm-last-order");
+      const raw = localStorage.getItem("buleje-last-order");
       return raw ? JSON.parse(raw) : null;
     } catch { return null; }
   });
@@ -39,12 +39,12 @@ export default function OrderConfirmModal() {
   useEffect(() => {
     const handler = () => {
       try {
-        const raw = localStorage.getItem("bsm-last-order");
+        const raw = localStorage.getItem("buleje-last-order");
         setLastOrder(raw ? JSON.parse(raw) : null);
       } catch { setLastOrder(null); }
     };
-    window.addEventListener("bsm:orderCreated", handler);
-    return () => window.removeEventListener("bsm:orderCreated", handler);
+    window.addEventListener("buleje:orderCreated", handler);
+    return () => window.removeEventListener("buleje:orderCreated", handler);
   }, []);
 
   const orderId = lastOrder?.id ?? "";
@@ -62,7 +62,7 @@ export default function OrderConfirmModal() {
       const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(CONFIRM_MSG)}`;
       window.open(url, "_blank", "noopener");
     }
-    try { localStorage.removeItem("bsm-last-order"); } catch { /* ignore */ }
+    try { localStorage.removeItem("buleje-last-order"); } catch { /* ignore */ }
     closeConfirmModal();
     const name = customer?.name ?? "Cliente";
     const loc = customer?.location ?? "";
@@ -73,7 +73,7 @@ export default function OrderConfirmModal() {
     clearPendingOrder();
     const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(REJECT_MSG)}`;
     window.open(url, "_blank", "noopener");
-    try { localStorage.removeItem("bsm-last-order"); } catch { /* ignore */ }
+    try { localStorage.removeItem("buleje-last-order"); } catch { /* ignore */ }
     closeConfirmModal();
   };
 

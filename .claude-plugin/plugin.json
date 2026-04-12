@@ -2,7 +2,7 @@
   "$schema": "https://code.claude.com/schemas/plugin.json",
   "name": "bodega-claude-pack",
   "version": "0.1.0",
-  "description": "Claude Code agent suite for Bodega San Martín — 19 subagents, 14+ skills, 5 hooks, self-improvement loop with Compound Engineering pattern, and full multi-agent level 3 architecture (Orquestador → Agencias → Empleados).",
+  "description": "Claude Code agent suite for Buleje — 19 subagents, 14+ skills, 5 hooks, self-improvement loop with Compound Engineering pattern, and full multi-agent level 3 architecture (Orquestador → Agencias → Empleados).",
   "author": {
     "name": "Brandon Buleje",
     "url": "https://buleje.pe"

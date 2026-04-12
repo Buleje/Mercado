@@ -4,6 +4,7 @@ import { createPlatformToken, getPlatformSession, maybeRotateToken, PLATFORM_SES
 import { applyRateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity-logger";
 import { is2FAEnabled, create2FAChallenge, verify2FACode } from "@/lib/superadmin-2fa";
+import { sendWhatsAppText } from "@/lib/whatsapp";
 
 function cookieOpts(maxAge: number) {
   return {
@@ -15,11 +16,73 @@ function cookieOpts(maxAge: number) {
   };
 }
 
+// ── Login lockout (5 failed attempts → 15 min lockout) ──────────────────────
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const failedAttempts = new Map<string, { count: number; lastAttempt: number; lockedUntil: number | null }>();
+
+function getLockoutKey(req: NextRequest): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? req.headers.get("x-real-ip") ?? "unknown";
+}
+
+function checkLockout(ip: string): { locked: boolean; remainingMinutes: number } {
+  const entry = failedAttempts.get(ip);
+  if (!entry) return { locked: false, remainingMinutes: 0 };
+  if (entry.lockedUntil && Date.now() < entry.lockedUntil) {
+    const remaining = Math.ceil((entry.lockedUntil - Date.now()) / 60000);
+    return { locked: true, remainingMinutes: remaining };
+  }
+  // Reset if lockout expired
+  if (entry.lockedUntil && Date.now() >= entry.lockedUntil) {
+    failedAttempts.delete(ip);
+  }
+  return { locked: false, remainingMinutes: 0 };
+}
+
+function recordFailedAttempt(ip: string): { locked: boolean; attemptsLeft: number } {
+  const entry = failedAttempts.get(ip) ?? { count: 0, lastAttempt: 0, lockedUntil: null };
+  entry.count += 1;
+  entry.lastAttempt = Date.now();
+
+  if (entry.count >= MAX_ATTEMPTS) {
+    entry.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+    failedAttempts.set(ip, entry);
+    return { locked: true, attemptsLeft: 0 };
+  }
+
+  failedAttempts.set(ip, entry);
+  return { locked: false, attemptsLeft: MAX_ATTEMPTS - entry.count };
+}
+
+function clearFailedAttempts(ip: string): void {
+  failedAttempts.delete(ip);
+}
+
+// ── WhatsApp login alert (fire-and-forget) ──────────────────────────────────
+function notifyLoginWhatsApp(user: string, ip: string): void {
+  const phone = process.env.SUPERADMIN_PHONE;
+  if (!phone) return;
+  const now = new Date().toLocaleString("es-PE", { timeZone: "America/Lima" });
+  const msg = `🔐 *Alerta de seguridad — Buleje*\n\nSe inició sesión como SuperAdmin.\n👤 Usuario: ${user}\n🌐 IP: ${ip}\n🕐 Fecha: ${now}\n\nSi no fuiste tú, cambia tu contraseña de inmediato.`;
+  sendWhatsAppText(phone, msg).catch(() => {});
+}
+
 // POST /api/superadmin/auth  – login { username, password } or verify 2FA { challengeId, code }
 // DELETE /api/superadmin/auth – logout
 export async function POST(req: NextRequest) {
   const limited = applyRateLimit(req, "AUTH", "superadmin:login");
   if (limited) return limited;
+
+  // ── Lockout check ─────────────────────────────────────────────────────────
+  const ip = getLockoutKey(req);
+  const lockout = checkLockout(ip);
+  if (lockout.locked) {
+    logActivity("login_locked", "superadmin", `IP bloqueada por ${lockout.remainingMinutes} min: ${ip}`, undefined, "superadmin").catch(() => {});
+    return NextResponse.json(
+      { error: `Demasiados intentos fallidos. Intente en ${lockout.remainingMinutes} minutos.` },
+      { status: 429 }
+    );
+  }
 
   let body: { username?: string; password?: string; challengeId?: string; code?: string };
   try { body = await req.json(); } catch { body = {}; }
@@ -28,13 +91,19 @@ export async function POST(req: NextRequest) {
   if (body.challengeId && body.code) {
     const result = await verify2FACode(body.challengeId, body.code);
     if (!result.valid || !result.username) {
-      logActivity("2fa_failed", "superadmin", `2FA fallido: challengeId=${body.challengeId}`, undefined, "superadmin").catch(() => {});
+      const lockResult = recordFailedAttempt(ip);
+      logActivity("2fa_failed", "superadmin", `2FA fallido: challengeId=${body.challengeId} desde IP ${ip}. Intentos restantes: ${lockResult.attemptsLeft}`, undefined, "superadmin").catch(() => {});
+      if (lockResult.locked) {
+        return NextResponse.json({ error: "Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos." }, { status: 429 });
+      }
       return NextResponse.json({ error: "Código inválido o expirado" }, { status: 401 });
     }
+    clearFailedAttempts(ip);
     const token = await createPlatformToken(result.username);
     const res = NextResponse.json({ ok: true });
     res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, token, cookieOpts(PLATFORM_SESSION.MAX_AGE));
-    logActivity("login_success", "superadmin", `Login exitoso con 2FA: ${result.username}`, undefined, "superadmin").catch(() => {});
+    logActivity("login_success", "superadmin", `Login exitoso con 2FA: ${result.username} desde IP ${ip}`, undefined, "superadmin").catch(() => {});
+    notifyLoginWhatsApp(result.username, ip);
     return res;
   }
 
@@ -50,9 +119,16 @@ export async function POST(req: NextRequest) {
     password !== expectedPass ||
     !expectedPass
   ) {
-    logActivity("login_failed", "superadmin", `Intento fallido: ${username || "(vacío)"}`, undefined, "superadmin").catch(() => {});
+    const lockResult = recordFailedAttempt(ip);
+    logActivity("login_failed", "superadmin", `Intento fallido: ${username || "(vacío)"} desde IP ${ip}. Intentos restantes: ${lockResult.attemptsLeft}`, undefined, "superadmin").catch(() => {});
+    if (lockResult.locked) {
+      return NextResponse.json({ error: "Demasiados intentos fallidos. Cuenta bloqueada por 15 minutos." }, { status: 429 });
+    }
     return NextResponse.json({ error: "Credenciales inválidas" }, { status: 401 });
   }
+
+  // Credentials valid — clear lockout counter
+  clearFailedAttempts(ip);
 
   // If 2FA is enabled, generate challenge instead of granting session
   if (is2FAEnabled()) {
@@ -65,7 +141,8 @@ export async function POST(req: NextRequest) {
   const token = await createPlatformToken(username);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(PLATFORM_SESSION.COOKIE_NAME, token, cookieOpts(PLATFORM_SESSION.MAX_AGE));
-  logActivity("login_success", "superadmin", `Login exitoso: ${username}`, undefined, "superadmin").catch(() => {});
+  logActivity("login_success", "superadmin", `Login exitoso: ${username} desde IP ${ip}`, undefined, "superadmin").catch(() => {});
+  notifyLoginWhatsApp(username, ip);
   return res;
 }
 

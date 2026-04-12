@@ -108,6 +108,10 @@ export default function SocialProofToast() {
 
   return (
     <div
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-label="Actividad reciente de clientes"
       className={cn(
         "fixed bottom-54 sm:bottom-6 left-4 z-20 max-w-xs transition-all duration-500 pointer-events-auto",
         visible

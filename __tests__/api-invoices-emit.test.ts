@@ -182,7 +182,7 @@ describe("POST /api/invoices/emit", () => {
     mockGetById.mockResolvedValue(ORDER_MOCK);
 
     await POST(makeReq(BODY_BOLETA));
-    expect(mockGetById).toHaveBeenCalledWith("order-001");
+    expect(mockGetById).toHaveBeenCalledWith("main", "order-001");
     expect(mockGetById).toHaveBeenCalledTimes(1);
   });
 

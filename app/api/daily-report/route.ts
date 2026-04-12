@@ -5,6 +5,7 @@ import { ProductsDB } from "@/lib/db/products.db";
 import { CustomersDB } from "@/lib/db/customers.db";
 import { requireAdmin } from "@/lib/require-admin";
 import type { DailyReport } from "@/lib/daily-report";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdmin(request, ["admin", "cajero"]);
@@ -20,10 +21,10 @@ export async function GET(request: NextRequest) {
     // Obtener datos en paralelo
     const [allSales, allOrders, allProducts, allCustomers, openCash] = await Promise.all([
       SalesDB.getAll(tenantId),
-      OrdersDB.getAllFiltered({ since: startOfDayISO }),
+      OrdersDB.getAllFiltered({ since: startOfDayISO, tenantId }),
       ProductsDB.getAll(tenantId),
       CustomersDB.getAll(tenantId),
-      CashRegistersDB.getOpen(),
+      CashRegistersDB.getOpen(tenantId),
     ]);
 
     // Ventas del día desde POS
@@ -108,13 +109,42 @@ export async function GET(request: NextRequest) {
           .reduce((sum, m) => sum + m.amount, 0)
       : 0;
 
+    // Ventas por hora del día (0-23)
+    const salesByHour: number[] = Array(24).fill(0);
+    for (const sale of todaySales) {
+      const h = new Date(sale.createdAt).getHours();
+      salesByHour[h] += sale.total ?? 0;
+    }
+    for (const order of activeOrders) {
+      const h = new Date(order.createdAt).getHours();
+      salesByHour[h] += order.total ?? 0;
+    }
+
+    // Comparación con la semana pasada (mismo día)
+    const lastWeekDay = new Date(now);
+    lastWeekDay.setDate(lastWeekDay.getDate() - 7);
+    const lastWeekStart = new Date(lastWeekDay.getFullYear(), lastWeekDay.getMonth(), lastWeekDay.getDate());
+    const lastWeekEnd = new Date(lastWeekStart);
+    lastWeekEnd.setDate(lastWeekEnd.getDate() + 1);
+
+    let lastWeekSales = 0;
+    let lastWeekOrders = 0;
+    try {
+      const lwSales = allSales.filter(s => {
+        const d = new Date(s.createdAt);
+        return d >= lastWeekStart && d < lastWeekEnd;
+      });
+      lastWeekSales += lwSales.reduce((sum, s) => sum + (s.total ?? 0), 0);
+      lastWeekOrders += lwSales.length;
+    } catch { /* ignored */ }
+
     const dateLabel = now.toLocaleDateString("es-PE", {
       day: "numeric",
       month: "short",
       year: "numeric",
     });
 
-    const report: DailyReport & { tenantId: string } = {
+    const report: DailyReport & { tenantId: string; salesByHour?: number[]; lastWeek?: { sales: number; orders: number } } = {
       tenantId,
       date: dateLabel,
       totalSales,
@@ -126,11 +156,16 @@ export async function GET(request: NextRequest) {
       lowStockAlerts,
       newCustomers,
       cashBalance,
+      salesByHour,
+      lastWeek: { sales: lastWeekSales, orders: lastWeekOrders },
     };
 
     return NextResponse.json(report);
   } catch (err) {
-    console.error("[daily-report]", err);
+    logger.error("[daily-report] GET error", {
+      error: err instanceof Error ? err.message : String(err),
+      tenantId,
+    });
     return NextResponse.json({ error: "Error al generar reporte" }, { status: 500 });
   }
 }

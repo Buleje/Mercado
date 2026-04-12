@@ -46,15 +46,15 @@ export default function LogisticaModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {sub === "calendario" && <DeliveryCalendarTab />}
-      {sub === "rutas" && <DeliveryRoutesTab />}
-      {sub === "horarios" && <DeliveryScheduleTab />}
-      {sub === "seguimiento" && <ShipmentTrackingTab />}
-      {sub === "costos" && <ShippingCostsTab />}
-      {sub === "flota" && <FleetManagementTab />}
-      {sub === "logistica-rev" && <ReturnLogisticsTab />}
+      >
+        {sub === "calendario" && <DeliveryCalendarTab />}
+        {sub === "rutas" && <DeliveryRoutesTab />}
+        {sub === "horarios" && <DeliveryScheduleTab />}
+        {sub === "seguimiento" && <ShipmentTrackingTab />}
+        {sub === "costos" && <ShippingCostsTab />}
+        {sub === "flota" && <FleetManagementTab />}
+        {sub === "logistica-rev" && <ReturnLogisticsTab />}
+      </AdminTabBar>
     </div>
   );
 }

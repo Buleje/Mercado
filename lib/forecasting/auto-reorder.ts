@@ -227,7 +227,7 @@ export async function createAutoPurchaseOrders(
       })),
       createdAt: now,
       updatedAt: now,
-    });
+    }, tenantId);
 
     // Fire-and-forget: registrar actividad
     logActivity(

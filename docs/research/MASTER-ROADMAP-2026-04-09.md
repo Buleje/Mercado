@@ -1,4 +1,4 @@
-# 🗺️ MASTER ROADMAP — Mejoras consolidadas Bodega San Martín
+# 🗺️ MASTER ROADMAP — Mejoras consolidadas Buleje
 
 > **Fecha:** 2026-04-09
 > **Research base:** 6 scout agents paralelos — ~86 mejoras candidatas analizadas

@@ -100,6 +100,51 @@ const DEFAULT_CAT_THEME = {
 };
 function getCatTheme(id: string) { return CAT_THEME[id] ?? DEFAULT_CAT_THEME; }
 
+/**
+ * #49: Lazy category section — defers rendering of below-fold category grids
+ * until the section enters the viewport via IntersectionObserver.
+ * First 2 categories render immediately; the rest show skeletons until scrolled near.
+ */
+function LazyCategorySection({
+  children,
+  eager = false,
+  productCount = 6,
+}: {
+  children: React.ReactNode;
+  eager?: boolean;
+  productCount?: number;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(eager);
+
+  useEffect(() => {
+    if (eager) return;
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "300px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [eager]);
+
+  if (visible) return <>{children}</>;
+
+  return (
+    <div ref={ref} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3">
+      {Array.from({ length: Math.min(productCount, 6) }).map((_, i) => (
+        <SkeletonCard key={i} />
+      ))}
+    </div>
+  );
+}
+
 // ── Skeleton Card ─────────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
@@ -196,7 +241,7 @@ function ListProductRowBase({ product, onQuickView }: { product: LiveProduct; on
 const ListProductRow = memo(ListProductRowBase);
 
 // ── Search History ────────────────────────────────────────────────────────────
-const SEARCH_HISTORY_KEY = "bsm-search-history";
+const SEARCH_HISTORY_KEY = "buleje-search-history";
 const MAX_HISTORY = 5;
 
 function getSearchHistory(): string[] {
@@ -265,7 +310,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
   /* U1: Grid/List view toggle */
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "grid";
-    return (localStorage.getItem("bsm-view-mode") as "grid" | "list") || "grid";
+    return (localStorage.getItem("buleje-view-mode") as "grid" | "list") || "grid";
   });
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const searchRef = useRef<HTMLDivElement>(null);
@@ -623,7 +668,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             {/* U1: Grid/List toggle — enhanced with active indicator */}
             <div className="flex items-center bg-gray-100 dark:bg-accent rounded-xl p-0.5 shadow-sm relative">
               <button
-                onClick={() => { setViewMode("grid"); localStorage.setItem("bsm-view-mode", "grid"); }}
+                onClick={() => { setViewMode("grid"); localStorage.setItem("buleje-view-mode", "grid"); }}
                 className={cn(
                   "p-2.5 rounded-lg transition-all relative z-10",
                   viewMode === "grid"
@@ -636,7 +681,7 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                 <LayoutGrid className="h-4 w-4" />
               </button>
               <button
-                onClick={() => { setViewMode("list"); localStorage.setItem("bsm-view-mode", "list"); }}
+                onClick={() => { setViewMode("list"); localStorage.setItem("buleje-view-mode", "list"); }}
                 className={cn(
                   "p-2.5 rounded-lg transition-all relative z-10",
                   viewMode === "list"
@@ -979,10 +1024,12 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
             </div>
           ) : (
             <div className="space-y-10">
-              {realCategories.map((cat) => {
+              {realCategories.map((cat, catIdx) => {
                 const catProducts = filteredProducts.filter((p) => p.category === cat.id);
                 if (catProducts.length === 0) return null;
                 const theme = getCatTheme(cat.id);
+                /* #49: First 2 categories render eagerly; rest lazy-loaded */
+                const isEager = catIdx < 2;
                 return (
                   <div
                     key={cat.id}
@@ -998,15 +1045,17 @@ export default function ProductCatalog({ initialProducts = [] }: { initialProduc
                         <p className="text-xs text-muted">{catProducts.length} producto{catProducts.length !== 1 ? "s" : ""}</p>
                       </div>
                     </div>
-                    <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3" : "space-y-2"}>
-                      {catProducts.map((product) =>
-                        viewMode === "list" ? (
-                          <ListProductRow key={product.id} product={product} onQuickView={handleQuickView} />
-                        ) : (
-                          <ProductCard key={product.id} product={product} onQuickView={handleQuickView} />
-                        )
-                      )}
-                    </div>
+                    <LazyCategorySection eager={isEager} productCount={catProducts.length}>
+                      <div className={viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-3" : "space-y-2"}>
+                        {catProducts.map((product) =>
+                          viewMode === "list" ? (
+                            <ListProductRow key={product.id} product={product} onQuickView={handleQuickView} />
+                          ) : (
+                            <ProductCard key={product.id} product={product} onQuickView={handleQuickView} />
+                          )
+                        )}
+                      </div>
+                    </LazyCategorySection>
                   </div>
                 );
               })}

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { Bot, X } from "lucide-react";
@@ -26,8 +26,8 @@ export default function AIFloatingButton({ moduleContext, onNavigate }: Props) {
       if (detail?.alertCount !== undefined) setAlertCount(detail.alertCount);
       if (detail?.healthScore !== undefined) setHealthScore(detail.healthScore);
     };
-    window.addEventListener("bsm-ai-alerts", handler);
-    return () => window.removeEventListener("bsm-ai-alerts", handler);
+    window.addEventListener("buleje-ai-alerts", handler);
+    return () => window.removeEventListener("buleje-ai-alerts", handler);
   }, []);
 
   // Pulse for unread

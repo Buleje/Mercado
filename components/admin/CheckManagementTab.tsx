@@ -364,7 +364,7 @@ export default function CheckManagementTab() {
                     >
                       <Calendar className="h-3 w-3" />
                       {new Date(c.dueDate).toLocaleDateString("es-PE")}
-                      {isOverdue && " ⚠"}
+                      {isOverdue && " (vencido)"}
                     </td>
                     <td className="px-4 py-3">
                       <span

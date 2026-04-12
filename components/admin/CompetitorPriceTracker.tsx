@@ -25,7 +25,7 @@ type TrackerData = {
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 
-const LS_KEY = "bsm-competitor-prices";
+const LS_KEY = "buleje-competitor-prices";
 
 function loadData(): TrackerData {
   if (typeof window === "undefined") return { competitors: [], products: [] };

@@ -27,7 +27,7 @@ async function segmentation(
   log.info("Running RFM segmentation", { action: task.action });
 
   const customers = await cache.getOrSet("customers:all", 120, () =>
-    CustomersDB.getAll(),
+    CustomersDB.getAll(task.tenantId),
   );
 
   const now = Date.now();
@@ -134,7 +134,7 @@ async function topCustomers(
   const limit = (task.payload.limit as number) ?? 10;
 
   const customers = await cache.getOrSet("customers:all", 120, () =>
-    CustomersDB.getAll(),
+    CustomersDB.getAll(task.tenantId),
   );
 
   const sorted = [...customers]
@@ -171,7 +171,7 @@ async function churnRisk(
   const cutoff = Date.now() - inactiveDays * 24 * 60 * 60 * 1000;
 
   const customers = await cache.getOrSet("customers:all", 120, () =>
-    CustomersDB.getAll(),
+    CustomersDB.getAll(task.tenantId),
   );
 
   const atRisk = customers
@@ -220,7 +220,7 @@ async function birthdayUpcoming(
   const daysAhead = (task.payload.daysAhead as number) ?? 7;
 
   const customers = await cache.getOrSet("customers:all", 120, () =>
-    CustomersDB.getAll(),
+    CustomersDB.getAll(task.tenantId),
   );
 
   const now = new Date();
@@ -288,7 +288,7 @@ async function customer360(
     CustomersDB.getByPhone(phone),
     OrdersDB.getByCustomerPhone(ctx.tenantId, phone),
     LoyaltyDB.getByPhone(phone),
-    ReviewsDB.getAll(),
+    ReviewsDB.getAll(task.tenantId),
   ]);
 
   if (!customer) {

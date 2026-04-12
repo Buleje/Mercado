@@ -45,11 +45,11 @@ type Receta = {
 };
 
 const CATEGORIA_GRADIENTS: Record<string, { from: string; to: string }> = {
-  "Entradas": { from: "#60a5fa", to: "#06b6d4" },
-  "Platos de fondo": { from: "#f97316", to: "#ef4444" },
-  "Postres": { from: "#f472b6", to: "#a855f7" },
-  "Bebidas": { from: "#facc15", to: "#f59e0b" },
-  "Sopas": { from: "#4ade80", to: "#2dd4bf" },
+  "Entradas": { from: "#0d9488", to: "#14b8a6" },
+  "Platos de fondo": { from: "#f59e0b", to: "#d97706" },
+  "Postres": { from: "#0f766e", to: "#0d9488" },
+  "Bebidas": { from: "#fbbf24", to: "#f59e0b" },
+  "Sopas": { from: "#10b981", to: "#0d9488" },
 };
 
 const DIFICULTAD_EMOJI: Record<string, string> = {
@@ -95,7 +95,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
   // Load saved steps from localStorage
   useEffect(() => {
     if (!receta) return;
-    const saved = (() => { try { return localStorage.getItem(`bsm-receta-steps-${recetaId}`); } catch { return null; } })();
+    const saved = (() => { try { return localStorage.getItem(`buleje-receta-steps-${recetaId}`); } catch { return null; } })();
     if (saved) {
       const parsed = (() => { try { return JSON.parse(saved) as number[]; } catch { return null; } })();
       if (parsed) setCheckedSteps(new Set(parsed));
@@ -109,7 +109,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
       const next = new Set(prev);
       if (next.has(idx)) next.delete(idx);
       else next.add(idx);
-      try { localStorage.setItem(`bsm-receta-steps-${recetaId}`, JSON.stringify([...next])); } catch { /* ignore */ }
+      try { localStorage.setItem(`buleje-receta-steps-${recetaId}`, JSON.stringify([...next])); } catch { /* ignore */ }
 
       // Check if all steps completed
       if (receta?.pasos && next.size === receta.pasos.length) {
@@ -204,7 +204,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="h-14 w-14 rounded-2xl bg-[#00B4A6] flex items-center justify-center">
+          <div className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center">
             <ChefHat className="h-7 w-7 text-white animate-pulse" />
           </div>
           <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Cargando receta...</p>
@@ -223,7 +223,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
           <p className="text-gray-500 dark:text-gray-400 mb-6">La receta que buscas no existe o fue eliminada.</p>
           <Link
             href="/recetas"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#00B4A6] text-white font-bold hover:bg-[#009690] transition-colors shadow-lg"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-dark transition-colors shadow-lg"
           >
             <ArrowLeft className="h-4 w-4" /> Ver recetario
           </Link>
@@ -234,7 +234,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
 
   const colors = receta.colorFrom && receta.colorTo
     ? { from: receta.colorFrom, to: receta.colorTo }
-    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#00B4A6", to: "#007A72" };
+    : CATEGORIA_GRADIENTS[receta.categoria || ""] || { from: "#0d9488", to: "#0f766e" };
   const completedSteps = checkedSteps.size;
   const totalSteps = receta.pasos?.length || 0;
 
@@ -288,7 +288,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
               Recetas
             </Link>
             <ChevronRight className="h-3.5 w-3.5" />
-            <span className="text-white font-medium truncate max-w-[200px]">
+            <span className="text-white font-medium truncate max-w-50">
               {receta.nombre}
             </span>
           </nav>
@@ -400,7 +400,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
               >
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                    <ChefHat className="h-6 w-6 text-[#f97316]" />
+                    <ChefHat className="h-6 w-6 text-teal-600" />
                     Preparacion
                   </h2>
                   {totalSteps > 0 && (
@@ -414,7 +414,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                 {totalSteps > 0 && (
                   <div className="h-2.5 rounded-full bg-gray-100 dark:bg-gray-800 mb-8 overflow-hidden">
                     <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-[#00B4A6] to-[#2dd4bf]"
+                      className="h-full rounded-full bg-linear-to-r from-primary to-primary-light"
                       initial={{ width: 0 }}
                       animate={{ width: `${(completedSteps / totalSteps) * 100}%` }}
                       transition={{ duration: 0.5, ease: "easeOut" }}
@@ -436,15 +436,15 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                         className={cn(
                           "w-full flex items-start gap-4 sm:gap-5 p-4 sm:p-5 rounded-2xl border text-left transition-all duration-300",
                           done
-                            ? "bg-[#00B4A6]/5 border-[#00B4A6]/20 dark:bg-[#00B4A6]/10"
-                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-[#00B4A6]/30 hover:shadow-md"
+                            ? "bg-primary/5 border-primary/20 dark:bg-primary/10"
+                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-primary/30 hover:shadow-md"
                         )}
                       >
                         {/* Step number circle */}
                         <div className={cn(
-                          "flex-shrink-0 flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-full text-sm sm:text-base font-bold transition-all duration-300",
+                          "shrink-0 flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-full text-sm sm:text-base font-bold transition-all duration-300",
                           done
-                            ? "bg-[#00B4A6] text-white shadow-lg shadow-[#00B4A6]/30"
+                            ? "bg-primary text-white shadow-lg shadow-primary/30"
                             : "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                         )}>
                           {done ? <Check className="h-5 w-5" /> : idx + 1}
@@ -467,10 +467,10 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      className="mt-8 p-6 rounded-2xl bg-gradient-to-r from-[#00B4A6]/10 to-[#f97316]/10 dark:from-[#00B4A6]/20 dark:to-[#f97316]/20 text-center border border-[#00B4A6]/20"
+                      className="mt-8 p-6 rounded-2xl bg-linear-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20 text-center border border-primary/20"
                     >
                       <p className="text-2xl mb-2">{showConfetti ? "\uD83C\uDF89\uD83C\uDF8A\uD83E\uDD73" : "\uD83C\uDF7D\uFE0F"}</p>
-                      <p className="text-[#00B4A6] dark:text-[#2dd4bf] font-bold text-lg flex items-center justify-center gap-2">
+                      <p className="text-primary dark:text-primary-light font-bold text-lg flex items-center justify-center gap-2">
                         <Sparkles className="h-5 w-5" />
                         Receta completada! Buen provecho!
                       </p>
@@ -524,14 +524,14 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                 className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm"
               >
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-[#f97316]" />
+                  <Sparkles className="h-5 w-5 text-teal-600" />
                   Tambien te puede gustar
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {relatedRecetas.map(r => {
                     const rColors = r.colorFrom && r.colorTo
                       ? { from: r.colorFrom, to: r.colorTo }
-                      : CATEGORIA_GRADIENTS[r.categoria || ""] || { from: "#00B4A6", to: "#007A72" };
+                      : CATEGORIA_GRADIENTS[r.categoria || ""] || { from: "#0d9488", to: "#0f766e" };
                     return (
                       <Link
                         key={r.id}
@@ -548,7 +548,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                         </div>
                         <div className="p-4">
-                          <h3 className="font-bold text-sm text-gray-900 dark:text-white truncate group-hover:text-[#00B4A6] dark:group-hover:text-[#2dd4bf] transition-colors">
+                          <h3 className="font-bold text-sm text-gray-900 dark:text-white truncate group-hover:text-primary dark:group-hover:text-primary-light transition-colors">
                             {r.nombre}
                           </h3>
                           <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -559,7 +559,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                             )}
                             <span>{r.ingredientes.length} ing.</span>
                           </div>
-                          <p className="text-sm font-bold text-[#00B4A6] dark:text-[#2dd4bf] mt-2">
+                          <p className="text-sm font-bold text-primary dark:text-primary-light mt-2">
                             S/ {r.totalIngredientes.toFixed(2)}
                           </p>
                         </div>
@@ -589,10 +589,10 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                 >
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                      <ShoppingCart className="h-5 w-5 text-[#00B4A6]" />
+                      <ShoppingCart className="h-5 w-5 text-primary" />
                       Lista de compras
                     </h2>
-                    <span className="text-lg font-extrabold text-[#00B4A6] dark:text-[#2dd4bf]">
+                    <span className="text-lg font-extrabold text-primary dark:text-primary-light">
                       S/ {receta.totalIngredientes.toFixed(2)}
                     </span>
                   </div>
@@ -613,16 +613,16 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                         className={cn(
                           "flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-200",
                           isChecked && !agotado
-                            ? "border-[#00B4A6]/20 bg-[#00B4A6]/5 dark:bg-[#00B4A6]/10"
+                            ? "border-primary/20 bg-primary/5 dark:bg-primary/10"
                             : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600",
                           agotado && "opacity-50 cursor-not-allowed"
                         )}
                       >
                         {/* Custom checkbox */}
                         <div className={cn(
-                          "flex-shrink-0 h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all",
+                          "shrink-0 h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all",
                           isChecked && !agotado
-                            ? "bg-[#00B4A6] border-[#00B4A6]"
+                            ? "bg-primary border-primary"
                             : "border-gray-300 dark:border-gray-600"
                         )}>
                           {isChecked && !agotado && <Check className="h-3 w-3 text-white" />}
@@ -636,7 +636,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                         />
 
                         {/* Product image */}
-                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center">
+                        <div className="shrink-0 h-10 w-10 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden flex items-center justify-center">
                           {ing.imagen ? (
                             <Image src={ing.imagen} alt={ing.nombre} width={40} height={40} className="h-10 w-10 object-cover rounded-full" />
                           ) : (
@@ -658,7 +658,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                         </div>
 
                         {/* Price + stock */}
-                        <div className="text-right flex-shrink-0">
+                        <div className="text-right shrink-0">
                           <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
                             S/ {(ing.precio * ing.cantidad).toFixed(2)}
                           </p>
@@ -696,7 +696,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
                   <button
                     onClick={handleAddSelected}
                     disabled={selectedIngredients.length === 0}
-                    className="w-full py-4 rounded-xl bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl shadow-[#00B4A6]/25 active:scale-[0.98]"
+                    className="w-full py-4 rounded-xl bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-base flex items-center justify-center gap-2 transition-all shadow-xl shadow-primary/25 active:scale-[0.98]"
                   >
                     <ShoppingCart className="h-5 w-5" />
                     Agregar {selectedIngredients.length} ingredientes &middot; S/ {selectedTotal.toFixed(2)}
@@ -725,7 +725,7 @@ export default function RecetaDetalleClient({ recetaId }: { recetaId: string }) 
         <button
           onClick={handleAddSelected}
           disabled={selectedIngredients.length === 0}
-          className="w-full py-4 rounded-xl bg-[#00B4A6] hover:bg-[#009690] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold flex items-center justify-center gap-2 shadow-xl shadow-[#00B4A6]/25 active:scale-[0.98]"
+          className="w-full py-4 rounded-xl bg-primary hover:bg-primary-dark disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/25 active:scale-[0.98]"
         >
           <ShoppingCart className="h-5 w-5" />
           Agregar {selectedIngredients.length} ingredientes &middot; S/ {selectedTotal.toFixed(2)}

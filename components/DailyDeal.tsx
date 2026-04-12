@@ -151,19 +151,26 @@ export default function DailyDeal() {
 
               {/* Countdown */}
               <div className="flex items-center gap-2 justify-center sm:justify-start mb-5">
-                <Clock className="w-4 h-4 text-secondary" />
+                <Clock className="w-4 h-4 text-secondary" aria-hidden="true" />
                 <span className="text-sm font-semibold text-foreground">
                   Oferta v\u00e1lida por{" "}
-                  <span className="text-secondary font-bold tabular-nums">{countdown}</span>
+                  <span
+                    className="text-secondary font-bold tabular-nums"
+                    aria-live="polite"
+                    aria-label={`Tiempo restante: ${countdown}`}
+                  >
+                    {countdown}
+                  </span>
                 </span>
               </div>
 
               {/* CTA */}
               <button
                 onClick={handleAdd}
+                aria-label={`Agregar ${product.name} al carrito`}
                 className="inline-flex items-center gap-2 bg-primary text-white font-bold px-8 py-3.5 rounded-xl hover:bg-primary/90 active:scale-95 transition-all shadow-lg hover:shadow-xl text-base"
               >
-                <ShoppingCart className="w-5 h-5" />
+                <ShoppingCart className="w-5 h-5" aria-hidden="true" />
                 Agregar al carrito
               </button>
             </div>

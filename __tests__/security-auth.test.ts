@@ -20,31 +20,46 @@ import { checkPermission, canWrite, canRead } from "@/lib/auth/role-permissions"
 // MOCKS & HELPERS
 // ══════════════════════════════════════════════════════════════
 
+const CSRF_TOKEN = "a".repeat(64); // Fixed CSRF token for tests
+
 function mockRequest(
   pathname: string,
   method: string = "GET",
   token?: string
 ): NextRequest {
   const url = `https://localhost:3000${pathname}`;
+  const isMutation = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
   const req = new NextRequest(url, { method });
 
-  // Mock cookies
+  // Mock cookies — include CSRF token for mutation methods
   if (token) {
     Object.defineProperty(req, "cookies", {
       value: {
-        get: (name: string) => (name === "bsm-admin-sess" ? { value: token } : undefined),
+        get: (name: string) => {
+          if (name === "buleje-admin-sess") return { value: token };
+          if (name === "csrf-token" && isMutation) return { value: CSRF_TOKEN };
+          return undefined;
+        },
       },
       writable: true,
     });
   } else {
     Object.defineProperty(req, "cookies", {
-      value: { get: () => undefined },
+      value: {
+        get: (name: string) => {
+          if (name === "csrf-token" && isMutation) return { value: CSRF_TOKEN };
+          return undefined;
+        },
+      },
       writable: true,
     });
   }
 
-  // Mock headers for IP tracking
+  // Mock headers for IP tracking + CSRF header for mutations
   const headers = new Headers({ "x-forwarded-for": "127.0.0.1" });
+  if (isMutation) {
+    headers.set("x-csrf-token", CSRF_TOKEN);
+  }
   Object.defineProperty(req, "headers", {
     value: headers,
     writable: true,

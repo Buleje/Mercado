@@ -18,6 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
 import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import { DEMO_DATA_MODULES } from "@/app/admin/_lib/tab-categories";
@@ -46,6 +47,7 @@ export type AdminSidebarProps = {
   // Tenant / usuario
   activeTenantName: string | null | undefined;
   activeTenantLogo: string | null | undefined;
+  activeTenantSlug: string | null | undefined;
   userName: string;
   userRole: string;
 
@@ -106,6 +108,7 @@ export function AdminSidebar({
   isSuperAdminImpersonating,
   activeTenantName,
   activeTenantLogo,
+  activeTenantSlug,
   userName,
   userRole,
   tab,
@@ -140,6 +143,32 @@ export function AdminSidebar({
   sidebarSearch,
   allTabs,
 }: AdminSidebarProps) {
+  const [storeHref, setStoreHref] = React.useState("/tienda");
+
+  React.useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      const fallbackSlug = await resolveActiveTenantSlug();
+      const resolvedSlug = activeTenantSlug && activeTenantSlug !== "main"
+        ? activeTenantSlug
+        : fallbackSlug;
+
+      if (!active) return;
+
+      if (resolvedSlug && resolvedSlug !== "main") {
+        setStoreHref(`/t/${resolvedSlug}/tienda`);
+        return;
+      }
+
+      setStoreHref("/tienda");
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [activeTenantSlug]);
+
   return (
     <>
       {/* Desktop permanent sidebar */}
@@ -559,15 +588,16 @@ export function AdminSidebar({
             <Globe className="h-5 w-5" /> {!focusMode && "Marketplace"}
           </Link>
           <Link
-            href="/tienda"
+            href={storeHref}
             target="_blank"
-            title={focusMode ? "Tienda" : undefined}
+            rel="noopener noreferrer"
+            title={focusMode ? "Mi Tienda" : undefined}
             className={cn(
               "flex items-center rounded-xl text-sm font-semibold text-primary hover:bg-primary/10 dark:hover:bg-primary/20 transition-all",
               focusMode ? "justify-center px-0 py-2.5" : "gap-3 px-4 py-3"
             )}
           >
-            <Store className="h-5 w-5" /> {!focusMode && "Tienda"}
+            <Store className="h-5 w-5" /> {!focusMode && "Mi Tienda"}
           </Link>
         </div>
       </aside>

@@ -46,7 +46,8 @@ export type Tab =
   | "store-customizer"
   | "mi-perfil"
   | "rendimiento"
-  | "colas";
+  | "colas"
+  | "pagina-inicio";
 
 export type TabCategory = {
   id: string;
@@ -120,7 +121,7 @@ export const TAB_MIGRATION: Record<string, Tab> = {
   recordatorios: "config", flujos: "config", "reglas-negocio": "config",
   "agenda-utilidades": "config", calendario: "config",
   "notas-rapidas": "config", "filtros-guardados": "config",
-  "pagina-inicio": "config",
+  "pagina-inicio": "pagina-inicio",
   // Especiales
   pedidos: "pedidos",
   plan: "plan",

@@ -1,7 +1,7 @@
 # Product & UX — Research 2026-04-09
 
 **Autor:** PRODUCT-UX-SCOUT (subagente)
-**Scope:** Flujos end-to-end de Bodega San Martín / Buleje desde lente de PM, retention, conversion.
+**Scope:** Flujos end-to-end de Buleje / Buleje desde lente de PM, retention, conversion.
 **Fuentes clave inspeccionadas:** `app/onboarding/page.tsx`, `components/onboarding/*`, `app/(marketing)/plataforma/page.tsx`, `components/marketing/RegistrationForm.tsx`, `app/supplier/page.tsx`, `app/api/daily-digest/route.ts`, `app/api/abandoned-cart/route.ts`, `lib/analytics.ts`, `lib/plans.ts`, `lib/churn/health-scorer.ts`, `lib/trial.ts`, `lib/whatsapp/conversation-engine.ts`, `components/ReferralBanner.tsx`, `app/admin/_lib/tab-categories.ts`.
 
 ---
@@ -70,7 +70,7 @@ Post-delivery survey (StarRating 1-5 + comment) ← solo si el flow de entrega d
 ¿Repeat purchase?
    ├─ Email abandoned cart... NO, va a NOTIFY_EMAIL (admin), NUNCA al cliente ← BUG crítico
    ├─ Loyalty: autoDiscount por tier (Nuevo 0% → Conocido 2% → Habitual 4% → VIP 6%)
-   ├─ Referral: código BSM-XXXX-Y (último 4 + checksum) — banner en home
+   ├─ Referral: código Buleje-XXXX-Y (último 4 + checksum) — banner en home
    ├─ Birthday coupons (existe endpoint /api/birthday-coupons, sin confirmar trigger)
    └─ WhatsApp conversation engine existe (`lib/whatsapp/conversation-engine.ts`) pero fuera del flow de re-engagement, solo como canal reactivo
 ```
@@ -207,7 +207,7 @@ Existe `StoreRegistrationForm.tsx` para registrar tienda en el marketplace → e
 **Categoría:** Revenue/Growth — growth loop viral
 **Impacto:** CAC ↓ 30-40%. Si 1 de cada 5 dueños trae 1 amigo, k-factor 0.2 — significativo.
 **Esfuerzo:** M (1 sprint)
-**Qué es:** Hoy solo existe referral para clientes finales (`ReferralBanner.tsx` con código `BSM{last4}{char}`). Crear equivalente para tenants: cada dueño tiene un código único que al usarse en `/plataforma/registro` (hay un campo `referralCode` que existe pero no tiene reward asociado), otorga 1 mes Pro gratis a AMBOS (quien refiere y quien llega).
+**Qué es:** Hoy solo existe referral para clientes finales (`ReferralBanner.tsx` con código `Buleje{last4}{char}`). Crear equivalente para tenants: cada dueño tiene un código único que al usarse en `/plataforma/registro` (hay un campo `referralCode` que existe pero no tiene reward asociado), otorga 1 mes Pro gratis a AMBOS (quien refiere y quien llega).
 **Por qué:** Los bodegueros en Pucallpa son una red densa — se conocen, van al mismo mercado mayorista, comparten proveedores. Un referral viral tiene sentido natural. Además, Brandon no puede hacer outreach 1:1, necesita un growth loop.
 **Cómo:** Expandir el schema Tenant con `referralCodeOwn` (único), `referredByTenantId`. Endpoint `/api/tenant/apply-referral`. Lógica de reward en `lib/plans.ts` (extender trial 30 días adicionales). Banner en `/admin/plan` mostrando "Invita otra bodega → 1 mes gratis los dos" con link directo a WhatsApp con mensaje pre-formateado.
 **Dependencias:** Schema migration, trial extension logic, WhatsApp deeplink.

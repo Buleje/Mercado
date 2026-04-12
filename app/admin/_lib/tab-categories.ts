@@ -37,6 +37,7 @@ import {
   Store,
   Palette,
   Settings,
+  Receipt,
 } from "lucide-react";
 import type { Tab } from "./tabs.types";
 
@@ -151,7 +152,7 @@ export const BASIC_MODULES: TabCategory[] = [
     id: "asistente-ia",
     label: "IA & Analítica",
     icon: Brain,
-    tabs: ["asistente-ia", "analytics-pro"],
+    tabs: ["asistente-ia", "analytics-pro", "forecasting"],
   },
   {
     id: "ventas-caja",
@@ -242,6 +243,12 @@ export const BASIC_MODULES: TabCategory[] = [
     label: "Scoring Crédito",
     icon: Shield,
     tabs: ["scoring"],
+  },
+  {
+    id: "facturacion-sunat",
+    label: "Facturación SUNAT",
+    icon: Receipt,
+    tabs: ["facturacion"],
   },
   {
     id: "documentos",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeCompare } from "@/lib/timing-safe";
 import { logger } from "@/lib/logger";
 import { orchestrator, ensureAgentsRegistered } from "@/lib/agents";
+import { prisma } from "@/lib/prisma";
 
 /**
  * GET /api/cron/agent-tasks
@@ -23,8 +24,14 @@ export async function GET(req: NextRequest) {
   try {
     await ensureAgentsRegistered();
 
+    // Iterate over all active tenants (multi-tenant)
+    const tenants = await prisma.tenant.findMany({
+      where: { active: true },
+      select: { id: true },
+    });
+
     // Daily automated agent tasks
-    const tasks = [
+    const taskDefs = [
       { domain: "inventory" as const, action: "check-stock", payload: {} },
       { domain: "inventory" as const, action: "fefo-audit", payload: {} },
       { domain: "analytics" as const, action: "daily-kpis", payload: {} },
@@ -34,24 +41,28 @@ export async function GET(req: NextRequest) {
     ];
 
     const results = [];
-    for (const t of tasks) {
-      const task = await orchestrator.submitTask({
-        ...t,
-        tenantId: "main",
-        priority: "normal",
-      });
-      results.push({
-        id: task.id,
-        domain: t.domain,
-        action: t.action,
-        status: task.status,
-      });
+    for (const tenant of tenants) {
+      for (const t of taskDefs) {
+        const task = await orchestrator.submitTask({
+          ...t,
+          tenantId: tenant.id,
+          priority: "normal",
+        });
+        results.push({
+          id: task.id,
+          tenantId: tenant.id,
+          domain: t.domain,
+          action: t.action,
+          status: task.status,
+        });
+      }
     }
 
-    logger.info("[cron] agent-tasks executed", { taskCount: results.length });
+    logger.info("[cron] agent-tasks executed", { taskCount: results.length, tenants: tenants.length });
 
     return NextResponse.json({
       ok: true,
+      tenantsProcessed: tenants.length,
       tasksSubmitted: results.length,
       tasks: results,
       processedAt: new Date().toISOString(),

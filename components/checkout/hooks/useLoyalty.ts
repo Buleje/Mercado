@@ -9,7 +9,7 @@ import type { CheckoutDispatch } from "./useCheckoutState";
 export const TIER_DISCOUNT: Record<string, number> = {
   plata: 2,
   oro: 4,
-  diamante: 7,
+  diamante: 6,
 };
 
 /**

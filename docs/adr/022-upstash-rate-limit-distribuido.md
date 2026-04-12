@@ -46,7 +46,7 @@ UPSTASH_REDIS_REST_URL=""
 UPSTASH_REDIS_REST_TOKEN=""
 ```
 
-Se obtienen en https://console.upstash.com/ (tier gratis: 10k comandos/día, más que suficiente para v1 de Bodega San Martín).
+Se obtienen en https://console.upstash.com/ (tier gratis: 10k comandos/día, más que suficiente para v1 de Buleje).
 
 `lib/env.ts` valida opcionalmente en `validateEnv()` — en producción, si faltan, loggea warning pero **no lanza**, porque queremos que deploys existentes sigan booteando mientras el humano aprieta el toggle.
 

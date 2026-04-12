@@ -55,7 +55,7 @@ const PREDEFINED: WATemplate[] = [
   },
 ];
 
-const LS_KEY = "bsm-whatsapp-templates";
+const LS_KEY = "buleje-whatsapp-templates";
 
 function loadCustomTemplates(): WATemplate[] {
   if (typeof window === "undefined") return [];

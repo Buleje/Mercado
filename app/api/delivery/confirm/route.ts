@@ -113,6 +113,16 @@ export async function POST(req: NextRequest) {
           message: `Tu pedido fue entregado por ${assignment.partner.name}. Gracias por tu compra!`,
         }),
       }).catch(() => {});
+
+      // Fire-and-forget: enviar link de calificación por WhatsApp (30s delay via setTimeout no disponible en serverless, se envía inmediato en segundo mensaje)
+      const ratingUrl = `${baseUrl}/marketplace/calificar-entrega?id=${updatedAssignment.id}`;
+      const customerName = assignment.order.customerName?.split(" ")[0] ?? "vecino";
+      import("@/lib/whatsapp").then(({ sendWhatsAppText }) => {
+        sendWhatsAppText(
+          assignment.order.customerPhone!,
+          `⭐ ¡Hola ${customerName}! ¿Cómo fue tu entrega con ${assignment.partner.name}?\n\nCalifica aquí en 10 segundos 👉 ${ratingUrl}\n\nTu opinión nos ayuda a mejorar 🙏`
+        ).catch(() => {});
+      }).catch(() => {});
     }
 
     // Fire-and-forget: log de actividad

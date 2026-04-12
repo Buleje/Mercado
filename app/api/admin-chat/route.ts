@@ -20,6 +20,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "sender y message requeridos" }, { status: 400 });
   }
   
-  const msg = await AdminChatDB.add(sender, message.trim());
+  const msg = await AdminChatDB.add(sender, message.trim(), auth.tenantId);
   return NextResponse.json(msg, { status: 201 });
 }

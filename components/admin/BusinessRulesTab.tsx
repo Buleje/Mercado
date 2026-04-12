@@ -99,11 +99,11 @@ export default function BusinessRulesTab() {
 
                 {/* Rule flow visualization */}
                 <div className="flex items-center gap-2 flex-wrap text-xs">
-                  <span className="bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 px-2.5 py-1.5 rounded-lg font-semibold">📡 {r.trigger}</span>
+                  <span className="bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 px-2.5 py-1.5 rounded-lg font-semibold">{r.trigger}</span>
                   <ArrowRight className="h-3.5 w-3.5 text-gray-400" />
-                  <span className="bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 px-2.5 py-1.5 rounded-lg font-semibold">🔍 {r.condition}</span>
+                  <span className="bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 px-2.5 py-1.5 rounded-lg font-semibold">{r.condition}</span>
                   <ArrowRight className="h-3.5 w-3.5 text-gray-400" />
-                  <span className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 px-2.5 py-1.5 rounded-lg font-semibold">⚡ {r.action}</span>
+                  <span className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 px-2.5 py-1.5 rounded-lg font-semibold">{r.action}</span>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3 text-[11px] text-gray-400 dark:text-muted">

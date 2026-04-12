@@ -57,7 +57,7 @@ function getBroadcastChannel(slug: string): BroadcastChannel | null {
   try {
     if (!_broadcastChannel || _broadcastSlug !== slug) {
       if (_broadcastChannel) try { _broadcastChannel.close(); } catch { /* ok */ }
-      _broadcastChannel = new BroadcastChannel(`bsm-cart-sync-${slug}`);
+      _broadcastChannel = new BroadcastChannel(`buleje-cart-sync-${slug}`);
       _broadcastSlug = slug;
     }
     return _broadcastChannel;
@@ -66,9 +66,9 @@ function getBroadcastChannel(slug: string): BroadcastChannel | null {
   }
 }
 
-/** Build a tenant-scoped localStorage key: bsm-{slug}-{key} */
+/** Build a tenant-scoped localStorage key: buleje-{slug}-{key} */
 function sk(slug: string, key: string): string {
-  return slug ? `bsm-${slug}-${key}` : `bsm-${key}`;
+  return slug ? `buleje-${slug}-${key}` : `buleje-${key}`;
 }
 
 export type CartItem = Product & { quantity: number; note?: string };

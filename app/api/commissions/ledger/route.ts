@@ -60,7 +60,14 @@ export async function GET(req: NextRequest) {
       else if (row.status === "paid") totals.totalPaid = sum;
     }
 
-    return NextResponse.json({ data: commissions, totals });
+    return NextResponse.json({
+      data: commissions.map((c) => ({
+        ...c,
+        amount: Number(c.amount),
+        rate: Number(c.rate),
+      })),
+      totals,
+    });
   } catch {
     return NextResponse.json({ error: "Error del servidor" }, { status: 503 });
   }

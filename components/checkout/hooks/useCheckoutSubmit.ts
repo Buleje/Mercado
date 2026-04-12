@@ -131,7 +131,7 @@ export function useCheckoutSubmit({
         cartActions.closeCart();
         cartActions.markOrderPending();
         window.dispatchEvent(
-          new CustomEvent("bsm:orderCreated", { detail: { orderId: data.id } })
+          new CustomEvent("buleje:orderCreated", { detail: { orderId: data.id } })
         );
 
         trackPurchase({

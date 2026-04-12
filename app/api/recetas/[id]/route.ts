@@ -29,8 +29,8 @@ export async function GET(
 
   const { id } = await params;
   try {
-    const receta = await RecetasDB.getById(id);
-    if (!receta || receta.tenantId !== auth.tenantId) {
+    const receta = await RecetasDB.getById(auth.tenantId, id);
+    if (!receta) {
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
 
@@ -63,8 +63,8 @@ export async function PATCH(
       );
     }
 
-    const existing = await RecetasDB.getById(id);
-    if (!existing || existing.tenantId !== auth.tenantId) {
+    const existing = await RecetasDB.getById(auth.tenantId, id);
+    if (!existing) {
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
 
@@ -97,7 +97,7 @@ export async function PATCH(
     // Recalculate cost
     await RecetasDB.calcularCosto(id);
 
-    const result = await RecetasDB.getById(id);
+    const result = await RecetasDB.getById(auth.tenantId, id);
 
     logActivity(
       "Actualizar", "receta",
@@ -122,8 +122,8 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    const existing = await RecetasDB.getById(id);
-    if (!existing || existing.tenantId !== auth.tenantId) {
+    const existing = await RecetasDB.getById(auth.tenantId, id);
+    if (!existing) {
       return NextResponse.json({ error: "Receta no encontrada" }, { status: 404 });
     }
 

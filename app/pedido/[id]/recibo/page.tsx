@@ -38,7 +38,7 @@ function resolveCustomerPhone(urlPhone: string | null): string | null {
   if (urlPhone) return urlPhone;
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem("bsm-last-order");
+    const raw = localStorage.getItem("buleje-last-order");
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { customerPhone?: string };
     return parsed.customerPhone ?? null;

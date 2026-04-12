@@ -48,7 +48,7 @@ function formatPrice(amount: number, currency = "PEN") {
 }
 
 function getCartKey(slug: string) {
-  return `bsm-${slug}-cart`;
+  return `buleje-${slug}-cart`;
 }
 
 /* ─── Componente carrito flotante ─────────────────────────────────────────── */

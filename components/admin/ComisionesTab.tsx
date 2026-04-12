@@ -127,7 +127,7 @@ export default function ComisionesTab() {
         const created: DbCommissionRule = await res.json();
         setDbRules(prev => [...prev, created]);
         setNewTier({ cashierId: "", label: "", minSales: 0, maxSales: "", rate: 3 });
-        showToast("Regla de comisión guardada ✓");
+        showToast("Regla de comisión guardada");
       } else {
         showToast("Error al guardar la regla");
       }
@@ -223,7 +223,7 @@ export default function ComisionesTab() {
 
   function togglePaid(cashierId: string) {
     setRules(prev => prev.map(r => r.cashierId === cashierId ? { ...r, paid: !r.paid } : r));
-    showToast("Estado de pago actualizado ✓");
+    showToast("Estado de pago actualizado");
   }
 
   function handleExport() {
@@ -434,7 +434,7 @@ export default function ComisionesTab() {
                       <td className="px-2 sm:px-4 py-2 sm:py-3 font-extrabold text-violet-600 dark:text-violet-400">{fmt(s.commission)}</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3">
                         <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-xl text-xs font-bold transition-all", s.paid ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400")}>
-                          {s.paid ? "✓ Pagado" : "Pendiente"}
+                          {s.paid ? "Pagado" : "Pendiente"}
                         </button>
                       </td>
                     </tr>
@@ -465,7 +465,7 @@ export default function ComisionesTab() {
                       <p className="text-xs text-gray-500 dark:text-muted">{ROLE_LABEL[s.role] ?? s.role}</p>
                     </div>
                     <button onClick={() => togglePaid(s.cashierId)} className={cn("px-2.5 py-1 rounded-xl text-xs font-bold", s.paid ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400")}>
-                      {s.paid ? "✓ Pagado" : "Pendiente"}
+                      {s.paid ? "Pagado" : "Pendiente"}
                     </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">

@@ -3,7 +3,7 @@
 **Status:** 🟢 Accepted
 **Fecha:** 2026-04-09
 **Autor:** Brandon (Buleje) + Claude Code (Lead Systems Architect)
-**Contexto del proyecto:** Bodega San Martín (ERP/e-commerce multi-tenant Pucallpa)
+**Contexto del proyecto:** Buleje (ERP/e-commerce multi-tenant Pucallpa)
 **Supersede:** ninguno · **Relacionado con:** ADR-014 (middleware split), ADR-015 (checkout footer slot), ADR-016 (plan 24 semanas), ADR-020 (ola1 migration plan), ADR-022 (upstash rate limit), ADR-024 (loyalty transaction)
 
 ---
@@ -83,7 +83,7 @@ Adicionalmente, el contexto de sesión crecía sin control en sesiones largas (>
 |---|---|---|---|
 | **A: Quedarse en Phase 1** (status quo) | Sin cambios, sin riesgo | Brandon sigue siendo el cuello de botella; los hallazgos del Vercel setup quedan sin proceso para resolverse | No escalable. Brandon explícitamente pidió "máxima ambición" y "autonomía total nivel 4" |
 | **B: Solo añadir self-heal** (mínimo viable) | Resuelve el bottleneck principal | Deja sin resolver: gestión de ADRs, pentest pre-merge, QA visual, observabilidad Vercel | Brandon pidió "Phase 2 completa", no incremento mínimo |
-| **C: Usar plugin externo** (ej: ralph-loop, claude-md-management) | Menos código propio | Brandon quiere skills custom adaptados a Bodega San Martín, no genéricos. Los plugins existentes (ralph-loop, claude-md-improver) cubren ~30% del scope | Incompleto y no específico al stack del proyecto |
+| **C: Usar plugin externo** (ej: ralph-loop, claude-md-management) | Menos código propio | Brandon quiere skills custom adaptados a Buleje, no genéricos. Los plugins existentes (ralph-loop, claude-md-improver) cubren ~30% del scope | Incompleto y no específico al stack del proyecto |
 | **D: Phase 2 completa con artefactos custom** (la elegida) | Cubre los 4 gaps. Custom al stack. Documentado en ADR. Reusable en sesiones futuras | Mayor complejidad operativa | — |
 
 ## 5. Verificación

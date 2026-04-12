@@ -1,10 +1,15 @@
 import Link from "next/link";
+import { Search } from "lucide-react";
 
 export default function AdminNotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <div className="text-center">
-        <div className="text-6xl mb-4">🔍</div>
+        <div className="mb-4 flex justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-sky-900/20 dark:text-sky-300">
+            <Search className="h-8 w-8" />
+          </div>
+        </div>
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
           Pagina no encontrada
         </h1>

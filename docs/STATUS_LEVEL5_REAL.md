@@ -74,4 +74,4 @@ L5 ████████████████ GitHub Actions 24/7 + SLOs +
 
 ---
 
-> Bodega San Martín: de cuaderno → ERP digital → plataforma autónoma → sistema imparable en producción real.
+> Buleje: de cuaderno → ERP digital → plataforma autónoma → sistema imparable en producción real.

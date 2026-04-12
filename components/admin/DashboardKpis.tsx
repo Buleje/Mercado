@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { z } from "zod";
-import { Loader2, TrendingUp, ShoppingCart, AlertTriangle, Wallet } from "lucide-react";
+import { Loader2, TrendingUp, ShoppingCart, AlertTriangle, Wallet, ShoppingBag } from "lucide-react";
 
 /**
  * components/admin/DashboardKpis.tsx
@@ -30,6 +30,10 @@ const DashboardAggregatesSchema = z.object({
   }),
   activeCarts: z.number(),
   lowStockCount: z.number(),
+  abandonedCarts: z.object({
+    count: z.number(),
+    estimatedValue: z.number(),
+  }),
   generatedAt: z.string(),
 });
 
@@ -117,7 +121,7 @@ export function DashboardKpis() {
   const { data } = state;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
       <KpiCard
         label="Ventas hoy"
         value={formatCurrency(data.today.revenue)}
@@ -135,6 +139,13 @@ export function DashboardKpis() {
         value={data.activeCarts.toString()}
         sub="pedidos en curso"
         icon={<ShoppingCart className="h-5 w-5" />}
+      />
+      <KpiCard
+        label="Carritos abandonados"
+        value={data.abandonedCarts.count.toString()}
+        sub={`${formatCurrency(data.abandonedCarts.estimatedValue)} en ventas por recuperar`}
+        icon={<ShoppingBag className="h-5 w-5" />}
+        danger={data.abandonedCarts.count > 0}
       />
       <KpiCard
         label="Bajo stock"

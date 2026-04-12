@@ -60,7 +60,7 @@ const a = 0.1 + 0.2;  // 0.30000000000000004, no 0.3
 // Float real: S/. 0.9999999999999993
 ```
 
-**Impacto en Bodega San Martín:**
+**Impacto en Buleje:**
 - Cuadre de caja manual con discrepancias fantasma de centavos
 - Auditoría de SUNAT falla por mismatch en Invoice.total
 - Métricas de ventas del admin subestiman o sobrestiman por margen de error

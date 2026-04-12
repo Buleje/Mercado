@@ -79,9 +79,22 @@ export async function GET(req: NextRequest) {
       const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000); // 2 horas atras
       const maxAge = new Date(Date.now() - 24 * 60 * 60 * 1000); // maximo 24 horas
 
+      // Iterate over all active tenants (multi-tenant)
+      const tenants = await prisma.tenant.findMany({
+        where: { active: true },
+        select: { id: true, name: true },
+      });
+
+      let grandTotal = 0;
+      let grandNotifications = 0;
+
+      for (const tenant of tenants) {
+        const tenantId = tenant.id;
+
       // Buscar carritos guardados actualizados hace mas de 2 horas pero menos de 24
       const carts = await prisma.savedCart.findMany({
         where: {
+          tenantId,
           updatedAt: { lt: cutoff, gt: maxAge },
           // Solo carritos con contenido
           NOT: { itemsJson: "[]" },
@@ -95,8 +108,7 @@ export async function GET(req: NextRequest) {
       });
 
       if (carts.length === 0) {
-        logger.info("[cron/abandoned-cart] Sin carritos abandonados");
-        return { total: 0, carts: [], notificationsCreated: 0 };
+        continue;
       }
 
       const now = Date.now();
@@ -137,7 +149,7 @@ export async function GET(req: NextRequest) {
         const displayName = cart.customerName || cart.customerPhone;
         const valorStr = `S/${cart.estimatedValue.toFixed(2)}`;
         createNotification({
-          tenantId: "main",
+          tenantId,
           type: "CARRITO_ABANDONADO",
           severity: cart.estimatedValue > 100 ? "HIGH" : "MEDIUM",
           title: `Carrito abandonado: ${displayName}`,
@@ -159,14 +171,18 @@ export async function GET(req: NextRequest) {
           .catch(() => {});
 
         // WhatsApp recovery message al cliente
-        enqueueNotification({ type: "whatsapp", recipient: cart.customerPhone, message: cart.whatsappText, tenantId: "main", metadata: { purpose: "abandoned-cart-recovery" } }).catch(() => {});
+        enqueueNotification({ type: "whatsapp", recipient: cart.customerPhone, message: cart.whatsappText, tenantId, metadata: { purpose: "abandoned-cart-recovery" } }).catch(() => {});
 
         notificationsCreated++;
       }
 
-      logger.info(`[cron/abandoned-cart] ${abandonados.length} carritos abandonados detectados, ${notificationsCreated} notificaciones creadas`);
+      grandTotal += abandonados.length;
+      grandNotifications += notificationsCreated;
 
-      return { total: abandonados.length, carts: abandonados, notificationsCreated };
+      logger.info(`[cron/abandoned-cart] ${abandonados.length} carritos abandonados para ${tenant.name}`, { tenantId });
+      } // end for tenant
+
+      return { total: grandTotal, notificationsCreated: grandNotifications, tenantsProcessed: tenants.length };
     });
 
     return NextResponse.json({ ok: true, ...result });

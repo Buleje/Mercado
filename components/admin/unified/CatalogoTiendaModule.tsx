@@ -578,15 +578,15 @@ export default function CatalogoTiendaModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId={MODULE_ID}
-      />
-
-      {/* Tab content */}
-      {sub === "dashboard" && <ProductsDashboard />}
-      {sub === "productos" && <ProductsAdminTab />}
-      {sub === "categorias" && <CategoriesEditorTab />}
-      {sub === "promociones" && <PromotionsTab />}
-      {sub === "cupones" && <CouponsTab />}
-      {sub === "historial-precios" && <PriceHistoryTab />}
+      >
+        {/* Tab content */}
+        {sub === "dashboard" && <ProductsDashboard />}
+        {sub === "productos" && <ProductsAdminTab />}
+        {sub === "categorias" && <CategoriesEditorTab />}
+        {sub === "promociones" && <PromotionsTab />}
+        {sub === "cupones" && <CouponsTab />}
+        {sub === "historial-precios" && <PriceHistoryTab />}
+      </AdminTabBar>
     </div>
   );
 }

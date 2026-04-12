@@ -10,6 +10,7 @@ import type { TenantRow, PlanId } from "@/lib/superadmin-types";
 import { TenantCard } from "@/components/superadmin/tenants/TenantCard";
 import { TenantTable } from "@/components/superadmin/tenants/TenantTable";
 import { TenantGrowthTab } from "@/components/superadmin/tenants/TenantGrowthTab";
+import { TenantProductsModal } from "@/components/superadmin/tenants/TenantProductsModal";
 import { InviteModal } from "@/components/superadmin/tenants/InviteModal";
 import { TenantDetailModal } from "@/components/superadmin/tenants/TenantDetailModal";
 import { DeleteConfirmModal } from "@/components/superadmin/tenants/DeleteConfirmModal";
@@ -36,6 +37,7 @@ export default function TenantsPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [inviteTarget, setInviteTarget] = useState<{ slug: string; name: string } | null>(null);
   const [detailTarget, setDetailTarget] = useState<TenantRow | null>(null);
+  const [productsTarget, setProductsTarget] = useState<{ slug: string; name: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ slug: string; name: string } | null>(null);
   const [nuclearResetOpen, setNuclearResetOpen] = useState(false);
   const [nuclearResetLoading, setNuclearResetLoading] = useState(false);
@@ -214,6 +216,7 @@ export default function TenantsPage() {
                     onImpersonate={(slug) => void handleImpersonate(slug)}
                     onToggleMarketplace={(t) => void handleToggleMarketplace(t)}
                     onLoginAs={(t) => handleLoginAs(t)}
+                    onViewProducts={(t) => setProductsTarget({ slug: t.slug, name: t.name })}
                     onDelete={(slug, name) => setDeleteTarget({ slug, name })}
                     onPurge={(slug, name) => void handlePurgeTenant(slug, name)}
                   />
@@ -252,6 +255,14 @@ export default function TenantsPage() {
 
       {inviteTarget && <InviteModal tenantSlug={inviteTarget.slug} tenantName={inviteTarget.name} onClose={() => setInviteTarget(null)} />}
       {detailTarget && <TenantDetailModal tenant={detailTarget} onClose={() => setDetailTarget(null)} />}
+      {productsTarget && (
+        <TenantProductsModal
+          open={Boolean(productsTarget)}
+          onClose={() => setProductsTarget(null)}
+          tenantSlug={productsTarget.slug}
+          tenantName={productsTarget.name}
+        />
+      )}
       {deleteTarget && (
         <DeleteConfirmModal name={deleteTarget.name} slug={deleteTarget.slug}
           loading={actionLoading === `${deleteTarget.slug}-delete`}

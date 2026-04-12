@@ -3105,13 +3105,13 @@ export default function SmartDashboardTab({
         return (
           <div className="bg-white dark:bg-card border border-gray-200 dark:border-card-border rounded-2xl p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-lg">🏆</div>
+              <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center"><Target className="h-5 w-5 text-amber-600" /></div>
               <div>
                 <p className="text-sm font-bold text-gray-900 dark:text-white">
                   {unlocked.length}/{LOGROS.length} logros desbloqueados
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  {streak > 0 ? `🔥 Racha: ${streak} días` : "Empieza tu racha vendiendo hoy"}
+                  {streak > 0 ? `Racha: ${streak} dias` : "Empieza tu racha vendiendo hoy"}
                 </p>
               </div>
             </div>

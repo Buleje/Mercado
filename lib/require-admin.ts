@@ -44,16 +44,20 @@ export async function requireAdmin(
     );
   }
 
-  // The middleware sets x-tenant-id per-request based on subdomain or /t/[slug]/.
-  // This header is the source of truth for tenant context.
+  // The middleware sets x-tenant-id per-request based on JWT / cookie / Referer.
+  // The JWT's tenantId is always the canonical CUID (set during login/impersonation).
+  // The header may contain a slug (from Referer) which doesn't match DB IDs.
+  // RULE: for DB queries, always prefer the JWT's tenantId (CUID).
   const headerTenantId = req.headers.get("x-tenant-id");
-  const effectiveTenantId = headerTenantId || payload.tenantId;
+  const effectiveTenantId = payload.tenantId || headerTenantId || "main";
 
   if (headerTenantId && headerTenantId !== payload.tenantId) {
-    // Tenant mismatch: middleware says one tenant, JWT says another.
-    // Only admin/superadmin may cross-tenant (e.g. superadmin managing another store).
+    // Mismatch between middleware header and JWT. This happens when:
+    // - Referer slug "demo" doesn't match JWT CUID "cmnl82b..." (same tenant, different format)
+    // - Multi-tab: shared cookie has a different tenant than the URL
+    // In ALL cases, the JWT's tenantId is the canonical CUID and the safest for DB queries.
     if (payload.role === "admin") {
-      logger.info("[AUTH] Tenant override", {
+      logger.info("[AUTH] Tenant context — using JWT CUID over header", {
         username: payload.username,
         role: payload.role,
         jwtTenant: payload.tenantId,
@@ -61,7 +65,8 @@ export async function requireAdmin(
         method,
         path,
       });
-      return { ...payload, tenantId: headerTenantId };
+      // Keep JWT's tenantId (CUID) — DO NOT override with header that may be a slug
+      return { ...payload };
     }
 
     // Non-privileged role trying to access a different tenant → 403
@@ -106,6 +111,8 @@ export async function tryAdmin(req: NextRequest): Promise<SessionPayload | null>
   if (!payload) return null;
 
   const headerTenantId = req.headers.get("x-tenant-id");
-  const effectiveTenantId = headerTenantId || payload.tenantId;
+  // JWT's tenantId is always the canonical CUID — prefer it over header
+  // which may contain a slug from Referer.
+  const effectiveTenantId = payload.tenantId || headerTenantId || "main";
   return { ...payload, tenantId: effectiveTenantId };
 }

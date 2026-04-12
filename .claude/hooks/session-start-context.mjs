@@ -118,7 +118,7 @@ try {
 
 // ── Build context message ───────────────────────────────────────
 const lines = [];
-lines.push("## 🧠 BRAIN BOOT — Bodega San Martin (v2 auto-context)");
+lines.push("## 🧠 BRAIN BOOT — Buleje (v2 auto-context)");
 lines.push("");
 
 // Status line

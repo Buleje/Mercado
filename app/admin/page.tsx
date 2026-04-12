@@ -202,7 +202,7 @@ function AdminPage() {
         }}
         sidebar={{
           focusMode, presentationMode, isSuperAdminImpersonating,
-          activeTenantLogo, userName, userRole, openAccordionCategories,
+          activeTenantLogo, activeTenantSlug, userName, userRole, openAccordionCategories,
           onToggleAccordion: (categoryId) =>
             setOpenAccordionCategories(prev =>
               prev.has(categoryId) ? new Set() : new Set([categoryId])

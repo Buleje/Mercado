@@ -17,8 +17,8 @@ type ShiftNote = {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const LS_NOTES = "bsm_shift_notes";
-const LS_USER = "bsm_shift_user";
+const LS_NOTES = "buleje_shift_notes";
+const LS_USER = "buleje_shift_user";
 
 function fmtDate(iso: string) {
   const d = new Date(iso);

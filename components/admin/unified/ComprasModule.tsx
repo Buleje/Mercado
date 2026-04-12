@@ -638,15 +638,15 @@ export default function ComprasModule() {
         activeTab={sub}
         onTabChange={setSub}
         moduleId="compras"
-      />
-
-      {sub === "punto-compra" && <PuntoCompraView />}
-      {sub === "dashboard" && <ComprasDashboard />}
-      {sub === "sugerencias" && <SugerenciasCompraTab />}
-      {sub === "ordenes-compra" && <PurchaseOrdersTab />}
-      {sub === "proveedores" && <SuppliersTab />}
-      {sub === "recepcion" && <ReceivingTab />}
-      {sub === "comparador" && <SupplierComparator />}
+      >
+        {sub === "punto-compra" && <PuntoCompraView />}
+        {sub === "dashboard" && <ComprasDashboard />}
+        {sub === "sugerencias" && <SugerenciasCompraTab />}
+        {sub === "ordenes-compra" && <PurchaseOrdersTab />}
+        {sub === "proveedores" && <SuppliersTab />}
+        {sub === "recepcion" && <ReceivingTab />}
+        {sub === "comparador" && <SupplierComparator />}
+      </AdminTabBar>
     </div>
   );
 }
