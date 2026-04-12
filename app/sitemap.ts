@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { categories } from "@/data/products";
+import { categories, slugify } from "@/data/products";
 import { zones } from "@/data/zones";
 import { prisma } from "@/lib/prisma";
 
@@ -175,6 +175,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
+  // Programmatic SEO — zone × product pages (/zona/[ciudad]/[producto])
+  const zoneProductPages: MetadataRoute.Sitemap = [];
+  if (dbProducts.length > 0) {
+    for (const zone of zones) {
+      for (const product of dbProducts) {
+        zoneProductPages.push({
+          url: `${baseUrl}/zona/${zone.slug}/${slugify(product.name)}`,
+          lastModified,
+          changeFrequency: "weekly",
+          priority: 0.6,
+        });
+      }
+    }
+  }
+
   return [
     ...staticPages,
     ...categoryPages,
@@ -182,5 +197,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...productPages,
     ...marketplaceStorePages,
     ...zonePages,
+    ...zoneProductPages,
   ];
 }
