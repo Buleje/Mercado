@@ -115,9 +115,9 @@ export default function AdminTabBar({
 
   if (vertical) {
     return (
-      <div className={cn("flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-5", className)}>
-        <nav className="w-full shrink-0 rounded-2xl border border-gray-100 bg-gray-50 p-1.5 dark:border-white/10 dark:bg-white/[0.04] lg:sticky lg:top-0 lg:w-56 lg:self-start">
-          <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 lg:grid-cols-1">
+      <div className={cn("flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-0", className)}>
+        <nav className="w-full shrink-0 lg:sticky lg:top-0 lg:w-44 lg:self-start lg:border-r lg:border-gray-100 lg:dark:border-card-border lg:pr-2 lg:mr-3">
+          <div className="grid grid-cols-2 gap-0.5 sm:grid-cols-3 lg:grid-cols-1">
             {orderedTabs.map((tab) => {
               const Icon = tab.icon;
 
@@ -126,14 +126,14 @@ export default function AdminTabBar({
                   key={tab.id}
                   onClick={() => !tab.disabled && onTabChange(tab.id)}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-150",
+                    "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] transition-all duration-150",
                     activeTab === tab.id
-                      ? "border border-[#00B4A6]/20 bg-white font-semibold text-[#00B4A6] shadow-sm dark:bg-white/10"
-                      : "text-gray-500 hover:bg-white/70 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-200",
+                      ? "bg-primary/10 font-semibold text-primary dark:bg-primary/15"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-200",
                     tab.disabled && "cursor-not-allowed opacity-40",
                   )}
                 >
-                  {Icon && <Icon className="h-4 w-4 shrink-0" />}
+                  {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
                   <span className="truncate">{tab.label}</span>
                   {tab.badge != null && (
                     <span className="ml-auto flex h-4 min-w-[16px] shrink-0 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
@@ -148,7 +148,7 @@ export default function AdminTabBar({
           {isReordered && (
             <button
               onClick={resetOrder}
-              className="mt-2 w-full border-t border-gray-100 px-3 pt-2 text-left text-[10px] text-gray-400 transition-colors hover:text-[#00B4A6] dark:border-white/10"
+              className="mt-1.5 w-full border-t border-gray-100 px-2.5 pt-1.5 text-left text-[10px] text-gray-400 transition-colors hover:text-primary dark:border-white/10"
             >
               Restablecer orden
             </button>
