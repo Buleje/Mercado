@@ -191,3 +191,54 @@ export function zoneBreadcrumbs(
   }
   return items;
 }
+
+// ── Zone × Product (AggregateOffer across stores) ────────────────────
+
+export function generateZoneProductLD(
+  zone: { name: string; slug: string },
+  product: { name: string; price: number; image: string; description?: string },
+  stores: Array<{ name: string; inStock: boolean; retailPrice: number }>,
+): Record<string, unknown> {
+  const offers = stores.filter(s => s.inStock).map(s => ({
+    "@type": "Offer",
+    seller: { "@type": "Organization", name: s.name },
+    price: s.retailPrice,
+    priceCurrency: "PEN",
+    availability: "https://schema.org/InStock",
+  }));
+
+  const prices = offers.map(o => o.price as number);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    image: product.image,
+    description: product.description || `${product.name} disponible en ${zone.name}`,
+    offers: {
+      "@type": "AggregateOffer",
+      lowPrice: Math.min(...prices),
+      highPrice: Math.max(...prices),
+      priceCurrency: "PEN",
+      offerCount: offers.length,
+      availability: offers.length > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      areaServed: { "@type": "City", name: zone.name.includes("Pucallpa") ? "Pucallpa" : zone.name },
+      offers,
+    },
+  };
+}
+
+// ── Generic BreadcrumbList ───────────────────────────────────────────
+
+export function generateBreadcrumbLD(items: Array<{ name: string; url: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
