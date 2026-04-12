@@ -19,7 +19,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import AdminBreadcrumb from "@/components/admin/shared/AdminBreadcrumb";
 import type { Tab } from "../_lib/tabs.types";
-import { TAB_CATEGORIES, MODULE_INFO } from "../_lib/tab-categories";
+import { TAB_CATEGORIES } from "../_lib/tab-categories";
+import { ALL_TABS } from "../_lib/tab-data";
 import { TabRouter } from "./TabRouter";
 
 type TabRouterProps = ComponentProps<typeof TabRouter>;
@@ -47,17 +48,23 @@ export function AdminMainContent({
   tabRouter,
 }: AdminMainContentProps) {
   const cat = TAB_CATEGORIES.find((c) => c.tabs.includes(tab));
-  const modInfo = MODULE_INFO[tab];
+  const tabMeta = ALL_TABS.find((t) => t.id === tab);
   const breadcrumbItems: { label: string; onClick?: () => void }[] = [];
-  if (cat && cat.tabs.length > 1) {
+
+  // Level 1: category name (clickable if multi-tab)
+  if (cat) {
     breadcrumbItems.push({
       label: cat.label,
-      onClick: () => navigateTab(cat.tabs[0]),
+      ...(cat.tabs.length > 1 ? { onClick: () => navigateTab(cat.tabs[0]) } : {}),
     });
   }
-  breadcrumbItems.push({
-    label: modInfo?.desc?.split(".")[0] || cat?.label || tab,
-  });
+
+  // Level 2: specific tab name (only if different from category)
+  if (cat && cat.tabs.length > 1 && tabMeta) {
+    breadcrumbItems.push({
+      label: tabMeta.label,
+    });
+  }
 
   return (
     <main
