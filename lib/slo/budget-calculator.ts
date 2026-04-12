@@ -203,15 +203,39 @@ export function calculateBudgetBurn(
 }
 
 /**
- * Returns budget status for all SLOs at once.
- * Uses simulated data (at-target) when no real telemetry is available.
+ * Returns budget status for all SLOs at once (sync version — simulated data).
+ * Use getAllBudgetStatusesLive() for real Sentry data.
  */
 export function getAllBudgetStatuses(): BudgetStatus[] {
   return SLO_DEFINITIONS.map((slo) => {
     const result = calculateBudgetBurn(slo.name);
-    // Should never be null since we iterate from known definitions
     return result!;
   });
+}
+
+/**
+ * Returns budget status for all SLOs using REAL Sentry data.
+ * Falls back to simulated (at-target) per SLO when no data available.
+ */
+export async function getAllBudgetStatusesLive(): Promise<{ statuses: BudgetStatus[]; dataSource: "sentry" | "simulated" | "mixed" }> {
+  const { getAllSentryMetrics } = await import("./sentry-provider");
+  const metrics = await getAllSentryMetrics();
+
+  let hasReal = false;
+  let hasSimulated = false;
+
+  const statuses = SLO_DEFINITIONS.map((slo) => {
+    const metric = metrics.get(slo.name);
+    if (metric && metric.hasData && metric.currentValue >= 0) {
+      hasReal = true;
+      return calculateBudgetBurn(slo.name, metric.currentValue)!;
+    }
+    hasSimulated = true;
+    return calculateBudgetBurn(slo.name)!;
+  });
+
+  const dataSource = hasReal && hasSimulated ? "mixed" : hasReal ? "sentry" : "simulated";
+  return { statuses, dataSource };
 }
 
 /**

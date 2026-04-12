@@ -9,19 +9,7 @@ argument-hint: "[sprint-items como lista o referencia a ROADMAP]"
 
 # /sprint-autopilot — Ejecucion Autonoma de Sprint
 
-## Que es
-
-Le das una lista de cosas que hacer (features, fixes, mejoras) y el sistema:
-1. Descompone cada item en tareas concretas
-2. Identifica dependencias entre tareas
-3. Lanza agentes en paralelo para lo independiente
-4. Coordina lo dependiente via A2A Protocol
-5. Verifica cada entrega (lint+tsc+test+build)
-6. Auto-repara fallos (self-heal v2 + auto-escalation)
-7. Crea commits atomicos por feature
-8. Genera reporte final del sprint
-
-**Un comando = sprint ejecutado.**
+Le das una lista de items y el sistema: descompone en tareas, identifica dependencias, lanza agentes en paralelo, coordina via A2A, verifica (lint+tsc+test+build), auto-repara fallos, crea commits atomicos, y genera reporte.
 
 ## Uso
 
@@ -30,174 +18,67 @@ Le das una lista de cosas que hacer (features, fixes, mejoras) y el sistema:
   1. pgvector recommender para productos similares
   2. 7 URLs programaticas de zona para SEO
   3. WhatsApp concierge para compradores frecuentes
-  4. Billing metering endpoint para tracking de uso
 ```
 
-O referencia al roadmap:
-```
-/sprint-autopilot from:ROADMAP-24-WEEKS.md sprint:2
-```
+O desde roadmap: `/sprint-autopilot from:ROADMAP-24-WEEKS.md sprint:2`
 
-## Algoritmo completo
+## Algoritmo
 
-### FASE 0: Intake (30 segundos)
+### FASE 0: Intake
+- Parsear items, clasificar tipo (feature|fix|refactor|infra) y complejidad (simple|moderada|alta|enterprise)
+- Identificar dominio y mapear via agent-router al agente/squad optimo
+- Output: Sprint Backlog estructurado
 
-```
-1. Parsear la lista de items del sprint
-2. Para cada item:
-   a. Clasificar tipo: feature | fix | refactor | infra
-   b. Estimar complejidad: simple | moderada | alta | enterprise
-   c. Identificar dominio: frontend | backend | database | integration | seo | fullstack
-   d. Mapear a agent-router → agente/squad optimo
-3. Output: Sprint Backlog estructurado
-```
+### FASE 1: Arquitectura
+- solution-architect produce: contrato global (interfaces TS compartidas), DAG de dependencias, mapa de archivos por item, items paralelos vs secuenciales
+- Publicar contrato en A2A Bus (broadcast)
+- Validar: zona peligrosa solo via squad designado
 
-### FASE 1: Arquitectura (2-5 minutos)
+### FASE 2: Base de datos (si aplica)
+- Si hay cambio de schema: database-engineer + migration-planner generan SQL (NO ejecutar)
+- Publicar resultado en A2A Bus. Si no hay cambios DB → skip
 
-```
-1. Lanzar solution-architect para TODOS los items del sprint
-2. El arquitecto produce:
-   - Contrato global: interfaces TS compartidas entre items
-   - DAG de dependencias entre items
-   - Archivos que cada item tocara (para detectar conflictos)
-   - Items que pueden ir en paralelo vs secuencial
-3. Publicar contrato en A2A Bus (broadcast)
-4. Validar: ningun item toca archivos de zona peligrosa sin squad designado
-```
+### FASE 3: Ejecucion paralela
+Para cada grupo de items independientes:
+- **Simple** (1-3 archivos, 1 area) → Agent(especialista, background)
+- **Moderado** (4-10 archivos, 1-2 areas) → Agent(especialista, worktree, background)
+- **Alto/enterprise** (10+ archivos, 3+ areas) → Agent(squad, background)
 
-### FASE 2: Base de datos (si aplica, 3-5 minutos)
-
-```
-1. Si algun item necesita cambio de schema:
-   a. Lanzar database-engineer + migration-planner
-   b. Crear migracion SQL (NO ejecutar — solo generar)
-   c. Publicar resultado en A2A Bus
-2. Si no hay cambios de DB → skip directo a Fase 3
-```
-
-### FASE 3: Ejecucion paralela (5-20 minutos)
-
-```
-Para cada grupo de items independientes (sin deps cruzadas):
-
-  Si item es simple (1-3 archivos, 1 area):
-    → Agent(subagent_type=[especialista], run_in_background=true)
-    
-  Si item es moderado (4-10 archivos, 1-2 areas):
-    → Agent(subagent_type=[especialista], isolation="worktree", run_in_background=true)
-    
-  Si item es alto/enterprise (10+ archivos, 3+ areas):
-    → Agent(subagent_type=[squad], run_in_background=true)
-
-Cada agente recibe:
-  - Su porcion del contrato arquitectonico (de Fase 1)
-  - Pre-task intel de su dominio (auto-cargado)
-  - Resultados de DB si depende (de Fase 2)
-  - Instruccion: "Al terminar, publica resultado en A2A Bus"
-```
+Cada agente recibe: contrato arquitectonico, pre-task intel, resultados DB si depende. Al terminar publica en A2A Bus.
 
 ### FASE 4: Gating de dependencias (continuo)
+- Leer A2A Bus para resultados → lanzar items dependientes cuando deps satisfechas
+- Si agente falla → auto-escalation (5 niveles). Si no converge → BLOCKED, seguir con otros
+- Al completar una ola → `lint && tsc --noEmit && test`. Si falla → self-heal v2
 
-```
-Mientras hay items pendientes:
-  1. Leer A2A Bus para resultados publicados
-  2. Si un item dependiente tiene sus deps satisfechas:
-     → Lanzar su agente con los resultados de las deps
-  3. Si un agente falla:
-     → Invocar auto-escalation (5 niveles)
-     → Si no converge: marcar item como BLOCKED, seguir con otros
-  4. Si todos los items de una ola estan completos:
-     → Correr verificacion: npm run lint && npx tsc --noEmit && npm run test
-     → Si falla: self-heal v2 sobre los archivos tocados
-```
+### FASE 5: Integracion
+- Merge worktrees al branch principal (fast-forward o merge). Conflictos → refactoring-expert
+- Verificacion COMPLETA: `lint && tsc --noEmit && test && build`
+- Si falla → self-heal v2 → auto-escalation
 
-### FASE 5: Integracion (3-5 minutos)
-
-```
-1. Si se usaron worktrees:
-   a. Para cada worktree con cambios:
-      - Merge branch al branch principal (fast-forward o merge commit)
-      - Si hay conflicto: lanzar refactoring-expert para resolver
-   b. Cleanup de worktrees
-2. Correr verificacion COMPLETA:
-   npm run lint && npx tsc --noEmit && npm run test && npm run build
-3. Si falla: self-heal v2 → auto-escalation si no converge
-```
-
-### FASE 6: Entrega (1-2 minutos)
-
-```
-1. Crear commit(s) atomicos:
-   - 1 commit por item del sprint (ideal)
-   - O 1 commit consolidado si los items estan muy entrelazados
-2. Correr security-pentester sobre el diff total (Regla 14)
-3. Si hay hallazgo CRITICAL → bloquear, reportar
-4. Si pasa seguridad → push al remote
-5. Generar Sprint Report
-```
-
-## Formato del Sprint Report
-
-```markdown
-## Sprint Autopilot Report
-
-### Items completados
-| # | Item | Tipo | Agente | Tiempo | Tests | Status |
-|---|---|---|---|---|---|---|
-| 1 | pgvector recommender | feature | database-engineer + backend | 8min | 12 new | DONE |
-| 2 | 7 URLs programaticas | feature | seo-growth-strategist | 5min | 3 new | DONE |
-| 3 | WhatsApp concierge | feature | integration-specialist | 12min | 8 new | DONE |
-| 4 | Billing metering | feature | backend-platform-engineer | 6min | 5 new | BLOCKED |
-
-### Verificacion global
-- Lint: PASS
-- TypeCheck: PASS  
-- Tests: 28 new, 0 failures
-- Build: PASS
-- Security: PASS (0 critical, 1 low)
-
-### Metricas
-- Tiempo total: 23 minutos
-- Agentes lanzados: 7
-- Worktrees usados: 3
-- Auto-repairs (self-heal): 2
-- Escalaciones: 0
-- Tokens estimados: ~180K
-
-### Items bloqueados
-| Item | Razon | Accion requerida |
-|---|---|---|
-| Billing metering | Stripe API key no configurada | Brandon: agregar STRIPE_SECRET_KEY |
-
-### Commits
-- c8eb69e feat(ai): pgvector recommender con embeddings
-- a1b2c3d feat(seo): 7 URLs programaticas de zona
-- d4e5f6g feat(whatsapp): concierge para compradores frecuentes
-
-### Siguiente sprint sugerido
-1. [item de mayor impacto pendiente]
-2. [item bloqueado resuelto]
-3. [mejora detectada por compound-learning]
-```
+### FASE 6: Entrega
+- Commits atomicos (1 por item ideal, o 1 consolidado si entrelazados)
+- security-pentester sobre diff total (Regla 14). CRITICAL → bloquear
+- Si pasa → push. Generar Sprint Report con tabla items, verificacion global, metricas, bloqueados, commits, siguiente sprint sugerido.
 
 ## Limites de seguridad
 
-1. **Nunca ejecutar migraciones de DB automaticamente** — solo generar SQL
-2. **Nunca deploy automatico a produccion** — solo push a branch
-3. **Maximo 8 agentes simultaneos** (performance + cost control)
-4. **Cost cap: $15 por sprint** — si se excede, pausar y reportar
-5. **Si >50% de items fallan** → abortar sprint, reportar al Orquestador
-6. **Archivos zona peligrosa** → solo via squads especializados
+1. **Nunca ejecutar migraciones DB** — solo generar SQL
+2. **Nunca deploy auto a produccion** — solo push a branch
+3. **Maximo 8 agentes simultaneos**
+4. **Cost cap: $15 por sprint** — si excede, pausar
+5. **>50% items fallan** → abortar sprint
+6. **Zona peligrosa** → solo via squads especializados
 
 ## Integraciones
 
 | Sistema | Rol |
 |---|---|
-| agent-router | Selecciona agente optimo por item |
-| pre-task-intel | Carga contexto por dominio antes de cada item |
-| a2a-bus | Coordinacion entre agentes durante ejecucion |
-| auto-escalation | Maneja fallos de agentes |
-| self-heal v2 | Repara errores de verificacion |
-| agent-metrics | Trackea rendimiento por agente |
-| parallel-work | Worktrees para items independientes |
-| compound-learning-v2 | Aprende patrones del sprint para mejorar el siguiente |
+| agent-router | Selecciona agente por item |
+| pre-task-intel | Contexto por dominio pre-item |
+| a2a-bus | Coordinacion inter-agentes |
+| auto-escalation | Maneja fallos |
+| self-heal v2 | Repara errores verificacion |
+| agent-metrics | Trackea rendimiento |
+| parallel-work | Worktrees para independientes |
+| compound-learning-v2 | Aprende patrones del sprint |

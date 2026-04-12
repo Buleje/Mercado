@@ -29,134 +29,56 @@ argument-hint: "[checkout|database|auth|seo|fiado|performance|integration|genera
 ## Context Packet por dominio
 
 ### checkout
-```
-ADRs: 015 (checkout confirmar step), 006 (strategy descuentos)
-Archivos clave:
-  - components/CheckoutModal.tsx (119KB — zona peligrosa)
-  - components/checkout/** (sub-componentes)
-  - lib/db/orders.db.ts (state machine)
-  - app/api/orders/route.ts
-Tests: __tests__/**/checkout*, __tests__/**/order*
-Git: git log --oneline -5 -- components/checkout/ components/CheckoutModal.tsx
-Danger: CheckoutModal.tsx, orders.db.ts — requiere /checkout-squad
-Sprint: verificar estado en ROADMAP-24-WEEKS.md
-Evals: /eval checkout (10 tests)
-```
+- **ADRs:** 015 (checkout confirmar step), 006 (strategy descuentos)
+- **Archivos:** `components/CheckoutModal.tsx` (119KB, zona peligrosa), `components/checkout/**`, `lib/db/orders.db.ts` (state machine), `app/api/orders/route.ts`
+- **Tests:** `__tests__/**/checkout*`, `__tests__/**/order*` | **Evals:** `/eval checkout`
+- **Danger:** CheckoutModal.tsx, orders.db.ts — requiere `/checkout-squad`
 
 ### database
-```
-ADRs: 017 (ola1 migrations), 018 (float-to-decimal), 020 (ola1 plan), 001 (multi-tenancy)
-Archivos clave:
-  - prisma/schema.prisma (131 modelos)
-  - lib/db/*.db.ts (DB classes)
-  - prisma/migrations/ (historial)
-Tests: __tests__/**/db*, __tests__/**/migration*
-Git: git log --oneline -5 -- prisma/ lib/db/
-Danger: schema.prisma — requiere DIRECT_URL + migration-planner
-Referencia: memory/reference_prisma_pgbouncer_workaround.md
-```
+- **ADRs:** 017 (ola1 migrations), 018 (float-to-decimal), 020 (ola1 plan), 001 (multi-tenancy)
+- **Archivos:** `prisma/schema.prisma` (131 modelos), `lib/db/*.db.ts`, `prisma/migrations/`
+- **Tests:** `__tests__/**/db*`, `__tests__/**/migration*`
+- **Danger:** schema.prisma — requiere DIRECT_URL + migration-planner. Ref: `reference_prisma_pgbouncer_workaround.md`
 
 ### auth
-```
-ADRs: 002 (JWT sessions), 013 (chat public endpoint), 014 (middleware split)
-Archivos clave:
-  - lib/auth/role-permissions.ts (26 recursos x 6 roles)
-  - proxy.ts (398 lineas — auth + CSP + tenant)
-  - lib/middleware/** (rate limit, tenant resolution)
-  - app/api/auth/** (login, register, session)
-Tests: __tests__/**/auth*, __tests__/**/role*
-Git: git log --oneline -5 -- lib/auth/ proxy.ts lib/middleware/
-Danger: role-permissions.ts, proxy.ts — requiere security-squad
-```
+- **ADRs:** 002 (JWT sessions), 013 (chat public endpoint), 014 (middleware split)
+- **Archivos:** `lib/auth/role-permissions.ts` (26 recursos x 6 roles), `proxy.ts` (398 lineas), `lib/middleware/**`, `app/api/auth/**`
+- **Tests:** `__tests__/**/auth*`, `__tests__/**/role*`
+- **Danger:** role-permissions.ts, proxy.ts — requiere security-squad
 
 ### seo
-```
-ADRs: 041 (sprint2 programmatic SEO)
-Archivos clave:
-  - app/(marketing)/** (paginas publicas)
-  - app/sitemap.ts
-  - components/seo/** (si existe)
-  - lib/seo/** (si existe)
-Tests: __tests__/**/seo*
-Git: git log --oneline -5 -- app/sitemap* app/(marketing)/
-Sprint: Sprint 2 — Programmatic SEO es prioridad
-```
+- **ADRs:** 041 (sprint2 programmatic SEO)
+- **Archivos:** `app/(marketing)/**`, `app/sitemap.ts`, `components/seo/**`, `lib/seo/**`
+- **Tests:** `__tests__/**/seo*`
+- **Sprint:** Sprint 2 — Programmatic SEO es prioridad
 
 ### fiado
-```
-ADRs: 021 (fiado digital ola2), 024 (loyalty transaction)
-Archivos clave:
-  - lib/db/fiado*.db.ts
-  - app/api/fiado/** o app/api/credits/**
-  - components/fiado/** o components/credits/**
-  - prisma/schema.prisma (modelos Fiado*, Credit*)
-Tests: __tests__/**/fiado*, __tests__/**/credit*
-Git: git log --oneline -5 -- lib/db/fiado* app/api/fiado* app/api/credits*
-Evals: /eval fiado (5 tests)
-Diferenciador: #1 del negocio (VISION_2027.md)
-```
+- **ADRs:** 021 (fiado digital ola2), 024 (loyalty transaction)
+- **Archivos:** `lib/db/fiado*.db.ts`, `app/api/fiado/**` o `app/api/credits/**`, `components/fiado/**`
+- **Tests:** `__tests__/**/fiado*`, `__tests__/**/credit*` | **Evals:** `/eval fiado`
+- **Diferenciador:** #1 del negocio (VISION_2027.md)
 
 ### performance
-```
-ADRs: 028 (performance budget CI gate), 029 (OTEL economics)
-Archivos clave:
-  - next.config.ts (bundle config)
-  - app/layout.tsx (fonts, scripts)
-  - components/** archivos >500 lineas
-  - lib/cache/** (si existe)
-Tests: npm run test:load (k6)
-Git: git log --oneline -5 -- next.config* app/layout*
-Herramientas: Lighthouse, Vercel Speed Insights, bundle-analyzer
-Target: LCP <2.5s, CLS <0.1, INP <200ms, Lighthouse >90
-```
+- **ADRs:** 028 (performance budget CI gate), 029 (OTEL economics)
+- **Archivos:** `next.config.ts`, `app/layout.tsx`, componentes >500 lineas, `lib/cache/**`
+- **Tests:** `npm run test:load` (k6)
+- **Targets:** LCP <2.5s, CLS <0.1, INP <200ms, Lighthouse >90
 
 ### integration
-```
-ADRs: 003 (fire-and-forget BullMQ), 007 (domain events), 012 (chat polling vs realtime)
-Archivos clave:
-  - lib/integrations/** (WhatsApp, Stripe, SUNAT adapters)
-  - app/api/webhooks/** (webhook handlers)
-  - lib/notifications/** (email, push, WhatsApp)
-Tests: __tests__/**/integration*, __tests__/**/webhook*
-Git: git log --oneline -5 -- lib/integrations/ app/api/webhooks/
-Referencia: memory/reference_groq_platform_limits.md (para AI integrations)
-```
+- **ADRs:** 003 (fire-and-forget BullMQ), 007 (domain events), 012 (chat polling vs realtime)
+- **Archivos:** `lib/integrations/**`, `app/api/webhooks/**`, `lib/notifications/**`
+- **Tests:** `__tests__/**/integration*`, `__tests__/**/webhook*`
+- **Ref:** `reference_groq_platform_limits.md` (AI integrations)
 
 ### general
-```
-ADRs: 016 (plan maestro 24 weeks) — siempre leer primero
-Archivos: docs/ARCHITECTURE.md (resumen), docs/TECH-DEBT.md (deuda actual)
-Git: git log --oneline -10 (ultimos 10 commits globales)
-Sprint: leer session_sprint2_seo_kickoff.md en memoria
-Branch: git branch --show-current
-Status: git status --short
-```
+- **ADRs:** 016 (plan maestro 24 weeks) — siempre leer primero
+- **Archivos:** `docs/ARCHITECTURE.md`, `docs/TECH-DEBT.md`
+- **Git:** `git log --oneline -10`, `git branch --show-current`, `git status --short`
+- **Sprint:** leer `session_sprint2_seo_kickoff.md` en memoria
 
 ## Formato de salida
 
-```markdown
-## Pre-Task Intel — [dominio]
-
-### ADRs relevantes
-- ADR-XXX: [titulo] — [1 linea resumen]
-
-### Archivos clave (leer antes de tocar)
-- [path:lines] — [que hace]
-
-### Cambios recientes (ultimos 5 commits en esta area)
-- [hash] [mensaje]
-
-### Tests existentes
-- [N] archivos de test en [patron]
-
-### Danger Zones
-- [archivo] — [por que es peligroso] — agente recomendado: [nombre]
-
-### Contexto de Sprint
-- Sprint actual: [N]
-- Estado de esta area: [del roadmap]
-- Prioridad: [alta/media/baja]
-```
+Reportar para el dominio detectado: ADRs relevantes (titulo + 1 linea), archivos clave (path:lines + que hace), cambios recientes (ultimos 5 commits en area), tests existentes (N archivos en patron), danger zones (archivo + por que + agente recomendado), contexto de sprint (sprint actual + estado + prioridad).
 
 ## Integracion
 
@@ -164,11 +86,11 @@ Status: git status --short
 |---|---|
 | **agent-router** | Invoca pre-task-intel automaticamente antes de despachar |
 | **orchestrator-config.json** | Campo `preTask` en cada route referencia dominios |
-| **audit-first** | Si el dominio es danger zone, pre-task-intel sugiere /audit-first |
-| **a2a-bus** | Publica el Context Packet como mensaje broadcast para que todos los agentes del squad lo lean |
+| **audit-first** | Si dominio es danger zone, sugiere /audit-first |
+| **a2a-bus** | Publica Context Packet como broadcast para agentes del squad |
 
 ## Cache de sesion
 
-- El Context Packet se cachea en memoria durante la sesion
-- Si el mismo dominio se pide 2 veces, reusar cache (los commits no cambian en 5 min)
-- Invalidar cache si hay un git commit nuevo en esa area
+- Context Packet se cachea en memoria durante la sesion
+- Si mismo dominio se pide 2 veces, reusar cache (commits no cambian en 5 min)
+- Invalidar cache si hay git commit nuevo en esa area

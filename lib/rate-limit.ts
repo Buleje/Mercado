@@ -263,9 +263,9 @@ export function createDistributedRateLimiter(
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(config.maxRequests, windowDuration),
-    // `prefix` makes every Redis key start with `"bsm:rl:<key>"` so we never
+    // `prefix` makes every Redis key start with `"buleje:rl:<key>"` so we never
     // collide with other Upstash consumers on the same DB.
-    prefix: `bsm:rl:${config.key}`,
+    prefix: `buleje:rl:${config.key}`,
     analytics: false,
   });
 
@@ -455,7 +455,8 @@ export function applyRateLimit(
   // Preset string path — skip enforcement outside production
   if (process.env.NODE_ENV !== "production") return null;
   const { maxReqs, windowSec } = RateLimitPresets[limiterOrPreset];
-  const result = rateLimit(`${keyPrefix}:${ip}`, maxReqs, windowSec);
+  const tenantId = req.headers.get("x-tenant-id") ?? "global";
+  const result = rateLimit(`${keyPrefix}:${tenantId}:${ip}`, maxReqs, windowSec);
 
   if (!result.allowed) {
     const retryAfter = Math.ceil((result.resetAt - Date.now()) / 1000);

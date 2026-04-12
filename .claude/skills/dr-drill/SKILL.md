@@ -9,7 +9,7 @@ disable-model-invocation: false
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob
 argument-hint: "[latest|YYYY-MM-DD|status]"
-model: opus
+model: haiku
 ---
 
 # DR Drill — Disaster Recovery Manual

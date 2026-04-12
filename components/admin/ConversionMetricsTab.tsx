@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 
 type Stats = {
   pendingOrders: number;
@@ -76,7 +77,7 @@ export default function ConversionMetricsTab() {
       setLastRefresh(new Date());
     } catch (e) {
       setFetchError("Error al cargar métricas de conversión");
-      console.error("Error fetching metrics:", e);
+      Sentry.captureException(e instanceof Error ? e : new Error(String(e)));
     } finally {
       setLoading(false);
     }

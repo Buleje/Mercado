@@ -102,7 +102,7 @@ class RedisStore implements CacheStore {
       });
       this.client.on("error", (err: Error) => {
         // Log but don't crash — callers fall back to the mem layer
-        console.error("[cache/redis] connection error:", err.message);
+        logger.error("[cache/redis] connection error", { error: err.message });
       });
     } catch {
       logger.warn("[cache/redis] ioredis not installed — falling back to MemoryStore");
@@ -167,7 +167,7 @@ class RedisStore implements CacheStore {
 
 // ── Global singleton — survives across requests in the same serverless instance ─
 
-const globalForCache = global as typeof global & { __bsmCache?: CacheStore };
+const globalForCache = global as typeof global & { __bulejeCache?: CacheStore };
 
 function createStore(): CacheStore {
   if (process.env.REDIS_URL) {
@@ -176,7 +176,7 @@ function createStore(): CacheStore {
   return new MemoryStore();
 }
 
-export const cacheStore: CacheStore = (globalForCache.__bsmCache ??= createStore());
+export const cacheStore: CacheStore = (globalForCache.__bulejeCache ??= createStore());
 
 /**
  * Get a cached value or compute it.

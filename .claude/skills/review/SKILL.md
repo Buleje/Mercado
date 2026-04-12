@@ -5,6 +5,7 @@ disable-model-invocation: false
 user-invocable: true
 context: fork
 agent: general-purpose
+model: sonnet
 allowed-tools: Bash, Read, Grep, Glob
 ---
 

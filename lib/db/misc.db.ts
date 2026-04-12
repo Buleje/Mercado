@@ -65,7 +65,7 @@ export type DbProduct = {
   stockMin?: number;
   stockMax?: number;
   active: boolean;
-  tenantId?: string;
+  tenantId: string;
 };
 
 export type DbOrderItem = {
@@ -392,7 +392,7 @@ export const SurveyDB = {
     rating: number;
     comment?: string;
     type?: string;
-    tenantId?: string;
+    tenantId: string;
   }): Promise<DbSurveyResponse> {
     const r = await prisma.surveyResponse.upsert({
       where: { orderId_type: { orderId: data.orderId, type: data.type ?? "nps" } },
@@ -403,7 +403,7 @@ export const SurveyDB = {
         rating: data.rating,
         comment: data.comment ?? "",
         type: data.type ?? "nps",
-        tenantId: data.tenantId ?? "main",
+        tenantId: data.tenantId,
       },
     });
     return mapSurvey(r);
@@ -414,9 +414,8 @@ export const SurveyDB = {
     return r ? mapSurvey(r) : null;
   },
 
-  async getAll(tenantId?: string, limit = 100): Promise<DbSurveyResponse[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string, limit = 100): Promise<DbSurveyResponse[]> {
+    const where: Record<string, unknown> = { tenantId };
     const rows = await prisma.surveyResponse.findMany({
       where,
       orderBy: { createdAt: "desc" },

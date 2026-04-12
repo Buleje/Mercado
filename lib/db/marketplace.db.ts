@@ -257,19 +257,19 @@ export const MarketplaceStoresDB = {
    * Listar tiendas publicadas — usando cache de 5 minutos.
    */
   async list(params: {
-    tenantId?: string;
+    tenantId: string;
     zone?: string;
     category?: string;
     search?: string;
     limit?: number;
-  } = {}): Promise<DbStore[]> {
+  }): Promise<DbStore[]> {
     const cacheKey = `marketplace:stores:list:${JSON.stringify(params)}`;
 
     return getOrSet(cacheKey, 300, async () => {
       const rows = await prisma.store.findMany({
         where: {
           isPublished: true,
-          ...(params.tenantId && { tenantId: params.tenantId }),
+          tenantId: params.tenantId,
           ...(params.zone     && { zone: params.zone }),
           ...(params.category && { category: params.category }),
           ...(params.search   && { name: { contains: params.search, mode: "insensitive" } }),
@@ -653,6 +653,7 @@ export const MarketplaceOrdersDB = {
     customerPhone: string;
     customerAddress: string;
     notes?: string;
+    paymentMethod?: string;
     items: CartItem[];
   }): Promise<DbMarketplaceOrder> {
     // 1. Cargar tienda y verificar que esté publicada
@@ -709,7 +710,7 @@ export const MarketplaceOrdersDB = {
         customerLocation: params.customerAddress,
         total,
         notes:            params.notes ?? null,
-        paymentMethod:    "marketplace",
+        paymentMethod:    params.paymentMethod || "marketplace",
         updatedAt:        new Date(),
         items: {
           create: orderItems,
@@ -939,10 +940,6 @@ type AbandonedCartItem = {
   unit: string;
 };
 
-// TODO Sprint C Wave 4: refactor type MarketplaceAbandonedCart — el modelo
-// `marketplaceAbandonedCart` no existe aún en el schema de Prisma.
-// Estas funciones son stub hasta que se agregue la migración correspondiente.
-
 export type AbandonedCartRecord = {
   id: string;
   storeSlug: string;
@@ -961,42 +958,111 @@ export const MarketplaceAbandonedCartsDB = {
   /**
    * Save/update a marketplace cart for recovery tracking.
    * Called when user enters customer info in checkout.
-   * @stub — requiere migración de schema (Sprint C Wave 4)
+   * Upserts by storeSlug + customerPhone to avoid duplicates.
    */
-  async save(_params: {
+  async save(params: {
     storeSlug: string;
     customerName: string;
     customerPhone: string;
     items: AbandonedCartItem[];
     total: number;
   }): Promise<AbandonedCartRecord | null> {
-    // TODO Sprint C Wave 4: implementar cuando exista el modelo en schema.prisma
-    return null;
+    try {
+      const itemsJson = JSON.stringify(params.items);
+      // Try to find existing non-recovered cart for this customer+store
+      const existing = await prisma.marketplaceAbandonedCart.findFirst({
+        where: {
+          storeSlug: params.storeSlug,
+          customerPhone: params.customerPhone,
+          recovered: false,
+        },
+        select: { id: true },
+      });
+
+      if (existing) {
+        const updated = await prisma.marketplaceAbandonedCart.update({
+          where: { id: existing.id },
+          data: {
+            customerName: params.customerName,
+            itemsJson,
+            total: params.total,
+            reminderSentAt: null, // reset so new reminder can be sent
+          },
+        });
+        return updated as AbandonedCartRecord;
+      }
+
+      const created = await prisma.marketplaceAbandonedCart.create({
+        data: {
+          storeSlug: params.storeSlug,
+          customerName: params.customerName,
+          customerPhone: params.customerPhone,
+          itemsJson,
+          total: params.total,
+        },
+      });
+      return created as AbandonedCartRecord;
+    } catch {
+      return null;
+    }
   },
 
   /**
    * Mark a cart as converted (order was placed).
-   * @stub — requiere migración de schema (Sprint C Wave 4)
    */
-  async markConverted(_storeSlug: string, _customerPhone: string): Promise<void> {
-    // TODO Sprint C Wave 4: implementar cuando exista el modelo en schema.prisma
+  async markConverted(storeSlug: string, customerPhone: string): Promise<void> {
+    try {
+      await prisma.marketplaceAbandonedCart.updateMany({
+        where: {
+          storeSlug,
+          customerPhone,
+          recovered: false,
+        },
+        data: {
+          recovered: true,
+          convertedAt: new Date(),
+        },
+      });
+    } catch {
+      // silently fail — non-critical
+    }
   },
 
   /**
    * Get abandoned carts that haven't been converted and haven't received a reminder.
-   * Only carts older than `hoursOld` hours.
-   * @stub — requiere migración de schema (Sprint C Wave 4)
+   * Only carts older than `hoursOld` hours and younger than 24h.
    */
-  async getAbandoned(_hoursOld = 2): Promise<AbandonedCartRecord[]> {
-    // TODO Sprint C Wave 4: implementar cuando exista el modelo en schema.prisma
-    return [];
+  async getAbandoned(hoursOld = 2): Promise<AbandonedCartRecord[]> {
+    try {
+      const cutoff = new Date(Date.now() - hoursOld * 60 * 60 * 1000);
+      const maxAge = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+      const carts = await prisma.marketplaceAbandonedCart.findMany({
+        where: {
+          recovered: false,
+          reminderSentAt: null,
+          createdAt: { lt: cutoff, gt: maxAge },
+        },
+        orderBy: { createdAt: "asc" },
+        take: 50,
+      });
+      return carts as AbandonedCartRecord[];
+    } catch {
+      return [];
+    }
   },
 
   /**
    * Mark reminder as sent for a cart.
-   * @stub — requiere migración de schema (Sprint C Wave 4)
    */
-  async markReminderSent(_id: string): Promise<void> {
-    // TODO Sprint C Wave 4: implementar cuando exista el modelo en schema.prisma
+  async markReminderSent(id: string): Promise<void> {
+    try {
+      await prisma.marketplaceAbandonedCart.update({
+        where: { id },
+        data: { reminderSentAt: new Date() },
+      });
+    } catch {
+      // silently fail
+    }
   },
 };

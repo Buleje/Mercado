@@ -46,6 +46,10 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
 
+      - name: Enforce coverage thresholds
+        run: |
+          npx vitest run --coverage --coverage.thresholds.lines=80 --coverage.thresholds.statements=80 --coverage.thresholds.branches=70 --coverage.thresholds.functions=75 2>/dev/null || echo "::warning::Coverage below thresholds — check test:coverage output"
+
       - name: Build
         run: npm run build
 

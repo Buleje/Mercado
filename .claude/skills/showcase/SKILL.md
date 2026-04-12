@@ -1,71 +1,66 @@
 ---
 name: showcase
 description: |
-  Genera un resumen ejecutivo de alto nivel de los últimos 5 ADRs para
-  presentar a un cliente técnico o inversor. Incluye borrador LinkedIn
-  y caso de estudio actualizado.
-  Usar cuando Brandon diga "showcase", "muéstrame logros", "qué tenemos
-  para mostrar", "prepará un resumen ejecutivo", "portafolio".
+  Genera resumen ejecutivo de ADRs + auto-genera contenido de showcase
+  (case-study, LinkedIn, Twitter) tras commits feat:/BREAKING CHANGE.
+  Fusiona showcase manual + showcase-auto.
+  Usar: "showcase", "logros", "portfolio", "linkedin draft".
 disable-model-invocation: false
 user-invocable: true
-allowed-tools: Read, Grep, Glob, Bash, Write, Edit
-argument-hint: "[últimos N ADRs | tema específico | 'full']"
+allowed-tools: Read, Grep, Glob, Bash, Write, Edit, Agent
+argument-hint: "[últimos N ADRs | auto | last-commit | full]"
 model: sonnet
 ---
 
-# Showcase — Resumen ejecutivo de logros
+# Showcase — Resumen ejecutivo + auto-generacion
 
-Genera un resumen de alto nivel de los logros técnicos del proyecto, listo para
-presentar a clientes, inversores o publicar en LinkedIn.
-
-## Algoritmo
+## Modo manual: `/showcase [N]`
 
 ```
-1. Leer todos los ADRs en docs/adr/ (ordenados por número DESC)
-2. Tomar los últimos 5 (o N si se especifica)
-3. Para cada ADR extraer:
-   - Título
-   - Problema que resolvió
-   - Tecnologías usadas
-   - Impacto en el negocio
+1. Leer ADRs en docs/adr/ (DESC por numero)
+2. Tomar ultimos 5 (o N)
+3. Extraer: titulo, problema, tecnologias, impacto
 4. Generar:
    a. Tabla resumen ejecutivo
-   b. Borrador LinkedIn (máx 300 palabras)
-   c. Actualizar docs/growth/CASE_STUDIES.md si existe
-5. Mostrar todo en formato visual para Brandon
+   b. LinkedIn draft (max 300 palabras)
+   c. Actualizar docs/growth/CASE_STUDIES.md
+```
+
+## Modo auto: `/showcase auto` o `/showcase last-commit`
+
+Se activa si ultimo commit cumple: `feat:` | `BREAKING CHANGE` | `ADR-`
+
+```
+1. Leer ultimo commit → verificar si califica
+2. Si califica:
+   a. Extraer archivos tocados, lineas, ADRs relacionados
+   b. Crear docs/showcase/[YYYY-MM-DD]-[slug]/
+   c. Generar: case-study.md + linkedin.md + twitter-thread.md
+3. Si no califica: salir silenciosamente
 ```
 
 ## Formato de salida
 
 ```markdown
-## 🏆 Showcase — Bodega San Martín
+## Showcase — [fecha]
 
-### Resumen ejecutivo (últimos 5 ADRs)
-
-| # | Decisión | Problema | Solución | Impacto |
+### Resumen ejecutivo
+| # | Decision | Problema | Solucion | Impacto |
 |---|---|---|---|---|
-| 026 | Phase 3 Sovereignty | Sistema sin auto-monitoreo | 3 agentes + 4 skills + 2 hooks | Auto-optimización de costos |
-| 025 | Phase 2 Autonomous OS | Bloqueos por errores triviales | Self-heal + pentest + ADR mgr | Autonomía nocturna real |
-| ... | ... | ... | ... | ... |
 
-### 🔷 LinkedIn Draft (listo para copiar)
+### LinkedIn Draft (listo para copiar)
+[200-300 palabras con hook, historia, resultado, hashtags]
 
-[Post de 200-300 palabras con hook, historia, resultado, hashtags]
-
-### 📖 Case Study actualizado
-
-[Resumen del case study más reciente]
+### Archivos generados (modo auto)
+- docs/showcase/[fecha]-[slug]/case-study.md
+- docs/showcase/[fecha]-[slug]/linkedin.md
+- docs/showcase/[fecha]-[slug]/twitter-thread.md
 ```
 
 ## Reglas
 
-1. **Lenguaje ejecutivo** — sin jerga innecesaria
-2. **Datos reales** — no inventar métricas
-3. **Máximo 1 página** el resumen — si quiere más, invitar a leer los ADRs
-4. **LinkedIn draft debe ser copiable** directamente
-5. **Actualizar docs/growth/ si existe** — crear directorio si no existe
-
-## Referencia
-
-- Agente: `growth-specialist` — para tareas más profundas de growth
-- Memoria: `user_profile.md` — contexto de Brandon
+1. Lenguaje ejecutivo, sin jerga innecesaria
+2. Datos reales, no inventar metricas
+3. Max 1 pagina el resumen
+4. LinkedIn draft copiable directamente
+5. No generar para chore/fix/docs/style — solo feat/BREAKING

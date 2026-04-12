@@ -17,7 +17,7 @@ datasource db {
 model Tenant {
   id                     String    @id @default(cuid())
   slug                   String    @unique // subdomain: e.g. "bodega-san-martin"
-  name                   String // E.g. "Bodega San Martín"
+  name                   String // E.g. "Buleje"
   plan                   String    @default("free") // free | pro | business
   type                   String    @default("store") // store | supplier | delivery
   active                 Boolean   @default(true)
@@ -66,6 +66,10 @@ model Tenant {
   treasuryTransferencias TreasuryTransferencia[]
   stores                 Store[]
   featureFlags           TenantFeatureFlag[]
+  storePage              TenantStorePage?
+  pageProductOverrides   TenantPageProductOverride[]
+  pagePromotions         TenantPagePromotion[]
+  pageVisits             TenantPageVisit[]
 
   @@index([slug])
   @@index([active])
@@ -115,6 +119,7 @@ model Product {
 
   stockoutPredictions StockoutPrediction[]
   sponsoredBoosts     SponsoredBoost[]
+  pageOverrides       TenantPageProductOverride[]
 
   @@index([tenantId])
   @@index([tenantId, active])
@@ -1066,10 +1071,31 @@ model AdminUser {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
+  // ── 2FA TOTP (ADR-043) ──────────────────────────────────────
+  totpSecret    String? // Base32-encoded TOTP secret (RFC 6238). NULL = sin 2FA configurado
+  totpEnabledAt DateTime? // Timestamp de activación. NULL = TOTP no activo aún
+
   turnos Turno[]
 
   @@unique([tenantId, username])
   @@index([tenantId])
+  @@index([totpEnabledAt])
+}
+
+// ── SuperadminUser — platform-level users (ADR-043) ──────────
+// La auth de superadmin usaba solo ADMIN_PASSWORD env + session cookie.
+// Ahora persistimos el user con TOTP obligatorio para platform access.
+model SuperadminUser {
+  id            String    @id @default(cuid())
+  username      String    @unique
+  passwordHash  String
+  totpSecret    String? // Base32-encoded TOTP secret (RFC 6238)
+  totpEnabledAt DateTime?
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([username])
 }
 
 // ─── WhatsApp Notification Log ──────────────────────────
@@ -1574,6 +1600,18 @@ model CronDeadLetter {
   createdAt DateTime @default(now())
 
   @@index([jobName, createdAt])
+}
+
+model CronHealthLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobName    String
+  status     String
+  durationMs Int
+  error      String?
+  createdAt  DateTime @default(now())
+
+  @@index([jobName, createdAt])
+  @@index([createdAt])
 }
 
 // ─── Warehouses ─────────────────────────────────────────
@@ -2379,6 +2417,8 @@ model Store {
   banner              String?
   category            String               @default("bodega")
   zone                String?
+  lat                 Float?
+  lng                 Float?
   rating              Float                @default(0)
   reviewCount         Int                  @default(0)
   isPublished         Boolean              @default(false)
@@ -3242,4 +3282,136 @@ model TenantFeatureFlag {
 
   @@unique([tenantId, flagKey])
   @@index([tenantId])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// MarketplaceAbandonedCart — carts abandoned during marketplace checkout.
+/// Used by the cron job to send WhatsApp recovery messages.
+/// Referenced by lib/db/marketplace.db.ts (MarketplaceAbandonedCartsDB).
+/// ─────────────────────────────────────────────────────────────────────────────
+model MarketplaceAbandonedCart {
+  id              String    @id @default(cuid())
+  storeSlug       String
+  customerName    String
+  customerPhone   String
+  itemsJson       String /// JSON array of {storeProductId, productId, name, quantity, price, unit}
+  total           Float
+  recovered       Boolean   @default(false)
+  convertedAt     DateTime?
+  reminderSentAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([storeSlug])
+  @@index([customerPhone])
+  @@index([recovered, reminderSentAt, createdAt])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// TenantStorePage — customización de la página pública individual por tienda.
+/// Una fila por tenant. Controla tema, hero, about, SEO y estado publicado.
+/// Referenciado por lib/db/store-page.db.ts (StorePageDB).
+/// Página pública: /t/[slug] (server component con "use cache" + cacheTag).
+/// ─────────────────────────────────────────────────────────────────────────────
+model TenantStorePage {
+  id               String   @id @default(cuid())
+  tenantId         String   @unique
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  published        Boolean  @default(true)
+  heroTitle        String?
+  heroSubtitle     String?
+  heroImageUrl     String?
+  heroCtaLabel     String?
+  heroCtaUrl       String?
+  primaryColor     String   @default("#00B4A6")
+  accentColor      String   @default("#f4a261")
+  aboutTitle       String?
+  aboutBody        String?
+  whatsappPhone    String?
+  contactEmail     String?
+  address          String?
+  metaTitle        String?
+  metaDescription  String?
+  ogImageUrl       String?
+  footerHtml       String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// TenantPageProductOverride — override de producto para la página individual.
+/// Permite al dueño elegir qué productos del inventario aparecen, fijar precio
+/// exclusivo (menor al marketplace) y destacarlos. NO afecta marketplace general.
+/// ─────────────────────────────────────────────────────────────────────────────
+model TenantPageProductOverride {
+  id              String   @id @default(cuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  productId       Int
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  exclusivePrice  Decimal? @db.Decimal(12, 2)
+  featured        Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  badge           String?
+  visible         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([tenantId, productId])
+  @@index([tenantId])
+  @@index([tenantId, visible, featured])
+  @@index([productId])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// TenantPagePromotion — promociones exclusivas de la página individual.
+/// Scope limitado: NO aparecen en marketplace ni en admin general de promos.
+/// discountType: "percent" | "amount" | "fixed"
+/// ─────────────────────────────────────────────────────────────────────────────
+model TenantPagePromotion {
+  id              String    @id @default(cuid())
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  discountType    String    @default("percent")
+  discountValue   Decimal   @db.Decimal(12, 2)
+  bannerImageUrl  String?
+  ctaLabel        String?
+  ctaUrl          String?
+  startAt         DateTime?
+  endAt           DateTime?
+  active          Boolean   @default(true)
+  position        Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, active, startAt, endAt])
+}
+
+/// ─────────────────────────────────────────────────────────────────────────────
+/// TenantPageVisit — evento analítico de visita a la página individual.
+/// Trackea visitas (pageview) y conversiones (linked orderId) por tenant.
+/// Write-heavy: usar índice compuesto para queries de agregado.
+/// ─────────────────────────────────────────────────────────────────────────────
+model TenantPageVisit {
+  id         String   @id @default(cuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sessionId  String?
+  referrer   String?
+  utmSource  String?
+  userAgent  String?
+  ipHash     String?
+  path       String?
+  converted  Boolean  @default(false)
+  orderId    String?
+  visitedAt  DateTime @default(now())
+
+  @@index([tenantId, visitedAt])
+  @@index([tenantId, converted])
+  @@index([sessionId])
 }

@@ -10,7 +10,7 @@ disable-model-invocation: false
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob
 argument-hint: "[list | latest | YYYY-MM-DD-HHMMSS]"
-model: opus
+model: sonnet
 ---
 
 # DB Restore — Restauración de base de datos desde backup

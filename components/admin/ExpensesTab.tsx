@@ -8,17 +8,23 @@ type Expense = { id: string; category: string; description: string; amount: numb
 type Summary = { category: string; total: number; count: number };
 
 const CATEGORIES = [
-  { value: "alquiler", label: "Alquiler", emoji: "🏠" },
-  { value: "servicios", label: "Servicios", emoji: "💡" },
-  { value: "personal", label: "Personal", emoji: "👥" },
-  { value: "transporte", label: "Transporte", emoji: "🚚" },
-  { value: "limpieza", label: "Limpieza", emoji: "🧹" },
-  { value: "marketing", label: "Marketing", emoji: "📢" },
-  { value: "mantenimiento", label: "Mantenimiento", emoji: "🔧" },
-  { value: "otros", label: "Otros", emoji: "📋" },
+  { value: "alquiler", label: "Alquiler" },
+  { value: "servicios", label: "Servicios" },
+  { value: "personal", label: "Personal" },
+  { value: "transporte", label: "Transporte" },
+  { value: "limpieza", label: "Limpieza" },
+  { value: "marketing", label: "Marketing" },
+  { value: "mantenimiento", label: "Mantenimiento" },
+  { value: "otros", label: "Otros" },
 ];
 
-const catEmoji = (cat: string) => CATEGORIES.find(c => c.value === cat)?.emoji ?? "📋";
+function catEmoji(category: string): string {
+  const map: Record<string, string> = {
+    alquiler: "🏠", servicios: "💡", personal: "👥", transporte: "🚚",
+    limpieza: "🧹", marketing: "📢", mantenimiento: "🔧", otros: "📦",
+  };
+  return map[category] ?? "📦";
+}
 
 export default function ExpensesTab() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -140,7 +146,6 @@ export default function ExpensesTab() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {summary.map(s => (
             <div key={s.category} className={cn("bg-white dark:bg-card border rounded-2xl p-3 text-center", s.category === maxCat?.category ? "border-red-300 dark:border-red-700" : "border-gray-200 dark:border-card-border")}>
-              <span className="text-xl sm:text-2xl">{catEmoji(s.category)}</span>
               <p className="font-extrabold text-sm text-gray-900 dark:text-foreground">S/{s.total.toFixed(0)}</p>
               <p className="text-[10px] text-gray-400 capitalize">{s.category} ({s.count})</p>
               {totalAll > 0 && <div className="mt-1 h-1 bg-gray-100 dark:bg-surface rounded-full overflow-hidden"><div className="h-full bg-primary rounded-full" style={{ width: `${(s.total / totalAll) * 100}%` }} /></div>}
@@ -190,7 +195,7 @@ export default function ExpensesTab() {
               <button onClick={() => setShowForm(false)}><X className="h-5 w-5 text-gray-400" /></button>
             </div>
             <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm">
-              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>)}
+              {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
             <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Descripción del gasto" className="w-full px-3 py-2 border border-gray-200 dark:border-card-border rounded-xl bg-white dark:bg-surface text-sm" />
             <div className="flex flex-wrap gap-3">

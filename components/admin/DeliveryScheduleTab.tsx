@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Clock, MapPin, Save, Plus, Trash2, CheckCircle } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 
 type DaySchedule = { day: string; open: string; close: string; enabled: boolean };
 type Zone = { name: string; radius: number; price: number; enabled: boolean };
@@ -59,7 +60,7 @@ export default function DeliveryScheduleTab() {
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
       setSaveError("Error al guardar configuración de delivery");
-      console.error("Error saving delivery config:", e);
+      Sentry.captureException(e instanceof Error ? e : new Error(String(e)));
     } finally {
       setSaving(false);
     }

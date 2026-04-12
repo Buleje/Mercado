@@ -10,7 +10,7 @@ disable-model-invocation: false
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Agent, WebFetch
 argument-hint: "[checkout-down|db-connections-saturated|sunat-api-failing|whatsapp-rate-limited|tenant-isolation-breach|redis-down|stripe-webhook-failing|disk-space-low]"
-model: opus
+model: haiku
 ---
 
 # Runbook Executor — Respuesta a incidentes automatizada

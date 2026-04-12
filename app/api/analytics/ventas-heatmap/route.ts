@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 const querySchema = z.object({
   days: z.coerce.number().min(7).max(180).default(60),
@@ -85,7 +86,7 @@ export async function GET(req: NextRequest) {
       insight,
     });
   } catch (e) {
-    console.error("[analytics/ventas-heatmap] GET error:", e);
+    logger.error("[analytics/ventas-heatmap] GET error", { error: String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

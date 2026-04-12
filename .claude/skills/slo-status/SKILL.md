@@ -1,6 +1,6 @@
 ---
 name: slo-status
-description: Shows current SLO status, error budgets, and burn rates for Bodega San Martin
+description: Shows current SLO status, error budgets, and burn rates for Buleje
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob
 argument-hint: "[name|all|checkout_success_rate|api_p99_latency|boleta_sunat_success|whatsapp_delivery]"

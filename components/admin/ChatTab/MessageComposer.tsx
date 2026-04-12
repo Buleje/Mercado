@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Send, Paperclip } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 
 interface MessageComposerProps {
@@ -29,7 +30,7 @@ export function MessageComposer({
       // Refocus
       textareaRef.current?.focus();
     } catch (err) {
-      console.error("[MessageComposer] send failed", err);
+      Sentry.captureException(err instanceof Error ? err : new Error(String(err)));
       window.alert("No se pudo enviar el mensaje. Reintentá.");
     } finally {
       setSending(false);

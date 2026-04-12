@@ -114,9 +114,8 @@ function mapReturn(r: PReturn & { items: PReturnItem[] }): DbReturn {
 // ── Orders DB ─────────────────────────────────────────────────────────────────
 
 export const OrdersDB = {
-  async getAll(tenantId?: string): Promise<DbOrder[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbOrder[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.order.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapOrder);
   },
 
@@ -128,7 +127,7 @@ export const OrdersDB = {
     status?: string;
     since?: string;
     phone?: string;
-    tenantId?: string;
+    tenantId: string;
   }): Promise<DbOrder[]> {
     const where: Record<string, unknown> = {};
     if (opts?.tenantId) where.tenantId = opts.tenantId;
@@ -162,7 +161,7 @@ export const OrdersDB = {
     status?: string;
     since?: string;
     phone?: string;
-    tenantId?: string;
+    tenantId: string;
   }): Promise<{ orders: DbOrder[]; nextCursor: string | null; total: number }> {
     const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
 
@@ -238,7 +237,7 @@ export const OrdersDB = {
       orderBy: { createdAt: "desc" },
     })).map(mapOrder);
   },
-  async add(order: DbOrder, tenantId = "main"): Promise<DbOrder> {
+  async add(order: DbOrder, tenantId: string): Promise<DbOrder> {
     // Ensure the customer exists in the DB before linking via FK
     const phone = order.customer.phone ? normalizePhone(order.customer.phone) : null;
     if (phone) {
@@ -545,10 +544,10 @@ export const DeliverySlotsDB = {
     const row = await prisma.deliverySlot.findUnique({ where: { orderId } });
     return row ? mapDeliverySlot(row) : null;
   },
-  async set(data: { orderId: string; date: string; slot: string; notes?: string; tenantId?: string }): Promise<DbDeliverySlot> {
+  async set(data: { orderId: string; date: string; slot: string; notes?: string; tenantId: string }): Promise<DbDeliverySlot> {
     const row = await prisma.deliverySlot.upsert({
       where: { orderId: data.orderId },
-      create: { orderId: data.orderId, date: data.date, slot: data.slot, notes: data.notes, tenantId: data.tenantId ?? "main" },
+      create: { orderId: data.orderId, date: data.date, slot: data.slot, notes: data.notes, tenantId: data.tenantId },
       update: { date: data.date, slot: data.slot, notes: data.notes },
     });
     return mapDeliverySlot(row);
@@ -558,19 +557,18 @@ export const DeliverySlotsDB = {
 // ── Returns DB ────────────────────────────────────────────────────────────────
 
 export const ReturnsDB = {
-  async getAll(tenantId?: string): Promise<DbReturn[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbReturn[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.return.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapReturn);
   },
-  async add(r: { saleId?: string; orderId?: string; reason: string; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: Omit<DbReturnItem, "id">[]; tenantId?: string }): Promise<DbReturn> {
+  async add(r: { saleId?: string; orderId?: string; reason: string; photoUrl?: string; customerPhone?: string; creditApplied?: boolean; items: Omit<DbReturnItem, "id">[]; tenantId: string }): Promise<DbReturn> {
     const total = r.items.reduce((s, i) => s + i.price * i.quantity, 0);
     const row = await prisma.return.create({
       data: {
         saleId: r.saleId, orderId: r.orderId, reason: r.reason, total,
         photoUrl: r.photoUrl, customerPhone: r.customerPhone ? normalizePhone(r.customerPhone) : undefined,
         creditApplied: r.creditApplied ?? false,
-        tenantId: r.tenantId ?? "main",
+        tenantId: r.tenantId,
         items: { create: r.items.map(i => ({ productId: i.productId, name: i.name, quantity: i.quantity, price: i.price, unit: i.unit })) },
       },
       include: { items: true },

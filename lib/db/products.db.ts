@@ -55,6 +55,7 @@ function mapProduct(p: PProduct): DbProduct {
     ...(p.stockMin != null && { stockMin: p.stockMin }),
     ...(p.stockMax != null && { stockMax: p.stockMax }),
     active: p.active,
+    tenantId: p.tenantId,
   };
 }
 
@@ -73,9 +74,8 @@ function mapBundle(b: PBundle & { items: PBundleItem[] }): DbBundle {
 // ── Products ──────────────────────────────────────────────────────────────────
 
 export const ProductsDB = {
-  async getAll(tenantId?: string): Promise<DbProduct[]> {
-    const where: Record<string, unknown> = { deletedAt: null };
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbProduct[]> {
+    const where: Record<string, unknown> = { deletedAt: null, tenantId };
     const rows = await prisma.product.findMany({ where, orderBy: { id: "asc" } });
     return rows.map(mapProduct);
   },
@@ -85,13 +85,13 @@ export const ProductsDB = {
    * Returns up to `limit` products plus the cursor for the next page.
    */
   async getPage(opts: {
-    tenantId?: string;
+    tenantId: string;
     cursor?: number;
     limit?: number;
     category?: string;
     search?: string;
     active?: boolean;
-  } = {}): Promise<{ products: DbProduct[]; nextCursor: number | null; total: number }> {
+  }): Promise<{ products: DbProduct[]; nextCursor: number | null; total: number }> {
     const limit = Math.min(Math.max(opts.limit ?? 50, 1), 200);
 
     const where: Record<string, unknown> = { deletedAt: null };
@@ -136,7 +136,7 @@ export const ProductsDB = {
     };
     const row = await prisma.product.upsert({
       where: { id: product.id },
-      create: { id: product.id, ...d, tenantId: product.tenantId ?? "main" },
+      create: { id: product.id, ...d, tenantId: product.tenantId },
       update: d,
     });
     return mapProduct(row);
@@ -194,9 +194,9 @@ export const PriceHistoryDB = {
   async getAll(limit = 100): Promise<DbPriceHistory[]> {
     return (await prisma.priceHistory.findMany({ orderBy: { changedAt: "desc" }, take: limit })).map(mapPriceHistory);
   },
-  async record(productId: number, oldPrice: number, newPrice: number, tenantId?: string): Promise<DbPriceHistory> {
+  async record(productId: number, oldPrice: number, newPrice: number, tenantId: string): Promise<DbPriceHistory> {
     if (oldPrice === newPrice) return { id: 0, productId, oldPrice, newPrice, changedAt: new Date().toISOString() };
-    const row = await prisma.priceHistory.create({ data: { productId, oldPrice, newPrice, tenantId: tenantId ?? "main" } });
+    const row = await prisma.priceHistory.create({ data: { productId, oldPrice, newPrice, tenantId } });
     return mapPriceHistory(row);
   },
 };
@@ -204,17 +204,16 @@ export const PriceHistoryDB = {
 // ── Bundles ───────────────────────────────────────────────────────────────────
 
 export const BundlesDB = {
-  async getAll(tenantId?: string): Promise<DbBundle[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbBundle[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.bundle.findMany({ where, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);
   },
   async getActive(): Promise<DbBundle[]> {
     return (await prisma.bundle.findMany({ where: { active: true }, include: { items: true }, orderBy: { createdAt: "desc" } })).map(mapBundle);
   },
-  async add(data: { name: string; description?: string; price: number; image?: string; tenantId?: string; items: { productId: number; quantity: number }[] }): Promise<DbBundle> {
+  async add(data: { name: string; description?: string; price: number; image?: string; tenantId: string; items: { productId: number; quantity: number }[] }): Promise<DbBundle> {
     const row = await prisma.bundle.create({
-      data: { name: data.name, description: data.description ?? "", price: data.price, image: data.image ?? "", tenantId: data.tenantId ?? "main", items: { create: data.items } },
+      data: { name: data.name, description: data.description ?? "", price: data.price, image: data.image ?? "", tenantId: data.tenantId, items: { create: data.items } },
       include: { items: true },
     });
     return mapBundle(row);

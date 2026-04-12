@@ -10,6 +10,8 @@
  *   const data = await withCircuitBreaker("prisma", () => prisma.product.findMany());
  */
 
+import { logger } from "@/lib/logger";
+
 type CBState = "closed" | "open" | "half-open";
 
 interface BreakerRecord {
@@ -101,9 +103,7 @@ export async function withCircuitBreaker<T>(
 
     if (rec.state === "half-open" || rec.failures >= threshold) {
       rec.state = "open";
-      console.error(
-        `[CircuitBreaker] Service "${service}" circuit OPENED after ${rec.failures} failure(s)`,
-      );
+      logger.error("[CircuitBreaker] circuit OPENED", { service, failures: rec.failures });
     }
 
     throw err;

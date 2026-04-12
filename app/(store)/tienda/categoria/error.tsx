@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
 
 export default function CategoriaError({
@@ -11,7 +12,7 @@ export default function CategoriaError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[Categoria Error]", error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (

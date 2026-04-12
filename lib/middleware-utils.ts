@@ -145,8 +145,11 @@ export function checkEdgeRateLimit(
  */
 export async function checkRateLimit(req: NextRequest): Promise<NextResponse | null> {
   const ip = getIP(req);
+  const tenantId = req.headers.get("x-tenant-id") ?? "global";
+  const identifier = `${tenantId}:${ip}`;
+
   const limiter = getEdgeLimiter();
-  const allowed = await limiter.check(ip);
+  const allowed = await limiter.check(identifier);
   if (allowed) return null;
 
   return NextResponse.json(
@@ -175,7 +178,13 @@ export function __resetEdgeLimiterForTests(): void {
  * When `nonce` is provided, `script-src` uses `'nonce-{value}'` instead of
  * `'unsafe-inline'`, substantially tightening security.
  *
- * Keep `'unsafe-eval'` for Next.js hydration (required for edge runtime).
+ * NOTE on 'unsafe-eval': Required by Next.js edge runtime for hydration and
+ * dynamic code evaluation in development. Recharts (used in admin dashboards)
+ * also relies on eval for its responsive container calculations. Until these
+ * dependencies drop eval usage, we cannot remove 'unsafe-eval' without
+ * breaking the app. Tracked for future removal when Next.js and Recharts
+ * provide eval-free alternatives.
+ *
  * Keep `'unsafe-inline'` in `style-src` for Tailwind JIT.
  */
 export function buildCSP(pathname: string, nonce?: string): string {

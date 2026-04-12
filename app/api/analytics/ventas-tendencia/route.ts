@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { toNumOrZero } from "@/lib/decimal-utils";
+import { logger } from "@/lib/logger";
 
 const querySchema = z.object({
   period: z.enum(["7d", "30d", "90d"]).default("30d"),
@@ -112,7 +113,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ dias });
   } catch (e) {
-    console.error("[analytics/ventas-tendencia] GET error:", e);
+    logger.error("[analytics/ventas-tendencia] GET error", { error: String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

@@ -5,6 +5,7 @@ disable-model-invocation: false
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob, Agent, TaskCreate, TaskUpdate
 argument-hint: [descripción de la tarea]
+model: sonnet
 ---
 
 # checkout-squad — Preset del equipo de checkout

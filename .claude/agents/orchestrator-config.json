@@ -1,7 +1,36 @@
 {
-  "_comment": "God-mode orchestration config — mapa maestro de task types → agent combinations. Usado por agent-router y el Orquestador Principal para auto-seleccionar el equipo optimo.",
-  "version": 2,
-  "lastUpdated": "2026-04-10",
+  "_comment": "God-mode orchestration config v4 — mapa maestro de task types → agent combinations + dynamic model routing. Usado por agent-router y el Orquestador Principal.",
+  "version": 4,
+  "lastUpdated": "2026-04-11",
+
+  "dynamicModelRouting": {
+    "_comment": "Model selection by task complexity — same agent, variable model. Overrides agent's default model.",
+    "rules": [
+      { "complexity": "trivial", "signals": ["1 archivo", "typo", "rename"], "model": "haiku" },
+      { "complexity": "simple", "signals": ["2-5 archivos", "1 endpoint", "1 componente"], "model": "sonnet" },
+      { "complexity": "moderate", "signals": ["5-15 archivos", "2 areas"], "model": "sonnet" },
+      { "complexity": "high", "signals": ["15+ archivos", "3+ areas", "cross-layer"], "model": "opus" },
+      { "complexity": "enterprise", "signals": ["sprint completo", "migracion DB", "arquitectura nueva"], "model": "opus" }
+    ],
+    "override": "El Orquestador puede override el modelo si la tarea lo justifica. Ejemplo: bug simple pero en zona peligrosa → opus."
+  },
+
+  "agentRegistry": {
+    "_comment": "Registro centralizado de todos los agentes disponibles con sus capacidades",
+    "totalAgents": 37,
+    "categories": {
+      "orchestrators": ["director-orchestrator", "initiative-orchestrator", "orchestrator"],
+      "core-engineers": ["backend-platform-engineer", "frontend-engineer", "database-engineer", "checkout-specialist", "mobile-engineer"],
+      "domain-specialists": ["marketplace-specialist", "ai-ml-engineer", "integration-specialist", "seo-growth-strategist"],
+      "quality-gates": ["qa-reliability-engineer", "security-auditor", "security-pentester", "code-reviewer", "test-writer", "bug-hunter", "visual-qa-specialist", "reviewer"],
+      "operations": ["devops-release-engineer", "incident-commander", "performance-engineer", "finops-guard", "sre-observability"],
+      "design-strategy": ["solution-architect", "product-uiux-strategist", "data-analyst", "growth-specialist"],
+      "maintenance": ["refactoring-expert", "migration-planner", "healer", "optimizer", "compressor"],
+      "content": ["docs-generator", "scribe"],
+      "squads": ["full-stack-squad", "security-squad", "performance-squad"],
+      "architecture": ["architect"]
+    }
+  },
 
   "taskRoutes": {
     "bug-simple": {
@@ -10,7 +39,8 @@
       "model": "sonnet",
       "maxTurns": 20,
       "verification": ["lint", "tsc", "test"],
-      "escalation": "bug-hunter-opus"
+      "escalation": "bug-complex",
+      "keywords": ["error", "bug", "falla", "rompe", "no funciona"]
     },
     "bug-complex": {
       "description": "Bug cross-layer o intermitente",
@@ -26,7 +56,8 @@
       "model": "sonnet",
       "maxTurns": 40,
       "verification": ["lint", "tsc", "test"],
-      "preTask": ["pre-task-intel:frontend"]
+      "preTask": ["pre-task-intel:frontend"],
+      "keywords": ["componente", "pagina", "UI", "boton", "modal", "formulario", "tabla", "dark mode"]
     },
     "feature-backend": {
       "description": "Endpoint API nuevo o logica de negocio",
@@ -34,7 +65,8 @@
       "model": "sonnet",
       "maxTurns": 40,
       "verification": ["lint", "tsc", "test"],
-      "preTask": ["pre-task-intel:backend"]
+      "preTask": ["pre-task-intel:backend"],
+      "keywords": ["endpoint", "API", "ruta", "validacion", "auth", "DB class"]
     },
     "feature-fullstack": {
       "description": "Feature que toca DB + API + UI",
@@ -52,7 +84,38 @@
       "maxTurns": 50,
       "verification": ["lint", "tsc", "test", "build", "eval:checkout"],
       "preTask": ["pre-task-intel:checkout", "audit-first:checkout"],
-      "mandatory": true
+      "mandatory": true,
+      "keywords": ["checkout", "pago", "Yape", "carrito", "cupon", "descuento", "pedido"]
+    },
+    "feature-marketplace": {
+      "description": "Marketplace multi-vendor: catalogo, busqueda cross-store, carritos multi-tienda, comisiones, onboarding de vendors",
+      "squad": "marketplace-squad",
+      "model": "opus",
+      "maxTurns": 50,
+      "verification": ["lint", "tsc", "test", "build"],
+      "preTask": ["pre-task-intel:marketplace"],
+      "postTask": ["code-reviewer", "security-auditor"],
+      "keywords": ["marketplace", "tienda", "vendor", "multi-vendor", "catalogo", "busqueda cross", "comision"]
+    },
+    "feature-ai": {
+      "description": "Features de IA: recomendaciones, prediccion, chatbot, clasificacion automatica",
+      "squad": "ai-squad",
+      "model": "opus",
+      "maxTurns": 45,
+      "verification": ["lint", "tsc", "test"],
+      "preTask": ["pre-task-intel:ai"],
+      "postTask": ["finops-guard"],
+      "keywords": ["IA", "AI", "recomendacion", "prediccion", "chatbot", "inteligente", "embeddings", "Groq"]
+    },
+    "incident-production": {
+      "description": "Incidente en produccion: sitio caido, errores masivos, datos corruptos",
+      "agents": ["incident-commander"],
+      "model": "opus",
+      "maxTurns": 30,
+      "verification": ["smoke-test", "health-check"],
+      "escalation": "brandon",
+      "priority": "critical",
+      "keywords": ["produccion", "caido", "error 500", "incidente", "emergencia", "rollback"]
     },
     "security-audit": {
       "description": "Auditoria de seguridad pre-merge",
@@ -67,7 +130,8 @@
       "squad": "performance-squad",
       "model": "opus",
       "maxTurns": 40,
-      "verification": ["lighthouse", "bundle-analysis"]
+      "verification": ["lighthouse", "bundle-analysis"],
+      "keywords": ["lento", "performance", "bundle", "carga", "LCP", "CLS", "cache"]
     },
     "database-migration": {
       "description": "Cambio de schema Prisma o migracion",
@@ -76,7 +140,8 @@
       "maxTurns": 30,
       "verification": ["prisma-validate", "tsc", "test"],
       "preTask": ["pre-task-intel:database", "audit-first:database"],
-      "requiresConfirmation": true
+      "requiresConfirmation": true,
+      "keywords": ["migracion", "schema", "Prisma", "modelo", "tabla", "columna"]
     },
     "refactor": {
       "description": "Refactoring sin cambio funcional",
@@ -84,48 +149,157 @@
       "model": "sonnet",
       "maxTurns": 35,
       "verification": ["lint", "tsc", "test", "build"],
-      "postTask": ["code-reviewer"]
+      "postTask": ["code-reviewer"],
+      "keywords": ["refactor", "dividir", "extraer", "limpiar", "simplificar"]
     },
     "seo": {
       "description": "SEO, metadata, sitemap, JSON-LD",
       "agents": ["seo-growth-strategist"],
       "model": "sonnet",
       "maxTurns": 20,
-      "verification": ["lint", "tsc", "build"]
+      "verification": ["lint", "tsc", "build"],
+      "keywords": ["SEO", "Google", "metadata", "sitemap", "posicionamiento"]
     },
     "integration": {
-      "description": "API externa (WhatsApp, Stripe, SUNAT)",
+      "description": "API externa (WhatsApp, Stripe, SUNAT, RENIEC)",
       "agents": ["integration-specialist"],
       "model": "sonnet",
       "maxTurns": 30,
       "verification": ["lint", "tsc", "test"],
-      "preTask": ["pre-task-intel:integration"]
+      "preTask": ["pre-task-intel:integration"],
+      "postTask": ["security-auditor"],
+      "keywords": ["WhatsApp", "Stripe", "SUNAT", "RENIEC", "webhook", "API externa"]
     },
     "deploy": {
-      "description": "Deploy a Vercel",
+      "description": "Deploy a Vercel con full gates",
       "agents": ["devops-release-engineer"],
       "model": "sonnet",
       "maxTurns": 20,
       "gates": ["slo-gate", "enterprise-gate", "db-snapshot", "canary"],
-      "postTask": ["sentinel-health-check"]
+      "postTask": ["sentinel-health-check"],
+      "keywords": ["deploy", "produccion", "Vercel", "release"]
     },
     "sprint-planning": {
       "description": "Planificacion de sprint o iniciativa grande",
       "agents": ["solution-architect", "initiative-orchestrator"],
       "model": "opus",
       "maxTurns": 30,
-      "output": ["adr", "roadmap-update"]
+      "output": ["adr", "roadmap-update"],
+      "keywords": ["sprint", "planificacion", "roadmap", "iniciativa", "proyecto grande"]
     },
     "test-writing": {
       "description": "Escribir tests para codigo existente",
       "agents": ["test-writer"],
       "model": "sonnet",
       "maxTurns": 40,
-      "verification": ["test", "coverage"]
+      "verification": ["test", "coverage"],
+      "keywords": ["test", "coverage", "Vitest", "Playwright", "e2e"]
+    },
+    "code-review": {
+      "description": "Revision de codigo por calidad, seguridad y patrones",
+      "agents": ["code-reviewer"],
+      "model": "sonnet",
+      "maxTurns": 25,
+      "verification": ["lint", "tsc"],
+      "keywords": ["revisar", "review", "calidad", "PR"]
+    },
+    "ux-design": {
+      "description": "Diseno UX/UI, flujos de usuario, jerarquia visual",
+      "agents": ["product-uiux-strategist"],
+      "model": "sonnet",
+      "maxTurns": 20,
+      "postTask": ["frontend-engineer"],
+      "keywords": ["UX", "diseno", "flujo", "experiencia", "wireframe", "pantalla"]
+    },
+    "data-analytics": {
+      "description": "KPIs, reportes, dashboards, analisis de negocio",
+      "agents": ["data-analyst"],
+      "model": "sonnet",
+      "maxTurns": 30,
+      "postTask": ["frontend-engineer"],
+      "keywords": ["KPI", "reporte", "dashboard", "metricas", "ventas", "analisis"]
+    },
+    "mobile": {
+      "description": "Features moviles: Capacitor, builds iOS/Android, plugins nativos",
+      "agents": ["mobile-engineer"],
+      "model": "sonnet",
+      "maxTurns": 35,
+      "verification": ["lint", "tsc", "build"],
+      "keywords": ["movil", "Android", "iOS", "Capacitor", "app", "nativo"]
+    },
+    "onboarding": {
+      "description": "Flujo de registro de nuevas tiendas, configuracion inicial",
+      "squad": "onboarding-squad",
+      "model": "opus",
+      "maxTurns": 45,
+      "verification": ["lint", "tsc", "test", "build"],
+      "keywords": ["onboarding", "registro", "nueva tienda", "setup", "configuracion inicial"]
+    },
+    "roadmap-parallel": {
+      "description": "Items del roadmap ejecutados en 3 worktrees paralelos",
+      "squad": "worktree-parallel",
+      "model": "opus",
+      "maxTurns": 60,
+      "verification": ["lint", "tsc", "test"],
+      "preTask": ["pre-task-intel:general"],
+      "postTask": ["code-reviewer"]
+    },
+    "tenant-onboarding": {
+      "description": "Crear nuevo tenant, onboarding, configuracion inicial",
+      "agents": ["tenant-lifecycle", "database-engineer"],
+      "model": "sonnet",
+      "maxTurns": 30,
+      "verification": ["lint", "tsc", "test"],
+      "keywords": ["onboarding", "nuevo tenant", "crear tienda", "registrar bodega"]
+    },
+    "sunat-facturacion": {
+      "description": "Emitir boleta/factura, consultar estado SUNAT, anulaciones",
+      "agents": ["integration-specialist"],
+      "model": "sonnet",
+      "maxTurns": 20,
+      "verification": ["lint", "tsc", "test"],
+      "keywords": ["boleta", "factura", "SUNAT", "nubefact", "RUC", "IGV"]
+    },
+    "cron-debug": {
+      "description": "Debug de cron jobs fallidos o stale",
+      "agents": ["sre-observability", "backend-platform-engineer"],
+      "model": "sonnet",
+      "maxTurns": 20,
+      "verification": ["lint", "tsc"],
+      "keywords": ["cron", "job fallido", "cron stale", "dead letter", "scheduled"]
+    },
+    "tenant-health": {
+      "description": "Diagnostico de salud de un tenant especifico",
+      "agents": ["tenant-lifecycle", "data-analyst"],
+      "model": "sonnet",
+      "maxTurns": 20,
+      "verification": [],
+      "keywords": ["salud tenant", "tenant health", "metricas tenant", "tenant inactivo"]
+    }
+  },
+
+  "retryPolicy": {
+    "_comment": "Politica de reintentos por agente. Si falla, cuantas veces reintenta antes de escalar.",
+    "default": { "maxRetries": 1, "escalateAfter": "auto-escalation" },
+    "overrides": {
+      "bug-hunter": { "maxRetries": 2, "escalateAfter": "full-stack-squad" },
+      "frontend-engineer": { "maxRetries": 1, "escalateAfter": "director-orchestrator" },
+      "database-engineer": { "maxRetries": 0, "escalateAfter": "solution-architect" },
+      "security-pentester": { "maxRetries": 0, "escalateAfter": "security-squad" }
     }
   },
 
   "squads": {
+    "worktree-parallel": {
+      "agents": ["orchestrator", "frente-back", "frente-front", "frente-qa"],
+      "protocol": "parallel-worktrees",
+      "order": ["orchestrator-decomposes", "back+front-parallel", "qa-validates"],
+      "worktrees": {
+        "frente-back": "worktree-1-roadmap-bugs",
+        "frente-front": "worktree-2-roadmap-features",
+        "frente-qa": "worktree-3-roadmap-tier-a"
+      }
+    },
     "full-stack-squad": {
       "agents": ["solution-architect", "database-engineer", "backend-platform-engineer", "frontend-engineer", "qa-reliability-engineer"],
       "protocol": "A2A-sequential",
@@ -137,34 +311,79 @@
       "order": ["checkout", "backend", "frontend", "qa"],
       "dangerZone": true
     },
+    "marketplace-squad": {
+      "agents": ["marketplace-specialist", "database-engineer", "backend-platform-engineer", "frontend-engineer", "security-auditor", "qa-reliability-engineer"],
+      "protocol": "A2A-sequential",
+      "order": ["marketplace-design", "database", "backend", "frontend", "security-review", "qa"],
+      "description": "Squad para features del marketplace multi-vendor. Incluye security review obligatorio por manejo de datos cross-tenant."
+    },
+    "ai-squad": {
+      "agents": ["ai-ml-engineer", "backend-platform-engineer", "frontend-engineer", "finops-guard"],
+      "protocol": "A2A-sequential",
+      "order": ["ai-design", "backend-api", "frontend-ui", "cost-review"],
+      "description": "Squad para features de IA. Incluye FinOps review obligatorio para controlar costos de tokens."
+    },
+    "onboarding-squad": {
+      "agents": ["marketplace-specialist", "product-uiux-strategist", "backend-platform-engineer", "frontend-engineer", "qa-reliability-engineer"],
+      "protocol": "A2A-sequential",
+      "order": ["marketplace-reqs", "ux-design", "backend", "frontend", "qa"],
+      "description": "Squad para el flujo de onboarding de nuevas tiendas al marketplace."
+    },
     "security-squad": {
       "agents": ["security-auditor", "security-pentester", "qa-reliability-engineer"],
       "protocol": "parallel-then-merge",
       "order": ["auditor+pentester-parallel", "qa-merge"]
     },
     "performance-squad": {
-      "agents": ["performance-engineer", "frontend-engineer", "finops-guard"],
+      "agents": ["performance-engineer", "frontend-engineer", "database-engineer", "finops-guard"],
       "protocol": "parallel-then-merge",
-      "order": ["all-parallel", "consolidate"]
+      "order": ["perf+db-parallel", "frontend-fixes", "cost-consolidate"],
+      "description": "Squad de performance mejorado: incluye database-engineer para queries lentas."
+    },
+    "incident-squad": {
+      "agents": ["incident-commander", "backend-platform-engineer", "devops-release-engineer", "qa-reliability-engineer"],
+      "protocol": "incident-response",
+      "order": ["commander-triage", "engineer-fix", "devops-deploy", "qa-verify"],
+      "priority": "critical",
+      "description": "Squad de respuesta a incidentes. Solo se activa en emergencias de produccion."
     }
   },
 
   "escalationChain": {
     "default": ["sonnet-specialist", "opus-specialist", "squad", "orchestrator-direct", "brandon"],
+    "incident": ["incident-commander", "incident-squad", "brandon"],
     "maxLevels": 4,
     "costCap": 5.00,
     "timeoutMinutes": 10
   },
 
+  "keywordRouter": {
+    "_comment": "Auto-routing basado en palabras clave del usuario. El orchestrator usa esto para seleccionar el taskRoute correcto automaticamente.",
+    "enabled": true,
+    "fallback": "director-orchestrator",
+    "confidenceThreshold": 0.7,
+    "multiMatchStrategy": "most-specific-first"
+  },
+
   "globalRules": {
     "alwaysVerify": ["lint", "tsc"],
     "alwaysPreTask": ["session-context"],
-    "alwaysPostTask": ["four-table-closing"],
-    "neverSkip": ["qa-for-critical-zones"],
+    "alwaysPostTask": ["two-table-closing"],
+    "neverSkip": ["qa-for-critical-zones", "security-for-auth-changes", "tenantId-for-db-queries"],
+    "autoSecurityReview": {
+      "triggers": ["auth", "payment", "tenant", "admin", "secret", "token"],
+      "agent": "security-auditor"
+    },
     "parallelismTarget": {
       "reads": 4,
       "agents": 3,
       "edits": 3
+    },
+    "agentMetrics": {
+      "trackTokenUsage": true,
+      "trackSuccessRate": true,
+      "trackExecutionTime": true,
+      "alertOnCostExceeded": 2.00
     }
   }
 }

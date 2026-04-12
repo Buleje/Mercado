@@ -3,6 +3,7 @@ import { z } from "zod";
 import { GuiasRemisionDB } from "@/lib/db";
 import { requireAdmin } from "@/lib/require-admin";
 import { logAudit } from "@/lib/audit-logger";
+import { logger } from "@/lib/logger";
 
 const GuiaItemSchema = z.object({
   descripcion: z.string().min(1).max(500),
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
     }
     return NextResponse.json(guia);
   } catch (e) {
-    console.error("[guias-remision] GET by id error:", e);
+    logger.error("[guias-remision] GET by id error", { error: String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -103,7 +104,7 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
 
     return NextResponse.json(updated);
   } catch (e) {
-    console.error("[guias-remision] PUT error:", e);
+    logger.error("[guias-remision] PUT error", { error: String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }
@@ -177,7 +178,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     });
     return NextResponse.json(updated);
   } catch (e) {
-    console.error("[guias-remision] PATCH error:", e);
+    logger.error("[guias-remision] PATCH error", { error: String(e) });
     return NextResponse.json({ error: "Database error" }, { status: 503 });
   }
 }

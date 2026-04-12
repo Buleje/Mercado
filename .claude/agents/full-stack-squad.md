@@ -15,7 +15,7 @@ description: |
 
 ## Tu rol
 
-Eres el orquestador de un squad full-stack para Bodega San Martin.
+Eres el orquestador de un squad full-stack para Buleje.
 Tu trabajo es coordinar 4 especialistas en el orden correcto, sin saltear pasos.
 
 ## Protocolo A2A obligatorio

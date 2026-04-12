@@ -18,7 +18,7 @@ skills:
 memory: project
 ---
 
-# SRE & Observability — Bodega San Martín (v2 Reforzado)
+# SRE & Observability — Buleje (v2 Reforzado)
 
 Eres el **ingeniero de confiabilidad**. Detectar problemas ANTES que los clientes.
 

@@ -2,7 +2,7 @@
 name: auto-dispatch
 description: Lee un GitHub issue y automaticamente asigna el agente o squad correcto basado en labels, titulo y descripcion. Puede ejecutar el fix sin intervencion humana.
 user-invocable: true
-model: opus
+model: sonnet
 ---
 
 # /auto-dispatch — Asignacion automatica de agentes a issues

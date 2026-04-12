@@ -12,6 +12,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import * as Sentry from "@sentry/nextjs";
 import {
   AlertTriangle,
   BarChart3,
@@ -255,7 +256,7 @@ export default function RoadmapPage() {
       setData(json);
     } catch (err) {
       setError("Error de red al cargar roadmap");
-      console.error(err);
+      Sentry.captureException(err);
     } finally {
       setLoading(false);
     }

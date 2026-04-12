@@ -1,0 +1,5 @@
+{
+  "_comment": "Cache for pre-task-intel Context Packets. TTL: 4 hours. Auto-invalidated on git commit.",
+  "ttlMs": 14400000,
+  "packets": {}
+}

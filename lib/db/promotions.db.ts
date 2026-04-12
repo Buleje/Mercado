@@ -67,12 +67,11 @@ function mapCoupon(c: PCoupon): DbCoupon {
 // ── Promotions DB ─────────────────────────────────────────────────────────────
 
 export const PromotionsDB = {
-  async getAll(tenantId?: string): Promise<DbPromotion[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbPromotion[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.promotion.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapPromotion);
   },
-  async add(p: DbPromotion, tenantId = "main"): Promise<DbPromotion> {
+  async add(p: DbPromotion, tenantId: string): Promise<DbPromotion> {
     const row = await prisma.promotion.create({
       data: {
         id: p.id, name: p.name, description: p.description, discountPercent: p.discountPercent,
@@ -108,9 +107,8 @@ export const PromotionsDB = {
 // ── Coupons DB ────────────────────────────────────────────────────────────────
 
 export const CouponsDB = {
-  async getAll(tenantId?: string): Promise<DbCoupon[]> {
-    const where: Record<string, unknown> = {};
-    if (tenantId) where.tenantId = tenantId;
+  async getAll(tenantId: string): Promise<DbCoupon[]> {
+    const where: Record<string, unknown> = { tenantId };
     return (await prisma.coupon.findMany({ where, orderBy: { createdAt: "desc" } })).map(mapCoupon);
   },
   // RED-007: tenant-scoped lookup. The function accepts both shapes — legacy
@@ -132,7 +130,7 @@ export const CouponsDB = {
     (code: string): Promise<DbCoupon | null>;
     (tenantId: string, code: string): Promise<DbCoupon | null>;
   },
-  async add(c: Omit<DbCoupon, "id" | "createdAt" | "usedCount">, tenantId = "main"): Promise<DbCoupon> {
+  async add(c: Omit<DbCoupon, "id" | "createdAt" | "usedCount">, tenantId: string): Promise<DbCoupon> {
     const row = await prisma.coupon.create({
       data: {
         code: c.code.toUpperCase().trim(), description: c.description,

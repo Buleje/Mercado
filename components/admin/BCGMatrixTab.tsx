@@ -66,7 +66,6 @@ export default function BCGMatrixTab() {
           return (
             <button key={q} onClick={() => setSelectedQ(selectedQ === q ? "todas" : q)} className={cn("rounded-2xl border-2 p-3 sm:p-5 text-left transition-all hover:shadow-md", c.bg, selectedQ === q && "ring-2 ring-primary ring-offset-2 dark:ring-offset-card")}>
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="text-xl sm:text-2xl">{c.emoji}</span>
                 <span className={cn("font-extrabold text-sm", c.color)}>{c.label}</span>
               </div>
               <p className="text-2xl sm:text-3xl font-mono font-extrabold text-gray-900 dark:text-foreground">{items.length}</p>
@@ -139,7 +138,7 @@ export default function BCGMatrixTab() {
                     <td className="px-5 py-3 text-right font-bold">{fmt(p.revenue)}</td>
                     <td className={cn("px-5 py-3 text-right font-bold", p.growth >= 0 ? "text-emerald-600" : "text-red-500")}>{p.growth > 0 && "+"}{p.growth}%</td>
                     <td className="px-5 py-3 text-right font-bold">{p.marketShare}%</td>
-                    <td className="px-5 py-3"><span className={cn("text-xs font-bold px-2 py-1 rounded-full", c.bg)}>{c.emoji} {c.label}</span></td>
+                    <td className="px-5 py-3"><span className={cn("text-xs font-bold px-2 py-1 rounded-full", c.bg)}>{c.label}</span></td>
                     <td className="px-5 py-3 text-center">
                       <button onClick={() => setDetail(p)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-accent"><Eye className="h-4 w-4" /></button>
                     </td>

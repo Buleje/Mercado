@@ -9,7 +9,7 @@ disable-model-invocation: false
 user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob
 argument-hint: "[DNI 8 dígitos]"
-model: sonnet
+model: haiku
 ---
 
 # GDPR Export — Derecho de Acceso (Ley 29733 Art. 18-20)

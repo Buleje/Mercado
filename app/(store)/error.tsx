@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
 
 export default function StoreError({
@@ -11,7 +12,7 @@ export default function StoreError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[Store Error]", error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (

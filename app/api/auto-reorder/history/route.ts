@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -42,7 +43,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ history, total: history.length });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error("[auto-reorder/history] GET error", msg);
+    logger.error("[auto-reorder/history] GET error", { error: msg });
     return NextResponse.json({ history: [], total: 0, error: msg }, { status: 200 });
   }
 }

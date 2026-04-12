@@ -5,6 +5,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import * as Sentry from "@sentry/nextjs";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   Save,
@@ -16,6 +18,13 @@ import {
   Link as LinkIcon,
   ToggleLeft,
   Palette,
+  Sparkles,
+  BookOpenText,
+  Zap,
+  Phone,
+  ShoppingCart,
+  CircleHelp,
+  Megaphone,
 } from "lucide-react";
 import HeroBlock from "@/components/blocks/HeroBlock";
 import AboutBlock from "@/components/blocks/AboutBlock";
@@ -43,13 +52,13 @@ interface Page {
 }
 
 const AVAILABLE_BLOCKS = [
-  { type: "hero", name: "Hero Principal", icon: "✨" },
-  { type: "about", name: "Nosotros", icon: "📖" },
-  { type: "benefits", name: "Beneficios", icon: "⚡" },
-  { type: "contact", name: "Contacto", icon: "📞" },
-  { type: "products", name: "Productos", icon: "🛒" },
-  { type: "faq", name: "Preguntas Frecuentes", icon: "❓" },
-  { type: "cta", name: "Llamada a la Acción", icon: "📢" },
+  { type: "hero", name: "Hero Principal", icon: Sparkles },
+  { type: "about", name: "Nosotros", icon: BookOpenText },
+  { type: "benefits", name: "Beneficios", icon: Zap },
+  { type: "contact", name: "Contacto", icon: Phone },
+  { type: "products", name: "Productos", icon: ShoppingCart },
+  { type: "faq", name: "Preguntas Frecuentes", icon: CircleHelp },
+  { type: "cta", name: "Llamada a la Acción", icon: Megaphone },
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -77,7 +86,7 @@ const BLOCK_FIELDS: Record<string, FieldDef[]> = {
     { key: "secondaryCTAText", label: "Botón secundario (texto)", type: "text", placeholder: "Hacer pedido" },
     { key: "secondaryCTALink", label: "Botón secundario (enlace)", type: "link", placeholder: "#contacto" },
     { key: "showBadge", label: "Mostrar badge de envío", type: "boolean" },
-    { key: "badgeText", label: "Texto del badge", type: "text", placeholder: "🚚 Envío gratis desde S/ 50" },
+    { key: "badgeText", label: "Texto del badge", type: "text", placeholder: "Envio gratis desde S/ 50" },
     { key: "backgroundImage", label: "Imagen de fondo (URL)", type: "url", placeholder: "https://..." },
     { key: "backgroundColor", label: "Color de fondo", type: "color" },
     { key: "showStats", label: "Mostrar estadísticas", type: "boolean" },
@@ -149,7 +158,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         setPage(data);
       }
     } catch (error) {
-      console.error("Error fetching page:", error);
+      Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
     }
   }, [params.id]);
 
@@ -197,7 +206,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         alert("Página guardada");
       }
     } catch (error) {
-      console.error("Error saving page:", error);
+      Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
       alert("Error al guardar");
     } finally {
       setSaving(false);
@@ -226,7 +235,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         fetchPage();
       }
     } catch (error) {
-      console.error("Error adding block:", error);
+      Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -243,7 +252,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         fetchPage();
       }
     } catch (error) {
-      console.error("Error deleting block:", error);
+      Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -262,7 +271,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         fetchPage();
       }
     } catch (error) {
-      console.error("Error updating block:", error);
+      Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
     }
   }
 
@@ -284,7 +293,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
         alert("Error al guardar propiedades");
       }
     } catch (error) {
-      console.error("Error saving block props:", error);
+      Sentry.captureException(error instanceof Error ? error : new Error(String(error)));
       alert("Error al guardar propiedades");
     } finally {
       setSavingProps(false);
@@ -356,7 +365,7 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
                   onClick={() => addBlock(block.type)}
                   className="w-full p-3 bg-white border rounded-lg hover:bg-blue-50 hover:border-blue-500 text-left flex items-center gap-2"
                 >
-                  <span className="text-2xl">{block.icon}</span>
+                  <block.icon className="h-5 w-5 text-blue-600" />
                   <span className="font-medium">{block.name}</span>
                 </button>
               ))}
@@ -535,8 +544,9 @@ export default function PageBuilder({ params }: { params: { id: string } }) {
 
                         {/* Image preview */}
                         {field.type === "url" && val && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={val} alt="preview" className="mt-2 w-full h-24 object-cover rounded-lg border border-gray-200" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                          <div className="relative mt-2 w-full h-24 rounded-lg overflow-hidden border border-gray-200">
+                            <Image src={val} alt="preview" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                          </div>
                         )}
                       </div>
                     );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -326,7 +327,7 @@ export default function CustomReportBuilder({
 
       doc.save(`reporte-${from}-${to}.pdf`);
     } catch (e) {
-      console.error("[CustomReportBuilder] PDF export failed:", e);
+      Sentry.captureException(e instanceof Error ? e : new Error(String(e)));
     } finally {
       setExporting(false);
     }

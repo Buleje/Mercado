@@ -4,6 +4,7 @@ description: Ejecutar la suite completa de verificacion del proyecto (lint, buil
 disable-model-invocation: false
 user-invocable: true
 allowed-tools: Bash, Read, Grep
+model: haiku
 ---
 
 # Test All — Buleje

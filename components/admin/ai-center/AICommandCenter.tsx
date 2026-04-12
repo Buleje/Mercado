@@ -5,6 +5,7 @@ import {
   ClipboardList, Stethoscope, GraduationCap,
   FlaskConical, Newspaper, AlertCircle, CreditCard, BookOpen, WifiOff, ChevronLeft, ChevronRight, TrendingUp, MessageSquare,
   DollarSign } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 import { cn } from "@/lib/utils";
 
 // ── Lazy load ALL heavy tab components ─────────────────────────────────────────
@@ -437,7 +438,7 @@ export default function AICommandCenter() {
       setLastRefresh(new Date());
     } catch (e) {
       setError("No se pudo cargar los datos del negocio.");
-      console.error("[AICommandCenter] fetch error:", e);
+      Sentry.captureException(e instanceof Error ? e : new Error(String(e)));
     } finally {
       setLoading(false);
     }

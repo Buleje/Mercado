@@ -11,21 +11,10 @@ argument-hint: "[scan|fix|status]"
 
 ## Que es
 
-Un pipeline que cierra el loop completo:
+Pipeline de 5 fases: Error en produccion → Detectar → Clasificar → Auto-fix → Deploy canary → Confirmar.
 
-```
-Error en produccion
-  → Detectar (Vercel logs / Sentry)
-    → Clasificar (tipo + severidad + area)
-      → Crear GitHub Issue automatico
-        → Despachar agente correcto
-          → Fix + test + verify
-            → Deploy canary
-              → Confirmar fix en produccion
-```
-
-**Zero intervencion humana para errores tipo P2-P3.**
-**Confirmacion de Brandon solo para P0-P1 (criticos).**
+- **Zero intervencion humana para P2-P3.**
+- **Confirmacion de Brandon solo para P0-P1 (criticos).**
 
 ## Comandos
 
@@ -36,29 +25,9 @@ Error en produccion
 
 ## FASE 1: Deteccion
 
-### Fuentes de datos
+**Fuentes:** `vercel logs [deployment-url] --since 2h` (runtime), `--level error --since 24h` (functions). Sentry si configurado.
 
-```bash
-# Vercel runtime logs (ultimas 2 horas)
-vercel logs [deployment-url] --since 2h
-
-# Vercel function errors
-vercel logs [deployment-url] --level error --since 24h
-
-# Si Sentry esta configurado:
-# curl -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
-#   "https://sentry.io/api/0/projects/$ORG/$PROJECT/issues/?query=is:unresolved"
-```
-
-### Parsing de errores
-
-```
-Para cada linea de error en logs:
-  1. Extraer: timestamp, tipo, mensaje, stack trace, URL, status code
-  2. Deduplicar: agrupar errores identicos por fingerprint (tipo+mensaje+archivo)
-  3. Contar: frecuencia en las ultimas 24h
-  4. Output: lista unica de errores con frecuencia
-```
+**Parsing:** Para cada linea de error: extraer timestamp/tipo/mensaje/stack/URL/status → deduplicar por fingerprint (tipo+mensaje+archivo) → contar frecuencia 24h → lista unica.
 
 ## FASE 2: Clasificacion
 
@@ -87,103 +56,30 @@ Para cada linea de error en logs:
 
 ## FASE 3: Auto-Fix
 
-```
 Para cada error clasificado:
-
-1. Crear branch: auto-fix/prod-[error-fingerprint]
-
-2. Cargar contexto:
-   /pre-task-intel [area del error]
-
-3. Despachar agente:
-   Agent({
-     subagent_type: [agente de la tabla],
-     prompt: "Error en produccion:
-       Tipo: [tipo]
-       Mensaje: [mensaje completo]
-       Stack trace: [stack trace]
-       URL afectada: [url]
-       Frecuencia: [N] veces en 24h
-       
-       Tu trabajo:
-       1. Localizar la causa raiz en el codigo
-       2. Aplicar fix minimo y seguro
-       3. Agregar test que reproduzca el error
-       4. Verificar: npm run lint && npx tsc --noEmit && npm run test"
-   })
-
-4. Verificar resultado:
-   - Si pasa verificacion → commit + push
-   - Si falla → self-heal v2 → auto-escalation
-```
+1. Crear branch: `auto-fix/prod-[error-fingerprint]`
+2. Cargar contexto: `/pre-task-intel [area del error]`
+3. Despachar agente de la tabla con: tipo, mensaje, stack trace, URL, frecuencia. Agente debe localizar causa raiz, aplicar fix minimo, agregar test, verificar con `npm run lint && npx tsc --noEmit && npm run test`
+4. Si pasa verificacion → commit + push. Si falla → self-heal v2 → auto-escalation
 
 ## FASE 4: Deploy
 
-```
-Si P2-P3 (auto):
-  1. Push branch
-  2. Vercel auto-genera preview deployment
-  3. Verificar preview (health check)
-  4. Si OK → merge a master → canary deploy (5%→25%→100%)
-  5. Monitorear 15 min post-deploy
-  6. Si error persiste → auto-rollback
+**P2-P3 (auto):** Push branch → Vercel preview → health check → merge a master → canary (5%→25%→100%) → monitorear 15 min → auto-rollback si error persiste.
 
-Si P0-P1 (requiere Brandon):
-  1. Push branch
-  2. Crear PR con titulo: "fix(prod): [error] — auto-fix by prod-to-code"
-  3. Body del PR incluye: error, stack trace, fix aplicado, tests
-  4. Notificar a Brandon: "PR listo para review"
-```
+**P0-P1 (requiere Brandon):** Push branch → crear PR con titulo `fix(prod): [error] — auto-fix by prod-to-code` + error/stack/fix/tests en body → notificar Brandon.
 
 ## FASE 5: Confirmacion
 
-```
-Despues de deploy:
-  1. Esperar 15 minutos
-  2. Re-escanear logs buscando el mismo error
-  3. Si error desaparecio → marcar como RESOLVED
-  4. Si error persiste → marcar como UNRESOLVED, crear issue de follow-up
-  5. Actualizar metricas en agent-metrics
-```
+Despues de deploy: esperar 15 min → re-escanear logs buscando mismo error → RESOLVED si desaparecio / UNRESOLVED + issue follow-up si persiste → actualizar agent-metrics.
 
 ## Modo Autonomo Completo (/prod-to-code auto)
 
-Ejecuta las 5 fases en secuencia para TODOS los errores detectados:
-
-```
 1. Scan → encontrar N errores
 2. Clasificar → separar P0/P1 (manual) de P2/P3 (auto)
-3. Para P2/P3: fix en paralelo (max 5 simultaneos)
-4. Para P0/P1: crear PRs, notificar Brandon
+3. P2/P3: fix en paralelo (max 5 simultaneos)
+4. P0/P1: crear PRs, notificar Brandon
 5. Deploy canary para P2/P3 fixes
-6. Monitorear 15 min
-7. Reportar resultado final
-```
-
-## Formato de reporte
-
-```markdown
-## Prod-to-Code Report
-
-### Errores detectados
-| # | Error | Severidad | Frecuencia | Area |
-|---|---|---|---|---|
-| 1 | TypeError in /api/orders | P2 | 23/24h | backend |
-| 2 | 404 on /tienda/zona/X | P3 | 150/24h | seo |
-| 3 | PrismaTimeout in /api/products | P2 | 8/24h | database |
-
-### Fixes aplicados
-| # | Error | Agente | Fix | Tests | Deploy |
-|---|---|---|---|---|---|
-| 1 | TypeError orders | bug-hunter | null check + fallback | +2 | canary OK |
-| 2 | 404 zona URLs | seo-strategist | generate missing pages | +3 | canary OK |
-| 3 | PrismaTimeout | db-engineer | add index + connection pool | +1 | canary OK |
-
-### Estado post-deploy (15 min)
-- Error 1: RESOLVED (0 ocurrencias)
-- Error 2: RESOLVED (0 ocurrencias)
-- Error 3: PARTIALLY RESOLVED (2 ocurrencias, -75%)
-```
+6. Monitorear 15 min → reportar resultado final
 
 ## Integraciones
 
