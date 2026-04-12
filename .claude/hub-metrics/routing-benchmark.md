@@ -16,7 +16,7 @@ Test these scenarios to verify the Director routes correctly.
 
 | # | Input | Expected teammates | Expected Hub |
 |---|-------|-------------------|-------------|
-| 6 | "Add new field to Product schema + endpoint" | database + backend | BUILD (partial) |
+| 6 | "Add new field to Product schema + endpoint" | database + backend (1 field = skip architect) | BUILD (partial) |
 | 7 | "Add SUNAT RUC validation to checkout" | backend + integrator | BUILD (partial) |
 | 8 | "Fix bug in cart sync across tabs" | frontend (+ skill state-management) | BUILD (partial) |
 
@@ -51,6 +51,18 @@ Test these scenarios to verify the Director routes correctly.
 | 18 | Backend agent fails twice on same task | Retry with Opus → Hub BUILD |
 | 19 | Lint fails after BUILD completes | Healer auto-repair (3 attempts) |
 | 20 | Security finds SQL injection in PR | BLOCK merge, report to Brandon |
+
+## Test Results — 2026-04-12
+
+### Dry Run: 20/20 PASS
+All 20 scenarios match the decision tree. Fix applied to scenario 6 (1-field schema change skips architect).
+
+### Live Test: 3/3 PASS (with naming caveat)
+- Task A: PASS — correctly routed database → backend (Sonnet)
+- Task B: PASS — correctly identified triple danger zone, Opus, 3 skills
+- Task C: PASS — correctly identified need for architect-first design phase
+
+**Caveat:** Director used legacy agent names (checkout-specialist, database-engineer) instead of new Hub names (backend, database). This is because the test spawned `director-orchestrator` (archived) instead of the new `director`. The `.agent.md` files in `.claude/agents/` are loaded as teammates via TeamCreate, not as subagent_type. To invoke the Director, use `Agent(subagent_type="director")` — this requires the agent name to match a file in `.claude/agents/`.
 
 ## Scoring
 

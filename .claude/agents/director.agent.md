@@ -54,7 +54,8 @@ React 19, TypeScript 5.7, Tailwind 4, Prisma 7 + Supabase PostgreSQL, Zod 4.
 | Archivo | Regla |
 |---------|-------|
 | components/checkout/**, CheckoutModal.tsx | backend DEBE cargar skill checkout-flow. NUNCA en paralelo |
-| schema.prisma | architect disena primero. database ejecuta con DIRECT_URL |
+| schema.prisma (1-2 campos) | database directo con DIRECT_URL (no necesita architect) |
+| schema.prisma (modelo nuevo o 3+ campos) | architect disena primero. database ejecuta con DIRECT_URL |
 | lib/auth/role-permissions.ts, proxy.ts | security DEBE revisar ANTES del merge |
 | lib/db/orders.db.ts | backend con skill database-migrations |
 | contexts/cart-context.tsx | frontend con skill state-management |
