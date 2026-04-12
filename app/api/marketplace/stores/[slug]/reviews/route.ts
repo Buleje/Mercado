@@ -45,13 +45,19 @@ export async function GET(
         rating: true,
         text: true,
         date: true,
-        // TECH-DEBT: campo imageUrls no está en schema Prisma, removido temporalmente
+        photosJson: true,
       },
       orderBy: { date: "desc" },
       take: 20,
     });
 
-    return NextResponse.json({ data: reviews });
+    const data = reviews.map((r) => ({
+      ...r,
+      imageUrls: r.photosJson ? (JSON.parse(r.photosJson) as string[]) : [],
+      photosJson: undefined,
+    }));
+
+    return NextResponse.json({ data });
   } catch (err) {
     logger.error("[STORE-REVIEWS] GET error", { error: err });
     return NextResponse.json(toErrorPayload(err), { status: 500 });
@@ -85,7 +91,7 @@ export async function POST(
       );
     }
 
-    const { reviewerName, rating, comment, customerPhone, imageUrls } = parsed.data;
+    const { reviewerName, rating, comment, customerPhone, imageUrls = [] } = parsed.data;
 
     // Una reseña por teléfono por tienda (si se proporciona phone)
     if (customerPhone) {
@@ -112,7 +118,7 @@ export async function POST(
         storeId: store.id,
         tenantId: store.tenantId,
         status: "approved",
-        // TECH-DEBT: campo imageUrls no está en schema Prisma, removido temporalmente
+        photosJson: imageUrls.length > 0 ? JSON.stringify(imageUrls) : null,
       },
     });
 
@@ -140,7 +146,7 @@ export async function POST(
           rating: review.rating,
           text: review.text,
           date: review.date,
-          // TECH-DEBT: campo imageUrls no está en schema Prisma, removido temporalmente
+          imageUrls,
         },
         store: { rating: newRating, reviewCount: newCount },
       },

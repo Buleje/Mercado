@@ -35,24 +35,30 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  // Count real products (Product table) per tenant — NOT StoreProduct intermediate
-  // rows. This matches what the per-tenant admin inventory tab shows.
-  // Uses an OR(id, slug) lookup so it works whether Product.tenantId stores the
-  // canonical CUID or the slug (mismatch is being normalized in a separate fix).
-  const stores = await Promise.all(
-    storesRaw.map(async (store) => {
-      const productCount = await prisma.product.count({
-        where: {
-          deletedAt: null,
-          OR: [
-            { tenantId: store.tenant.id },
-            { tenantId: store.tenant.slug },
-          ],
-        },
-      });
-      return { ...store, _count: { products: productCount } };
-    })
-  );
+  // Count real products per tenant in a single query (was N+1 — TD-027).
+  // Uses OR(id, slug) because some products have tenantId as slug instead of CUID.
+  const tenantIdentifiers = storesRaw.flatMap((s) => [s.tenant.id, s.tenant.slug]);
+
+  const productCounts = await prisma.product.groupBy({
+    by: ["tenantId"],
+    where: {
+      deletedAt: null,
+      tenantId: { in: tenantIdentifiers },
+    },
+    _count: { id: true },
+  });
+
+  const countMap = new Map<string, number>();
+  for (const row of productCounts) {
+    countMap.set(row.tenantId, row._count.id);
+  }
+
+  const stores = storesRaw.map((store) => {
+    const count =
+      (countMap.get(store.tenant.id) ?? 0) +
+      (countMap.get(store.tenant.slug) ?? 0);
+    return { ...store, _count: { products: count } };
+  });
 
   return NextResponse.json({ stores });
 }

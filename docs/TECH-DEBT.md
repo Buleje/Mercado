@@ -72,16 +72,16 @@ Al cerrar los últimos 105 errores TS, el Agent Team descubrió 4 gaps reales en
 
 | ID | Modelo/Campo | Problema | Workaround aplicado | Severidad |
 |----|--------------|----------|---------------------|-----------|
-| TD-030 | `LoyaltyTransaction` (modelo completo) | Referenciado por `app/api/marketplace/loyalty/route.ts` (3 uses) pero el modelo no existe en schema. El historial de puntos de fidelidad NO persiste — solo se guarda el balance actual en `Customer.loyaltyPoints`. | Opción B: array vacío en GET, operación directa sobre `customer.loyaltyPoints` en POST. | 🟠 Alta — audit loyalty roto |
-| TD-031 | `Review.imageUrls` | Referenciado por `app/api/marketplace/stores/[slug]/reviews/route.ts` (3 uses: select, create, response). El UI del marketplace soportaba reseñas con fotos pero la DB nunca tuvo la columna. | Opción B: removido el uso, reseñas sin fotos. | 🟡 Media — feature UI sin backing |
-| TD-032 | `Coupon.storeId` | Referenciado en 3 archivos (`marketplace/coupons`, `marketplace/coupons/validate`, `superadmin/marketplace/coupons`). Los cupones del marketplace NO están diferenciados de los cupones del POS — comparten tabla sin relación a tienda. | Opción B: removidos filtros por `storeId` con comentarios TECH-DEBT. | 🟡 Media — cupones cruzados |
+| ~~TD-030~~ | ~~`LoyaltyTransaction`~~ | **✅ CERRADO 2026-04-12.** Modelo `LoyaltyTransaction` creado en schema (id, customerId, tenantId, amount, reason, metadata, createdAt) + 3 indexes + `lib/db/loyalty.db.ts` (earn/redeem/getHistory con atomic `$transaction`) + 9 endpoints (marketplace/loyalty, loyalty/[phone], referral, auto-earn, metrics, redeem, cron). Interfaz formal en `lib/db/interfaces/ILoyaltyDB.ts`. Backfill sintético para customers con balance previo. | — | ✅ Cerrado |
+| ~~TD-031~~ | ~~`Review.imageUrls`~~ | **✅ CERRADO 2026-04-12.** `imageUrls` ahora se persiste via `photosJson` (campo existente en schema). GET parsea JSON→array, POST serializa array→JSON. 3 TECH-DEBT comments removidos. Zero migration — usa campo existente. | — | ✅ Cerrado |
+| ~~TD-032~~ | ~~`Coupon.storeId`~~ | **✅ CERRADO 2026-04-12.** `storeId String?` ya existía en schema con `@@index([storeId, code])`. Superadmin endpoint actualizado: filtra `storeId: { not: null }` para marketplace, incluye `storeId` en response. 2 TECH-DEBT comments removidos. | — | ✅ Cerrado |
 | TD-033 | `Tenant.settings` (relación) | Los crons (`demand-forecast`, `marketplace-weekly-report`, `stock-alerts-notify`, `recompra-coupon`, `zone-offers-push`) asumían una relación `Tenant.settings` que no existe. La config real vive en el modelo `Settings` separado (1:1 implícito vía `tenantId`) y los feature flags en `Settings.featureFlagsJson`. | Opción A: corregido — queries ahora hacen `prisma.settings.findUnique({ where: { tenantId } })` y leen `featureFlagsJson` para feature flags. | ✅ Ya corregido en código |
 
 **Plan de migración futuro** (requiere sesión dedicada con `migration-planner`):
 
-1. **TD-030**: crear modelo `LoyaltyTransaction` con `(id, customerId, tenantId, amount, reason, createdAt)` + migration + backfill de `Customer.loyaltyPoints` a movimientos sintéticos.
-2. **TD-031**: agregar `Review.imageUrls String[]` (PostgreSQL array) o tabla `ReviewImage` con relación 1:N.
-3. **TD-032**: agregar `Coupon.storeId String? @index` + FK opcional a `Store` + migration que marque los existentes como cupones POS (storeId = null).
+1. ~~**TD-030**~~: ✅ CERRADO — modelo + DB class + 9 endpoints + backfill implementados.
+2. ~~**TD-031**~~: ✅ CERRADO — imageUrls persiste via photosJson existente, zero migration.
+3. ~~**TD-032**~~: ✅ CERRADO — storeId ya existía en schema, superadmin endpoint actualizado.
 4. **TD-033**: sin migración necesaria — solo documentar la relación implícita en `prisma/schema.prisma` como comentario.
 
 ## ✅ Resueltas
