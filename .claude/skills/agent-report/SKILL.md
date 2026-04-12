@@ -1,43 +1,77 @@
 ---
 name: agent-report
-description: Dashboard de rendimiento por agente. Muestra sesiones, tasa exito, tokens promedio, tiempo, fallos top. Usar cuando Brandon diga "como rinden los agentes", "agent report", "metricas agentes".
+description: Dashboard de rendimiento por Hub y agente. Muestra tokens, exito, tiempo, fallos por Hub BUILD/QUALITY/OPS. Usar cuando Brandon diga "como rinden los agentes", "agent report", "hub metrics".
 user-invocable: true
 model: haiku
 allowed-tools: Read, Grep, Glob
-argument-hint: "[all|agent-name]"
+argument-hint: "[all|hub-build|hub-quality|hub-ops|agent-name]"
 ---
 
-# /agent-report — Rendimiento de Agentes
+# /agent-report v2 — Hub Performance Dashboard
 
 ## Fuente de datos
-Archivo: `.claude/agent-metrics.json` (generado por skill `/agent-metrics`)
+Archivos en `.claude/hub-metrics/`:
+- `build-metrics.json` — Metricas del Hub BUILD
+- `quality-metrics.json` — Metricas del Hub QUALITY
+- `ops-metrics.json` — Metricas del Hub OPS
+- `sprint-history.json` — Historial de sprints
+
+Si no existen, buscar fallback en `.claude/agent-metrics.json` (formato v1).
 
 ## Algoritmo
-1. Leer `.claude/agent-metrics.json`
-2. Si no existe → reportar "Sin datos. Ejecuta `/agent-metrics` primero."
-3. Para cada agente con datos, calcular:
-   - Sesiones totales
-   - Tasa de éxito (tareas completadas / total)
-   - Tokens promedio por tarea
-   - Tiempo promedio (segundos)
+
+1. Leer archivos de metricas disponibles
+2. Si no existe ninguno → reportar "Sin datos. Las metricas se generan automaticamente al usar sprint-autopilot o agent-team."
+3. Calcular por Hub:
+   - Sesiones totales del Hub
+   - Tasa de exito (features completadas / total)
+   - Tokens promedio por feature
+   - Tiempo promedio por feature
    - Top 3 errores recurrentes
+   - Gate pass rate (% que pasa lint+tsc o test+build a la primera)
+4. Calcular por agente dentro del Hub:
+   - Tareas completadas
+   - Tokens usados
+   - Errores causados
+5. Calcular tendencias (mejorando/empeorando vs sesion anterior)
 
 ## Formato de salida
 
 ```markdown
-## Agent Performance — [fecha]
+## Hub Performance — [fecha]
 
-| Agente | Sesiones | Éxito | Tokens/tarea | Tiempo | Top fallo |
-|--------|----------|-------|-------------|--------|-----------|
-| frontend-engineer | 15 | 93% | 5.2K | 45s | snapshot mismatch |
-| backend-platform-engineer | 12 | 87% | 8.1K | 62s | missing tenantId |
+### Resumen ejecutivo
+
+| Hub | Sesiones | Exito | Tokens/feature | Tiempo | Gate pass |
+|-----|----------|-------|----------------|--------|-----------|
+| BUILD | N | N% | NK | Ns | N% |
+| QUALITY | N | N% | NK | Ns | N% |
+| OPS | N | N% | NK | Ns | N% |
+
+### Detalle por agente
+
+| Hub | Agente | Tareas | Tokens | Errores | Tendencia |
+|-----|--------|--------|--------|---------|-----------|
+| BUILD | architect | N | NK | N | ↑↓→ |
+| BUILD | backend | N | NK | N | ↑↓→ |
+| ... | ... | ... | ... | ... | ... |
+
+### Top problemas
+
+| # | Problema | Hub | Frecuencia | Impacto |
+|---|---------|-----|-----------|---------|
+| 1 | [desc] | [hub] | Nx | [alto/medio/bajo] |
 
 ### Recomendaciones
-- [agente con <80% éxito] → candidato a `/evolve analyze`
-- [agente con >10K tokens] → candidato a model downgrade
+
+| # | Accion | Impacto estimado |
+|---|--------|-----------------|
+| 1 | [mejora] | [tokens ahorrados o tiempo reducido] |
 ```
 
-## Reglas
-1. Solo mostrar agentes con >= 3 sesiones de datos
-2. Marcar 🔴 si éxito < 80%, 🟡 si < 90%, 🟢 si >= 90%
-3. Sugerir `/evolve` para agentes con rendimiento bajo
+## Modo comparativo
+
+Si se pasa argumento `vs-last`:
+- Comparar metricas actuales con la sesion/sprint anterior
+- Mostrar deltas con flechas (↑ mejor, ↓ peor, → igual)
+- Alertar si algun agente empeoro significativamente (>20%)

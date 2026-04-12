@@ -1,84 +1,89 @@
 ---
 name: sprint-autopilot
-description: Ejecuta un sprint completo de forma autonoma. Recibe una lista de features/fixes, descompone en tareas, lanza agentes en paralelo con worktrees, coordina dependencias via A2A, verifica cada entrega, y genera PRs. Un boton = sprint hecho.
+description: Ejecuta un sprint completo via Hub pipeline streaming. Recibe features, el Director las descompone, lanza Hubs BUILD→QUALITY→OPS con gates automaticos. Features entran a siguiente fase individualmente sin esperar batch.
 user-invocable: true
 model: opus
 context: fork
-argument-hint: "[sprint-items como lista o referencia a ROADMAP]"
+argument-hint: "[lista de features/fixes o referencia a ROADMAP]"
 ---
 
-# /sprint-autopilot — Ejecucion Autonoma de Sprint
+# /sprint-autopilot v2 — Hub Pipeline Streaming
 
-Le das una lista de items y el sistema: descompone en tareas, identifica dependencias, lanza agentes en paralelo, coordina via A2A, verifica (lint+tsc+test+build), auto-repara fallos, crea commits atomicos, y genera reporte.
+Le das una lista de items y el Director ejecuta un pipeline de 4 fases usando los 3 Hubs nativos (BUILD, QUALITY, OPS) con Agent Teams.
 
 ## Uso
 
 ```
 /sprint-autopilot
-  1. pgvector recommender para productos similares
-  2. 7 URLs programaticas de zona para SEO
-  3. WhatsApp concierge para compradores frecuentes
+  1. Modulo de fiado con scoring
+  2. Facturacion SUNAT electronica
+  3. Dashboard de ventas por tenant
 ```
 
-O desde roadmap: `/sprint-autopilot from:ROADMAP-24-WEEKS.md sprint:2`
+O desde roadmap: `/sprint-autopilot from:ROADMAP-24-WEEKS.md sprint:3`
 
-## Algoritmo
+## Pipeline (4 fases)
 
-### FASE 0: Intake
-- Parsear items, clasificar tipo (feature|fix|refactor|infra) y complejidad (simple|moderada|alta|enterprise)
-- Identificar dominio y mapear via agent-router al agente/squad optimo
-- Output: Sprint Backlog estructurado
+### FASE 1: DESIGN (architect solo, secuencial)
 
-### FASE 1: Arquitectura
-- solution-architect produce: contrato global (interfaces TS compartidas), DAG de dependencias, mapa de archivos por item, items paralelos vs secuenciales
-- Publicar contrato en A2A Bus (broadcast)
-- Validar: zona peligrosa solo via squad designado
+Para cada feature:
+1. architect genera contrato (tipos TS, schema, endpoints, Zod schemas)
+2. architect crea ADR si cambia arquitectura (Rule 12)
+3. Output: 1 contrato por feature con deliverable/artifacts/types/interface/blockers
 
-### FASE 2: Base de datos (si aplica)
-- Si hay cambio de schema: database-engineer + migration-planner generan SQL (NO ejecutar)
-- Publicar resultado en A2A Bus. Si no hay cambios DB → skip
+### FASE 2: BUILD (paralelo, max 3 features simultaneas)
 
-### FASE 3: Ejecucion paralela
-Para cada grupo de items independientes:
-- **Simple** (1-3 archivos, 1 area) → Agent(especialista, background)
-- **Moderado** (4-10 archivos, 1-2 areas) → Agent(especialista, worktree, background)
-- **Alto/enterprise** (10+ archivos, 3+ areas) → Agent(squad, background)
+Para cada feature, TeamCreate("hub-build") con teammates necesarios:
+- DAG interno: architect → [database + integrator-SEO] → backend → [integrator-API] → frontend
+- Gate por feature: `npm run lint && npx tsc --noEmit`
+- Si falla gate: healer auto-repair (max 3 intentos)
+- Feature completada → entra a FASE 3 inmediatamente (streaming, no batch)
 
-Cada agente recibe: contrato arquitectonico, pre-task intel, resultados DB si depende. Al terminar publica en A2A Bus.
+### FASE 3: QUALITY (paralelo, features entran al completar BUILD)
 
-### FASE 4: Gating de dependencias (continuo)
-- Leer A2A Bus para resultados → lanzar items dependientes cuando deps satisfechas
-- Si agente falla → auto-escalation (5 niveles). Si no converge → BLOCKED, seguir con otros
-- Al completar una ola → `lint && tsc --noEmit && test`. Si falla → self-heal v2
+Para cada feature, TeamCreate("hub-quality") con teammates necesarios:
+- DAG interno: [reviewer + tester] → [security + data-qa]
+- reviewer en modo "review" (analiza diff)
+- security con veto power (hallazgo critico = BLOQUEA)
+- Gate: `npm run test && npm run build`
+- Si falla: SendMessage back a BUILD con errores especificos
 
-### FASE 5: Integracion
-- Merge worktrees al branch principal (fast-forward o merge). Conflictos → refactoring-expert
-- Verificacion COMPLETA: `lint && tsc --noEmit && test && build`
-- Si falla → self-heal v2 → auto-escalation
+### FASE 4: OPS (secuencial, 1 deploy por batch)
 
-### FASE 6: Entrega
-- Commits atomicos (1 por item ideal, o 1 consolidado si entrelazados)
-- security-pentester sobre diff total (Regla 14). CRITICAL → bloquear
-- Si pasa → push. Generar Sprint Report con tabla items, verificacion global, metricas, bloqueados, commits, siguiente sprint sugerido.
+Cuando QUALITY aprueba un batch:
+1. observer → health check pre-deploy
+2. deployer → canary 5% → 25% → 100%
+3. optimizer → CWV + cost check post-deploy
+4. Si degradacion: auto-rollback
 
-## Limites de seguridad
+## Coordinacion
 
-1. **Nunca ejecutar migraciones DB** — solo generar SQL
-2. **Nunca deploy auto a produccion** — solo push a branch
-3. **Maximo 8 agentes simultaneos**
-4. **Cost cap: $15 por sprint** — si excede, pausar
-5. **>50% items fallan** → abortar sprint
-6. **Zona peligrosa** → solo via squads especializados
+- **Intra-Hub:** SendMessage nativo entre teammates
+- **Inter-Hub:** Director sintetiza output de un Hub y lo pasa como contexto al siguiente
+- **Task list:** Compartida, visible con Ctrl+T
+- **Contrato format:**
+  ```
+  deliverable: [que se completo]
+  artifacts: [archivos creados/modificados]
+  types: [tipos TS exportados]
+  interface: [lo que debe implementar el receptor]
+  blockers: [impedimentos o "ninguno"]
+  ```
 
-## Integraciones
+## Reglas
 
-| Sistema | Rol |
-|---|---|
-| agent-router | Selecciona agente por item |
-| pre-task-intel | Contexto por dominio pre-item |
-| a2a-bus | Coordinacion inter-agentes |
-| auto-escalation | Maneja fallos |
-| self-heal v2 | Repara errores verificacion |
-| agent-metrics | Trackea rendimiento |
-| parallel-work | Worktrees para independientes |
-| compound-learning-v2 | Aprende patrones del sprint |
+1. Max 3 features en paralelo en BUILD (oleadas de 3)
+2. Features independientes = paralelo. Con dependencias = secuencial
+3. Cada feature tiene su propio pipeline (streaming, no batch)
+4. Security gate obligatorio antes de deploy (Rule 14)
+5. Commit atomico por feature completada
+6. Si healer falla 3 veces → escalar a Brandon
+
+## Metricas al cierre
+
+Al terminar el sprint, reportar:
+- Features completadas / total
+- Tokens totales por Hub
+- Tiempo por feature
+- Issues encontrados por QUALITY
+- CWV delta post-deploy

@@ -38,6 +38,27 @@ El Director indica tu modo al asignarte:
 - Mantiene backwards compatibility
 - Hace cambios incrementales, no rewrite total
 
+## Feedback Loop — Auto-generacion de tests preventivos
+
+Despues de cada review donde encuentres un bug:
+
+1. **Documentar el patron** del bug (ej: "falta tenantId en query nueva")
+2. **Generar test sugerido** que habria atrapado el bug
+3. **SendMessage al tester** con:
+   ```
+   deliverable: test preventivo sugerido
+   artifacts: [archivo donde va el test]
+   types: [tipo de test: unit/e2e]
+   interface: [test code sugerido]
+   blockers: ninguno
+   ```
+4. **Registrar en hub-metrics** via:
+   ```bash
+   node .claude/hooks/hub-metrics-persist.mjs '{"hub":"quality","agent":"reviewer","task":"bug-pattern-detected","tokens":0,"success":true,"errors":["pattern: [descripcion del bug]"]}'
+   ```
+
+Esto crea un ciclo virtuoso: cada bug encontrado → genera test → previene reincidencia.
+
 ## Reglas criticas
 1. NUNCA aprobar codigo sin tenantId en queries multi-tenant
 2. NUNCA aprobar .parse() — solo safeParse()

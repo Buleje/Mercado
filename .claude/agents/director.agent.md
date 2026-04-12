@@ -132,6 +132,89 @@ interface: [contrato de lo que debe implementar el receptor]
 blockers: [impedimentos o "ninguno"]
 ```
 
+## Auto-Skill Loading (danger zone detection)
+
+Cuando detectes que una tarea toca zona de peligro, carga el skill automaticamente:
+
+| Archivos detectados | Skill a cargar | Razon |
+|-------------------|---------------|-------|
+| components/checkout/**, CheckoutModal.tsx | checkout-flow | State machine pagos, idempotency |
+| schema.prisma, prisma/migrations/ | prisma-schema + database-migrations | 131 modelos, requiere DIRECT_URL |
+| lib/auth/role-permissions.ts, proxy.ts | security-auth | 26 recursos x 6 roles, CSP |
+| contexts/cart-context.tsx | state-management | BroadcastChannel multi-tab |
+| lib/db/orders.db.ts | database-migrations | State machine, idempotency keys |
+| capacitor.config.ts, android/, ios/ | capacitor-mobile | Builds nativos |
+| Groq, embeddings, AI features | ai-features | ML pipeline |
+| SUNAT, WhatsApp, Stripe | external-integrations | APIs externas |
+| metadata, JSON-LD, sitemap | seo-metadata | SEO tecnico |
+
+Instruccion al teammate: "Carga el skill [nombre] antes de empezar. Contiene reglas criticas para esta zona."
+
+## Hub Coordination Loop (polling pattern)
+
+Despues de crear un Hub con TeamCreate:
+
+1. **Crear todas las tasks** con dependencias (blockedBy)
+2. **Asignar task inicial** a teammates sin blockers
+3. **Loop de monitoreo:**
+   - Verificar TaskList cada turno
+   - Cuando una task pasa a "completed":
+     a. Verificar si desbloquea otra task
+     b. Si si → SendMessage al teammate desbloqueado con contexto
+     c. Si no hay mas tasks pendientes → ejecutar gate
+   - Si un teammate esta idle sin tasks → no asignar mas (cleanup natural)
+4. **Gate automatico:**
+   - Post-BUILD: `npm run lint && npx tsc --noEmit`
+   - Post-QUALITY: `npm run test && npm run build`
+   - Si falla → SendMessage a healer → retry gate
+   - Si healer falla 3x → escalar a Brandon
+5. **Transicion al siguiente Hub:**
+   - Sintetizar output del Hub actual (que archivos, que tipos, que cambio)
+   - TeamCreate del siguiente Hub con contexto sintetizado
+
+## Hub Memory (cross-session learning)
+
+Despues de cada Hub completado, guardar en memoria del proyecto:
+- **BUILD learnings:** Patrones que funcionaron, errores comunes, tiempo por tipo de tarea
+- **QUALITY findings:** Bugs recurrentes, zonas fragiles, tests que mas fallan
+- **OPS incidents:** Rollbacks, degradaciones, CWV trends
+
+Archivo: `.claude/hub-metrics/[hub]-learnings.json`
+El Director consulta estos learnings al inicio de cada nuevo sprint para evitar errores repetidos.
+
+## Gate Automation Scripts
+
+Despues de que un Hub complete, ejecutar el gate automatico:
+
+```bash
+# Post-BUILD gate (lint + tsc)
+node .claude/hooks/hub-gate.mjs build
+
+# Post-QUALITY gate (test + build)
+node .claude/hooks/hub-gate.mjs quality
+
+# Post-OPS gate (health check)
+node .claude/hooks/hub-gate.mjs ops
+```
+
+El script devuelve JSON con `{ passed: true/false, gates: [...] }`.
+- Si `passed: true` → continuar al siguiente Hub
+- Si `passed: false` → SendMessage a healer con el error del gate
+- Despues de cada gate, persistir metricas:
+```bash
+node .claude/hooks/hub-metrics-persist.mjs '{"hub":"build","agent":"backend","task":"[desc]","tokens":N,"time_ms":N,"success":true,"gate_passed":true,"errors":[]}'
+```
+
+## Routing Validation
+
+Benchmark de 20 escenarios en `.claude/hub-metrics/routing-benchmark.md`.
+Consultar este archivo cuando:
+- Se modifique el decision tree
+- Se agregue un nuevo agente
+- Un routing falle en produccion
+
+Los 20 escenarios cubren: simple (5), medium (3), complex (3), danger zone (4), sprint (2), fallback (3).
+
 ## Reglas criticas (de CLAUDE.md)
 
 1. Nunca Prisma directo — usar lib/db/*.db.ts

@@ -3,7 +3,6 @@
   "_comment": "Settings locales del proyecto Buleje. Activados 2026-04-08 tras el plan maestro FLUJO_PRO_v6 nivel 3 (ver docs/adr/017-claude-code-agent-architecture-v3.md — pendiente). Este archivo ES versionado en git para que viaje con el repo. Los hooks personales globales del usuario viven en ~/.claude/settings.json y se heredan automáticamente.",
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "CLAUDE_CODE_TEAMMATE_MODE": "in-process",
     "BSM_PROJECT_ROOT": "${CLAUDE_PROJECT_DIR}",
     "BSM_HOOKS_DEBUG": "0",
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
