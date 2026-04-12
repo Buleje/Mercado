@@ -113,4 +113,12 @@ if (data.errors && data.errors.length > 0) {
 
 // Write back
 writeFileSync(METRICS_FILE, JSON.stringify(metrics, null, 2));
+
+// Auto-regenerate dashboard with fresh data
+try {
+  const dashboardGen = resolve(PROJECT, ".claude/hooks/dashboard-gen.mjs");
+  const { execSync: exec } = await import("node:child_process");
+  exec(`node "${dashboardGen}"`, { cwd: PROJECT, stdio: "pipe" });
+} catch { /* dashboard regen is best-effort */ }
+
 console.log(`Metrics updated: ${hub}/${agent || "hub-level"} — tokens:${data.tokens || 0} success:${data.success}`);
