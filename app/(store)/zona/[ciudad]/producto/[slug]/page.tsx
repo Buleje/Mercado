@@ -1,5 +1,5 @@
 /**
- * /zona/[ciudad]/[producto] — City x Product page for Programmatic SEO
+ * /zona/[ciudad]/producto/[slug] — City x Product page for Programmatic SEO
  *
  * Buleje = Software SaaS ERP para bodegas y tiendas de todo Peru.
  *
@@ -33,7 +33,7 @@ const BASE_URL =
 const realCategories = categories.filter((c) => c.id !== "todos");
 
 interface Props {
-  params: Promise<{ ciudad: string; producto: string }>;
+  params: Promise<{ ciudad: string; slug: string }>;
 }
 
 // ── Cached: find a product by slug within a tenant ───────────────────
@@ -73,16 +73,14 @@ async function getRelatedProducts(
 
 // ── Static params: zone × product combos ────────────────────────────
 // Note: products live in the DB so we return an empty array and rely on
-// on-demand rendering + caching at runtime. generateStaticParams can be
-// extended once a product-slug snapshot is available.
+// Seed params for build validation — remaining combos render on-demand.
 export function generateStaticParams() {
-  // Return empty — pages are rendered on first request and then cached.
-  return [];
+  return [{ ciudad: "pucallpa", slug: "arroz-extra" }];
 }
 
 // ── Metadata ─────────────────────────────────────────────────────────
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { ciudad, producto: productoSlug } = await params;
+  const { ciudad, slug: productoSlug } = await params;
   const zone = findZone(ciudad);
   if (!zone) return { title: "Zona no encontrada" };
 
@@ -97,7 +95,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     product.description
       ? `${product.description} Disponible en ${zone.name}, ${zone.region}. Precio: S/${price} por ${product.unit ?? "und"}. Gestiona tu bodega con Buleje ERP.`
       : `${product.name} en ${zone.name} al precio de S/${price} por ${product.unit ?? "und"}. Gestiona inventario, ventas y delivery con Buleje ERP para bodegas.`;
-  const url = `${BASE_URL}/zona/${zone.slug}/${productoSlug}`;
+  const url = `${BASE_URL}/zona/${zone.slug}/producto/${productoSlug}`;
 
   return {
     title,
@@ -145,7 +143,7 @@ function generateProductLD(
     image: product.image.startsWith("http")
       ? product.image
       : `${BASE_URL}${product.image}`,
-    url: `${BASE_URL}/zona/${zone.slug}/${productoSlug}`,
+    url: `${BASE_URL}/zona/${zone.slug}/producto/${productoSlug}`,
     offers: {
       "@type": "Offer",
       price: product.price,
@@ -181,7 +179,7 @@ function RelatedProductCard({
   const slug = slugify(product.name);
   return (
     <Link
-      href={`/zona/${zoneSlug}/${slug}`}
+      href={`/zona/${zoneSlug}/producto/${slug}`}
       className="group flex flex-col rounded-2xl border border-slate-200 bg-white dark:bg-slate-900 dark:border-slate-700 overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-[#2d6a4f]/40"
     >
       <div className="relative aspect-square bg-slate-50 dark:bg-slate-800">
@@ -246,7 +244,7 @@ async function ZoneProductContent({
     ...zoneBreadcrumbs(zone, category ? { id: category.id, label: category.label } : undefined),
     {
       name: product.name,
-      url: `${BASE_URL}/zona/${zone.slug}/${productoSlug}`,
+      url: `${BASE_URL}/zona/${zone.slug}/producto/${productoSlug}`,
     },
   ];
 
@@ -482,7 +480,7 @@ async function ZoneProductContent({
           {otherZones.map((z) => (
             <Link
               key={z.slug}
-              href={`/zona/${z.slug}/${productoSlug}`}
+              href={`/zona/${z.slug}/producto/${productoSlug}`}
               className="text-sm text-slate-500 dark:text-slate-400 hover:text-[#2d6a4f] transition-colors"
             >
               {product.name} en {z.name}
@@ -548,8 +546,8 @@ export default function ZoneProductPage({ params }: Props) {
 async function ZoneProductContentWrapper({
   params,
 }: {
-  params: Promise<{ ciudad: string; producto: string }>;
+  params: Promise<{ ciudad: string; slug: string }>;
 }) {
-  const { ciudad, producto } = await params;
-  return <ZoneProductContent ciudad={ciudad} productoSlug={producto} />;
+  const { ciudad, slug } = await params;
+  return <ZoneProductContent ciudad={ciudad} productoSlug={slug} />;
 }

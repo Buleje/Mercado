@@ -175,13 +175,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  // Programmatic SEO — zone × product pages (/zona/[ciudad]/[producto])
+  // Programmatic SEO — zone × product pages (/zona/[ciudad]/producto/[slug])
   const zoneProductPages: MetadataRoute.Sitemap = [];
   if (dbProducts.length > 0) {
     for (const zone of zones) {
       for (const product of dbProducts) {
         zoneProductPages.push({
-          url: `${baseUrl}/zona/${zone.slug}/${slugify(product.name)}`,
+          url: `${baseUrl}/zona/${zone.slug}/producto/${slugify(product.name)}`,
           lastModified,
           changeFrequency: "weekly",
           priority: 0.6,
