@@ -108,3 +108,7 @@ build-output.txt
 build-task003.log
 
 .env*.local
+lint-compact.txt
+lint-output.txt
+tsc-errors.log
+check-tenants.sql
