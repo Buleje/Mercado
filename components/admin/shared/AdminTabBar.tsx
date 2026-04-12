@@ -32,7 +32,7 @@ export default function AdminTabBar({
   moduleId,
   draggable = true,
   className,
-  vertical = true,
+  vertical = false,
   children,
 }: AdminTabBarProps) {
   const tabsRef = useRef<HTMLDivElement>(null);
