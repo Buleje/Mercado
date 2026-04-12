@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Tag, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStoreProducts } from "@/hooks/use-store-products";
+import SectionPlaceholder from "@/components/SectionPlaceholder";
 
 interface Promo {
   emoji: string;
@@ -99,7 +100,7 @@ export default function SeasonalPromo() {
   }, [paused, next]);
 
   // Don't render if loading or no matching promos for actual products
-  if (isLoading || PROMOS.length === 0) return null;
+  if (isLoading || PROMOS.length === 0) return <SectionPlaceholder title="Promo de Temporada" hint="Se activan automaticamente segun la epoca del ano" cols={6} />;
 
   // Clamp idx to valid range
   const safeIdx = idx % PROMOS.length;
