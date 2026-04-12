@@ -10,7 +10,10 @@ import {
   Paintbrush, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveActiveTenantSlug } from "@/lib/tenant-fetch";
+import dynamic from "next/dynamic";
 import StorefrontEditor from "./StorefrontEditor";
+
+const StoreCreativeMode = dynamic(() => import("./StoreCreativeMode"), { ssr: false });
 import type { SectionKey } from "./StorefrontEditor";
 import ImageUpload from "./ImageUpload";
 
@@ -485,6 +488,7 @@ export default function StoreCustomizer() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showCreativeMode, setShowCreativeMode] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
   const [previewWidth, setPreviewWidth] = useState(0); // 0 = full width (desktop)
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -692,6 +696,14 @@ export default function StoreCustomizer() {
           >
             <Eye className="h-4 w-4" />
             Vista previa
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowCreativeMode(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-teal-600 text-white text-xs font-bold hover:from-violet-500 hover:to-teal-500 transition-all min-h-[44px] shadow-md"
+          >
+            <Paintbrush className="h-4 w-4" />
+            Modo Creativo
           </button>
         </div>
       </div>
@@ -1438,6 +1450,15 @@ export default function StoreCustomizer() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Modo Creativo fullscreen ──────────────────────────────── */}
+      {showCreativeMode && (
+        <StoreCreativeMode
+          tenantSlug={activeTenantSlug}
+          onClose={() => setShowCreativeMode(false)}
+          onSave={handleSave}
+        />
       )}
     </div>
   );
