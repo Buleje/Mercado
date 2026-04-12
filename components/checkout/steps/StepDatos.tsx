@@ -89,7 +89,7 @@ export function StepDatos({
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.2 }}
     >
-      <form onSubmit={onSubmit} className="px-5 py-4 space-y-4">
+      <form onSubmit={onSubmit} data-testid="datos-form" className="px-5 py-4 space-y-4">
         {showVerifiedCard ? (
           <CustomerVerifiedCard
             variant={foundCustomer ? "found" : "saved"}
@@ -238,6 +238,7 @@ export function StepDatos({
           <m.button
             type="button"
             onClick={onBack}
+            data-testid="datos-back"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.96 }}
             className="flex-1 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"

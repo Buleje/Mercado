@@ -1,0 +1,96 @@
+"use client";
+
+/**
+ * components/admin/EmptyState.tsx
+ *
+ * Componente reutilizable de estado vacío para el panel admin.
+ * Reemplaza los patrones inline "No hay X / No se encontraron X".
+ *
+ * Props:
+ *  - icon      — ReactNode (icono lucide u otro)
+ *  - title     — Título principal del estado vacío
+ *  - description — Texto secundario opcional
+ *  - actions   — Array de botones accionables: { label, href | onClick }
+ */
+
+import Link from "next/link";
+import type { ReactNode } from "react";
+
+export type EmptyStateAction = {
+  label: string;
+  href?: string;
+  onClick?: () => void;
+  variant?: "primary" | "secondary";
+};
+
+export interface EmptyStateProps {
+  icon?: ReactNode;
+  title: string;
+  description?: string;
+  actions?: EmptyStateAction[];
+  className?: string;
+}
+
+export function EmptyState({
+  icon,
+  title,
+  description,
+  actions = [],
+  className = "",
+}: EmptyStateProps) {
+  return (
+    <div
+      className={[
+        "flex flex-col items-center justify-center text-center py-14 px-6",
+        "bg-white dark:bg-card border border-dashed border-gray-200 dark:border-card-border",
+        "rounded-2xl",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {icon && (
+        <div className="mb-4 text-gray-300 dark:text-muted [&_svg]:h-10 [&_svg]:w-10 [&_svg]:mx-auto">
+          {icon}
+        </div>
+      )}
+
+      <p className="font-semibold text-gray-800 dark:text-foreground text-base leading-snug">
+        {title}
+      </p>
+
+      {description && (
+        <p className="text-sm text-gray-400 dark:text-muted mt-1.5 max-w-xs leading-relaxed">
+          {description}
+        </p>
+      )}
+
+      {actions.length > 0 && (
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+          {actions.map((action, i) => {
+            const isPrimary = action.variant !== "secondary";
+            const baseClass = [
+              "min-h-11 px-4 py-2 rounded-xl text-sm font-semibold transition-colors",
+              isPrimary
+                ? "bg-primary text-white hover:bg-primary/90"
+                : "bg-gray-100 dark:bg-surface text-gray-700 dark:text-foreground hover:bg-gray-200 dark:hover:bg-card-border",
+            ].join(" ");
+
+            if (action.href) {
+              return (
+                <Link key={i} href={action.href} className={baseClass}>
+                  {action.label}
+                </Link>
+              );
+            }
+            return (
+              <button key={i} onClick={action.onClick} className={baseClass} type="button">
+                {action.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

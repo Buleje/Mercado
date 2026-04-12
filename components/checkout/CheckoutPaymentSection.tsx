@@ -539,6 +539,7 @@ export function CheckoutPaymentSection({
         <m.button
           type="button"
           onClick={onBack}
+          data-testid="pago-back"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.96 }}
           className="flex items-center justify-center gap-1.5 shrink-0 px-4 py-3 rounded-xl border-2 border-gray-200 dark:border-zinc-700 text-sm font-semibold text-gray-600 dark:text-muted hover:bg-gray-50 dark:hover:bg-surface transition-colors"

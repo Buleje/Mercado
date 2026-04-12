@@ -62,7 +62,7 @@ export function StepPago({
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.2 }}
     >
-      <form onSubmit={onSubmit} className="px-6 py-5">
+      <form onSubmit={onSubmit} data-testid="pago-form" className="px-6 py-5">
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_360px] divide-y sm:divide-y-0 sm:divide-x divide-gray-100 dark:divide-card-border gap-0">
           <CheckoutOrderReview
             items={items}

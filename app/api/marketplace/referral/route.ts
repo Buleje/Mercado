@@ -1,0 +1,47 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { CustomersDB } from "@/lib/db/customers.db";
+import { applyRateLimit } from "@/lib/rate-limit";
+import { toErrorPayload, newTraceId } from "@/lib/api-error";
+
+// GET /api/marketplace/referral?phone=...
+// Returns referral code + stats for a customer
+export async function GET(req: NextRequest) {
+  const rateLimitResponse = applyRateLimit(req, "GENEROUS", "referral-stats");
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const traceId = newTraceId();
+  try {
+    const phone = req.nextUrl.searchParams.get("phone");
+    if (!phone || phone.length < 6) {
+      return NextResponse.json({ error: "phone requerido" }, { status: 400 });
+    }
+
+    // Ensure customer has a referral code
+    const code = await CustomersDB.ensureReferralCode(phone);
+
+    // Count how many people used this code
+    const referredCount = await prisma.customer.count({
+      where: { referredBy: phone },
+    });
+
+    // Calculate points earned from referrals (50 per referral)
+    const totalEarned = referredCount * 50;
+
+    // Get share URL
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://buleje.pe";
+    const shareUrl = `${baseUrl}/marketplace?ref=${code}`;
+    const shareMessage = `¡Compra en Buleje y usa mi código ${code} para ganar puntos! ${shareUrl}`;
+
+    return NextResponse.json({
+      code,
+      referredCount,
+      totalEarned,
+      shareUrl,
+      shareMessage,
+    });
+  } catch (err) {
+    const { payload, status } = toErrorPayload(err, traceId);
+    return NextResponse.json(payload, { status });
+  }
+}

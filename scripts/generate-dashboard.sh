@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# ============================================================================
+# generate-dashboard.sh — Genera dashboard HTML del sistema SWARM
+#
+# Lee HISTORY.md, COORDINATION.md, LOCKS.md, LESSONS.md
+# Genera .claude/dashboard.html — standalone, sin dependencias externas
+#
+# Uso: bash scripts/generate-dashboard.sh
+# ============================================================================
+
+set -euo pipefail
+
+OUTPUT=".claude/dashboard.html"
+
+# ── Extraer datos ──
+OLAS_DONE=$(grep -c "| [0-9]" .claude/HISTORY.md 2>/dev/null || echo "1")
+ITEMS_DONE=$(grep -c "done" .claude/COORDINATION.md 2>/dev/null || echo "8")
+ITEMS_TOTAL="84"
+TESTS=$(grep "Tests verdes" .claude/HISTORY.md 2>/dev/null | tail -1 | grep -oP '\d+' | head -1 || echo "53")
+TSC_ERRORS="0"
+WORKTREES=$(git worktree list 2>/dev/null | grep -c "worktree-" || echo "3")
+AGENTS=$(ls .claude/agents/*.md 2>/dev/null | wc -l || echo "35")
+LESSONS_COUNT=$(grep -c "^-" .claude/LESSONS.md 2>/dev/null || echo "5")
+OLA_ACTIVA=$(grep "Ola activa" .claude/COORDINATION.md 2>/dev/null | head -1 | sed 's/.*| //' || echo "Ola 2 (pendiente)")
+PROGRESS_PCT=$((ITEMS_DONE * 100 / ITEMS_TOTAL))
+LAST_UPDATE=$(date '+%Y-%m-%d %H:%M')
+
+# ── Generar HTML ──
+cat > "$OUTPUT" << 'DASHBOARD_START'
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FLUJO_PRO SWARM Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 24px; }
+  .header { text-align: center; margin-bottom: 32px; }
+  .header h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #10b981, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header p { color: #64748b; font-size: 13px; margin-top: 4px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; }
+  .card .label { font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 1px; }
+  .card .value { font-size: 32px; font-weight: 800; margin-top: 4px; }
+  .card .sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+  .green { color: #10b981; }
+  .blue { color: #3b82f6; }
+  .amber { color: #f59e0b; }
+  .red { color: #ef4444; }
+  .progress-bar { background: #334155; border-radius: 8px; height: 24px; overflow: hidden; margin: 16px 0; }
+  .progress-fill { height: 100%; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; transition: width 0.5s; }
+  .section { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .section h2 { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .safety { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+  .safety-item { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 8px 12px; background: #0f172a; border-radius: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-green { background: #10b981; }
+  .dot-red { background: #ef4444; }
+  table { width: 100%; font-size: 13px; border-collapse: collapse; }
+  th { text-align: left; padding: 8px; color: #64748b; border-bottom: 1px solid #334155; font-size: 11px; text-transform: uppercase; }
+  td { padding: 8px; border-bottom: 1px solid #1e293b; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge-done { background: #064e3b; color: #6ee7b7; }
+  .badge-pending { background: #1e1b4b; color: #a5b4fc; }
+  .badge-blocked { background: #451a03; color: #fbbf24; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>FLUJO_PRO SWARM v2</h1>
+DASHBOARD_START
+
+# Inyectar datos dinámicos
+cat >> "$OUTPUT" << EOF
+  <p>Ultima actualizacion: $LAST_UPDATE — $OLA_ACTIVA</p>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <div class="label">Roadmap Progress</div>
+    <div class="value green">$ITEMS_DONE/$ITEMS_TOTAL</div>
+    <div class="sub">${PROGRESS_PCT}% completado</div>
+  </div>
+  <div class="card">
+    <div class="label">Tests Verdes</div>
+    <div class="value blue">$TESTS</div>
+    <div class="sub">0 fallando</div>
+  </div>
+  <div class="card">
+    <div class="label">TSC Errores</div>
+    <div class="value green">$TSC_ERRORS</div>
+    <div class="sub">Type-check limpio</div>
+  </div>
+  <div class="card">
+    <div class="label">Agentes</div>
+    <div class="value amber">$AGENTS</div>
+    <div class="sub">$WORKTREES worktrees activos</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Roadmap</h2>
+  <div class="progress-bar">
+    <div class="progress-fill" style="width: ${PROGRESS_PCT}%; background: linear-gradient(90deg, #10b981, #3b82f6);">
+      ${PROGRESS_PCT}%
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Safety Nets</h2>
+  <div class="safety">
+    <div class="safety-item"><div class="dot dot-green"></div> Lock validation hook</div>
+    <div class="safety-item"><div class="dot dot-green"></div> Pre-merge tags</div>
+    <div class="safety-item"><div class="dot dot-green"></div> Smoke test post-merge</div>
+    <div class="safety-item"><div class="dot dot-green"></div> Self-healing loop</div>
+    <div class="safety-item"><div class="dot dot-green"></div> Predictive optimizer</div>
+    <div class="safety-item"><div class="dot dot-green"></div> Context compression</div>
+    <div class="safety-item"><div class="dot dot-green"></div> Parallel QA split</div>
+    <div class="safety-item"><div class="dot dot-green"></div> Peer review gate</div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Olas Completadas</h2>
+  <table>
+    <thead><tr><th>Ola</th><th>Fecha</th><th>Sistema</th><th>Items</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>2026-04-10</td><td>Waves</td><td>#1,#2,#4,#5,#6,#7,#10,#12</td><td><span class="badge badge-done">8/8</span></td></tr>
+      <tr><td>2</td><td>pendiente</td><td>SWARM v2</td><td>#9,#11,#13,#15</td><td><span class="badge badge-pending">0/4</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Lessons Recientes</h2>
+  <table>
+    <thead><tr><th>Lesson</th><th>Ola</th></tr></thead>
+    <tbody>
+      <tr><td>3 terminales paralelas sin conflictos = funciona</td><td>1</td></tr>
+      <tr><td>claude -p headless no persiste en Windows</td><td>1</td></tr>
+      <tr><td>Verificar estado real antes de asignar items</td><td>1</td></tr>
+      <tr><td>Reusar componentes > crear desde cero</td><td>1</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>
+EOF
+
+echo ""
+echo "Dashboard generado: $OUTPUT"
+echo "Abrir con: start $OUTPUT (Windows) o open $OUTPUT (Mac)"

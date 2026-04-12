@@ -1,0 +1,65 @@
+name: Backup off-site (encrypted)
+
+on:
+  schedule:
+    # Daily at 03:00 UTC = 22:00 Lima (UTC-5)
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      verify:
+        description: "Run local decrypt verification after upload"
+        required: false
+        default: "true"
+
+concurrency:
+  group: backup-offsite
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: bodega-san-martin/package-lock.json
+
+      - name: Install pg_dump (Postgres client)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Install deps
+        working-directory: bodega-san-martin
+        run: npm ci --prefer-offline --no-audit
+
+      - name: Install @aws-sdk/client-s3
+        working-directory: bodega-san-martin
+        run: npm i -D @aws-sdk/client-s3 --no-save
+
+      - name: Run backup
+        working-directory: bodega-san-martin
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          BACKUP_S3_REGION: ${{ secrets.BACKUP_S3_REGION }}
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          BACKUP_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+        run: npx tsx scripts/backup-offsite.ts --verify
+
+      - name: Notify Sentry on failure
+        if: failure()
+        run: |
+          curl -sS -X POST "https://sentry.io/api/0/projects/${{ secrets.SENTRY_ORG }}/${{ secrets.SENTRY_PROJECT }}/events/" \
+            -H "Authorization: Bearer ${{ secrets.SENTRY_AUTH_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"message":"backup-offsite FAILED","level":"error"}' || true
