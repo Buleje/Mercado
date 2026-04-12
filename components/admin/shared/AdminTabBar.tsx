@@ -115,9 +115,17 @@ export default function AdminTabBar({
 
   if (vertical) {
     return (
-      <div className={cn("flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-0", className)}>
-        <nav className="w-full shrink-0 lg:sticky lg:top-0 lg:w-44 lg:self-start lg:border-r lg:border-gray-100 lg:dark:border-card-border lg:pr-2 lg:mr-3">
-          <div className="grid grid-cols-2 gap-0.5 sm:grid-cols-3 lg:grid-cols-1">
+      <div className={cn("flex flex-col gap-3 lg:flex-row lg:items-stretch lg:gap-0", className)}>
+        {/* Sub-tab nav: flush against main sidebar with matching style */}
+        <nav className={cn(
+          "w-full shrink-0",
+          // Desktop: fixed strip matching sidebar visual style
+          "lg:w-40 lg:self-stretch lg:-ml-3 sm:lg:-ml-6 lg:pl-3 sm:lg:pl-6 lg:pr-0",
+          "lg:border-r lg:border-gray-200 lg:dark:border-card-border",
+          "lg:bg-white lg:dark:bg-card",
+          "lg:pt-1 lg:pb-4",
+        )}>
+          <div className="grid grid-cols-2 gap-0.5 sm:grid-cols-3 lg:grid-cols-1 lg:pt-0">
             {orderedTabs.map((tab) => {
               const Icon = tab.icon;
 
@@ -126,10 +134,12 @@ export default function AdminTabBar({
                   key={tab.id}
                   onClick={() => !tab.disabled && onTabChange(tab.id)}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13px] transition-all duration-150",
+                    "flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] transition-all duration-150",
+                    "lg:rounded-none lg:rounded-r-lg",
                     activeTab === tab.id
-                      ? "bg-primary/10 font-semibold text-primary dark:bg-primary/15"
-                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-200",
+                      ? "bg-primary/10 font-semibold text-primary border-l-[3px] border-l-primary dark:bg-primary/15"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.06] dark:hover:text-gray-200 border-l-[3px] border-l-transparent",
+                    "rounded-lg lg:rounded-none lg:rounded-r-lg",
                     tab.disabled && "cursor-not-allowed opacity-40",
                   )}
                 >
@@ -148,14 +158,15 @@ export default function AdminTabBar({
           {isReordered && (
             <button
               onClick={resetOrder}
-              className="mt-1.5 w-full border-t border-gray-100 px-2.5 pt-1.5 text-left text-[10px] text-gray-400 transition-colors hover:text-primary dark:border-white/10"
+              className="mt-1.5 w-full border-t border-gray-100 px-3 pt-1.5 text-left text-[10px] text-gray-400 transition-colors hover:text-primary dark:border-white/10"
             >
               Restablecer orden
             </button>
           )}
         </nav>
 
-        <div className="min-w-0 flex-1">{children}</div>
+        {/* Content: fills 100% remaining space */}
+        <div className="min-w-0 flex-1 lg:pl-4">{children}</div>
       </div>
     );
   }
