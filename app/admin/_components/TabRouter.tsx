@@ -7,6 +7,7 @@ import type { Tab } from "@/app/admin/_lib/tabs.types";
 import type { TabCategory } from "@/app/admin/_lib/tab-categories";
 import type { StoreMode } from "@/lib/jsondb";
 import DashboardWidgets from "@/components/admin/shared/DashboardWidgets";
+import OnboardingWizard from "@/components/admin/shared/OnboardingWizard";
 
 // ── Lazy tab wrappers (TASK-003 — reusable dynamic shells) ─────────────────────
 // These four wrappers live under components/admin/tabs/* and wrap their
@@ -114,6 +115,7 @@ export function TabRouter({
   // ── 1. Asistente IA ──
   if (tab === "asistente-ia") return (
     <>
+      <OnboardingWizard onNavigate={(t) => onNavigateTab(t as Tab)} />
       <DashboardWidgets onNavigate={(t) => onNavigateTab(t as Tab)} />
       <AsistenteIAModule />
     </>
